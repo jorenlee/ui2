@@ -52,11 +52,9 @@ onMounted(async () => {
           <h2
             class="text-left text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg"
           >
-           News and Updates
+            News and Updates
           </h2>
-      
         </div>
-     
       </div>
 
       <div
@@ -64,14 +62,14 @@ onMounted(async () => {
         class="grid lg:grid-cols-4 grid-cols-2 justify-center lg:gap-x-8 gap-2 w-11/12 mx-auto"
       >
         <div
-          v-for="(j, i) in info.slice(0,4)"
+          v-for="(j, i) in info.slice(0, 4)"
           :key="i"
-          class="w-full shadow-green-900 rounded bg-white text-green-900 shadow-2xl  overflow-hidden transition-all duration-500 hover:scale-[1.02]"
+          class="w-full shadow-green-900 rounded bg-white text-green-900 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
         >
           <a class="relative overflow-hidden" :href="'news-updates/' + j.id">
             <!-- Title -->
             <div
-              class=" lg:min-h-[70px] lg:px-3 lg:py-3 py-2 tracking-tighter leading-tight px-1 text-center font-semibold flex items-center justify-center lg:text-xs text-[9px]"
+              class="lg:min-h-[70px] lg:px-3 lg:py-3 py-2 tracking-tighter leading-tight px-1 text-center font-semibold flex items-center justify-center lg:text-xs text-[9px]"
             >
               {{ j.title }}
             </div>
@@ -89,11 +87,15 @@ onMounted(async () => {
       <!-- Empty State -->
       <div v-else class="text-gray-400 py-10">No news posted yet.</div>
 
-   <div class="w-11/12 mx-auto lg:mt-10 mt-5">
-    <a href="/news-updates" class="ml-auto mr-0 block w-fit whitespace-nowrap  text-white text-lg rounded-xl mt-30 italic hover:font-bold hover:text-xl">
-      More <i class="fa fa-angle-double-right italic" aria-hidden="true"></i>
-    </a>
-   </div>
+      <div class="w-11/12 mx-auto lg:mt-10 mt-5" v-if="info.length">
+        <a
+          href="/news-updates"
+          class="ml-auto mr-0 block w-fit whitespace-nowrap text-white text-lg rounded-xl mt-30 italic hover:font-bold hover:text-xl"
+        >
+          More
+          <i class="fa fa-angle-double-right italic" aria-hidden="true"></i>
+        </a>
+      </div>
     </div>
   </div>
 </template>

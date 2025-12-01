@@ -76,7 +76,7 @@ onBeforeUnmount(() => {
                 >Administration</a
               >
             </li>
-             <li>
+            <li>
               <a
                 href="/sdgs"
                 class="nav-link"
@@ -129,7 +129,6 @@ onBeforeUnmount(() => {
                 >About</a
               >
             </li>
-           
           </ul>
         </nav>
 
@@ -191,6 +190,13 @@ onBeforeUnmount(() => {
                 >Administration</a
               >
             </li>
+
+            <li>
+              <a href="/sdgs" class="mobile-menu-item border-y"
+                >Sustainability</a
+              >
+            </li>
+
             <li>
               <a href="/directory" class="mobile-menu-item border-b">Contact</a>
             </li>
