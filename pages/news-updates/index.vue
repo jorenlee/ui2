@@ -33,53 +33,99 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="w-full bg-[#0c4804] lg:pt-10 pb-5 py-5 relative">
+  <div class="bg-gray-50">
+    <Header />
+    <div class="">
+      <div class="relative">
+        <Banner />
+        <img
+          src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
+          class="align-top w-full h-36 object-none lg:hidden block"
+        />
+        <div>
+
+        </div>
+        <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
+          <h1 class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto">
+            New and Updates
+
+          </h1>
+        </div>
+        <div class="pt-2.5 pb-3 shadow-lg">
+          <ul class="flex lasalle-green-text capitalize w-11/12 mx-auto text-xs">
+            <li>
+              <a href="/" class="mr-1"> Home </a>
+            </li>
+            <li>
+              <i class="fas fa-caret-right mr-1"></i>
+              <a href="/new-updates" class="mr-1"> News and Updates </a>
+            </li>
+       
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
+   <div class="w-full lg:py-10 py-5 relative">
     <!-- Background Image -->
     <div
       class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
-      style="
-        background-image: url('https://lsu-media-styles.sgp1.digitaloceanspaces.com/481668685_1139543031299171_4009940609016510904_n.jpg');
-      "
+    
     ></div>
-    <div class="absolute inset-0 bg-[#003500df]"></div>
+
     <!-- Dark overlay -->
 
     <!-- Content -->
-    <div class="relative z-10 mx-auto">
+    <div class="relative z-10 lg:px-10 mx-auto">
       <div class="flex justify-between">
-        <div class="lg:mb-8 mb-3 w-fit mx-auto">
+        <div class=" w-fit mx-auto">
           <!-- Title -->
-          <h2
-            class="text-left text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg"
-          >
-           News and Updates
-          </h2>
-      
-        </div>
-     
-      </div>
 
+          <!-- <p class="text-gray-400 text-[10px] border-t w-fit mx-auto py-1 mt-2">
+            A.Y 2025 to 2026 First Semester
+          </p> -->
+        </div>
+        <!-- <div class="">
+          <div class="flex items-center justify-center space-x-3 lg:pt-3 pt-5">
+       
+            <div
+              class="w-0 h-0 border-t-8 border-b-8 border-r-8 border-t-transparent border-b-transparent border-r-white"
+            ></div>
+
+            <div
+              class="w-0 h-0 border-t-8 border-b-8 border-l-8 border-t-transparent border-b-transparent border-l-white"
+            ></div>
+          </div>
+        </div> -->
+      </div>
+      <!-- <p class="text-gray-300 text-sm lg:text-base mb-6">
+      Read about the latest DLSU initiatives, achievements, and developments.
+    </p> -->
+
+      <!-- News Cards -->
       <div
         v-if="info.length"
-        class="grid lg:grid-cols-4 grid-cols-2 justify-center lg:gap-x-8 gap-2 w-11/12 mx-auto"
+        class="lg:grid lg:grid-cols-4 justify-center lg:gap-3"
       >
         <div
-          v-for="(j, i) in info.slice(0,4)"
+          v-for="(j, i) in info"
           :key="i"
-          class="w-full shadow-green-900 rounded bg-white text-green-900 shadow-2xl  overflow-hidden transition-all duration-500 hover:scale-[1.02]"
+          class="w-full shadow-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
         >
           <a class="relative overflow-hidden" :href="'news-updates/' + j.id">
             <!-- Title -->
             <div
-              class=" lg:min-h-[70px] lg:px-3 lg:py-3 py-2 tracking-tighter leading-tight px-1 text-center font-semibold flex items-center justify-center lg:text-xs text-[9px]"
+              class="text-green-700 lg:px-3 lg:py-3 py-2 px-1  text-base text-center font-semibold flex items-center justify-center"
             >
               {{ j.title }}
             </div>
             <!-- Image -->
-            <div class="border-t-4 border-t-[#ffffff] w-full">
+            <div class="border-t-4 border-t-[#ffffff] px-2">
               <img
                 :src="j.thumbnails[0].url"
-                class="w-full lg:h-[220px] transition-transform duration-500 hover:scale-110"
+                class="w-[350px] h-[250px] transition-transform duration-500 hover:scale-110 object-contain"
               />
             </div>
           </a>
@@ -89,14 +135,21 @@ onMounted(async () => {
       <!-- Empty State -->
       <div v-else class="text-gray-400 py-10">No news posted yet.</div>
 
-   <div class="w-11/12 mx-auto lg:mt-10 mt-5">
-    <a href="/news-updates" class="ml-auto mr-0 block w-fit whitespace-nowrap  text-white text-lg rounded-xl mt-30 italic hover:font-bold hover:text-xl">
-      More <i class="fa fa-angle-double-right italic" aria-hidden="true"></i>
-    </a>
-   </div>
+      <!-- Pagination Dots -->
+      <!-- <div class="flex justify-center gap-2 mt-6">
+        <span
+          v-for="n in 2"
+          :key="n"
+          class="w-3 h-3 rounded-full bg-green-700 opacity-50 hover:opacity-100 transition-opacity"
+        ></span>
+      </div> -->
     </div>
   </div>
+</div>
+    <Footer />
+  </div>
 </template>
+
 
 <style scoped>
 .bg {

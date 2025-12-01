@@ -122,7 +122,7 @@ function zoomOut() {
     </div>
 
     <!-- MAIN CONTENT -->
-    <div class="w-11/12 mx-auto py-10">
+    <div class="w-11/12 mx-auto lg:py-10 py-5">
       <!-- Loading -->
       <div v-if="loading" class="text-center py-10 text-gray-600">
         Loading...
@@ -137,9 +137,9 @@ function zoomOut() {
       <div v-if="item && !loading" class="lg:flex gap-10">
         <!-- LEFT: Content + Highlight + Thumbnails -->
         <div class=" w-fit">
-          <h2 class="text-2xl font-bold mb-5">{{ item.title }}</h2>
+          <h2 class="lg:text-2xl font-bold mb-5 leading-tight">{{ item.title }}</h2>
 
-          <p class="leading-7 whitespace-pre-line mb-7">
+          <p class=" whitespace-pre-line mb-7 leading-tight lg:text-sm text-xs">
             {{ item.description }}
           </p>
 
@@ -153,13 +153,13 @@ function zoomOut() {
                 <img
                   :src="activeImage || item.thumbnails[0].url"
                   @click="openModal(currentIndex)"
-                  class="w-auto h-screen object-contain rounded-lg shadow cursor-pointer hover:opacity-95 transition"
+                  class="w-auto h-fit object-contain rounded-lg shadow cursor-pointer hover:opacity-95 transition"
                   alt="highlight"
                 />
               </div>
 
               <!-- Thumbnails (right) -->
-              <div class="lg:w-4/12 w-full grid grid-cols-2 gap-3">
+              <div class="lg:w-4/12 w-full grid lg:grid-cols-2 grid-cols-4 gap-3">
                 <div
                   v-for="(thumb, index) in item.thumbnails"
                   :key="index"
@@ -169,7 +169,7 @@ function zoomOut() {
                   <img
                     :src="thumb.url"
                     :alt="thumb.name || `thumb-${index}`"
-                    class="w-full h-32 object-contain rounded shadow hover:ring-2 hover:ring-green-700 transition"
+                    class="w-full lg:h-32 object-contain rounded shadow hover:ring-2 hover:ring-green-700 transition"
                   />
                 </div>
               </div>

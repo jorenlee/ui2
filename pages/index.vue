@@ -36,6 +36,27 @@ onMounted(() =>
     <div class="lg:relative block z-0">
       <div class=""></div>
       <BlogPosting />
+
+      <a href="/sdgs" class="bg-gray-50 py-20 border block">
+            <div class="w-fit mx-auto my-10">
+      <div class="flex items-center gap-x-5  w-fit mx-auto">
+        <img
+          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/lsu-corporate-logo-green.png"
+          class="w-80"
+        />
+        <div class="w-0.5 h-[200px] bg-black"></div>
+        <img
+          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/E_SDG_logo_Square_WEB.png.png"
+          class="w-80"
+        />
+      </div>
+      <div
+        class="text-green-900 text-2xl text-center my-8 font-roboto font-semibold"
+      >
+        La Salle University supports the Sustainable Development Goals.
+      </div>
+    </div>
+  </a>
       <!-- <a href="https://drive.google.com/drive/folders/1F29IJ8LNDYJ8ElYvDwWDjsqI9NmAj5Y7?fbclid=IwY2xjawOMRIRleHRuA2FlbQIxMABicmlkETFIOWZPbWtCSXJreTcxWlhjc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHuqxEsKN2qFstVGA0sT5OgjH0MZpaaIvR9qqgmuEvh-9i-FRNG252cSFsFfI_aem_5T6KSJaDAR26zcAYCWywFg" class="w-10/12 mx-auto" target="_blank">
         <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Panagsadya%20(2).png" class="w-full" />
        </a>   -->
