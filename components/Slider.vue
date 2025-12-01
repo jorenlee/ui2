@@ -109,7 +109,7 @@ onMounted(() => {
 
 <template>
   <div class="relative">
-    <div class="slider lg:pt-[90px] pt-[50px] bg-green-950">
+    <div class="slider bg-[#031d03]">
       <input
         v-for="(j, i) in slides"
         :key="i"

@@ -33,7 +33,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="w-full bg-[#0c4804] lg:pt-10 pb-5 py-5 relative">
+  <div class="w-full bg-[#ffffff] lg:pt-10 pb-5 py-5 relative">
     <!-- Background Image -->
     <div
       class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
@@ -41,7 +41,7 @@ onMounted(async () => {
         background-image: url('https://lsu-media-styles.sgp1.digitaloceanspaces.com/481668685_1139543031299171_4009940609016510904_n.jpg');
       "
     ></div>
-    <div class="absolute inset-0 bg-[#003500df]"></div>
+    <div class="absolute inset-0 bg-[#363636df]"></div>
     <!-- Dark overlay -->
 
     <!-- Content -->
@@ -85,7 +85,7 @@ onMounted(async () => {
       </div>
 
       <!-- Empty State -->
-      <div v-else class="text-gray-400 py-10">No news posted yet.</div>
+      <div v-else class="text-gray-400 py-10 w-11/12 mx-auto">No news posted yet.</div>
 
       <div class="w-11/12 mx-auto lg:mt-10 mt-5" v-if="info.length">
         <a

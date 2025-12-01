@@ -29,7 +29,7 @@ const slides = ref([
 </script>
 
 <template>
-  <div class="slider lg:pt-[80px] pt-[50px] bg-white">
+  <div class="slider pt-[50px] bg-white">
     <input
       v-for="(j, i) in slides"
       :key="i"
