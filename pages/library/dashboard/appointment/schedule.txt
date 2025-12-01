@@ -1,0 +1,292 @@
+{
+  "timeSelection":[
+    {
+      "category": "",
+      "time" : [
+        {
+          "range_from_time": "07:00 AM",
+          "range_to_time": "07:20 AM",
+          "_12_hour_format_from": "07:00 AM", 
+          "_12_hour_format_to": "07:20 AM"
+        },
+        {
+          "range_from_time": "07:20 AM",
+          "range_to_time": "07:40 AM",
+          "_12_hour_format_from": "07:20 AM", 
+          "_12_hour_format_to": "07:40 AM"
+        },
+        {
+          "range_from_time": "07:40 AM",
+          "range_to_time": "08:00 AM",
+          "_12_hour_format_from": "07:40 AM", 
+          "_12_hour_format_to": "08:00 AM"
+        },
+        {
+          "range_from_time": "08:00 AM",
+          "range_to_time": "08:20 AM",
+          "_12_hour_format_from": "08:00 AM", 
+          "_12_hour_format_to": "08:20 AM"
+        },
+        {
+          "range_from_time": "08:20 AM",
+          "range_to_time": "08:40 AM",
+          "_12_hour_format_from": "08:20 AM", 
+          "_12_hour_format_to": "08:40 AM"
+        },
+        {
+          "range_from_time": "08:40 AM",
+          "range_to_time": "09:00 AM",
+          "_12_hour_format_from": "08:40 AM", 
+          "_12_hour_format_to": "09:00 AM"
+        },
+        {
+          "range_from_time": "09:00 AM",
+          "range_to_time": "09:20 AM",
+          "_12_hour_format_from": "09:00 AM", 
+          "_12_hour_format_to": "09:20 AM"
+        },
+        {
+          "range_from_time": "09:20 AM",
+          "range_to_time": "09:40 AM",
+          "_12_hour_format_from": "09:20 AM", 
+          "_12_hour_format_to": "09:40 AM"
+        },
+        {
+          "range_from_time": "09:40 AM",
+          "range_to_time": "10:00 AM",
+          "_12_hour_format_from": "09:40 AM", 
+          "_12_hour_format_to": "10:00 AM"
+        },
+        {
+          "range_from_time": "10:00 AM",
+          "range_to_time": "10:20 AM",
+          "_12_hour_format_from": "10:00 AM", 
+          "_12_hour_format_to": "10:20 AM"
+        },
+        {
+          "range_from_time": "10:20 AM",
+          "range_to_time": "10:40 AM",
+          "_12_hour_format_from": "10:20 AM", 
+          "_12_hour_format_to": "10:40 AM"
+        },
+        {
+          "range_from_time": "10:40 AM",
+          "range_to_time": "11:00 AM",
+          "_12_hour_format_from": "10:40 AM", 
+          "_12_hour_format_to": "11:00 AM"
+        },
+        {
+          "range_from_time": "11:00 AM",
+          "range_to_time": "11:20 AM",
+          "_12_hour_format_from": "11:00 AM", 
+          "_12_hour_format_to": "11:20 AM"
+        },
+        {
+          "range_from_time": "11:20 AM",
+          "range_to_time": "11:40 AM",
+          "_12_hour_format_from": "11:20 AM", 
+          "_12_hour_format_to": "11:40 AM"
+        },
+        {
+          "range_from_time": "11:40 AM",
+          "range_to_time": "12:00 NN",
+          "_12_hour_format_from": "11:40 AM", 
+          "_12_hour_format_to": "12:00 NN"
+        },
+        {
+          "range_from_time": "12:00 NN",
+          "range_to_time": "12:20 PM",
+          "_12_hour_format_from": "12:00 NN",
+          "_12_hour_format_to": "12:20 PM"
+        },
+        {
+          "range_from_time": "12:20 PM",
+          "range_to_time": "12:40 PM",
+          "_12_hour_format_from": "12:20 PM",
+          "_12_hour_format_to": "12:40 PM"
+        },
+        {
+          "range_from_time": "12:40 PM",
+          "range_to_time": "13:00 PM",
+          "_12_hour_format_from": "12:40 PM", 
+          "_12_hour_format_to": "01:00 PM"
+        },
+        {
+          "range_from_time": "13:00 PM",
+          "range_to_time": "13:20 PM",
+          "_12_hour_format_from": "01:00 PM", 
+          "_12_hour_format_to": "01:20 PM"
+        },
+        {
+          "range_from_time": "13:20 PM",
+          "range_to_time": "13:40 PM",
+          "_12_hour_format_from": "01:20 PM", 
+          "_12_hour_format_to": "01:40 PM"
+        },
+        {
+          "range_from_time": "13:40 PM",
+          "range_to_time": "14:00 PM",
+          "_12_hour_format_from": "01:40 PM", 
+          "_12_hour_format_to": "02:00 PM"
+        },
+        {
+          "range_from_time": "14:00 PM",
+          "range_to_time": "14:20 PM",
+          "_12_hour_format_from": "02:00 PM", 
+          "_12_hour_format_to": "02:20 PM"
+        },
+        {
+          "range_from_time": "14:20 PM",
+          "range_to_time": "14:40 PM",
+          "_12_hour_format_from": "02:20 PM", 
+          "_12_hour_format_to": "02:40 PM"
+        },
+        {
+          "range_from_time": "14:40 PM",
+          "range_to_time": "15:00 PM",
+          "_12_hour_format_from": "02:40 PM", 
+          "_12_hour_format_to": "03:00 PM"
+        },
+        {
+          "range_from_time": "15:00 PM",
+          "range_to_time": "15:20 PM",
+          "_12_hour_format_from": "03:00 PM", 
+          "_12_hour_format_to": "03:20 PM"
+        },
+        {
+          "range_from_time": "15:20 PM",
+          "range_to_time": "15:40 PM",
+          "_12_hour_format_from": "03:20 PM", 
+          "_12_hour_format_to": "03:40 PM"
+        },
+        {
+          "range_from_time": "15:40 PM",
+          "range_to_time": "16:00 PM",
+          "_12_hour_format_from": "03:40 PM", 
+          "_12_hour_format_to": "04:00 PM"
+        },
+        {
+          "range_from_time": "16:00 PM",
+          "range_to_time": "16:20 PM",
+          "_12_hour_format_from": "04:00 PM", 
+          "_12_hour_format_to": "04:20 PM"
+        },
+        {
+          "range_from_time": "16:20 PM",
+          "range_to_time": "16:40 PM",
+          "_12_hour_format_from": "04:20 PM", 
+          "_12_hour_format_to": "04:40 PM"
+        },
+        {
+          "range_from_time": "16:40 PM",
+          "range_to_time": "17:00 PM",
+          "_12_hour_format_from": "04:40 PM", 
+          "_12_hour_format_to": "05:00 PM"
+        },
+        {
+          "range_from_time": "17:00 PM",
+          "range_to_time": "17:20 PM",
+          "_12_hour_format_from": "05:00 PM", 
+          "_12_hour_format_to": "05:20 PM"
+        },
+        {
+          "range_from_time": "17:20 PM",
+          "range_to_time": "17:40 PM",
+          "_12_hour_format_from": "05:20 PM", 
+          "_12_hour_format_to": "05:40 PM"
+        },
+        {
+          "range_from_time": "17:40 PM",
+          "range_to_time": "18:00 PM",
+          "_12_hour_format_from": "05:40 PM", 
+          "_12_hour_format_to": "06:00 PM"
+        },
+        {
+          "range_from_time": "18:00 PM",
+          "range_to_time": "18:20 PM",
+          "_12_hour_format_from": "06:00 PM", 
+          "_12_hour_format_to": "06:20 PM"
+        },
+        {
+          "range_from_time": "18:20 PM",
+          "range_to_time": "18:40 PM",
+          "_12_hour_format_from": "06:20 PM", 
+          "_12_hour_format_to": "06:40 PM"
+        },
+        {
+          "range_from_time": "18:40 PM",
+          "range_to_time": "19:00 PM",
+          "_12_hour_format_from": "06:40 PM", 
+          "_12_hour_format_to": "07:00 PM"
+        },
+        {
+          "range_from_time": "19:00 PM",
+          "range_to_time": "19:20 PM",
+          "_12_hour_format_from": "07:00 PM", 
+          "_12_hour_format_to": "07:20 PM"
+        },
+        {
+          "range_from_time": "19:20 PM",
+          "range_to_time": "19:40 PM",
+          "_12_hour_format_from": "07:20 PM", 
+          "_12_hour_format_to": "07:40 PM"
+        },
+        {
+          "range_from_time": "19:40 PM",
+          "range_to_time": "19:00 PM",
+          "_12_hour_format_from": "07:40 PM", 
+          "_12_hour_format_to": "08:00 PM"
+        }
+      ]
+    }
+  ]
+}
+
+
+{
+    "timeSelection": [
+        {
+            "time": [
+                "07:00 AM - 07:20 AM",
+                "07:20 AM - 07:40 AM",
+                "07:40 AM - 08:00 AM",
+                "08:00 AM - 08:20 AM",
+                "08:20 AM - 08:40 AM",
+                "08:40 AM - 09:00 AM",
+                "09:00 AM - 09:20 AM",
+                "09:20 AM - 09:40 AM",
+                "09:40 AM - 10:00 AM",
+                "10:00 AM - 10:20 AM",
+                "10:20 AM - 10:40 AM",
+                "10:40 AM - 11:00 AM",
+                "11:00 AM - 11:20 AM",
+                "11:20 AM - 11:40 AM",
+                "11:40 AM - 12:00 NN",
+                "12:00 NN - 12:20 PM",
+                "12:20 PM - 12:40 PM",
+                "12:40 PM - 01:00 PM",
+                "01:00 PM - 01:20 PM",
+                "01:20 PM - 01:40 PM",
+                "01:40 PM - 02:00 PM",
+                "02:00 PM - 02:20 PM",
+                "02:20 PM - 02:40 PM",
+                "02:40 PM - 03:00 PM",
+                "03:00 PM - 03:20 PM",
+                "03:20 PM - 03:40 PM",
+                "03:40 PM - 04:00 PM",
+                "04:00 PM - 04:20 PM",
+                "04:20 PM - 04:40 PM",
+                "04:40 PM - 05:00 PM",
+                "05:00 PM - 05:20 PM",
+                "05:20 PM - 05:40 PM",
+                "05:40 PM - 06:00 PM",
+                "06:00 PM - 06:20 PM",
+                "06:20 PM - 06:40 PM",
+                "06:40 PM - 07:00 PM",
+                "07:00 PM - 07:20 PM",
+                "07:20 PM - 07:40 PM",
+                "07:40 PM - 08:00 PM"
+            ]
+        }
+    ]
+}

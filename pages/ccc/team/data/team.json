@@ -1,0 +1,55 @@
+[
+  {
+    "name": "Jay Adrian Paciente, RGC",
+    "role": "Director, Career and Counseling Center",
+    "email": "jay.paciente@lsu.edu.ph",
+    "img": "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ccc/Pictures/jay-adrian-paciente.png",
+    "alignment": "center"
+  },
+  {
+    "name": "Theodora La Reyna Villanueva, RGC",
+    "role": [
+       "Guidance Counselor",
+      "College of Nursing",
+      "College of Business and Accountancy",
+      "College of Teacher Education"
+    ],
+    "email": "theodoralareyna.villanueva@lsu.edu.ph",
+    "img": "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ccc/Pictures/theodora-villanueva.png",
+    "alignment": "left"
+  },
+  {
+    "name": "Mia Shaina Dumasig",
+    "role": [
+      "Guidance Associate",
+      "College of Arts and Sciences",
+      "College of Criminal Justice Education",
+      "College of Computer Studies, Engineering and Architecture",
+      "College of Tourism and Hospitality Management"
+    ],
+    "email": "miashaina.dumasig@lsu.edu.ph",
+    "img": "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ccc/Pictures/mia-dumasig.png",
+    "alignment": "right"
+  },
+  {
+    "name": "Bellemarie September Sanes, RPm CHRA",
+    "role": "Psychometrician, Basic Education Unit",
+    "email": "bellemarieseptember.sanes@lsu.edu.ph",
+    "img": "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ccc/Pictures/bellemarie-sanes.png",
+    "alignment": "right"
+  },
+  {
+    "name": "Sandra Marie Haganus, RPm",
+    "role": "Psychometrician, Higher Education Unit",
+    "email": "sandramarie.haganus@lsu.edu.ph",
+    "img": "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ccc/Pictures/sandra-haganus.png",
+    "alignment": "left"
+  },
+  {
+    "name": "Monica Thea Resuelo, RPm CHRA",
+    "role": "Guidance Associate for Senior High School",
+    "email": "monicathea.resuelo2@lsu.edu.ph",
+    "img": "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ccc/Pictures/monica-resuelo.png",
+    "alignment": "left"
+  }
+]

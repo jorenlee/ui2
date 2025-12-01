@@ -1,0 +1,244 @@
+{
+  "administrators": [
+    {
+      "offices": "Office of the President",
+      "headOffice": true,
+      "admins": [
+        {
+          "officeAbbr": "OPR",
+          "designationAbbr": "OPR",
+          "designation": "University President",
+          "name": "Br. Rey Erezare Mejias FSC"
+        },
+        {
+          "officeAbbr": "OPR",
+          "designationAbbr": "OPR",
+          "designation": "Executive Assistant | Officer, Data Privacy & Lasallian Yearbook Publications",
+          "name": "Mr. Israel Gallogo"
+        },
+        {
+          "officeAbbr": "OPR",
+          "designationAbbr": "NPC",
+          "designation": "Director, Network, Programs and Computerization",
+          "name": "Mr. Michael John Puertogalera"
+        },
+        {
+          "officeAbbr": "OPR",
+          "designationAbbr": "CEMO",
+          "designation": "Director, Corporate and Executive Management Center",
+          "name": "Ms. Meredith  Embuscado"
+        },
+        {
+          "officeAbbr": "OPR",
+          "designationAbbr": "CEMO",
+          "designation": "Officer, Corporate and Executive Management Center & Risk Management",
+          "name": "Ms. Maria Cristina Llauder"
+        }
+      ]
+    },
+    {
+      "offices": "Vice-President for Planning and Strategic Services",
+      "headOffice": true,
+      "admins": [
+        {
+          "officeAbbr": "VPSS",
+          "designationAbbr": "VPSS",
+          "designation": "Vice-President for Planning and Strategic Services",
+          "name": "Mr. Raymundo Dolor"
+        },
+        {
+          "officeAbbr": "VPSS",
+          "designationAbbr": "MCO",
+          "designation": "Director, Marketing and Communications Center",
+          "name": "Br. Alexander Ervin Diaz FSC"
+        },
+        {
+          "officeAbbr": "VPSS",
+          "designationAbbr": "HRD",
+          "designation": "Director, Human Resources Development Center",
+          "name": "Dr. Daryl Quinco"
+        },
+        {
+          "officeAbbr": "VPSS",
+          "designationAbbr": "HRD",
+          "designation": "Officer, Institutional Learning",
+          "name": "Ms. Naiza Amba"
+        },
+        {
+          "officeAbbr": "VPSS",
+          "designationAbbr": "UPC",
+          "designation": "Officer, Procurement",
+          "name": "Ms. Margeaux Labuga"
+        }
+      ]
+    },
+    {
+      "offices": "Vice-President for Lasallian Mission Services",
+      "headOffice": true,
+      "admins": [
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "VPLM",
+          "designation": "Vice-President for Lasallian Mission",
+          "name": "Mr. Carl Vincent Codera"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "SAC",
+          "designation": "Director, Student Activities, Arts and Culture Center",
+          "name": "Mr. Ted Nudgent Tac-an"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "SAC",
+          "designation": "Officer, Leadership Formation and Empowerment",
+          "name": "Mr. Dean Eust'l Lopez"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "LLF",
+          "designation": "Prefect of Discipline",
+          "name": "Ms. Dessa Montejo and Ms. Nicole Raagas"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "ACC",
+          "designation": "Officer, Sports and Wellness",
+          "name": "Ms. Showery Bless Ponce"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "CCC",
+          "designation": "Director, Lasallian Ministries Center",
+          "name": "Br. Manny Sia FSC"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "LSMC",
+          "designation": "Officer, Lasallian Formation Minister",
+          "name": "Ms. Mary Joezl Dumat-ol"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "LSMC",
+          "designation": "University Chaplain",
+          "name": "Fr. Joven Lustre"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "LSMC",
+          "designation": "Vocations Coordinator",
+          "name": "Br. Manny Sia FSC"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "SCC",
+          "designation": "Director, Social Concerns Center",
+          "name": "Ms. Jemarie Villones"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "SCC",
+          "designation": "Officer, Community Organizing",
+          "name": "Ms. Jeanelyn Potestas"
+        },
+        {
+          "officeAbbr": "VPLM",
+          "designationAbbr": "SCC",
+          "designation": "Officer, Advocacy Organizing",
+          "name": "Mr. Georey Pescador"
+        }
+      ]
+    },
+    {
+      "offices": "Vice-President For Finance And Accounting Services",
+      "headOffice": true,
+      "admins": [
+        {
+          "officeAbbr": "VPFAS",
+          "designationAbbr": "VPFAS",
+          "designation": "Vice-President, Finance and Accounting Services & Controller",
+          "name": "Ms. Rose Aimee Mangao"
+        },
+        {
+          "officeAbbr": "VPFAS",
+          "designationAbbr": "VPFAS",
+          "designation": "Officer, Budget and Cost",
+          "name": "Ms. Donnabel Balase"
+        },
+        {
+          "officeAbbr": "VPFAS",
+          "designationAbbr": "VPFAS",
+          "designation": "Officer, Business Development",
+          "name": "Mr. Dennis Mitchel Dioquino"
+        },
+        {
+          "officeAbbr": "VPFAS - ASC",
+          "designationAbbr": "OCH",
+          "designation": "Director, Admissions and Scholarships Center",
+          "name": "Ms. Charm Femae Mendoza"
+        }
+      ]
+    },
+    {
+      "offices": "Vice-President For Administrative Services",
+      "headOffice": true,
+      "admins": [
+        {
+          "officeAbbr": "VPAD",
+          "designationAbbr": "VPAD",
+          "designation": "Vice-President for Administrative Services",
+          "name": "Engr. Flordeliza Cabang"
+        },
+        {
+          "officeAbbr": "VPAD",
+          "designationAbbr": "VPAD",
+          "designation": "Farm Manager",
+          "name": "Dr. Reggie Macahilo"
+        },
+        {
+          "officeAbbr": "VPAD",
+          "designationAbbr": "VPAD",
+          "designation": "Director, General Services Center",
+          "name": "Mr. Cristopher Noronio"
+        },
+        {
+          "officeAbbr": "VPAD",
+          "designationAbbr": "VPAD",
+          "designation": "Director, Safety, Security, and Environment",
+          "name": "Engr. Esmael Larubis"
+        },
+        {
+          "officeAbbr": "VPAD",
+          "designationAbbr": "VPAD",
+          "designation": "Officer, Health Services Center",
+          "name": "Ms. Maria Diva Dagandara"
+        }
+      ]
+    },
+    {
+      "offices": "Vice-President for Advancement and Linkages Services",
+      "headOffice": true,
+      "admins": [
+        {
+          "officeAbbr": "VPALS",
+          "designationAbbr": "VPALS",
+          "designation": "Vice-President for Advancement and Linkages",
+          "name": "Br. Alexander Ervin Diaz FSC"
+        },
+        {
+          "officeAbbr": "VPALS",
+          "designationAbbr": "VPALS",
+          "designation": "Officer, Advancement and Linkages",
+          "name": "Ms. Tefanie Matutes"
+        },
+        {
+          "officeAbbr": "VPALS",
+          "designationAbbr": "VPALS",
+          "designation": "Officer, Government Partnership Management Center",
+          "name": "Ms. Roselyn Tuastomban"
+        }
+      ]
+    }
+  ]
+}

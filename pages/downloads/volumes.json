@@ -1,0 +1,111 @@
+{
+ "volumes": [{
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._12_No._1.pdf",
+   "title": "Vol. 12 No. 1"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._12_No._2.pdf",
+   "title": "Vol. 12 No. 2"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._12_No._3.pdf",
+   "title": "Vol. 12 No. 3"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._12_No._4.pdf",
+   "title": "Vol. 12 No. 4"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._13_No._1.pdf",
+   "title": "Vol. 13 No. 1"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._13_No._2.pdf",
+   "title": "Vol. 13 No. 2"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._13_No._3.pdf",
+   "title": "Vol. 13 No. 3"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._13_No._4.pdf",
+   "title": "Vol. 13 No. 4"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._13_No._8.pdf",
+   "title": "Vol. 13 No. 8"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._14_No._1.pdf",
+   "title": "Vol. 14 No. 1"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._14_No._2.pdf",
+   "title": "Vol. 14 No. 2"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._14_No._3.pdf",
+   "title": "Vol. 14 No. 3"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._14_No._4.pdf",
+   "title": "Vol. 14 No. 4"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._14_No._5.pdf",
+   "title": "Vol. 14 No. 5"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._14_No._6.pdf",
+   "title": "Vol. 14 No. 6"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._14_No._7.pdf",
+   "title": "Vol. 14 No. 7"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._15_No._1.pdf",
+   "title": "Vol. 15 No. 1"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._15_No._2.pdf",
+   "title": "Vol. 15 No. 2"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._15_No._3.pdf",
+   "title": "Vol. 15 No. 3"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._15_No._5.pdf",
+   "title": "Vol. 15 No. 5"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._15_No._6.pdf",
+   "title": "Vol. 15 No. 6"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._15_No._7.pdf",
+   "title": "Vol. 15 No. 7"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._16_No._1.pdf",
+   "title": "Vol. 16 No. 1"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._16_No._2.pdf",
+   "title": "Vol. 16 No. 2"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._17_No._1.pdf",
+   "title": "Vol. 17 No. 1"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._17_No._2.pdf",
+   "title": "Vol. 17 No. 2"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._18_No._1.pdf",
+   "title": "Vol. 18 No. 1"
+  }
+ ]
+}

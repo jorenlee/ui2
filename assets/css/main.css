@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Peace+Sans:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.lasalle-green{
+  background-color: #087830!important;
+}
+
+.lasalle-green-text {
+  color: #087830!important;
+}
+
+.flickity-page-dots .dot {
+  background: #01481f!important;
+}
+
+/* @font-face {
+  font-family: 'Montserrat';
+  src: url('~/assets/fonts/Montserrat/MONTSERRAT-VARIABLEFONT_WGHT.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'HK-Compression';
+  src: url('~/assets/fonts/HK_Compression_Heavy_Condensed/HK-COMPRESSION-HEAVY-CONDENSED.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+} */
+
+
+.scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 20px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  border-radius: 100vh;
+  background: #0e4a03;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background: #ffffff;
+  border-radius: 100vh;
+  border: 3px solid #12b700;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #014716;
+}
+
+input[type="radio"] {
+  accent-color: #20990b;
+}
+
+
+.scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 20px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  border-radius: 100vh;
+  background: #0e4a03;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background: #ffffff;
+  border-radius: 100vh;
+  border: 3px solid #12b700;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #014716;
+}
+
+input[type="checkbox"] {
+  color: #116f00;
+}
+
+input[type="checkbox"] {
+  accent-color: #20990b;
+}
+
+input[type="radio"] {
+  margin: 3px auto auto auto;
+}
+
+.error {
+  color: red;
+}
+
+
+
+.login-with-google-btn {
+  background-image: url("https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/icons8-google-48.png");
+  background-size: 30px 30px;
+  background-repeat: no-repeat;
+  background-position: 10% 51%;
+}
+
+/* @font-face {
+  font-family: "Peace Sans";
+  src: url("/assets/fonts/Peace Sans.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+} */

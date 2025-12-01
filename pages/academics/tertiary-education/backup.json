@@ -1,0 +1,168 @@
+{
+    "tertiary": [{
+        "under_grad": [{
+          "title": "Undergraduate Studies",
+          "list": [{
+              "logo": "cas",
+              "title": "College of Arts and Sciences",
+              "abbr": "CAS",
+              "active": false,
+              "programs": [{
+                  "title": "Bachelor of Arts in English Language Studies (BAELS)"
+                },
+                {
+                  "title": "Bachelor of Arts in Political Science (BAPolSc)"
+                },
+                {
+                  "title": "Bachelor of Science in Psychology (BSPsych)"
+                },
+                {
+                  "title": "Bachelor of Science in Criminology (BSCrim)"
+                },
+                {
+                  "title": "Bachelor of Science in Social Work (BSSW)"
+                }
+              ]
+            },
+            {
+              "logo": "cba",
+              "title": "College of Business and Accountancy",
+              "abbr": "CBA",
+              "active": false,
+              "programs": [{
+                  "title": "Bachelor of Science in Accounting Information System(BSAIS)"
+                },
+                {
+                  "title": " Bachelor of Science in Accountancy (BSAc)"
+                },
+                {
+                  "title": "Bachelor of Science in Business Administration (BSBA)",
+                  "major": "Majors in: Financial Management, Marketing Management"
+                }
+              ]
+            },
+            {
+              "logo": "ccsea",
+              "title": "College of Computer Studies, Engineering, and Architecture",
+              "abbr": "CCSEA",
+              "active": false,
+              "programs": [{
+                  "title": "Bachelor of Science in Civil Engineering (BSCE)"
+                },
+                {
+                  "title": "Bachelor of Science in Architecture (BSArch)"
+                },
+                {
+                  "title": "Bachelor of Science in Electrical Engineering (BSEE)"
+                },
+                {
+                  "title": "Bachelor of Science in Electronics Engineering (BSECE)"
+                },
+                {
+                  "title": "Bachelor of Science in Geodetic Engineering (BSGE)"
+                },
+                {
+                  "title": "Bachelor of Science in Computer Engineering (BSCpE)"
+                },
+                {
+                  "title": "Bachelor of Science in Computer Science (BSCS)"
+                },
+                {
+                  "title": "Bachelor of Science in Information Technology (BSIT)"
+                },
+                {
+                  "title": "Bachelor of Library and Information Science (BLIS)"
+                }
+              ]
+            },
+            {
+              "logo": "con-lsu",
+              "title": "College of Nursing",
+              "abbr": "CON",
+              "active": false,
+              "programs": [{
+                "title": "Bachelor of Science in Nursing (BSN)"
+              }]
+            },
+            {
+              "logo": "cte",
+              "title": "College of Teacher Education",
+              "abbr": "CTE",
+              "active": false,
+              "programs": [{
+                  "title": "Bachelor of Special Needs Education (BSNEd)"
+                },
+                {
+                  "title": "Bachelor of Physical Education (BPEd)"
+                },
+                {
+                  "title": "Bachelor of Technology and Livelihood Education (BTLEd)"
+                },
+                {
+                  "title": "Bachelor of Elementary Education (BEEd)"
+                },
+                {
+                  "title": "Bachelor of Secondary Education (BSEd)",
+                  "major": "Majors in: English, Filipino, Science, Mathematics,Social Studies, Values Education"
+                }
+              ]
+            },
+            {
+              "logo": "cthm",
+              "title": "College of Tourism and Hospitality Management",
+              "abbr": "CTHM",
+              "active": false,
+              "programs": [{
+                  "title": " Bachelor of Science in Hospitality Management (BSHM)"
+                },
+                {
+                  "title": "Bachelor of Science in Tourism Management (BSTM)"
+                }
+              ]
+            }
+          ]
+        }]
+      },
+      {
+        "grad_stud": [{
+          "title": "Graduate Studies",
+          "list": [{
+            "logo": "sgs",
+            "title": "School of Graduate Studies",
+            "active": false,
+            "category": [{
+                "title": "Graduate School of Business",
+                "programs": [{
+                    "title": "Master of Arts in Education (with Thesis Program)"
+                  },
+                  {
+                    "title": "Doctor of Philosophy in Education",
+                    "major": "Major in Educational Management"
+                  },
+                  {
+                    "title": "Master in Public Administration (Non-Thesis Program)",
+                    "major": "Majors in: Cultural Education, Educational Management, English, Filipino, Guidance and Counseling, Mathematics, Physical Education, Science, Social Studies, Teaching Arts"
+                  }
+                ]
+              },
+              {
+                "title": "Graduate School of Education",
+                "programs": [{
+                    "title": "Master of Arts in Education (with Thesis Program)"
+                  },
+                  {
+                    "title": "Doctor of Philosophy in Education",
+                    "major": "Major in Educational Management"
+                  },
+                  {
+                    "title": "Master in Public Administration (Non-Thesis Program)",
+                    "major": "Majors in: Cultural Education, Educational Management, English, Filipino, Guidance and Counseling, Mathematics, Physical Education, Science, Social Studies, Teaching Arts"
+                  }
+                ]
+              }
+            ]
+          }]
+        }]
+      }
+    ]
+   }

@@ -1,0 +1,104 @@
+{
+ "files": [
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/AdmissionForm-undergrad.pdf",
+   "title": "Admission Form Undergraduate"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/Application_for_Graduation.pdf",
+   "title": "Application for Graduation"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/Booking_Form_for_Computer_Laboratory.pdf",
+   "title": "Booking Form for Computer Laboratory"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/CAPEX_form_2023.pdf",
+   "title": "CAPEX Form"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/Contract_Approval_Cover_Sheet_-_v1.pdf",
+   "title": "Contract Approval Cover Sheet V1"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/Contract_Review_Checklist.pdf",
+   "title": "Contract Review Checklist"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/G1_new_transferee_old.pdf",
+   "title": "G1 New Transferee Old"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/G7_new_transferee_old_2021.pdf",
+   "title": "G7 New Transferee Old 2021"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/G11_new_transferee_old.pdf",
+   "title": "G11 New Transferee Old"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/Google_Accounts_Template.csv",
+   "title": "Google Accounts Template"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/Incoming_Freshmen.pdf",
+   "title": "Incoming Freshmen"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/Incoming_Transferre.pdf",
+   "title": "Incoming Transferre"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/IS_Enrollment_Requirements.pdf",
+   "title": "IS Enrollment Requirements"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/k1_new_2021.pdf",
+   "title": "K1 New 2021"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/k2_new_2021.pdf",
+   "title": "K2 New 2021"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/LSU_Consent_Form.pdf",
+   "title": "LSU Consent Form"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/Lycee_La_Salle_Brochure.pdf",
+   "title": "Lycee La Salle Brochure"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/MatRequestForm_-_Editable.pdf",
+   "title": "Mat Request Form Editable"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/PaymentRequestForm.pdf",
+   "title": "Payment Request Form"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/RATA_Liquidation_form.pdf",
+   "title": "RATA Liquidation Form"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/Recommendation_Form.doc",
+   "title": "Recommendation Form"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/residents_transferees_students_EF.pdf",
+   "title": "Residents Transferees Students EF"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/TAX_PLANNING_TEMPLATE.xlsx",
+   "title": "Tax Planning Template"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/TES_Letter_of_Authorization.docx",
+   "title": "TES Letter of Authorization"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/Textbook_Cost_Added_to_Tuition_Fee_Authorization.xlsx",
+   "title": "Textbook Cost Added to Tuition Fee Authorization"
+  }
+ ]
+}

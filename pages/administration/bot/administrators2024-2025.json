@@ -1,0 +1,99 @@
+{
+  "administrators": [{
+    "offices": "Board of Trustees and Officers",
+    "headOffice": true,
+    "admins": [
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Chairman",
+        "name": "Br. Edmundo Fernandez FSC"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Corporate Secretary",
+        "name": "Atty. Iolanda Abella"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Treasurer",
+        "name": "Mr. Paul Zaldarriaga"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Br. Rey Mejias FSC"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Ms. Victoria Amalingan-Sales AFSC"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Dr. Manuel Belino"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Br. Gus Boquer FSC"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Atty. Jackie Cruz Jr."
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Br. Normandy Dujunco FSC"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Mr. Francis Joseph Kaamiño"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Br. Joaquin Severino Martinez FSC"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Mr. Benhur Ong"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Mr. John Philip Orbeta"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Br. Manuel Pajarillo FSC"
+      },
+      {
+        "officeAbbr": "BOT",
+        "designationAbbr": "BOT",
+        "designation": "Member",
+        "name": "Dr. Myrna Ramos"
+      }
+    ]
+    }
+  ]
+}

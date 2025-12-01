@@ -1,0 +1,700 @@
+{
+    "directory_campus1": [
+        {
+            "office": "Office of the University President",
+            "location": "2F LS Bldg.",
+            "local_tel_no": "154",
+            "mobile_no": [
+                "-",
+                ""
+            ],
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "Accounting Office",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "119",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "Alumni Office",
+            "location": "2F LS Bldg.",
+            "local_tel_no": "185",
+            "mobile_no": "-",
+            "email_address": [
+                "development@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Business Development Office",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "119",
+            "mobile_no": "-",
+            "email_address": [
+                "bizdev@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Campus Development Office",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "148",
+            "mobile_no": [
+                "",
+                ""
+            ],
+            "email_address": [
+                "campusdev@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Campus Internal Safety and Security Office",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "48",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "Career and Counseling Center",
+            "location": "1F Student Center Bldg.",
+            "local_tel_no": "132",
+            "mobile_no": "-",
+            "email_address": [
+                "ccc@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "CCS Server Room",
+            "location": "2F LS Bldg.",
+            "local_tel_no": "715",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "Central Procurement Unit",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "185",
+            "mobile_no": [
+                "(0917) 188 8729"
+            ],
+            "email_address": [
+                "procurement@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "College of Arts and Sciences Office",
+            "location": "2F SC Bldg.",
+            "local_tel_no": "151",
+            "mobile_no": "-",
+            "email_address": [
+                "cas@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "College of Business and Accountancy Office",
+            "location": "1F SB Bldg.",
+            "local_tel_no": "107",
+            "mobile_no": "-",
+            "email_address": [
+                "cba@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "College of Computer Studies, Engineering and Architecture Office",
+            "location": "1F SB Bldg.",
+            "local_tel_no": "123",
+            "mobile_no": "-",
+            "email_address": [
+                "cea@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "College of Nursing Office",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": "-",
+            "email_address": [
+                "con@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "College of Teacher Education Office",
+            "location": "2F SC Bldg.",
+            "local_tel_no": "151",
+            "mobile_no": "-",
+            "email_address": [
+                "cte@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "College of Tourism and Hospitality Management Office",
+            "location": "1F SB Bldg.",
+            "local_tel_no": "105",
+            "mobile_no": "-",
+            "email_address": [
+                "cthm@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "College of Criminal Justice Education Office",
+            "location": "1F SB Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": "-",
+            "email_address": [
+                "ccje@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Computer and Information Technology Services",
+            "location": "2F LS Bldg.",
+            "local_tel_no": "156, 157",
+            "mobile_no": "-",
+            "email_address": [
+                "cits@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Educational Technology Center",
+            "location": "2F LS Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": "-",
+            "email_address": [
+                "edm@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Executive Assistants Team",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "124",
+            "mobile_no": "-",
+            "email_address": [
+                "east@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "General Services Office",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "148",
+            "mobile_no": "-",
+            "email_address": [
+                "gso@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Human Resource and Development Office",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "163",
+            "mobile_no": "-",
+            "email_address": [
+                "hr@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Institutional Quality Assurance and Monitoring Office",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "114",
+            "mobile_no": "-",
+            "email_address": [
+                "iqamo@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Institutional Research and Publication Office",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "143",
+            "mobile_no": "-",
+            "email_address": [
+                "research_office@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "La Ferme de La Salle",
+            "location": "Gala, Ozamiz",
+            "local_tel_no": "183",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "La Grande Maison",
+            "location": "Abanil St.",
+            "local_tel_no": "716",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "La Librairie Boutique",
+            "location": "Gate 6 Area",
+            "local_tel_no": "169",
+            "mobile_no": "-",
+            "email_address": [
+                "lsubookstore@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Lasallian Life Formation Center",
+            "location": "2F Student Center Bldg.",
+            "local_tel_no": "175",
+            "mobile_no": [
+                "(+63) 970-987-9438",
+                "(+63) 965-860-7468"
+            ],
+            "email_address": [
+                "llfc@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Lasallian Pastoral Center",
+            "location": "2F Student Center Bldg.",
+            "local_tel_no": "174",
+            "mobile_no": "-",
+            "email_address": [
+                "lspc@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Lasallian Yearbook and Media Center",
+            "location": "1F Student Center Bldg.",
+            "local_tel_no": "713",
+            "mobile_no": "-",
+            "email_address": [
+                "lymc@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Libraries and Media Center",
+            "location": "2F SC Bldg.",
+            "local_tel_no": "712",
+            "mobile_no": "",
+            "email_address": [
+                "lsulibrary@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Marketing and Communications Center",
+            "location": "2F LS Bldg.",
+            "local_tel_no": "138",
+            "mobile_no": "-",
+            "email_address": [
+                "mcc@lsu.edu.ph",
+                "communications@lsu.edu.ph"
+            ]
+        },
+        {
+            "office": "Office of the University Chancellor",
+            "location": "2F LS Bldg.",
+            "local_tel_no": "115",
+            "mobile_no": "-",
+            "email_address": [
+                "chancellor@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Office of the Vice Chancellor for Academic Affairs",
+            "location": "2F LS Bldg.",
+            "local_tel_no": "115",
+            "mobile_no": "-",
+            "email_address": [
+                "academics@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Office of the Vice-President for Administrative Services",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "124",
+            "mobile_no": "-",
+            "email_address": [
+                "administration@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Office of the Vice-President for Finance and Accounting Services",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "119",
+            "mobile_no": ["(0962) 743 7456"],
+            "email_address": [
+                "finance@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Office of the Vice-President for Lasallian Mission Services and Dean of Student Affairs",
+            "location": "2F Student Center Bldg.",
+            "local_tel_no": "711",
+            "mobile_no": "-",
+            "email_address": [
+                "lasallianmission@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Office of the Vice-President for Planning and Strategic Services",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "185",
+            "mobile_no": "-",
+            "email_address": [
+                "strategic.planning@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "PC Clinic",
+            "location": "1F SB Bldg.",
+            "local_tel_no": "102",
+            "mobile_no": "-",
+            "email_address": ["pc@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Practicum and Placement Office",
+            "location": "1F Student Center Bldg.",
+            "local_tel_no": "713",
+            "mobile_no": "-",
+            "email_address": ["lsupracticumoffice@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Printing Section",
+            "location": "1F LS Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "Property Custodian",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "118",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "Purchasing Office",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "122",
+            "mobile_no": "-",
+            "email_address": ["purchasingoffice@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Higher Education Unit Registrar",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "121",
+            "mobile_no": ["(0970) 084 9023"],
+            "email_address": [
+                "registrar@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Registrar's Office - CTE",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": [
+                "(+63) 970-084-9023",
+                ""
+            ],
+            "email_address": [
+                "",
+                ""
+            ]
+        },
+        {
+            "office": "Registrar's Office - SGS/CTHM",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "",
+            "mobile_no": [
+                "(+63) 966-574-2572",
+                ""
+            ],
+            "email_address": [
+                "",
+                ""
+            ]
+        },
+        {
+            "office": "Registrar's Office - CCSEA/CAS",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "",
+            "mobile_no": [
+                "(+63) 970-084-9020",
+                ""
+            ],
+            "email_address": [
+                "",
+                ""
+            ]
+        },
+        {
+            "office": "Registrar's Office - CON/CCJE",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "",
+            "mobile_no": [
+                "(+63) 905-153-3583",
+                ""
+            ],
+            "email_address": [
+                "",
+                ""
+            ]
+        },
+        {
+            "office": "Registrar's Office - CBA",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "",
+            "mobile_no": [
+                "(+63) 905-153-3584",
+                ""
+            ],
+            "email_address": [
+                "",
+                ""
+            ]
+        },
+        {
+            "office": "School of Graduate Studies Office",
+            "location": "2F LS Bldg.",
+            "local_tel_no": "155",
+            "mobile_no": "-",
+            "email_address": ["graduatestudies@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Security Office (Burgos)",
+            "location": "Gate 5 Area",
+            "local_tel_no": "103",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "Security Office (Valconcha)",
+            "location": "Facade",
+            "local_tel_no": "100",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "Social Concerns Center",
+            "location": "2F Student Center Bldg.",
+            "local_tel_no": "176",
+            "mobile_no": "-",
+            "email_address": ["isco@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Student Activities Center",
+            "location": "2F Student Center Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": "-",
+            "email_address": ["sac@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "TESDA Center",
+            "location": "2F LS Bldg.",
+            "local_tel_no": "158",
+            "mobile_no": "-",
+            "email_address": ["tesda@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "University Clinic (Campus 1)",
+            "location": "SB Bldg. Area",
+            "local_tel_no": "104",
+            "mobile_no": "-",
+            "email_address": ["clinic@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "University Library - Circulation Section",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "135",
+            "mobile_no": "-",
+            "email_address": ["library.helpdesk@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "University Library - Information Reference Section",
+            "location": "1F SC Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "University Library - Periodical Section",
+            "location": "2F SC Bldg.",
+            "local_tel_no": "108",
+            "mobile_no": "-",
+            "email_address": [
+                "-",
+                ""
+            ]
+        }
+    ],
+    "directory_campus2": [
+        {
+            "office": "Computer and Information Technology Services (Integrated School)",
+            "location": "2F BVM Bldg.",
+            "local_tel_no": "108",
+            "mobile_no": [
+                "-",
+                ""
+            ],
+            "email_address": ["is.cits@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Junior High School Library",
+            "location": "2F BVM Bldg.",
+            "local_tel_no": "103",
+            "mobile_no": [
+                "-",
+                ""
+            ],
+            "email_address": [
+                "-",
+                ""
+            ]
+        },
+        {
+            "office": "Lasallian Life Formation Center (IS Office)",
+            "location": "1F BVM Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": ["(+63) 970-987-9438",
+                "(+63) 965-860-7468",
+                ""
+            ],
+            "email_address": ["llfc@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Office of the LSU Integrated School Principal and Vice Principal",
+            "location": "1F BVM Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": [
+                "(0951) 267 2749",
+                ""
+            ],
+            "email_address": ["is@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Basic Education Unit Registrar",
+            "location": "1F BVM Bldg.",
+            "local_tel_no": "124",
+            "mobile_no": ["(+63) 951-267-2750",
+                ""
+            ],
+            "email_address": ["is.registrar@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "Scholarships and Admissions Office",
+            "location": "1F SJ Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": ["(0953) 964 3792",
+                ""
+            ],
+            "email_address": [
+                "scholarships@lsu.edu.ph",
+                "admissions@lsu.edu.ph"
+            ]
+        },
+        {
+            "office": "School for the Deaf",
+            "location": "1F SJ Bldg.",
+            "local_tel_no": "-",
+            "mobile_no": [
+                "-",
+                ""
+            ],
+            "email_address": ["deaf@lsu.edu.ph",
+                ""
+            ]
+        },
+        {
+            "office": "University Clinic (Campus 2)",
+            "location": "1F BVM Bldg.",
+            "local_tel_no": "104",
+            "mobile_no": [
+                "-",
+                ""
+            ],
+            "email_address": [
+                "-",
+                ""
+            ]
+        }
+    ]
+}

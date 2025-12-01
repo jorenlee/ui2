@@ -1,0 +1,59 @@
+{
+    "providerLists" : [
+        {
+          "title": "BUSINESS-RELATED COURSES",
+          "description": "(Commerce, Accounting, Business Administration)",
+          "registrarsAssign": "CBA",
+          "department": "CBA"
+        },
+        {
+          "title": "ARTS & SCIENCES",
+          "description": "(AB Philosophy, Ab English, Social Work)",
+          "registrarsAssign": "CAS / CON",
+          "department": "CAS"
+        },
+        {
+          "title": "ENGINEERING & ARCHITECTURE",
+          "description": "(BSCE, Bachelor of Science in Architecture)",
+          "registrarsAssign": "CCSEA",
+          "department": "CCSEA"
+        },
+        {
+          "title": "COMPUTER STUDIES",
+          "description": "(BSIT, BSCS)",
+          "registrarsAssign": "CCSEA",
+          "department": "CCSEA"
+        },
+        {
+          "title": "TOURISM & HOSPITALITY MANAGEMENT",
+          "description": "(BSTM, BSHM)",
+          "registrarsAssign": "CTHM / SGS",
+          "department": "CTHM"
+        },
+        {
+          "title": "NURSING",
+          "description": "(BS NURSING)",
+          "registrarsAssign": "CAS / CON",
+          "department": "CON"
+        },
+        {
+          "title": "CRIMINAL JUSTICE EDUCATION",
+          "description": "(BS CRIM)",
+          "registrarsAssign": "CAS / CON",
+          "department": "CAS"
+        },
+        {
+          "title": "EDUCATION",
+          "description": "(BSED, BEED)",
+          "registrarsAssign": "CTE",
+          "department": "CTE"
+        },
+        {
+          "title": "GRADUATE STUDIES",
+          "description": "",
+          "registrarsAssign": "CTHM / SGS",
+          "department": "SGS"
+        }
+      ]
+      
+}

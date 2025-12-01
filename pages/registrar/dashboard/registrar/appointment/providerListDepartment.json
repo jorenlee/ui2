@@ -1,0 +1,18 @@
+{
+  "providerListsDepartment": [{
+      "department": "CAS / CON"
+    },
+    {
+      "department": "CBA"
+    },
+    {
+      "department": "CCSEA"
+    },
+    {
+      "department": "CTE"
+    },
+    {
+      "department": "CTHM / SGS"
+    }
+  ]
+}

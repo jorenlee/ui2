@@ -1,0 +1,166 @@
+[
+ {
+   "college_or_school_id": "BEd (Basic Education)",
+   "name": "Pre-School"
+ },
+ {
+   "college_or_school_id": "BEd (Basic Education)",
+   "name": "Grade 1"
+ },
+ {
+   "college_or_school_id": "BEd (Basic Education)",
+   "name": "Grade 2"
+ },
+ {
+   "college_or_school_id": "BEd (Basic Education)",
+   "name": "Grade 3"
+ },
+ {
+   "college_or_school_id": "BEd (Basic Education)",
+   "name": "Grade 4"
+ },
+ {
+   "college_or_school_id": "BEd (Basic Education)",
+   "name": "Grade 5"
+ },
+ {
+  "college_or_school_id": "BEd (Basic Education)",
+  "name": "Grade 6"
+ },
+ {
+  "college_or_school_id": "BEd (Basic Education)",
+  "name": "Grade 7"
+ },
+ {
+  "college_or_school_id": "BEd (Basic Education)",
+  "name": "Grade 8"
+ },
+ {
+  "college_or_school_id": "BEd (Basic Education)",
+  "name": "Grade 9"
+ },
+ {
+  "college_or_school_id": "BEd (Basic Education)",
+  "name": "Grade 10"
+ },
+ {
+  "college_or_school_id": "BEd (Basic Education)",
+  "name": "Grade 11"
+ },
+ {
+  "college_or_school_id": "BEd (Basic Education)",
+  "name": "Grade 12"
+ },
+ {
+  "college_or_school_id": "CBA (College of Business and Accountancy)",
+  "name": "Bachelor of Science in Business Administration (BSBA)"
+ },
+ {
+  "college_or_school_id": "CBA (College of Business and Accountancy)",
+  "name": "Bachelor of Science in Accounting Information System (BSAIS)"
+ },
+ {
+  "college_or_school_id": "CBA (College of Business and Accountancy)",
+  "name": "Bachelor of Science in Accountancy (BSAc)"
+ },
+ {
+  "college_or_school_id": "CCSEA (College of Computer Studies, Engineering, and Architecture)",
+  "name": "Bachelor of Science in Civil Engineering (BSCE)"
+ },
+ {
+  "college_or_school_id": "CCSEA (College of Computer Studies, Engineering, and Architecture)",
+  "name": "Bachelor of Science in Architecture (BSArch)"
+ },
+ {
+  "college_or_school_id": "CCSEA (College of Computer Studies, Engineering, and Architecture)",
+  "name": "Bachelor of Science in Electrical Engineering (BSEE)"
+ },
+ {
+  "college_or_school_id": "CCSEA (College of Computer Studies, Engineering, and Architecture)",
+  "name": "Bachelor of Science in Electronics Engineering (BSECE)"
+ },
+ {
+  "college_or_school_id": "CCSEA (College of Computer Studies, Engineering, and Architecture)",
+  "name": "Bachelor of Science in Geodetic Engineering (BSGE)"
+ },
+ {
+  "college_or_school_id": "CCSEA (College of Computer Studies, Engineering, and Architecture)",
+  "name": "Bachelor of Science in Computer Science (BSCS)"
+ },
+ {
+  "college_or_school_id": "CCSEA (College of Computer Studies, Engineering, and Architecture)",
+  "name": "Bachelor of Science in Information Technology (BSIT)"
+ },
+ {
+  "college_or_school_id": "CCSEA (College of Computer Studies, Engineering, and Architecture)",
+  "name": "Bachelor of Library and Information Science (BLIS)"
+ },
+ {
+  "college_or_school_id": "CCSEA (College of Computer Studies, Engineering, and Architecture)",
+  "name": "Bachelor of Science in Computer Engineering (BSCpE)"
+ },
+ {
+  "college_or_school_id": "CAS (College of Arts and Sciences)",
+  "name": "Bachelor of Arts in English Language Studies (BAELS)"
+ },
+ {
+  "college_or_school_id": "CAS (College of Arts and Sciences)",
+  "name": "Bachelor of Arts in Political Science (BAPolSc)"
+ },
+ {
+  "college_or_school_id": "CAS (College of Arts and Sciences)",
+  "name": "Bachelor of Science in Psychology (BSPsych)"
+ },
+ {
+  "college_or_school_id": "CAS (College of Arts and Sciences)",
+  "name": "Bachelor of Science in Criminology (BSCrim)"
+ },
+ {
+  "college_or_school_id": "CAS (College of Arts and Sciences)",
+  "name": "Bachelor of Science in Social Work (BSSW)"
+ },
+ {
+  "college_or_school_id": "CTE (College of Teacher Education)",
+  "name": "Bachelor of Elementary Education (BEEd)"
+ },
+ {
+  "college_or_school_id": "CTE (College of Teacher Education)",
+  "name": "Bachelor of Secondary Education (BSEd)"
+ },
+ {
+  "college_or_school_id": "CTE (College of Teacher Education)",
+  "name": "Bachelor of Special Needs Education (BSNEd)"
+ },
+ {
+  "college_or_school_id": "CTE (College of Teacher Education)",
+  "name": "Bachelor of Physical Education (BPEd)"
+ },
+ {
+  "college_or_school_id": "CTE (College of Teacher Education)",
+  "name": "Bachelor of Technology and Livelihood Education (BTLEd)"
+ },
+ {
+  "college_or_school_id": "SGS (School of Graduate Studies)",
+  "name": "Doctor in Business Administration (DBA)"
+ },
+ {
+  "college_or_school_id": "SGS (School of Graduate Studies)",
+  "name": "Doctor of Philosophy in Education (DPEd)"
+ },
+ {
+  "college_or_school_id": "SGS (School of Graduate Studies)",
+  "name": "Master in Business Administration, Non-Thesis (MBA)"
+ },
+ {
+  "college_or_school_id": "SGS (School of Graduate Studies)",
+  "name": "Master in Public Administration, Non-Thesis (MPA)"
+ },
+ {
+  "college_or_school_id": "SGS (School of Graduate Studies)",
+  "name": "Master of Arts in Education, Thesis (MAEd)"
+ },
+ {
+  "college_or_school_id": "SGS (School of Graduate Studies)",
+  "name": "Master in Education, Non-Thesis (MEd)"
+ }
+]

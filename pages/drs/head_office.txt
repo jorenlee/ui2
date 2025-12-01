@@ -1,0 +1,951 @@
+[    
+    {
+        "officeAbbr": "OPR",
+        "designationAbbr": "OPR",
+        "designation": "University President",
+        "name": "Br. Rey Erezare Mejias FSC",
+        "offices": "Office of the President",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "president@lsu.edu.ph",
+        "individual_lsu_email": "rey.mejias@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designationAbbr": "OPR",
+        "designation": "Executive Assistant to the President",
+        "name": "Mr. Israel Gallogo",
+        "offices": "Office of the President",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "president@lsu.edu.ph",
+        "individual_lsu_email": "israelgallogo@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designationAbbr": "OPR",
+        "designation": "Data Privacy Officer",
+        "name": "Mr. Israel Gallogo",
+        "offices": "Office of the President",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "dpco@lsu.edu.ph",
+        "individual_lsu_email": "israelgallogo@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designationAbbr": "NPC",
+        "designation": "Director, Network, Programs and Computerization",
+        "name": "Mr. Michael John Puertogalera",
+        "offices": "Office of the President",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "npc@lsu.edu.ph",
+        "individual_lsu_email": "michaeljohn.puertogalera@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designationAbbr": "CEMO",
+        "designation": "Director, Corporate and Executive Management Office",
+        "name": "Ms. Meredith Embuscado",
+        "offices": "Office of the President",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "cemc@lsu.edu.ph",
+        "individual_lsu_email": "meredith.embuscado@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designationAbbr": "CEMO",
+        "designation": "Officer, Institutional Quality Assurance and Monitoring",
+        "name": "Ms. Maria Cristina Llauder",
+        "offices": "Office of the President",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "cemc@lsu.edu.ph",
+        "individual_lsu_email": "macristina.llauder@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designationAbbr": "CEMO",
+        "designation": "Officer, Risk Management",
+        "name": "Br. Alexander Ervin Diaz FSC",
+        "offices": "Office of the President",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "rmo@lsu.edu.ph",
+        "individual_lsu_email": "alexander.diaz@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPSS",
+        "designationAbbr": "VPSS",
+        "designation": "Vice-President For Planning & Strategic Services",
+        "name": "Mr. Raymundo Dolor",
+        "offices": "Vice-President For Planning & Strategic Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "raymundo.dolor@lsu.edu.ph",
+        "individual_lsu_email": "raymundo.dolor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPSS",
+        "designationAbbr": "MCO",
+        "designation": "Director, Marketing and Communications",
+        "name": "Br. Alexander Ervin Diaz FSC",
+        "offices": "Vice-President For Planning & Strategic Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "mcc@lsu.edu.ph",
+        "individual_lsu_email": "alexander.diaz@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPSS",
+        "designationAbbr": "HRD",
+        "designation": "Director, Human Resource Development",
+        "name": "Dr. Daryl Quinco",
+        "offices": "Vice-President For Planning & Strategic Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "hr@lsu.edu.ph",
+        "individual_lsu_email": "quincodf@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPSS",
+        "designationAbbr": "HRD",
+        "designation": "Officer, Institutional Learning",
+        "name": "Ms. Naiza Amba",
+        "offices": "Vice-President For Planning & Strategic Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "naiza.amba@lsu.edu.ph",
+        "individual_lsu_email": "naiza.amba@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPSS",
+        "designationAbbr": "CPU",
+        "designation": "Officer, Procurement",
+        "name": "Ms. Margeaux Labuga",
+        "offices": "Vice-President For Planning & Strategic Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "procurement@lsu.edu.ph",
+        "individual_lsu_email": "margeaux.quimno@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "VPLM",
+        "designation": "Vice-President, Lasallian Mission",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph",
+        "individual_lsu_email": "carlvincent.codera@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "SAC",
+        "designation": "Director, Students Activities",
+        "name": "Mr. Cristopher Noronio",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph",
+        "individual_lsu_email": "cristopher.noronio@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "SAC",
+        "designation": "Officer, Leadership Formation and Empowerment",
+        "name": "Mr. Dean Eust'l Lopez",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "sac@lsu.edu.ph",
+        "individual_lsu_email": "dean.lopez@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "LLF",
+        "designation": "Officer, Lasallian Life Formation",
+        "name": "Ms. Eva Dawn Balongkit",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "eva.balongkit@lsu.edu.ph",
+        "individual_lsu_email": "eva.balongkit@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "ACC",
+        "designation": "Director, Arts and Culture",
+        "name": "Ms. Denise Aguilar",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "culture@lsu.edu.ph",
+        "individual_lsu_email": "denise.aguilar@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "CCC",
+        "designation": "Director, Career and Counseling",
+        "name": "Mr. Jay Adrian Paciente",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "ccc@lsu.edu.ph",
+        "individual_lsu_email": "jay.paciente@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "LSMC",
+        "designation": "Director, Lasallian Ministries",
+        "name": "Br. Ivan Karlo Umali FSC",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph",
+        "individual_lsu_email": "brivan.umali@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "LSMC",
+        "designation": "Officer, Lasallian Formation",
+        "name": "Ms. Mary Joezl Dumat-ol",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "maryjoezl.dumat-ol@lsu.edu.ph",
+        "individual_lsu_email": "maryjoezl.dumat-ol@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "LSMC",
+        "designation": "Coordinator, Vocations",
+        "name": "Br. Ivan Karlo Umali FSC",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph",
+        "individual_lsu_email": "brivan.umali@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "SCC",
+        "designation": "Director, Social Concerns",
+        "name": "Ms. Jemarie Villones",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "jemarie.villones@lsu.edu.ph",
+        "individual_lsu_email": "jemarie.villones@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "SCC",
+        "designation": "Officer, Community Organizing",
+        "name": "Ms. Jeanelyn Potestas",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "jeanelyn.potestas@lsu.edu.ph",
+        "individual_lsu_email": "jeanelyn.potestas@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "SCC",
+        "designation": "Officer, Advocacy",
+        "name": "Mr. Georey Pescador",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "georey.pescador@lsu.edu.ph",
+        "individual_lsu_email": "georey.pescador@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "SWC",
+        "designation": "Officer, Sports and Wellness",
+        "name": "Ms. Showery Bless Ponce",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "showery.ponce@lsu.edu.ph",
+        "individual_lsu_email": "showery.ponce@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designationAbbr": "PPC",
+        "designation": "Officer, Practicum and Placement",
+        "name": "Ms. Shaira Joy Antoque",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "shaira.antoque@lsu.edu.ph",
+        "individual_lsu_email": "shaira.antoque@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPFAS",
+        "designationAbbr": "VPF",
+        "designation": "Vice-President, Finance and Accounting Services",
+        "name": "Ms. Rose Aimee Mangao",
+        "offices": "Vice-President For Finance And Accounting Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "roseaimee.mangao@lsu.edu.ph",
+        "individual_lsu_email": "roseaimee.mangao@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPFAS",
+        "designationAbbr": "BDO",
+        "designation": "Officer, Business Development",
+        "name": "Mr. Dennis Mitchel Dioquino",
+        "offices": "Vice-President For Finance And Accounting Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "dennis.dioquino@lsu.edu.ph",
+        "individual_lsu_email": "dennis.dioquino@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPFAS",
+        "designationAbbr": "BCC",
+        "designation": "Controller",
+        "name": "Ms. Rose Aimee Mangao",
+        "offices": "Vice-President For Finance And Accounting Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "roseaimee.mangao@lsu.edu.ph",
+        "individual_lsu_email": "roseaimee.mangao@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPFAS",
+        "designationAbbr": "BCC",
+        "designation": "Officer, Budget and Cost Control",
+        "name": "Ms. Donnabel Balase",
+        "offices": "Vice-President For Finance And Accounting Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "donnabel.balase@lsu.edu.ph",
+        "individual_lsu_email": "donnabel.balase@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designationAbbr": "VPAD",
+        "designation": "Vice-President, Administrative Services",
+        "name": "Engr. Flordeliza Cabang",
+        "offices": "Vice-President For Administrative Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "flordeliza.cabang@lsu.edu.ph",
+        "individual_lsu_email": "flordeliza.cabang@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designationAbbr": "CDU",
+        "designation": "Officer Campus Development",
+        "name": "Mr. Christian Jason Robles",
+        "offices": "Vice-President For Administrative Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "christianjason.robles@lsu.edu.ph",
+        "individual_lsu_email": "christianjason.robles@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designationAbbr": "GSO",
+        "designation": "Director, General Services",
+        "name": "Ms. Leonila Dolor",
+        "offices": "Vice-President For Administrative Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "leonila.dolor@lsu.edu.ph",
+        "individual_lsu_email": "leonila.dolor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designationAbbr": "ESU",
+        "designation": "Officer, Environmental Sustainability",
+        "name": "Engr. Esmael Larubis",
+        "offices": "Vice-President For Administrative Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "esmael.larubis@lsu.edu.ph",
+        "individual_lsu_email": "esmael.larubis@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designationAbbr": "ESU",
+        "designation": "Manager, Farm",
+        "name": "Dr. Reggie Macahilo",
+        "offices": "Vice-President For Administrative Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "reggie.macahilo@lsu.edu.ph",
+        "individual_lsu_email": "reggie.macahilo@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designationAbbr": "ESU",
+        "designation": "Officer, Health Services",
+        "name": "Ms. Maria Diva Dagandara",
+        "offices": "Vice-President For Administrative Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "mariadiva.dagandara@lsu.edu.ph",
+        "individual_lsu_email": "mariadiva.dagandara@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPALS",
+        "designationAbbr": "VPALS",
+        "designation": "Vice-President, Advancement and Linkages Services",
+        "name": "Dr. Irene Eguico",
+        "offices": "Vice-President For Advancement And Linkages Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "vpal@lsu.edu.ph",
+        "individual_lsu_email": "irene.eguico@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPALS",
+        "designationAbbr": "VPALS",
+        "designation": "Officer TESDA Programs",
+        "name": "Ms. Roselyn Tuastomban",
+        "offices": "Vice-President For Advancement And Linkages Services",
+        "category": "Professional Track Partners",
+        "office_lsu_email": "vpal@lsu.edu.ph",
+        "individual_lsu_email": "roselyn.tuastomban@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designationAbbr": "OCH",
+        "designation": "Chancellor",
+        "name": "Dr. Wenny Caseros",
+        "offices": "Office Of The Chancellor",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "chancellor@lsu.edu.ph",
+        "individual_lsu_email": "wenny.caseros@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designationAbbr": "ASC",
+        "designation": "Director, Admissions and Scholarships",
+        "name": "Ms. Charm Femae Mendoza",
+        "offices": "Office Of The Chancellor",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "ascdirector@lsu.edu.ph",
+        "individual_lsu_email": "charmfemae.mendoza@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designationAbbr": "REG",
+        "designation": "University Registrar",
+        "name": "Engr. Jay Harold Reazol",
+        "offices": "Office Of The Chancellor",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "registrar@lsu.edu.ph",
+        "individual_lsu_email": "jayharold.reazol@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designationAbbr": "LRC",
+        "designation": "Director, Learning and Resource",
+        "name": "Dr. Monaliza Senining",
+        "offices": "Office Of The Chancellor",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "lrc@lsu.edu.ph",
+        "individual_lsu_email": "monaliza.mugot@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designationAbbr": "ETC",
+        "designation": "Director, Educational Technology",
+        "name": "Mr. Ted Nudgent Tac-An",
+        "offices": "Office Of The Chancellor",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "edm@lsu.edu.ph",
+        "individual_lsu_email": "tednudgent.tacan@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designationAbbr": "ETC",
+        "designation": "Officer, Educational Technology",
+        "name": "Ms. Maria Alexandra Benitez",
+        "offices": "Office Of The Chancellor",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "edm@lsu.edu.ph",
+        "individual_lsu_email": "mariaalexandra.benitez@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designationAbbr": "IRPC",
+        "designation": "Director, Institutional Research and Publications",
+        "name": "Dr. Carousel Tagaylo",
+        "offices": "Office Of The Chancellor",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "research_office@lsu.edu.ph",
+        "individual_lsu_email": "carousel.tagaylo@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designationAbbr": "IRPC",
+        "designation": "Analyst, University Data",
+        "name": "Ms. Rachelle Padilla",
+        "offices": "Office Of The Chancellor",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "rachelle.padilla@lsu.edu.ph",
+        "individual_lsu_email": "rachelle.padilla@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VCAA",
+        "designationAbbr": "VCAA",
+        "designation": "Vice Chancellor For Academic Affairs",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph",
+        "individual_lsu_email": "benjiemen.labastin@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VCAA",
+        "designationAbbr": "VCAA",
+        "designation": "Assistant Vice Chancellor, Curriculum Development",
+        "name": "Dr. Flordelis Ejercito",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "flordelis.ejercito@lsu.edu.ph",
+        "individual_lsu_email": "flordelis.ejercito@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VCAA",
+        "designationAbbr": "VCAA",
+        "designation": "Coordinator, National Service Training Program",
+        "name": "Mr. Noel Alamin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "noel.alamin@lsu.edu.ph",
+        "individual_lsu_email": "noel.alamin@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - SGS",
+        "designationAbbr": "SGS",
+        "designation": "Dean, School of Graduate Studies",
+        "name": "Dr. Catalina Maghamil",
+        "offices": "School of Graduate Studies",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "graduatestudies@lsu.edu.ph",
+        "individual_lsu_email": "catalina.maghamil@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CTHM",
+        "designationAbbr": "CTHM",
+        "designation": "Dean, College of Tourism and Hospitality Management",
+        "name": "Mr. Joed Layna",
+        "offices": "College of Tourism and Hospitality Management",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "cthm@lsu.edu.ph",
+        "individual_lsu_email": "joed.layna@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CTHM",
+        "designationAbbr": "CTHM",
+        "designation": "Program Head, Tourism Management",
+        "name": "Mr. Michael Angelo Pagara",
+        "offices": "College of Tourism and Hospitality Management",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "michael.angelo.pagara@lsu.edu.ph",
+        "individual_lsu_email": "michael.angelo.pagara@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CTHM",
+        "designationAbbr": "CTHM",
+        "designation": "Program Head, Hospitality Management",
+        "name": "Ms. Karen Linganay",
+        "offices": "College of Tourism and Hospitality Management",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "karen.linganay@lsu.edu.ph",
+        "individual_lsu_email": "karen.linganay@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CTE",
+        "designationAbbr": "CTE",
+        "designation": "Dean, College of Teacher Education",
+        "name": "Dr. Emma Suana",
+        "offices": "College of Teacher Education",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "cte@lsu.edu.ph",
+        "individual_lsu_email": "emma.suana@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CTE",
+        "designationAbbr": "CTE",
+        "designation": "Coordinator, Physical Education",
+        "name": "Mr. Kenneth Yagong",
+        "offices": "College of Teacher Education",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "kenneth.yagong@lsu.edu.ph",
+        "individual_lsu_email": "kenneth.yagong@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CTE",
+        "designationAbbr": "CTE",
+        "designation": "Program Head, BEED Programs",
+        "name": "Dr. Jenel Cruz",
+        "offices": "College of Teacher Education",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "jenel.cruz@lsu.edu.ph",
+        "individual_lsu_email": "jenel.cruz@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CTE",
+        "designationAbbr": "CTE",
+        "designation": "Program Head, BSED Programs",
+        "name": "Mr. John Mark Saldivar",
+        "offices": "College of Teacher Education",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "johnmark.saldivar@lsu.edu.ph",
+        "individual_lsu_email": "johnmark.saldivar@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Dean, College of Computer Studies, Engineering and Architecture",
+        "name": "Engr. Ramel Recentes",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "ccsea@lsu.edu.ph",
+        "individual_lsu_email": "ramel.recentes@lsu.edu.ph"              
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Coordinator, IMPACT",
+        "name": "Mr. Mark Krisli Dela Peña",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "markkrisli.delapena@lsu.edu.ph",
+        "individual_lsu_email": "markkrisli.delapena@lsu.edu.ph"           
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Program Head, Architecture",
+        "name": "Arch. Olaira Mae Imbong",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "olairamae.imbong@lsu.edu.ph",
+        "individual_lsu_email": "olairamae.imbong@lsu.edu.ph"            
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Program Head, Civil Engineering",
+        "name": "Engr. Grace Dolloso",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "grace.dolloso@lsu.edu.ph",
+        "individual_lsu_email": "grace.dolloso@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Program Head, Computer Engineering",
+        "name": "Mr. Mark Krisli Dela Peña",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "markkrisli.delapena@lsu.edu.ph",
+        "individual_lsu_email": "markkrisli.delapena@lsu.edu.ph"    
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Program Head, Electrical Engineering",
+        "name": "Engr. Lady Vi Tagailo",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "ladyvi.tagailo@lsu.edu.ph",
+        "individual_lsu_email": "ladyvi.tagailo@lsu.edu.ph"         
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Program Head, Electronics Engineering",
+        "name": "Engr. Ramel Recentes",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "ramel.recentes@lsu.edu.ph",
+        "individual_lsu_email": "ramel.recentes@lsu.edu.ph"       
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Program Head, Geodetic Engineering",
+        "name": "Engr. Ramel Recentes",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "ramel.recentes@lsu.edu.ph",
+        "individual_lsu_email": "ramel.recentes@lsu.edu.ph"    
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Program Head, Computer Science",
+        "name": "Mr. Earl Peter Gangoso",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "earl.gangoso@lsu.edu.ph",
+        "individual_lsu_email": "earl.gangoso@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Program Head, Information Technology",
+        "name": "Mr. Honimar Panganiban",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "honimar.panganiban@lsu.edu.ph",
+        "individual_lsu_email": "honimar.panganiban@lsu.edu.ph"        
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designationAbbr": "CCSEA",
+        "designation": "Program Head, Library and Information Science",
+        "name": "Ms. Marilyn Bejec",
+        "offices": "College of Computer Studies, Engineering and Architecture",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "marilyn.bejec@lsu.edu.ph",
+        "individual_lsu_email": "marilyn.bejec@lsu.edu.ph"            
+    },
+    {
+        "officeAbbr": "HEU - CBA",
+        "designationAbbr": "CBA",
+        "designation": "Dean, College of Business Accountancy",
+        "name": "Mr. Lowelle Pacot",
+        "offices": "College of Business and Accountancy",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "cba@lsu.edu.ph",
+        "individual_lsu_email": "lowelle.pacot@lsu.edu.ph"      
+    },
+    {
+        "officeAbbr": "HEU - CBA",
+        "designationAbbr": "CBA",
+        "designation": "Program Head, Accountancy",
+        "name": "Mr. Lowelle Pacot",
+        "offices": "College of Business and Accountancy",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "lowelle.pacot@lsu.edu.ph",
+        "individual_lsu_email": "lowelle.pacot@lsu.edu.ph"      
+    },
+    {
+        "officeAbbr": "HEU - CBA",
+        "designationAbbr": "CBA",
+        "designation": "Program Head, Financial Management",
+        "name": "Ms. Jennifer Aguanta",
+        "offices": "College of Business and Accountancy",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "jennifer.aguanta@lsu.edu.ph",
+        "individual_lsu_email": "jennifer.aguanta@lsu.edu.ph"      
+    },
+    {
+        "officeAbbr": "HEU - CBA",
+        "designationAbbr": "CBA",
+        "designation": "Program Head, Marketing Management",
+        "name": "Ms. Jaysavelle Tubigon",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "jaysavelle.tubigon@lsu.edu.ph",
+        "individual_lsu_email": "jaysavelle.tubigon@lsu.edu.ph"      
+    },
+    {
+        "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Dean, College of Arts and Sciences",
+        "name": "Ms. Anilou Dilao",
+        "offices": "College of Arts and Sciences",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "anilou.dilao@lsu.edu.ph",
+        "individual_lsu_email": "anilou.dilao@lsu.edu.ph"    
+    },
+    {
+        "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Coordinator, Languages and Communications",
+        "name": "Dr. Mary Grace Daga-ang",
+        "offices": "College of Arts and Sciences",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "marygrace.dagaang@lsu.edu.ph",
+        "individual_lsu_email": "marygrace.dagaang@lsu.edu.ph"    
+    },
+    {
+        "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Coordinator, Mathematics and Science",
+        "name": "Ms. Karen Jean Batoy",
+        "offices": "College of Arts and Sciences",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "karen.batoy@lsu.edu.ph",
+        "individual_lsu_email": "karen.batoy@lsu.edu.ph"    
+    },
+    {
+        "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Coordinator, Social Sciences",
+        "name": "Mr. Joemarie Gapol",
+        "offices": "College of Arts and Sciences",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "joemarie.gapol@lsu.edu.ph",
+        "individual_lsu_email": "joemarie.gapol@lsu.edu.ph"    
+    },
+    {
+        "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Coordinator, Theology and La Salle",
+        "name": "Mr. Glen Morito",
+        "offices": "College of Arts and Sciences",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "glenn.morito@lsu.edu.ph",
+        "individual_lsu_email": "glenn.morito@lsu.edu.ph"    
+    },
+    {
+        "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Program Head, Psychology",
+        "name": "Mr. Marvel Deromol",
+        "offices": "College of Arts and Sciences",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "marvel.deromol@lsu.edu.ph",
+        "individual_lsu_email": "marvel.deromol@lsu.edu.ph"    
+    },
+    {
+        "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Program Head, Social Work",
+        "name": "Mr. Nizel Lou Apas",
+        "offices": "College of Arts and Sciences",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "nizellou.apas@lsu.edu.ph",
+        "individual_lsu_email": "nizellou.apas@lsu.edu.ph"    
+    },
+    {
+        "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Program Head, Political Science",
+        "name": "Ms. Christal Marceline Monicit",
+        "offices": "College of Arts and Sciences",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "christal.monicit@lsu.edu.ph",
+        "individual_lsu_email": "christal.monicit@lsu.edu.ph"    
+    },
+    {
+        "officeAbbr": "HEU - CCJE",
+        "designationAbbr": "CCJE",
+        "designation": "Dean, College Of Criminal Justice Education",
+        "name": "Ms. Estephanie Estrobo",
+        "offices": "College Of Criminal Justice Education",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "estephanie.zamora@lsu.edu.ph",
+        "individual_lsu_email": "estephanie.zamora@lsu.edu.ph"  
+    },
+    {
+        "officeAbbr": "HEU - CON",
+        "designationAbbr": "CON",
+        "designation": "Dean, College Of Nursing",
+        "name": "Ms. Arlene Apao",
+        "offices": "College of Nursing",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "con@lsu.edu.ph",
+        "individual_lsu_email": "arlene.apao@lsu.edu.ph"  
+    },
+    {
+        "officeAbbr": "HEU - CON",
+        "designationAbbr": "CON",
+        "designation": "Coordinator, Clinical Instructions",
+        "name": "Ms. Harriet Jimenez",
+        "offices": "College of Nursing",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "harriet.catubay@lsu.edu.ph",
+        "individual_lsu_email": "harriet.catubay@lsu.edu.ph"  
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Principal, Basic Education",
+        "name": "Dr. Glenna Tac-an",
+        "offices": "Basic Education Unit",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "is@lsu.edu.ph",
+        "individual_lsu_email": "glenna.tacan@lsu.edu.ph" 
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Vice Principal, Basic Education",
+        "name": "Ms. Darlene Jane Filipino",
+        "offices": "Vice Principal for Basic Education",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "darlenejane.filipino@lsu.edu.ph",
+        "individual_lsu_email": "darlenejane.filipino@lsu.edu.ph" 
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Learning Community Academic Assistant - Grade School",
+        "name": "Ms. Kemberly Jean Aya-ay",
+        "offices": "Academic Assistants",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "kemberly.clara@lsu.edu.ph",
+        "individual_lsu_email": "kemberly.clara@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant, Christian Living",
+        "name": "Mr. Jovanie Tamala",
+        "offices": "Academic Assistants",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "jovanie.tangcaan@lsu.edu.ph",
+        "individual_lsu_email": "jovanie.tangcaan@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant - MAPEH",
+        "name": "Ms. Mia Jean Bel-Ida",
+        "offices": "Academic Assistants",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "miajean.dinulos@lsu.edu.ph",
+        "individual_lsu_email": "miajean.dinulos@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant, Mathematics",
+        "name": "Mr. Lorilyn Golez",
+        "offices": "Academic Assistants",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "lorilyn.golez@lsu.edu.ph",
+        "individual_lsu_email": "lorilyn.golez@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant, Science",
+        "name": "Mr. Jupiter Yap",
+        "offices": "Academic Assistants",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "jupiter.yap@lsu.edu.ph",
+        "individual_lsu_email": "jupiter.yap@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant, Social Sciences",
+        "name": "Ms. Mark John Dalagan",
+        "offices": "Academic Assistants",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "markjohn.dalagan@lsu.edu.ph",
+        "individual_lsu_email": "markjohn.dalagan@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant, Filipino",
+        "name": "Mr. Jeru Salem Andrada",
+        "offices": "Academic Assistants",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "jerusalem.andrada@lsu.edu.ph",
+        "individual_lsu_email": "jerusalem.andrada@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant- Technical, Vocational & Livelihood Education",
+        "name": "Ms. Jessa Branzuela",
+        "offices": "Academic Assistants",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "jessa.branzuela@lsu.edu.ph",
+        "individual_lsu_email": "jessa.branzuela@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant, English",
+        "name": "Ms. Michelle Hinagdanan",
+        "offices": "Academic Assistants",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "michelle.hinagdanan@lsu.edu.ph",
+        "individual_lsu_email": "michelle.hinagdanan@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant, School For The Deaf",
+        "name": "Mr. Jeric Ted Alfanta",
+        "offices": "Academic Assistants",
+        "category": "Academic Track Partners",
+        "office_lsu_email": "jericted.alfanta@lsu.edu.ph",
+        "individual_lsu_email": "jericted.alfanta@lsu.edu.ph"
+    }
+]

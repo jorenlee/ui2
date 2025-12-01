@@ -1,0 +1,475 @@
+{
+  "tertiary": [{
+      "under_grad": [{
+        "title": "Undergraduate Studies",
+        "list": [{
+            "logo": "cas.png",
+            "title": "College of Arts and Sciences",
+            "abbr": "CAS",
+            "active": false,
+            "link": "lsu-cas",
+            "programs": [{
+                "abbr": "BAELS",
+                "title": "Bachelor of Arts in English Language",
+                "description":"",
+                "vision": "",
+                "mission": "",
+                "goalDescription":"",
+                "goals": "",
+                "objectivesDescription":"",
+                "objectives": []
+              },
+              {
+                "abbr": "BAPolSc",
+                "title": "Bachelor of Arts in Political Science",
+                "description":"",
+                "goalDescription":"",
+                "goals": "",
+                "objectivesDescription": "",
+                "objectives": []
+              },
+              {
+                "abbr": "BAComm",
+                "title": "Bachelor of Arts in Communication ",
+                "description":"",
+                "vision": "",
+                "mission": "",
+                "goalDescription": "",
+                "goals": "",
+                "objectivesDescription":"",
+                "objectives": []
+              },
+              {
+                "abbr": "BAPhilo",
+                "title": "Bachelor of Arts in Philosophy",
+                "description":"",
+                "vision": "",
+                "mission": "",
+                "goalDescription":"",
+                "goals": [],
+                "objectivesDescription":"",
+                "objectives": []
+              },
+              {
+                "abbr": "BSPsych",
+                "title": "Bachelor of Arts in Psychology ",
+                "description":"",
+                "vision": "",
+                "goalDescription": "To carry out its mission, the Psychology Department shall:",
+                "goals": [],
+                "objectivesDescription": "In particular, the Psychology Department will:",
+                "objectives": []
+              },
+              {
+                "abbr": "BSSW",
+                "title": "Bachelor of Science in Social Work",
+                "description" : "",
+                "vision": "",
+                "mission": "",
+                "goalDescription": "",
+                "goals": [],
+                "objectivesDescription":"",
+                "objectives":[]
+              }
+            ]
+          },
+          {
+            "logo": "cba.png",
+            "title": "College of Business and Accountancy",
+            "abbr": "CBA",
+            "active": false,
+            "link": "lsu-cba",
+            "programs": [{
+                "abbr": "BSA",
+                "title": "Bachelor of Science in Accountancy",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"",
+                "goals":[],
+                "objectivesDescription":"",
+                "objectives":[]
+              },
+              {
+                "abbr": "BSAIS",
+                "title": "Bachelor of Science in Accounting Information System",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"",
+                "goals":[],
+                "objectivesDescription":"",
+                "objectives": []
+              },
+              {
+                "abbr": "BSBA-FM",
+                "title": "Bachelor of Science in Business Administration Major in Financial Management",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"",
+                "goals": [],
+                "objectivesDescription":"",
+                "objectives":[]
+              },
+              {
+                "abbr": "BSBA-MM",
+                "title": "Bachelor of Science in Business Administration Major in Marketing Management",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"",
+                "goals": [],
+                "objectivesDescription":"",
+                "objectives": []
+              },
+              {
+                "abbr": "BSOA",
+                "title": "Bachelor of Science in Office Administration",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"Specifically, the program aims to:",
+                "goals":[],
+                "objectivesDescription":"",
+                "objectives":[]
+              },
+              {
+                "abbr": "BSAB",
+                "title": "Bachelor of Science in Agribusiness",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"Specifically, the program aims to:",
+                "goals":[],
+                "objectivesDescription":"",
+                "objectives":[]
+              }
+            ]
+          },
+          {
+            "logo": "ccje.jpg",
+            "title": "College of Criminal Justice Education",
+            "abbr": "CCJE",
+            "active": false,
+            "link": "lsu-ccje",
+            "programs": [{
+              "abbr": "BSC",
+              "title":"Bachelor of Science in Criminology",
+              "description":"",
+              "vision":"",
+              "mission": "",
+              "goalDescription": "",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
+            }]
+          },
+          {
+            "logo": "ccsea.png",
+            "title": "College of Computer Studies, Engineering, and Architecture",
+            "abbr": "CCSEA",
+            "active": false,
+            "link": "lsu-ccsea",
+            "programs": [{
+                "abbr": "BSCE",
+                "title": "Bachelor of Science in Civil Engineering",
+                "description": "",
+                "vision": "",
+                "mission": "",
+                "goalDescription": "This program aims to:",
+                "goals":[],
+                "objectivesDescription":"",
+                "objectives": []
+              },
+              {
+                "abbr": "BSArch",
+                "title": "Bachelor of Science in Architecture",
+                "description" :"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"This program aims to:",
+                "goals": [],
+                "objectivesDescription": "",
+                "objectives": []
+              },
+              {
+                "abbr": "BSEE",
+                "title":"Bachelor of Science in Electrical Engineering",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"This program aims to:",
+                "goals": [],
+                "objectivesDescription":"",
+                "objectives":[]
+              },
+              {
+                "abbr": "BSECE",
+                "title": "Bachelor of Science Electronics and Communications Engineering",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"This program aims to:",
+                "goals": [],
+                "objectivesDescription":"",
+                "objectives": []
+              },
+              {
+                "abbr": "BSGE",
+                "title":"Bachelor of Science in Geodetic Engineering",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"This program aims to:",
+                "goals": [],
+                "objectivesDescription":"",
+                "objectives": []
+              },
+              {
+                "abbr": "BSCpE",
+                "title":"Bachelor of Science in Computer Engineering",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"This program aims to:",
+                "goals": [],
+                "objectivesDescription":"",
+                "objectives": []
+              },
+              {
+                "abbr": "BSCS",
+                "title":"Bachelor of Science in Computer Science",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"The BSCS program expects the graduates to:",
+                "goals": [],
+                "objectivesDescription":"",
+                "objectives": []
+              },
+              {
+                "abbr": "BSIT",
+                "title":"Bachelor of Science in Information Technology",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"The BSIT program expects the graduates to:",
+                "goals": [],
+                "objectivesDescription":"",
+                "objectives": [] 
+              },
+              {
+                "abbr": "BLIS",
+                "title": "Bachelor of Library and Information Science",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"The program aims to achieve the following:",
+                "goals": [],
+                "objectivesDescription":"" ,
+                "objectives": [] 
+              }
+            ]
+          },
+          {
+            "logo": "con-lsu.png",
+            "title": "College of Nursing",
+            "abbr": "CON",
+            "active": false,
+            "link": "lsu-con",
+            "programs": [{
+              "abbr": "BSN",
+              "title":"Bachelor of Science in Nursing",
+              "description":"",
+              "vision":"",
+              "mission": "",
+              "goalDescription": "BSN is committed to:",
+              "goals": [],
+              "objectivesDescription":"",
+              "objectives":[]
+            }]
+          },
+          {
+            "logo": "cte.png",
+            "title": "College of Teacher Education",
+            "abbr": "CTE",
+            "active": false,
+            "link": "lsu-cte",
+            "programs": [{
+              "abbr":"BSE-MEL",
+              "title":"Bachelor of Secondary Education Major in English Language",
+              "description":"",
+              "vision":"",
+              "mission":"",
+              "goalDescription":"",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
+            },
+            {
+              "abbr":"BSE-MFL",
+              "title":"Bachelor of Secondary Education Major in Filipino Language",
+              "description":"",
+              "vision":"",
+              "mission":"",
+              "goalDescription":"",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
+            },
+            {
+              "abbr":"BSE-MM",
+              "title":"Bachelor of Secondary Education Major in Mathematics",
+              "description":"",
+              "vision":"",
+              "mission":"",
+              "goalDescription":"",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
+            },
+            {
+              "abbr":"BSE-MS",
+              "title":"Bachelor of Secondary Education Major in Science",
+              "description":"",
+              "vision":"",
+              "mission":"",
+              "goalDescription":"",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
+            },
+            {
+              "abbr":"BSE-MSS",
+              "title":"Bachelor of Secondary Education Major in Social Studies",
+              "description":"",
+              "vision":"",
+              "mission":"",
+              "goalDescription":"",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
+            },
+            {
+              "abbr":"BSE-MVE",
+              "title":"Bachelor of Secondary Education Major in Values Education",
+              "description":"",
+              "vision":"",
+              "mission":"",
+              "goalDescription":"",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
+            },
+            {
+              "abbr":"BTLEHE",
+              "title":"Bachelor of Technology and Livelihood Education-Home Economics",
+              "description":"",
+              "vision":"",
+              "mission":"",
+              "goalDescription":"",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
+            },
+            {
+              "abbr":"BPE",
+              "title":"Bachelor of Physical Education",
+              "description":"",
+              "vision":"",
+              "mission":"",
+              "goalDescription":"",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
+            }
+          ]
+          },
+          {
+            "logo": "cthm.png",
+            "title": "College of Tourism and Hospitality Management",
+            "abbr": "CTHM",
+            "active": false,
+            "link": "lsu-cthm",
+            "programs": [{
+                "abbr": "BSHM",
+                "title": "Bachelor of Science in Hospitality Management",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"",
+                "goals":[],
+                "objectivesDescription":"",
+                "objectives":[]
+              },
+              {
+                "abbr": "BSTM",
+                "title":"Bachelor of Science in Tourism Management",
+                "description":"",
+                "vision":"",
+                "mission":"",
+                "goalDescription":"",
+                "goals":[],
+                "objectivesDescription":"",
+                "objectives":[]
+              }
+            ]
+          }
+        ]
+      }]
+    },
+    {
+      "grad_stud": [{
+        "title": "Graduate Studies",
+        "list": [{
+          "logo": "cas.png",
+          "title": "School of Graduate Studies",
+          "abbr": "SGS",
+          "active": false,
+          "link": "lsu-sgs",
+          "category": [{
+              "title": "Graduate School of Business",
+              "programs": [{
+                  "title": "Doctor in Business Administration (DBA)",
+                  "major": []
+                },
+                {
+                  "title": "Master in Business Administration (MBA, Non-Thesis)",
+                  "major": []
+                },
+                {
+                  "title": "Master in Public Administration (MPA, Non-Thesis)",
+                  "major": []
+                }
+              ]
+            },
+            {
+              "title": "Graduate School of Education",
+              "programs": [{
+                  "title": "Doctor of Philosophy in Education",
+                  "major": ["Major in Educational Management"]
+                },
+                {
+                  "title": "Master of Arts in Education",
+                  "major": [""]
+                },
+                {
+                  "title": "Master in Education",
+                  "major": ["Major in Educational Management", 
+                          "Major in English",
+                          "Major in Filipino",
+                          "Major in Guidance and Counseling",
+                          "Major in Mathematics",
+                          "Major in Physical Education",
+                          "Major in Science",
+                          "Major in Social Studies"]
+                }
+              ]
+            }
+          ]
+        }]
+      }]
+    }
+  ]
+}

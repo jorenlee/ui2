@@ -1,0 +1,415 @@
+[    
+    {
+        "officeAbbr": "OPR",
+        "designation": "University President",
+        "name": "Br. Rey Erezare Mejias FSC",
+        "offices": "Office of the President",
+        "office_lsu_email": "president@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designation": "Executive Assistant to the President",
+        "name": "Mr. Israel Gallogo",
+        "offices": "Office of the President",
+        "office_lsu_email": "president@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designation": "Data Privacy Officer",
+        "name": "Mr. Israel Gallogo",
+        "offices": "Office of the President",
+        "office_lsu_email": "dpco@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designation": "Director, Network, Programs and Computerization",
+        "name": "Mr. Michael John Puertogalera",
+        "offices": "Office of the President",
+        "office_lsu_email": "michaeljohn.puertogalera@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designation": "Director, Corporate and Executive Management Office",
+        "name": "Ms. Meredith Embuscado",
+        "offices": "Office of the President",
+        "office_lsu_email": "cemc@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designation": "Officer, Institutional Quality Assurance and Monitoring",
+        "name": "Ms. Meredith Embuscado",
+        "offices": "Office of the President",
+        "office_lsu_email": "cemc@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OPR",
+        "designation": "Officer, Risk Management",
+        "name": "Ms. Meredith Embuscado",
+        "offices": "Office of the President",
+        "office_lsu_email": "cemc@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPSS",
+        "designation": "Vice-President For Planning & Strategic Services",
+        "name": "Mr. Raymundo Dolor",
+        "offices": "Vice-President For Planning & Strategic Services",
+        "office_lsu_email": "raymundo.dolor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPSS",
+        "designation": "Director, Marketing and Communications",
+        "name": "Mr. Raymundo Dolor",
+        "offices": "Vice-President For Planning & Strategic Services",
+        "office_lsu_email": "raymundo.dolor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPSS",
+        "designation": "Director, Human Resource Development",
+        "name": "Mr. Raymundo Dolor",
+        "offices": "Vice-President For Planning & Strategic Services",
+        "office_lsu_email": "raymundo.dolor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPSS",
+        "designation": "Officer, Institutional Learning",
+        "name": "Mr. Raymundo Dolor",
+        "offices": "Vice-President For Planning & Strategic Services",
+        "office_lsu_email": "raymundo.dolor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPSS",
+        "designation": "Officer, Procurement",
+        "name": "Mr. Raymundo Dolor",
+        "offices": "Vice-President For Planning & Strategic Services",
+        "office_lsu_email": "raymundo.dolor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Vice-President, Lasallian Mission",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Director, Students Activities",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Officer, Leadership Formation and Empowerment",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Officer, Lasallian Life Formation",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Director, Arts and Culture",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Director, Career and Counseling",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Director, Lasallian Ministries",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Officer, Lasallian Formation",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Coordinator, Vocations",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Director, Social Concerns",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Officer, Community Organizing",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Officer, Advocacy",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Officer, Sports and Wellness",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPLM",
+        "designation": "Officer, Practicum and Placement",
+        "name": "Mr. Carl Vincent Codera",
+        "offices": "Vice-President For Lasallian Mission Services",
+        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPFAS",
+        "designation": "Vice-President, Finance and Accounting Services",
+        "name": "Ms. Rose Aimee Mangao",
+        "offices": "Vice-President For Finance And Accounting Services",
+        "office_lsu_email": "roseaimee.mangao@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPFAS",
+        "designation": "Officer, Business Development",
+        "name": "Ms. Rose Aimee Mangao",
+        "offices": "Vice-President For Finance And Accounting Services",
+        "office_lsu_email": "roseaimee.mangao@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPFAS",
+        "designation": "Controller",
+        "name": "Ms. Rose Aimee Mangao",
+        "offices": "Vice-President For Finance And Accounting Services",
+        "office_lsu_email": "roseaimee.mangao@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPFAS",
+        "designation": "Officer, Budget and Cost Control",
+        "name": "Ms. Rose Aimee Mangao",
+        "offices": "Vice-President For Finance And Accounting Services",
+        "office_lsu_email": "roseaimee.mangao@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designation": "Vice-President, Administrative Services",
+        "name": "Engr. Flordeliza Cabang",
+        "offices": "Vice-President For Administrative Services",
+        "office_lsu_email": "flordeliza.cabang@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designation": "Officer Campus Development",
+        "name": "Engr. Flordeliza Cabang",
+        "offices": "Vice-President For Administrative Services",
+        "office_lsu_email": "flordeliza.cabang@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designation": "Director, General Services",
+        "name": "Engr. Flordeliza Cabang",
+        "offices": "Vice-President For Administrative Services",
+        "office_lsu_email": "flordeliza.cabang@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designation": "Officer, Environmental Sustainability",
+        "name": "Engr. Flordeliza Cabang",
+        "offices": "Vice-President For Administrative Services",
+        "office_lsu_email": "flordeliza.cabang@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designation": "Manager, Farm",
+        "name": "Engr. Flordeliza Cabang",
+        "offices": "Vice-President For Administrative Services",
+        "office_lsu_email": "flordeliza.cabang@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPAD",
+        "designation": "Officer, Health Services",
+        "name": "Engr. Flordeliza Cabang",
+        "offices": "Vice-President For Administrative Services",
+        "office_lsu_email": "flordeliza.cabang@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPALS",
+        "designation": "Vice-President, Advancement and Linkages Services",
+        "name": "Dr. Irene Eguico",
+        "offices": "Vice-President For Advancement And Linkages Services",
+        "office_lsu_email": "vpal@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VPALS",
+        "designation": "Officer TESDA Programs",
+        "name": "Dr. Irene Eguico",
+        "offices": "Vice-President For Advancement And Linkages Services",
+        "office_lsu_email": "vpal@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designation": "Chancellor",
+        "name": "Dr. Wenny Caseros",
+        "offices": "Office Of The Chancellor",
+        "office_lsu_email": "chancellor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designation": "Director, Admissions and Scholarships",
+        "name": "Dr. Wenny Caseros",
+        "offices": "Office Of The Chancellor",
+        "office_lsu_email": "chancellor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designation": "University Registrar",
+        "name": "Dr. Wenny Caseros",
+        "offices": "Office Of The Chancellor",
+        "office_lsu_email": "chancellor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designation": "Director, Learning and Resource",
+        "name": "Dr. Wenny Caseros",
+        "offices": "Office Of The Chancellor",
+        "office_lsu_email": "chancellor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designation": "Director, Educational Technology",
+        "name": "Dr. Wenny Caseros",
+        "offices": "Office Of The Chancellor",
+        "office_lsu_email": "chancellor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designation": "Officer, Educational Technology",
+        "name": "Mr. Ted Nudgent Tac-An",
+        "offices": "Office Of The Chancellor",
+        "office_lsu_email": "edm@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designation": "Director, Institutional Research and Publications",
+        "name": "Dr. Wenny Caseros",
+        "offices": "Office Of The Chancellor",
+        "office_lsu_email": "chancellor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "OCH",
+        "designation": "Analyst, University Data",
+        "name": "Dr. Wenny Caseros",
+        "offices": "Office Of The Chancellor",
+        "office_lsu_email": "chancellor@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VCAA",
+        "designation": "Vice Chancellor For Academic Affairs",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "VCAA",
+        "designation": "Assistant Vice Chancellor, Curriculum Development",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph" 
+    },
+    {
+        "officeAbbr": "VCAA",
+        "designation": "Coordinator, National Service Training Program",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph" 
+    },
+    {
+        "officeAbbr": "HEU - SGS",
+        "designation": "Dean, School of Graduate Studies",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CTHM",
+        "designation": "Dean, College of Tourism and Hospitality Management",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CTE",
+        "designation": "Dean, College of Teacher Education",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CCSEA",
+        "designation": "Dean, College of Computer Studies, Engineering and Architecture",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph"         
+    },
+    {
+        "officeAbbr": "HEU - CBA",
+        "designation": "Dean, College of Business Accountancy",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph" 
+    },
+    {
+        "officeAbbr": "HEU - CAS",
+        "designation": "Dean, College of Arts and Sciences",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph" 
+    },
+    {
+        "officeAbbr": "HEU - CCJE",
+        "designation": "Dean, College Of Criminal Justice Education",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "HEU - CON",
+        "designation": "Dean, College Of Nursing",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designation": "Principal, Basic Education",
+        "name": "Mr. Benjiemen Labastin",
+        "offices": "Vice Chancellor For Academic Affairs",
+        "office_lsu_email": "benjiemen.labastin@lsu.edu.ph"
+    },
+    {
+        "officeAbbr": "BEU",
+        "designation": "Vice Principal, Basic Education",
+        "name": "Dr. Glenna Tac-an",
+        "offices": "Basic Education Unit",
+        "office_lsu_email": "is@lsu.edu.ph" 
+    }
+]

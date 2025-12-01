@@ -1,0 +1,1139 @@
+<script setup>
+import { onMounted } from "vue";
+import { useUserStore } from "@/stores/user";
+const router = useRouter();
+const userStore = useUserStore();
+import _ from "lodash";
+import collegeOrSchoolJSON from "../college_school.json";
+import courseOrProgramJSON from "../course_program.json";
+import courseMajorJSON from "../course_major.json";
+
+const endpoint = ref(userStore.mainDevServer);
+
+const enrollments = await $fetch(endpoint.value + "/api/enrollment/list").catch((error) => error.data)
+
+onMounted(() => {
+  if (userStore.user.isAuthenticated && userStore.user.email !== "") {
+    router.push("/enrollment/portal");
+    enrollments.value.filter(function (params) {
+      if (params.contactEmail === userStore.user.email) {
+        id.value = params.id;
+        enrollmentId.value = params.enrollmentId;
+        studentId.value = params.studentId;
+        firstName.value = params.firstName;
+        middleName.value = params.middleName;
+        lastName.value = params.lastName;
+        suffixName.value = params.suffixName;
+        dateOfBirth.value = params.dateOfBirth;
+        gender.value = params.gender;
+        contactNumber.value = params.contactNumber;
+        college.value = params.college;
+        courseProgram.value = params.courseProgram;
+        courseYear.value = params.courseYear;
+        courseMajor.value = params.courseMajor;
+        contactEmail.value = params.contactEmail;
+        lsuEmail.value = params.lsuEmail;
+        lsuEmailPassword.value = params.lsuEmailPassword;
+        canvasEmail.value = params.canvasEmail;
+        canvasPassword.value = params.canvasPassword;
+        schoolAutomateUsername.value = params.schoolAutomateUsername;
+        schoolAutomatePassword.value = params.schoolAutomatePassword;
+        admissionStatus.value = params.admissionStatus;
+        proofOfPayment.value = params.proofOfPayment;
+        allowEnrollment.value = params.allowEnrollment;
+        isFormSubmitted.value = params.isFormSubmitted;
+        isAdmissionConfirmed.value = params.isAdmissionConfirmed;
+        admissionRemarks.value = params.admissionRemarks;
+        advisingRemarks.value = params.advisingRemarks;
+        paymentRemarks.value = params.paymentRemarks;
+        isAssigningSubjectsOrCourse.value = params.isAssigningSubjectsOrCourse;
+        isSubjectsOrCoursesSuccessfullyAssigned.value =
+          params.isSubjectsOrCoursesSuccessfullyAssigned;
+        subjectLoadAndAssessment.value = params.subjectLoadAndAssessment;
+        modeOfPayment.value = params.modeOfPayment;
+        documents.value = params.documents;
+        isSubmitReceipt.value = params.isSubmitReceipt;
+        isPaymentConfirm.value = params.isPaymentConfirm;
+        enrollmentIsValidated.value = params.enrollmentIsValidated;
+        dateOfEnrollment.value = params.dateOfEnrollment;
+        updatedBy.value = params.updatedBy;
+        lastUpdatedOn.value = params.lastUpdatedOn;
+        created_by_name.value = params.created_by_name;
+        created_by_email.value = params.created_by_email;
+      }
+    });
+  } else {
+    router.push("/enrollment");
+  }
+});
+
+let id = ref();
+let enrollmentId = ref("EN" + Date.now());
+let studentId = ref("-");
+let firstName = ref("-");
+let middleName = ref("-");
+let lastName = ref("-");
+let suffixName = ref("N/A");
+let dateOfBirth = ref("00/00/0000");
+let gender = ref("-");
+let contactNumber = ref("-");
+let college = ref("-");
+let courseProgram = ref("-");
+let courseYear = ref("-");
+let courseMajor = ref("-");
+let contactEmail = ref(userStore.user.email);
+let lsuEmail = ref("-");
+let lsuEmailPassword = ref("-");
+let canvasEmail = ref("-");
+let canvasPassword = ref("-");
+let schoolAutomateUsername = ref("-");
+let schoolAutomatePassword = ref("-");
+let admissionStatus = ref(false);
+let documents = ref(
+  "https://firebasestorage.googleapis.com/v0/b/public-images-cbecf.appspot.com/o/public%2F1684826293302?alt=media&token=6bd368c2-5a1b-4d13-9c83-eafccfee8fd2"
+);
+let allowEnrollment = ref(false);
+let isFormSubmitted = ref(false);
+let isAdmissionConfirmed = ref(false);
+let admissionRemarks = ref("-");
+let advisingRemarks = ref("-");
+let paymentRemarks = ref("-");
+let isAssigningSubjectsOrCourse = ref(false);
+let isSubjectsOrCoursesSuccessfullyAssigned = ref(false);
+let subjectLoadAndAssessment = ref(false);
+let modeOfPayment = ref("-");
+let proofOfPayment = ref(
+  "https://firebasestorage.googleapis.com/v0/b/public-images-cbecf.appspot.com/o/public%2F1684826293302?alt=media&token=6bd368c2-5a1b-4d13-9c83-eafccfee8fd2"
+);
+let isSubmitReceipt = ref(false);
+let isPaymentConfirm = ref(false);
+let enrollmentIsValidated = ref(false);
+// e update ni
+let dateOfEnrollment = ref(Date.now());
+let updatedBy = ref(userStore.user.email);
+let lastUpdatedOn = ref(Date.now());
+let created_by_name = ref(userStore.user.email);
+let created_by_email = ref(userStore.user.email);
+let errors = ref([]);
+
+const collegeOrSchool = ref(collegeOrSchoolJSON);
+const courseOrProgram = ref(courseOrProgramJSON);
+const courseMajorList = ref(courseMajorJSON);
+
+let collegeOrSchoolData = collegeOrSchool._rawValue;
+let courseOrProgramData = courseOrProgram._rawValue;
+let courseMajorListData = courseMajorList._rawValue;
+
+let filteredCourseOrProgram = computed(() =>
+  courseOrProgramData.filter(function (params) {
+    if (params.college_or_school_id === college.value) {
+      return params.name;
+    }
+  })
+);
+
+let filteredCourseMajor = computed(() =>
+  courseMajorListData.filter(function (params) {
+    if (params.course_program_id === courseProgram.value) {
+      return params.name;
+    }
+  })
+);
+
+const logOut = () => {
+  router.push("/enrollment");
+  userStore.removeToken();
+};
+
+// Document or ID Upload
+const uploadTask = ref(null);
+const paused = ref(true);
+const progress = ref(0);
+let fileTitle = ref("");
+
+let bannerImagePreview = ref(
+  "https://firebasestorage.googleapis.com/v0/b/public-images-cbecf.appspot.com/o/public%2F1684826293302?alt=media&token=6bd368c2-5a1b-4d13-9c83-eafccfee8fd2"
+);
+
+const progressPercent = computed(() => Math.round(progress.value));
+
+
+
+// Receipt Upload
+const uploadTaskReceipt = ref(null);
+const pausedReceipt = ref(true);
+const progressReceipt = ref(0);
+let fileTitleReceipt = ref("");
+
+let bannerImagePreviewReceipt = ref(
+  "https://firebasestorage.googleapis.com/v0/b/public-images-cbecf.appspot.com/o/public%2F1684826293302?alt=media&token=6bd368c2-5a1b-4d13-9c83-eafccfee8fd2"
+);
+
+const progressPercentReceipt = computed(() => Math.round(progressReceipt.value));
+
+const pauseReceipt = (e) => {
+  e.preventDefault();
+
+  if (pausedReceipt.value == false) {
+    uploadTaskReceipt.value.pause();
+    pausedReceipt.value = !pausedReceipt.value;
+  } else {
+    uploadTaskReceipt.value.resume();
+    pausedReceipt.value = false;
+  }
+};
+
+const submitNewEnrollmentBtn = () => {
+  isFormSubmitted.value = true;
+  submitForm();
+  submitEnrollmentToGmail();
+};
+
+const submitForm = async () => {
+  //console.log("submitForm");
+
+  errors.value = [];
+  if (
+    id.value == "" &&
+    enrollmentId.value == "" &&
+    studentId.value == "" &&
+    firstName.value == "" &&
+    middleName.value == "" &&
+    lastName.value == "" &&
+    suffixName.value == "" &&
+    dateOfBirth.value == "" &&
+    gender.value == "" &&
+    contactNumber.value == "" &&
+    college.value == "" &&
+    courseProgram.value == "" &&
+    courseYear.value == "" &&
+    courseMajor.value == "" &&
+    contactEmail.value == "" &&
+    lsuEmail.value == "" &&
+    lsuEmailPassword.value == "" &&
+    canvasEmail.value == "" &&
+    canvasPassword.value == "" &&
+    schoolAutomateUsername.value == "" &&
+    schoolAutomatePassword.value == "" &&
+    admissionStatus.value == "" &&
+    proofOfPayment.value == "" &&
+    allowEnrollment.value == "" &&
+    isFormSubmitted.value == "" &&
+    isAdmissionConfirmed.value == "" &&
+    admissionRemarks.value == "" &&
+    advisingRemarks.value == "" &&
+    paymentRemarks.value == "" &&
+    isAssigningSubjectsOrCourse.value == "" &&
+    isSubjectsOrCoursesSuccessfullyAssigned.value == "" &&
+    subjectLoadAndAssessment.value == "" &&
+    modeOfPayment.value == "" &&
+    documents.value == "" &&
+    isSubmitReceipt.value == "" &&
+    isPaymentConfirm.value == "" &&
+    enrollmentIsValidated.value == "" &&
+    dateOfEnrollment.value == "" &&
+    updatedBy.value == "" &&
+    lastUpdatedOn.value == "" &&
+    created_by_name.value == "" &&
+    created_by_email.value == ""
+  ) {
+    errors.value.push("Please enter all Fields.");
+  }
+
+  if (errors.value.length == 0) {
+    await $fetch(endpoint.value + "/api/enrollment/create/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: {
+        id: id.value,
+        enrollmentId: enrollmentId.value,
+        studentId: studentId.value,
+        firstName: firstName.value,
+        middleName: middleName.value,
+        lastName: lastName.value,
+        suffixName: suffixName.value,
+        dateOfBirth: dateOfBirth.value,
+        gender: gender.value,
+        contactNumber: contactNumber.value,
+        college: college.value,
+        courseProgram: courseProgram.value,
+        courseYear: courseYear.value,
+        courseMajor: courseMajor.value,
+        contactEmail: contactEmail.value,
+        lsuEmail: lsuEmail.value,
+        lsuEmailPassword: lsuEmailPassword.value,
+        canvasEmail: canvasEmail.value,
+        canvasPassword: canvasPassword.value,
+        schoolAutomateUsername: schoolAutomateUsername.value,
+        schoolAutomatePassword: schoolAutomatePassword.value,
+        admissionStatus: admissionStatus.value,
+        proofOfPayment: proofOfPayment.value,
+        allowEnrollment: allowEnrollment.value,
+        isFormSubmitted: isFormSubmitted.value,
+        isAdmissionConfirmed: isAdmissionConfirmed.value,
+        admissionRemarks: admissionRemarks.value,
+        advisingRemarks: advisingRemarks.value,
+        paymentRemarks: paymentRemarks.value,
+        isAssigningSubjectsOrCourse: isAssigningSubjectsOrCourse.value,
+        isSubjectsOrCoursesSuccessfullyAssigned:
+          isSubjectsOrCoursesSuccessfullyAssigned.value,
+        subjectLoadAndAssessment: subjectLoadAndAssessment.value,
+        modeOfPayment: modeOfPayment.value,
+        documents: documents.value,
+        isSubmitReceipt: isSubmitReceipt.value,
+        isPaymentConfirm: isPaymentConfirm.value,
+        enrollmentIsValidated: enrollmentIsValidated.value,
+        dateOfEnrollment: dateOfEnrollment.value,
+        updatedBy: updatedBy.value,
+        lastUpdatedOn: lastUpdatedOn.value,
+        created_by_name: created_by_name.value,
+        created_by_email: created_by_email.value,
+      },
+    })
+      .then((response) => {
+        //console.log("response", response);
+        router.push("/enrollment/portal");
+      })
+  }
+};
+
+const submitEnrollmentToGmail = async () => {
+  //console.log("submitEnrollmentToGmail");
+  await $fetch(endpoint.value + "/api/enrollment/submit-enrollment-to-gmail/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: {
+      id: id.value,
+      enrollmentId: enrollmentId.value,
+      studentId: studentId.value,
+      firstName: firstName.value,
+      middleName: middleName.value,
+      lastName: lastName.value,
+      suffixName: suffixName.value,
+      dateOfBirth: dateOfBirth.value,
+      gender: gender.value,
+      contactNumber: contactNumber.value,
+      college: college.value,
+      courseProgram: courseProgram.value,
+      courseYear: courseYear.value,
+      courseMajor: courseMajor.value,
+      contactEmail: contactEmail.value,
+      lsuEmail: lsuEmail.value,
+      lsuEmailPassword: lsuEmailPassword.value,
+      canvasEmail: canvasEmail.value,
+      canvasPassword: canvasPassword.value,
+      schoolAutomateUsername: schoolAutomateUsername.value,
+      schoolAutomatePassword: schoolAutomatePassword.value,
+      admissionStatus: admissionStatus.value,
+      proofOfPayment: proofOfPayment.value,
+      allowEnrollment: allowEnrollment.value,
+      isFormSubmitted: isFormSubmitted.value,
+      isAdmissionConfirmed: isAdmissionConfirmed.value,
+      admissionRemarks: admissionRemarks.value,
+      advisingRemarks: advisingRemarks.value,
+      paymentRemarks: paymentRemarks.value,
+      isAssigningSubjectsOrCourse: isAssigningSubjectsOrCourse.value,
+      isSubjectsOrCoursesSuccessfullyAssigned:
+        isSubjectsOrCoursesSuccessfullyAssigned.value,
+      subjectLoadAndAssessment: subjectLoadAndAssessment.value,
+      modeOfPayment: modeOfPayment.value,
+      documents: documents.value,
+      isSubmitReceipt: isSubmitReceipt.value,
+      isPaymentConfirm: isPaymentConfirm.value,
+      enrollmentIsValidated: enrollmentIsValidated.value,
+      dateOfEnrollment: dateOfEnrollment.value,
+      updatedBy: updatedBy.value,
+      lastUpdatedOn: lastUpdatedOn.value,
+      created_by_name: created_by_name.value,
+      created_by_email: created_by_email.value,
+    },
+  })
+    .then((response) => {})
+    .catch((error) => {
+      //console.log(error);
+    });
+};
+
+async function updateEnrollment() {
+  //console.log("updateEnrollment");
+  //console.log("submitForm");
+
+  errors.value = [];
+
+  if (
+    id.value == "" &&
+    studentId.value == "" &&
+    firstName.value == "" &&
+    lastName.value == "" &&
+    middleName.value == "" &&
+    lastName.value == "" &&
+    suffixName.value == "" &&
+    dateOfBirth.value == "" &&
+    gender.value == "" &&
+    contactNumber.value == "" &&
+    college.value == "" &&
+    courseProgram.value == "" &&
+    courseYear.value == "" &&
+    courseMajor.value == "" &&
+    contactEmail.value == "" &&
+    lsuEmail.value == "" &&
+    lsuEmailPassword.value == "" &&
+    canvasEmail.value == "" &&
+    canvasPassword.value == "" &&
+    schoolAutomateUsername.value == "" &&
+    schoolAutomatePassword.value == "" &&
+    admissionStatus.value == "" &&
+    proofOfPayment.value == "" &&
+    allowEnrollment.value == "" &&
+    isFormSubmitted.value == "" &&
+    isAdmissionConfirmed.value == "" &&
+    admissionRemarks.value == "" &&
+    advisingRemarks.value == "" &&
+    paymentRemarks.value == "" &&
+    isAssigningSubjectsOrCourse.value == "" &&
+    isSubjectsOrCoursesSuccessfullyAssigned.value == "" &&
+    subjectLoadAndAssessment.value == "" &&
+    modeOfPayment.value == "" &&
+    documents.value == "" &&
+    isSubmitReceipt.value == "" &&
+    isPaymentConfirm.value == "" &&
+    enrollmentIsValidated.value == "" &&
+    dateOfEnrollment.value == "" &&
+    updatedBy.value == "" &&
+    lastUpdatedOn.value == "" &&
+    created_by_name.value == "" &&
+    created_by_email.value == ""
+  ) {
+    errors.value.push("Please fill in all fields");
+  }
+  if (errors.value.length == 0) {
+    await $fetch(endpoint.value + "/api/enrollment/" + id.value + "/edit/", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: {
+        id: id.value,
+        enrollmentId: enrollmentId.value,
+        studentId: studentId.value,
+        firstName: firstName.value,
+        middleName: middleName.value,
+        lastName: lastName.value,
+        suffixName: suffixName.value,
+        dateOfBirth: dateOfBirth.value,
+        gender: gender.value,
+        contactNumber: contactNumber.value,
+        college: college.value,
+        courseProgram: courseProgram.value,
+        courseYear: courseYear.value,
+        courseMajor: courseMajor.value,
+        contactEmail: contactEmail.value,
+        lsuEmail: lsuEmail.value,
+        lsuEmailPassword: lsuEmailPassword.value,
+        canvasEmail: canvasEmail.value,
+        canvasPassword: canvasPassword.value,
+        schoolAutomateUsername: schoolAutomateUsername.value,
+        schoolAutomatePassword: schoolAutomatePassword.value,
+        admissionStatus: admissionStatus.value,
+        proofOfPayment: proofOfPayment.value,
+        allowEnrollment: allowEnrollment.value,
+        isFormSubmitted: isFormSubmitted.value,
+        isAdmissionConfirmed: isAdmissionConfirmed.value,
+        admissionRemarks: admissionRemarks.value,
+        advisingRemarks: advisingRemarks.value,
+        paymentRemarks: paymentRemarks.value,
+        isAssigningSubjectsOrCourse: isAssigningSubjectsOrCourse.value,
+        isSubjectsOrCoursesSuccessfullyAssigned:
+          isSubjectsOrCoursesSuccessfullyAssigned.value,
+        subjectLoadAndAssessment: subjectLoadAndAssessment.value,
+        modeOfPayment: modeOfPayment.value,
+        documents: documents.value,
+        isSubmitReceipt: isSubmitReceipt.value,
+        isPaymentConfirm: isPaymentConfirm.value,
+        enrollmentIsValidated: enrollmentIsValidated.value,
+        dateOfEnrollment: dateOfEnrollment.value,
+        updatedBy: updatedBy.value,
+        lastUpdatedOn: lastUpdatedOn.value,
+        created_by_name: created_by_name.value,
+        created_by_email: created_by_email.value,
+      },
+    })
+      .then((response) => {
+        //console.log("response", response);
+        // router.push({ path: "/registrar" });
+      })
+  }
+}
+</script>
+
+<template>
+  <div class="">
+    <div class="lasalle-green shadow-lg lg:h-16">
+      <div class="lg:w-11/12 mx-auto lg:px-4">
+        <div class="lg:flex lg:justify-between">
+          <a href="/" class="flex lg:border-0 border-b">
+            <img
+              src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/lsu-w-h.png"
+              class="lg:w-48 h-10 my-3 lg:mx-0 mx-auto"
+            />
+          </a>
+          <div class="flex lg:pb-0 justify-between lg:px-0 px-2">
+            <h1 class="text-gray-300 text-base py-5 block">
+              {{ userStore.user.email }}
+            </h1>
+            <p
+              class="text-white whitespace-nowrap py-5 font-bold text-base cursor-pointer hover:underline lg:pl-5"
+              @click="logOut"
+            >
+              Log Out
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full min-h-screen">
+      <div class="">
+        <div class="lg:w-full lg:p-5 bg-gray-50">
+          <div
+            class="xl:w-8/12 lg:10/12 w-full lg:px-0 px-2 mx-auto h-full bg-white shadow-lg pt-1 lg:pb-10 pb-5"
+          >
+            <div class="relative">
+              <h1
+                class="font-bold mt-5 mb-5 text-center lg:text-3xl text-xl block px-3 whitespace-nowrap lasalle-green-text capitalize"
+              >
+                online enrollment
+              </h1>
+              <p>Continuing Student</p>
+              <div>
+                <h1 class="text-xl text-green-800 lg:ml-5">
+                  Step 1. <span class="font-bold">Admission</span>
+                </h1>
+                <div
+                  class="lg:w-11/12 mx-auto lg:px-5 px-2 border-l-4 my-2 shadow-sm py-4 text-xs"
+                  :class="isFormSubmitted ? 'border-green-800' : ''"
+                >
+                  <div class="flex">
+                    <h2 class="font-bold lg:text-base text-xs capitalize text-green-800">
+                      <i
+                        class="fa-solid fa-circle-minus mr-1 text-gray-500"
+                        v-if="!isFormSubmitted"
+                      ></i>
+                      <i class="fa-solid fa-circle-check mr-1 text-green-800" v-else></i>
+                      1.1 Fill Out Admission Form
+                    </h2>
+                    <h1 class="ml-1 lg:mt-1 text-xs lowercase italic font-semibold">
+                      (<span class="text-red-600 font-bold">*</span>
+                      - is required)
+                    </h1>
+                  </div>
+                  <form
+                    class="lg:w-fit mx-auto"
+                    v-on:submit.prevent="submitNewEnrollmentBtn"
+                  >
+                    <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-2 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                        >Enrollment ID</label
+                      >
+                      <input
+                        id="enrollmentId"
+                        name="enrollmentId"
+                        class="capitalize rounded border py-0.5 px-2 lg:w-1/3 w-full"
+                        placeholder="Enrollment Id"
+                        v-model="enrollmentId"
+                        disabled
+                      />
+                    </div>
+                    <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-2 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                      >
+                        Student ID
+                         <span class="text-slate-400 text-xs mb-2 lg:hidden block">
+                        (For Continuing Student)</span
+                      >
+                      </label>
+                      <div>
+                        <input
+                        id="studentId"
+                        name="studentId"
+                        class="capitalize rounded border py-0.5 px-2 lg:w-1/3 w-full"
+                        placeholder="Student Id"
+                        v-model="studentId"
+                        :disabled="isFormSubmitted"
+                      />
+                      <span class="text-slate-400 text-xs mt-2 ml-2 lg:block hidden">
+                        (For Continuing Student)</span
+                      >
+                      </div>
+                    </div>
+                    <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-2 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                      >
+                        First Name<span class="text-red-500">*</span></label
+                      >
+                      <input
+                        v-model="firstName"
+                        name="firstName"
+                        class="capitalize rounded border py-0.5 px-2 lg:w-1/3 w-full"
+                        placeholder="First Name"
+                        :disabled="isFormSubmitted"
+                      />
+                    </div>
+                    <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-2 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                        >Middle Name<span class="text-red-500">*</span></label
+                      >
+                      <input
+                        id="middlename"
+                        name="middlename"
+                        class="capitalize rounded border py-0.5 px-2 lg:w-1/3 w-full"
+                        placeholder="Middle Name"
+                        v-model="middleName"
+                        :disabled="isFormSubmitted"
+                      />
+                    </div>
+                    <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-2 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                        >Last Name<span class="text-red-500">*</span></label
+                      >
+                      <input
+                        id="lastname"
+                        name="lastname"
+                        class="capitalize rounded border py-0.5 px-2 lg:w-1/3 w-full"
+                        placeholder="Last Name"
+                        v-model="lastName"
+                        :disabled="isFormSubmitted"
+                      />
+                    </div>
+                    <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-2 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                        >Suffix</label
+                      >
+                      <input
+                        id="suffixName"
+                        name="suffixName"
+                        class="capitalize rounded border py-0.5 px-2 lg:w-1/3 w-full"
+                        placeholder="e.g SR. JR. II"
+                        v-model="suffixName"
+                        :disabled="isFormSubmitted"
+                      />
+                    </div>
+                    <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-2 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                      >
+                        Date of Birth<span class="text-red-500">*</span></label
+                      >
+                      <input
+                        id="dateOfBirth"
+                        name="dateOfBirth"
+                        type="date"
+                        class="lowercase rounded border py-0 px-2 lg:w-fit w-full border-gray-200"
+                        placeholder="Date of Birth"
+                        v-model="dateOfBirth"
+                        :disabled="isFormSubmitted"
+                      />
+                    </div>
+                    <div class="w-full flex my-3 md:justify-normal justify-between">
+                      <label
+                        class="text-gray-400 text-xs mt-2 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                        >Gender<span class="text-red-500">*</span></label
+                      >
+                      <input
+                        type="radio"
+                        id="male"
+                        name="male"
+                        value="male"
+                        class="mr-1 my-1 block"
+                        v-model="gender"
+                        :disabled="isFormSubmitted"
+                      />
+                      <label class="mr-3 py-1">Male</label>
+                      <input
+                        type="radio"
+                        class="mr-1 my-1 block"
+                        id="female"
+                        name="female"
+                        value="female"
+                        v-model="gender"
+                        :disabled="isFormSubmitted"
+                      />
+                      <label class="lg:mr-3 py-1">Female</label>
+                    </div>
+                    <!-- <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-2 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                      >
+                        Contact Number<span class="text-red-500">*</span></label
+                      >
+                      <input
+                        id="contactNumber"
+                        name="contactNumber"
+                        class="capitalize rounded border py-0.5 px-2 lg:w-1/3 w-full"
+                        placeholder="e.g 09XXXXXXXXX"
+                        v-model="contactNumber"
+                        :disabled="isFormSubmitted"
+                      />
+                    </div> -->
+
+                    <!-- <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-1.5 whitespace-nowrap block lg:text-right capitalize mr-3 w-32"
+                      >
+                        College/School<span class="text-red-500">*</span></label
+                      >
+                      <div class="">
+                        <select
+                          id="college"
+                          v-model="college"
+                          name="college"
+                          class="capitalize rounded border py-0.5 px-2 border-slate-300 w-full"
+                          required
+                          :disabled="isFormSubmitted"
+                        >
+                          <option value="" disabled>Select College or School</option>
+                          <option value="" disabled>
+                            CON (College of Nursing) - Walk In Enrollment
+                          </option>
+                          <option value="" disabled>
+                            CTHM (College of Tourism and Hospitality Management) - Walk In
+                            Enrollment
+                          </option>
+                          <option value="" disabled>BEd (Basic Education)</option>
+                          <option
+                            :value="college.name"
+                            v-for="(college, i) in collegeOrSchoolData"
+                            :key="i"
+                          >
+                            {{ college.name }}
+                          </option>
+                        </select>
+                      </div>
+                    </div> -->
+
+                    <!-- <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-1.5 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                        >Course/Program<span class="text-red-500">*</span></label
+                      >
+                      <select
+                        id="courseProgram"
+                        v-model="courseProgram"
+                        name="courseProgram"
+                        class="capitalize rounded border py-0.5 px-2 border-slate-300 lg:w-9/12 w-full"
+                        required
+                        :disabled="isFormSubmitted"
+                      >
+                        <option value="" disabled>Select Course Program</option>
+                        <option
+                          :value="cp.name"
+                          v-for="(cp, i) in filteredCourseOrProgram"
+                          :key="i"
+                        >
+                          {{ cp.name }}
+                        </option>
+                      </select>
+                    </div> -->
+
+                    <!-- <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-1.5 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                      >
+                        Course Major</label
+                      >
+                      <select
+                        id="courseMajor"
+                        v-model="courseMajor"
+                        name="courseMajor"
+                        class="capitalize rounded border py-0.5 px-2 border-slate-300 lg:w-9/12 w-full"
+                        :disabled="isFormSubmitted"
+                      >
+                        <option value="N/A" disabled>Select Course Major</option>
+                        <option
+                          :value="cm.name"
+                          v-for="(cm, i) in filteredCourseMajor"
+                          :key="i"
+                        >
+                          <span v-if="cm">{{ cm.name }}</span>
+                        </option>
+                      </select>
+                    </div> -->
+
+                    <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-1.5 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                      >
+                        Course Year/Grade<span class="text-red-500">*</span></label
+                      >
+                      <div class="">
+                        <select
+                          id="courseYear"
+                          v-model="courseYear"
+                          name="courseYear"
+                          class="capitalize rounded border py-0.5 px-2 border-slate-300 lg:w-auto w-full"
+                          required
+                          :disabled="isFormSubmitted"
+                        >
+                          <!-- <option value="" disabled>Select Course Year or Grade</option> -->
+                          <option value="N/A" disabled>Select Course Year</option>
+                          <!-- <option value="Pre School">Pre School</option>
+                          <option value="Grade 1">Grade 1</option>
+                          <option value="Grade 2">Grade 2</option>
+                          <option value="Grade 3">Grade 3</option>
+                          <option value="Grade 4">Grade 4</option>
+                          <option value="Grade 5">Grade 5</option>
+                          <option value="Grade 6">Grade 6</option>
+                          <option value="Grade 7">Grade 7</option>
+                          <option value="Grade 8">Grade 8</option>
+                          <option value="Grade 9">Grade 9</option>
+                          <option value="Grade 10">Grade 10</option>
+                          <option value="Grade 11">Grade 11</option>
+                          <option value="Grade 12">Grade 12</option> -->
+                          <option value="1st Year">1st Year</option>
+                          <option value="2nd Year">2nd Year</option>
+                          <option value="3rd Year">3rd Year</option>
+                          <option value="4th Year">4th Year</option>
+                          <option value="5th Year">5th Year</option>
+                          <option value="6th Year">6th Year</option>
+                          <option value="7th Year">7th Year</option>
+                          <option value="8th Year">8th Year</option>
+                          <option value="9th Year">9th Year</option>
+                          <option value="10th Year">10th Year</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="w-full lg:flex my-3">
+                      <label
+                        class="text-gray-400 text-xs mt-2 whitespace-nowrap block lg:text-right mr-3 capitalize w-32"
+                        >Contact Email</label
+                      >
+                      <input
+                        id="contactEmail"
+                        name="contactEmail"
+                        class="lowercase  rounded border py-0.5 px-2 border-slate-300 lg:w-7/12 w-full"
+                        disabled
+                        v-model="contactEmail"
+                      />
+                    </div>
+                    <!-- <div class="w-full lg:flex mt-3">
+                      <label
+                        class="text-gray-400 lg:pt-3 text-xs lg:mt-2 whitespace-nowrap lg:block lg:text-right mr-3 capitalize w-32 flex"
+                        >
+                        
+                        <span class="block pr-1">Valid Government ID or</span>
+                        <span class="lg:block flex">School ID <span class="text-red-500"
+                          >*</span
+                        ></span>
+                      </label>
+                      <div class="lg:mt-3">
+                        <div class="flex lg:mb-5 mb-2" v-if="!isFormSubmitted">
+                          <div class="flex h-fit">
+                            <input type="file" @change="handleChange" accept="image/*" class="border"/>
+                            <button @click="pause" class="ml-10">
+                              <div v-if="paused">
+                                <i class="fa fa-pause" aria-hidden="true"></i>
+                              </div>
+                              <div v-else>
+                                <i class="fa fa-play" aria-hidden="true"></i>
+                              </div>
+                            </button>
+                          </div>
+                          <div class="w-5/12 ml-10 text-center pt-3">
+                            <div
+                              class="text-white bg-green-900 transition-all ease-in-out duration-200 h-5 flex items-center"
+                              :style="`width:${progressPercent}%`"
+                            >
+                              <p class="mx-auto">{{ progressPercent }} %</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="w-fit lg:mx-0 mx-auto">
+                          <div class="w-56 shadow">
+                            <img class="lg:w-full h-56 object-contain" v-if="documents === ''" :src="bannerImagePreview" />
+                             <img class="lg:w-full h-56 object-contain" v-else :src="documents" />
+                          </div>
+                        </div>
+                      </div>
+                    </div> -->
+                    <!-- <div class="mt-5" v-if="!isFormSubmitted">
+                      <sup class="w-full lg:mx-auto block text-xs text-gray-500 pt-2">
+                        *For Continuing Students: Upload softcopy of your Student ID/Any
+                        valid ID (IMAGE/PNG/PDF).<br />
+                        *For New Students: Submit your Required Documents (Orginal Hard
+                        Copies) at registrar's office.
+                      </sup>
+                    </div> -->
+                    <!-- <div
+                      v-if="!isFormSubmitted"
+                      class="w-full lg:mx-auto block text-xs text-gray-500 border lg:px-4 px-2 pb-3 pt-3 lg:rounded-3xl rounded-md mt-2"
+                    >
+                      <h1 class="font-bold">
+                        Incoming Freshmen: (Submit Original Copies)
+                      </h1>
+                      <ul class="lg:ml-5 ml-5 list-disc">
+                        <li>Form 138A (Card)</li>
+                        <li>Good Moral</li>
+                        <li>PSA Birth Certificate</li>
+                        <li>
+                          Two Copies of 2x2 ID Picture (Formal with White Background)
+                        </li>
+                        <li>
+                          Two Original Copies of Certificate of Residency (for OZAMIZ
+                          RESIDENTS Only)
+                        </li>
+                        <li>Clear Photoscopy of 4P's ID (for 4P's MEMBER only)</li>
+                      </ul>
+                    </div> -->
+
+                    <button
+                      v-if="!isFormSubmitted"
+                      class="capitalize border border-green-800 my-10 px-3 py-1 text-sm bg-green-800 text-white rounded mx-auto block hover:font-bold"
+                      type="submit"
+                    >
+                      submit
+                    </button>
+                  </form>
+                  <h2
+                    class="font-bold lg:text-base text-xs capitalize py-2"
+                    :class="isFormSubmitted ? 'text-green-800' : 'text-slate-400'"
+                  >
+                    <i
+                      class="fa-solid fa-circle-minus mr-1 text-gray-500"
+                      v-if="!isFormSubmitted"
+                    ></i>
+                    <i class="fa-solid fa-circle-check mr-1 text-green-800" v-else></i>
+                    1.2 Form Submitted
+                  </h2>
+                  <h2
+                    class="font-bold lg:text-base text-xs capitalize py-2"
+                    :class="isFormSubmitted ? 'text-green-800' : 'text-slate-400'"
+                  >
+                    <i
+                      class="fa-solid fa-circle-minus mr-1 text-gray-500"
+                      v-if="!isAdmissionConfirmed"
+                    ></i>
+                    <i class="fa-solid fa-circle-check mr-1 text-green-800" v-else></i>
+                    1.3 Admission Confirmed
+                  </h2>
+                  <div class="flex">
+                    <h1
+                      class="font-bold whitespace-nowrap lg:text-base text-xs capitalize py-1"
+                      :class="isAdmissionConfirmed ? 'text-green-800' : 'text-slate-400'"
+                    >
+                      Admission Remarks:
+                    </h1>
+                    <input
+                      type="text"
+                      class="mt-0.5 ml-2 shadow border-0 rounded w-8/12 py-0"
+                      disabled
+                      v-model="admissionRemarks"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <h1
+              class="text-xl lg:ml-5"
+              :class="isAdmissionConfirmed ? 'text-green-800' : 'text-slate-400'"
+            >
+              Step 2.
+              <span class="font-bold">Advising</span>
+            </h1>
+            <div
+              class="lg:w-11/12 mx-auto lg:px-5 px-2 border-l-4 my-2 shadow-sm py-4 text-xs"
+              :class="isFormSubmitted ? 'border-green-800' : ''"
+            >
+              <h2
+                class="font-bold lg:text-base text-xs capitalize py-2"
+                :class="isAssigningSubjectsOrCourse ? 'text-green-800' : 'text-slate-400'"
+              >
+                <i
+                  class="fa-solid fa-circle-minus mr-1 text-gray-500"
+                  v-if="!isAssigningSubjectsOrCourse"
+                ></i>
+                <i class="fa-solid fa-circle-check mr-1 text-green-800" v-else></i>
+                2.1 Assigning Subjects or Courses
+              </h2>
+              <h2
+                class="lg:text-base text-xs font-bold capitalize py-2"
+                :class="
+                  isSubjectsOrCoursesSuccessfullyAssigned
+                    ? 'text-green-800'
+                    : 'text-slate-400'
+                "
+              >
+                <i
+                  class="fa-solid fa-circle-minus mr-1 text-gray-500"
+                  v-if="!isSubjectsOrCoursesSuccessfullyAssigned"
+                ></i>
+                <i class="fa-solid fa-circle-check mr-1 text-green-800" v-else></i>
+                2.2 Successfully Added Subjects or Courses
+              </h2>
+              <div class="flex">
+                <h1
+                  class="whitespace-nowrap font-bold text-sm py-1"
+                  :class="
+                    isSubjectsOrCoursesSuccessfullyAssigned
+                      ? 'text-green-800'
+                      : 'text-slate-400'
+                  "
+                >
+                  Advising Remarks:
+                </h1>
+                <input
+                  type="text"
+                  class="mt-0.5 ml-2 shadow border-0 rounded w-8/12 py-0"
+                  disabled
+                  v-model="advisingRemarks"
+                />
+              </div>
+            </div>
+
+            <h1
+              class="text-xl lg:ml-5"
+              :class="
+                isSubjectsOrCoursesSuccessfullyAssigned
+                  ? 'text-green-800'
+                  : 'text-slate-400'
+              "
+            >
+              Step 3. <span class="font-bold">Payment</span>
+            </h1>
+            <div
+              class="lg:w-11/12 mx-auto lg:px-5 px-2 border-l-4 my-2 shadow-sm py-4 text-xs"
+              :class="isFormSubmitted ? 'border-green-800' : ''"
+            >
+              <h2
+                class="lg:text-base text-xs font-bold capitalize py-2"
+                :class="isSubmitReceipt ? 'text-green-800' : 'text-slate-400'"
+              >
+                <i
+                  class="fa-solid fa-circle-check mr-1 text-green-800"
+                  v-if="isPaymentConfirm"
+                ></i>
+                <i class="fa-solid fa-circle-minus mr-1 text-gray-500" v-else></i>
+                3.1 Payment Receipt
+              </h2>
+              <div
+                class="mt-3"
+                v-if="isSubjectsOrCoursesSuccessfullyAssigned"
+                :class="isPaymentConfirm ? 'hidden' : ''"
+              >
+                <div class="flex">
+                  <div class="flex h-fit">
+                    <form v-on:submit.prevent="updateEnrollment">
+                      <input
+                        class="border"
+                        type="file"
+                        @change="handleChangeReceipt"
+                        accept="image/*"
+                      />
+
+                      <button>Submit Receipt</button>
+                    </form>
+                  </div>
+                  <div class="w-5/12 ml-10 text-center pt-3">
+                    <div
+                      class="text-white bg-green-900 transition-all ease-in-out duration-200 h-5 flex items-center"
+                      :style="`width:${progressPercentReceipt}%`"
+                    >
+                      <p class="mx-auto">{{ progressPercentReceipt }} %</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="w-fit my-5">
+                  <div class="w-full shadow" v-if="proofOfPayment === ''">
+                    <img class="w-full h-56" :src="bannerImagePreviewReceipt" />
+                  </div>
+                  <div class="w-full shadow" v-else>
+                    <img class="w-full h-56" :src="proofOfPayment" />
+                  </div>
+                </div>
+              </div>
+              <h2
+                class="lg:text-base text-xs font-bold capitalize py-2"
+                :class="isPaymentConfirm ? 'text-green-800' : 'text-slate-400'"
+              >
+                <i
+                  class="fa-solid fa-circle-check mr-1 text-green-800"
+                  v-if="isPaymentConfirm"
+                ></i>
+                <i class="fa-solid fa-circle-minus mr-1 text-gray-500" v-else></i>
+                3.2 Payment Confirmed
+              </h2>
+              <div class="flex">
+                <h1
+                  class="whitespace-nowrap font-bold text-sm py-1"
+                  :class="isPaymentConfirm ? 'text-green-800' : 'text-slate-400'"
+                >
+                  Payment Remarks:
+                </h1>
+                <input
+                  type="text"
+                  class="mt-0.5 ml-2 shadow border-0 rounded w-8/12 py-0"
+                  disabled
+                  v-model="paymentRemarks"
+                />
+              </div>
+            </div>
+            <h1
+              class="text-xl lg:ml-5"
+              :class="isPaymentConfirm ? 'text-green-800' : 'text-slate-400'"
+            >
+              Step 4. <span class="font-bold">Validation</span>
+            </h1>
+            <div
+              class="lg:w-11/12 mx-auto lg:px-5 px-2 border-l-4 my-2 shadow-sm py-4 text-xs"
+              :class="isFormSubmitted ? 'border-green-800' : ''"
+            >
+              <h2
+                class="lg:text-base text-xs font-bold capitalize py-2"
+                :class="enrollmentIsValidated ? 'text-green-800' : 'text-slate-400'"
+              >
+                <i
+                  class="fa-solid fa-circle-minus mr-1 text-gray-500"
+                  v-if="!enrollmentIsValidated"
+                ></i>
+                <i class="fa-solid fa-circle-check mr-1 text-green-800" v-else></i>
+                4.1 Enrollees online accounts
+              </h2>
+              <h2
+                class="lg:text-base text-xs font-bold capitalize py-2"
+                :class="enrollmentIsValidated ? 'text-green-800' : 'text-slate-400'"
+              >
+                <i
+                  class="fa-solid fa-circle-minus mr-1 text-gray-500"
+                  v-if="!enrollmentIsValidated"
+                ></i>
+                <i class="fa-solid fa-circle-check mr-1 text-green-800" v-else></i>
+                4.2 Enrollment Complete
+              </h2>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-green-900 p-3">
+      <h1 class="text-center text-white text-xs">
+        <span class="font-bold">Copyright © 2023 </span
+        ><span>La Salle University - Ozamiz</span>
+      </h1>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+  input[type=file]::file-selector-button {background: #004d01; }
+</style>

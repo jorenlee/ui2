@@ -1,0 +1,399 @@
+{
+    "administrators": [
+     {
+      "offices": "Office Of The Chancellor",
+      "acadOffice": true,
+      "admins": [
+        {
+          "officeAbbr": "OCH",
+          "designationAbbr": "OCH",
+          "designation": "Chancellor",
+          "name": "Dr. Wenny Caseros"
+        },
+        {
+          "officeAbbr": "OCH",
+          "designationAbbr": "OCH",
+          "designation": "Officer, Practicum and Placement",
+          "name": "Ms. Shaira Joy Antoque"
+        },
+        {
+          "officeAbbr": "OCH - CCC",
+          "designationAbbr": "OCH",
+          "designation": "Director, Career Counseling Center",
+          "name": "Mr. Adrian Jay Paciente"
+        },
+        {
+          "officeAbbr": "OCH - REG",
+          "designationAbbr": "OCH",
+          "designation": "University Registrar",
+          "name": "Engr. Jay Harold Reazol"
+        },
+        {
+          "officeAbbr": "OCH - REG",
+          "designationAbbr": "OCH",
+          "designation": "Assistant Registrar",
+          "name": "Ms. Mary Grace Oracion"
+        },
+        {
+          "officeAbbr": "OCH - REG",
+          "designationAbbr": "OCH",
+          "designation": "Assistant Registrar for Basic Education",
+          "name": "Ms. Edesa Leopoldo"
+        },
+        {
+          "officeAbbr": "OCH - LRC",
+          "designationAbbr": "OCH",
+          "designation": "Director, Learning Resource Center",
+          "name": "Dr. Monaliza Senining"
+        },
+        {
+          "officeAbbr": "OCH - ETC",
+          "designationAbbr": "OCH ",
+          "designation": "Director, Educational Technology Center",
+          "name": "Ms. Ma. Alexandra Benitez"
+        },
+        {
+          "officeAbbr": "OCH - ETC",
+          "designationAbbr": "OCH",
+          "designation": "Officer, Educational Technology Center",
+          "name": "Ms. Jenny Licanda-Largo"
+        },
+        {
+          "officeAbbr": "OCH - IRP",
+          "designationAbbr": "OCH",
+          "designation": "Director, Institutional Research and Publications",
+          "name": "Dr. Carousel Tagaylo"
+        },
+        {
+          "officeAbbr": "OCH - IRP",
+          "designationAbbr": "OCH",
+          "designation": "Chair, Ethics Review Board",
+          "name": "Mr. John Mark Saldivar"
+        },
+        {
+          "officeAbbr": "OCH - IRP",
+          "designationAbbr": "OCH",
+          "designation": "University Statistician (Faculty and Students)",
+          "name": "Ms. Rachel Padilla"
+        }
+      ]
+     },
+     {
+      "offices": "Vice-Chancellor for Academics Affairs",
+      "acadOffice": true,
+      "admins": [
+        {
+        "officeAbbr": "VCAR",
+        "designationAbbr": "VCAR",
+        "designation": "Vice Chancellor for Academics Affairs",
+        "name": "Dr. Emma Suana"
+       },
+       {
+        "officeAbbr": "VCAR",
+        "designationAbbr": "VCAR",
+        "designation": "Assistant Vice Chancellor for Curriculum Development",
+        "name": "Dr. Flordelis Ejercito"
+       },
+       {
+        "officeAbbr": "VCAR",
+        "designationAbbr": "VCAR",
+        "designation": "Coordinator, National Service Training Program",
+        "name": "Mr. Noel Alamin"
+       }
+      ]
+     },
+     {
+      "offices": "School of Graduate Studies",
+      "acadOffice": true,
+      "admins": [{
+       "officeAbbr": "HEU - SGS",
+       "designationAbbr": "SGS",
+       "designation": "Dean, School of Graduate Studies",
+       "name": "Dr. Catalina Maghamil"
+      }]
+     },
+     {
+      "offices": "College of Tourism and Hospitality Management",
+      "acadOffice": true,
+      "admins": [{
+        "officeAbbr": "HEU - CTHM",
+        "designationAbbr": "CTHM",
+        "designation": "Dean, College of Tourism and Hospitality Management",
+        "name": "Mr. Michael Angelo Pagara"
+       },
+       {
+        "officeAbbr": "HEU - CTHM",
+        "designationAbbr": "CTHM",
+        "designation": "Program Head, Tourism Management",
+        "name": "Mr. Michael Angelo Pagara"
+       },
+       {
+        "officeAbbr": "HEU - CTHM",
+        "designationAbbr": "CTHM",
+        "designation": "Program Head, Hospitality Management",
+        "name": "Mr. Joed Layna"
+       }
+      ]
+     },
+     {
+      "offices": "College of Teacher Education",
+      "acadOffice": true,
+      "admins": [{
+        "officeAbbr": "HEU - CTE",
+        "designationAbbr": "CTE",
+        "designation": "Dean, College of Teacher Education",
+        "name": "Dr. Jackjun Caupayan"
+       },
+       {
+        "officeAbbr": "HEU - CTE",
+        "designationAbbr": "CTE",
+        "designation": "Coordinator, BEED Programs",
+        "name": "Dr. Jenel Cruz"
+       },
+       {
+        "officeAbbr": "HEU - CTE",
+        "designationAbbr": "CTE",
+        "designation": "Coordinator, BSED Programs",
+        "name": "Dr. Jackjun Caupayan"
+       },
+       {
+        "officeAbbr": "HEU - CTE",
+        "designationAbbr": "CTE",
+        "designation": "Coordinator, Physical Education",
+        "name": "Dr. Kenneth Yagong"
+       }
+      ]
+     },
+     {
+      "offices": "College of Computer Studies, Engineering and Architecture",
+      "acadOffice": true,
+      "admins": [{
+          "officeAbbr": "HEU - CCSEA",
+          "designationAbbr": "CCSEA",
+          "designation": "Dean, College of Computer Studies, Engineering, and Architecture",
+          "name": "Engr. Ramel Recentes"
+       },
+       {
+          "officeAbbr": "HEU - CCSEA",
+          "designationAbbr": "CCSEA",
+          "designation": "Program Head, Architecture",
+          "name": "Arch. Olaira Mae Imbong"
+       },
+       {
+          "officeAbbr": "HEU - CCSEA",
+          "designationAbbr": "CCSEA",
+          "designation": "Program Head, Civil Engineering",
+          "name": "Engr. Grace Dolloso"
+       },
+       {
+          "officeAbbr": "HEU - CCSEA",
+          "designationAbbr": "CCSEA",
+          "designation": "Program Head, Computer Engineering",
+          "name": "Mr. Mark Krisli Dela Peña"
+       },
+       {
+          "officeAbbr": "HEU - CCSEA",
+          "designationAbbr": "CCSEA",
+          "designation": "Program Head, Electrical Engineering",
+          "name": "Engr. Lady Vi Tagailo"
+       },
+       {
+          "officeAbbr": "HEU - CCSEA",
+          "designationAbbr": "CCSEA",
+          "designation": "Program Head, Electronics Engineering",
+          "name": "Engr. Ramel Recentes"
+       },
+       {
+          "officeAbbr": "HEU - CCSEA",
+          "designationAbbr": "CCSEA",
+          "designation": "Program Head, Geodetic Engineering",
+          "name": "Engr. Ramel Recentes"
+       },
+       {
+          "officeAbbr": "HEU - CCSEA",
+          "designationAbbr": "CCSEA",
+          "designation": "Program Head, Computer Science",
+          "name": "Mr. Earl Peter Gangoso"
+       },
+       {
+          "officeAbbr": "HEU - CCSEA",
+          "designationAbbr": "CCSEA",
+          "designation": "Program Head, Information Technology",
+          "name": "Mr. Honimar Panganiban"
+       },
+       {
+          "officeAbbr": "HEU - CCSEA",
+          "designationAbbr": "CCSEA",
+          "designation": "Program Head, Library and Information Science",
+          "name": "Ms. Marilyn Bejec"
+        }
+      ]
+     },
+     {
+      "offices": "College of Business and Accountancy",
+      "acadOffice": true,
+      "admins": [
+        {
+        "officeAbbr": "HEU - CBA",
+        "designationAbbr": "CBA",
+        "designation": "Dean, College of Business and Accountancy",
+        "name": "Mr. Lowelle Pacot"
+       },
+       {
+        "officeAbbr": "HEU - CBA",
+        "designationAbbr": "CBA",
+        "designation": "Program Head, Financial Management",
+        "name": "Ms. Jennifer Aguanta"
+       },
+       {
+        "officeAbbr": "HEU - CBA",
+        "designationAbbr": "CBA",
+        "designation": "Program Head, Marketing Management",
+        "name": "Ms. Jennifer Aguanta"
+       }
+      ]
+     },
+     {
+      "offices": "College of Arts and Sciences",
+      "acadOffice": true,
+      "admins": [
+        {
+       "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Dean, College of Arts and Sciences",
+        "name": "Mr. Benjiemen Labastin"
+       },
+       {
+       "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Coordinator, Languages and Communications",
+        "name": "Dr. Mary Grace Daga-ang"
+       },
+       {
+       "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Coordinator, Mathematics and Science",
+        "name": "Ms. Karen Jean Batoy"
+       },
+       {
+       "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Coordinator, Social Sciences",
+        "name": "Mr. Joemarie Gapol"
+       },
+       {
+       "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Coordinator, Theology and La Salle",
+        "name": "Mr. Benjiemen Labastin"
+       },
+       {
+       "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Program Head, Psychology",
+        "name": "Mr. Marvel Deromol"
+       },
+       {
+       "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Program Head, Social Work",
+        "name": "Ms. Nizel Lou Apas"
+       },
+       {
+       "officeAbbr": "HEU - CAS",
+        "designationAbbr": "CAS",
+        "designation": "Program Head, Political Science",
+        "name": "Ms. Anilou Dilao"
+       }
+      ]
+     },
+     {
+      "offices": "College Of Criminal Justice Education",
+      "acadOffice": true,
+      "admins": [
+        {
+        "officeAbbr": "HEU - CCJE",
+        "designationAbbr": "CCJE",
+        "designation": "Dean, College Of Criminal Justice Education",
+        "name": "Ms. Estephanie Estrobo"
+      }
+      ]
+     },
+     {
+      "offices": "College of Nursing",
+      "acadOffice": true,
+      "admins": [{
+        "officeAbbr": "HEU - CON",
+        "designationAbbr": "CON",
+        "designation": "Dean, College Of Nursing",
+        "name": "Mr. Benjiber Silva"
+       },
+       {
+        "officeAbbr": "HEU - CON",
+        "designationAbbr": "CON",
+        "designation": "Coordinator, Clinical Instructions",
+        "name": "Ms. Harriet Jimenez"
+       }
+      ]
+     },
+     {
+      "offices": "Basic Education Unit",
+      "acadOffice": true,
+      "admins": [{
+       "officeAbbr": "BEU",
+       "designationAbbr": "BEU",
+       "designation": "Principal, Basic Education",
+       "name": "Dr. Irene Eguico"
+      }]
+     },
+     {
+      "offices": "Vice Principal for Basic Education",
+      "admins": [{
+       "officeAbbr": "BEU",
+       "designationAbbr": "BEU",
+       "designation": "Vice Principal, Basic Education",
+       "name": "Mr. Jeru Salem Andrada"
+      },
+      {
+       "officeAbbr": "BEU",
+       "designationAbbr": "BEU",
+       "designation": "Research Officer",
+       "name": "Ms. Michelle Hinagdanan"
+      }]
+     },
+     {
+      "offices": "Academic Assistants",
+      "admins": [{
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant - Learning Community & School for the Deaf",
+        "name": "Ms. Kemberly Jean Aya-ay"
+       },
+       {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant - English & Filipino",
+        "name": "Ms. Michelle Hinagdanan"
+       },
+       {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant - Social Sciences & Christian Living",
+        "name": "Mr. Mark Dalagan"
+       },
+       {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant - Math & Science",
+        "name": "Mr. Jupiter Yap"
+       },
+       {
+        "officeAbbr": "BEU",
+        "designationAbbr": "BEU",
+        "designation": "Academic Assistant - Technical, Vocational and Livelihood Education & MAPEH",
+        "name": "Ms. Mia Jean Bel-ida"
+       }
+      ]
+     }
+    ]
+  }
