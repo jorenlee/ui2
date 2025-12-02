@@ -16,7 +16,6 @@ onMounted(() =>
   <div class="font-montserrat">
     <Header />
     <div class="relative">
- 
       <div class="bg-[#e3e3e3] relative">
         <img
           src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/Corporate%20Logo%20New/Corporate%20Logo-Tagline.png"
@@ -30,20 +29,14 @@ onMounted(() =>
       <Shortcuts class="lg:-mt-1 2xl-shadow lg:absolute bottom-0 w-full" />
     </div>
 
-
     <div class="lg:relative block z-0">
       <div class=""></div>
       <BlogPosting />
 
-                      <Slider class="lg:flex hidden"/>
-
-    <div v-if="display === 'mobile'">
-      <SliderMobile />
-    </div>
-
-
-
-      <a href="/sdgs" class="lg:bg-gray-50 bg-white lg:py-20 lg:border block px-10">
+      <a
+        href="/sdgs"
+        class="lg:bg-gray-50 bg-white lg:py-20 lg:border block px-10"
+      >
         <div class="w-fit mx-auto lg:py-10 py-5">
           <div class="lg:flex items-center gap-x-5 w-fit mx-auto">
             <img
@@ -67,18 +60,25 @@ onMounted(() =>
         <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Panagsadya%20(2).png" class="w-full" />
        </a>   -->
 
-    <NetworkLogo class="py-10" />
-      
+      <div class="bg-[#031d03] text-white">
+        <p
+          class="text-center text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg py-5"
+        >
+          Announcements
+        </p>
+        <Slider class="lg:flex hidden" />
+
+        <div v-if="display === 'mobile'">
+          <SliderMobile />
+        </div>
+      </div>
 
       <NewsAndUpdates />
 
-
-
-
+      <NetworkLogo class="py-10" />
     </div>
 
-
-        <FAQs />
+    <FAQs />
     <!-- <TingogMagazine /> -->
     <Footer />
   </div>
