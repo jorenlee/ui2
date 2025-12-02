@@ -75,13 +75,138 @@ onMounted(async () => {
 
     <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
       <div class="w-full lg:py-10 py-5 relative">
-        <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30">
-            
-        </div>
+        <div
+          class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
+        ></div>
         <div class="relative z-10 lg:px-10 mx-auto">
           <div class="flex justify-between">
             <div class="w-fit mx-auto">
+              <form class="space-y-5 w-full max-w-2xl">
+                <!-- Title -->
+                <div>
+                  <label class="block font-semibold mb-1">Title</label>
+                  <input
+                    type="text"
+                    class="w-full border rounded-md p-2 focus:ring-green-600 focus:border-green-600"
+                    placeholder="Enter title"
+                  />
+                </div>
 
+                <!-- Subject / Keywords -->
+                <div>
+                  <label class="block font-semibold mb-1"
+                    >Subject / Keywords</label
+                  >
+                  <input
+                    type="text"
+                    class="w-full border rounded-md p-2"
+                    placeholder="Enter keywords (comma separated)"
+                  />
+                </div>
+
+                <!-- Description / Summary -->
+                <div>
+                  <label class="block font-semibold mb-1"
+                    >Description / Summary</label
+                  >
+                  <textarea
+                    rows="3"
+                    class="w-full border rounded-md p-2"
+                    placeholder="Short description..."
+                  ></textarea>
+                </div>
+
+                <!-- Content -->
+                <div>
+                  <label class="block font-semibold mb-1">Content</label>
+                  <textarea
+                    rows="6"
+                    class="w-full border rounded-md p-2"
+                    placeholder="Main content here..."
+                  ></textarea>
+                </div>
+
+                <!-- Creator / Author -->
+                <div>
+                  <label class="block font-semibold mb-1"
+                    >Creator / Author</label
+                  >
+                  <input
+                    type="text"
+                    class="w-full border rounded-md p-2"
+                    placeholder="Enter author name"
+                  />
+                </div>
+
+                <!-- Contributor -->
+                <div>
+                  <label class="block font-semibold mb-1">Contributor</label>
+                  <input
+                    type="text"
+                    class="w-full border rounded-md p-2"
+                    placeholder="Enter contributor name"
+                  />
+                </div>
+
+                <!-- Date -->
+                <div>
+                  <label class="block font-semibold mb-1">Date</label>
+                  <input type="date" class="w-full border rounded-md p-2" />
+                </div>
+
+                <!-- Format -->
+                <div>
+                  <label class="block font-semibold mb-1">Format</label>
+                  <select class="w-full border rounded-md p-2">
+                    <option value="">Select format</option>
+                    <option>Article</option>
+                    <option>Document</option>
+                    <option>Image</option>
+                    <option>Video</option>
+                    <option>Audio</option>
+                  </select>
+                </div>
+
+                <!-- Language -->
+                <div>
+                  <label class="block font-semibold mb-1">Language</label>
+                  <select class="w-full border rounded-md p-2">
+                    <option value="">Select language</option>
+                    <option>English</option>
+                    <option>Filipino</option>
+                    <option>Cebuano</option>
+                    <option>Other</option>
+                  </select>
+                </div>
+
+                <!-- Image Upload -->
+                <div>
+                  <label class="block font-semibold mb-1">Image</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    class="w-full border rounded-md p-2"
+                  />
+                </div>
+
+                <!-- Video Upload -->
+                <div>
+                  <label class="block font-semibold mb-1">Video</label>
+                  <input
+                    type="file"
+                    accept="video/*"
+                    class="w-full border rounded-md p-2"
+                  />
+                </div>
+
+                <!-- Submit Button -->
+                <button
+                  type="submit"
+                  class="bg-green-700 text-white px-6 py-2 rounded-md hover:bg-green-800 transition"
+                >
+                  Submit Contribution
+                </button>
+              </form>
             </div>
           </div>
         </div>
