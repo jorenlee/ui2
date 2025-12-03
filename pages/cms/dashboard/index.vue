@@ -196,10 +196,43 @@ const submitContent = async () => {
 
 // ---------------- AUTH ----------------
 onMounted(() => {
-  if (!userStore.user.isAuthenticated || !["jorenleeluna24@gmail.com","npc@lsu.edu.ph"].includes(userStore.user.email)) {
+  const allowedEmails = [
+    "jorenleeluna24@gmail.com",
+    "npc@lsu.edu.ph",
+    "wenny.caseros@lsu.edu.ph",
+    "mariaalexandra.benitez@lsu.edu.ph",
+    "alexander.diaz@lsu.edu.ph",
+    "carmelona.jumalon@lsu.edu.ph",
+    "carmelona2.jumalon@lsu.edu.ph",
+    "carousel.tagaylo@lsu.edu.ph",
+    "carlvincent.codera@lsu.edu.ph",
+    "cherrylyn.sanipa@lsu.edu.ph",
+    "dean.lopez@lsu.edu.ph",
+    "esmael.larubis@lsu.edu.ph",
+    "israelgallogo@lsu.edu.ph",
+    "jeanelyn.potestas@lsu.edu.ph",
+    "jenel.cruz@lsu.edu.ph",
+    "jerusalem.andrada@lsu.edu.ph",
+    "jorenlee.luna@lsu.edu.ph",
+    "joed.layna@lsu.edu.ph",
+    "jumelah.padilla@lsu.edu.ph",
+    "carmela.buenbrazo2@lsu.edu.ph",
+    "macristina.llauder@lsu.edu.ph",
+    "markjohn.dalagan@lsu.edu.ph",
+    "menchie.grana@lsu.edu.ph",
+    "meredith.embuscado@lsu.edu.ph",
+    "michaeljohn.puertogalera@lsu.edu.ph",
+    "naiza.amba@lsu.edu.ph",
+    "roselyn.tuastomban@lsu.edu.ph",
+    "tednudgent.tacan@lsu.edu.ph",
+    "xie.medrano@lsu.edu.ph"
+  ];
+
+  if (!userStore.user.isAuthenticated || !allowedEmails.includes(userStore.user.email)) {
     router.push("/unauthorized");
   }
 });
+
 
 // ---------------- LINKS MANUAL ----------------
 const addItem = () => content.value.links.push({ name: "" });
