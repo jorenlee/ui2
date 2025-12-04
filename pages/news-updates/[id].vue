@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
@@ -11,30 +11,63 @@ const loading = ref(true);
 const errorMsg = ref("");
 const item = ref(null);
 
-// image viewer state
-const activeImage = ref(null);       // url of highlighted image
+// Modal state for images
 const showModal = ref(false);
-const zoomLevel = ref(1);
-const currentIndex = ref(0);
+const currentImageUrl = ref("");
+const currentImageIndex = ref(0);
+const imageFiles = ref([]);
 
 const userStore = useUserStore();
 const endpoint = userStore.mainDevServer;
+
+// Add computed property for SDG badges
+const sdgBadges = computed(() => {
+  if (!item.value?.filters) return [];
+  
+  const filters = item.value.filters.toLowerCase();
+  const badges = [];
+  
+  // Check for SDG mentions
+  for (let i = 1; i <= 17; i++) {
+    if (filters.includes(`sdg${i}`) || filters.includes(`sdg ${i}`)) {
+      badges.push({ number: i });
+    }
+  }
+  
+  return badges;
+});
+
+// File type detection helpers
+const isImageFile = (filename) => {
+  const ext = filename.toLowerCase().split('.').pop();
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+};
+
+const isPdfFile = (filename) => {
+  return filename.toLowerCase().endsWith('.pdf');
+};
+
+const isVideoFile = (filename) => {
+  const ext = filename.toLowerCase().split('.').pop();
+  return ['mp4', 'webm', 'ogg', 'avi', 'mov'].includes(ext);
+};
 
 // fetch the item
 onMounted(async () => {
   loading.value = true;
   errorMsg.value = "";
   try {
-    const res = await $fetch(`${endpoint}/api/cms/${itemId}/`);
+    const res = await $fetch(`${endpoint}/api/cms/content/${itemId}/`);
     item.value = res ?? null;
-
-    // init image viewer if thumbnails exist
-    if (item.value?.thumbnails && item.value.thumbnails.length) {
-      currentIndex.value = 0;
-      activeImage.value = item.value.thumbnails[0].url;
-    } else {
-      activeImage.value = null;
+    
+    // Filter image files for modal navigation
+    if (item.value?.files) {
+      imageFiles.value = item.value.files.filter(file => isImageFile(file));
+      console.log('Image files found:', imageFiles.value);
+      console.log('All files:', item.value.files);
     }
+    
+    console.log('Fetched item:', item.value);
   } catch (error) {
     console.error("Error fetching item:", error);
     errorMsg.value = "Failed to load details.";
@@ -43,51 +76,43 @@ onMounted(async () => {
   }
 });
 
-// open modal with selected image index
-function openModal(index = 0) {
-  if (!item.value?.thumbnails?.length) return;
-  currentIndex.value = index;
-  activeImage.value = item.value.thumbnails[index].url;
+// Modal functions
+const openModal = (imageUrl, filename) => {
+  console.log('openModal called with:', { imageUrl, filename });
+  currentImageUrl.value = imageUrl;
+  
+  // Find the correct index in imageFiles array
+  const index = imageFiles.value.findIndex(file => file === filename);
+  currentImageIndex.value = index >= 0 ? index : 0;
+  
   showModal.value = true;
-  zoomLevel.value = 1;
-}
+  document.body.style.overflow = "hidden";
+  console.log('Modal state after setting:', { 
+    showModal: showModal.value, 
+    currentImageUrl: currentImageUrl.value,
+    currentImageIndex: currentImageIndex.value 
+  });
+};
 
-// close modal
-function closeModal() {
+const closeModal = () => {
   showModal.value = false;
-  zoomLevel.value = 1;
-}
+  currentImageUrl.value = "";
+  document.body.style.overflow = "";
+};
 
-// set highlight image without opening modal
-function setHighlight(index) {
-  if (!item.value?.thumbnails?.length) return;
-  currentIndex.value = index;
-  activeImage.value = item.value.thumbnails[index].url;
-}
+const nextImage = () => {
+  if (imageFiles.value.length > 1) {
+    currentImageIndex.value = (currentImageIndex.value + 1) % imageFiles.value.length;
+    currentImageUrl.value = `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${imageFiles.value[currentImageIndex.value]}`;
+  }
+};
 
-// carousel next/prev (wrap)
-function nextImage() {
-  if (!item.value?.thumbnails?.length) return;
-  currentIndex.value = (currentIndex.value + 1) % item.value.thumbnails.length;
-  activeImage.value = item.value.thumbnails[currentIndex.value].url;
-  zoomLevel.value = 1;
-}
-function prevImage() {
-  if (!item.value?.thumbnails?.length) return;
-  currentIndex.value =
-    (currentIndex.value - 1 + item.value.thumbnails.length) %
-    item.value.thumbnails.length;
-  activeImage.value = item.value.thumbnails[currentIndex.value].url;
-  zoomLevel.value = 1;
-}
-
-// zoom controls
-function zoomIn() {
-  zoomLevel.value = +(zoomLevel.value + 0.25).toFixed(2);
-}
-function zoomOut() {
-  zoomLevel.value = +(Math.max(1, zoomLevel.value - 0.25)).toFixed(2);
-}
+const prevImage = () => {
+  if (imageFiles.value.length > 1) {
+    currentImageIndex.value = (currentImageIndex.value - 1 + imageFiles.value.length) % imageFiles.value.length;
+    currentImageUrl.value = `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${imageFiles.value[currentImageIndex.value]}`;
+  }
+};
 </script>
 
 <template>
@@ -110,12 +135,16 @@ function zoomOut() {
         </h1>
       </div>
 
-      <div class="pt-2.5 pb-3 shadow-lg">
+      <div class="pt-2.5 pb-3 shadow-lg bg-white">
         <ul class="flex lasalle-green-text capitalize w-11/12 mx-auto text-xs">
-          <li><a href="/" class="mr-1">Home</a></li>
+          <li><a href="/" class="mr-1 hover:underline">Home</a></li>
           <li class="flex items-center">
             <i class="fas fa-caret-right mx-1"></i>
-            <a href="/news-updates" class="mr-1">News and Updates</a>
+            <a href="/news-updates" class="mr-1 hover:underline">News and Updates</a>
+          </li>
+          <li class="flex items-center">
+            <i class="fas fa-caret-right mx-1"></i>
+            <span class="text-gray-600">{{ item?.title || 'Loading...' }}</span>
           </li>
         </ul>
       </div>
@@ -124,169 +153,209 @@ function zoomOut() {
     <!-- MAIN CONTENT -->
     <div class="w-11/12 mx-auto lg:py-10 py-5">
       <!-- Loading -->
-      <div v-if="loading" class="text-center py-10 text-gray-600">
-        Loading...
+      <div v-if="loading" class="text-center py-20">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-green-800 mx-auto mb-4"></div>
+        <p class="text-gray-600">Loading article...</p>
       </div>
 
       <!-- Error -->
-      <div v-if="errorMsg && !loading" class="text-center text-red-600 py-10">
-        {{ errorMsg }}
+      <div v-if="errorMsg && !loading" class="text-center py-20">
+        <div class="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md mx-auto">
+          <i class="fas fa-exclamation-triangle text-red-500 text-4xl mb-4"></i>
+          <h3 class="text-lg font-semibold text-red-800 mb-2">Error Loading Article</h3>
+          <p class="text-red-600">{{ errorMsg }}</p>
+          <button 
+            @click="$router.go(-1)" 
+            class="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+          >
+            Go Back
+          </button>
+        </div>
       </div>
 
       <!-- CONTENT -->
-      <div v-if="item && !loading" class="lg:flex gap-10">
-        <!-- LEFT: Content + Highlight + Thumbnails -->
-        <div class=" w-fit">
-          <h2 class="lg:text-2xl font-bold mb-5 leading-tight">{{ item.title }}</h2>
+      <div v-if="item && !loading" class="max-w-6xl mx-auto">
+        <!-- Article Header -->
+        <div class="bg-white rounded-lg shadow-sm p-6 lg:p-8 mb-6">
+          <div class="flex flex-wrap items-center gap-2 mb-4">
+            <!-- SDG Badges -->
+            <div v-for="badge in sdgBadges" :key="badge.number" class="inline-flex items-center">
+              <span 
+                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
+              >
+                <i class="fas fa-leaf mr-1"></i>
+                SDG {{ badge.number }}
+              </span>
+            </div>
+            
+            <!-- Date Badge -->
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+              <i class="fas fa-calendar mr-1"></i>
+              {{ moment(item.date || item.created_at).format("MMMM DD, YYYY") }}
+            </span>
 
-          <p class=" whitespace-pre-line mb-7 leading-tight lg:text-sm text-xs">
-            {{ item.description }}
-          </p>
+            <!-- Content ID Badge -->
+            <span v-if="item.content_id" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+              <i class="fas fa-id-card mr-1"></i>
+              {{ item.content_id }}
+            </span>
+          </div>
 
-          <!-- IMAGE VIEWER -->
-          <div v-if="item.thumbnails?.length" class="mb-10">
-            <h3 class="text-lg font-semibold mb-3">Images</h3>
+          <h1 class="text-2xl lg:text-4xl font-bold text-gray-900 leading-tight mb-6">
+            {{ item.title }}
+          </h1>
 
-            <div class="flex flex-col lg:flex-row gap-5">
-              <!-- Highlight (left on desktop) -->
-              <div class="lg:w-8/12 w-full">
-                <img
-                  :src="activeImage || item.thumbnails[0].url"
-                  @click="openModal(currentIndex)"
-                  class="w-auto h-fit object-contain rounded-lg shadow cursor-pointer hover:opacity-95 transition"
-                  alt="highlight"
-                />
-              </div>
-
-              <!-- Thumbnails (right) -->
-              <div class="lg:w-4/12 w-full grid lg:grid-cols-2 grid-cols-4 gap-3">
-                <div
-                  v-for="(thumb, index) in item.thumbnails"
-                  :key="index"
-                  class="cursor-pointer"
-                  @click="setHighlight(index)"
-                >
-                  <img
-                    :src="thumb.url"
-                    :alt="thumb.name || `thumb-${index}`"
-                    class="w-full lg:h-32 object-contain rounded shadow hover:ring-2 hover:ring-green-700 transition"
-                  />
-                </div>
-              </div>
+          <!-- Description Content -->
+          <div v-if="item.descriptions" class="prose prose-lg max-w-none text-gray-700 leading-relaxed mb-6">
+            <div class="text-base lg:text-lg whitespace-pre-line">
+              {{ item.descriptions }}
+            </div>
+          </div>
+          
+          <!-- Links Section -->
+          <div v-if="item.links && item.links.length" class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+              <i class="fas fa-link mr-2 text-green-600"></i>
+              Related Links
+            </h3>
+            <div class="space-y-2">
+              <a 
+                v-for="(link, index) in item.links" 
+                :key="index"
+                :href="link"
+                target="_blank"
+                class="block text-blue-600 hover:text-blue-800 underline break-all"
+              >
+                <i class="fas fa-external-link-alt mr-1"></i>
+                {{ link }}
+              </a>
             </div>
           </div>
 
-          <!-- fallback when no images -->
-          <div v-else class="mb-6 text-gray-500">
-            No images available for this post.
-          </div>
-
-          <!-- Created At -->
-          <div class="text-sm text-gray-500 mt-5">
-            Posted: {{ moment(item.created_at).format("MMMM DD, YYYY") }}
+          <!-- Fallback if no description -->
+          <div v-if="!item.descriptions" class="text-gray-500 italic text-center py-8">
+            <i class="fas fa-info-circle mr-2"></i>
+            No description available for this article.
           </div>
         </div>
 
-        <!-- RIGHT SIDEBAR: Optional metadata or logs (collapsed) -->
-        <!-- <aside class="lg:w-4/12 w-full mt-10 lg:mt-0">
-          <div class="bg-white p-4 rounded shadow-sm">
-            <h3 class="font-bold mb-2">Details</h3>
-            <p class="text-sm text-gray-600 mb-2">
-              <strong>Title:</strong> {{ item.title || "-" }}
-            </p>
-            <p class="text-sm text-gray-600 mb-2">
-              <strong>Created:</strong> {{ moment(item.created_at).fromNow() }}
-            </p>
+        <!-- MEDIA GALLERY -->
+        <div v-if="item.files && item.files.length" class="bg-white rounded-lg shadow-sm p-6 lg:p-8 mb-6">
+          <h2 class="text-xl lg:text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <i class="fas fa-images mr-2 text-green-600"></i>
+            Gallery
+          </h2>
 
-            <div v-if="item.logs?.length" class="mt-4">
-              <h4 class="font-semibold mb-2">Status Logs</h4>
-              <ul class="space-y-3 text-sm text-gray-700">
-                <li v-for="(log, i) in item.logs" :key="i" class="border-b pb-2 last:border-0">
-                  <div class="font-semibold">{{ log.personnel_fullname }}</div>
-                  <div class="text-xs text-gray-500">{{ log.personnel_designation }} • {{ log.personnel_email }}</div>
-                  <div class="mt-1">{{ log.personnel_remarks }}</div>
-                  <div class="italic text-xs text-gray-500 mt-1">{{ log.status_remarks }}</div>
-                  <div class="text-xs text-gray-400 mt-1">{{ moment(log.timestamp).format("MMM DD, YYYY - h:mm A") }}</div>
-                </li>
-              </ul>
-            </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div v-for="(file, index) in item.files" :key="index" class="space-y-2">
+              <!-- Image Files -->
+              <div v-if="isImageFile(file)" class="relative group cursor-pointer">
+                <img
+                  :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${file}`"
+                  :alt="`Image ${index + 1}`"
+                  class="w-full h-64 object-cover rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
+                  @click="openModal(`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${file}`, file)"
+                />
+                <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-search-plus text-white text-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></i>
+                </div>
+              </div>
 
-            <div v-else class="text-sm text-gray-500 mt-4">
-              No logs available.
+              <!-- PDF Files -->
+              <div v-else-if="isPdfFile(file)" class="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                <i class="fas fa-file-pdf text-red-600 text-4xl mb-2"></i>
+                <p class="text-sm text-gray-700 mb-2 break-all">{{ file }}</p>
+                <a 
+                  :href="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${file}`"
+                  target="_blank"
+                  class="inline-flex items-center px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                >
+                  <i class="fas fa-download mr-1"></i>
+                  View PDF
+                </a>
+              </div>
+
+              <!-- Video Files -->
+              <div v-else-if="isVideoFile(file)" class="relative">
+                <video 
+                  :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${file}`"
+                  controls
+                  class="w-full h-32 object-cover rounded-lg shadow-lg"
+                >
+                  Your browser does not support the video tag.
+                </video>
+                <div class="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                  {{ file }}
+                </div>
+              </div>
+
+              <!-- Other Files -->
+              <div v-else class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                <i class="fas fa-file text-gray-600 text-4xl mb-2"></i>
+                <p class="text-sm text-gray-700 mb-2 break-all">{{ file }}</p>
+                <a 
+                  :href="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${file}`"
+                  target="_blank"
+                  class="inline-flex items-center px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 text-xs"
+                >
+                  <i class="fas fa-download mr-1"></i>
+                  Download
+                </a>
+              </div>
             </div>
           </div>
-        </aside> -->
+        </div>
+
+        <!-- No Media Fallback -->
+        <div v-else class="bg-white rounded-lg shadow-sm p-6 lg:p-8 mb-6">
+          <div class="text-center py-12 text-gray-500">
+            <i class="fas fa-image text-4xl mb-4 text-gray-300"></i>
+            <p class="text-lg">No media files available for this article</p>
+          </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="text-center">
+          <button 
+            @click="$router.push('/news-updates')"
+            class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
+          >
+            <i class="fas fa-arrow-left mr-2"></i>
+            Back to News & Updates
+          </button>
+        </div>
       </div>
     </div>
 
     <Footer />
 
-    <!-- FULLSCREEN MODAL CAROUSEL -->
+    <!-- Image Modal -->
     <div
       v-if="showModal"
-      class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4"
+      class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center"
+      style="z-index: 9999;"
+      @click.self="closeModal"
     >
-      <!-- Close Button -->
-      <button
-        class="absolute top-5 right-5 text-white text-3xl z-60"
-        @click="closeModal"
-        aria-label="Close"
-      >
-        ✕
-      </button>
+      <div class="relative w-fit max-w-[90vw] max-h-[90vh]">
+        <button
+          class="absolute top-2 right-2 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-70 transition"
+          style="z-index: 10000;"
+          @click="closeModal"
+        >
+          <i class="fa fa-times"></i>
+        </button>
 
-      <!-- Left Arrow -->
-      <button
-        @click="prevImage"
-        class="absolute left-5 text-white text-4xl font-bold z-60"
-        aria-label="Previous"
-      >
-        ‹
-      </button>
-
-      <!-- Right Arrow -->
-      <button
-        @click="nextImage"
-        class="absolute right-5 text-white text-4xl font-bold z-60"
-        aria-label="Next"
-      >
-        ›
-      </button>
-
-      <!-- IMAGE CONTAINER WITH ZOOM -->
-      <div class="relative w-full max-w-5xl h-[80vh] flex items-center justify-center overflow-hidden">
         <img
-          :src="activeImage"
-          :style="{ transform: `scale(${zoomLevel})` }"
-          class="max-h-full object-contain transition-transform duration-200 cursor-grab"
-          draggable="false"
-          alt="modal-image"
+          :src="currentImageUrl"
+          alt="Full size image"
+          class="rounded-lg shadow-lg w-full max-h-[80vh] object-contain"
         />
-      </div>
-
-      <!-- Zoom Controls -->
-      <div class="absolute bottom-10 flex gap-4 z-60">
-        <button
-          class="bg-white text-black px-4 py-2 rounded shadow"
-          @click="zoomOut"
-          aria-label="Zoom out"
-        >
-          -
-        </button>
-        <button
-          class="bg-white text-black px-4 py-2 rounded shadow"
-          @click="zoomIn"
-          aria-label="Zoom in"
-        >
-          +
-        </button>
       </div>
     </div>
   </div>
 </template>
 
-<style scoped>
-/* small styling helpers */
+<style>
 .cursor-grab {
   cursor: grab;
 }
@@ -294,13 +363,5 @@ function zoomOut() {
   cursor: grabbing;
 }
 
-/* ensure modal controls appear above image */
-.z-60 {
-  z-index: 60;
-}
 
-/* make sure long text wraps in sidebar */
-aside p {
-  word-wrap: break-word;
-}
 </style>
