@@ -12,6 +12,7 @@ const endpoint = ref(userStore.mainDevServer);
 const content = ref({
   content_id: "CMS" + moment().valueOf(),
   title: "",
+  authors: "",
   filters: "",
   descriptions: "",
   date: "",
@@ -283,7 +284,8 @@ onMounted(() => {
       "naiza.amba@lsu.edu.ph",
       "roselyn.tuastomban@lsu.edu.ph",
       "tednudgent.tacan@lsu.edu.ph",
-      "xie.medrano@lsu.edu.ph"
+      "xie.medrano@lsu.edu.ph",
+      "jenny.licanda@lsu.edu.ph",
     ];
 
     // if (!userStore.user.isAuthenticated || !allowedEmails.includes(userStore.user.email)) {
@@ -406,13 +408,18 @@ const logOut = () => {
           <!-- TITLE -->
           <label>
             <p>Title</p>
-            <input v-model="content.title" class="input" />
+            <input v-model="content.title" class="input" placeholder="Title"/>
+          </label>
+
+          <label>
+            <p>Author/Authors</p>
+            <input v-model="content.authors" class="input" placeholder="Author/Authors"/>
           </label>
 
           <!-- DESCRIPTION -->
           <label>
             <p>Description</p>
-            <textarea v-model="content.descriptions" class="input h-32"></textarea>
+            <textarea v-model="content.descriptions" class="input h-32" placeholder="Descriptions"></textarea>
           </label>
 
           <!-- KEYWORDS -->

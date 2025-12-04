@@ -62,6 +62,7 @@ const editContent = ref({
   id: null,
   content_id: "",
   title: "",
+  authors: "",
   filters: "",
   descriptions: "",
   date: "",
@@ -140,7 +141,8 @@ onMounted(() => {
       "naiza.amba@lsu.edu.ph",
       "roselyn.tuastomban@lsu.edu.ph",
       "tednudgent.tacan@lsu.edu.ph",
-      "xie.medrano@lsu.edu.ph"
+      "xie.medrano@lsu.edu.ph",
+      "jenny.licanda@lsu.edu.ph",
     ];
 
   //   if (!userStore.user.isAuthenticated || !allowedEmails.includes(userStore.user.email)) {
@@ -159,6 +161,7 @@ const openEditModal = async (item) => {
       id: response.id,
       content_id: response.content_id || "",
       title: response.title || "",
+      authors: response.authors || "",
       filters: response.filters || "",
       descriptions: response.descriptions || "",
       date: response.date || "",
@@ -208,6 +211,7 @@ const closeEditModal = () => {
     id: null,
     content_id: "",
     title: "",
+    authors: "",
     filters: "",
     descriptions: "",
     date: "",
@@ -580,6 +584,18 @@ const handleImageLoad = (fileName) => {
             <label class="block text-sm font-medium mb-1">Title</label>
             <input 
               v-model="editContent.title" 
+              type="text" 
+              class="w-full border rounded px-3 py-2"
+              placeholder="Title"
+              required
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-1">Author/Authors</label>
+            <input 
+              v-model="editContent.authors" 
+              placeholder="e.g. John Doe, Jane Doe"
               type="text" 
               class="w-full border rounded px-3 py-2"
               required
