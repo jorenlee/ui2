@@ -1,7 +1,7 @@
 
 
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, onMounted, nextTick, computed } from "vue";
 import { useRoute } from "vue-router";
 import { useUserStore } from "@/stores/user";
 
@@ -85,10 +85,64 @@ const errorMsg = ref("");
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
 
+// Get current SDG number for filtering
+const currentSdgNumber = computed(() => {
+  return sdgsCategory.indexOf(sdg) + 1;
+});
+
+// Add computed property for SDG badges
+const getSdgBadges = (item) => {
+  if (!item?.filters) return [];
+  
+  const filters = item.filters.toLowerCase();
+  const badges = [];
+  
+  // Check for SDG mentions
+  for (let i = 1; i <= 17; i++) {
+    const patterns = [
+      `sdg${i}`,
+      `sdg ${i}`,
+      `sdg-${i}`,
+      `sdg_${i}`,
+      `goal ${i}`,
+      `goal${i}`,
+      `sdg${i.toString().padStart(2, '0')}`
+    ];
+    
+    if (patterns.some(pattern => filters.includes(pattern))) {
+      badges.push({ number: i });
+    }
+  }
+  
+  return badges;
+};
+
 onMounted(async () => {
   try {
-    const res = await $fetch(endpoint.value + "/api/cms/list/");
-    info.value = Array.isArray(res) ? res : [];
+    const res = await $fetch(endpoint.value + "/api/cms/content/list/");
+    const allItems = Array.isArray(res) ? res : [];
+    
+    // Filter items for current SDG
+    const sdgNum = currentSdgNumber.value;
+    info.value = allItems.filter(item => {
+      if (!item?.filters) return false;
+      const filters = item.filters.toLowerCase();
+      
+      // Check for various SDG formats
+      const patterns = [
+        `sdg${sdgNum}`,
+        `sdg ${sdgNum}`,
+        `sdg-${sdgNum}`,
+        `sdg_${sdgNum}`,
+        `goal ${sdgNum}`,
+        `goal${sdgNum}`,
+        `sdg${sdgNum.toString().padStart(2, '0')}`
+      ];
+      
+      return patterns.some(pattern => filters.includes(pattern));
+    });
+    
+    console.log(`Filtered ${info.value.length} items for SDG ${sdgNum}`);
   } catch (error) {
     console.error("Error fetching list:", error);
     errorMsg.value = "Failed to load news & updates.";
@@ -180,42 +234,67 @@ onMounted(async () => {
         />
 
         <p class="text-lg text-gray-700 mb-10">
-          This is the dynamic page for <strong>{{ sdg.title }}</strong
-          >. Add details such as **Events, Targets, Actions, News, Photos**,
-          etc. (Sample Content)
+          <strong>{{ sdg.title }}</strong
+          >
         </p>
 
-        <!-- News Grid -->
-        <div v-if="info.length" class="grid lg:grid-cols-4 grid-cols-2 gap-4">
-          <div
-            v-for="(j, i) in info.slice(0, 4)"
-            :key="i"
-            class="w-full shadow-green-900 rounded bg-white text-green-900 shadow-2xl overflow-hidden transition-transform hover:scale-[1.02]"
-          >
-            <NuxtLink
-              :to="'/news-updates/' + j.id"
-              class="block relative overflow-hidden"
+         <div
+    
+        class="grid lg:grid-cols-4 grid-cols-2 justify-center lg:gap-x-8 gap-2 w-11/12 mx-auto"
+      >
+        <div
+          v-for="(j, i) in info"
+          :key="i"
+          class="w-full shadow-green-900 rounded bg-white text-green-900 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
+        >
+          <a class="relative overflow-hidden" :href="'news-updates/' + j.id">
+            <!-- Title -->
+            <div
+              class="lg:min-h-[70px] lg:px-3 lg:py-3 py-2 tracking-tighter leading-tight px-1 text-center font-semibold flex items-center justify-center lg:text-xs text-[9px]"
             >
+              {{ j.title }}
+            </div>
+            
+            <!-- SDG Badges -->
+           
+            <!-- Image -->
+            <div class="border-t-4 border-t-[#ffffff] w-full">
+              <img
+                v-if="j.files && j.files.length > 0"
+                  :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
+                class="w-full lg:h-[220px] transition-transform duration-500 hover:scale-110"
+                alt="News thumbnail"
+              />
               <div
-                class="lg:min-h-[70px] lg:px-3 lg:py-3 py-2 tracking-tighter leading-tight text-center font-semibold flex items-center justify-center text-[9px] lg:text-xs"
+                v-else
+                class="w-full lg:h-[220px] bg-gray-200 flex items-center justify-center text-gray-500"
               >
-                {{ j.title }}
+                <i class="fa fa-image text-4xl"></i>
               </div>
-              <div class="border-t-4 border-t-[#ffffff] w-full">
-                <img
-                  :src="j.thumbnails[0]?.url"
-                  class="w-full lg:h-[220px] object-cover transition-transform hover:scale-110"
-                />
+            </div>
+
+             <div v-if="getSdgBadges(j).length" class="px-2 pb-2">
+              <div class="flex flex-wrap gap-1 justify-center">
+                <div v-for="badge in getSdgBadges(j)" :key="badge.number" class="inline-flex items-center">
+                  <span 
+                    class="inline-flex items-center px-0.5 py-1 rounded-full text-[8px] font-medium bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
+                  >
+                    <i class="fas fa-leaf mr-1"></i>
+                    SDG {{ badge.number }}
+                  </span>
+                </div>
               </div>
-            </NuxtLink>
-          </div>
+            </div>
+
+          </a>
         </div>
+      </div>
 
         <p
           v-if="!info.length && !loading"
           class="text-center text-gray-400 mt-10"
         >
-          {{ errorMsg || "No news available." }}
+          {{ errorMsg || `No news available for ${sdg.title}.` }}
         </p>
       </main>
     </div>
