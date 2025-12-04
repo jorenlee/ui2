@@ -166,11 +166,30 @@ const openEditModal = async (item) => {
       files: response.files || []
     };
     
-    // Populate selectedSDGs based on existing filters
+    // Populate selectedSDGs based on existing filters using exact matching
     if (response.filters) {
       const filters = response.filters.toLowerCase();
       selectedSDGs.value = sdgOptions.value
-        .filter(sdg => filters.includes(sdg.value))
+        .filter(sdg => {
+          // Extract SDG number from value (e.g., "sdg1" -> "1")
+          const sdgNum = sdg.value.replace('sdg', '');
+          
+          // Check for exact SDG matches using word boundaries
+          const patterns = [
+            `\\bsdg${sdgNum}\\b`,
+            `\\bsdg ${sdgNum}\\b`,
+            `\\bsdg-${sdgNum}\\b`,
+            `\\bsdg_${sdgNum}\\b`,
+            `\\bgoal ${sdgNum}\\b`,
+            `\\bgoal${sdgNum}\\b`,
+            `\\bsdg${sdgNum.toString().padStart(2, '0')}\\b`
+          ];
+          
+          return patterns.some(pattern => {
+            const regex = new RegExp(pattern, 'i');
+            return regex.test(filters);
+          });
+        })
         .map(sdg => sdg.value);
     } else {
       selectedSDGs.value = [];
@@ -579,7 +598,7 @@ const handleImageLoad = (fileName) => {
             </div>
             <div class="mt-4">
               <label class="block text-sm font-medium mb-2">SDGs:</label>
-              <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded p-3">
+              <div class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto border rounded p-3">
                 <div v-for="sdg in sdgOptions" :key="sdg.value" class="flex items-center">
                   <input 
                     type="checkbox"

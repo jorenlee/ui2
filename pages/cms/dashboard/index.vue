@@ -19,8 +19,9 @@ const content = ref({
   files: [],                // ← ARRAY OF STRINGS e.g ['filename.jpg', filename.pdf, filename.mp4]
   logs: [
     {
+      personnel_fullname: userStore.user.name,
       personnel_designation: userStore.user.email,
-      personal_email: userStore.user.email,
+      personnel_email: userStore.user.email,
       remarks_title: "N/A",
       remarks_description: "N/A",
       timestamp: moment().valueOf(),
@@ -427,7 +428,7 @@ const logOut = () => {
             </div>
             <div class="mt-4">
               <label class="block text-sm font-medium mb-2">SDGs:</label>
-              <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded p-3">
+              <div class="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto border rounded p-3">
                 <div v-for="sdg in sdgOptions" :key="sdg.value" class="flex items-center">
                   <input 
                     type="checkbox"
