@@ -170,18 +170,21 @@ const sdgsWithRelatedCount = computed(() => {
       if (!item?.filters) return false;
       const filters = item.filters.toLowerCase();
       
-      // Check for various SDG formats based on your image
+      // Check for exact SDG matches using word boundaries
       const patterns = [
-        `sdg${sdgNumber}`,
-        `sdg ${sdgNumber}`, 
-        `sdg-${sdgNumber}`,
-        `sdg_${sdgNumber}`,
-        `goal ${sdgNumber}`,
-        `goal${sdgNumber}`,
-        `sdg${sdgNumber.toString().padStart(2, '0')}` // sdg01, sdg02, etc.
+        `\\bsdg${sdgNumber}\\b`,
+        `\\bsdg ${sdgNumber}\\b`, 
+        `\\bsdg-${sdgNumber}\\b`,
+        `\\bsdg_${sdgNumber}\\b`,
+        `\\bgoal ${sdgNumber}\\b`,
+        `\\bgoal${sdgNumber}\\b`,
+        `\\bsdg${sdgNumber.toString().padStart(2, '0')}\\b` // sdg01, sdg02, etc.
       ];
       
-      return patterns.some(pattern => filters.includes(pattern));
+      return patterns.some(pattern => {
+        const regex = new RegExp(pattern, 'i');
+        return regex.test(filters);
+      });
     }).length;
     
     return {

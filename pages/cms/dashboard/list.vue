@@ -27,6 +27,27 @@ const errorMsg = ref("")
 const isLoading = ref(false)
 const display = ref("desktop")
 
+
+const sdgOptions = ref([
+  { value: "sdg1", label: "SDG 1 - No Poverty" },
+  { value: "sdg2", label: "SDG 2 - Zero Hunger" },
+  { value: "sdg3", label: "SDG 3 - Good Health" },
+  { value: "sdg4", label: "SDG 4 - Quality Education" },
+  { value: "sdg5", label: "SDG 5 - Gender Equality" },
+  { value: "sdg6", label: "SDG 6 - Clean Water" },
+  { value: "sdg7", label: "SDG 7 - Affordable Energy" },
+  { value: "sdg8", label: "SDG 8 - Decent Work" },
+  { value: "sdg9", label: "SDG 9 - Industry Innovation" },
+  { value: "sdg10", label: "SDG 10 - Reduced Inequalities" },
+  { value: "sdg11", label: "SDG 11 - Sustainable Cities" },
+  { value: "sdg12", label: "SDG 12 - Responsible Consumption" },
+  { value: "sdg13", label: "SDG 13 - Climate Action" },
+  { value: "sdg14", label: "SDG 14 - Life Below Water" },
+  { value: "sdg15", label: "SDG 15 - Life on Land" },
+  { value: "sdg16", label: "SDG 16 - Peace and Justice" },
+  { value: "sdg17", label: "SDG 17 - Partnerships" }
+]);
+
 // Add toast system
 const toast = ref({ show: false, message: "", type: "success" });
 
@@ -53,6 +74,27 @@ const editSubmitting = ref(false);
 // Add these variables to your script setup
 const selectedFiles = ref([]);
 const uploadingFiles = ref(false);
+const selectedSDGs = ref([]);
+
+// Add method to update filters based on checkbox selection
+const updateFilters = () => {
+  // Get existing filters and clean them up
+  let existingFilters = editContent.value.filters || '';
+  
+  // Remove existing SDG entries from filters
+  const sdgValues = sdgOptions.value.map(sdg => sdg.value);
+  let cleanedFilters = existingFilters
+    .split(',')
+    .map(filter => filter.trim())
+    .filter(filter => !sdgValues.includes(filter))
+    .filter(filter => filter !== '');
+  
+  // Add selected SDGs
+  const allFilters = [...cleanedFilters, ...selectedSDGs.value];
+  
+  // Update the filters field
+  editContent.value.filters = allFilters.length > 0 ? allFilters.join(', ') : '';
+};
 
 onMounted(async () => {
   loading.value = true
@@ -123,6 +165,16 @@ const openEditModal = async (item) => {
       links: response.links || [],
       files: response.files || []
     };
+    
+    // Populate selectedSDGs based on existing filters
+    if (response.filters) {
+      const filters = response.filters.toLowerCase();
+      selectedSDGs.value = sdgOptions.value
+        .filter(sdg => filters.includes(sdg.value))
+        .map(sdg => sdg.value);
+    } else {
+      selectedSDGs.value = [];
+    }
   } catch (error) {
     console.error("Error fetching content:", error);
   } finally {
@@ -132,6 +184,7 @@ const openEditModal = async (item) => {
 
 const closeEditModal = () => {
   showEditModal.value = false;
+  selectedSDGs.value = [];
   editContent.value = {
     id: null,
     content_id: "",
@@ -503,12 +556,33 @@ const handleImageLoad = (fileName) => {
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-1">Filters</label>
-            <input 
-              v-model="editContent.filters" 
-              type="text" 
-              class="w-full border rounded px-3 py-2"
-            />
+            <div>
+              <label class="block text-sm font-medium mb-1">Filters</label>
+              <input 
+                v-model="editContent.filters" 
+                type="text" 
+                class="w-full border rounded px-3 py-2"
+                placeholder="Enter filters manually or use checkboxes below"
+              />
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-medium mb-2">SDGs:</label>
+              <div class="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto border rounded p-3">
+                <div v-for="sdg in sdgOptions" :key="sdg.value" class="flex items-center">
+                  <input 
+                    type="checkbox"
+                    :id="sdg.value"
+                    :value="sdg.value"
+                    v-model="selectedSDGs"
+                    @change="updateFilters"
+                    class="mr-2"
+                  />
+                  <label :for="sdg.value" class="text-xs cursor-pointer">
+                    {{ sdg.label }}
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div>
