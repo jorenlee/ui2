@@ -42,9 +42,22 @@ const getSdgBadges = (item) => {
   const filters = item.filters.toLowerCase();
   const badges = [];
   
-  // Check for SDG mentions
+  // Check for exact SDG mentions using word boundaries
   for (let i = 1; i <= 17; i++) {
-    if (filters.includes(`sdg${i}`) || filters.includes(`sdg ${i}`)) {
+    const patterns = [
+      `\\bsdg${i}\\b`,
+      `\\bsdg ${i}\\b`,
+      `\\bsdg-${i}\\b`,
+      `\\bsdg_${i}\\b`,
+      `\\bgoal ${i}\\b`,
+      `\\bgoal${i}\\b`,
+      `\\bsdg${i.toString().padStart(2, '0')}\\b`
+    ];
+    
+    if (patterns.some(pattern => {
+      const regex = new RegExp(pattern, 'i');
+      return regex.test(filters);
+    })) {
       badges.push({ number: i });
     }
   }
