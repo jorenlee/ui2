@@ -265,22 +265,74 @@ const logOut = () => {
 <template>
 <div class="flex">
   <!-- SIDEBAR -->
-  <div v-show="toggleSideBarMenu" class="bg-gray-100 w-3/12 p-3">
-    <div class="text-center mb-5">
-      <img
-        src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/LSU_Seal.PNG"
-        class="w-20 mx-auto"
-      />
-      <h1 class="font-bold text-green-800 text-2xl mt-3">Dashboard</h1>
-      <p class="text-green-900 text-sm mt-1">{{ userStore.user.email }}</p>
-    </div>
+<div
+        class="pb-3 lg:w-3/12 bg-gray-100 w-full flex overflow-hidden"
+        v-show="toggleSideBarMenu"
+      >
+        <div class="w-full">
+          <div
+            class="flex items-center justify-center text-white bg-green-900 lg:py-[16px] py-[8px] sta"
+          >
+            <div class="flex items-center w-full px-2">
+              <i class="fa fa-user mx-2" aria-hidden="true"></i>
+              <h1 class="text-sm">
+                {{ userStore.user.email }}
+              </h1>
+            </div>
 
-    <div class="grid gap-2">
-      <a href="/cms/dashboard" class="menu">Content Form</a>
-      <a href="/cms/dashboard/list" class="menu">All Contents</a>
-      <a href="/" class="menu">LSU HOME PAGE</a>
-    </div>
-  </div>
+            <div
+              @click="toggleSideBarMenu = !toggleSideBarMenu"
+              class="w-10 px-1.5 lg:hidden flex"
+            >
+              <i
+                class="fa text-3xl text-white"
+                :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'"
+                aria-hidden="true"
+              ></i>
+            </div>
+          </div>
+
+          <div class="">
+            <div class="w-fit mx-auto mt-5 mb-3">
+              <img
+                src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/LSU_Seal.PNG"
+                class="lg:w-24 w-20 mx-auto"
+              />
+            </div>
+
+            <div class="text-center">
+              <h1 class="font-bold text-green-800 text-2xl">Dashboard</h1>
+            </div>
+
+            <div class="mx-auto mt-10 mb-5 grid grid-cols-1">
+              <a
+                href="/cms/dashboard"
+                class="text-xs mx-auto mb-2 w-full uppercase whitespace-nowrap px-5 py-1 font-bold text-left text-black hover:bg-black hover:text-white"
+              >
+                <i class="fa fa-list mr-3" aria-hidden="true"></i>
+                 Content Form
+              </a>
+
+              <a
+                href="/cms/dashboard/list"
+                class="text-xs mx-auto mb-2 w-full uppercase whitespace-nowrap px-5 py-1 font-bold text-left text-black hover:bg-black hover:text-white"
+              >
+               <i class="fa fa-list-alt mr-3" aria-hidden="true"></i>
+              
+                 All Contents Lists
+              </a>
+
+              <a
+                href="/"
+                class="text-xs mx-auto mb-2 w-full uppercase whitespace-nowrap px-5 py-1 font-bold text-left text-green-900 hover:bg-green-900 hover:text-white"
+              >
+                <i class="fa fa-globe mr-3" aria-hidden="true"></i>
+                LSU HOME PAGE
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
 
   <!-- MAIN -->
   <div class="w-full">
