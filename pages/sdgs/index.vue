@@ -1,4 +1,11 @@
 <script setup>
+import { ref, onMounted, computed } from "vue";
+import { useUserStore } from "@/stores/user";
+
+const userStore = useUserStore();
+const endpoint = ref(userStore.mainDevServer);
+const cmsData = ref([]);
+
 const sdgsCategory = [
   {
     title: "No Poverty",
@@ -155,8 +162,57 @@ const sdgsCategory = [
   },
 ];
 
+// Computed property to count related news for each SDG
+const sdgsWithRelatedCount = computed(() => {
+  return sdgsCategory.map((sdg, index) => {
+    const sdgNumber = index + 1;
+    const relatedCount = cmsData.value.filter(item => {
+      if (!item?.filters) return false;
+      const filters = item.filters.toLowerCase();
+      
+      // Check for various SDG formats based on your image
+      const patterns = [
+        `sdg${sdgNumber}`,
+        `sdg ${sdgNumber}`, 
+        `sdg-${sdgNumber}`,
+        `sdg_${sdgNumber}`,
+        `goal ${sdgNumber}`,
+        `goal${sdgNumber}`,
+        `sdg${sdgNumber.toString().padStart(2, '0')}` // sdg01, sdg02, etc.
+      ];
+      
+      return patterns.some(pattern => filters.includes(pattern));
+    }).length;
+    
+    return {
+      ...sdg,
+      related: relatedCount
+    };
+  });
+});
+
+
 
 const categorySelection = ref("Economy");
+
+onMounted(async () => {
+  try {
+    const res = await $fetch(endpoint.value + "/api/cms/content/list/");
+    cmsData.value = Array.isArray(res) ? res : [];
+    console.log("CMS Data loaded:", cmsData.value.length, "items");
+    
+    console.log('sdgsWithRelatedCount',sdgsWithRelatedCount)
+
+
+    // Debug: Log sample filters to see the data structure
+    if (cmsData.value.length > 0) {
+      console.log("Sample filters:", cmsData.value.slice(0, 3).map(item => item.filters));
+    }
+  } catch (error) {
+    console.error("Error fetching CMS data:", error);
+    cmsData.value = [];
+  }
+});
 </script>
 
 <template>
@@ -325,7 +381,7 @@ const categorySelection = ref("Economy");
     <div class="lg:flex justify-center px-2 lg:px-5 mx-auto gap-x-2 w-fit ">
       <ul class="grid lg:grid-cols-6 grid-cols-3 gap-y-5 gap-x-2">
         <li
-          v-for="(j, i) in sdgsCategory"
+          v-for="(j, i) in sdgsWithRelatedCount"
           :key="i"
           class="flip-card w-[130px] h-[130px] lg:mx-3 mx-auto"
           :class="j.category === categorySelection ? '':'hidden'"
@@ -360,16 +416,9 @@ const categorySelection = ref("Economy");
                   class="flex items-center justify-center text-white gap-x-2"
                 >
                   <p class="text-sm font-semibold">
-                    <span class="text-2xl">{{ j.events || "0" }}</span>
-                    <span class="text-xs flex">Event</span>
-                  </p>
-                  <p class="text-sm font-semibold">
-                    <span class="text-2xl">{{ j.targets || "0" }}</span>
-                    <span class="text-xs flex">Target</span>
-                  </p>
-                  <p class="text-sm font-semibold">
-                    <span class="text-2xl">{{ j.actions || "0" }}</span>
-                    <span class="text-xs flex">Actions</span>
+                    <!-- Counter per SDGS -->
+                    <span class="text-2xl">{{ j.related || 0 }}</span>
+                    <span class="text-xs flex">Related</span>
                   </p>
                 </div>
 
