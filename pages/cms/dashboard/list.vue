@@ -476,17 +476,18 @@ const handleImageLoad = (fileName) => {
           </div>
         </div>
 
-        <div
+
+          <!-- filters -->
+                   <!-- <div
           class="bg-white border rounded-md p-2 text-xs flex items-end gap-2 mt-20 mx-5"
         >
-          <!-- filters -->
-        </div>
+        </div> -->
 
-        <div class="">
-          <div class="w-full lg:p-5 px-2 py-2">
+        <div class="mt-16">
+          <div class="m-5 py-2">
             <div v-show="tableDisplay">
               <div
-                class="w-full shadow bg-gray-100 text-green-900 font-bold px-2 text-center mb-3 py-2 text-xs uppercase"
+                class="w-full shadow bg-gray-100 text-green-900 font-bold text-center py-2 text-xs uppercase"
               >
                 All Contents Lists
               </div>
@@ -519,13 +520,15 @@ const handleImageLoad = (fileName) => {
                   <div v-else>
                     <div class="gap-4" v-if="info.length > 0">
                       <ul>
-                        <li v-for="(j,i) in info" :key="j.id" class="flex w-full border-b py-2">
-                          <span class="w-full"> {{ j.content_id }}</span>
+                        <li v-for="(j,i) in info" :key="j.id" class="flex items-center w-full border-b py-1">
+                          <span class="lg:w-3/12 w-full whitespace-nowrap"> {{ j.content_id }}</span>
+                          <span class="lg:w-6/12 w-full whitespace-nowrap px-10"> {{ j.authors }}</span>
                           <span class="w-full"> {{ j.title }}</span>
+                          
                           <span class="w-fit">
                             <button 
                               @click="openEditModal(j)" 
-                              class="text-blue-600 hover:underline px-2 py-1"
+                              class="text-white bg-yellow-500 hover:text-yellow-500 hover:bg-white border border-yellow-500 px-2 py-1 hover:underline flex uppercase gap-x-2 rounded-lg"
                             >
                               <i class="fa fa-edit"></i> edit
                             </button>

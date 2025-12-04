@@ -207,10 +207,10 @@ const prevImage = () => {
               {{ moment(item.date || item.created_at).format("MMMM DD, YYYY") }}
             </span>
 
-            <!-- Content ID Badge -->
-            <span v-if="item.content_id" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+     
+            <span v-if="item.authors" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
               <i class="fas fa-id-card mr-1"></i>
-              {{ item.content_id }}
+              {{ item.authors }}
             </span>
           </div>
 
