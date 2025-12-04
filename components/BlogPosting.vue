@@ -76,9 +76,17 @@ onMounted(async () => {
             <!-- Image -->
             <div class="border-t-4 border-t-[#ffffff] w-full">
               <img
-                :src="j.thumbnails[0].url"
+                v-if="j.files && j.files.length > 0"
+                  :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
                 class="w-full lg:h-[220px] transition-transform duration-500 hover:scale-110"
+                alt="News thumbnail"
               />
+              <div
+                v-else
+                class="w-full lg:h-[220px] bg-gray-200 flex items-center justify-center text-gray-500"
+              >
+                <i class="fa fa-image text-4xl"></i>
+              </div>
             </div>
           </a>
         </div>
