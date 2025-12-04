@@ -1,39 +1,35 @@
 <script setup>
-  import {
-    useUserStore
-  } from "@/stores/user";
-  import {
-    useTokenClient
-  } from "vue3-google-signin";
-  const userStore = useUserStore();
-  const router = useRouter();
-  const handleOnError = (errorResponse) => {
-    // console.log("Error: ", errorResponse);
-  };
-  const handleOnSuccess = async (response) => {
-    try {
-      const userInfo = await $fetch("https://www.googleapis.com/oauth2/v1/userinfo?access_token=" + response.access_token);
-      
-      if (!userInfo?.email) {
-        console.error("No email found in response:", userInfo);
-        return;
-      }
-      
-      userStore.setToken(response.access_token, userInfo.email);
-      console.log("User info:", userInfo);
-      router.push("/cms/dashboard");
-    } catch (error) {
-      console.error("Login error:", error);
+import { useUserStore } from "@/stores/user";
+import { useTokenClient } from "vue3-google-signin";
+
+const userStore = useUserStore();
+const router = useRouter();
+
+const handleOnError = (errorResponse) => {
+  console.error("Google Login Error:", errorResponse);
+};
+
+const handleOnSuccess = async (response) => {
+  try {
+    const userInfo = await $fetch("https://www.googleapis.com/oauth2/v1/userinfo?access_token=" + response.access_token);
+    
+    if (!userInfo?.email) {
+      console.error("No email found in response:", userInfo);
+      return;
     }
-  };
-  const {
-    isReady,
-    login
-  } = useTokenClient({
-    onSuccess: handleOnSuccess,
-    onError: handleOnError,
-    // other options
-  });
+    
+    userStore.setToken(response.access_token, userInfo.email);
+    console.log("User info:", userInfo);
+    router.push("/cms/dashboard");
+  } catch (error) {
+    console.error("Login error:", error);
+  }
+};
+
+const { isReady, login } = useTokenClient({
+  onSuccess: handleOnSuccess,
+  onError: handleOnError,
+});
 </script>
 <template>
   <div class="lg:bg-gray-50">

@@ -1,31 +1,70 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
 
 const router = useRouter();
+const route = useRoute();
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
 
-// ---------------- CONTENT MODEL ----------------
+// Add loading state
+const loading = ref(true);
+const loadError = ref("");
+
+// Initialize content with empty values first
 const content = ref({
   content_id: "CMS" + moment().valueOf(),
   title: "",
   filters: "",
   descriptions: "",
   date: "",
-  links: [],                // ← ARRAY OF STRINGS
-  files: [],                // ← ARRAY OF STRINGS e.g ['filename.jpg', filename.pdf, filename.mp4]
+  links: [],
+  files: [],
   logs: [
     {
       personnel_designation: userStore.user.email,
       personal_email: userStore.user.email,
-      remarks_title: "N/A",
-      remarks_description: "N/A",
+      remarks_title: "Edit",
+      remarks_description: "Content updated",
       timestamp: moment().valueOf(),
     }
   ]
+});
+
+// Fetch existing content in onMounted instead
+onMounted(async () => {
+  try {
+    const response = await $fetch(`${endpoint.value}/api/cms/content/${route.params.id}/`);
+    
+    if (response) {
+      content.value = {
+        content_id: response.content_id || "CMS" + moment().valueOf(),
+        title: response.title || "",
+        filters: response.filters || "",
+        descriptions: response.descriptions || "",
+        date: response.date || "",
+        links: response.links || [],
+        files: response.files || [],
+        logs: response.logs || [
+          {
+            personnel_designation: userStore.user.email,
+            personal_email: userStore.user.email,
+            remarks_title: "Edit",
+            remarks_description: "Content updated",
+            timestamp: moment().valueOf(),
+          }
+        ]
+      };
+    }
+  } catch (error) {
+    console.error("Error fetching content:", error);
+    loadError.value = "Failed to load content";
+  } finally {
+    loading.value = false;
+  }
+
 });
 
 // ---------------- HELPERS ----------------
@@ -86,10 +125,12 @@ const validateFile = (file) => {
 };
 
 const detectType = (file) => {
-  const t = file.type || "";
-  if (t.startsWith("image")) return "image";
-  if (t.startsWith("video")) return "video";
-  if (t === "application/pdf") return "pdf";
+  const fileName = file.name || "";
+  const ext = fileName.toLowerCase().split('.').pop();
+  
+  if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) return "image";
+  if (['mp4', 'webm', 'ogg', 'avi', 'mov'].includes(ext)) return "video";
+  if (ext === 'pdf') return "pdf";
   return "other";
 };
 
@@ -156,7 +197,10 @@ const handleFileSelect = async (e) => {
     }
   }
 
-  e.target.value = "";
+  // Clear the input value safely
+  if (e.target) {
+    e.target.value = "";
+  }
 };
 
 // ---------------- REMOVE FILE ----------------
@@ -182,6 +226,28 @@ const sortedSelectedFiles = computed(() => {
   );
 });
 
+// ---------------- FILE TYPE HELPERS ----------------
+const isImageFile = (fileName) => {
+  if (!fileName) return false;
+  const ext = fileName.toLowerCase().split('.').pop();
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+};
+
+const isPdfFile = (fileName) => {
+  if (!fileName) return false;
+  return fileName.toLowerCase().endsWith('.pdf');
+};
+
+const isVideoFile = (fileName) => {
+  if (!fileName) return false;
+  const ext = fileName.toLowerCase().split('.').pop();
+  return ['mp4', 'webm', 'ogg', 'avi', 'mov'].includes(ext);
+};
+
+const removeExistingFile = (index) => {
+  content.value.files.splice(index, 1);
+};
+
 // ---------------- SUBMIT CONTENT ----------------
 const submitting = ref(false);
 const submitMessage = ref("");
@@ -190,20 +256,20 @@ const submitContent = async () => {
   submitting.value = true;
 
   try {
-    await $fetch(`${endpoint.value}/api/cms/content/create/`, {
-      method: "POST",
+    await $fetch(`${endpoint.value}/api/cms/content/${route.params.id}/edit/`, {
+      method: "PUT",
       body: {
         ...content.value,
         links: [...content.value.links],
       },
     });
 
-    submitMessage.value = "Content successfully created!";
+    submitMessage.value = "Content successfully updated!";
     selectedFiles.value = [];
     router.push("/cms/dashboard/list");
   } catch (err) {
     console.error(err);
-    submitMessage.value = "Error submitting content.";
+    submitMessage.value = "Error updating content.";
   }
 
   submitting.value = false;
@@ -211,7 +277,7 @@ const submitContent = async () => {
 
 // ---------------- AUTH ----------------
 onMounted(() => {
-  // setTimeout(() => {
+  setTimeout(() => {
     const allowedEmails = [
       "jorenleeluna24@gmail.com",
       "npc@lsu.edu.ph",
@@ -244,12 +310,11 @@ onMounted(() => {
       "xie.medrano@lsu.edu.ph"
     ];
 
-    // if (!userStore.user.isAuthenticated || !allowedEmails.includes(userStore.user.email)) {
-    //   router.push("/unauthorized");
-    // }
-  // }, 10000); // Wait 3 seconds for authentication to load
+    if (!userStore.user.isAuthenticated || !allowedEmails.includes(userStore.user.email)) {
+      router.push("/unauthorized");
+    }
+  }, 10000); // Wait 3 seconds for authentication to load
 });
-
 // ---------------- LINKS (ARRAY OF STRINGS) ----------------
 const addItem = () => content.value.links.push("");
 const removeItem = (i) => content.value.links.splice(i, 1);
@@ -306,9 +371,17 @@ const logOut = () => {
 
     <div class="p-3 lg:p-5">
       <div class="bg-white shadow rounded p-4">
-        <h1 class="text-lg font-bold mb-4">Create New Content</h1>
+        <h1 class="text-lg font-bold mb-4">Edit Content</h1>
 
-        <div class="grid gap-3 text-sm">
+        <div v-if="loading" class="text-center py-4">
+          <p>Loading content...</p>
+        </div>
+
+        <div v-else-if="loadError" class="text-center py-4 text-red-600">
+          <p>{{ loadError }}</p>
+        </div>
+
+        <div v-else class="grid gap-3 text-sm">
           <!-- TITLE -->
           <label>
             <p>Title</p>
@@ -354,14 +427,68 @@ const logOut = () => {
             </div>
           </div>
 
+          <!-- EXISTING FILES PREVIEW -->
+          <div v-if="content.files && content.files.length" class="mt-4">
+            <p class="font-bold mb-2">Existing Files</p>
+            <div class="space-y-3">
+              <div
+                v-for="(fileName, i) in content.files"
+                :key="i"
+                class="border p-2 rounded bg-gray-50 relative"
+              >
+                <p class="text-xs font-semibold mb-2">{{ fileName }}</p>
+                
+                <!-- Image preview for jpg, png files -->
+                <img
+                  v-if="isImageFile(fileName)"
+                  :src="`${endpoint}/media/cms/files/${fileName}`"
+                  class="w-full h-60 object-contain rounded border"
+                  :alt="fileName"
+                />
+                
+                <!-- PDF preview -->
+                <div v-else-if="isPdfFile(fileName)" class="w-full h-40 bg-gray-100 rounded flex items-center justify-center">
+                  <div class="text-center">
+                    <i class="fa fa-file-pdf-o text-red-500 text-3xl mb-2"></i>
+                    <p class="text-xs">PDF File</p>
+                    <a :href="`${endpoint}/media/cms/files/${fileName}`" target="_blank" class="text-blue-500 text-xs underline">View PDF</a>
+                  </div>
+                </div>
+                
+                <!-- Video preview -->
+                <div v-else-if="isVideoFile(fileName)" class="w-full h-40 bg-gray-100 rounded flex items-center justify-center">
+                  <div class="text-center">
+                    <i class="fa fa-file-video-o text-blue-500 text-3xl mb-2"></i>
+                    <p class="text-xs">Video File</p>
+                    <a :href="`${endpoint}/media/cms/files/${fileName}`" target="_blank" class="text-blue-500 text-xs underline">View Video</a>
+                  </div>
+                </div>
+                
+                <!-- Generic file icon for other files -->
+                <div v-else class="flex items-center justify-center h-20 bg-gray-200 rounded">
+                  <i class="fa fa-file text-gray-500 text-2xl"></i>
+                </div>
+
+                <!-- Remove existing file button -->
+                <button
+                  @click="removeExistingFile(i)"
+                  class="absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded hover:bg-red-700"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- FILE INPUT -->
           <div>
-            <p class="font-bold">Select Files (Image, Video, PDF)</p>
+            <p class="font-bold">Add New Files (Image, Video, PDF)</p>
             <input type="file" multiple @change="handleFileSelect" class="input" />
           </div>
 
-          <!-- PREVIEW -->
-          <div class="mt-4 space-y-3">
+          <!-- NEW FILES PREVIEW -->
+          <div v-if="sortedSelectedFiles.length" class="mt-4 space-y-3">
+            <p class="font-bold">New Files to Upload</p>
             <div
               v-for="(file, i) in sortedSelectedFiles"
               :key="i"
@@ -370,37 +497,41 @@ const logOut = () => {
               <p class="text-xs font-semibold">{{ file.name }}</p>
 
               <img
-                v-if="file.type === 'image'"
+                v-if="isImageFile(file.name)"
                 :src="file.preview"
                 class="w-full h-40 object-cover rounded mt-2"
+                :alt="file.name"
               />
               <video
-                v-if="file.type === 'video'"
+                v-else-if="isVideoFile(file.name)"
                 :src="file.preview"
                 controls
                 class="w-full h-40 rounded mt-2"
               ></video>
-              <iframe
-                v-if="file.type === 'pdf'"
-                :src="file.preview"
-                class="w-full h-40 rounded mt-2"
-              ></iframe>
+              <div
+                v-else-if="isPdfFile(file.name)"
+                class="w-full h-40 bg-gray-100 rounded mt-2 flex items-center justify-center"
+              >
+                <div class="text-center">
+                  <i class="fa fa-file-pdf-o text-red-500 text-3xl mb-2"></i>
+                  <p class="text-xs">PDF File</p>
+                </div>
+              </div>
 
               <div
-                v-if="file.type === 'other'"
-                class="text-xs text-gray-600 mt-2"
+                v-else
+                class="text-xs text-gray-600 mt-2 flex items-center justify-center h-20 bg-gray-100 rounded"
               >
-                File ready to upload.
+                <div class="text-center">
+                  <i class="fa fa-file text-gray-500 text-2xl mb-1"></i>
+                  <p>File ready to upload</p>
+                </div>
               </div>
 
               <div class="mt-1 text-xs">
                 <span v-if="file.uploading">Uploading...</span>
-                <span v-else-if="file.uploaded" class="text-green-700"
-                  >Uploaded ✔</span
-                >
-                <span v-else-if="file.error" class="text-red-600">{{
-                  file.error
-                }}</span>
+                <span v-else-if="file.uploaded" class="text-green-700">Uploaded ✔</span>
+                <span v-else-if="file.error" class="text-red-600">{{ file.error }}</span>
               </div>
 
               <button
@@ -418,7 +549,7 @@ const logOut = () => {
             :disabled="submitting"
             class="w-full bg-green-800 text-white py-2 rounded mt-4 font-bold"
           >
-            {{ submitting ? "Saving..." : "Submit Content" }}
+            {{ submitting ? "Saving..." : "Update Content" }}
           </button>
 
           <p class="text-center text-green-700">{{ submitMessage }}</p>

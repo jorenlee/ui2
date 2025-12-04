@@ -14,7 +14,7 @@ const endpoint = ref(userStore.mainDevServer);
 
 onMounted(async () => {
   try {
-    const res = await $fetch(endpoint.value + "/api/cms/list/");
+    const res = await $fetch(endpoint.value + "/api/cms/content/list/");
     // console.log("res", res);
     info.value = Array.isArray(res) ? res : [];
   } catch (error) {

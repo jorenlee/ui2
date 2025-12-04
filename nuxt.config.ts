@@ -47,9 +47,14 @@ export default defineNuxtConfig({
       },
       template: {
         compilerOptions: {
-          isCustomElement: (tag) => false
+          isCustomElement: (tag) => false,
+          // suppressHydrationMismatch: true
         }
       }
+    },
+    // Add this to suppress warnings
+    define: {
+      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false
     },
     build: {
       rollupOptions: {

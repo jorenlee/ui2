@@ -14,7 +14,7 @@ const endpoint = ref(userStore.mainDevServer);
 
 onMounted(async () => {
   try {
-    const res = await $fetch(endpoint.value + "/api/cms/list/");
+    const res = await $fetch(endpoint.value + "/api/cms/content/list/");
     // console.log("res", res);
     info.value = Array.isArray(res) ? res : [];
   } catch (error) {
@@ -143,9 +143,11 @@ onMounted(async () => {
                 <!-- Image -->
                 <div class="border-t-4 border-t-[#ffffff] px-2">
                   <img
-                    :src="j.thumbnails[0].url"
+                    :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
                     class="w-[350px] h-[250px] transition-transform duration-500 hover:scale-110 object-contain"
                   />
+
+
                 </div>
               </a>
             </div>
