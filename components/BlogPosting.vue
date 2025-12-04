@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, onMounted, nextTick, computed } from "vue";
 import { useUserStore } from "@/stores/user";
 import _ from "lodash";
 import moment from "moment";
@@ -11,6 +11,46 @@ const errorMsg = ref("");
 
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
+
+// Computed property to filter and sort highlighted news
+const highlightedNews = computed(() => {
+  return info.value
+    .filter(item => {
+      // Only show items that have "highlight" in the filters field
+      if (!item?.filters) return false;
+      return item.filters.toLowerCase().includes('highlight');
+    })
+    .sort((a, b) => {
+      // Sort by date field (latest to oldest)
+      const dateA = moment(a.date);
+      const dateB = moment(b.date);
+      
+      // Handle invalid dates by putting them at the end
+      if (!dateA.isValid() && !dateB.isValid()) return 0;
+      if (!dateA.isValid()) return 1;
+      if (!dateB.isValid()) return -1;
+      
+      // Sort latest to oldest (descending)
+      return dateB.valueOf() - dateA.valueOf();
+    });
+});
+
+// Add computed property for SDG badges
+const getSdgBadges = (item) => {
+  if (!item?.filters) return [];
+  
+  const filters = item.filters.toLowerCase();
+  const badges = [];
+  
+  // Check for SDG mentions
+  for (let i = 1; i <= 17; i++) {
+    if (filters.includes(`sdg${i}`) || filters.includes(`sdg ${i}`)) {
+      badges.push({ number: i });
+    }
+  }
+  
+  return badges;
+};
 
 onMounted(async () => {
   try {
@@ -58,11 +98,11 @@ onMounted(async () => {
       </div>
 
       <div
-        v-if="info.length"
+        v-if="highlightedNews.length"
         class="grid lg:grid-cols-4 grid-cols-2 justify-center lg:gap-x-8 gap-2 w-11/12 mx-auto"
       >
         <div
-          v-for="(j, i) in info.slice(0, 4)"
+          v-for="(j, i) in highlightedNews.slice(0, 4)"
           :key="i"
           class="w-full shadow-green-900 rounded bg-white text-green-900 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
         >
@@ -73,6 +113,9 @@ onMounted(async () => {
             >
               {{ j.title }}
             </div>
+            
+            <!-- SDG Badges -->
+           
             <!-- Image -->
             <div class="border-t-4 border-t-[#ffffff] w-full">
               <img
@@ -88,6 +131,20 @@ onMounted(async () => {
                 <i class="fa fa-image text-4xl"></i>
               </div>
             </div>
+
+             <div v-if="getSdgBadges(j).length" class="px-2 pb-2">
+              <div class="flex flex-wrap gap-1 justify-center">
+                <div v-for="badge in getSdgBadges(j)" :key="badge.number" class="inline-flex items-center">
+                  <span 
+                    class="inline-flex items-center px-0.5 py-1 rounded-full text-[8px] font-medium bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
+                  >
+                    <i class="fas fa-leaf mr-1"></i>
+                    SDG {{ badge.number }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </a>
         </div>
       </div>
@@ -95,7 +152,7 @@ onMounted(async () => {
       <!-- Empty State -->
       <div v-else class="text-gray-400 py-10 w-11/12 mx-auto">No news posted yet.</div>
 
-      <div class="w-11/12 mx-auto lg:mt-10 mt-5" v-if="info.length">
+      <div class="w-11/12 mx-auto lg:mt-10 mt-5" v-if="highlightedNews.length">
         <a
           href="/news-updates"
           class="ml-auto mr-0 block w-fit whitespace-nowrap text-white text-lg rounded-xl mt-30 italic hover:font-bold hover:text-xl"

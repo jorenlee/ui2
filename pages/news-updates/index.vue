@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick } from "vue";
+import { ref, onMounted, nextTick, computed } from "vue";
 import { useUserStore } from "@/stores/user";
 import _ from "lodash";
 import moment from "moment";
@@ -9,8 +9,117 @@ const info = ref([]);
 const loading = ref(true);
 const errorMsg = ref("");
 
+// Filter states
+const selectedSDG = ref("");
+const selectedYear = ref("");
+const selectedMonth = ref("");
+
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
+
+// SDG options for filter
+const sdgOptions = ref([
+  { value: "sdg1", label: "SDG 1 - No Poverty" },
+  { value: "sdg2", label: "SDG 2 - Zero Hunger" },
+  { value: "sdg3", label: "SDG 3 - Good Health" },
+  { value: "sdg4", label: "SDG 4 - Quality Education" },
+  { value: "sdg5", label: "SDG 5 - Gender Equality" },
+  { value: "sdg6", label: "SDG 6 - Clean Water" },
+  { value: "sdg7", label: "SDG 7 - Affordable Energy" },
+  { value: "sdg8", label: "SDG 8 - Decent Work" },
+  { value: "sdg9", label: "SDG 9 - Industry Innovation" },
+  { value: "sdg10", label: "SDG 10 - Reduced Inequalities" },
+  { value: "sdg11", label: "SDG 11 - Sustainable Cities" },
+  { value: "sdg12", label: "SDG 12 - Responsible Consumption" },
+  { value: "sdg13", label: "SDG 13 - Climate Action" },
+  { value: "sdg14", label: "SDG 14 - Life Below Water" },
+  { value: "sdg15", label: "SDG 15 - Life on Land" },
+  { value: "sdg16", label: "SDG 16 - Peace and Justice" },
+  { value: "sdg17", label: "SDG 17 - Partnerships" }
+]);
+
+// Get available years and months from data
+const availableYears = computed(() => {
+  const years = info.value
+    .filter(item => item.date) // Only items with date field
+    .map(item => moment(item.date).year());
+  return [...new Set(years)].sort((a, b) => b - a);
+});
+
+const availableMonths = computed(() => {
+  if (!selectedYear.value) return [];
+  const months = info.value
+    .filter(item => item.date && moment(item.date).year() === parseInt(selectedYear.value))
+    .map(item => moment(item.date).month());
+  return [...new Set(months)].sort((a, b) => a - b);
+});
+
+// Filtered info based on selected filters
+const filteredInfo = computed(() => {
+  let filtered = info.value;
+
+  // Filter by SDG
+  if (selectedSDG.value) {
+    filtered = filtered.filter(item => {
+      if (!item.filters) return false;
+      return item.filters.toLowerCase().includes(selectedSDG.value);
+    });
+  }
+
+  // Filter by year (using date field)
+  if (selectedYear.value) {
+    filtered = filtered.filter(item => {
+      if (!item.date) return false;
+      return moment(item.date).year() === parseInt(selectedYear.value);
+    });
+  }
+
+  // Filter by month (using date field)
+  if (selectedMonth.value) {
+    filtered = filtered.filter(item => {
+      if (!item.date) return false;
+      return moment(item.date).month() === parseInt(selectedMonth.value);
+    });
+  }
+
+  // Sort by date field (latest to oldest)
+  return filtered.sort((a, b) => {
+    const dateA = moment(a.date);
+    const dateB = moment(b.date);
+    
+    // Handle invalid dates by putting them at the end
+    if (!dateA.isValid() && !dateB.isValid()) return 0;
+    if (!dateA.isValid()) return 1;
+    if (!dateB.isValid()) return -1;
+    
+    // Sort latest to oldest (descending)
+    return dateB.valueOf() - dateA.valueOf();
+  });
+});
+
+// Clear filters
+const clearFilters = () => {
+  selectedSDG.value = "";
+  selectedYear.value = "";
+  selectedMonth.value = "";
+};
+
+// Add computed property for SDG badges
+const getSdgBadges = (item) => {
+  if (!item?.filters) return [];
+  
+  const filters = item.filters.toLowerCase();
+  const badges = [];
+  
+  // Check for SDG mentions
+  for (let i = 1; i <= 17; i++) {
+    if (filters.includes(`sdg${i}`) || filters.includes(`sdg ${i}`)) {
+      badges.push({ number: i });
+    }
+  }
+  
+  return badges;
+};
 
 onMounted(async () => {
   try {
@@ -95,60 +204,126 @@ onMounted(async () => {
 
         <!-- Content -->
         <div class="relative z-10 lg:px-10 mx-auto">
-          <div class="flex justify-between">
-            <div class="w-fit mx-auto">
-              <!-- Title -->
+          <!-- Filters Section -->
+          <div class="bg-white rounded-lg shadow-sm p-4 mb-6 w-11/12 mx-auto">
+            <h3 class="text-lg font-semibold text-green-800 mb-4">Filter News & Updates</h3>
+            
+            <div class="grid lg:grid-cols-4 grid-cols-1 gap-4">
+             
 
-              <!-- <p class="text-gray-400 text-[10px] border-t w-fit mx-auto py-1 mt-2">
-            A.Y 2025 to 2026 First Semester
-          </p> -->
+              <!-- Month Filter -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Month</label>
+                <select 
+                  v-model="selectedMonth" 
+                  :disabled="!selectedYear"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm disabled:bg-gray-100"
+                >
+                  <option value="">All Months</option>
+                  <option v-for="month in availableMonths" :key="month" :value="month">
+                    {{ moment().month(month).format('MMMM') }}
+                  </option>
+                </select>
+              </div>
+
+
+              
+              <!-- Year Filter -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Year</label>
+                <select 
+                  v-model="selectedYear" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                >
+                  <option value="">All Years</option>
+                  <option v-for="year in availableYears" :key="year" :value="year">
+                    {{ year }}
+                  </option>
+                </select>
+              </div>
+
+
+               <!-- SDG Filter -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Filter by SDG</label>
+                <select 
+                  v-model="selectedSDG" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                >
+                  <option value="">All SDGs</option>
+                  <option v-for="sdg in sdgOptions" :key="sdg.value" :value="sdg.value">
+                    {{ sdg.label }}
+                  </option>
+                </select>
+              </div>
+
+
+              <!-- Clear Filters Button -->
+              <div class="flex items-end">
+                <button 
+                  @click="clearFilters"
+                  class="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
+                >
+                  Clear Filters
+                </button>
+              </div>
             </div>
-            <!-- <div class="">
-          <div class="flex items-center justify-center space-x-3 lg:pt-3 pt-5">
-       
-            <div
-              class="w-0 h-0 border-t-8 border-b-8 border-r-8 border-t-transparent border-b-transparent border-r-white"
-            ></div>
 
-            <div
-              class="w-0 h-0 border-t-8 border-b-8 border-l-8 border-t-transparent border-b-transparent border-l-white"
-            ></div>
+            <!-- Results Count -->
+            <div class="mt-4 text-sm text-gray-600">
+              Showing {{ filteredInfo.length }} of {{ info.length }} news items
+            </div>
           </div>
-        </div> -->
-          </div>
-          <!-- <p class="text-gray-300 text-sm lg:text-base mb-6">
-      Read about the latest DLSU initiatives, achievements, and developments.
-    </p> -->
 
           <!-- News Cards -->
           <div
-            v-if="info.length"
-            class="lg:grid lg:grid-cols-4 justify-center lg:gap-3"
+            v-if="filteredInfo.length"
+            class="grid lg:grid-cols-4 grid-cols-2 justify-center lg:gap-x-8 gap-2 w-11/12 mx-auto"
           >
             <div
-              v-for="(j, i) in info"
+              v-for="(j, i) in filteredInfo"
               :key="i"
-              class="w-full shadow-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
+              class="w-full shadow-green-900 rounded bg-white text-green-900 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
             >
-              <a
-                class="relative overflow-hidden"
-                :href="'news-updates/' + j.id"
-              >
+              <a class="relative overflow-hidden" :href="'news-updates/' + j.id">
                 <!-- Title -->
                 <div
-                  class="text-green-700 lg:px-3 lg:py-3 py-2 px-1 text-base text-center font-semibold flex items-center justify-center"
+                  class="lg:min-h-[70px] lg:px-3 lg:py-3 py-2 tracking-tighter leading-tight px-1 text-center font-semibold flex items-center justify-center lg:text-xs text-[9px]"
                 >
                   {{ j.title }}
                 </div>
+                
+                <!-- SDG Badges -->
+               
                 <!-- Image -->
-                <div class="border-t-4 border-t-[#ffffff] px-2">
+                <div class="border-t-4 border-t-[#ffffff] w-full">
                   <img
-                    :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
-                    class="w-[350px] h-[250px] transition-transform duration-500 hover:scale-110 object-contain"
+                    v-if="j.files && j.files.length > 0"
+                      :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
+                    class="w-full lg:h-[220px] transition-transform duration-500 hover:scale-110"
+                    alt="News thumbnail"
                   />
-
-
+                  <div
+                    v-else
+                    class="w-full lg:h-[220px] bg-gray-200 flex items-center justify-center text-gray-500"
+                  >
+                    <i class="fa fa-image text-4xl"></i>
+                  </div>
                 </div>
+
+                 <div v-if="getSdgBadges(j).length" class="px-2 pb-2">
+                  <div class="flex flex-wrap gap-1 justify-center">
+                    <div v-for="badge in getSdgBadges(j)" :key="badge.number" class="inline-flex items-center">
+                      <span 
+                        class="inline-flex items-center px-0.5 py-1 rounded-full text-[8px] font-medium bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
+                      >
+                        <i class="fas fa-leaf mr-1"></i>
+                        SDG {{ badge.number }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
               </a>
             </div>
           </div>
