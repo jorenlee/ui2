@@ -529,10 +529,32 @@ const handleImageLoad = (fileName) => {
             ></textarea>
           </div>
 
-          <!-- Files Preview Section -->
-          <div v-if="editContent.files && editContent.files.length" class="mt-4">
-            <label class="block text-sm font-medium mb-2">Existing Files</label>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Files Section - Always Show -->
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label class="block text-sm font-medium">Files & Images</label>
+              <button 
+                type="button" 
+                @click.prevent.stop="$refs.fileInput.click()"
+                class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
+              >
+                <i class="fa fa-plus mr-1"></i> Add Files
+              </button>
+            </div>
+
+            <!-- Hidden file input -->
+            <input 
+              ref="fileInput"
+              type="file" 
+              multiple 
+              @change="handleFileSelect"
+              accept="image/*,application/pdf,video/mp4"
+              class="hidden"
+              :disabled="uploadingFiles"
+            />
+
+            <!-- Existing Files Preview -->
+            <div v-if="editContent.files && editContent.files.length" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div
                 v-for="(fileName, i) in editContent.files"
                 :key="i"
@@ -611,25 +633,23 @@ const handleImageLoad = (fileName) => {
               </div>
             </div>
 
-            <!-- Add More Files Section -->
-            <div class="mt-4">
-              <label class="block text-sm font-medium mb-2">Add More Files</label>
-              <input 
-                type="file" 
-                multiple 
-                @change="handleFileSelect"
-                accept="image/*,application/pdf,video/mp4"
-                class="w-full border rounded px-3 py-2"
-                :disabled="uploadingFiles"
-              />
-              <p class="text-xs text-gray-500 mt-1">
-                Supported: Images (JPG, PNG), PDF, MP4 videos. Max 50MB per file.
-              </p>
-              <div v-if="uploadingFiles" class="text-center mt-2">
-                <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-800 mx-auto"></div>
-                <p class="text-xs mt-1">Uploading files...</p>
-              </div>
+            <!-- No files message -->
+            <div v-else class="text-center py-8 bg-gray-50 rounded border-2 border-dashed border-gray-300">
+              <i class="fa fa-image text-gray-400 text-3xl mb-2"></i>
+              <p class="text-gray-500 text-sm">No files uploaded yet</p>
+              <p class="text-gray-400 text-xs">Click "Add Files" to upload images, PDFs, or videos</p>
             </div>
+
+            <!-- Upload status -->
+            <div v-if="uploadingFiles" class="text-center mt-2">
+              <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-green-800 mx-auto"></div>
+              <p class="text-xs mt-1">Uploading files...</p>
+            </div>
+
+            <!-- File info -->
+            <p class="text-xs text-gray-500 mt-2">
+              Supported: Images (JPG, PNG), PDF, MP4 videos. Max 50MB per file.
+            </p>
           </div>
 
           <div>
