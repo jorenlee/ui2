@@ -20,7 +20,7 @@ const handleOnSuccess = async (response) => {
     
     userStore.setToken(response.access_token, userInfo.email);
     console.log("User info:", userInfo);
-    router.push("/cms/dashboard");
+    router.push("/cms/dashboard/list");
   } catch (error) {
     console.error("Login error:", error);
   }
