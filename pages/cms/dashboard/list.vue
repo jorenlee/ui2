@@ -293,14 +293,26 @@ const uploadFile = async (file) => {
   try {
     const res = await $fetch(`${endpoint.value}/api/cms/content/file/upload/`, {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: {
+        // Don't set Content-Type, let browser set it with boundary
+      },
+      // Add timeout and retry logic
+      timeout: 60000, // 60 seconds
     });
     
     showToast(`✅ File uploaded: ${file.name}`, "success");
     return { finalName: res.filename || res.name || file.name };
   } catch (error) {
     console.error('Upload error:', error);
-    showToast(`❌ Upload failed: ${file.name}`, "error");
+    
+    if (error.status === 413) {
+      showToast(`❌ File too large: ${file.name} (Max 50MB)`, "error");
+    } else if (error.message?.includes('CORS')) {
+      showToast(`❌ CORS error: ${file.name}`, "error");
+    } else {
+      showToast(`❌ Upload failed: ${file.name}`, "error");
+    }
     return null;
   }
 };

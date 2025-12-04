@@ -139,32 +139,30 @@ const detectType = (file) => {
 // ---------------- FILE UPLOAD ----------------
 const uploadFile = async (file) => {
   const formData = new FormData();
-  formData.append("file", file);
-
+  formData.append('file', file);
+  
   try {
-    const res = await $fetch(
-      `${endpoint.value}/api/cms/content/file/upload/`,
-      {
-        method: "POST",
-        body: formData,
-        headers: { Authorization: `Bearer ${userStore.token || ""}` },
-      }
-    );
-
-    let finalName = "";
-
-    if (res?.url) finalName = extractFileNameFromUrl(res.url);
-    else if (res?.filename) finalName = res.filename;
-    else if (res?.name) finalName = res.name;
-    else finalName = file.name;
-
-    // Always add the filename to the array (removed duplicate check)
-    content.value.files = [...content.value.files, finalName];
-
-    return { ok: true, finalName };
-  } catch (err) {
-    console.error("UPLOAD ERROR:", err);
-    showToast(`Upload failed: ${file.name}`);
+    const res = await $fetch(`${endpoint.value}/api/cms/content/file/upload/`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        // Don't set Content-Type, let browser set it with boundary
+      },
+      timeout: 60000, // 60 seconds
+    });
+    
+    showToast(`✅ File uploaded: ${file.name}`, "success");
+    return { finalName: res.filename || res.name || file.name };
+  } catch (error) {
+    console.error('Upload error:', error);
+    
+    if (error.status === 413) {
+      showToast(`❌ File too large: ${file.name} (Max 50MB)`, "error");
+    } else if (error.message?.includes('CORS')) {
+      showToast(`❌ CORS error: ${file.name}`, "error");
+    } else {
+      showToast(`❌ Upload failed: ${file.name}`, "error");
+    }
     return null;
   }
 };
