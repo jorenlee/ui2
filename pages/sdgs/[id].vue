@@ -90,26 +90,29 @@ const currentSdgNumber = computed(() => {
   return sdgsCategory.indexOf(sdg) + 1;
 });
 
-// Add computed property for SDG badges
+// Add computed property for SDG badges - exact matches only
 const getSdgBadges = (item) => {
   if (!item?.filters) return [];
   
   const filters = item.filters.toLowerCase();
   const badges = [];
   
-  // Check for SDG mentions
+  // Check for exact SDG mentions using word boundaries
   for (let i = 1; i <= 17; i++) {
     const patterns = [
-      `sdg${i}`,
-      `sdg ${i}`,
-      `sdg-${i}`,
-      `sdg_${i}`,
-      `goal ${i}`,
-      `goal${i}`,
-      `sdg${i.toString().padStart(2, '0')}`
+      `\\bsdg${i}\\b`,
+      `\\bsdg ${i}\\b`,
+      `\\bsdg-${i}\\b`,
+      `\\bsdg_${i}\\b`,
+      `\\bgoal ${i}\\b`,
+      `\\bgoal${i}\\b`,
+      `\\bsdg${i.toString().padStart(2, '0')}\\b`
     ];
     
-    if (patterns.some(pattern => filters.includes(pattern))) {
+    if (patterns.some(pattern => {
+      const regex = new RegExp(pattern, 'i');
+      return regex.test(filters);
+    })) {
       badges.push({ number: i });
     }
   }
@@ -128,18 +131,21 @@ onMounted(async () => {
       if (!item?.filters) return false;
       const filters = item.filters.toLowerCase();
       
-      // Check for various SDG formats
+      // Check for exact SDG matches using word boundaries
       const patterns = [
-        `sdg${sdgNum}`,
-        `sdg ${sdgNum}`,
-        `sdg-${sdgNum}`,
-        `sdg_${sdgNum}`,
-        `goal ${sdgNum}`,
-        `goal${sdgNum}`,
-        `sdg${sdgNum.toString().padStart(2, '0')}`
+        `\\bsdg${sdgNum}\\b`,
+        `\\bsdg ${sdgNum}\\b`,
+        `\\bsdg-${sdgNum}\\b`,
+        `\\bsdg_${sdgNum}\\b`,
+        `\\bgoal ${sdgNum}\\b`,
+        `\\bgoal${sdgNum}\\b`,
+        `\\bsdg${sdgNum.toString().padStart(2, '0')}\\b`
       ];
       
-      return patterns.some(pattern => filters.includes(pattern));
+      return patterns.some(pattern => {
+        const regex = new RegExp(pattern, 'i');
+        return regex.test(filters);
+      });
     });
     
     console.log(`Filtered ${info.value.length} items for SDG ${sdgNum}`);
@@ -247,7 +253,7 @@ onMounted(async () => {
           :key="i"
           class="w-full shadow-green-900 rounded bg-white text-green-900 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
         >
-          <a class="relative overflow-hidden" :href="'news-updates/' + j.id">
+          <a class="relative overflow-hidden" :href="'/news-updates/' + j.id">
             <!-- Title -->
             <div
               class="lg:min-h-[70px] lg:px-3 lg:py-3 py-2 tracking-tighter leading-tight px-1 text-center font-semibold flex items-center justify-center lg:text-xs text-[9px]"

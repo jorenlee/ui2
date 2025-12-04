@@ -58,11 +58,31 @@ const availableMonths = computed(() => {
 const filteredInfo = computed(() => {
   let filtered = info.value;
 
-  // Filter by SDG
+  // Filter by SDG - exact match only
   if (selectedSDG.value) {
     filtered = filtered.filter(item => {
       if (!item.filters) return false;
-      return item.filters.toLowerCase().includes(selectedSDG.value);
+      const filters = item.filters.toLowerCase();
+      
+      // Extract SDG number from selectedSDG (e.g., "sdg1" -> "1")
+      const selectedSdgNum = selectedSDG.value.replace('sdg', '');
+      
+      // Check for exact SDG matches only
+      const exactPatterns = [
+        `sdg${selectedSdgNum}`,
+        `sdg ${selectedSdgNum}`,
+        `sdg-${selectedSdgNum}`,
+        `sdg_${selectedSdgNum}`,
+        `goal${selectedSdgNum}`,
+        `goal ${selectedSdgNum}`,
+        `sdg${selectedSdgNum.padStart(2, '0')}`
+      ];
+      
+      return exactPatterns.some(pattern => {
+        // Use word boundaries to ensure exact matches
+        const regex = new RegExp(`\\b${pattern}\\b`, 'i');
+        return regex.test(filters);
+      });
     });
   }
 
@@ -104,16 +124,29 @@ const clearFilters = () => {
   selectedMonth.value = "";
 };
 
-// Add computed property for SDG badges
+// Add computed property for SDG badges - exact matches only
 const getSdgBadges = (item) => {
   if (!item?.filters) return [];
   
   const filters = item.filters.toLowerCase();
   const badges = [];
   
-  // Check for SDG mentions
+  // Check for exact SDG mentions using word boundaries
   for (let i = 1; i <= 17; i++) {
-    if (filters.includes(`sdg${i}`) || filters.includes(`sdg ${i}`)) {
+    const patterns = [
+      `\\bsdg${i}\\b`,
+      `\\bsdg ${i}\\b`,
+      `\\bsdg-${i}\\b`,
+      `\\bsdg_${i}\\b`,
+      `\\bgoal ${i}\\b`,
+      `\\bgoal${i}\\b`,
+      `\\bsdg${i.toString().padStart(2, '0')}\\b`
+    ];
+    
+    if (patterns.some(pattern => {
+      const regex = new RegExp(pattern, 'i');
+      return regex.test(filters);
+    })) {
       badges.push({ number: i });
     }
   }
