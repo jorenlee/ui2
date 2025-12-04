@@ -257,6 +257,7 @@ onMounted(() => {
   // setTimeout(() => {
     const allowedEmails = [
       "jorenleeluna24@gmail.com",
+      "jason.yap@lsu.edu.ph",
       "npc@lsu.edu.ph",
       "wenny.caseros@lsu.edu.ph",
       "mariaalexandra.benitez@lsu.edu.ph",

@@ -30,7 +30,7 @@
 
               <!-- Copyright -->
               <p class="text-sm mb-3">
-                © {{ presentYear }} La Salle University - Ozamiz
+                © {{ presentYear }} La Salle University Ozamiz, Inc.
               </p>
 
               <!-- Address -->
