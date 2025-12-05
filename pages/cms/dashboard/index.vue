@@ -98,12 +98,12 @@ const extractFileNameFromUrl = (url) => {
 
 // ---------------- FILE VALIDATION ----------------
 const selectedFiles = ref([]);
-const MAX_FILE = 5 * 1024 * 1024;
-const MAX_MEDIA = 50 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB for images
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB for PDFs and other files
 
 const ALLOWED_TYPES = [
   "image/jpeg",
-  "image/png",
+  "image/png", 
   "image/jpg",
   "application/pdf",
   "audio/mpeg",
@@ -115,7 +115,7 @@ const ALLOWED_EXTENSIONS = [".jpeg", ".jpg", ".png", ".pdf", ".mp3", ".mp4"];
 const fileError = ref("");
 const showFileToast = ref(false);
 
-const showToast = (msg) => {
+const showToast = (msg, type = "error") => {
   fileError.value = msg;
   showFileToast.value = true;
   setTimeout(() => (showFileToast.value = false), 3000);
@@ -126,15 +126,17 @@ const validateFile = (file) => {
   const mime = file.type.toLowerCase();
 
   if (!ALLOWED_TYPES.includes(mime) && !ALLOWED_EXTENSIONS.includes(ext)) {
-    showToast(`Invalid file: ${file.name}`);
+    showToast(`Invalid file type: ${file.name}`);
     return false;
   }
 
-  const maxSize =
-    mime.startsWith("image") || mime.startsWith("video") ? MAX_MEDIA : MAX_FILE;
+  // Different size limits for images vs other files
+  const isImage = mime.startsWith("image");
+  const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
+  const sizeLimit = isImage ? "1MB" : "10MB";
 
   if (file.size > maxSize) {
-    showToast(`File too large: ${file.name}`);
+    showToast(`File too large: ${file.name} (Max ${sizeLimit})`);
     return false;
   }
 
@@ -147,6 +149,37 @@ const detectType = (file) => {
   if (t.startsWith("video")) return "video";
   if (t === "application/pdf") return "pdf";
   return "other";
+};
+
+// Add these functions to handle file previews
+const removeSelectedFile = (index) => {
+  const fileObj = selectedFiles.value[index];
+  if (fileObj.preview && fileObj.preview.startsWith('blob:')) {
+    URL.revokeObjectURL(fileObj.preview);
+  }
+  selectedFiles.value.splice(index, 1);
+};
+
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+// Add modal state
+const showImagePreview = ref(false);
+const previewImageUrl = ref('');
+
+const openImagePreview = (url) => {
+  previewImageUrl.value = url;
+  showImagePreview.value = true;
+};
+
+const closeImagePreview = () => {
+  showImagePreview.value = false;
+  previewImageUrl.value = '';
 };
 
 // ---------------- FILE UPLOAD ----------------
@@ -211,20 +244,6 @@ const handleFileSelect = async (e) => {
   }
 
   e.target.value = "";
-};
-
-// ---------------- REMOVE FILE ----------------
-const removeSelectedFile = (i) => {
-  const local = selectedFiles.value[i];
-
-  if (local.uploadedUrl) {
-    const index = content.value.files.findIndex((f) => f === local.uploadedUrl);
-    if (index !== -1) content.value.files.splice(index, 1);
-  }
-
-  if (local.preview) URL.revokeObjectURL(local.preview);
-
-  selectedFiles.value.splice(i, 1);
 };
 
 const sortedSelectedFiles = computed(() => {
@@ -496,14 +515,103 @@ const logOut = () => {
                 <!-- FILE INPUT -->
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-1">Select Files (Image, Video, PDF)</label>
-                  <input type="file" multiple @change="handleFileSelect" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+                  <input 
+                    type="file" 
+                    multiple 
+                    @change="handleFileSelect" 
+                    accept="image/*,video/mp4,application/pdf,audio/mpeg"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent file:mr-3 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-green-50 file:text-green-700 hover:file:bg-green-100" 
+                  />
+                  <p class="text-xs text-gray-500 mt-1">Images: Max 1MB | PDFs & Other files: Max 10MB</p>
+                  
+                  <!-- File Previews -->
+                  <div v-if="selectedFiles.length > 0" class="mt-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Selected Files:</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                      <div
+                        v-for="(fileObj, index) in selectedFiles"
+                        :key="index"
+                        class="relative border border-gray-200 rounded-lg p-2 bg-gray-50"
+                      >
+                        <!-- Image Preview -->
+                        <div v-if="fileObj.type === 'image'" class="mb-2">
+                          <img
+                            :src="fileObj.preview"
+                            :alt="fileObj.name"
+                            class="w-full h-20 object-cover rounded cursor-pointer hover:opacity-80"
+                            @click="openImagePreview(fileObj.preview)"
+                          />
+                        </div>
+                        
+                        <!-- Video Preview -->
+                        <div v-else-if="fileObj.type === 'video'" class="mb-2 relative cursor-pointer" @click="openImagePreview(fileObj.preview)">
+                          <video
+                            :src="fileObj.preview"
+                            class="w-full h-20 object-cover rounded"
+                            muted
+                            preload="metadata"
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                          <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
+                            <i class="fa fa-play text-white text-lg"></i>
+                          </div>
+                        </div>
+                        
+                        <!-- PDF Preview -->
+                        <div v-else-if="fileObj.type === 'pdf'" class="mb-2">
+                          <div class="w-full h-20 bg-red-100 rounded flex items-center justify-center">
+                            <i class="fa fa-file-pdf text-red-600 text-2xl"></i>
+                          </div>
+                        </div>
+                        
+                        <!-- Other Files -->
+                        <div v-else class="mb-2">
+                          <div class="w-full h-20 bg-gray-100 rounded flex items-center justify-center">
+                            <i class="fa fa-file text-gray-600 text-2xl"></i>
+                          </div>
+                        </div>
+                        
+                        <!-- File Info -->
+                        <div class="text-xs">
+                          <p class="font-medium text-gray-800 truncate" :title="fileObj.name">{{ fileObj.name }}</p>
+                          <div class="flex justify-between items-center mt-1">
+                            <span class="text-gray-500">{{ formatFileSize(fileObj.file.size) }}</span>
+                            <button
+                              @click="removeSelectedFile(index)"
+                              class="text-red-500 hover:text-red-700 p-1"
+                              title="Remove file"
+                            >
+                              <i class="fa fa-times"></i>
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <!-- Upload Status -->
+                        <div v-if="fileObj.uploading" class="absolute inset-0 bg-white bg-opacity-90 rounded-lg flex items-center justify-center">
+                          <div class="text-center">
+                            <i class="fa fa-spinner fa-spin text-green-600 text-lg mb-1"></i>
+                            <p class="text-xs text-gray-600">Uploading...</p>
+                          </div>
+                        </div>
+                        
+                        <div v-else-if="fileObj.uploaded" class="absolute top-1 right-1">
+                          <i class="fa fa-check-circle text-green-500"></i>
+                        </div>
+                        
+                        <div v-else-if="fileObj.error" class="absolute top-1 right-1">
+                          <i class="fa fa-exclamation-circle text-red-500" :title="fileObj.error"></i>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- SUBMIT -->
                 <button
                   @click="submitContent"
                   :disabled="submitting"
-                  class="w-full bg-green-800 hover:bg-green-900 disabled:bg-gray-400 text-white py-3 rounded-lg text-lg font-bold transition-colors mt-4"
+                  class="w-full bg-green-800 hover:bg-green-900 disabled:bg-gray-400 text-white py-1 rounded-lg text-lg font-bold transition-colors mt-4"
                 >
                   {{ submitting ? "Saving..." : "Submit Content" }}
                 </button>
@@ -519,6 +627,38 @@ const logOut = () => {
       </div>
     </div>
   </div>
+  <!-- Image Preview Modal -->
+  <ClientOnly>
+    <div
+      v-if="showImagePreview"
+      class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+      @click="closeImagePreview"
+    >
+      <div class="relative max-w-4xl max-h-[90vh] overflow-auto bg-white p-2 rounded-lg" @click.stop>
+        <button
+          @click="closeImagePreview"
+          class="absolute top-2 right-2 text-gray-700 hover:text-red-500 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-md z-10"
+        >
+          <i class="fa fa-times"></i>
+        </button>
+        <img
+          v-if="!previewImageUrl.includes('.mp4')"
+          :src="previewImageUrl"
+          class="max-w-full max-h-[85vh] object-contain"
+          alt="Preview"
+        />
+        <video
+          v-else
+          :src="previewImageUrl"
+          class="max-w-full max-h-[85vh]"
+          controls
+          autoplay
+        >
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    </div>
+  </ClientOnly>
 </template>
 
 <style scoped>

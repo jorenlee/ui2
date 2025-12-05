@@ -756,7 +756,7 @@ const getSdgBadges = (item) => {
                           <!-- SDG Badges -->
                           <div v-if="getSdgBadges(j).length" class="mb-2">
                             <div class="flex flex-wrap gap-1">
-                              <div v-for="badge in getSdgBadges(j).slice(0, 2)" :key="badge.number" class="inline-flex items-center">
+                              <div v-for="badge in getSdgBadges(j)" :key="badge.number" class="inline-flex items-center">
                                 <span 
                                   class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold text-white shadow-sm"
                                   :style="{ backgroundColor: badge.color }"
@@ -764,12 +764,6 @@ const getSdgBadges = (item) => {
                                   SDG {{ badge.number }}
                                 </span>
                               </div>
-                              <span 
-                                v-if="getSdgBadges(j).length > 2"
-                                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600"
-                              >
-                                +{{ getSdgBadges(j).length - 2 }}
-                              </span>
                             </div>
                           </div>
                           <p class="text-xs text-gray-600 mb-1">ID: {{ j.content_id }}</p>
