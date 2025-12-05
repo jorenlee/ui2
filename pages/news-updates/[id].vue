@@ -20,37 +20,46 @@ const imageFiles = ref([]);
 const userStore = useUserStore();
 const endpoint = userStore.mainDevServer;
 
+// SDG Colors mapping
+const sdgColors = {
+  1: "#e5243b", 2: "#dda63a", 3: "#4c9f38", 4: "#c5192d", 5: "#ff3a21",
+  6: "#26bde2", 7: "#fcc30b", 8: "#a21942", 9: "#fd6925", 10: "#dd1367",
+  11: "#fd9d24", 12: "#bf8b2e", 13: "#3f7e44", 14: "#0a97d9", 15: "#56c02b",
+  16: "#00689d", 17: "#19486a"
+};
+
+// Helper function to get SDG color
+const getSdgColor = (sdgNumber) => {
+  return sdgColors[sdgNumber] || "#6b7280";
+};
+
 // Add computed property for SDG badges
-const sdgBadges = computed(() => {
-  if (!item.value?.filters) return [];
-
-  const filters = item.value.filters.toLowerCase();
+const getSdgBadges = (item) => {
+  if (!item?.filters) return [];
+  
+  const filters = item.filters.toLowerCase();
   const badges = [];
-
+  
   // Check for exact SDG mentions using word boundaries
   for (let i = 1; i <= 17; i++) {
     const patterns = [
-      `\\bsdg${i}\\b`,
-      `\\bsdg ${i}\\b`,
-      `\\bsdg-${i}\\b`,
-      `\\bsdg_${i}\\b`,
-      `\\bgoal ${i}\\b`,
-      `\\bgoal${i}\\b`,
-      `\\bsdg${i.toString().padStart(2, "0")}\\b`,
+      `\\bsdg${i}\\b`, `\\bsdg ${i}\\b`, `\\bsdg-${i}\\b`, `\\bsdg_${i}\\b`,
+      `\\bgoal ${i}\\b`, `\\bgoal${i}\\b`, `\\bsdg${i.toString().padStart(2, '0')}\\b`
     ];
-
-    if (
-      patterns.some((pattern) => {
-        const regex = new RegExp(pattern, "i");
-        return regex.test(filters);
-      })
-    ) {
-      badges.push({ number: i });
+    
+    if (patterns.some(pattern => {
+      const regex = new RegExp(pattern, 'i');
+      return regex.test(filters);
+    })) {
+      badges.push({ 
+        number: i,
+        color: sdgColors[i] || "#6b7280"
+      });
     }
   }
-
+  
   return badges;
-});
+};
 
 // File type detection helpers
 const isImageFile = (filename) => {
@@ -144,6 +153,22 @@ const getAllVideos = () => {
   }
 
   return videos;
+};
+
+// Add formatDate function
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  } catch (error) {
+    return dateString;
+  }
 };
 
 // fetch the item
@@ -270,83 +295,47 @@ const prevImage = () => {
       <div v-if="item && !loading" class="max-w-6xl mx-auto">
         <!-- Article Header -->
         <div class="bg-white rounded-lg shadow-sm p-6 lg:p-8 mb-6">
-          <div class="flex flex-wrap items-center gap-2 mb-4">
-            <!-- SDG Badges -->
-            <div
-              v-for="badge in sdgBadges"
-              :key="badge.number"
-              class="inline-flex items-center"
-            >
-              <span
-                class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
-              >
-                <i class="fas fa-leaf mr-1"></i>
-                SDG {{ badge.number }}
-              </span>
+          <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+            <div class="flex-1">
+              <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-4 leading-tight">
+                {{ item.title }}
+              </h1>
+              
+              <!-- SDG Badges -->
+              <div v-if="getSdgBadges(item).length > 0" class="flex flex-wrap gap-2 mb-4">
+                <span
+                  v-for="badge in getSdgBadges(item)"
+                  :key="badge.number"
+                  class="inline-flex items-center px-3 py-1 rounded-full text-white text-sm font-medium"
+                  :style="{ backgroundColor: badge.color }"
+                >
+                  <i class="fas fa-check-circle mr-1"></i>
+                  SDG {{ badge.number }}
+                </span>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                <div class="flex items-center">
+                  <i class="fas fa-user mr-2 text-green-600"></i>
+                  <span class="font-medium">{{ item.authors }}</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-calendar mr-2 text-green-600"></i>
+                  <span>{{ formatDate(item.date) }}</span>
+                </div>
+                <div class="flex items-center">
+                  <i class="fas fa-tag mr-2 text-green-600"></i>
+                  <span>{{ item.content_id }}</span>
+                </div>
+              </div>
             </div>
-
-            <!-- Date Badge -->
-            <span
-              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
-            >
-              <i class="fas fa-calendar mr-1"></i>
-              {{ moment(item.date || item.created_at).format("MMMM DD, YYYY") }}
-            </span>
-
-            <span
-              v-if="item.authors"
-              class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
-            >
-              <i class="fas fa-id-card mr-1"></i>
-              {{ item.authors }}
-            </span>
           </div>
 
-          <h1
-            class="text-2xl lg:text-4xl font-bold text-gray-900 leading-tight mb-6"
-          >
-            {{ item.title }}
-          </h1>
-
-          <!-- Description Content -->
-          <div
-            v-if="item.descriptions"
-            class="prose prose-lg max-w-none text-gray-700 leading-relaxed mb-6"
-          >
-            <div class="text-base lg:text-lg whitespace-pre-line">
+          <!-- Article Description -->
+          <div v-if="item.descriptions" class="prose max-w-none">
+            <div class="text-gray-700 leading-relaxed whitespace-pre-wrap">
               {{ item.descriptions }}
             </div>
-          </div>
-
-          <!-- Links Section -->
-          <div v-if="item.links && item.links.length" class="mb-6">
-            <h3
-              class="text-lg font-semibold text-gray-900 mb-3 flex items-center"
-            >
-              <i class="fas fa-link mr-2 text-green-600"></i>
-              Related Links
-            </h3>
-            <div class="space-y-2">
-              <a
-                v-for="(link, index) in item.links"
-                :key="index"
-                :href="link"
-                target="_blank"
-                class="block text-blue-600 hover:text-blue-800 underline break-all"
-              >
-                <i class="fas fa-external-link-alt mr-1"></i>
-                {{ link }}
-              </a>
-            </div>
-          </div>
-
-          <!-- Fallback if no description -->
-          <div
-            v-if="!item.descriptions"
-            class="text-gray-500 italic text-center py-8"
-          >
-            <i class="fas fa-info-circle mr-2"></i>
-            No description available for this article.
           </div>
         </div>
 

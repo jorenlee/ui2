@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick, computed } from "vue";
+import { ref, onMounted, nextTick, computed, watch, onBeforeUnmount } from "vue";
 import { useUserStore } from "@/stores/user";
 import _ from "lodash";
 import moment from "moment";
@@ -14,8 +14,22 @@ const selectedSDG = ref("");
 const selectedYear = ref("");
 const selectedMonth = ref("");
 
+// Scroll to top button
+const showScrollButton = ref(false);
+
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
+
+const handleScroll = () => {
+  showScrollButton.value = window.scrollY > 300;
+};
+
+const scrollToTop = () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+};
 
 // SDG options for filter
 const sdgOptions = ref([
@@ -211,7 +225,6 @@ const isVideoFile = (filename) => {
 onMounted(async () => {
   try {
     const res = await $fetch(endpoint.value + "/api/cms/content/list/");
-    // console.log("res", res);
     info.value = Array.isArray(res) ? res : [];
   } catch (error) {
     console.error("Error fetching list:", error);
@@ -225,6 +238,51 @@ onMounted(async () => {
   if (window.innerWidth < 800) {
     display.value = "mobile";
   }
+
+  // Add scroll event listener
+  window.addEventListener('scroll', handleScroll);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
+
+// Pagination
+const currentPage = ref(1);
+const itemsPerPage = 30;
+const maxVisiblePages = 5;
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredInfo.value.length / itemsPerPage);
+});
+
+const paginatedInfo = computed(() => {
+  const startIndex = (currentPage.value - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  return filteredInfo.value.slice(startIndex, endIndex);
+});
+
+const visiblePages = computed(() => {
+  const pages = [];
+  let startPage = Math.max(
+    1,
+    currentPage.value - Math.floor(maxVisiblePages / 2)
+  );
+  let endPage = Math.min(totalPages.value, startPage + maxVisiblePages - 1);
+
+  if (endPage - startPage + 1 < maxVisiblePages) {
+    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
+  return pages;
+});
+
+// Reset page when filters change
+watch([selectedSDG, selectedYear, selectedMonth], () => {
+  currentPage.value = 1;
 });
 </script>
 
@@ -358,21 +416,68 @@ onMounted(async () => {
 
             <!-- Results Count -->
             <div class="mt-4 text-sm text-gray-600">
-              Showing {{ filteredInfo.length }} of {{ info.length }} news items
+              Showing {{ Math.min(itemsPerPage, paginatedInfo.length) }} of {{ filteredInfo.length }} news items
+              <span v-if="totalPages > 1">(Page {{ currentPage }} of {{ totalPages }})</span>
             </div>
+          </div>
+
+          
+          <!-- Pagination -->
+          <div v-if="totalPages > 1" class="flex justify-center mt-8 mb-6">
+            <div class="flex items-center space-x-1">
+              <!-- Previous Button -->
+              <button
+                :disabled="currentPage === 1"
+                @click="currentPage--"
+                class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
+              >
+                <i class="fas fa-chevron-left mr-1"></i>
+                <span class="hidden sm:inline">Previous</span>
+              </button>
+
+              <!-- Page Numbers -->
+              <button
+                v-for="page in visiblePages"
+                :key="page"
+                @click="currentPage = page"
+                class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                :class="currentPage === page 
+                  ? 'bg-green-600 text-white shadow-md' 
+                  : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'"
+              >
+                {{ page }}
+              </button>
+
+              <!-- Next Button -->
+              <button
+                :disabled="currentPage === totalPages"
+                @click="currentPage++"
+                class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
+              >
+                <span class="hidden sm:inline">Next</span>
+                <i class="fas fa-chevron-right ml-1"></i>
+              </button>
+            </div>
+          </div>
+
+          
+          <!-- Pagination Info -->
+          <div v-if="totalPages > 1" class="text-center text-sm text-gray-500 mb-6">
+            Page {{ currentPage }} of {{ totalPages }} 
+            ({{ filteredInfo.length }} total items)
           </div>
 
           <!-- News Cards -->
           <div
-            v-if="filteredInfo.length"
+            v-if="paginatedInfo.length"
             class="grid lg:grid-cols-3 grid-cols-1 gap-6 w-11/12 mx-auto"
           >
             <div
-              v-for="(j, i) in filteredInfo"
-              :key="i"
+              v-for="(j, i) in paginatedInfo"
+              :key="j.id"
               class="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
             >
-              <a :href="'news-updates/' + j.id" class="block">
+              <a :href="'/news-updates/' + j.id" class="block">
                 <!-- Image Section -->
                 <div class="relative h-48 overflow-hidden">
                   <img
@@ -464,21 +569,80 @@ onMounted(async () => {
             </div>
           </div>
 
-          <!-- Empty State -->
-          <div v-else class="text-gray-400 py-10">No news posted yet.</div>
 
-          <!-- Pagination Dots -->
-          <!-- <div class="flex justify-center gap-2 mt-6">
-        <span
-          v-for="n in 2"
-          :key="n"
-          class="w-3 h-3 rounded-full bg-green-700 opacity-50 hover:opacity-100 transition-opacity"
-        ></span>
-      </div> -->
+            <!-- Pagination -->
+          <div v-if="totalPages > 1" class="flex justify-center mt-8 mb-6">
+            <div class="flex items-center space-x-1">
+              <!-- Previous Button -->
+              <button
+                :disabled="currentPage === 1"
+                @click="currentPage--"
+                class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
+              >
+                <i class="fas fa-chevron-left mr-1"></i>
+                <span class="hidden sm:inline">Previous</span>
+              </button>
+
+              <!-- Page Numbers -->
+              <button
+                v-for="page in visiblePages"
+                :key="page"
+                @click="currentPage = page"
+                class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                :class="currentPage === page 
+                  ? 'bg-green-600 text-white shadow-md' 
+                  : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'"
+              >
+                {{ page }}
+              </button>
+
+              <!-- Next Button -->
+              <button
+                :disabled="currentPage === totalPages"
+                @click="currentPage++"
+                class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
+              >
+                <span class="hidden sm:inline">Next</span>
+                <i class="fas fa-chevron-right ml-1"></i>
+              </button>
+            </div>
+          </div>
+
+          
+          <!-- Pagination Info -->
+          <div v-if="totalPages > 1" class="text-center text-sm text-gray-500 mb-6">
+            Page {{ currentPage }} of {{ totalPages }} 
+            ({{ filteredInfo.length }} total items)
+          </div>
+
+          
+          <!-- Empty State -->
+          <div v-else class="text-gray-400 py-10 text-center">No news posted yet.</div>
+
+
         </div>
       </div>
     </div>
     <Footer />
+
+    <!-- Floating Scroll to Top Button -->
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="opacity-0 scale-75 translate-y-4"
+      enter-to-class="opacity-100 scale-100 translate-y-0"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="opacity-100 scale-100 translate-y-0"
+      leave-to-class="opacity-0 scale-75 translate-y-4"
+    >
+      <button
+        v-show="showScrollButton"
+        @click="scrollToTop"
+        class="fixed bottom-6 right-6 z-50 bg-green-600 hover:bg-green-700 text-white p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 group"
+        aria-label="Scroll to top"
+      >
+        <i class="fas fa-chevron-up text-lg group-hover:animate-bounce"></i>
+      </button>
+    </Transition>
   </div>
 </template>
 
