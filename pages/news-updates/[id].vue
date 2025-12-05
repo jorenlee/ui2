@@ -61,6 +61,20 @@ const getSdgBadges = (item) => {
   return badges;
 };
 
+// Helper function to get SDG slug from number
+const getSdgSlug = (sdgNumber) => {
+  const sdgSlugs = [
+    'no-poverty', 'zero-hunger', 'good-health-and-well-being', 'quality-education',
+    'gender-equality', 'clean-water-and-sanitation', 'affordable-and-clean-energy',
+    'decent-work-and-economic-growth', 'industry-innovation-and-infrastructure',
+    'reduced-inequalities', 'sustainable-cities-and-communities',
+    'responsible-consumption-and-production', 'climate-action', 'life-below-water',
+    'life-on-land', 'peace-justice-and-strong-institutions', 'partnerships-for-the-goals'
+  ];
+  
+  return sdgSlugs[sdgNumber - 1] || '';
+};
+
 // File type detection helpers
 const isImageFile = (filename) => {
   const ext = filename.toLowerCase().split(".").pop();
@@ -303,15 +317,16 @@ const prevImage = () => {
               
               <!-- SDG Badges -->
               <div v-if="getSdgBadges(item).length > 0" class="flex flex-wrap gap-2 mb-4">
-                <span
+                <NuxtLink
                   v-for="badge in getSdgBadges(item)"
                   :key="badge.number"
-                  class="inline-flex items-center px-3 py-1 rounded-full text-white text-sm font-medium"
+                  :to="`/sdgs/${getSdgSlug(badge.number)}`"
+                  class="inline-flex items-center px-3 py-1 rounded-full text-white text-sm font-medium hover:opacity-80 transition-opacity cursor-pointer"
                   :style="{ backgroundColor: badge.color }"
                 >
                   <i class="fas fa-check-circle mr-1"></i>
                   SDG {{ badge.number }}
-                </span>
+                </NuxtLink>
               </div>
 
               <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">

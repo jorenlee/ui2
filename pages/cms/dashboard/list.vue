@@ -468,6 +468,34 @@ const visiblePages = computed(() => {
 watch([searchQuery, selectedFilter], () => {
   currentPage.value = 1;
 });
+
+// Add computed property for SDG badges
+const getSdgBadges = (item) => {
+  if (!item?.filters) return [];
+  
+  const filters = item.filters.toLowerCase();
+  const badges = [];
+  
+  // Check for exact SDG mentions using word boundaries
+  for (let i = 1; i <= 17; i++) {
+    const patterns = [
+      `\\bsdg${i}\\b`, `\\bsdg ${i}\\b`, `\\bsdg-${i}\\b`, `\\bsdg_${i}\\b`,
+      `\\bgoal ${i}\\b`, `\\bgoal${i}\\b`, `\\bsdg${i.toString().padStart(2, '0')}\\b`
+    ];
+    
+    if (patterns.some(pattern => {
+      const regex = new RegExp(pattern, 'i');
+      return regex.test(filters);
+    })) {
+      badges.push({ 
+        number: i,
+        color: getSdgColor(i)
+      });
+    }
+  }
+  
+  return badges;
+};
 </script>
 <template>
   <div class="w-full min-h-screen flex flex-col">
@@ -565,50 +593,32 @@ watch([searchQuery, selectedFilter], () => {
             <div class="flex-1 p-3 lg:p-5" :class="showEditModal ? 'lg:pr-2' : ''">
               <div v-show="tableDisplay">
                 <!-- Search and Filter Bar -->
-                <div class="bg-white rounded-lg shadow-sm border p-3 lg:p-4 mb-4 lg:flex w-full gap-x-2">
+                <div class="bg-white rounded-lg shadow-sm border p-3 lg:p-4 mb-4 w-full" :class="showEditModal ? '' : 'lg:flex lg:gap-x-2'">
                   <!-- Stats Cards -->
-                  <div class="w-full grid grid-cols-2 gap-2 lg:gap-4 mb-4" :class="showEditModal ? 'lg:grid-cols-2':'lg:grid-cols-4'">
-                    <div class="bg-blue-50 p-2 lg:p-x3  lg:py-1rounded-lg border-l-4 border-blue-500">
+                  <div class="flex gap-x-2 lg:mb-0 mb-3" :class="showEditModal ? 'grid grid-cols-2 lg:mb-3' : 'w-fit'">
+                    <div class="bg-blue-50 p-2 lg:px-3 w-full lg:py-1 rounded-lg border-l-4 border-blue-500">
                       <div class="flex items-center">
                         <i class="fa fa-file-text text-blue-500 text-sm lg:text-lg mr-2 lg:mr-3"></i>
                         <div class="flex items-center">
-                          <p class="text-xs text-gray-600 font-medium pr-5">Total</p>
+                          <p class="text-xs text-gray-600 font-medium pr-2 lg:pr-5">Total</p>
                           <p class="text-lg lg:text-xl font-bold text-blue-600">{{ info.length }}</p>
                         </div>
                       </div>
                     </div>
-                    <div class="bg-green-50 p-2 lg:px-3 lg:py-1 rounded-lg border-l-4 border-green-500">
+                    <div class="bg-green-50 p-2 lg:px-3 w-full lg:py-1 rounded-lg border-l-4 border-green-500">
                       <div class="flex items-center">
                         <i class="fa fa-filter text-green-500 text-sm lg:text-lg mr-2 lg:mr-3"></i>
                         <div class="flex items-center">
-                          <p class="text-xs text-gray-600 font-medium pr-5">Filtered</p>
+                          <p class="text-xs text-gray-600 font-medium pr-2 lg:pr-5">Filtered</p>
                           <p class="text-lg lg:text-xl font-bold text-green-600">{{ filteredInfo.length }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="bg-purple-50 p-2 lg:xp- lg:py-13 rounded-lg border-l-4 border-purple-500">
-                      <div class="flex items-center">
-                        <i class="fa fa-eye text-purple-500 text-sm lg:text-lg mr-2 lg:mr-3"></i>
-                        <div class="flex items-center">
-                          <p class="text-xs text-gray-600 font-medium pr-5">Page</p>
-                          <p class="text-lg lg:text-xl font-bold text-purple-600">{{ currentPage }}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div class="bg-orange-50 p-2 lg:xp- lg:py-13 rounded-lg border-l-4 border-orange-500">
-                      <div class="flex items-center">
-                        <i class="fa fa-pages text-orange-500 text-sm lg:text-lg mr-2 lg:mr-3"></i>
-                        <div class="flex items-center">
-                          <p class="text-xs text-gray-600 font-medium pr-5">Pages</p>
-                          <p class="text-lg lg:text-xl font-bold text-orange-600">{{ totalPages }}</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <!-- Search and Filter Controls -->
-                  <div class=" items-center gap-3 w-full h-fit" :class="showEditModal ? 'lg:flex-col':'lg:flex'">
-                    <div class="relative w-full lg:mb-0 mb-2">
+                  <div class="flex flex-col lg:flex-row items-center gap-3 w-full h-fit">
+                    <div class="relative w-full">
                       <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                       <input
                         v-model="searchQuery"
@@ -617,11 +627,10 @@ watch([searchQuery, selectedFilter], () => {
                         class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                       />
                     </div>
-                    <div class="flex gap-2 w-full">
+                    <div class="flex gap-2 w-full lg:w-fit">
                       <select
                         v-model="selectedFilter"
-                        class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                        :class="showEditModal ? 'my-2':''"
+                        class="flex-1 lg:flex-none px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
                       >
                         <option v-for="option in filterOptions" :key="option.value" :value="option.value">
                           {{ option.label }}
@@ -632,14 +641,14 @@ watch([searchQuery, selectedFilter], () => {
                       <button
                         v-if="selectedItem && display === 'mobile'"
                         @click="showEditModal = !showEditModal"
-                        class="lg:hidden bg-green-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium"
+                        class="lg:hidden bg-green-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap"
                       >
                         {{ showEditModal ? 'Close' : 'Edit' }}
                       </button>
                     </div>
 
                     <!-- Pagination Controls -->
-                    <div v-if="totalPages > 1" class="flex justify-center lg:mt-0 mt-3">
+                    <div v-if="totalPages > 1" class="flex justify-center w-full lg:w-auto">
                       <div class="flex items-center space-x-1">
                         <button
                           :disabled="currentPage === 1"
@@ -702,7 +711,23 @@ watch([searchQuery, selectedFilter], () => {
                       >
                         <span class="flex items-center text-gray-800 font-medium truncate">{{ j.content_id }}</span>
                         <span class="flex items-center text-gray-600 truncate">{{ j.authors }}</span>
-                        <span class="flex items-center text-gray-800 truncate">{{ j.title }}</span>
+                       <div>
+                         <span class="flex items-center text-gray-800 truncate">{{ j.title }}</span>
+                        <!-- SDG Badges -->
+                        <div v-if="getSdgBadges(j).length" class="mt-1">
+                          <div class="flex flex-wrap gap-1">
+                            <div v-for="badge in getSdgBadges(j)" :key="badge.number" class="inline-flex items-center">
+                              <span 
+                                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold text-white shadow-sm"
+                                :style="{ backgroundColor: badge.color }"
+                              >
+                                SDG {{ badge.number }}
+                              </span>
+                            </div>
+                            
+                          </div>
+                        </div>
+                       </div>
                         <span class="flex justify-center">
                           <button
                             @click.stop="openEditModal(j)"
@@ -728,6 +753,25 @@ watch([searchQuery, selectedFilter], () => {
                       <div class="flex justify-between items-start mb-2">
                         <div class="flex-1">
                           <h3 class="font-medium text-gray-900 text-sm mb-1 line-clamp-2">{{ j.title }}</h3>
+                          <!-- SDG Badges -->
+                          <div v-if="getSdgBadges(j).length" class="mb-2">
+                            <div class="flex flex-wrap gap-1">
+                              <div v-for="badge in getSdgBadges(j).slice(0, 2)" :key="badge.number" class="inline-flex items-center">
+                                <span 
+                                  class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold text-white shadow-sm"
+                                  :style="{ backgroundColor: badge.color }"
+                                >
+                                  SDG {{ badge.number }}
+                                </span>
+                              </div>
+                              <span 
+                                v-if="getSdgBadges(j).length > 2"
+                                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                              >
+                                +{{ getSdgBadges(j).length - 2 }}
+                              </span>
+                            </div>
+                          </div>
                           <p class="text-xs text-gray-600 mb-1">ID: {{ j.content_id }}</p>
                           <p class="text-xs text-gray-600">{{ j.authors }}</p>
                         </div>
@@ -957,14 +1001,14 @@ watch([searchQuery, selectedFilter], () => {
                                 <span class="text-gray-700 truncate text-xs">{{ file }}</span>
                               </div>
                               <div class="flex gap-1 ml-2">
-                                <a
+                                <!-- <a
                                   :href="getFileUrl(file)"
                                   target="_blank"
                                   class="px-1 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs"
                                   title="View file"
                                 >
                                   <i class="fa fa-external-link-alt"></i>
-                                </a>
+                                </a> -->
                                 <button
                                   type="button"
                                   @click="removeFile(index)"
@@ -1003,6 +1047,29 @@ watch([searchQuery, selectedFilter], () => {
       </div>
     </div>
   </div>
+
+  <!-- Image Preview Modal - Only render on client -->
+  <ClientOnly>
+    <div
+      v-if="showImagePreview"
+      class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+      @click="closeImagePreview"
+    >
+      <div class="relative max-w-4xl max-h-[90vh] overflow-auto bg-white p-2 rounded-lg" @click.stop>
+        <button
+          @click="closeImagePreview"
+          class="absolute top-2 right-2 text-gray-700 hover:text-red-500 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-md z-10"
+        >
+          <i class="fa fa-times"></i>
+        </button>
+        <img
+          :src="previewImageUrl"
+          class="max-w-full max-h-[85vh] object-contain"
+          alt="Preview"
+        />
+      </div>
+    </div>
+  </ClientOnly>
 
   <!-- Toast Notification -->
   <div
