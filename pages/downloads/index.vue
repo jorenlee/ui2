@@ -35,25 +35,7 @@
           </li>
         </ul>
       </div>
-      <div class="shadow-xl rounded-3xl lg:w-11/12 mx-auto">
-        <h1
-          class="text-base text-green-900 mt-5 mb-3 w-8/12 mx-auto font-bold pt-10 pb-5 uppercase"
-        >
-          Research Volumes
-        </h1>
-        <ul
-          class="gap-2 mb-10 pb-10 mx-auto w-full justify-left grid lg:grid-cols-4 grid-cols-2 text-sm"
-        >
-          <li
-            class="flex shadow py-2 px-3 rounded-lg mb-4 text-green-900 font-semibold lg:mx-7 mx-4"
-            v-for="(v, i) in volumes"
-            :key="i"
-          >
-            <i class="mr-5 fa fa-download mt-1" aria-hidden="true"></i>
-            <a :href="v.file" download target="_blank" class="">{{ v.title }}</a>
-          </li>
-        </ul>
-      </div>
+   
     </div>
     <Footer />
   </div>
