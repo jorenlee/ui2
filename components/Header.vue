@@ -335,13 +335,13 @@ onBeforeUnmount(() => {
               </ul>
             </li>
           
-            <!-- <li> 
+            <li> 
               <a class="nav-link cursor-pointer"
                 :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
                 @click="openSearchModal">
                 <i class="fa fa-search"></i> Search
               </a>
-            </li> -->
+            </li>
           </ul>
         </nav>
 
@@ -470,11 +470,11 @@ onBeforeUnmount(() => {
               </ul>
             </li>
 
-            <!-- <li>
+            <li>
               <a href="/campus-dev" class="mobile-menu-item border-y"
                 >Campus Dev</a
               >
-            </li> -->
+            </li>
 
             <li>
               <a
