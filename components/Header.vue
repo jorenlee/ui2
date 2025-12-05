@@ -135,15 +135,34 @@ onBeforeUnmount(() => {
   >
     <div class="container mx-auto lg:px-4 px-2 transition-all duration-300">
       <div class="flex justify-between items-center">
-        <!-- Logo -->
-        <a href="/" class="flex items-center hover:opacity-90 transition">
-          <img
-            src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/lsu-logotype-green.png"
-            class="transition-all duration-300"
-            :class="isScrolled ? 'w-48' : 'lg:w-60 w-48'"
-            alt="La Salle University"
-          />
-        </a>
+        <!-- Logo and Search -->
+        <div class="flex items-center gap-4">
+          <a href="/" class="flex items-center hover:opacity-90 transition">
+            <img
+              src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/lsu-logotype-green.png"
+              class="transition-all duration-300"
+              :class="isScrolled ? 'w-48' : 'lg:w-60 w-48'"
+              alt="La Salle University"
+            />
+          </a>
+          
+          <!-- Search Icon with Expandable Input -->
+          <div class="relative group">
+            <button 
+              class=" bg-green-900 text-white hover:text-white hover:bg-green-800 transition-all duration-300 pr-1 shadow-xl py-2 pl-2.5 rounded-full flex items-center gap-2 overflow-hidden "
+              @click="openSearchModal"
+              aria-label="Search"
+            >
+              <i class="fa fa-search text-xl flex-shrink-0"></i>
+              <input 
+                type="text" 
+                class="w-0 group-hover:w-32 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-transparent border-none outline-none text-sm text-white placeholder-green-200" 
+                placeholder="Search..." 
+                readonly
+              />
+            </button>
+          </div>
+        </div>
 
         <!-- Desktop Navigation -->
         <nav class="hidden lg:block">
@@ -333,14 +352,6 @@ onBeforeUnmount(() => {
                   >
                 </li>
               </ul>
-            </li>
-          
-            <li> 
-              <a class="nav-link cursor-pointer"
-                :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
-                @click="openSearchModal">
-                <i class="fa fa-search"></i> Search
-              </a>
             </li>
           </ul>
         </nav>
