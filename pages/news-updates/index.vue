@@ -616,8 +616,22 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
           </div>
 
           
-          <!-- Empty State -->
-          <div v-else class="text-gray-400 py-10 text-center">No news posted yet.</div>
+           <!-- Empty State -->
+          <div v-else-if="paginatedInfo.length === 0 && filteredInfo.length === 0" class="text-gray-400 py-10 text-center">
+            <div v-if="selectedSDG || selectedYear || selectedMonth" class="text-center py-12">
+              <div class="text-gray-500 text-lg">
+                <i class="fa fa-search mb-4 text-4xl"></i>
+                <p>No news found matching your filters.</p>
+                <button 
+                  @click="clearFilters" 
+                  class="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+            <div v-else>No news posted yet.</div>
+          </div>
 
 
         </div>

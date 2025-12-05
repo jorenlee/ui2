@@ -774,7 +774,7 @@ watch([searchQuery, selectedFilter], () => {
 
                 <!-- Edit Form -->
                 <div class="flex-1 p-4 space-y-4 overflow-y-auto">
-                  <form @submit.prevent="updateContent" class="space-y-4">
+                  <form @submit.prevent="submitEdit" class="space-y-4">
                     <!-- Content ID -->
                     <div>
                       <label class="block text-sm font-medium text-gray-700 mb-1">Content ID</label>
@@ -980,21 +980,15 @@ watch([searchQuery, selectedFilter], () => {
                       </div>
                     </div>
 
-                    <!-- Submit Buttons -->
-                    <div class="flex gap-2 pt-4 border-t">
-                      <button
-                        type="button"
-                        @click="closeEditModal"
-                        class="flex-1 px-3 py-2 border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50"
-                      >
-                        Cancel
-                      </button>
+                    <!-- Update Button -->
+                    <div class="flex justify-end pt-4 border-t border-gray-200">
                       <button
                         type="submit"
                         :disabled="editSubmitting"
-                        class="flex-1 px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
+                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
-                        <i v-if="editSubmitting" class="fa fa-spinner fa-spin mr-1"></i>
+                        <i v-if="editSubmitting" class="fa fa-spinner fa-spin"></i>
+                        <i v-else class="fa fa-save"></i>
                         {{ editSubmitting ? 'Updating...' : 'Update' }}
                       </button>
                     </div>
