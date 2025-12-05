@@ -292,7 +292,7 @@ const prevImage = () => {
       </div>
 
       <!-- CONTENT -->
-      <div v-if="item && !loading" class="max-w-6xl mx-auto">
+      <div v-if="item && !loading">
         <!-- Article Header -->
         <div class="bg-white rounded-lg shadow-sm p-6 lg:p-8 mb-6">
           <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
@@ -338,8 +338,8 @@ const prevImage = () => {
             </div>
           </div>
 
-          <div v-if="item.links && item.links.length > 0">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+          <div v-if="item.links && item.links.length > 0" class="mt-5">
+            <h3 class="text-lg font-semibold text-gray-900 flex items-center">
               <i class="fas fa-link mr-2 text-green-600"></i>
               Related Links
             </h3>
@@ -425,7 +425,7 @@ const prevImage = () => {
             Gallery
           </h2>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
             <div
               v-for="(file, index) in item.files"
               :key="index"
@@ -444,7 +444,7 @@ const prevImage = () => {
                 <img
                   :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${file}`"
                   :alt="`Image ${index + 1}`"
-                  class="w-full h-64 object-cover rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
+                  class="w-full h-32 object-cover rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
                 />
                 <div
                   class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 rounded-lg flex items-center justify-center"
