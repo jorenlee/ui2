@@ -65,6 +65,83 @@ const isVideoFile = (filename) => {
   return ['mp4', 'webm', 'ogg', 'avi', 'mov'].includes(ext);
 };
 
+// Video link detection helpers
+const isYouTubeLink = (url) => {
+  return url.includes('youtube.com') || url.includes('youtu.be');
+};
+
+const isReelsLink = (url) => {
+  return url.includes('facebook.com/reel') || url.includes('fb.com/reel');
+};
+
+const convertToYouTubeEmbed = (url) => {
+  try {
+    const urlObj = new URL(url);
+    let videoId = '';
+    
+    if (urlObj.hostname.includes('youtube.com')) {
+      videoId = urlObj.searchParams.get('v');
+    } else if (urlObj.hostname.includes('youtu.be')) {
+      videoId = urlObj.pathname.substring(1);
+    }
+    
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+  } catch (error) {
+    console.error('Error converting YouTube URL:', error);
+  }
+  return url;
+};
+
+const convertToFacebookEmbed = (url) => {
+  try {
+    const reelMatch = url.match(/\/reel\/(\d+)/);
+    if (reelMatch) {
+      return `https://www.facebook.com/plugins/video.php?height=476&href=${encodeURIComponent(url)}&show_text=false&width=267&t=0`;
+    }
+  } catch (error) {
+    console.error('Error converting Facebook URL:', error);
+  }
+  return url;
+};
+
+// Combine all videos into a single numbered array
+const getAllVideos = () => {
+  const videos = [];
+  
+  // Add video files
+  if (item.value?.files) {
+    item.value.files.forEach(file => {
+      if (isVideoFile(file)) {
+        videos.push({
+          type: 'file',
+          content: file
+        });
+      }
+    });
+  }
+  
+  // Add video links
+  if (item.value?.links) {
+    item.value.links.forEach(link => {
+      if (isYouTubeLink(link)) {
+        videos.push({
+          type: 'youtube',
+          content: link
+        });
+      } else if (isReelsLink(link)) {
+        videos.push({
+          type: 'facebook',
+          content: link
+        });
+      }
+    });
+  }
+  
+  return videos;
+};
+
 // fetch the item
 onMounted(async () => {
   loading.value = true;
@@ -314,6 +391,83 @@ const prevImage = () => {
                   <i class="fas fa-download mr-1"></i>
                   Download
                 </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Video List or GALLERY -->
+        <div v-if="(item.files && item.files.some(file => isVideoFile(file))) || (item.links && item.links.some(link => isYouTubeLink(link) || isReelsLink(link)))">
+          <h2 class="text-xl lg:text-2xl font-bold text-gray-900 mb-6 flex items-center">
+            <i class="fas fa-video mr-2 text-green-600"></i>
+            Video List
+          </h2>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Combined Video Files and Links with numbering -->
+            <div 
+              v-for="(video, index) in getAllVideos()" 
+              :key="`video-${index}`" 
+              class="relative bg-white rounded-lg shadow-lg overflow-hidden"
+            >
+              <!-- Video Number Badge -->
+              <div class="absolute top-2 left-2 z-10 bg-green-600 text-white text-sm font-bold px-2 py-1 rounded-full">
+                {{ index + 1 }}
+              </div>
+
+              <!-- Video Content -->
+              <div class="relative">
+                <!-- Video Files -->
+                <div v-if="video.type === 'file'" class="relative">
+                  <video 
+                    :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${video.content}`"
+                    controls
+                    class="w-full h-48 object-cover"
+                    :poster="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${video.content}`"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+
+                <!-- YouTube Videos -->
+                <div v-else-if="video.type === 'youtube'" class="relative">
+                  <iframe
+                    :src="convertToYouTubeEmbed(video.content)"
+                    class="w-full h-48"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                  ></iframe>
+                </div>
+
+                <!-- Facebook Reels -->
+                <div v-else-if="video.type === 'facebook'" class="relative">
+                  <iframe
+                    :src="convertToFacebookEmbed(video.content)"
+                    class="w-full h-48"
+                    frameborder="0"
+                    scrolling="no"
+                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                    allowfullscreen
+                  ></iframe>
+                </div>
+              </div>
+
+              <!-- Video Info -->
+              <div class="p-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs text-gray-600 capitalize">
+                    {{ video.type === 'file' ? 'Video File' : video.type === 'youtube' ? 'YouTube' : 'Facebook Reel' }}
+                  </span>
+                  <div class="flex items-center text-xs text-gray-500">
+                    <i class="fas fa-play-circle mr-1"></i>
+                    Video {{ index + 1 }}
+                  </div>
+                </div>
+                
+                <!-- Video title/filename -->
+                <div class="mt-1 text-sm text-gray-800 truncate">
+                  {{ video.type === 'file' ? video.content : 'External Video' }}
+                </div>
               </div>
             </div>
           </div>

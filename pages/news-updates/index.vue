@@ -38,6 +38,32 @@ const sdgOptions = ref([
   { value: "sdg17", label: "SDG 17 - Partnerships" }
 ]);
 
+// SDG Colors mapping
+const sdgColors = {
+  1: "#e5243b",   // No Poverty
+  2: "#dda63a",   // Zero Hunger  
+  3: "#4c9f38",   // Good Health and Well-being
+  4: "#c5192d",   // Quality Education
+  5: "#ff3a21",   // Gender Equality
+  6: "#26bde2",   // Clean Water and Sanitation
+  7: "#fcc30b",   // Affordable and Clean Energy
+  8: "#a21942",   // Decent Work and Economic Growth
+  9: "#fd6925",   // Industry, Innovation and Infrastructure
+  10: "#dd1367",  // Reduced Inequalities
+  11: "#fd9d24",  // Sustainable Cities and Communities
+  12: "#bf8b2e",  // Responsible Consumption and Production
+  13: "#3f7e44",  // Climate Action
+  14: "#0a97d9",  // Life Below Water
+  15: "#56c02b",  // Life on Land
+  16: "#00689d",  // Peace, Justice and Strong Institutions
+  17: "#19486a"   // Partnerships for the Goals
+};
+
+// Helper function to get SDG color
+const getSdgColor = (sdgNumber) => {
+  return sdgColors[sdgNumber] || "#6b7280"; // Default gray if not found
+};
+
 // Get available years and months from data
 const availableYears = computed(() => {
   const years = info.value
@@ -147,11 +173,39 @@ const getSdgBadges = (item) => {
       const regex = new RegExp(pattern, 'i');
       return regex.test(filters);
     })) {
-      badges.push({ number: i });
+      badges.push({ 
+        number: i,
+        color: getSdgColor(i)
+      });
     }
   }
   
   return badges;
+};
+
+// Helper function to check if item has video content
+const hasVideoContent = (item) => {
+  // Check for video files
+  if (item.files && item.files.some(file => isVideoFile(file))) {
+    return true;
+  }
+  
+  // Check for video links
+  if (item.links && item.links.some(link => 
+    link.includes('youtube.com') || 
+    link.includes('youtu.be') || 
+    link.includes('facebook.com/reel')
+  )) {
+    return true;
+  }
+  
+  return false;
+};
+
+// Helper function to check if file is video
+const isVideoFile = (filename) => {
+  const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv'];
+  return videoExtensions.some(ext => filename.toLowerCase().includes(ext));
 };
 
 onMounted(async () => {
@@ -311,52 +365,101 @@ onMounted(async () => {
           <!-- News Cards -->
           <div
             v-if="filteredInfo.length"
-            class="grid lg:grid-cols-4 grid-cols-2 justify-center lg:gap-x-8 gap-2 w-11/12 mx-auto"
+            class="grid lg:grid-cols-3 grid-cols-1 gap-6 w-11/12 mx-auto"
           >
             <div
               v-for="(j, i) in filteredInfo"
               :key="i"
-              class="w-full shadow-green-900 rounded bg-white text-green-900 shadow-2xl overflow-hidden transition-all duration-500 hover:scale-[1.02]"
+              class="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
             >
-              <a class="relative overflow-hidden" :href="'news-updates/' + j.id">
-                <!-- Title -->
-                <div
-                  class="lg:min-h-[70px] lg:px-3 lg:py-3 py-2 tracking-tighter leading-tight px-1 text-center font-semibold flex items-center justify-center lg:text-xs text-[9px]"
-                >
-                  {{ j.title }}
-                </div>
-                
-                <!-- SDG Badges -->
-               
-                <!-- Image -->
-                <div class="border-t-4 border-t-[#ffffff] w-full">
+              <a :href="'news-updates/' + j.id" class="block">
+                <!-- Image Section -->
+                <div class="relative h-48 overflow-hidden">
                   <img
                     v-if="j.files && j.files.length > 0"
-                      :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
-                    class="w-full lg:h-[220px] transition-transform duration-500 hover:scale-110"
+                    :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
+                    class="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
                     alt="News thumbnail"
                   />
                   <div
                     v-else
-                    class="w-full lg:h-[220px] bg-gray-200 flex items-center justify-center text-gray-500"
+                    class="w-full h-full bg-gray-200 flex items-center justify-center"
                   >
-                    <i class="fa fa-image text-4xl"></i>
+                    <img 
+                      src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg" 
+                      class="w-full h-full object-cover"
+                      alt="Default thumbnail"
+                    />
                   </div>
-                </div>
-
-                 <div v-if="getSdgBadges(j).length" class="px-2 pb-2">
-                  <div class="flex flex-wrap gap-1 justify-center">
-                    <div v-for="badge in getSdgBadges(j)" :key="badge.number" class="inline-flex items-center">
-                      <span 
-                        class="inline-flex items-center px-0.5 py-1 rounded-full text-[8px] font-medium bg-gradient-to-r from-green-600 to-green-700 text-white shadow-sm"
-                      >
-                        <i class="fas fa-leaf mr-1"></i>
-                        SDG {{ badge.number }}
-                      </span>
+                  
+                  <!-- Play button overlay for videos -->
+                  <div 
+                    v-if="hasVideoContent(j)"
+                    class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30"
+                  >
+                    <div class="bg-red-600 rounded-full p-3 shadow-lg">
+                      <i class="fas fa-play text-white text-xl ml-1"></i>
                     </div>
                   </div>
                 </div>
 
+                <!-- Content Section -->
+                <div class="p-4">
+                  <!-- Category/Type Badge -->
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs text-gray-500 uppercase tracking-wide">
+                      {{ j.category || 'News' }}
+                    </span>
+                    <span class="text-xs text-gray-400">
+                      {{ moment(j.date || j.created_at).format("MMM DD") }}
+                    </span>
+                  </div>
+
+                  <!-- Title -->
+                  <h3 class="text-lg font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
+                    {{ j.title }}
+                  </h3>
+
+                  <!-- Description Preview -->
+                  <p 
+                    v-if="j.descriptions" 
+                    class="text-sm text-gray-600 mb-3 line-clamp-3"
+                  >
+                    {{ j.descriptions.substring(0, 120) }}{{ j.descriptions.length > 120 ? '...' : '' }}
+                  </p>
+
+                  <!-- SDG Badges -->
+                  <div v-if="getSdgBadges(j).length" class="mb-3">
+                    <div class="flex flex-wrap gap-1">
+                      <div v-for="badge in getSdgBadges(j).slice(0, 3)" :key="badge.number" class="inline-flex items-center">
+                        <span 
+                          class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm"
+                          :style="{ backgroundColor: badge.color }"
+                        >
+                          SDG {{ badge.number }}
+                        </span>
+                      </div>
+                      <span 
+                        v-if="getSdgBadges(j).length > 3"
+                        class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                      >
+                        +{{ getSdgBadges(j).length - 3 }} more
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Footer -->
+                  <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <div class="flex items-center text-xs text-gray-500">
+                      <i class="fas fa-calendar mr-1"></i>
+                      {{ moment(j.date || j.created_at).format("MMMM DD, YYYY") }}
+                    </div>
+                    <div class="flex items-center text-xs text-green-600 font-medium">
+                      Read More
+                      <i class="fas fa-arrow-right ml-1"></i>
+                    </div>
+                  </div>
+                </div>
               </a>
             </div>
           </div>
@@ -490,5 +593,20 @@ onMounted(async () => {
   /* Additional effects */
   font-weight: 100 !important;
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
+}
+
+/* Line clamp utilities */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
