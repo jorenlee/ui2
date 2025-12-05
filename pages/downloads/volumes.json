@@ -1,0 +1,31 @@
+{
+ "volumes": [{
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._12_No._1.pdf",
+   "title": "Vol. 12 No. 1"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._12_No._2.pdf",
+   "title": "Vol. 12 No. 2"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._12_No._3.pdf",
+   "title": "Vol. 12 No. 3"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._12_No._4.pdf",
+   "title": "Vol. 12 No. 4"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._13_No._1.pdf",
+   "title": "Vol. 13 No. 1"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._17_No._2.pdf",
+   "title": "Vol. 17 No. 2"
+  },
+  {
+   "file": "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/files/vol/Vol._18_No._1.pdf",
+   "title": "Vol. 18 No. 1"
+  }
+ ]
+}

@@ -1,5 +1,5 @@
 <script setup>
-  import volumesJSON from "./volumes.json";
+  import volumesJSON from "../research/volumes.json";
   import { useUserStore } from "~/stores/user";
   const userStore = useUserStore();
   const endpoint = ref(userStore.mainDevServer);
