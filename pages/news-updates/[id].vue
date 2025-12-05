@@ -337,6 +337,26 @@ const prevImage = () => {
               {{ item.descriptions }}
             </div>
           </div>
+
+          <div v-if="item.links && item.links.length > 0">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+              <i class="fas fa-link mr-2 text-green-600"></i>
+              Related Links
+            </h3>
+            <div class="space-y-2">
+              <div v-for="(link, index) in item.links" :key="index">
+                <a
+                  :href="link"
+                  target="_blank"
+                  class="inline-flex items-center text-green-600 hover:text-green-700 hover:underline transition-colors duration-200 truncate max-w-full"
+                  :title="link"
+                >
+                  <i class="fas fa-external-link-alt mr-2 text-sm flex-shrink-0"></i>
+                  <span class="truncate">{{ link }}</span>
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Image Modal -->
