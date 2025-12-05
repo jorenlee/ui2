@@ -89,6 +89,61 @@ const selectedFiles = ref([]);
 const uploadingFiles = ref(false);
 const selectedSDGs = ref([]);
 
+// Image preview functionality
+const showImagePreview = ref(false);
+const previewImageUrl = ref('');
+
+// File type checking functions
+const isImageFile = (filename) => {
+  const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+  const ext = filename.split('.').pop()?.toLowerCase();
+  return imageExtensions.includes(ext);
+};
+
+const isVideoFile = (filename) => {
+  const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'];
+  const ext = filename.split('.').pop()?.toLowerCase();
+  return videoExtensions.includes(ext);
+};
+
+const isPdfFile = (filename) => {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  return ext === 'pdf';
+};
+
+const getFileIcon = (filename) => {
+  if (isImageFile(filename)) return 'fa fa-image';
+  if (isVideoFile(filename)) return 'fa fa-video';
+  if (isPdfFile(filename)) return 'fa fa-file-pdf';
+  return 'fa fa-file';
+};
+
+const getFileUrl = (filename) => {
+  return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${filename}`;
+};
+
+const openImagePreview = (imageUrl) => {
+  previewImageUrl.value = imageUrl;
+  showImagePreview.value = true;
+  document.body.style.overflow = 'hidden';
+};
+
+const closeImagePreview = () => {
+  showImagePreview.value = false;
+  previewImageUrl.value = '';
+  document.body.style.overflow = 'auto';
+};
+
+const handleImageError = (event, filename) => {
+  console.error('Image failed to load:', filename);
+  event.target.style.display = 'none';
+  // Show fallback icon
+  const fallback = event.target.parentElement;
+  if (fallback) {
+    fallback.innerHTML = '<div class="w-full h-24 bg-gray-200 rounded flex items-center justify-center"><i class="fa fa-image text-gray-400 text-2xl"></i></div>';
+  }
+};
+
 // Add method to update filters based on checkbox selection
 const updateFilters = () => {
   // Get existing filters and clean them up
@@ -272,22 +327,6 @@ const logOut = () => {
   router.push("/cms/login");
 };
 
-const isImageFile = (fileName) => {
-  const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
-  const ext = "." + fileName.split(".").pop().toLowerCase();
-  return imageExtensions.includes(ext);
-};
-
-const isPdfFile = (fileName) => {
-  return fileName.toLowerCase().endsWith(".pdf");
-};
-
-const isVideoFile = (fileName) => {
-  const videoExtensions = [".mp4", ".avi", ".mov", ".wmv", ".flv", ".webm"];
-  const ext = "." + fileName.split(".").pop().toLowerCase();
-  return videoExtensions.includes(ext);
-};
-
 // Add file upload functions
 const handleFileSelect = async (e) => {
   const files = e.target.files;
@@ -319,12 +358,12 @@ const validateFile = (file) => {
   const maxSize = 50 * 1024 * 1024; // 50MB
 
   if (!allowedTypes.includes(file.type)) {
-    alert(`Invalid file type: ${file.name}`);
+    showToast(`Invalid file type: ${file.name}`, "error");
     return false;
   }
 
   if (file.size > maxSize) {
-    alert(`File too large: ${file.name}`);
+    showToast(`File too large: ${file.name}`, "error");
     return false;
   }
 
@@ -339,10 +378,6 @@ const uploadFile = async (file) => {
     const res = await $fetch(`${endpoint.value}/api/cms/content/file/upload/`, {
       method: "POST",
       body: formData,
-      headers: {
-        // Don't set Content-Type, let browser set it with boundary
-      },
-      // Add timeout and retry logic
       timeout: 60000, // 60 seconds
     });
 
@@ -353,8 +388,6 @@ const uploadFile = async (file) => {
 
     if (error.status === 413) {
       showToast(`❌ File too large: ${file.name} (Max 50MB)`, "error");
-    } else if (error.message?.includes("CORS")) {
-      showToast(`❌ CORS error: ${file.name}`, "error");
     } else {
       showToast(`❌ Upload failed: ${file.name}`, "error");
     }
@@ -364,44 +397,6 @@ const uploadFile = async (file) => {
 
 const removeFile = (index) => {
   editContent.value.files.splice(index, 1);
-};
-
-// Add this helper function to get clean filename
-const getCleanFilename = (fileName) => {
-  if (!fileName) return "";
-  // Extract just the filename with extension, removing any extra parameters
-  const match = fileName.match(
-    /([^\/\\]+\.(jpg|jpeg|png|gif|webp|pdf|mp4|avi|mov|wmv|flv|webm|mp3))$/i
-  );
-  return match ? match[1] : fileName;
-};
-
-// Update the image URL helper to handle spaces and special characters
-const getImageUrl = (fileName) => {
-  const cleanName = getCleanFilename(fileName);
-  // URL encode the filename to handle spaces and special characters
-  const encodedName = encodeURIComponent(cleanName);
-  return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${encodedName}`;
-};
-
-// Add debugging functions
-const handleImageError = (event, fileName) => {
-  console.error("Image failed to load:", fileName);
-  console.error("URL:", getImageUrl(fileName));
-  console.error("Clean filename:", getCleanFilename(fileName));
-
-  // Hide the broken image and show fallback
-  event.target.style.display = "none";
-  const fallback = document.getElementById(
-    "fallback-" + editContent.value.files.indexOf(fileName)
-  );
-  if (fallback) {
-    fallback.style.display = "flex";
-  }
-};
-
-const handleImageLoad = (fileName) => {
-  console.log("Image loaded successfully:", fileName);
 };
 
 // Pagination and filtering
@@ -572,7 +567,7 @@ watch([searchQuery, selectedFilter], () => {
                 <!-- Search and Filter Bar -->
                 <div class="bg-white rounded-lg shadow-sm border p-3 lg:p-4 mb-4 lg:flex w-full gap-x-2">
                   <!-- Stats Cards -->
-                  <div class="w-full grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 mb-4">
+                  <div class="w-full grid grid-cols-2 gap-2 lg:gap-4 mb-4" :class="showEditModal ? 'lg:grid-cols-2':'lg:grid-cols-4'">
                     <div class="bg-blue-50 p-2 lg:p-x3  lg:py-1rounded-lg border-l-4 border-blue-500">
                       <div class="flex items-center">
                         <i class="fa fa-file-text text-blue-500 text-sm lg:text-lg mr-2 lg:mr-3"></i>
@@ -612,7 +607,7 @@ watch([searchQuery, selectedFilter], () => {
                   </div>
 
                   <!-- Search and Filter Controls -->
-                  <div class="lg:flex items-center gap-3 w-full h-fit">
+                  <div class=" items-center gap-3 w-full h-fit" :class="showEditModal ? 'lg:flex-col':'lg:flex'">
                     <div class="relative w-full lg:mb-0 mb-2">
                       <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                       <input
@@ -626,6 +621,7 @@ watch([searchQuery, selectedFilter], () => {
                       <select
                         v-model="selectedFilter"
                         class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        :class="showEditModal ? 'my-2':''"
                       >
                         <option v-for="option in filterOptions" :key="option.value" :value="option.value">
                           {{ option.label }}
@@ -761,10 +757,10 @@ watch([searchQuery, selectedFilter], () => {
             <!-- Edit Panel (Right Side / Mobile Overlay) -->
             <div 
               v-if="showEditModal" 
-              class="fixed inset-0 bg-black bg-opacity-50 z-50 lg:relative lg:bg-transparent lg:inset-auto lg:w-96 lg:bg-white lg:border-l lg:border-gray-200 lg:shadow-lg flex flex-col"
+              class="fixed inset-0 bg-black bg-opacity-50 z-50 lg:relative lg:bg-transparent lg:inset-auto lg:w-6/12 lg:bg-white lg:border-l lg:border-gray-200 lg:shadow-lg flex flex-col"
             >
               <!-- Mobile Edit Panel -->
-              <div class="bg-white h-full w-full lg:w-auto flex flex-col lg:relative">
+              <div class="bg-white h-full w-full lg:w-auto flex flex-col lg:relative overflow-y-auto">
                 <!-- Edit Panel Header -->
                 <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
                   <h2 class="text-lg font-bold text-gray-800">Edit Content</h2>
@@ -776,99 +772,232 @@ watch([searchQuery, selectedFilter], () => {
                   </button>
                 </div>
 
-                <!-- Edit Panel Content -->
-                <div class="flex-1 overflow-y-auto p-4">
-                  <div v-if="editLoading" class="text-center py-8">
-                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-800 mx-auto"></div>
-                    <p class="mt-2 text-sm text-gray-600">Loading content...</p>
-                  </div>
-
-                  <form v-else @submit.prevent="submitEdit" class="space-y-4">
-                    <!-- Form fields remain the same but with responsive adjustments -->
+                <!-- Edit Form -->
+                <div class="flex-1 p-4 space-y-4 overflow-y-auto">
+                  <form @submit.prevent="updateContent" class="space-y-4">
+                    <!-- Content ID -->
                     <div>
-                      <label class="block text-sm font-medium mb-1">Content ID</label>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Content ID</label>
                       <input
                         v-model="editContent.content_id"
                         type="text"
-                        disabled
-                        class="w-full border rounded px-3 py-2 bg-gray-50 text-sm"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                        required
                       />
                     </div>
 
+                    <!-- Title -->
                     <div>
-                      <label class="block text-sm font-medium mb-1">Title</label>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
                       <input
                         v-model="editContent.title"
                         type="text"
-                        class="w-full border rounded px-3 py-2 text-sm"
-                        placeholder="Title"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                         required
                       />
                     </div>
 
+                    <!-- Authors -->
                     <div>
-                      <label class="block text-sm font-medium mb-1">Author/Authors</label>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Authors</label>
                       <input
                         v-model="editContent.authors"
-                        placeholder="e.g. John Doe, Jane Doe"
                         type="text"
-                        class="w-full border rounded px-3 py-2 text-sm"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                         required
                       />
                     </div>
 
+                    <!-- Date -->
                     <div>
-                      <label class="block text-sm font-medium mb-1">Description</label>
-                      <textarea
-                        v-model="editContent.descriptions"
-                        class="w-full border rounded px-3 py-2 text-sm h-20 resize-y"
-                        placeholder="Description"
-                      ></textarea>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                      <input
+                        v-model="editContent.date"
+                        type="date"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                        required
+                      />
                     </div>
 
+                    <!-- Filters -->
                     <div>
-                      <label class="block text-sm font-medium mb-1">Filters</label>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Filters/SDGs</label>
                       <input
                         v-model="editContent.filters"
                         type="text"
-                        class="w-full border rounded px-3 py-2 text-sm"
-                        placeholder="Enter filters manually or use checkboxes below"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                        placeholder="e.g., SDG1, SDG4, SDG17"
                       />
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <textarea
+                        v-model="editContent.descriptions"
+                        rows="3"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                        required
+                      ></textarea>
+                    </div>
+
+                    <!-- Links Section -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">Links</label>
+                      <div class="space-y-2">
+                        <div
+                          v-for="(link, index) in editContent.links"
+                          :key="index"
+                          class="flex gap-1"
+                        >
+                          <input
+                            v-model="editContent.links[index]"
+                            type="url"
+                            placeholder="https://example.com"
+                            class="flex-1 px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+                          />
+                          <button
+                            type="button"
+                            @click="removeLink(index)"
+                            class="px-2 py-1 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                          >
+                            <i class="fa fa-trash"></i>
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          @click="addLink"
+                          class="w-full px-3 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                        >
+                          <i class="fa fa-plus mr-1"></i>Add Link
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Files Section -->
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-2">Files</label>
                       
-                      <div class="mt-2">
-                        <label class="block text-xs font-medium mb-1">SDGs:</label>
-                        <div class="grid grid-cols-1 lg:grid-cols-1 gap-1 max-h-32 overflow-y-auto border rounded p-2 bg-gray-50">
-                          <div v-for="sdg in sdgOptions" :key="sdg.value" class="flex items-center">
-                            <input 
-                              type="checkbox"
-                              :id="`edit-${sdg.value}`"
-                              :value="sdg.value"
-                              v-model="selectedSDGs"
-                              @change="updateEditFilters"
-                              class="mr-2 w-3 h-3"
-                              :style="{ accentColor: getSdgColor(parseInt(sdg.value.replace('sdg', ''))) }"
-                            />
-                            <label :for="`edit-${sdg.value}`" class="text-xs cursor-pointer text-gray-700 flex items-center">
-                              <span 
-                                class="inline-block w-2 h-2 rounded-full mr-1"
-                                :style="{ backgroundColor: getSdgColor(parseInt(sdg.value.replace('sdg', ''))) }"
-                              ></span>
-                              {{ sdg.label.replace('SDG ', '') }}
-                            </label>
+                      <!-- File Upload -->
+                      <div class="mb-3">
+                        <input
+                          ref="fileInput"
+                          type="file"
+                          multiple
+                          @change="handleFileSelect"
+                          class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
+                          :disabled="uploadingFiles"
+                        />
+                        <p class="text-xs text-gray-500 mt-1">Select files to upload</p>
+                      </div>
+
+                      <!-- Upload Progress -->
+                      <div v-if="uploadingFiles" class="mb-3">
+                        <div class="bg-blue-50 border border-blue-200 rounded p-2">
+                          <div class="flex items-center">
+                            <i class="fa fa-spinner fa-spin text-blue-500 mr-2 text-sm"></i>
+                            <span class="text-blue-700 text-xs">Uploading...</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Current Files with Preview -->
+                      <div v-if="editContent.files && editContent.files.length > 0" class="space-y-2">
+                        <h4 class="text-xs font-medium text-gray-700">Current Files:</h4>
+                        <div class="grid grid-cols-3 gap-2">
+                          <div
+                            v-for="(file, index) in editContent.files"
+                            :key="index"
+                            class="bg-gray-50 p-2 rounded border"
+                          >
+                            <!-- Image Preview -->
+                            <div v-if="isImageFile(file)" class="mb-2">
+                              <img
+                                :src="getFileUrl(file)"
+                                :alt="file"
+                                class="w-full h-24 object-cover rounded cursor-pointer hover:opacity-80"
+                                @click="openImagePreview(getFileUrl(file))"
+                                @error="handleImageError($event, file)"
+                              />
+                            </div>
+                            
+                            <!-- Video Preview -->
+                            <div v-else-if="isVideoFile(file)" class="mb-2 relative">
+                              <video
+                                :src="getFileUrl(file)"
+                                class="w-full h-24 object-cover rounded"
+                                muted
+                                preload="metadata"
+                              >
+                                Your browser does not support the video tag.
+                              </video>
+                              <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
+                                <i class="fa fa-play text-white text-lg"></i>
+                              </div>
+                            </div>
+                            
+                            <!-- PDF Preview -->
+                            <div v-else-if="isPdfFile(file)" class="mb-2">
+                              <div class="w-full h-24 bg-red-100 rounded flex items-center justify-center">
+                                <i class="fa fa-file-pdf text-red-600 text-2xl"></i>
+                              </div>
+                            </div>
+                            
+                            <!-- Other Files -->
+                            <div v-else class="mb-2">
+                              <div class="w-full h-24 bg-gray-200 rounded flex items-center justify-center">
+                                <i class="fa fa-file text-gray-600 text-2xl"></i>
+                              </div>
+                            </div>
+
+                            <!-- File Info and Actions -->
+                            <div class="flex items-center justify-between">
+                              <div class="flex items-center flex-1 min-w-0">
+                                <i :class="getFileIcon(file)" class="mr-1 text-gray-500 flex-shrink-0 text-xs"></i>
+                                <span class="text-gray-700 truncate text-xs">{{ file }}</span>
+                              </div>
+                              <div class="flex gap-1 ml-2">
+                                <a
+                                  :href="getFileUrl(file)"
+                                  target="_blank"
+                                  class="px-1 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-xs"
+                                  title="View file"
+                                >
+                                  <i class="fa fa-external-link-alt"></i>
+                                </a>
+                                <button
+                                  type="button"
+                                  @click="removeFile(index)"
+                                  class="px-1 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                                  title="Remove file"
+                                >
+                                  <i class="fa fa-trash"></i>
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <!-- Additional form fields... -->
-                    
-                    <button
-                      type="submit"
-                      :disabled="editSubmitting"
-                      class="w-full bg-green-800 hover:bg-green-900 disabled:bg-gray-400 text-white py-3 lg:py-2 rounded text-sm font-medium"
-                    >
-                      {{ editSubmitting ? "Updating..." : "Update Content" }}
-                    </button>
+                    <!-- Submit Buttons -->
+                    <div class="flex gap-2 pt-4 border-t">
+                      <button
+                        type="button"
+                        @click="closeEditModal"
+                        class="flex-1 px-3 py-2 border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        :disabled="editSubmitting"
+                        class="flex-1 px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50"
+                      >
+                        <i v-if="editSubmitting" class="fa fa-spinner fa-spin mr-1"></i>
+                        {{ editSubmitting ? 'Updating...' : 'Update' }}
+                      </button>
+                    </div>
                   </form>
                 </div>
               </div>
