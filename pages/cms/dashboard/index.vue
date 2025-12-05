@@ -228,6 +228,7 @@ const handleFileSelect = async (e) => {
       uploaded: false,
       uploading: true,
       error: null,
+      uploadedUrl: null, // Store the uploaded filename here
     });
 
     const uploaded = await uploadFile(file);
@@ -237,7 +238,7 @@ const handleFileSelect = async (e) => {
 
     if (uploaded) {
       last.uploaded = true;
-      last.uploadedUrl = uploaded.finalName;
+      last.uploadedUrl = uploaded.finalName; // Store the filename from upload response
     } else {
       last.error = "Upload failed";
     }
@@ -259,11 +260,17 @@ const submitContent = async () => {
   submitting.value = true;
 
   try {
+    // Collect uploaded filenames
+    const uploadedFilenames = selectedFiles.value
+      .filter(fileObj => fileObj.uploaded && fileObj.uploadedUrl)
+      .map(fileObj => fileObj.uploadedUrl);
+
     await $fetch(`${endpoint.value}/api/cms/content/create/`, {
       method: "POST",
       body: {
         ...content.value,
         links: [...content.value.links],
+        files: uploadedFilenames, // Add the filenames array
       },
     });
 
