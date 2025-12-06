@@ -20,12 +20,6 @@ export default defineNuxtConfig({
         {
           src: "/js/flickity.pkgd.min.js"
         },
-      ],
-      meta: [
-        // Default social media meta tags
-        { property: 'og:site_name', content: 'La Salle University - Ozamiz' },
-        { property: 'og:locale', content: 'en_US' },
-        { name: 'twitter:site', content: '@lsu_ozamiz' }
       ]
     },
   },
@@ -88,6 +82,4 @@ export default defineNuxtConfig({
     },
   },
   compatibilityDate: '2025-07-30',
-  // Enable server-side rendering for better social media crawling
-  ssr: true,
 });

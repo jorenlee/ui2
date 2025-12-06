@@ -6,19 +6,73 @@ import moment from "moment";
 
 const route = useRoute();
 const itemId = route.params.id;
+const userStore = useUserStore();
+const endpoint = userStore.mainDevServer;
 
-const loading = ref(true);
-const errorMsg = ref("");
-const item = ref(null);
+// Fetch data server-side for proper SSR
+const { data: item } = await useFetch(`${endpoint}/api/cms/content/${itemId}/`);
 
-// Modal state for images
+// Reactive state for modal and gallery
 const showModal = ref(false);
 const currentImageUrl = ref("");
 const currentImageIndex = ref(0);
 const imageFiles = ref([]);
+const loading = ref(false);
+const errorMsg = ref("");
 
-const userStore = useUserStore();
-const endpoint = userStore.mainDevServer;
+// Helper function
+const isImageFile = (filename) => {
+  const ext = filename.toLowerCase().split(".").pop();
+  return ["jpg", "jpeg", "png", "gif", "webp"].includes(ext);
+};
+
+// Set dynamic meta tags with actual article data
+if (item.value) {
+  const title = item.value.title || 'LSU News Update';
+  const description = item.value.descriptions 
+    ? item.value.descriptions.replace(/<[^>]*>/g, '').substring(0, 300)
+    : 'Latest news and updates from La Salle University - Ozamiz';
+  
+  const imageUrl = item.value.files && item.value.files.length > 0 && isImageFile(item.value.files[0])
+    ? `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${item.value.files[0]}`
+    : 'https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/logos/lsu-logo.png';
+
+  // Replace static useHead with dynamic data
+  useHead({
+    title: `${title} | LSU`,
+    meta: [
+      { property: "og:title", content: `${title} | LSU` },
+      { property: "og:image", content: imageUrl },
+      { property: "og:description", content: description },
+      { property: "og:url", content: `https://lsu.edu.ph/news-updates/${itemId}` },
+      { property: "og:type", content: "article" },
+      { property: "og:site_name", content: "La Salle University - Ozamiz" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: description },
+      { name: "twitter:image", content: imageUrl }
+    ]
+  });
+
+  useServerSeoMeta({
+    title: `${title} - La Salle University Ozamiz`,
+    description: description,
+    ogTitle: `${title} | LSU`,
+    ogDescription: description,
+    ogImage: imageUrl,
+    ogUrl: `https://lsu.edu.ph/news-updates/${itemId}`,
+    ogType: 'article',
+    ogSiteName: 'La Salle University - Ozamiz',
+    ogLocale: 'en_US',
+    ogImageWidth: '1200',
+    ogImageHeight: '630',
+    twitterCard: 'summary_large_image',
+    twitterTitle: title,
+    twitterDescription: description,
+    twitterImage: imageUrl,
+    twitterSite: '@lsu_ozamiz'
+  });
+}
 
 // SDG Colors mapping
 const sdgColors = {
@@ -32,6 +86,7 @@ const sdgColors = {
 const getSdgColor = (sdgNumber) => {
   return sdgColors[sdgNumber] || "#6b7280";
 };
+
 
 // Add computed property for SDG badges
 const getSdgBadges = (item) => {
@@ -75,11 +130,11 @@ const getSdgSlug = (sdgNumber) => {
   return sdgSlugs[sdgNumber - 1] || '';
 };
 
-// File type detection helpers
-const isImageFile = (filename) => {
-  const ext = filename.toLowerCase().split(".").pop();
-  return ["jpg", "jpeg", "png", "gif", "webp"].includes(ext);
-};
+// // File type detection helpers
+// const isImageFile = (filename) => {
+//   const ext = filename.toLowerCase().split(".").pop();
+//   return ["jpg", "jpeg", "png", "gif", "webp"].includes(ext);
+// };
 
 const isPdfFile = (filename) => {
   return filename.toLowerCase().endsWith(".pdf");
@@ -230,91 +285,14 @@ const copyToClipboard = async () => {
 };
 
 // fetch the item
-onMounted(async () => {
-  loading.value = true;
-  errorMsg.value = "";
-  try {
-    const res = await $fetch(`${endpoint}/api/cms/content/${itemId}/`);
-    item.value = res ?? null;
-
-    // Set up social media meta tags after data is loaded
-    if (item.value) {
-      setupSocialMeta();
-    }
-
-    // Filter image files for modal navigation
-    if (item.value?.files) {
-      imageFiles.value = item.value.files.filter((file) => isImageFile(file));
-    }
-  } catch (error) {
-    console.error("Error fetching item:", error);
-    errorMsg.value = "Failed to load details.";
-  } finally {
-    loading.value = false;
+onMounted(() => {
+  // Filter image files for modal navigation
+  if (item.value?.files) {
+    imageFiles.value = item.value.files.filter((file) => isImageFile(file));
   }
 });
 
-// Setup social media meta tags
-const setupSocialMeta = () => {
-  if (!item.value) return;
-
-  const title = item.value.title || 'LSU News Update';
-  const description = item.value.descriptions 
-    ? item.value.descriptions.replace(/<[^>]*>/g, '').substring(0, 160) + (item.value.descriptions.length > 160 ? '...' : '')
-    : 'Latest news and updates from La Salle University - Ozamiz';
-  
-  const imageUrl = item.value.files && item.value.files.length > 0 
-    ? `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${item.value.files[0]}`
-    : 'https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/logos/lsu-logo.png';
-
-  const url = `https://lsu.edu.ph/news-updates/${itemId}`;
-
-  useHead({
-    title: title,
-    meta: [
-      { name: 'description', content: description },
-      
-      // Enhanced Open Graph / Facebook
-      { property: 'og:type', content: 'article' },
-      { property: 'og:title', content: title },
-      { property: 'og:description', content: description },
-      { property: 'og:image', content: imageUrl },
-      { property: 'og:image:alt', content: title },
-      { property: 'og:image:width', content: '1200' },
-      { property: 'og:image:height', content: '630' },
-      { property: 'og:image:type', content: 'image/jpeg' },
-      { property: 'og:url', content: url },
-      { property: 'og:site_name', content: 'La Salle University - Ozamiz' },
-      { property: 'og:locale', content: 'en_US' },
-      { property: 'article:author', content: item.value.authors || 'LSU Communications' },
-      { property: 'article:published_time', content: item.value.date || item.value.created_at },
-      { property: 'article:section', content: item.value.category || 'News' },
-      { property: 'article:publisher', content: 'https://www.facebook.com/lsu.edu.ph/' },
-      
-      // Enhanced Twitter Card
-      { name: 'twitter:card', content: 'summary_large_image' },
-      { name: 'twitter:title', content: title },
-      { name: 'twitter:description', content: description },
-      { name: 'twitter:image', content: imageUrl },
-      { name: 'twitter:image:alt', content: title },
-      { name: 'twitter:site', content: '@lsu_ozamiz' },
-      { name: 'twitter:creator', content: '@lsu_ozamiz' },
-      
-      // Additional social platforms
-      { name: 'linkedin:owner', content: 'La Salle University - Ozamiz' },
-      
-      // SEO enhancements
-      { name: 'author', content: item.value.authors || 'LSU Communications' },
-      { name: 'keywords', content: `LSU, La Salle University, Ozamiz, ${item.value.category || 'news'}, education, Philippines` },
-      { name: 'robots', content: 'index, follow, max-image-preview:large' },
-      { name: 'googlebot', content: 'index, follow, max-image-preview:large' }
-    ],
-    link: [
-      { rel: 'canonical', href: url },
-      { rel: 'alternate', type: 'application/rss+xml', title: 'LSU News Feed', href: 'https://lsu.edu.ph/rss' }
-    ]
-  });
-};
+// Remove the setupSocialMeta function - no longer needed
 
 const closeModal = () => {
   showModal.value = false;
