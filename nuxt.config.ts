@@ -34,7 +34,7 @@ export default defineNuxtConfig({
     clientId: '818409831356-g3thpiuagqs1oj6sh1bk6j1c25j2m2mk.apps.googleusercontent.com'
   },
   googleAdsense: {
-    id: 'ca-pub-2783005418884897'
+    id: 'ca-pub-5434839287765657'
   },
   build: {
     transpile: ['@vuepic/vue-datepicker']
