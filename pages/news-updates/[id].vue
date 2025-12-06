@@ -185,6 +185,50 @@ const formatDate = (dateString) => {
   }
 };
 
+// Social sharing functions
+const shareToFacebook = () => {
+  const url = `https://lsu.edu.ph/news-updates/${itemId}`;
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+  window.open(facebookUrl, '_blank', 'width=600,height=400');
+};
+
+const shareToTwitter = () => {
+  const url = `https://lsu.edu.ph/news-updates/${itemId}`;
+  const title = item.value?.title || 'LSU News Update';
+  const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}&via=lsu_ozamiz`;
+  window.open(twitterUrl, '_blank', 'width=600,height=400');
+};
+
+const shareToLinkedIn = () => {
+  const url = `https://lsu.edu.ph/news-updates/${itemId}`;
+  const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+  window.open(linkedinUrl, '_blank', 'width=600,height=400');
+};
+
+const shareToWhatsApp = () => {
+  const url = `https://lsu.edu.ph/news-updates/${itemId}`;
+  const title = item.value?.title || 'LSU News Update';
+  const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(title + ' - ' + url)}`;
+  window.open(whatsappUrl, '_blank');
+};
+
+const copyToClipboard = async () => {
+  const url = `https://lsu.edu.ph/news-updates/${itemId}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    alert('Link copied to clipboard!');
+  } catch (err) {
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = url;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+    alert('Link copied to clipboard!');
+  }
+};
+
 // fetch the item
 onMounted(async () => {
   loading.value = true;
@@ -216,7 +260,7 @@ const setupSocialMeta = () => {
 
   const title = item.value.title || 'LSU News Update';
   const description = item.value.descriptions 
-    ? item.value.descriptions.substring(0, 160) + (item.value.descriptions.length > 160 ? '...' : '')
+    ? item.value.descriptions.replace(/<[^>]*>/g, '').substring(0, 160) + (item.value.descriptions.length > 160 ? '...' : '')
     : 'Latest news and updates from La Salle University - Ozamiz';
   
   const imageUrl = item.value.files && item.value.files.length > 0 
@@ -230,36 +274,44 @@ const setupSocialMeta = () => {
     meta: [
       { name: 'description', content: description },
       
-      // Open Graph / Facebook
+      // Enhanced Open Graph / Facebook
       { property: 'og:type', content: 'article' },
       { property: 'og:title', content: title },
       { property: 'og:description', content: description },
       { property: 'og:image', content: imageUrl },
+      { property: 'og:image:alt', content: title },
       { property: 'og:image:width', content: '1200' },
       { property: 'og:image:height', content: '630' },
+      { property: 'og:image:type', content: 'image/jpeg' },
       { property: 'og:url', content: url },
       { property: 'og:site_name', content: 'La Salle University - Ozamiz' },
+      { property: 'og:locale', content: 'en_US' },
       { property: 'article:author', content: item.value.authors || 'LSU Communications' },
       { property: 'article:published_time', content: item.value.date || item.value.created_at },
       { property: 'article:section', content: item.value.category || 'News' },
+      { property: 'article:publisher', content: 'https://www.facebook.com/lsu.edu.ph/' },
       
-      // Twitter Card
+      // Enhanced Twitter Card
       { name: 'twitter:card', content: 'summary_large_image' },
       { name: 'twitter:title', content: title },
       { name: 'twitter:description', content: description },
       { name: 'twitter:image', content: imageUrl },
+      { name: 'twitter:image:alt', content: title },
       { name: 'twitter:site', content: '@lsu_ozamiz' },
+      { name: 'twitter:creator', content: '@lsu_ozamiz' },
       
-      // Additional meta for better SEO
+      // Additional social platforms
+      { name: 'linkedin:owner', content: 'La Salle University - Ozamiz' },
+      
+      // SEO enhancements
       { name: 'author', content: item.value.authors || 'LSU Communications' },
-      { name: 'keywords', content: `LSU, La Salle University, Ozamiz, ${item.value.category || 'news'}, education` },
-      { name: 'robots', content: 'index, follow' },
-      
-      // Schema.org structured data
-      { name: 'article:tag', content: item.value.filters || '' }
+      { name: 'keywords', content: `LSU, La Salle University, Ozamiz, ${item.value.category || 'news'}, education, Philippines` },
+      { name: 'robots', content: 'index, follow, max-image-preview:large' },
+      { name: 'googlebot', content: 'index, follow, max-image-preview:large' }
     ],
     link: [
-      { rel: 'canonical', href: url }
+      { rel: 'canonical', href: url },
+      { rel: 'alternate', type: 'application/rss+xml', title: 'LSU News Feed', href: 'https://lsu.edu.ph/rss' }
     ]
   });
 };
@@ -577,6 +629,7 @@ const prevImage = () => {
             </div>
           </div>
         </div>
+
         <!-- Video List or GALLERY -->
         <div
           v-if="
@@ -645,51 +698,71 @@ const prevImage = () => {
                   ></iframe>
                 </div>
               </div>
-
-              <!-- Video Info -->
-              <div class="p-3">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs text-gray-600 capitalize">
-                    {{
-                      video.type === "file"
-                        ? "Video File"
-                        : video.type === "youtube"
-                        ? "YouTube"
-                        : "Facebook Reel"
-                    }}
-                  </span>
-                  <div class="flex items-center text-xs text-gray-500">
-                    <i class="fas fa-play-circle mr-1"></i>
-                    Video {{ index + 1 }}
-                  </div>
-                </div>
-
-                <!-- Video title/filename -->
-                <div class="mt-1 text-sm text-gray-800 truncate">
-                  {{ video.type === "file" ? video.content : "External Video" }}
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
-        <!-- No Media Fallback -->
-        <div v-else class="bg-white rounded-lg shadow-sm p-6 lg:p-8 mb-6">
-          <div class="text-center py-12 text-gray-500">
-            <i class="fas fa-image text-4xl mb-4 text-gray-300"></i>
-            <p class="text-lg">No media files available for this article</p>
+        <!-- Share Section -->
+        <div class="w-full mx-auto mt-8 mb-6" v-if="item">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+            <h3 class="text-lg font-bold text-green-800 mb-4 flex items-center">
+              <i class="fas fa-share-alt mr-2"></i>
+              Share this article
+            </h3>
+            
+            <div class="flex flex-wrap gap-3">
+              <!-- Facebook Share -->
+              <button 
+                @click="shareToFacebook"
+                class="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                <i class="fab fa-facebook-f mr-2"></i>
+                Facebook
+              </button>
+              
+              <!-- Twitter Share -->
+              <button 
+                @click="shareToTwitter"
+                class="flex items-center bg-blue-400 hover:bg-blue-500 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                <i class="fab fa-twitter mr-2"></i>
+                Twitter
+              </button>
+              
+              <!-- LinkedIn Share -->
+              <button 
+                @click="shareToLinkedIn"
+                class="flex items-center bg-blue-800 hover:bg-blue-900 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                <i class="fab fa-linkedin-in mr-2"></i>
+                LinkedIn
+              </button>
+              
+              <!-- WhatsApp Share -->
+              <button 
+                @click="shareToWhatsApp"
+                class="flex items-center bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                <i class="fab fa-whatsapp mr-2"></i>
+                WhatsApp
+              </button>
+              
+              <!-- Copy Link -->
+              <button 
+                @click="copyToClipboard"
+                class="flex items-center bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors duration-200"
+              >
+                <i class="fas fa-link mr-2"></i>
+                Copy Link
+              </button>
+            </div>
+            
+            <!-- Share count or additional info -->
+            <div class="mt-4 text-sm text-gray-600">
+              <i class="fas fa-info-circle mr-1"></i>
+              Share this news with your network to spread awareness
+            </div>
           </div>
-        </div>
-
-        <!-- Back Button -->
-        <div class="text-center">
-          <button
-            @click="$router.push('/news-updates')"
-            class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 shadow-sm"
-          >
-            <i class="fas fa-arrow-left mr-2"></i>
-            Back to News & Updates
-          </button>
         </div>
       </div>
     </div>
@@ -697,12 +770,3 @@ const prevImage = () => {
     <Footer />
   </div>
 </template>
-
-<style>
-.cursor-grab {
-  cursor: grab;
-}
-.cursor-grab:active {
-  cursor: grabbing;
-}
-</style>
