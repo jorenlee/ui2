@@ -6,6 +6,14 @@ export default defineNuxtPlugin(() => {
     return;
   }
 
+  // Add AdSense account meta tag
+  if (!document.querySelector('meta[name="google-adsense-account"]')) {
+    const metaTag = document.createElement('meta');
+    metaTag.name = 'google-adsense-account';
+    metaTag.content = 'ca-pub-5434839287765657';
+    document.head.appendChild(metaTag);
+  }
+
   // Check if AdSense is already loaded to avoid duplicates
   if (window.adsbygoogle || document.querySelector('script[src*="adsbygoogle.js"]')) {
     return;
@@ -24,3 +32,5 @@ export default defineNuxtPlugin(() => {
   
   document.head.appendChild(script);
 });
+
+
