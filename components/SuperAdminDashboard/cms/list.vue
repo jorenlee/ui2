@@ -500,91 +500,9 @@ const getSdgBadges = (item) => {
 <template>
   <div class="w-full min-h-screen flex flex-col">
     <div class="flex flex-1 w-full">
-      <!-- Sidebar -->
-      <div
-        class="pb-3 lg:w-3/12 bg-gray-100 w-full flex overflow-hidden z-40 lg:block lg:static absolute"
-        v-show="toggleSideBarMenu"
-      >
-        <div class="w-full">
-          <div
-            class="flex items-center text-white bg-green-900 lg:py-[16px] py-[8px]"
-          >
-            <div class="flex items-center w-full px-2">
-              <i class="fa fa-user mx-2" aria-hidden="true"></i>
-              <h1 class="text-sm">{{ userStore.user.email }}</h1>
-            </div>
-            <div
-              @click="toggleSideBarMenu = !toggleSideBarMenu"
-              class="w-10 px-1.5 lg:hidden flex"
-            >
-              <i
-                class="fa text-3xl text-white"
-                :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'"
-                aria-hidden="true"
-              ></i>
-            </div>
-          </div>
-          <div class="">
-            <div class="w-fit mx-auto mt-5 mb-3">
-              <img
-                src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/circleLSULogo.jpg"
-                class="lg:w-28 w-24 mx-auto rounded-full"
-              />
-            </div>
-            <div class="text-center">
-              <h1 class="font-bold text-green-800 text-3xl">Dashboard</h1>
-            </div>
-            <div class="mx-auto mt-10 mb-5 grid grid-cols-1">
-              <a
-                href="/cms/dashboard"
-                class="text-xs mx-auto mb-2 w-full uppercase whitespace-nowrap px-5 py-1 font-bold text-left text-green-900 hover:bg-green-900 hover:text-white"
-              >
-                <i class="fa fa-list mr-3" aria-hidden="true"></i>
-                Content Form
-              </a>
-              <a
-                href="/cms/dashboard/list"
-                class="text-xs mx-auto mb-2 w-full uppercase whitespace-nowrap px-5 py-1 font-bold text-left text-green-900 hover:bg-green-900 hover:text-white"
-              >
-                <i class="fa fa-list-alt mr-3" aria-hidden="true"></i>
-                All Contents Lists
-              </a>
-              <a
-                href="/"
-                class="text-xs mx-auto mb-2 w-full uppercase whitespace-nowrap px-5 py-1 font-bold text-left text-green-900 hover:bg-green-900 hover:text-white"
-              >
-                <i class="fa fa-globe mr-3" aria-hidden="true"></i>
-                LSU HOME PAGE
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-
+  
       <div class="w-full">
-        <div class="bg-green-800 w-full z-50">
-          <div class="flex mx-auto justify-between items-center py-2 px-3.5">
-            <div
-              @click="toggleSideBarMenu = !toggleSideBarMenu"
-              class="w-auto flex items-center lg:px-1.5"
-            >
-              <i
-                class="fa text-3xl text-white"
-                :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'"
-                aria-hidden="true"
-              ></i>
-              <p
-                class="text-white whitespace-nowrap lg:ml-5 ml-3 font-bold uppercase lg:text-sm text-xs"
-              >
-                LSU Content Management System
-              </p>
-            </div>
-            <button @click="logOut" class="flex items-center hover:font-bold">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white ml-2 lg:flex hidden">Log Out</h1>
-            </button>
-          </div>
-        </div>
+        
 
         <!-- Main Content with Footer -->
         <div class="w-full min-h-screen flex flex-col">
@@ -1035,8 +953,7 @@ const getSdgBadges = (item) => {
               </div>
             </div>
           </div>
-          <!-- Footer at bottom -->
-          <DashboardFooter />
+   
         </div>
       </div>
     </div>
