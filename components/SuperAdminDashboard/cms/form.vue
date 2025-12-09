@@ -8,6 +8,9 @@ const router = useRouter();
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
 
+// Define emit for parent
+const emit = defineEmits(['contentSubmitted']);
+
 // ---------------- CONTENT MODEL ----------------
 const content = ref({
   content_id: "CMS" + moment().valueOf(),
@@ -247,111 +250,149 @@ const handleFileSelect = async (e) => {
   e.target.value = "";
 };
 
-const sortedSelectedFiles = computed(() => {
-  const order = { video: 1, image: 2, pdf: 3, other: 4 };
-  return [...selectedFiles.value].sort((a, b) => order[a.type] - order[b.type]);
-});
 
-// ---------------- SUBMIT CONTENT ----------------
+
+// ============ SUBMIT CONTENT ============
 const submitting = ref(false);
 const submitMessage = ref("");
 
 const submitContent = async () => {
-  submitting.value = true;
+  // Validate required fields
+  if (!content.value.title?.trim()) {
+    displayToast("❌ Please enter a title", "error");
+    return;
+  }
+
+  if (!content.value.descriptions?.trim()) {
+    displayToast("❌ Please enter a description", "error");
+    return;
+  }
 
   try {
+    submitting.value = true;
+    submitMessage.value = "";
+
     // Collect uploaded filenames
     const uploadedFilenames = selectedFiles.value
       .filter(fileObj => fileObj.uploaded && fileObj.uploadedUrl)
       .map(fileObj => fileObj.uploadedUrl);
 
-    await $fetch(`${endpoint.value}/api/cms/content/create/`, {
+    const response = await $fetch(`${endpoint.value}/api/cms/content/create/`, {
       method: "POST",
       body: {
         ...content.value,
         links: [...content.value.links],
-        files: uploadedFilenames, // Add the filenames array
+        files: uploadedFilenames,
       },
     });
 
-    submitMessage.value = "Content successfully created!";
-    selectedFiles.value = [];
-    router.push("/cms/dashboard");
-  } catch (err) {
-    console.error(err);
-    submitMessage.value = "Error submitting content.";
-  }
+    // Success handling
+    displayToast("✅ Content submitted successfully!", "success", 2000);
+    submitMessage.value = "Content submitted successfully!";
+    
+    // Reset form immediately
+    resetForm();
+    
+    // Emit event to parent after short delay to let user see success message
+    setTimeout(() => {
+      emit('contentSubmitted');
+    }, 2000);
 
-  submitting.value = false;
+  } catch (error) {
+    console.error("Submission error:", error);
+    const errorMsg = error?.data?.message || error?.message || "Error submitting content. Please try again.";
+    displayToast(`❌ ${errorMsg}`, "error", 4000);
+    submitMessage.value = errorMsg;
+  } finally {
+    submitting.value = false;
+  }
 };
 
-// ---------------- AUTH ----------------
-onMounted(() => {
-  // setTimeout(() => {
-  const allowedEmails = [
-    "jorenleeluna24@gmail.com",
-    "jason.yap@lsu.edu.ph",
-    "npc@lsu.edu.ph",
-    "wenny.caseros@lsu.edu.ph",
-    "mariaalexandra.benitez@lsu.edu.ph",
-    "alexander.diaz@lsu.edu.ph",
-    "carmelona.jumalon@lsu.edu.ph",
-    "carmelona2.jumalon@lsu.edu.ph",
-    "carousel.tagaylo@lsu.edu.ph",
-    "carlvincent.codera@lsu.edu.ph",
-    "cherrylyn.sanipa@lsu.edu.ph",
-    "dean.lopez@lsu.edu.ph",
-    "esmael.larubis@lsu.edu.ph",
-    "israelgallogo@lsu.edu.ph",
-    "jeanelyn.potestas@lsu.edu.ph",
-    "jenel.cruz@lsu.edu.ph",
-    "jerusalem.andrada@lsu.edu.ph",
-    "jorenlee.luna@lsu.edu.ph",
-    "joed.layna@lsu.edu.ph",
-    "jumelah.padilla@lsu.edu.ph",
-    "carmela.buenbrazo2@lsu.edu.ph",
-    "macristina.llauder@lsu.edu.ph",
-    "markjohn.dalagan@lsu.edu.ph",
-    "menchie.grana@lsu.edu.ph",
-    "meredith.embuscado@lsu.edu.ph",
-    "michaeljohn.puertogalera@lsu.edu.ph",
-    "naiza.amba@lsu.edu.ph",
-    "roselyn.tuastomban@lsu.edu.ph",
-    "tednudgent.tacan@lsu.edu.ph",
-    "xie.medrano@lsu.edu.ph",
-    "jenny.licanda@lsu.edu.ph",
-  ];
+const resetForm = () => {
+  content.value = {
+    content_id: 'CMS' + Date.now(),
+    title: '',
+    authors: '',
+    filters: '',
+    descriptions: '',
+    date: '',
+    links: [],
+  };
+  selectedFiles.value = [];
+  selectedSDGs.value = [];
+  submitMessage.value = '';
+};
 
-  // if (!userStore.user.isAuthenticated || !allowedEmails.includes(userStore.user.email)) {
-  //   router.push("/unauthorized");
-  // }
-  // }, 10000); // Wait 3 seconds for authentication to load
-});
+
 
 // ---------------- LINKS (ARRAY OF STRINGS) ----------------
 const addItem = () => content.value.links.push("");
 const removeItem = (i) => content.value.links.splice(i, 1);
 
-// ---------------- SIDEBAR ----------------
-const toggleSideBarMenu = ref(true);
-const logOut = () => {
-  userStore.removeToken();
-  router.push("/cms/login");
+
+// Toast notification state
+const showToastVar = ref(false);
+const toastMessage = ref("");
+const toastType = ref("success"); // "success", "error", "info"
+
+const displayToast = (message, type = "success", duration = 3000) => {
+  toastMessage.value = message;
+  toastType.value = type;
+  showToastVar.value = true;
+  setTimeout(() => {
+    showToastVar.value = false;
+  }, duration);
 };
 </script>
 
 <template>
   <div class="w-full">
+    <!-- Toast Notification -->
+    <Transition name="slide-fade">
+      <div
+        v-if="showToastVar"
+        :class="[
+          'fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 z-50 max-w-md',
+          toastType === 'success' ? 'bg-green-500 text-white' :
+          toastType === 'error' ? 'bg-red-500 text-white' :
+          'bg-blue-500 text-white'
+        ]"
+      >
+        <div class="flex-shrink-0">
+          <i 
+            :class="[
+              'fa text-lg',
+              toastType === 'success' ? 'fa-check-circle' :
+              toastType === 'error' ? 'fa-exclamation-circle' :
+              'fa-info-circle'
+            ]"
+          ></i>
+        </div>
+        <div class="flex-1">
+          <p class="font-medium">{{ toastMessage }}</p>
+        </div>
+        <button
+          @click="showToastVar = false"
+          class="flex-shrink-0 text-lg leading-none opacity-70 hover:opacity-100"
+        >
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+    </Transition>
+
     <!-- MAIN CONTENT AREA -->
     <div class="flex-1 bg-gray-50 overflow-y-auto">
       <div class="p-3 lg:p-8">
         <div class="bg-white shadow-lg rounded-lg p-6 lg:p-8">
           <h1 class="text-2xl lg:text-3xl font-bold mb-8 text-gray-800">Create New Content</h1>
 
-          <div class="w-full">
+          <div class="w-full space-y-6">
             <!-- TITLE -->
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                Title
+                <span class="text-red-500">*</span>
+              </label>
               <input 
                 v-model="content.title" 
                 type="text"
@@ -373,10 +414,13 @@ const logOut = () => {
 
             <!-- DESCRIPTION -->
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                Description
+                <span class="text-red-500">*</span>
+              </label>
               <textarea 
                 v-model="content.descriptions" 
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 h-32 focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y" 
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 h-20 focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y" 
                 placeholder="Provide a detailed description of the content"
               ></textarea>
             </div>
@@ -485,7 +529,7 @@ const logOut = () => {
                   <div
                     v-for="(fileObj, index) in selectedFiles"
                     :key="index"
-                    class="relative border border-gray-200 rounded-lg overflow-hidden bg-gray-50 hover:shadow-md transition"
+                    class="relative border border-gray-200 rounded-lg overflow-hidden bg-gray-50 hover:shadow-md transition group"
                   >
                     <!-- Image Preview -->
                     <div v-if="fileObj.type === 'image'" class="relative">
@@ -498,7 +542,7 @@ const logOut = () => {
                     </div>
                     
                     <!-- Video Preview -->
-                    <div v-else-if="fileObj.type === 'video'" class="relative bg-black h-24 flex items-center justify-center cursor-pointer group" @click="openImagePreview(fileObj.preview)">
+                    <div v-else-if="fileObj.type === 'video'" class="relative bg-black h-24 flex items-center justify-center cursor-pointer" @click="openImagePreview(fileObj.preview)">
                       <i class="fa fa-play text-white text-xl group-hover:text-2xl transition"></i>
                     </div>
                     
@@ -557,17 +601,11 @@ const logOut = () => {
                 {{ submitting ? "Saving..." : "Submit Content" }}
               </button>
               <button
-                @click="() => { content = { ...content, title: '', authors: '', descriptions: '', filters: '', date: '', links: [] }; selectedFiles = []; }"
+                @click="resetForm"
                 class="px-6 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg font-bold transition-colors"
               >
-                Clear
+                <i class="fa fa-refresh mr-2"></i>Clear
               </button>
-            </div>
-
-            <!-- Messages -->
-            <div v-if="submitMessage" class="p-4 rounded-lg" :class="submitMessage.includes('successfully') ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
-              <i class="fa" :class="submitMessage.includes('successfully') ? 'fa-check-circle' : 'fa-exclamation-circle'" ></i>
-              {{ submitMessage }}
             </div>
           </div>
         </div>
@@ -612,5 +650,17 @@ const logOut = () => {
 <style scoped>
 .input {
   @apply border p-2 rounded w-full text-xs;
+}
+
+.slide-fade-enter-active, .slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-fade-enter-from {
+  transform: translateX(10px);
+  opacity: 0;
+}
+.slide-fade-leave-to {
+  transform: translateX(10px);
+  opacity: 0;
 }
 </style>

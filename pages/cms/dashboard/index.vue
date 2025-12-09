@@ -18,6 +18,11 @@ const logOut = () => {
   router.push("/cms/login");
 };
 
+// Handle form submission success - switch to list view
+const handleContentSubmitted = () => {
+  currentView.value = "list";
+};
+
 const profileImageUrl = computed(() => {
   const email = userStore.user.email;
   return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/LSU%20Seal.PNG`;
@@ -142,9 +147,9 @@ watch(
 
         <!-- MAIN CONTENT AREA - conditionally render based on currentView -->
         <div class="flex-1 bg-gray-50 overflow-y-auto">
-          <!-- FORM VIEW - render component without props -->
+          <!-- FORM VIEW - render component without props, listen for contentSubmitted -->
           <div v-if="currentView === 'form'">
-               <SuperAdminDashboardCmsForm />
+            <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted" />
           </div>
 
           <!-- LIST VIEW -->

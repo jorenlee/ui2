@@ -15,21 +15,21 @@ const endpoint = ref(userStore.mainDevServer);
 // Computed property to filter and sort highlighted news
 const highlightedNews = computed(() => {
   return info.value
-    .filter(item => {
+    .filter((item) => {
       // Only show items that have "highlight" in the filters field
       if (!item?.filters) return false;
-      return item.filters.toLowerCase().includes('highlight');
+      return item.filters.toLowerCase().includes("highlight");
     })
     .sort((a, b) => {
       // Sort by date field (latest to oldest)
       const dateA = moment(a.date);
       const dateB = moment(b.date);
-      
+
       // Handle invalid dates by putting them at the end
       if (!dateA.isValid() && !dateB.isValid()) return 0;
       if (!dateA.isValid()) return 1;
       if (!dateB.isValid()) return -1;
-      
+
       // Sort latest to oldest (descending)
       return dateB.valueOf() - dateA.valueOf();
     });
@@ -37,63 +37,117 @@ const highlightedNews = computed(() => {
 
 // SDG Colors mapping
 const sdgColors = {
-  1: "#e5243b", 2: "#dda63a", 3: "#4c9f38", 4: "#c5192d", 5: "#ff3a21",
-  6: "#26bde2", 7: "#fcc30b", 8: "#a21942", 9: "#fd6925", 10: "#dd1367",
-  11: "#fd9d24", 12: "#bf8b2e", 13: "#3f7e44", 14: "#0a97d9", 15: "#56c02b",
-  16: "#00689d", 17: "#19486a"
+  1: "#e5243b",
+  2: "#dda63a",
+  3: "#4c9f38",
+  4: "#c5192d",
+  5: "#ff3a21",
+  6: "#26bde2",
+  7: "#fcc30b",
+  8: "#a21942",
+  9: "#fd6925",
+  10: "#dd1367",
+  11: "#fd9d24",
+  12: "#bf8b2e",
+  13: "#3f7e44",
+  14: "#0a97d9",
+  15: "#56c02b",
+  16: "#00689d",
+  17: "#19486a",
 };
 
 // Add computed property for SDG badges
 const getSdgBadges = (item) => {
   if (!item?.filters) return [];
-  
+
   const filters = item.filters.toLowerCase();
   const badges = [];
-  
+
   // Check for exact SDG mentions using word boundaries
   for (let i = 1; i <= 17; i++) {
     const patterns = [
-      `\\bsdg${i}\\b`, `\\bsdg ${i}\\b`, `\\bsdg-${i}\\b`, `\\bsdg_${i}\\b`,
-      `\\bgoal ${i}\\b`, `\\bgoal${i}\\b`, `\\bsdg${i.toString().padStart(2, '0')}\\b`
+      `\\bsdg${i}\\b`,
+      `\\bsdg ${i}\\b`,
+      `\\bsdg-${i}\\b`,
+      `\\bsdg_${i}\\b`,
+      `\\bgoal ${i}\\b`,
+      `\\bgoal${i}\\b`,
+      `\\bsdg${i.toString().padStart(2, "0")}\\b`,
     ];
-    
-    if (patterns.some(pattern => {
-      const regex = new RegExp(pattern, 'i');
-      return regex.test(filters);
-    })) {
-      badges.push({ 
+
+    if (
+      patterns.some((pattern) => {
+        const regex = new RegExp(pattern, "i");
+        return regex.test(filters);
+      })
+    ) {
+      badges.push({
         number: i,
-        color: sdgColors[i] || "#6b7280"
+        color: sdgColors[i] || "#6b7280",
       });
     }
   }
-  
+
   return badges;
 };
 
 // Helper function to check if item has video content
 const hasVideoContent = (item) => {
   // Check for video files
-  if (item.files && item.files.some(file => isVideoFile(file))) {
+  if (item.files && item.files.some((file) => isVideoFile(file))) {
     return true;
   }
-  
+
   // Check for video links
-  if (item.links && item.links.some(link => 
-    link.includes('youtube.com') || 
-    link.includes('youtu.be') || 
-    link.includes('facebook.com/reel')
-  )) {
+  if (
+    item.links &&
+    item.links.some(
+      (link) =>
+        link.includes("youtube.com") ||
+        link.includes("youtu.be") ||
+        link.includes("facebook.com/reel")
+    )
+  ) {
     return true;
   }
-  
+
   return false;
+};
+
+// Add helper function to extract category from filters or use default
+const getCategoryLabel = (item) => {
+  if (!item.filters) return "News";
+
+  const filters = item.filters.toLowerCase();
+
+  // Check for explicit category keywords first
+  if (filters.includes("news highlight")) return "News Highlight";
+  if (filters.includes("announcement")) return "Announcement";
+  if (filters.includes("event")) return "Event";
+
+  if (filters.includes("news")) return "News";
+
+  // If only SDGs, count them and return SDG label
+  const sdgMatches = filters.match(/sdg\d+/gi) || [];
+  if (sdgMatches.length > 0) {
+    return `${sdgMatches.length} SDG${sdgMatches.length > 1 ? "s" : ""}`;
+  }
+
+  return "News"; // Default fallback
 };
 
 // Helper function to check if file is video
 const isVideoFile = (filename) => {
-  const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv'];
-  return videoExtensions.some(ext => filename.toLowerCase().includes(ext));
+  const videoExtensions = [
+    ".mp4",
+    ".avi",
+    ".mov",
+    ".wmv",
+    ".flv",
+    ".webm",
+    ".mkv",
+  ];
+  return videoExtensions.some((ext) => filename.toLowerCase().includes(ext));
 };
 
 onMounted(async () => {
@@ -163,15 +217,15 @@ onMounted(async () => {
                 v-else
                 class="w-full h-full bg-gray-200 flex items-center justify-center"
               >
-                <img 
-                  src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg" 
+                <img
+                  src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg"
                   class="w-full h-full object-cover"
                   alt="Default thumbnail"
                 />
               </div>
-              
+
               <!-- Play button overlay for videos -->
-              <div 
+              <div
                 v-if="hasVideoContent(j)"
                 class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30"
               >
@@ -184,40 +238,49 @@ onMounted(async () => {
             <!-- Content Section -->
             <div class="p-4">
               <!-- Category/Type Badge -->
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-xs text-gray-500 uppercase tracking-wide">
-                  {{ j.category || 'News' }}
+              <div class="flex items-center justify-between mb-3">
+                <span
+                  class="inline-block py-1 text-xs rounded-full uppercase tracking-wide font-light"
+                >
+                  {{ getCategoryLabel(j) }}
                 </span>
-                <span class="text-xs text-gray-400">
+                <span class="text-xs text-gray-400 whitespace-nowrap ml-2">
                   {{ moment(j.date || j.created_at).format("MMM DD") }}
                 </span>
               </div>
 
               <!-- Title -->
-              <h3 class="text-lg font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
+              <h3
+                class="text-lg font-bold text-gray-900 mb-3 line-clamp-2 leading-tight"
+              >
                 {{ j.title }}
               </h3>
 
               <!-- Description Preview -->
-              <p 
-                v-if="j.descriptions" 
+              <p
+                v-if="j.descriptions"
                 class="text-sm text-gray-600 mb-3 line-clamp-2"
               >
-                {{ j.descriptions.substring(0, 100) }}{{ j.descriptions.length > 100 ? '...' : '' }}
+                {{ j.descriptions.substring(0, 100)
+                }}{{ j.descriptions.length > 100 ? "..." : "" }}
               </p>
 
               <!-- SDG Badges -->
               <div v-if="getSdgBadges(j).length" class="mb-3">
                 <div class="flex flex-wrap gap-1">
-                  <div v-for="badge in getSdgBadges(j).slice(0, 2)" :key="badge.number" class="inline-flex items-center">
-                    <span 
+                  <div
+                    v-for="badge in getSdgBadges(j).slice(0, 2)"
+                    :key="badge.number"
+                    class="inline-flex items-center"
+                  >
+                    <span
                       class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm"
                       :style="{ backgroundColor: badge.color }"
                     >
                       SDG {{ badge.number }}
                     </span>
                   </div>
-                  <span 
+                  <span
                     v-if="getSdgBadges(j).length > 2"
                     class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
                   >
@@ -227,12 +290,16 @@ onMounted(async () => {
               </div>
 
               <!-- Footer -->
-              <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+              <div
+                class="flex items-center justify-between pt-2 border-t border-gray-100"
+              >
                 <div class="flex items-center text-xs text-gray-500">
                   <i class="fas fa-calendar mr-1"></i>
                   {{ moment(j.date || j.created_at).format("MMM DD, YYYY") }}
                 </div>
-                <div class="flex items-center text-xs text-green-600 font-medium">
+                <div
+                  class="flex items-center text-xs text-green-600 font-medium"
+                >
                   Read More
                   <i class="fas fa-arrow-right ml-1"></i>
                 </div>
@@ -243,7 +310,9 @@ onMounted(async () => {
       </div>
 
       <!-- Empty State -->
-      <div v-else class="text-gray-400 py-10 w-11/12 mx-auto">No news posted yet.</div>
+      <div v-else class="text-gray-400 py-10 w-11/12 mx-auto">
+        No news posted yet.
+      </div>
 
       <div class="w-11/12 mx-auto lg:mt-10 mt-5" v-if="highlightedNews.length">
         <a

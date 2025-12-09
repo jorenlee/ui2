@@ -1,8 +1,10 @@
 <script setup>
 import { onMounted, ref, computed, watch, onBeforeUnmount } from "vue";
 import { useUserStore } from "@/stores/user";
+import { useRouter, useRoute } from "vue-router";
 import _ from "lodash";
 import moment from "moment";
+
 const router = useRouter();
 const route = useRoute();
 const userStore = useUserStore();
@@ -49,10 +51,23 @@ const sdgOptions = ref([
 
 // Add SDG colors mapping
 const sdgColors = {
-  1: "#e5243b", 2: "#dda63a", 3: "#4c9f38", 4: "#c5192d", 5: "#ff3a21",
-  6: "#26bde2", 7: "#fcc30b", 8: "#a21942", 9: "#fd6925", 10: "#dd1367",
-  11: "#fd9d24", 12: "#bf8b2e", 13: "#3f7e44", 14: "#0a97d9", 15: "#56c02b",
-  16: "#00689d", 17: "#19486a"
+  1: "#e5243b",
+  2: "#dda63a",
+  3: "#4c9f38",
+  4: "#c5192d",
+  5: "#ff3a21",
+  6: "#26bde2",
+  7: "#fcc30b",
+  8: "#a21942",
+  9: "#fd6925",
+  10: "#dd1367",
+  11: "#fd9d24",
+  12: "#bf8b2e",
+  13: "#3f7e44",
+  14: "#0a97d9",
+  15: "#56c02b",
+  16: "#00689d",
+  17: "#19486a",
 };
 
 // Helper function to get SDG color
@@ -91,31 +106,31 @@ const selectedSDGs = ref([]);
 
 // Image preview functionality
 const showImagePreview = ref(false);
-const previewImageUrl = ref('');
+const previewImageUrl = ref("");
 
 // File type checking functions
 const isImageFile = (filename) => {
-  const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
-  const ext = filename.split('.').pop()?.toLowerCase();
+  const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp", "svg"];
+  const ext = filename.split(".").pop()?.toLowerCase();
   return imageExtensions.includes(ext);
 };
 
 const isVideoFile = (filename) => {
-  const videoExtensions = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm'];
-  const ext = filename.split('.').pop()?.toLowerCase();
+  const videoExtensions = ["mp4", "avi", "mov", "wmv", "flv", "webm"];
+  const ext = filename.split(".").pop()?.toLowerCase();
   return videoExtensions.includes(ext);
 };
 
 const isPdfFile = (filename) => {
-  const ext = filename.split('.').pop()?.toLowerCase();
-  return ext === 'pdf';
+  const ext = filename.split(".").pop()?.toLowerCase();
+  return ext === "pdf";
 };
 
 const getFileIcon = (filename) => {
-  if (isImageFile(filename)) return 'fa fa-image';
-  if (isVideoFile(filename)) return 'fa fa-video';
-  if (isPdfFile(filename)) return 'fa fa-file-pdf';
-  return 'fa fa-file';
+  if (isImageFile(filename)) return "fa fa-image";
+  if (isVideoFile(filename)) return "fa fa-video";
+  if (isPdfFile(filename)) return "fa fa-file-pdf";
+  return "fa fa-file";
 };
 
 const getFileUrl = (filename) => {
@@ -125,22 +140,23 @@ const getFileUrl = (filename) => {
 const openImagePreview = (imageUrl) => {
   previewImageUrl.value = imageUrl;
   showImagePreview.value = true;
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow = "hidden";
 };
 
 const closeImagePreview = () => {
   showImagePreview.value = false;
-  previewImageUrl.value = '';
-  document.body.style.overflow = 'auto';
+  previewImageUrl.value = "";
+  document.body.style.overflow = "auto";
 };
 
 const handleImageError = (event, filename) => {
-  console.error('Image failed to load:', filename);
-  event.target.style.display = 'none';
+  console.error("Image failed to load:", filename);
+  event.target.style.display = "none";
   // Show fallback icon
   const fallback = event.target.parentElement;
   if (fallback) {
-    fallback.innerHTML = '<div class="w-full h-24 bg-gray-200 rounded flex items-center justify-center"><i class="fa fa-image text-gray-400 text-2xl"></i></div>';
+    fallback.innerHTML =
+      '<div class="w-full h-24 bg-gray-200 rounded flex items-center justify-center"><i class="fa fa-image text-gray-400 text-2xl"></i></div>';
   }
 };
 
@@ -163,6 +179,28 @@ const updateFilters = () => {
   // Update the filters field
   editContent.value.filters =
     allFilters.length > 0 ? allFilters.join(", ") : "";
+};
+
+
+
+const getCategoryLabel = (item) => {
+  if (!item?.filters) return "News";
+
+  const filters = item.filters.toLowerCase();
+
+  // Check for explicit category keywords first
+  if (filters.includes("news highlight")) return "News Highlight";
+  if (filters.includes("announcement")) return "Announcement";
+  if (filters.includes("event")) return "Event";
+  if (filters.includes("news")) return "News";
+
+  // If only SDGs, count them and return SDG label
+  const sdgMatches = filters.match(/sdg\d+/gi) || [];
+  if (sdgMatches.length > 0) {
+    return `${sdgMatches.length} SDG${sdgMatches.length > 1 ? "s" : ""}`;
+  }
+
+  return "News"; // Default fallback
 };
 
 onMounted(async () => {
@@ -409,7 +447,7 @@ const selectedFilter = ref("");
 // Filter options
 const filterOptions = [
   { value: "", label: "All Contents" },
-  { value: "highlight", label: "Highlighted" },
+  { value: "news highlight", label: "news highlight" },
   { value: "news", label: "News" },
   { value: "events", label: "Events" },
   { value: "announcements", label: "Announcements" },
@@ -472,72 +510,113 @@ watch([searchQuery, selectedFilter], () => {
 // Add computed property for SDG badges
 const getSdgBadges = (item) => {
   if (!item?.filters) return [];
-  
+
   const filters = item.filters.toLowerCase();
   const badges = [];
-  
+
   // Check for exact SDG mentions using word boundaries
   for (let i = 1; i <= 17; i++) {
     const patterns = [
-      `\\bsdg${i}\\b`, `\\bsdg ${i}\\b`, `\\bsdg-${i}\\b`, `\\bsdg_${i}\\b`,
-      `\\bgoal ${i}\\b`, `\\bgoal${i}\\b`, `\\bsdg${i.toString().padStart(2, '0')}\\b`
+      `\\bsdg${i}\\b`,
+      `\\bsdg ${i}\\b`,
+      `\\bsdg-${i}\\b`,
+      `\\bsdg_${i}\\b`,
+      `\\bgoal ${i}\\b`,
+      `\\bgoal${i}\\b`,
+      `\\bsdg${i.toString().padStart(2, "0")}\\b`,
     ];
-    
-    if (patterns.some(pattern => {
-      const regex = new RegExp(pattern, 'i');
-      return regex.test(filters);
-    })) {
-      badges.push({ 
+
+    if (
+      patterns.some((pattern) => {
+        const regex = new RegExp(pattern, "i");
+        return regex.test(filters);
+      })
+    ) {
+      badges.push({
         number: i,
-        color: getSdgColor(i)
+        color: getSdgColor(i),
       });
     }
   }
-  
+
   return badges;
 };
 </script>
 <template>
   <div class="w-full min-h-screen flex flex-col">
     <div class="flex flex-1 w-full">
-  
       <div class="w-full">
-        
-
         <!-- Main Content with Footer -->
         <div class="w-full min-h-screen flex flex-col">
           <div class="flex-1 flex flex-col lg:flex-row">
             <!-- Content List Section -->
-            <div class="flex-1 p-3 lg:p-5" :class="showEditModal ? 'lg:pr-2' : ''">
+            <div
+              class="flex-1 p-3 lg:p-5"
+              :class="showEditModal ? 'lg:pr-2' : ''"
+            >
               <div v-show="tableDisplay">
                 <!-- Search and Filter Bar -->
-                <div class="bg-white rounded-lg shadow-sm border p-3 lg:p-4 mb-4 w-full" :class="showEditModal ? '' : 'lg:flex lg:gap-x-2'">
+                <div
+                  class="bg-white rounded-lg shadow-sm border p-3 lg:p-4 mb-4 w-full"
+                  :class="showEditModal ? '' : 'lg:flex lg:gap-x-2'"
+                >
                   <!-- Stats Cards -->
-                  <div class="flex gap-x-2 lg:mb-0 mb-3" :class="showEditModal ? 'grid grid-cols-2 lg:mb-3' : 'w-fit'">
-                    <div class="bg-blue-50 p-2 lg:px-3 w-full lg:py-1 rounded-lg border-l-4 border-blue-500">
+                  <div
+                    class="flex gap-x-2 lg:mb-0 mb-3"
+                    :class="
+                      showEditModal ? 'grid grid-cols-2 lg:mb-3' : 'w-fit'
+                    "
+                  >
+                    <div
+                      class="bg-blue-50 p-2 lg:px-3 w-full lg:py-1 rounded-lg border-l-4 border-blue-500"
+                    >
                       <div class="flex items-center">
-                        <i class="fa fa-file-text text-blue-500 text-sm lg:text-lg mr-2 lg:mr-3"></i>
+                        <i
+                          class="fa fa-file-text text-blue-500 text-sm lg:text-lg mr-2 lg:mr-3"
+                        ></i>
                         <div class="flex items-center">
-                          <p class="text-xs text-gray-600 font-medium pr-2 lg:pr-5">Total</p>
-                          <p class="text-lg lg:text-xl font-bold text-blue-600">{{ info.length }}</p>
+                          <p
+                            class="text-xs text-gray-600 font-medium pr-2 lg:pr-5"
+                          >
+                            Total
+                          </p>
+                          <p class="text-lg lg:text-xl font-bold text-blue-600">
+                            {{ info.length }}
+                          </p>
                         </div>
                       </div>
                     </div>
-                    <div class="bg-green-50 p-2 lg:px-3 w-full lg:py-1 rounded-lg border-l-4 border-green-500">
+                    <div
+                      class="bg-green-50 p-2 lg:px-3 w-full lg:py-1 rounded-lg border-l-4 border-green-500"
+                    >
                       <div class="flex items-center">
-                        <i class="fa fa-filter text-green-500 text-sm lg:text-lg mr-2 lg:mr-3"></i>
+                        <i
+                          class="fa fa-filter text-green-500 text-sm lg:text-lg mr-2 lg:mr-3"
+                        ></i>
                         <div class="flex items-center">
-                          <p class="text-xs text-gray-600 font-medium pr-2 lg:pr-5">Filtered</p>
-                          <p class="text-lg lg:text-xl font-bold text-green-600">{{ filteredInfo.length }}</p>
+                          <p
+                            class="text-xs text-gray-600 font-medium pr-2 lg:pr-5"
+                          >
+                            Filtered
+                          </p>
+                          <p
+                            class="text-lg lg:text-xl font-bold text-green-600"
+                          >
+                            {{ filteredInfo.length }}
+                          </p>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   <!-- Search and Filter Controls -->
-                  <div class="flex flex-col lg:flex-row items-center gap-3 w-full h-fit">
+                  <div
+                    class="flex flex-col lg:flex-row items-center gap-3 w-full h-fit"
+                  >
                     <div class="relative w-full">
-                      <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                      <i
+                        class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      ></i>
                       <input
                         v-model="searchQuery"
                         type="text"
@@ -548,25 +627,32 @@ const getSdgBadges = (item) => {
                     <div class="flex gap-2 w-full lg:w-fit">
                       <select
                         v-model="selectedFilter"
-                        class="flex-1 lg:flex-none px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        class="flex-1 lg:flex-none px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm capitalize"
                       >
-                        <option v-for="option in filterOptions" :key="option.value" :value="option.value">
+                        <option
+                          v-for="option in filterOptions"
+                          :key="option.value"
+                          :value="option.value"
+                        >
                           {{ option.label }}
                         </option>
                       </select>
-                      
+
                       <!-- Mobile Edit Button -->
                       <button
                         v-if="selectedItem && display === 'mobile'"
                         @click="showEditModal = !showEditModal"
                         class="lg:hidden bg-green-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap"
                       >
-                        {{ showEditModal ? 'Close' : 'Edit' }}
+                        {{ showEditModal ? "Close" : "Edit" }}
                       </button>
                     </div>
 
                     <!-- Pagination Controls -->
-                    <div v-if="totalPages > 1" class="flex justify-center w-full lg:w-auto">
+                    <div
+                      v-if="totalPages > 1"
+                      class="flex justify-center w-full lg:w-auto"
+                    >
                       <div class="flex items-center space-x-1">
                         <button
                           :disabled="currentPage === 1"
@@ -580,9 +666,11 @@ const getSdgBadges = (item) => {
                           :key="page"
                           @click="currentPage = page"
                           class="px-2 lg:px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                          :class="currentPage === page 
-                            ? 'bg-green-800 text-white' 
-                            : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'"
+                          :class="
+                            currentPage === page
+                              ? 'bg-green-800 text-white'
+                              : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'
+                          "
                         >
                           {{ page }}
                         </button>
@@ -603,12 +691,18 @@ const getSdgBadges = (item) => {
                   <!-- Desktop Table View -->
                   <div class="hidden lg:block">
                     <!-- Table Header -->
-                    <div class="grid grid-cols-4 gap-4 bg-gray-50 p-3 font-semibold text-gray-700 border-b text-sm">
+                    <div
+                      class="grid grid-cols-5 gap-4 bg-gray-50 p-3 font-semibold text-gray-700 border-b text-sm"
+                    >
                       <span class="flex items-center">
                         <i class="fa fa-hashtag mr-2 text-gray-500"></i>ID
                       </span>
                       <span class="flex items-center">
                         <i class="fa fa-user mr-2 text-gray-500"></i>Authors
+                      </span>
+                      <span class="flex items-center">
+                        <i class="fa fa-file-text mr-2 text-gray-500"></i
+                        >Content Type
                       </span>
                       <span class="flex items-center">
                         <i class="fa fa-file-text mr-2 text-gray-500"></i>Title
@@ -623,29 +717,49 @@ const getSdgBadges = (item) => {
                       <div
                         v-for="j in paginatedInfo"
                         :key="j.id"
-                        class="grid grid-cols-4 gap-4 p-3 hover:bg-gray-50 transition-colors text-sm cursor-pointer"
+                        class="grid grid-cols-5 gap-4 p-3 hover:bg-gray-50 transition-colors text-sm cursor-pointer"
                         @click="selectedItem = j"
-                        :class="selectedItem?.id === j.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''"
+                        :class="
+                          selectedItem?.id === j.id
+                            ? 'bg-blue-50 border-l-4 border-blue-500'
+                            : ''
+                        "
                       >
-                        <span class="flex items-center text-gray-800 font-medium truncate">{{ j.content_id }}</span>
-                        <span class="flex items-center text-gray-600 truncate">{{ j.authors }}</span>
-                       <div>
-                         <span class="flex items-center text-gray-800 truncate">{{ j.title }}</span>
-                        <!-- SDG Badges -->
-                        <div v-if="getSdgBadges(j).length" class="mt-1">
-                          <div class="flex flex-wrap gap-1">
-                            <div v-for="badge in getSdgBadges(j)" :key="badge.number" class="inline-flex items-center">
-                              <span 
-                                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold text-white shadow-sm"
-                                :style="{ backgroundColor: badge.color }"
+                        <span
+                          class="flex items-center text-gray-800 font-medium truncate"
+                          >{{ j.content_id }}</span
+                        >
+                        <span
+                          class="flex items-center text-gray-600 truncate"
+                          >{{ j.authors }}</span
+                        >
+                        <span class="flex items-center text-gray-600 truncate">
+                          {{ getCategoryLabel(j) }}</span
+                        >
+
+                        <div>
+                          <span
+                            class="flex items-center text-gray-800 truncate"
+                            >{{ j.title }}</span
+                          >
+                          <!-- SDG Badges -->
+                          <div v-if="getSdgBadges(j).length" class="mt-1">
+                            <div class="flex flex-wrap gap-1">
+                              <div
+                                v-for="badge in getSdgBadges(j)"
+                                :key="badge.number"
+                                class="inline-flex items-center"
                               >
-                                SDG {{ badge.number }}
-                              </span>
+                                <span
+                                  class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold text-white shadow-sm"
+                                  :style="{ backgroundColor: badge.color }"
+                                >
+                                  SDG {{ badge.number }}
+                                </span>
+                              </div>
                             </div>
-                            
                           </div>
                         </div>
-                       </div>
                         <span class="flex justify-center">
                           <button
                             @click.stop="openEditModal(j)"
@@ -665,17 +779,32 @@ const getSdgBadges = (item) => {
                       v-for="j in paginatedInfo"
                       :key="j.id"
                       class="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                      @click="selectedItem = j; openEditModal(j)"
-                      :class="selectedItem?.id === j.id ? 'bg-blue-50 border-l-4 border-blue-500' : ''"
+                      @click="
+                        selectedItem = j;
+                        openEditModal(j);
+                      "
+                      :class="
+                        selectedItem?.id === j.id
+                          ? 'bg-blue-50 border-l-4 border-blue-500'
+                          : ''
+                      "
                     >
                       <div class="flex justify-between items-start mb-2">
                         <div class="flex-1">
-                          <h3 class="font-medium text-gray-900 text-sm mb-1 line-clamp-2">{{ j.title }}</h3>
+                          <h3
+                            class="font-medium text-gray-900 text-sm mb-1 line-clamp-2"
+                          >
+                            {{ j.title }}
+                          </h3>
                           <!-- SDG Badges -->
                           <div v-if="getSdgBadges(j).length" class="mb-2">
                             <div class="flex flex-wrap gap-1">
-                              <div v-for="badge in getSdgBadges(j)" :key="badge.number" class="inline-flex items-center">
-                                <span 
+                              <div
+                                v-for="badge in getSdgBadges(j)"
+                                :key="badge.number"
+                                class="inline-flex items-center"
+                              >
+                                <span
                                   class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold text-white shadow-sm"
                                   :style="{ backgroundColor: badge.color }"
                                 >
@@ -684,7 +813,9 @@ const getSdgBadges = (item) => {
                               </div>
                             </div>
                           </div>
-                          <p class="text-xs text-gray-600 mb-1">ID: {{ j.content_id }}</p>
+                          <p class="text-xs text-gray-600 mb-1">
+                            ID: {{ j.content_id }}
+                          </p>
                           <p class="text-xs text-gray-600">{{ j.authors }}</p>
                         </div>
                         <button
@@ -694,31 +825,43 @@ const getSdgBadges = (item) => {
                           <i class="fa fa-edit"></i>
                         </button>
                       </div>
-                      <div v-if="j.descriptions" class="text-xs text-gray-500 line-clamp-2">
+                      <div
+                        v-if="j.descriptions"
+                        class="text-xs text-gray-500 line-clamp-2"
+                      >
                         {{ j.descriptions }}
                       </div>
                     </div>
                   </div>
 
                   <!-- Empty State -->
-                  <div v-if="!loading && filteredInfo.length === 0" class="text-center py-12">
+                  <div
+                    v-if="!loading && filteredInfo.length === 0"
+                    class="text-center py-12"
+                  >
                     <i class="fa fa-search text-gray-300 text-4xl mb-3"></i>
                     <p class="text-gray-500">No contents found</p>
-                    <p class="text-gray-400 text-sm">Try adjusting your search or filter</p>
+                    <p class="text-gray-400 text-sm">
+                      Try adjusting your search or filter
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Edit Panel (Right Side / Mobile Overlay) -->
-            <div 
-              v-if="showEditModal" 
+            <div
+              v-if="showEditModal"
               class="fixed inset-0 bg-black bg-opacity-50 z-50 lg:relative lg:bg-transparent lg:inset-auto lg:w-6/12 lg:bg-white lg:border-l lg:border-gray-200 lg:shadow-lg flex flex-col"
             >
               <!-- Mobile Edit Panel -->
-              <div class="bg-white h-full w-full lg:w-auto flex flex-col lg:relative overflow-y-auto">
+              <div
+                class="bg-white h-full w-full lg:w-auto flex flex-col lg:relative overflow-y-auto"
+              >
                 <!-- Edit Panel Header -->
-                <div class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50">
+                <div
+                  class="flex justify-between items-center p-4 border-b border-gray-200 bg-gray-50"
+                >
                   <h2 class="text-lg font-bold text-gray-800">Edit Content</h2>
                   <button
                     @click="closeEditModal"
@@ -733,7 +876,10 @@ const getSdgBadges = (item) => {
                   <form @submit.prevent="submitEdit" class="space-y-4">
                     <!-- Content ID -->
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">Content ID</label>
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >Content ID</label
+                      >
                       <input
                         v-model="editContent.content_id"
                         type="text"
@@ -744,7 +890,10 @@ const getSdgBadges = (item) => {
 
                     <!-- Title -->
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >Title</label
+                      >
                       <input
                         v-model="editContent.title"
                         type="text"
@@ -755,7 +904,10 @@ const getSdgBadges = (item) => {
 
                     <!-- Authors -->
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">Authors</label>
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >Authors</label
+                      >
                       <input
                         v-model="editContent.authors"
                         type="text"
@@ -766,7 +918,10 @@ const getSdgBadges = (item) => {
 
                     <!-- Date -->
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >Date</label
+                      >
                       <input
                         v-model="editContent.date"
                         type="date"
@@ -777,7 +932,10 @@ const getSdgBadges = (item) => {
 
                     <!-- Filters -->
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">Filters/SDGs</label>
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >Filters/SDGs</label
+                      >
                       <input
                         v-model="editContent.filters"
                         type="text"
@@ -788,7 +946,10 @@ const getSdgBadges = (item) => {
 
                     <!-- Description -->
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-1"
+                        >Description</label
+                      >
                       <textarea
                         v-model="editContent.descriptions"
                         rows="3"
@@ -799,7 +960,10 @@ const getSdgBadges = (item) => {
 
                     <!-- Links Section -->
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">Links</label>
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-2"
+                        >Links</label
+                      >
                       <div class="space-y-2">
                         <div
                           v-for="(link, index) in editContent.links"
@@ -832,8 +996,11 @@ const getSdgBadges = (item) => {
 
                     <!-- Files Section -->
                     <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">Files</label>
-                      
+                      <label
+                        class="block text-sm font-medium text-gray-700 mb-2"
+                        >Files</label
+                      >
+
                       <!-- File Upload -->
                       <div class="mb-3">
                         <input
@@ -844,22 +1011,35 @@ const getSdgBadges = (item) => {
                           class="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-green-500"
                           :disabled="uploadingFiles"
                         />
-                        <p class="text-xs text-gray-500 mt-1">Select files to upload</p>
+                        <p class="text-xs text-gray-500 mt-1">
+                          Select files to upload
+                        </p>
                       </div>
 
                       <!-- Upload Progress -->
                       <div v-if="uploadingFiles" class="mb-3">
-                        <div class="bg-blue-50 border border-blue-200 rounded p-2">
+                        <div
+                          class="bg-blue-50 border border-blue-200 rounded p-2"
+                        >
                           <div class="flex items-center">
-                            <i class="fa fa-spinner fa-spin text-blue-500 mr-2 text-sm"></i>
-                            <span class="text-blue-700 text-xs">Uploading...</span>
+                            <i
+                              class="fa fa-spinner fa-spin text-blue-500 mr-2 text-sm"
+                            ></i>
+                            <span class="text-blue-700 text-xs"
+                              >Uploading...</span
+                            >
                           </div>
                         </div>
                       </div>
 
                       <!-- Current Files with Preview -->
-                      <div v-if="editContent.files && editContent.files.length > 0" class="space-y-2">
-                        <h4 class="text-xs font-medium text-gray-700">Current Files:</h4>
+                      <div
+                        v-if="editContent.files && editContent.files.length > 0"
+                        class="space-y-2"
+                      >
+                        <h4 class="text-xs font-medium text-gray-700">
+                          Current Files:
+                        </h4>
                         <div class="grid grid-cols-3 gap-2">
                           <div
                             v-for="(file, index) in editContent.files"
@@ -876,9 +1056,12 @@ const getSdgBadges = (item) => {
                                 @error="handleImageError($event, file)"
                               />
                             </div>
-                            
+
                             <!-- Video Preview -->
-                            <div v-else-if="isVideoFile(file)" class="mb-2 relative">
+                            <div
+                              v-else-if="isVideoFile(file)"
+                              class="mb-2 relative"
+                            >
                               <video
                                 :src="getFileUrl(file)"
                                 class="w-full h-24 object-cover rounded"
@@ -887,30 +1070,45 @@ const getSdgBadges = (item) => {
                               >
                                 Your browser does not support the video tag.
                               </video>
-                              <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded">
+                              <div
+                                class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded"
+                              >
                                 <i class="fa fa-play text-white text-lg"></i>
                               </div>
                             </div>
-                            
+
                             <!-- PDF Preview -->
                             <div v-else-if="isPdfFile(file)" class="mb-2">
-                              <div class="w-full h-24 bg-red-100 rounded flex items-center justify-center">
-                                <i class="fa fa-file-pdf text-red-600 text-2xl"></i>
+                              <div
+                                class="w-full h-24 bg-red-100 rounded flex items-center justify-center"
+                              >
+                                <i
+                                  class="fa fa-file-pdf text-red-600 text-2xl"
+                                ></i>
                               </div>
                             </div>
-                            
+
                             <!-- Other Files -->
                             <div v-else class="mb-2">
-                              <div class="w-full h-24 bg-gray-200 rounded flex items-center justify-center">
-                                <i class="fa fa-file text-gray-600 text-2xl"></i>
+                              <div
+                                class="w-full h-24 bg-gray-200 rounded flex items-center justify-center"
+                              >
+                                <i
+                                  class="fa fa-file text-gray-600 text-2xl"
+                                ></i>
                               </div>
                             </div>
 
                             <!-- File Info and Actions -->
                             <div class="flex items-center justify-between">
                               <div class="flex items-center flex-1 min-w-0">
-                                <i :class="getFileIcon(file)" class="mr-1 text-gray-500 flex-shrink-0 text-xs"></i>
-                                <span class="text-gray-700 truncate text-xs">{{ file }}</span>
+                                <i
+                                  :class="getFileIcon(file)"
+                                  class="mr-1 text-gray-500 flex-shrink-0 text-xs"
+                                ></i>
+                                <span class="text-gray-700 truncate text-xs">{{
+                                  file
+                                }}</span>
                               </div>
                               <div class="flex gap-1 ml-2">
                                 <!-- <a
@@ -943,9 +1141,12 @@ const getSdgBadges = (item) => {
                         :disabled="editSubmitting"
                         class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
-                        <i v-if="editSubmitting" class="fa fa-spinner fa-spin"></i>
+                        <i
+                          v-if="editSubmitting"
+                          class="fa fa-spinner fa-spin"
+                        ></i>
                         <i v-else class="fa fa-save"></i>
-                        {{ editSubmitting ? 'Updating...' : 'Update' }}
+                        {{ editSubmitting ? "Updating..." : "Update" }}
                       </button>
                     </div>
                   </form>
@@ -953,7 +1154,6 @@ const getSdgBadges = (item) => {
               </div>
             </div>
           </div>
-   
         </div>
       </div>
     </div>
@@ -966,7 +1166,10 @@ const getSdgBadges = (item) => {
       class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
       @click="closeImagePreview"
     >
-      <div class="relative max-w-4xl max-h-[90vh] overflow-auto bg-white p-2 rounded-lg" @click.stop>
+      <div
+        class="relative max-w-4xl max-h-[90vh] overflow-auto bg-white p-2 rounded-lg"
+        @click.stop
+      >
         <button
           @click="closeImagePreview"
           class="absolute top-2 right-2 text-gray-700 hover:text-red-500 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-md z-10"

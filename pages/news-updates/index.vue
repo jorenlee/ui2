@@ -222,6 +222,27 @@ const isVideoFile = (filename) => {
   return videoExtensions.some(ext => filename.toLowerCase().includes(ext));
 };
 
+// Add helper function to extract category from filters or use default
+const getCategoryLabel = (item) => {
+  if (!item.filters) return 'News';
+  
+  const filters = item.filters.toLowerCase();
+  
+  // Check for explicit category keywords first
+  if (filters.includes('announcement')) return 'Announcement';
+  if (filters.includes('event')) return 'Event';
+  if (filters.includes('news highlight')) return 'News Highlight';
+  if (filters.includes('news')) return 'News';
+  
+  // If only SDGs, count them and return SDG label
+  const sdgMatches = filters.match(/sdg\d+/gi) || [];
+  if (sdgMatches.length > 0) {
+    return `${sdgMatches.length} SDG${sdgMatches.length > 1 ? 's' : ''}`;
+  }
+  
+  return 'News'; // Default fallback
+};
+
 onMounted(async () => {
   try {
     const res = await $fetch(endpoint.value + "/api/cms/content/list/");
@@ -510,12 +531,12 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 
                 <!-- Content Section -->
                 <div class="p-4">
-                  <!-- Category/Type Badge -->
-                  <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs text-gray-500 uppercase tracking-wide">
-                      {{ j.category || 'News' }}
+                  <!-- Category/Type Badge with Date -->
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="inline-block py-1 text-xs rounded-full uppercase tracking-wide font-light">
+                      {{ getCategoryLabel(j) }}
                     </span>
-                    <span class="text-xs text-gray-400">
+                    <span class="text-xs text-gray-400 whitespace-nowrap ml-2">
                       {{ moment(j.date || j.created_at).format("MMM DD") }}
                     </span>
                   </div>
