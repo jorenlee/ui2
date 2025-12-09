@@ -271,14 +271,14 @@ onBeforeUnmount(() => {
                 </li>
               </ul>
             </li>
-            <!-- <li>
+            <li>
               <a
-                href="/campus-dev"
+                href="/campus/dev"
                 class="nav-link"
                 :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
                 >Campus Dev</a
               >
-            </li> -->
+            </li>
             <li class="relative nav-dropdown">
               <a
                 href="#"
@@ -482,7 +482,7 @@ onBeforeUnmount(() => {
             </li>
 
             <li>
-              <a href="/campus-dev" class="mobile-menu-item border-y"
+              <a href="/campus/dev" class="mobile-menu-item border-y"
                 >Campus Dev</a
               >
             </li>
