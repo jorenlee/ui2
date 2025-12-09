@@ -37,40 +37,35 @@ if (item.value) {
     ? `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${item.value.files[0]}`
     : 'https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/logos/lsu-logo.png';
 
-  // Replace static useHead with dynamic data
+  const pageUrl = `https://lsu.edu.ph/news-updates/${itemId}`;
+
   useHead({
     title: `${title} | LSU`,
     meta: [
-      { property: "og:title", content: `${title} | LSU` },
-      { property: "og:image", content: imageUrl },
-      { property: "og:description", content: description },
-      { property: "og:url", content: `https://lsu.edu.ph/news-updates/${itemId}` },
-      { property: "og:type", content: "article" },
-      { property: "og:site_name", content: "La Salle University - Ozamiz" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: title },
-      { name: "twitter:description", content: description },
-      { name: "twitter:image", content: imageUrl }
+      { charset: 'utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      { hid: 'description', name: 'description', content: description },
+      
+      // OpenGraph - Facebook
+      { hid: 'og:title', property: 'og:title', content: `${title} | LSU` },
+      { hid: 'og:description', property: 'og:description', content: description },
+      { hid: 'og:image', property: 'og:image', content: imageUrl },
+      { hid: 'og:image:width', property: 'og:image:width', content: '1200' },
+      { hid: 'og:image:height', property: 'og:image:height', content: '630' },
+      { hid: 'og:url', property: 'og:url', content: pageUrl },
+      { hid: 'og:type', property: 'og:type', content: 'article' },
+      { hid: 'og:site_name', property: 'og:site_name', content: 'La Salle University - Ozamiz' },
+      
+      // Twitter Card
+      { hid: 'twitter:card', name: 'twitter:card', content: 'summary_large_image' },
+      { hid: 'twitter:title', name: 'twitter:title', content: title },
+      { hid: 'twitter:description', name: 'twitter:description', content: description },
+      { hid: 'twitter:image', name: 'twitter:image', content: imageUrl },
+      { hid: 'twitter:site', name: 'twitter:site', content: '@lsu_ozamiz' }
+    ],
+    link: [
+      { rel: 'canonical', href: pageUrl }
     ]
-  });
-
-  useServerSeoMeta({
-    title: `${title} - La Salle University Ozamiz`,
-    description: description,
-    ogTitle: `${title} | LSU`,
-    ogDescription: description,
-    ogImage: imageUrl,
-    ogUrl: `https://lsu.edu.ph/news-updates/${itemId}`,
-    ogType: 'article',
-    ogSiteName: 'La Salle University - Ozamiz',
-    ogLocale: 'en_US',
-    ogImageWidth: '1200',
-    ogImageHeight: '630',
-    twitterCard: 'summary_large_image',
-    twitterTitle: title,
-    twitterDescription: description,
-    twitterImage: imageUrl,
-    twitterSite: '@lsu_ozamiz'
   });
 }
 
