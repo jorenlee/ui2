@@ -82,4 +82,9 @@ export default defineNuxtConfig({
     },
   },
   compatibilityDate: '2025-07-30',
-});
+  // runtimeConfig: {
+  //   public: {
+  //     googleClientId: process.env.GOOGLE_CLIENT_ID || ''
+  //   }
+  // }
+})
