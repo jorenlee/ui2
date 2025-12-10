@@ -80,7 +80,10 @@ const allowedEmails = [
   "macy.beniola@lsu.edu.ph",
   "lynn.lumacad@lsu.edu.ph",
   "zosette.salas@lsu.edu.ph",
-  "jorenleeluna24@gmail.com"
+  "jorenleeluna24@gmail.com",
+  "jason.yap@lsu.edu.ph",
+  "npc@lsu.edu.ph",
+  "dev@lsu.edu.ph"
 ];
 
 // Watch for user email changes and restrict SSO login
