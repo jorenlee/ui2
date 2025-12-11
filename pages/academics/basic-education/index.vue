@@ -40,7 +40,7 @@ const menuList = [
     <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
 
       <!-- Side Menu -->
-      <div class="shadow lg:w-3/12 my-5 bg-white rounded-lg overflow-hidden">
+      <div class="shadow lg:w-3/12 my-5 bg-white overflow-hidden">
         <DynamicSideMenu :items="menuList" title="Sub Pages" />
       </div>
 
