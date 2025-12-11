@@ -2,23 +2,13 @@
   <div :class="['p-4 min-h-screen']">
     <div class="flex gap-4">
       <!-- Main content -->
-      <div class="flex-1">
+      <div class="">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-xl font-bold text-green-800">
-            Library Schedules — Calendar
+        <div class="flex items-center mb-4 w-full">
+          <h2 class="text-xl font-bold text-green-800 text-center w-full">
+            Library Schedules
           </h2>
-          <div class="flex gap-2">
-            <button
-              @click="openCreateFromButton"
-              class="bg-green-800 text-white px-4 py-2 rounded"
-            >
-              New
-            </button>
-            <button @click="refresh" class="bg-white border px-3 py-2 rounded">
-              Refresh
-            </button>
-          </div>
+          
         </div>
 
         <!-- Toast -->
@@ -35,7 +25,7 @@
         </div>
 
         <!-- Calendar -->
-        <div>
+        <div class="uppercase">
           <component
             v-if="calendarReady && FullCalendar"
             :is="FullCalendar"
@@ -52,9 +42,18 @@
             class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
           >
             <div :class="['rounded-lg w-full max-w-2xl p-6 bg-white']">
-              <h3 class="font-bold mb-4">
+            <div class="w-full flex justify-between">
+                <h3 class="font-bold mb-4">
                 {{ isEditing ? "Edit Schedule" : "Create New Schedule" }} ID: {{ form.id }}
               </h3>
+
+
+                 <button @click="closeModal" class="px-4 py-2 border rounded">
+                    <i class="fa fa-times"></i>
+                  </button>
+
+            </div>
+
 
               <div class="grid gap-3">
                 <label class="text-sm"
@@ -117,35 +116,46 @@
                   </label>
                 </div>
 
-                <div class="flex justify-end gap-2 mt-3">
-                  <button @click="closeModal" class="px-4 py-2 border rounded">
-                    Cancel
-                  </button>
-
-                  <button
+                <div class="">
+               
+                 <div class="justify-end flex gap-2 mt-4">
+                   <button
                     v-if="!isEditing"
                     @click="createSchedule"
                     :disabled="isSubmitting"
-                    class="px-4 py-2 bg-green-800 text-white rounded"
+                    class="px-4 py-2 bg-green-800 text-white rounded flex"
                   >
                     {{ isSubmitting ? "Saving..." : "Create" }}
                   </button>
 
-                  <div v-else class="flex gap-2">
+
+
+          
+
+
+                  
+                  <div v-else class="flex w-full justify-between gap-2">
                     <button
                       @click="updateSchedule"
                       :disabled="isSubmitting"
                       class="px-4 py-2 bg-yellow-500 text-white rounded"
                     >
-                      {{ isSubmitting ? "Saving..." : "Save Changes" }}
+                      {{ isSubmitting ? "assigning..." : "Set" }}
                     </button>
                     <button
                       @click="confirmDelete"
                       class="px-4 py-2 bg-red-600 text-white rounded"
                     >
-                      Delete
+                      <i class="fa fa-trash"></i>
                     </button>
                   </div>
+                 </div>
+
+
+                          
+
+
+
                 </div>
               </div>
             </div>
@@ -158,7 +168,7 @@
             v-if="showDeleteConfirm"
             class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
           >
-            <div :class="['rounded-lg w-full max-w-md p-6 text-center']">
+            <div :class="['rounded-lg w-full max-w-md p-6 text-center bg-white']">
               <h3 class="font-bold mb-4">Confirm Remove</h3>
               <p class="text-sm text-gray-700 mb-6">
                 Remove schedule for <strong>{{ form.date }}</strong
@@ -486,7 +496,7 @@ const createSchedule = async () => {
 
     toast.value = {
       show: true,
-      message: `Schedule created for ${payload.date}`,
+      message: `Schedule set for ${payload.date}`,
       type: "success",
     };
   } catch (e) {
@@ -581,7 +591,7 @@ const deleteSchedule = async () => {
     );
     showDeleteConfirm.value = false;
     await fetchSchedules();
-    toast.value = { show: true, message: "Schedule removed", type: "success" };
+    toast.value = { show: true, message: "Schedule Removed", type: "success" };
   } catch (e) {
     toast.value = {
       show: true,
@@ -612,7 +622,7 @@ const handleEventResize = async (resizeInfo) => {
         headers: { "Content-Type": "application/json" }
       }
     );
-    toast.value = { show: true, message: "Schedule resized", type: "success" };
+    toast.value = { show: true, message: "Schedule Resized", type: "success" };
     await fetchSchedules();
   } catch (e) {
     toast.value = {
@@ -763,7 +773,7 @@ const removeTimeSlot = async (slotToRemove) => {
     // Get current schedule
     const schedule = schedules.value.find(s => s.id === quickRemoveScheduleId.value);
     if (!schedule) {
-      toast.value = { show: true, message: "Schedule not found", type: "error" };
+      toast.value = { show: true, message: "Schedule not Found", type: "error" };
       return;
     }
 
