@@ -32,7 +32,7 @@ const socials = [
     <div class="bg-green-900/95">
       <div class="container mx-auto px-4 lg:px-8 py-12">
         <!-- Flex Wrapper -->
-        <div class="flex gap-10 lg:gap-5 w-full">
+        <div class="lg:flex gap-10 lg:gap-5 w-full">
 
           <!-- Left Section: Logo + Tagline + Quick Links -->
           <div class="w-full lg:w-8/12 text-center lg:text-left">
@@ -40,13 +40,13 @@ const socials = [
               <a href="https://lsu.edu.ph" class="inline-block">
                 <img
                   src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/lsu-w-h.png"
-                  class="sm:w-3/12 lg:w-4/12 w-11/12 mx-auto lg:mx-0 transition-transform duration-300 hover:scale-105"
+                  class="sm:w-3/12 md:w-6/12 lg:w-4/12 w-11/12 mx-auto lg:mx-0 transition-transform duration-300 hover:scale-105"
                   alt="LSU"
                 />
               </a>
             </div>
 
-            <p class="lg:text-[10px] text-xs mb-2 text-green-100">
+            <p class="lg:text-xs lg:mx-0 lg:w-full w-8/12 mx-auto text-xs mb-2 text-green-100">
               Valconcha St., Aguada, Ozamiz City, Misamis Occidental, Philippines 7200
             </p>
 
@@ -83,7 +83,7 @@ const socials = [
           </div>
 
           <!-- Right Section: Social Media -->
-          <div class="w-full lg:w-4/12 flex justify-center">
+          <div class="w-full lg:w-4/12 flex justify-center lg:mt-0 mt-10">
             <div class="bg-green-800/50 border-2 border-green-700 p-6 w-full sm:w-8/12 lg:w-full text-center">
               <h3 class="text-sm font-bold uppercase mb-4 text-green-200">
                 <i class="fa fa-share-alt mr-2"></i>Connect With Us

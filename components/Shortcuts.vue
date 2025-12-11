@@ -14,7 +14,7 @@ const majorComponents = ref([
   },
   {
     name: "My.LSU",
-    link: "https://my.lsu.edu.ph/index.jsp",
+    link: "/mylsu",
     image:
       "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-4-my-lsu.png",
   },

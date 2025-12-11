@@ -42,14 +42,7 @@ const buttons = ref([
         />
       </div>
     </div>
-    <!-- <div>fsdfsdfsfd</div> -->
-    <div class="justify-center lg:w-10/12 w-11/12 mx-auto border mb-5" title="Google Ads"> 
-      <Adsbygoogle ad-slot="9892943139" />
-    </div>
-    <!-- <ScriptGoogleAdsense
-      data-ad-client="ca-pub-2783005418884897"  
-      data-ad-slot="9892943139"           
-    /> -->
+
     <Footer />
   </div>
 </template>
