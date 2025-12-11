@@ -6,7 +6,7 @@ import moment from "moment";
 const menuDetails = ref(false);
 const isScrolled = ref(false);
 const showSearchModal = ref(false);
-const searchQuery = ref('');
+const searchQuery = ref("");
 const searchResults = ref([]);
 const searchLoading = ref(false);
 const allContent = ref([]);
@@ -24,15 +24,15 @@ const handleScroll = () => {
 
 const openSearchModal = () => {
   showSearchModal.value = true;
-  document.body.style.overflow = 'hidden';
+  document.body.style.overflow = "hidden";
   loadContent();
 };
 
 const closeSearchModal = () => {
   showSearchModal.value = false;
-  searchQuery.value = '';
+  searchQuery.value = "";
   searchResults.value = [];
-  document.body.style.overflow = 'auto';
+  document.body.style.overflow = "auto";
 };
 
 const loadContent = async () => {
@@ -53,19 +53,21 @@ const performSearch = () => {
   }
 
   searchLoading.value = true;
-  
+
   setTimeout(() => {
     const query = searchQuery.value.toLowerCase().trim();
-    
-    searchResults.value = allContent.value.filter(item => {
-      return (
-        item.title?.toLowerCase().includes(query) ||
-        item.authors?.toLowerCase().includes(query) ||
-        item.descriptions?.toLowerCase().includes(query) ||
-        item.filters?.toLowerCase().includes(query)
-      );
-    }).slice(0, 20); // Limit to 20 results
-    
+
+    searchResults.value = allContent.value
+      .filter((item) => {
+        return (
+          item.title?.toLowerCase().includes(query) ||
+          item.authors?.toLowerCase().includes(query) ||
+          item.descriptions?.toLowerCase().includes(query) ||
+          item.filters?.toLowerCase().includes(query)
+        );
+      })
+      .slice(0, 20); // Limit to 20 results
+
     searchLoading.value = false;
   }, 300);
 };
@@ -77,19 +79,19 @@ const goToArticle = (id) => {
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 };
 
 const getSdgBadges = (item) => {
   if (!item?.filters) return [];
-  
+
   const filters = item.filters.toLowerCase();
   const badges = [];
-  
+
   for (let i = 1; i <= 17; i++) {
     const patterns = [
       `\\bsdg${i}\\b`,
@@ -98,24 +100,26 @@ const getSdgBadges = (item) => {
       `\\bsdg_${i}\\b`,
       `\\bgoal ${i}\\b`,
       `\\bgoal${i}\\b`,
-      `\\bsdg${i.toString().padStart(2, '0')}\\b`
+      `\\bsdg${i.toString().padStart(2, "0")}\\b`,
     ];
-    
-    if (patterns.some(pattern => {
-      const regex = new RegExp(pattern, 'i');
-      return regex.test(filters);
-    })) {
+
+    if (
+      patterns.some((pattern) => {
+        const regex = new RegExp(pattern, "i");
+        return regex.test(filters);
+      })
+    ) {
       badges.push({ number: i });
     }
   }
-  
+
   return badges;
 };
 
 onMounted(() => {
   window.addEventListener("scroll", handleScroll);
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && showSearchModal.value) {
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && showSearchModal.value) {
       closeSearchModal();
     }
   });
@@ -145,19 +149,19 @@ onBeforeUnmount(() => {
               alt="La Salle University"
             />
           </a>
-          
+
           <!-- Search Icon with Expandable Input -->
           <div class="relative group">
-            <button 
-              class=" bg-green-900 text-white hover:text-white hover:bg-green-800 transition-all duration-300 pr-1 shadow-xl py-2 pl-2.5 rounded-full flex items-center gap-2 overflow-hidden "
+            <button
+              class="bg-green-900 text-white hover:text-white hover:bg-green-800 transition-all duration-300 pr-1 shadow-xl py-2 pl-2.5 rounded-full flex items-center gap-2 overflow-hidden"
               @click="openSearchModal"
               aria-label="Search"
             >
               <i class="fa fa-search text-xl flex-shrink-0"></i>
-              <input 
-                type="text" 
-                class="w-0 group-hover:w-32 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-transparent border-none outline-none text-sm text-white placeholder-green-200" 
-                placeholder="Search..." 
+              <input
+                type="text"
+                class="w-0 group-hover:w-32 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-transparent border-none outline-none text-sm text-white placeholder-green-200"
+                placeholder="Search..."
                 readonly
               />
             </button>
@@ -250,20 +254,31 @@ onBeforeUnmount(() => {
               >
               <ul class="dropdown-menu">
                 <li>
-                  <a href="/campus-life/lasallian-mission-center" class="dropdown-item"
+                  <a
+                    href="/campus-life/lasallian-mission-center"
+                    class="dropdown-item"
                     >Lasallian Mission Center</a
                   >
                 </li>
                 <li>
-                  <a href="/campus-life/lasallian-formation-center" class="dropdown-item"
+                  <a
+                    href="/campus-life/lasallian-formation-center"
+                    class="dropdown-item"
                     >Lasallian Formation Center</a
                   >
                 </li>
                 <li>
-                  <a href="/campus-life/student-activities-center" class="dropdown-item"
+                  <a
+                    href="/campus-life/student-activities-center"
+                    class="dropdown-item"
                     >Student Activities Center</a
                   >
                 </li>
+
+                <!-- <li>
+                  <a href="/etc" class="dropdown-item"> BlendFlex Learning</a>
+                </li> -->
+
                 <li>
                   <a href="/campus-life/activities" class="dropdown-item"
                     >Activities</a
@@ -300,7 +315,9 @@ onBeforeUnmount(() => {
                   <a href="/library" class="dropdown-item">Library</a>
                 </li>
                 <li>
-                  <a href="/social-media" class="dropdown-item">Student Affairs</a>
+                  <a href="/social-media" class="dropdown-item"
+                    >Student Affairs</a
+                  >
                 </li>
                 <li>
                   <a href="/hr" class="dropdown-item">Human Resource</a>
@@ -309,8 +326,13 @@ onBeforeUnmount(() => {
                   <a href="/drs" class="dropdown-item">Document Reviewer</a>
                 </li>
                 <li>
-                  <a href="/news-updates" class="dropdown-item">News and Updates</a>
+                  <a href="/news-updates" class="dropdown-item"
+                    >News and Updates</a
+                  >
                 </li>
+                <!-- <li>
+                  <a href="/npcc" class="dropdown-item">IT Services</a>
+                </li> -->
               </ul>
             </li>
             <li class="relative nav-dropdown">
@@ -322,9 +344,7 @@ onBeforeUnmount(() => {
               >
               <ul class="dropdown-menu">
                 <li>
-                  <a href="/about" class="dropdown-item"
-                    >LSU</a
-                  >
+                  <a href="/about" class="dropdown-item">LSU</a>
                 </li>
                 <li>
                   <a href="/about/founders-life" class="dropdown-item"
@@ -332,19 +352,13 @@ onBeforeUnmount(() => {
                   >
                 </li>
                 <li>
-                  <a href="/about/vocations" class="dropdown-item"
-                    >Vocations</a
-                  >
+                  <a href="/about/vocations" class="dropdown-item">Vocations</a>
                 </li>
                 <li>
-                  <a href="/about/contact" class="dropdown-item"
-                    >Contact</a
-                  >
+                  <a href="/about/contact" class="dropdown-item">Contact</a>
                 </li>
                 <li>
-                  <a href="/about/hymn" class="dropdown-item"
-                    >The Hymn</a
-                  >
+                  <a href="/about/hymn" class="dropdown-item">The Hymn</a>
                 </li>
                 <li>
                   <a href="/about/lasallian-prayer" class="dropdown-item"
@@ -422,7 +436,9 @@ onBeforeUnmount(() => {
               >
               <ul>
                 <li class="bg-[#f7faf7]">
-                  <a href="/research/institutional-research" class="mobile-submenu-item"
+                  <a
+                    href="/research/institutional-research"
+                    class="mobile-submenu-item"
                     >Institutional Research and Publication Office</a
                   >
                 </li>
@@ -459,20 +475,33 @@ onBeforeUnmount(() => {
               >
               <ul>
                 <li class="bg-[#f7faf7]">
-                  <a href="/campus-life/lasallian-mission-center" class="mobile-submenu-item"
+                  <a
+                    href="/campus-life/lasallian-mission-center"
+                    class="mobile-submenu-item"
                     >Lasallian Mission Center</a
                   >
                 </li>
                 <li class="bg-[#f7faf7]">
-                  <a href="/campus-life/lasallian-formation-center" class="mobile-submenu-item"
+                  <a
+                    href="/campus-life/lasallian-formation-center"
+                    class="mobile-submenu-item"
                     >Lasallian Formation Center</a
                   >
                 </li>
                 <li class="bg-[#f7faf7]">
-                  <a href="/campus-life/student-activities-center" class="mobile-submenu-item"
+                  <a
+                    href="/campus-life/student-activities-center"
+                    class="mobile-submenu-item"
                     >Student Activities Center</a
                   >
                 </li>
+
+                <!-- <li class="bg-[#f7faf7]">
+                  <a href="/etc" class="mobile-submenu-item"
+                    >BlendFlex Learning</a
+                  >
+                </li> -->
+
                 <li class="bg-[#f7faf7]">
                   <a href="/campus-life/activities" class="mobile-submenu-item"
                     >Activities</a
@@ -495,29 +524,43 @@ onBeforeUnmount(() => {
               >
               <ul>
                 <li class="bg-[#f7faf7]">
-                  <a href="/campus-pass" class="mobile-submenu-item">Campus Pass</a>
+                  <a href="/campus-pass" class="mobile-submenu-item"
+                    >Campus Pass</a
+                  >
                 </li>
                 <li class="bg-[#f7faf7]">
                   <a href="/registrar" class="mobile-submenu-item">Registrar</a>
                 </li>
                 <li class="bg-[#f7faf7]">
-                  <a href="/procurement" class="mobile-submenu-item">Procurement</a>
+                  <a href="/procurement" class="mobile-submenu-item"
+                    >Procurement</a
+                  >
                 </li>
                 <li class="bg-[#f7faf7]">
                   <a href="/library" class="mobile-submenu-item">Library</a>
                 </li>
                 <li class="bg-[#f7faf7]">
-                  <a href="/social-media" class="mobile-submenu-item">Student Affairs</a>
+                  <a href="/social-media" class="mobile-submenu-item"
+                    >Student Affairs</a
+                  >
                 </li>
                 <li class="bg-[#f7faf7]">
                   <a href="/hr" class="mobile-submenu-item">Human Resource</a>
                 </li>
                 <li class="bg-[#f7faf7]">
-                  <a href="/drs" class="mobile-submenu-item">Document Reviewer</a>
+                  <a href="/drs" class="mobile-submenu-item"
+                    >Document Reviewer</a
+                  >
                 </li>
                 <li class="bg-[#f7faf7]">
-                  <a href="/news-updates" class="mobile-submenu-item">News and Updates</a>
+                  <a href="/news-updates" class="mobile-submenu-item"
+                    >News and Updates</a
+                  >
                 </li>
+
+                <!-- <li class="bg-[#f7faf7]">
+                  <a href="/npcc" class="mobile-submenu-item">IT Services</a>
+                </li> -->
               </ul>
             </li>
 
@@ -529,9 +572,7 @@ onBeforeUnmount(() => {
               >
               <ul>
                 <li class="bg-[#f7faf7]">
-                  <a href="/about" class="mobile-submenu-item"
-                    >LSU</a
-                  >
+                  <a href="/about" class="mobile-submenu-item">LSU</a>
                 </li>
                 <li class="bg-[#f7faf7]">
                   <a href="/about/founders-life" class="mobile-submenu-item"
@@ -549,9 +590,7 @@ onBeforeUnmount(() => {
                   >
                 </li>
                 <li class="bg-[#f7faf7]">
-                  <a href="/about/hymn" class="mobile-submenu-item"
-                    >The Hymn</a
-                  >
+                  <a href="/about/hymn" class="mobile-submenu-item">The Hymn</a>
                 </li>
                 <li class="bg-[#f7faf7]">
                   <a href="/about/lasallian-prayer" class="mobile-submenu-item"
@@ -567,16 +606,28 @@ onBeforeUnmount(() => {
   </div>
 
   <!-- Search Modal -->
-  <div v-if="showSearchModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" @click="closeSearchModal">
-    <div class="bg-white rounded-lg shadow-xl w-11/12 max-w-2xl max-h-[80vh] overflow-hidden" @click.stop>
+  <div
+    v-if="showSearchModal"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+    @click="closeSearchModal"
+  >
+    <div
+      class="bg-white rounded-lg shadow-xl w-11/12 max-w-2xl max-h-[80vh] overflow-hidden"
+      @click.stop
+    >
       <!-- Modal Header -->
       <div class="flex items-center justify-between p-4 border-b">
-        <h3 class="text-lg font-semibold text-green-800">Search News & Updates</h3>
-        <button @click="closeSearchModal" class="text-gray-500 hover:text-gray-700">
+        <h3 class="text-lg font-semibold text-green-800">
+          Search News & Updates
+        </h3>
+        <button
+          @click="closeSearchModal"
+          class="text-gray-500 hover:text-gray-700"
+        >
           <i class="fa fa-times text-xl"></i>
         </button>
       </div>
-      
+
       <!-- Search Input -->
       <div class="p-4 border-b">
         <div class="relative">
@@ -587,22 +638,29 @@ onBeforeUnmount(() => {
             class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             @input="performSearch"
           />
-          <i class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          <i
+            class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+          ></i>
         </div>
       </div>
-      
+
       <!-- Search Results -->
       <div class="p-4 max-h-96 overflow-y-auto">
         <div v-if="searchLoading" class="text-center py-8">
           <i class="fa fa-spinner fa-spin text-green-600 text-2xl"></i>
           <p class="mt-2 text-gray-600">Searching...</p>
         </div>
-        
-        <div v-else-if="searchResults.length === 0 && searchQuery" class="text-center py-8">
+
+        <div
+          v-else-if="searchResults.length === 0 && searchQuery"
+          class="text-center py-8"
+        >
           <i class="fa fa-search text-gray-400 text-3xl"></i>
-          <p class="mt-2 text-gray-600">No results found for "{{ searchQuery }}"</p>
+          <p class="mt-2 text-gray-600">
+            No results found for "{{ searchQuery }}"
+          </p>
         </div>
-        
+
         <div v-else-if="searchResults.length > 0" class="space-y-3">
           <div
             v-for="item in searchResults"
@@ -612,9 +670,13 @@ onBeforeUnmount(() => {
           >
             <h4 class="font-semibold text-green-800 mb-1">{{ item.title }}</h4>
             <p class="text-sm text-gray-600 mb-2">{{ item.authors }}</p>
-            <p class="text-xs text-gray-500 line-clamp-2">{{ item.descriptions }}</p>
+            <p class="text-xs text-gray-500 line-clamp-2">
+              {{ item.descriptions }}
+            </p>
             <div class="flex items-center justify-between mt-2">
-              <span class="text-xs text-gray-400">{{ formatDate(item.date) }}</span>
+              <span class="text-xs text-gray-400">{{
+                formatDate(item.date)
+              }}</span>
               <div class="flex gap-1">
                 <span
                   v-for="badge in getSdgBadges(item).slice(0, 3)"
@@ -627,7 +689,7 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
-        
+
         <div v-else class="text-center py-8 text-gray-500">
           <i class="fa fa-search text-3xl"></i>
           <p class="mt-2">Start typing to search news & updates</p>

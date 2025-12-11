@@ -53,7 +53,7 @@
           >
             <div :class="['rounded-lg w-full max-w-2xl p-6 bg-white']">
               <h3 class="font-bold mb-4">
-                {{ isEditing ? "Edit Schedule" : "Create New Schedule" }} ID: {{ form.id }}
+                {{ isEditing ? "Edit Schedule" : "Create New Schedule" }}
               </h3>
 
               <div class="grid gap-3">
@@ -70,12 +70,7 @@
                 /> -->
 
                 <label class="text-sm font-bold">
-                  <input
-                    type="checkbox"
-                    :checked="isAllSelected"
-                    :indeterminate="isIndeterminate"
-                    @change="toggleSelectAll"
-                  />
+                  <input type="checkbox" />
                   Select All</label
                 >
 
@@ -182,54 +177,13 @@
             </div>
           </div>
         </transition>
-
-        <!-- Quick Slot Removal Modal -->
-        <transition name="fade">
-          <div
-            v-if="showQuickRemoveModal"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
-          >
-            <div :class="['rounded-lg w-full max-w-lg p-6 bg-white']">
-              <h3 class="font-bold mb-4">
-                Manage Time Slots - {{ quickRemoveDate ? moment(quickRemoveDate).format("MMMM DD, YYYY") : "" }}
-              </h3>
-
-              <div v-if="quickRemoveSlots.length === 0" class="text-center py-4 text-gray-500">
-                No time slots available for this day
-              </div>
-
-              <div v-else class="space-y-2">
-                <div
-                  v-for="(slot, index) in quickRemoveSlots"
-                  :key="index"
-                  class="flex items-center justify-between p-3 border rounded"
-                >
-                  <span class="text-sm">{{ slot._12_hour_format_from }} - {{ slot._12_hour_format_to }}</span>
-                  <button
-                    @click="removeTimeSlot(slot)"
-                    :disabled="isSubmitting"
-                    class="px-3 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
-                  >
-                    {{ isSubmitting ? "..." : "Remove" }}
-                  </button>
-                </div>
-              </div>
-
-              <div class="flex justify-end gap-2 mt-4">
-                <button @click="closeQuickRemoveModal" class="px-4 py-2 border rounded">
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </transition>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useUserStore } from "@/stores/user";
 import scheduleJSON from "../schedule.json";
 import moment from "moment";
@@ -384,40 +338,7 @@ const form = ref({
   recurrence_days: [],
 });
 
-// Quick remove modal state
-const showQuickRemoveModal = ref(false);
-const quickRemoveDate = ref("");
-const quickRemoveSlots = ref([]);
-const quickRemoveScheduleId = ref(null);
-
 const timeOptions = ref(scheduleJSON?.timeSelection?.[0]?.time || []);
-
-// Select All functionality
-const selectAll = ref(false);
-
-const isAllSelected = computed(() => {
-  return timeOptions.value.length > 0 && form.value.times.length === timeOptions.value.length;
-});
-
-const isIndeterminate = computed(() => {
-  return form.value.times.length > 0 && form.value.times.length < timeOptions.value.length;
-});
-
-const toggleSelectAll = () => {
-  if (isAllSelected.value) {
-    // Deselect all
-    form.value.times = [];
-  } else {
-    // Select all
-    form.value.times = timeOptions.value.map(t => `${t._12_hour_format_from} - ${t._12_hour_format_to}`);
-  }
-  selectAll.value = isAllSelected.value;
-};
-
-// Watch for manual changes to update selectAll state
-watch(() => form.value.times, (newTimes) => {
-  selectAll.value = isAllSelected.value;
-}, { immediate: true });
 
 // FullCalendar dynamic loader & options
 const FullCalendar = ref(null);
@@ -509,61 +430,20 @@ const createSchedule = async () => {
 };
 
 const updateSchedule = async () => {
-   if (!form.value.date || !form.value.times.length) {
-    toast.value = {
-      show: true,
-      message: "Choose date and at least one time",
-      type: "error",
-    };
-    return;
-  }
-
-  console.log("Updating schedule Date:", form.value.date);
-
-  const payload = formToPayload(form.value);
-  console.log("📤 Sending payload:", payload);
-  console.log("📍 Endpoint:", endpoint.value);
-
-  // Safety check: ensure time array is not empty
-  if (!payload.time || payload.time.length === 0) {
-    toast.value = { show: true, message: "No times selected", type: "error" };
-    return;
-  }
-
+  if (!form.value.id) return;
   isSubmitting.value = true;
   try {
-    const url = `${endpoint.value}/api/library/schedule/booking/create/`;
-    console.log("🔗 Full URL:", url);
-
-    const response = await $fetch(url, {
-      method: "POST",
-      body: payload,
-      headers: { "Content-Type": "application/json" },
-    });
-
-    console.log("✅ Create response:", response);
-
-    // Success: clear form, close modal, refresh calendar
+    await $fetch(
+      `${endpoint.value}/api/library/schedule/booking/${form.value.id}/update/`,
+      { method: "PUT", body: formToPayload(form.value) }
+    );
     closeModal();
     await fetchSchedules();
-
-    toast.value = {
-      show: true,
-      message: `Schedule created for ${payload.date}`,
-      type: "success",
-    };
+    toast.value = { show: true, message: "Schedule updated", type: "success" };
   } catch (e) {
-    console.error("❌ Create error:", {
-      message: e?.message,
-      data: e?.data,
-      statusCode: e?.statusCode,
-      statusMessage: e?.statusMessage,
-    });
-
     toast.value = {
       show: true,
-      message:
-        e?.data?.message || e?.statusMessage || e?.message || "Create failed",
+      message: e?.data?.message || e?.message || "Update failed",
       type: "error",
     };
   } finally {
@@ -606,11 +486,7 @@ const handleEventResize = async (resizeInfo) => {
   try {
     await $fetch(
       `${endpoint.value}/api/library/schedule/booking/${orig.id}/update/`,
-      {
-        method: "PUT",
-        body: payload,
-        headers: { "Content-Type": "application/json" }
-      }
+      { method: "PUT", body: payload }
     );
     toast.value = { show: true, message: "Schedule resized", type: "success" };
     await fetchSchedules();
@@ -696,7 +572,6 @@ onMounted(async () => {
       select: (sel) => handleSelect(sel),
       eventClick: (info) => handleEventClick(info),
       eventResize: (info) => handleEventResize(info),
-      dayClick: (info) => handleDayClick(info),
       height: "auto",
     };
 
@@ -738,99 +613,6 @@ const handleEventClick = (info) => {
   // scheduleToForm(existingApiObject, calendarEvent)
   form.value = scheduleToForm(original, evt);
   showModal.value = true;
-};
-
-const handleDayClick = (info) => {
-  // Find schedule for this date
-  const clickedDate = moment(info.date).format("MM-DD-YYYY");
-  const schedule = schedules.value.find(s => s.date === clickedDate);
-
-  if (schedule) {
-    quickRemoveDate.value = clickedDate;
-    quickRemoveScheduleId.value = schedule.id;
-    quickRemoveSlots.value = Array.isArray(schedule.time) ? schedule.time : [schedule.time];
-    showQuickRemoveModal.value = true;
-  } else {
-    toast.value = { show: true, message: "No schedule found for this date", type: "info" };
-  }
-};
-
-const removeTimeSlot = async (slotToRemove) => {
-  if (!quickRemoveScheduleId.value) return;
-
-  isSubmitting.value = true;
-  try {
-    // Get current schedule
-    const schedule = schedules.value.find(s => s.id === quickRemoveScheduleId.value);
-    if (!schedule) {
-      toast.value = { show: true, message: "Schedule not found", type: "error" };
-      return;
-    }
-
-    // Remove the slot from the time array
-    const currentTimes = Array.isArray(schedule.time) ? schedule.time : [schedule.time];
-    const updatedTimes = currentTimes.filter(slot =>
-      !(slot._12_hour_format_from === slotToRemove._12_hour_format_from &&
-        slot._12_hour_format_to === slotToRemove._12_hour_format_to)
-    );
-
-    // Convert to string format for API
-    let updatedTimeStrings = updatedTimes.map(slot => `${slot._12_hour_format_from} - ${slot._12_hour_format_to}`);
-
-    // If less than 2 slots, set to ["-"] as per old code
-    if (updatedTimeStrings.length < 2) {
-      updatedTimeStrings = ["-"];
-    }
-
-    // Create payload with updated times
-    const payload = {
-      date: schedule.date,
-      time: updatedTimeStrings,
-      updated_at: new Date().toISOString(),
-    };
-
-    console.log("📤 Removing slot payload:", payload);
-
-    const response = await $fetch(
-      `${endpoint.value}/api/library/schedule/booking/${quickRemoveScheduleId.value}/edit/`,
-      {
-        method: "PUT",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" }
-      }
-    );
-
-    console.log("✅ Slot removal response:", response);
-
-    // Update local state
-    quickRemoveSlots.value = updatedTimes;
-
-    // If no slots left, close modal and refresh
-    if (updatedTimes.length === 0) {
-      closeQuickRemoveModal();
-      await fetchSchedules();
-      toast.value = { show: true, message: "All slots removed for this day", type: "success" };
-    } else {
-      toast.value = { show: true, message: "Time slot removed", type: "success" };
-    }
-
-  } catch (e) {
-    console.error("❌ Slot removal error:", e);
-    toast.value = {
-      show: true,
-      message: e?.data?.message || e?.message || "Failed to remove slot",
-      type: "error",
-    };
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const closeQuickRemoveModal = () => {
-  showQuickRemoveModal.value = false;
-  quickRemoveDate.value = "";
-  quickRemoveSlots.value = [];
-  quickRemoveScheduleId.value = null;
 };
 </script>
 

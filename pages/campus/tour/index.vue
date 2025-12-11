@@ -1,8 +1,6 @@
 <script setup>
 const menuList = [
-  { label: "Campus Development", link: "/campus/dev" },
-  { label: "Campus Tour", link: "/campus/tour" },
-  { label: "Basic Education", link: "/campus/basic-education" }
+  { label: "Campus Development Program", link: "/campus/dev" },
 ];
 </script>
 
@@ -47,8 +45,8 @@ const menuList = [
           <div class="relative" style="padding-top: 56.25%;">
             <iframe
               class="absolute top-0 left-0 w-full h-full"
-              src="https://www.youtube.com/embed/6Wi9s0s-Tzs"
-              title="Campus University College Tour"
+              src="https://www.canva.com/design/DAGpch8ZlCU/AvOzo8Xm4coOEJAbKD8gaA/view?utm_content=DAGpch8ZlCU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=hc938867086"
+              title="Campus University Tour"
               frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen
@@ -56,10 +54,10 @@ const menuList = [
           </div>
           <div class="p-4">
             <h2 class="font-bold text-lg lasalle-green-text mb-2">
-              Main Campus University College Tour
+              Main Campus University Tour
             </h2>
             <p class="text-sm text-gray-600">
-              Explore our campus and facilities through this guided video tour.
+              Explore our campus and facilities through this guide.
             </p>
           </div>
         </div>
