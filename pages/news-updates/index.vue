@@ -1,5 +1,12 @@
 <script setup>
-import { ref, onMounted, nextTick, computed, watch, onBeforeUnmount } from "vue";
+import {
+  ref,
+  onMounted,
+  nextTick,
+  computed,
+  watch,
+  onBeforeUnmount,
+} from "vue";
 import { useUserStore } from "@/stores/user";
 import _ from "lodash";
 import moment from "moment";
@@ -27,7 +34,7 @@ const handleScroll = () => {
 const scrollToTop = () => {
   window.scrollTo({
     top: 0,
-    behavior: 'smooth'
+    behavior: "smooth",
   });
 };
 
@@ -49,28 +56,28 @@ const sdgOptions = ref([
   { value: "sdg14", label: "SDG 14 - Life Below Water" },
   { value: "sdg15", label: "SDG 15 - Life on Land" },
   { value: "sdg16", label: "SDG 16 - Peace and Justice" },
-  { value: "sdg17", label: "SDG 17 - Partnerships" }
+  { value: "sdg17", label: "SDG 17 - Partnerships" },
 ]);
 
 // SDG Colors mapping
 const sdgColors = {
-  1: "#e5243b",   // No Poverty
-  2: "#dda63a",   // Zero Hunger  
-  3: "#4c9f38",   // Good Health and Well-being
-  4: "#c5192d",   // Quality Education
-  5: "#ff3a21",   // Gender Equality
-  6: "#26bde2",   // Clean Water and Sanitation
-  7: "#fcc30b",   // Affordable and Clean Energy
-  8: "#a21942",   // Decent Work and Economic Growth
-  9: "#fd6925",   // Industry, Innovation and Infrastructure
-  10: "#dd1367",  // Reduced Inequalities
-  11: "#fd9d24",  // Sustainable Cities and Communities
-  12: "#bf8b2e",  // Responsible Consumption and Production
-  13: "#3f7e44",  // Climate Action
-  14: "#0a97d9",  // Life Below Water
-  15: "#56c02b",  // Life on Land
-  16: "#00689d",  // Peace, Justice and Strong Institutions
-  17: "#19486a"   // Partnerships for the Goals
+  1: "#e5243b", // No Poverty
+  2: "#dda63a", // Zero Hunger
+  3: "#4c9f38", // Good Health and Well-being
+  4: "#c5192d", // Quality Education
+  5: "#ff3a21", // Gender Equality
+  6: "#26bde2", // Clean Water and Sanitation
+  7: "#fcc30b", // Affordable and Clean Energy
+  8: "#a21942", // Decent Work and Economic Growth
+  9: "#fd6925", // Industry, Innovation and Infrastructure
+  10: "#dd1367", // Reduced Inequalities
+  11: "#fd9d24", // Sustainable Cities and Communities
+  12: "#bf8b2e", // Responsible Consumption and Production
+  13: "#3f7e44", // Climate Action
+  14: "#0a97d9", // Life Below Water
+  15: "#56c02b", // Life on Land
+  16: "#00689d", // Peace, Justice and Strong Institutions
+  17: "#19486a", // Partnerships for the Goals
 };
 
 // Helper function to get SDG color
@@ -81,16 +88,19 @@ const getSdgColor = (sdgNumber) => {
 // Get available years and months from data
 const availableYears = computed(() => {
   const years = info.value
-    .filter(item => item.date) // Only items with date field
-    .map(item => moment(item.date).year());
+    .filter((item) => item.date) // Only items with date field
+    .map((item) => moment(item.date).year());
   return [...new Set(years)].sort((a, b) => b - a);
 });
 
 const availableMonths = computed(() => {
   if (!selectedYear.value) return [];
   const months = info.value
-    .filter(item => item.date && moment(item.date).year() === parseInt(selectedYear.value))
-    .map(item => moment(item.date).month());
+    .filter(
+      (item) =>
+        item.date && moment(item.date).year() === parseInt(selectedYear.value)
+    )
+    .map((item) => moment(item.date).month());
   return [...new Set(months)].sort((a, b) => a - b);
 });
 
@@ -100,13 +110,13 @@ const filteredInfo = computed(() => {
 
   // Filter by SDG - exact match only
   if (selectedSDG.value) {
-    filtered = filtered.filter(item => {
+    filtered = filtered.filter((item) => {
       if (!item.filters) return false;
       const filters = item.filters.toLowerCase();
-      
+
       // Extract SDG number from selectedSDG (e.g., "sdg1" -> "1")
-      const selectedSdgNum = selectedSDG.value.replace('sdg', '');
-      
+      const selectedSdgNum = selectedSDG.value.replace("sdg", "");
+
       // Check for exact SDG matches only
       const exactPatterns = [
         `sdg${selectedSdgNum}`,
@@ -115,12 +125,12 @@ const filteredInfo = computed(() => {
         `sdg_${selectedSdgNum}`,
         `goal${selectedSdgNum}`,
         `goal ${selectedSdgNum}`,
-        `sdg${selectedSdgNum.padStart(2, '0')}`
+        `sdg${selectedSdgNum.padStart(2, "0")}`,
       ];
-      
-      return exactPatterns.some(pattern => {
+
+      return exactPatterns.some((pattern) => {
         // Use word boundaries to ensure exact matches
-        const regex = new RegExp(`\\b${pattern}\\b`, 'i');
+        const regex = new RegExp(`\\b${pattern}\\b`, "i");
         return regex.test(filters);
       });
     });
@@ -128,7 +138,7 @@ const filteredInfo = computed(() => {
 
   // Filter by year (using date field)
   if (selectedYear.value) {
-    filtered = filtered.filter(item => {
+    filtered = filtered.filter((item) => {
       if (!item.date) return false;
       return moment(item.date).year() === parseInt(selectedYear.value);
     });
@@ -136,7 +146,7 @@ const filteredInfo = computed(() => {
 
   // Filter by month (using date field)
   if (selectedMonth.value) {
-    filtered = filtered.filter(item => {
+    filtered = filtered.filter((item) => {
       if (!item.date) return false;
       return moment(item.date).month() === parseInt(selectedMonth.value);
     });
@@ -146,12 +156,12 @@ const filteredInfo = computed(() => {
   return filtered.sort((a, b) => {
     const dateA = moment(a.date);
     const dateB = moment(b.date);
-    
+
     // Handle invalid dates by putting them at the end
     if (!dateA.isValid() && !dateB.isValid()) return 0;
     if (!dateA.isValid()) return 1;
     if (!dateB.isValid()) return -1;
-    
+
     // Sort latest to oldest (descending)
     return dateB.valueOf() - dateA.valueOf();
   });
@@ -167,10 +177,10 @@ const clearFilters = () => {
 // Add computed property for SDG badges - exact matches only
 const getSdgBadges = (item) => {
   if (!item?.filters) return [];
-  
+
   const filters = item.filters.toLowerCase();
   const badges = [];
-  
+
   // Check for exact SDG mentions using word boundaries
   for (let i = 1; i <= 17; i++) {
     const patterns = [
@@ -180,67 +190,81 @@ const getSdgBadges = (item) => {
       `\\bsdg_${i}\\b`,
       `\\bgoal ${i}\\b`,
       `\\bgoal${i}\\b`,
-      `\\bsdg${i.toString().padStart(2, '0')}\\b`
+      `\\bsdg${i.toString().padStart(2, "0")}\\b`,
     ];
-    
-    if (patterns.some(pattern => {
-      const regex = new RegExp(pattern, 'i');
-      return regex.test(filters);
-    })) {
-      badges.push({ 
+
+    if (
+      patterns.some((pattern) => {
+        const regex = new RegExp(pattern, "i");
+        return regex.test(filters);
+      })
+    ) {
+      badges.push({
         number: i,
-        color: getSdgColor(i)
+        color: getSdgColor(i),
       });
     }
   }
-  
+
   return badges;
 };
 
 // Helper function to check if item has video content
 const hasVideoContent = (item) => {
   // Check for video files
-  if (item.files && item.files.some(file => isVideoFile(file))) {
+  if (item.files && item.files.some((file) => isVideoFile(file))) {
     return true;
   }
-  
+
   // Check for video links
-  if (item.links && item.links.some(link => 
-    link.includes('youtube.com') || 
-    link.includes('youtu.be') || 
-    link.includes('facebook.com/reel')
-  )) {
+  if (
+    item.links &&
+    item.links.some(
+      (link) =>
+        link.includes("youtube.com") ||
+        link.includes("youtu.be") ||
+        link.includes("facebook.com/reel")
+    )
+  ) {
     return true;
   }
-  
+
   return false;
 };
 
 // Helper function to check if file is video
 const isVideoFile = (filename) => {
-  const videoExtensions = ['.mp4', '.avi', '.mov', '.wmv', '.flv', '.webm', '.mkv'];
-  return videoExtensions.some(ext => filename.toLowerCase().includes(ext));
+  const videoExtensions = [
+    ".mp4",
+    ".avi",
+    ".mov",
+    ".wmv",
+    ".flv",
+    ".webm",
+    ".mkv",
+  ];
+  return videoExtensions.some((ext) => filename.toLowerCase().includes(ext));
 };
 
 // Add helper function to extract category from filters or use default
 const getCategoryLabel = (item) => {
-  if (!item.filters) return 'News';
-  
+  if (!item.filters) return "News";
+
   const filters = item.filters.toLowerCase();
-  
+
   // Check for explicit category keywords first
-  if (filters.includes('announcement')) return 'Announcement';
-  if (filters.includes('event')) return 'Event';
-  if (filters.includes('news highlight')) return 'News Highlight';
-  if (filters.includes('news')) return 'News';
-  
+  if (filters.includes("announcement")) return "Announcement";
+  if (filters.includes("event")) return "Event";
+  if (filters.includes("news highlight")) return "News Highlight";
+  if (filters.includes("news")) return "News";
+
   // If only SDGs, count them and return SDG label
   const sdgMatches = filters.match(/sdg\d+/gi) || [];
   if (sdgMatches.length > 0) {
-    return `${sdgMatches.length} SDG${sdgMatches.length > 1 ? 's' : ''}`;
+    return `${sdgMatches.length} SDG${sdgMatches.length > 1 ? "s" : ""}`;
   }
-  
-  return 'News'; // Default fallback
+
+  return "News"; // Default fallback
 };
 
 onMounted(async () => {
@@ -261,16 +285,16 @@ onMounted(async () => {
   }
 
   // Add scroll event listener
-  window.addEventListener('scroll', handleScroll);
+  window.addEventListener("scroll", handleScroll);
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('scroll', handleScroll);
+  window.removeEventListener("scroll", handleScroll);
 });
 
 // Pagination
 const currentPage = ref(1);
-const itemsPerPage = 30;
+const itemsPerPage = 32;
 const maxVisiblePages = 5;
 
 const totalPages = computed(() => {
@@ -345,10 +369,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
               <div
                 class="hover:bg-green-800 bg-white hover:text-white text-green-800 px-1 lg:px-4 lg:h-10 h-8 flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full"
               >
-                <a
-                  href="/cms/login"
-                  class="flex items-center w-fit mx-auto"
-                >
+                <a href="/cms/login" class="flex items-center w-fit mx-auto">
                   <i class="fa fa-user" aria-hidden="true"></i>
                   <span class="ml-3 whitespace-nowrap">Contribute</span>
                 </a>
@@ -360,7 +381,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
     </div>
 
     <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
-      <div class="w-full lg:py-10 py-5 relative">
+      <div class="w-full py-5 relative">
         <!-- Background Image -->
         <div
           class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
@@ -371,127 +392,145 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
         <!-- Content -->
         <div class="relative z-10 lg:px-10 mx-auto">
           <!-- Filters Section -->
-          <div class="bg-white rounded-lg shadow-sm p-4 mb-6 w-11/12 mx-auto">
-            <h3 class="text-lg font-semibold text-green-800 mb-4">Filter News & Updates</h3>
-            
-            <div class="grid lg:grid-cols-4 grid-cols-1 gap-4">
-             
-
+          <div class="bg-white rounded-lg shadow-sm px-4 mb-3 pt-3 pb-2">
+            <div class="lg:flex items-center gap-x-2">
               <!-- Month Filter -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Month</label>
-                <select 
-                  v-model="selectedMonth" 
+              <div class="w-full lg:mb-0 mb-3">
+                <label class="block text-sm font-medium text-gray-700"
+                  >Filter by Month</label
+                >
+                <select
+                  v-model="selectedMonth"
                   :disabled="!selectedYear"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm disabled:bg-gray-100"
                 >
                   <option value="">All Months</option>
-                  <option v-for="month in availableMonths" :key="month" :value="month">
-                    {{ moment().month(month).format('MMMM') }}
+                  <option
+                    v-for="month in availableMonths"
+                    :key="month"
+                    :value="month"
+                  >
+                    {{ moment().month(month).format("MMMM") }}
                   </option>
                 </select>
               </div>
 
-
-              
               <!-- Year Filter -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Year</label>
-                <select 
-                  v-model="selectedYear" 
+              <div class="w-full lg:mb-0 mb-3">
+                <label class="block text-sm font-medium text-gray-700"
+                  >Filter by Year</label
+                >
+                <select
+                  v-model="selectedYear"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                 >
                   <option value="">All Years</option>
-                  <option v-for="year in availableYears" :key="year" :value="year">
+                  <option
+                    v-for="year in availableYears"
+                    :key="year"
+                    :value="year"
+                  >
                     {{ year }}
                   </option>
                 </select>
               </div>
 
-
-               <!-- SDG Filter -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Filter by SDG</label>
-                <select 
-                  v-model="selectedSDG" 
+              <!-- SDG Filter -->
+              <div class="w-full lg:mb-0 mb-3">
+                <label class="block text-sm font-medium text-gray-700"
+                  >Filter by SDG</label
+                >
+                <select
+                  v-model="selectedSDG"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                 >
                   <option value="">All SDGs</option>
-                  <option v-for="sdg in sdgOptions" :key="sdg.value" :value="sdg.value">
+                  <option
+                    v-for="sdg in sdgOptions"
+                    :key="sdg.value"
+                    :value="sdg.value"
+                  >
                     {{ sdg.label }}
                   </option>
                 </select>
               </div>
 
-
               <!-- Clear Filters Button -->
-              <div class="flex items-end">
-                <button 
+              <div class="mt-5">
+                <button
                   @click="clearFilters"
-                  class="w-full px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
+                  class="lg:w-fit w-full whitespace-nowrap px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
                 >
                   Clear Filters
                 </button>
               </div>
+
+              <!-- Pagination -->
+              <div v-if="totalPages > 1" class="flex justify-center mt-[20px]">
+                <div class="flex items-center space-x-1">
+                  <!-- Previous Button -->
+                  <button
+                    :disabled="currentPage === 1"
+                    @click="currentPage--"
+                    class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
+                  >
+                    <i class="fas fa-chevron-left mr-1"></i>
+                    <span class="hidden sm:inline">Previous</span>
+                  </button>
+
+                  <!-- Page Numbers -->
+                  <button
+                    v-for="page in visiblePages"
+                    :key="page"
+                    @click="currentPage = page"
+                    class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    :class="
+                      currentPage === page
+                        ? 'bg-green-600 text-white shadow-md'
+                        : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'
+                    "
+                  >
+                    {{ page }}
+                  </button>
+
+                  <!-- Next Button -->
+                  <button
+                    :disabled="currentPage === totalPages"
+                    @click="currentPage++"
+                    class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
+                  >
+                    <span class="hidden sm:inline">Next</span>
+                    <i class="fas fa-chevron-right ml-1"></i>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- Results Count -->
-            <div class="mt-4 text-sm text-gray-600">
-              Showing {{ Math.min(itemsPerPage, paginatedInfo.length) }} of {{ filteredInfo.length }} news items
-              <span v-if="totalPages > 1">(Page {{ currentPage }} of {{ totalPages }})</span>
+            <div class="py-5 text-center text-sm text-gray-600">
+              Showing {{ Math.min(itemsPerPage, paginatedInfo.length) }} of
+              {{ filteredInfo.length }} news items
+              <span v-if="totalPages > 1"
+                >(Page {{ currentPage }} of {{ totalPages }})</span
+              >
             </div>
           </div>
 
-          
-          <!-- Pagination -->
-          <div v-if="totalPages > 1" class="flex justify-center mt-8 mb-6">
-            <div class="flex items-center space-x-1">
-              <!-- Previous Button -->
-              <button
-                :disabled="currentPage === 1"
-                @click="currentPage--"
-                class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
-              >
-                <i class="fas fa-chevron-left mr-1"></i>
-                <span class="hidden sm:inline">Previous</span>
-              </button>
-
-              <!-- Page Numbers -->
-              <button
-                v-for="page in visiblePages"
-                :key="page"
-                @click="currentPage = page"
-                class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                :class="currentPage === page 
-                  ? 'bg-green-600 text-white shadow-md' 
-                  : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'"
-              >
-                {{ page }}
-              </button>
-
-              <!-- Next Button -->
-              <button
-                :disabled="currentPage === totalPages"
-                @click="currentPage++"
-                class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
-              >
-                <span class="hidden sm:inline">Next</span>
-                <i class="fas fa-chevron-right ml-1"></i>
-              </button>
-            </div>
-          </div>
-
-          
           <!-- Pagination Info -->
-          <div v-if="totalPages > 1" class="text-center text-sm text-gray-500 mb-6">
-            Page {{ currentPage }} of {{ totalPages }} 
-            ({{ filteredInfo.length }} total items)
-          </div>
+          <!-- <div
+            v-if="totalPages > 1"
+            class="text-center text-sm text-gray-500 mb-6"
+          >
+            Page {{ currentPage }} of {{ totalPages }} ({{
+              filteredInfo.length
+            }}
+            total items)
+          </div> -->
 
           <!-- News Cards -->
           <div
             v-if="paginatedInfo.length"
-            class="grid lg:grid-cols-3 grid-cols-1 gap-6 w-11/12 mx-auto"
+            class="grid lg:grid-cols-4 grid-cols-1 gap-6"
           >
             <div
               v-for="(j, i) in paginatedInfo"
@@ -511,15 +550,15 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                     v-else
                     class="w-full h-full bg-gray-200 flex items-center justify-center"
                   >
-                    <img 
-                      src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg" 
+                    <img
+                      src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg"
                       class="w-full h-full object-cover"
                       alt="Default thumbnail"
                     />
                   </div>
-                  
+
                   <!-- Play button overlay for videos -->
-                  <div 
+                  <div
                     v-if="hasVideoContent(j)"
                     class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30"
                   >
@@ -533,7 +572,9 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                 <div class="p-4">
                   <!-- Category/Type Badge with Date -->
                   <div class="flex items-center justify-between mb-3">
-                    <span class="inline-block py-1 text-xs rounded-full uppercase tracking-wide font-light">
+                    <span
+                      class="inline-block py-1 text-xs rounded-full uppercase tracking-wide font-light"
+                    >
                       {{ getCategoryLabel(j) }}
                     </span>
                     <span class="text-xs text-gray-400 whitespace-nowrap ml-2">
@@ -542,30 +583,37 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                   </div>
 
                   <!-- Title -->
-                  <h3 class="text-lg font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
+                  <h3
+                    class="text-lg font-bold text-gray-900 mb-3 line-clamp-2 leading-tight"
+                  >
                     {{ j.title }}
                   </h3>
 
                   <!-- Description Preview -->
-                  <p 
-                    v-if="j.descriptions" 
+                  <p
+                    v-if="j.descriptions"
                     class="text-sm text-gray-600 mb-3 line-clamp-3"
                   >
-                    {{ j.descriptions.substring(0, 120) }}{{ j.descriptions.length > 120 ? '...' : '' }}
+                    {{ j.descriptions.substring(0, 120)
+                    }}{{ j.descriptions.length > 120 ? "..." : "" }}
                   </p>
 
                   <!-- SDG Badges -->
                   <div v-if="getSdgBadges(j).length" class="mb-3">
                     <div class="flex flex-wrap gap-1">
-                      <div v-for="badge in getSdgBadges(j).slice(0, 3)" :key="badge.number" class="inline-flex items-center">
-                        <span 
+                      <div
+                        v-for="badge in getSdgBadges(j).slice(0, 3)"
+                        :key="badge.number"
+                        class="inline-flex items-center"
+                      >
+                        <span
                           class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm"
                           :style="{ backgroundColor: badge.color }"
                         >
                           SDG {{ badge.number }}
                         </span>
                       </div>
-                      <span 
+                      <span
                         v-if="getSdgBadges(j).length > 3"
                         class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
                       >
@@ -575,12 +623,18 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                   </div>
 
                   <!-- Footer -->
-                  <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <div
+                    class="flex items-center justify-between pt-2 border-t border-gray-100"
+                  >
                     <div class="flex items-center text-xs text-gray-500">
                       <i class="fas fa-calendar mr-1"></i>
-                      {{ moment(j.date || j.created_at).format("MMMM DD, YYYY") }}
+                      {{
+                        moment(j.date || j.created_at).format("MMMM DD, YYYY")
+                      }}
                     </div>
-                    <div class="flex items-center text-xs text-green-600 font-medium">
+                    <div
+                      class="flex items-center text-xs text-green-600 font-medium"
+                    >
                       Read More
                       <i class="fas fa-arrow-right ml-1"></i>
                     </div>
@@ -590,8 +644,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             </div>
           </div>
 
-
-            <!-- Pagination -->
+          <!-- Pagination -->
           <div v-if="totalPages > 1" class="flex justify-center mt-8 mb-6">
             <div class="flex items-center space-x-1">
               <!-- Previous Button -->
@@ -610,9 +663,11 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                 :key="page"
                 @click="currentPage = page"
                 class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                :class="currentPage === page 
-                  ? 'bg-green-600 text-white shadow-md' 
-                  : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'"
+                :class="
+                  currentPage === page
+                    ? 'bg-green-600 text-white shadow-md'
+                    : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'
+                "
               >
                 {{ page }}
               </button>
@@ -629,22 +684,31 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             </div>
           </div>
 
-          
           <!-- Pagination Info -->
-          <div v-if="totalPages > 1" class="text-center text-sm text-gray-500 mb-6">
-            Page {{ currentPage }} of {{ totalPages }} 
-            ({{ filteredInfo.length }} total items)
+          <div
+            v-if="totalPages > 1"
+            class="text-center text-sm text-gray-500 mb-6"
+          >
+            Page {{ currentPage }} of {{ totalPages }} ({{
+              filteredInfo.length
+            }}
+            total items)
           </div>
 
-          
-           <!-- Empty State -->
-          <div v-else-if="paginatedInfo.length === 0 && filteredInfo.length === 0" class="text-gray-400 py-10 text-center">
-            <div v-if="selectedSDG || selectedYear || selectedMonth" class="text-center py-12">
+          <!-- Empty State -->
+          <div
+            v-else-if="paginatedInfo.length === 0 && filteredInfo.length === 0"
+            class="text-gray-400 py-10 text-center"
+          >
+            <div
+              v-if="selectedSDG || selectedYear || selectedMonth"
+              class="text-center py-12"
+            >
               <div class="text-gray-500 text-lg">
                 <i class="fa fa-search mb-4 text-4xl"></i>
                 <p>No news found matching your filters.</p>
-                <button 
-                  @click="clearFilters" 
+                <button
+                  @click="clearFilters"
                   class="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                 >
                   Clear Filters
@@ -653,8 +717,6 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             </div>
             <div v-else>No news posted yet.</div>
           </div>
-
-
         </div>
       </div>
     </div>
