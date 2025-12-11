@@ -6,11 +6,8 @@ const router = useRouter();
 const userStore = useUserStore();
 const route = useRoute();
 import _ from "lodash";
-import axios from 'axios';  // For making HTTP requests
+import axios from "axios"; // For making HTTP requests
 const endpoint = ref(userStore.mainDevServer);
-
-
-
 
 const presentYear = ref(moment(new Date()).format("YYYY"));
 
@@ -30,7 +27,6 @@ onMounted(() => {
 
 let toggleSideBarMenu = ref(true);
 let toggleConfirmDelete = ref(false);
-
 
 const info = ref({
   image_link: [],
@@ -75,7 +71,8 @@ const uploadFiles = async () => {
       }
     );
 
-    let imageUrl = 'https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/files/humanResource/files/'
+    let imageUrl =
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/files/humanResource/files/";
     uploadStatus.value = "Upload successful!";
     console.log("Files uploaded:", response.data);
     uploadedFiles.value = response.data.map((item) => ({
@@ -87,7 +84,7 @@ const uploadFiles = async () => {
     selectedFiles.value = []; // Clear selected files after successful upload
     info.value.image_link = uploadedFiles.value;
 
-    console.log(info.value.image_link)
+    console.log(info.value.image_link);
     postAPI();
 
     console.log(info.value);
@@ -212,47 +209,46 @@ const logOut = () => {
                     </div>
                   </div>
                   <div v-if="uploadStatus">{{ uploadStatus }}</div>
-                            <div v-for="file in uploadedFiles" :key="file.url">
-                              <img
-                                v-if="
-                                  file.url.includes('jpg') ||
-                                  file.url.includes('png')
-                                "
-                                :src="file.url"
-                                alt="Uploaded File"
-                                class="w-80"
-                              />  <a
-                                :href="file.url"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                >{{ file.name }}</a
-                              >
-                            </div>
+                  <div v-for="file in uploadedFiles" :key="file.url">
+                    <img
+                      v-if="
+                        file.url.includes('jpg') || file.url.includes('png')
+                      "
+                      :src="file.url"
+                      alt="Uploaded File"
+                      class="w-80"
+                    />
+                    <a
+                      :href="file.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >{{ file.name }}</a
+                    >
+                  </div>
 
-                            <div
-                              v-for="file in selectedFiles"
-                              :key="file.url"
-                              class="my-4 shadow-lg px-2 py-3 border-2"
-                            >
-                              <a
-                                :href="file.url"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="tracking-tighter"
-                                >{{ file.name }}</a
-                              >
-                              <!-- <span class="ml-3 font-bold"> 
+                  <div
+                    v-for="file in selectedFiles"
+                    :key="file.url"
+                    class="my-4 shadow-lg px-2 py-3 border-2"
+                  >
+                    <a
+                      :href="file.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="tracking-tighter"
+                      >{{ file.name }}</a
+                    >
+                    <!-- <span class="ml-3 font-bold"> 
                                 
                                 {{ (file.size/1024).toFixed(2) }} KB size
                               
                               
                               </span> -->
 
-                              <span class="ml-3 font-bold">
-                                {{ (file.size / 1024 / 1024).toFixed(2) }} MB
-                                size
-                              </span>
-                            </div>
+                    <span class="ml-3 font-bold">
+                      {{ (file.size / 1024 / 1024).toFixed(2) }} MB size
+                    </span>
+                  </div>
                 </div>
               </div>
               <div class="w-fit mt-5">
@@ -270,7 +266,7 @@ const logOut = () => {
 
     <div class="fixed bg-green-900 py-4 bottom-0 w-full">
       <h1 class="text-center text-white lg:text-sm text-xs">
-        Copyright © {{presentYear}} <span>La Salle University Ozamiz</span>
+        Copyright © {{ presentYear }} <span>La Salle University Ozamiz</span>
       </h1>
     </div>
   </div>

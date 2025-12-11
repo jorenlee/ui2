@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
@@ -21,10 +21,8 @@ const openGroups = ref([
 
 const toggleGroup = (groupName) => {
   if (openGroups.value.includes(groupName)) {
-    // close it
     openGroups.value = openGroups.value.filter((g) => g !== groupName);
   } else {
-    // open it
     openGroups.value.push(groupName);
   }
 };
@@ -83,8 +81,12 @@ const allowedEmails = [
   "jorenleeluna24@gmail.com",
   "jason.yap@lsu.edu.ph",
   "npc@lsu.edu.ph",
-  "dev@lsu.edu.ph"
+  "dev@lsu.edu.ph",
+  "hr@lsu.edu.ph",
 ];
+
+// Emails allowed to see HR menu
+const hrMenuEmails = ["hr@lsu.edu.ph", "npc@lsu.edu.ph", "jorenleeluna24@gmail.com"];
 
 // Watch for user email changes and restrict SSO login
 watch(
@@ -116,6 +118,12 @@ const menuList = [
     ],
   },
   {
+    group: "Human Resource",
+    items: [
+      { label: "Job Vacancies", icon: "fa-list-alt", type: "button", view: "hr-job-vacancy-list" },
+    ],
+  },
+  {
     group: "Library Management",
     items: [
       { label: "Appointment Lists", icon: "fa-list-alt", type: "button", view: "appointments" },
@@ -130,8 +138,22 @@ const menuList = [
     ],
   },
 ];
-</script>
 
+// Filter menu based on HR access
+const filteredMenuList = computed(() => {
+  return menuList.filter((menu) => {
+    if (menu.group === "Human Resource") {
+      return hrMenuEmails.includes(userStore.user?.email);
+    }
+    return true; // keep all other menus
+  });
+});
+
+// Navigation for link-type menu items
+const navigateTo = (url) => {
+  router.push(url);
+};
+</script>
 
 <template>
   <div class="h-screen flex flex-col">
@@ -143,17 +165,12 @@ const menuList = [
         v-show="toggleSideBarMenu"
       >
         <div class="w-full overflow-y-auto">
-          <div
-            class="flex items-center text-white bg-green-900 lg:py-[16px] py-[8px]"
-          >
+          <div class="flex items-center text-white bg-green-900 lg:py-[16px] py-[8px]">
             <div class="flex items-center w-full px-2">
               <i class="fa fa-user mx-2" aria-hidden="true"></i>
               <h1 class="text-sm">{{ userStore.user.email }}</h1>
             </div>
-            <div
-              @click="toggleSideBarMenu = !toggleSideBarMenu"
-              class="w-10 px-1.5 lg:hidden flex"
-            >
+            <div @click="toggleSideBarMenu = !toggleSideBarMenu" class="w-10 px-1.5 lg:hidden flex">
               <i
                 class="fa text-3xl text-white"
                 :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'"
@@ -161,20 +178,19 @@ const menuList = [
               ></i>
             </div>
           </div>
+
           <div class="">
             <div class="w-fit mx-auto mt-5 mb-3">
               <img :src="profileImageUrl" class="lg:w-24 w-20 mx-auto" />
             </div>
-            <!-- <div class="text-center">
-              <h1 class="font-bold text-green-800 text-2xl">Dashboard</h1>
-            </div> -->
-            <div class="mt-2 px-4">
+
+            <div class="text-[10px] mt-2 px-4">
               <div
-                v-for="menu in menuList"
+                v-for="menu in filteredMenuList"
                 :key="menu.label || menu.group"
-                class="border-b px-5 py-2"
+                class="border-b py-2"
               >
-                <!-- Only render collapsible group headers if group exists -->
+                <!-- Collapsible groups -->
                 <template v-if="menu.group">
                   <button
                     class="w-full flex items-center justify-between text-left font-bold text-gray-700 capitalize hover:text-green-700 transition-colors"
@@ -197,7 +213,7 @@ const menuList = [
                         v-for="item in menu.items"
                         :key="item.label"
                         :class="[
-                          'flex items-center gap-2 cursor-pointer py-2 px-2 rounded transition-colors',
+                          'flex items-center gap-2 cursor-pointer px-2 rounded transition-colors',
                           currentView === item.view
                             ? 'bg-green-100 text-green-700 font-semibold'
                             : 'hover:bg-gray-200 text-gray-700',
@@ -215,10 +231,10 @@ const menuList = [
                   </transition>
                 </template>
 
-                <!-- Render standalone button items (no dropdown) -->
+                <!-- Standalone buttons -->
                 <template v-else>
                   <li
-                    class="flex items-center gap-2 cursor-pointer py-2 px-0.5 rounded transition-colors hover:bg-gray-200 text-gray-700"
+                    class="flex items-center gap-2 cursor-pointer px-0.5 font-bold rounded transition-colors hover:bg-gray-200 text-gray-700"
                     @click="
                       menu.type === 'button'
                         ? (currentView = menu.view)
@@ -239,18 +255,13 @@ const menuList = [
         <!-- Fixed Header -->
         <div class="bg-green-800 w-full z-50">
           <div class="flex mx-auto justify-between py-2 px-3.5">
-            <div
-              @click="toggleSideBarMenu = !toggleSideBarMenu"
-              class="w-auto flex items-center lg:px-1.5"
-            >
+            <div @click="toggleSideBarMenu = !toggleSideBarMenu" class="w-auto flex items-center lg:px-1.5">
               <i
                 class="fa text-3xl text-white"
                 :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'"
                 aria-hidden="true"
               ></i>
-              <p
-                class="text-white whitespace-nowrap lg:ml-5 ml-3 font-bold uppercase lg:text-sm text-xs"
-              >
+              <p class="text-white whitespace-nowrap lg:ml-5 ml-3 font-bold uppercase lg:text-sm text-xs">
                 LSU Central
               </p>
             </div>
@@ -261,53 +272,27 @@ const menuList = [
           </div>
         </div>
 
-        <!-- MAIN CONTENT AREA - conditionally render based on currentView -->
+        <!-- MAIN CONTENT AREA -->
         <div class="flex-1 bg-gray-50 overflow-y-auto">
-          <!-- WELCOME VIEW -->
-          <div v-if="currentView === 'welcome'">
-            <SuperAdminDashboardWelcome />
-          </div>
-
-          <!-- FORM VIEW -->
-          <div v-else-if="currentView === 'form'">
-            <SuperAdminDashboardCmsForm
-              @contentSubmitted="handleContentSubmitted"
-            />
-          </div>
-
-          <!-- LIST VIEW -->
-          <div v-else-if="currentView === 'list'">
-            <SuperAdminDashboardCmsList />
-          </div>
-
-          <!-- APPOINTMENTS VIEW -->
-          <div v-else-if="currentView === 'appointments'">
-            <SuperAdminDashboardServicesLibraryReserved />
-          </div>
-
-          <!-- BOOKS VIEW -->
-          <div v-else-if="currentView === 'books'">
-            <SuperAdminDashboardServicesLibraryBooks />
-          </div>
-
-          <!-- SCHEDULES VIEW -->
-          <div v-else-if="currentView === 'schedules'">
-            <SuperAdminDashboardServicesLibrarySchedules />
-          </div>
+          <div v-if="currentView === 'welcome'"><SuperAdminDashboardWelcome /></div>
+          <div v-else-if="currentView === 'form'"><SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted" /></div>
+          <div v-else-if="currentView === 'list'"><SuperAdminDashboardCmsList /></div>
+          <div v-else-if="currentView === 'appointments'"><SuperAdminDashboardServicesLibraryReserved /></div>
+          <div v-else-if="currentView === 'books'"><SuperAdminDashboardServicesLibraryBooks /></div>
+          <div v-else-if="currentView === 'schedules'"><SuperAdminDashboardServicesLibrarySchedules /></div>
+          <div v-else-if="currentView === 'hr-job-vacancy-list'"><SuperAdminDashboardServicesHr /></div>
         </div>
 
-        <!-- Footer at bottom -->
+        <!-- Footer -->
         <DashboardFooter />
       </div>
     </div>
 
-    <!-- Show loading/unauthorized message if not authenticated -->
+    <!-- Unauthorized view -->
     <div v-else class="flex items-center justify-center h-screen bg-gray-50">
       <div class="text-center">
         <i class="fa fa-lock text-4xl text-gray-400 mb-4"></i>
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">
-          Unauthorized Access
-        </h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Unauthorized Access</h1>
         <p class="text-gray-600 mb-6">Please log in to access the dashboard.</p>
         <NuxtLink
           to="/cms/login"
@@ -325,7 +310,6 @@ const menuList = [
 .slide-fade-leave-active {
   transition: all 0.25s ease;
 }
-
 .slide-fade-enter-from,
 .slide-fade-leave-to {
   opacity: 0;
