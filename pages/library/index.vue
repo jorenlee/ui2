@@ -135,26 +135,17 @@ const logos = ref([
                   </a>
                 </li>
               </ul>
-              <ul class="flex text-green-800 capitalize text-xs">
-                <li>
-                  <a href="/library/login" class="mr-1 flex items-center">
-                    <i class="fa fa-user mr-2" aria-hidden="true"></i> Admin
-                    Login
-                  </a>
-                </li>
-              </ul>
             </div>
           </div>
         </div>
       </div>
-        <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
-      <div class="shadow lg:w-3/12 my-5 bg-white overflow-hidden">
-            <DynamicSideMenu :items="menuList" title="Sub Pages" />
-          </div>
-        
-     
-        <div class="lg:w-9/12 mx-auto lg:my-5 my-3 prose max-w-full text-justify">
-           
+      <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
+        <div class="shadow lg:w-3/12 my-5 bg-white overflow-hidden">
+          <DynamicSideMenu :items="menuList" title="Sub Pages" />
+        </div>
+        <div
+          class="lg:w-9/12 mx-auto lg:my-5 my-3 prose max-w-full text-justify"
+        >
           <div class="">
             <a
               href="https://lsu.edu.ph/library/LRCBookThru"
@@ -165,9 +156,7 @@ const logos = ref([
                 class="h-full top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 absolute"
               />
             </a>
-            <div
-              class=" flex mx-auto shadow-md bg-white"
-            >
+            <div class="flex mx-auto shadow-md bg-white">
               <div class="lg:py-7 py-5 px-5 shadow-r-md text-sm">
                 <p>
                   <span class="text-green-800 font-bold"
@@ -182,9 +171,7 @@ const logos = ref([
                 </p>
               </div>
             </div>
-            <div
-              class=" my-3  shadow-md lg:py-10 py-5 lg:px-10 px-3 bg-white"
-            >
+            <div class="my-3 shadow-md lg:py-10 py-5 lg:px-10 px-3 bg-white">
               <div class="">
                 <ul class="grid lg:grid-cols-3 lg:gap-14 gap-8">
                   <li>
@@ -233,7 +220,7 @@ const logos = ref([
               </div>
             </div>
             <div
-              class=" lg:my-5 mt-5 mb-3  shadow-md lg:py-10 pt-7 pb-7 lg:px-10 px-2 bg-white"
+              class="lg:my-5 mt-5 mb-3 shadow-md lg:py-10 pt-7 pb-7 lg:px-10 px-2 bg-white"
             >
               <p class="text-center mb-8">
                 Begin your LSU-LRC journey by
@@ -252,9 +239,7 @@ const logos = ref([
                 >
               </div>
             </div>
-            <div
-              class="text-center my-5 bg-white lg:pt-2 pt-1 shadow-md"
-            >
+            <div class="text-center my-5 bg-white lg:pt-2 pt-1 shadow-md">
               <h1
                 class="font-bold tracking-widest lasalle-green-text uppercase mt-5 lg:mb-12 mb-5 text-xl"
               >
@@ -281,11 +266,11 @@ const logos = ref([
             </div>
           </div>
 
-           <div class="lg:shadow">
+          <div class="lg:shadow">
             <div
               class="bg-green-900 w-full lg:pt-3 lg:pb-3 pt-2 pb-4 pr-14 pl-5 shadow-2xl lg:mb-0 mb-2"
             >
-              <div class="flex justify-between items-center">
+              <div class="lg:flex justify-between items-center">
                 <div class="">
                   <div class="flex">
                     <i
