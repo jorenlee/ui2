@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from "vue";
 import moment from "moment";
 const presentYear = ref(moment(new Date()).format("YYYY"));
 
@@ -30,48 +31,50 @@ const socials = [
   <footer class="footer w-full text-white relative border-t-8 border-green-800">
     <div class="bg-green-900/95">
       <div class="container mx-auto px-4 lg:px-8 py-12">
-        <div class="flex gap-x-5">
+        <!-- Flex Wrapper -->
+        <div class="flex gap-10 lg:gap-5 w-full">
 
           <!-- Left Section: Logo + Tagline + Quick Links -->
-          <div class="w-full text-center lg:text-left">
-            <div class="mb-1">
+          <div class="w-full lg:w-8/12 text-center lg:text-left">
+            <div class="mb-3">
               <a href="https://lsu.edu.ph" class="inline-block">
                 <img
                   src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/lsu-w-h.png"
-                  class="w-48 mx-auto lg:mx-0 transition-transform duration-300 hover:scale-105"
+                  class="sm:w-3/12 lg:w-4/12 w-11/12 mx-auto lg:mx-0 transition-transform duration-300 hover:scale-105"
                   alt="LSU"
                 />
               </a>
             </div>
 
-            <p class="text-[10px] mb-1 text-green-100">Valconcha St., Aguada, Ozamiz City</p>
-            <p class="text-[10px]  text-green-100 mb-10">Misamis Occidental, Philippines 7200</p>
+            <p class="lg:text-[10px] text-xs mb-2 text-green-100">
+              Valconcha St., Aguada, Ozamiz City, Misamis Occidental, Philippines 7200
+            </p>
 
-            <h1 class="font-bold text-2xl lg:text-3xl uppercase tracking-widest mb-6">
+            <h1 class="font-bold text-xl sm:text-2xl lg:text-3xl uppercase tracking-widest mb-6">
               Reshaping Futures
             </h1>
 
             <!-- Quick Links -->
-            <div class="border-t border-green-700 pt-6 w-10/12">
+            <div class="border-t border-green-700 pt-6 w-full sm:w-10/12 mx-auto lg:mx-0">
               <h3 class="text-sm font-bold uppercase mb-3 text-green-200">Quick Links</h3>
-              <ul class="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+              <ul class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <li>
-                  <a href="/data-privacy" class="flex items-center justify-center lg:justify-start hover:uppercase">
+                  <a href="/data-privacy" class="footer-link flex items-center justify-center lg:justify-start">
                     <i class="fa fa-shield mr-2"></i>Data Privacy
                   </a>
                 </li>
                 <li>
-                  <a href="/downloads" class="flex items-center justify-center lg:justify-start hover:uppercase">
+                  <a href="/downloads" class="footer-link flex items-center justify-center lg:justify-start">
                     <i class="fa fa-download mr-2"></i>Downloads
                   </a>
                 </li>
                 <li>
-                  <a href="/directory" class="flex items-center justify-center lg:justify-start hover:uppercase">
+                  <a href="/directory" class="footer-link flex items-center justify-center lg:justify-start">
                     <i class="fa fa-phone mr-2"></i>Contact Us
                   </a>
                 </li>
                 <li>
-                  <a href="/social-media" class="flex items-center justify-center lg:justify-start hover:uppercase">
+                  <a href="/social-media" class="footer-link flex items-center justify-center lg:justify-start">
                     <i class="fa fa-share-alt mr-2"></i>Social Media
                   </a>
                 </li>
@@ -80,12 +83,12 @@ const socials = [
           </div>
 
           <!-- Right Section: Social Media -->
-          <div class="mt-10 lg:mt-0 flex items-center w-4/12">
-            <div class="bg-green-800/50 border-2 border-green-700 p-6 lg:w-full text-center w-full">
+          <div class="w-full lg:w-4/12 flex justify-center">
+            <div class="bg-green-800/50 border-2 border-green-700 p-6 w-full sm:w-8/12 lg:w-full text-center">
               <h3 class="text-sm font-bold uppercase mb-4 text-green-200">
                 <i class="fa fa-share-alt mr-2"></i>Connect With Us
               </h3>
-              <ul class="grid grid-cols-2 gap-4">
+              <ul class="grid grid-cols-2 sm:grid-cols-2 gap-4">
                 <li v-for="social in socials" :key="social.name">
                   <a
                     :href="social.url"
@@ -106,17 +109,16 @@ const socials = [
         </div>
 
         <!-- Copyright -->
-        <p class="text-sm text-center mt-10 mb-2">
+        <p class="lg:text-base text-sm text-center mt-10 mb-2">
           © {{ presentYear }} La Salle University Ozamiz, Inc.
         </p>
-        <p class="text-[10px] text-center pb-5">
-          Powered By: <span class="font-bold">NPCC - Network, Programs and Computerization Center</span>
+        <p class="text-xs text-center pb-5 w-10/12 mx-auto">
+          Powered by <span class="font-bold">Network, Programs and Computerization Center (NPCC)</span>
         </p>
       </div>
     </div>
   </footer>
 </template>
-
 
 <style scoped>
 .footer {
