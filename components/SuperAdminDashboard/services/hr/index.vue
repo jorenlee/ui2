@@ -1,7 +1,7 @@
 <template>
   <div class="hr-service">
     <div class="w-full min-h-screen">
-      <div class="w-11/12 mx-auto my-10 rounded-lg">
+      <div class="w-11/12 mx-auto lg:my-10 rounded-lg">
         <!-- Header -->
         <div class="flex items-center justify-between mb-5">
           <h1 class="text-green-700 font-bold lg:text-3xl text-xl">Career Opportunities</h1>
@@ -29,15 +29,15 @@
               <li
                 v-for="c in careers"
                 :key="c.id"
-                class="border rounded-lg shadow-md bg-white relative overflow-hidden list-none"
+                class="border rounded-lg shadow-md bg-white relative overflow-hidden list-none mb-3"
               >
                 <div
                   v-if="c.image_link && c.image_link.length"
                   class="cursor-pointer"
-                  @click="openViewModal(c.image_link[0].url)"
+                  @click="openViewModal(getCleanUrl(c.image_link[0].url))"
                 >
                   <img
-                    :src="c.image_link[0].url"
+                    :src="getCleanUrl(c.image_link[0].url)"
                     class="w-full h-[200px] object-cover"
                   />
                 </div>
@@ -45,7 +45,7 @@
                 <div class="absolute bottom-2 right-2 flex gap-2">
                   <button
                     class="bg-blue-600 text-white px-2 py-1 rounded text-xs"
-                    @click="openViewModal(c.image_link?.[0]?.url || '')"
+                    @click="openViewModal(getCleanUrl(c.image_link?.[0]?.url || ''))"
                   >
                     View
                   </button>
@@ -98,7 +98,7 @@
           />
 
           <div v-if="preview" class="flex items-center gap-3 justify-center">
-            <img :src="preview" class="h-20 rounded object-cover" />
+            <img :src="getCleanUrl(preview)" class="h-20 rounded object-cover" />
             <div class="text-sm text-gray-700">
               {{ fileName }}
               <br />
@@ -136,7 +136,7 @@
     <div v-if="toggleView" class="fixed inset-0 z-50 flex items-center justify-center">
       <div class="absolute inset-0 bg-black opacity-80" @click="closeView"></div>
       <div class="relative z-10">
-        <img :src="viewImage" class="max-w-[90vw] max-h-[85vh] rounded-lg shadow-lg" />
+        <img :src="getCleanUrl(viewImage)" class="max-w-[90vw] max-h-[85vh] rounded-lg shadow-lg" />
         <button class="absolute top-2 right-2 bg-white rounded-full p-2 shadow" @click="closeView">✕</button>
       </div>
     </div>
@@ -179,7 +179,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useUserStore } from "@/stores/user";
@@ -189,10 +188,11 @@ const userStore = useUserStore();
 const router = useRouter();
 const endpoint = userStore.mainDevServer;
 
+
 // ================= STATE =================
 const loading = ref(true);
 const careers = ref([]);
-const lastCount = ref(0); // for auto-refresh diff-check
+const lastCount = ref(0);
 
 // Modals
 const toggleAdd = ref(false);
@@ -201,7 +201,7 @@ const toggleConfirmDelete = ref(false);
 const viewImage = ref("");
 const idToBeDeleted = ref(null);
 
-// File upload
+// Upload
 const selectedFile = ref(null);
 const preview = ref("");
 const fileName = ref("");
@@ -229,7 +229,7 @@ const reloadList = async () => {
     const data = await $fetch(endpoint + "/api/humanResource/list/");
     careers.value = Array.isArray(data) ? data : data.results ?? [];
     lastCount.value = careers.value.length;
-  } catch (err) {
+  } catch {
     pushToast("Failed to fetch careers.", "error");
   } finally {
     loading.value = false;
@@ -241,14 +241,11 @@ const autoRefresh = async () => {
   try {
     const data = await $fetch(endpoint + "/api/humanResource/list/");
     const newList = Array.isArray(data) ? data : data.results ?? [];
-
     if (JSON.stringify(newList) !== JSON.stringify(careers.value)) {
       careers.value = newList;
       lastCount.value = newList.length;
     }
-  } catch (err) {
-    console.warn("Auto-refresh skipped:", err);
-  }
+  } catch {}
 };
 
 let refreshInterval = null;
@@ -269,13 +266,11 @@ const toggleAddModal = () => {
 };
 
 const openViewModal = (url) => {
-  if (!url) {
-    pushToast("No image available.", "info");
-    return;
-  }
+  if (!url) return pushToast("No image available.", "info");
   viewImage.value = url;
   toggleView.value = true;
 };
+
 const closeView = () => {
   toggleView.value = false;
   viewImage.value = "";
@@ -287,9 +282,7 @@ const toggleDeleteBtn = (id = null) => {
 };
 
 // ================= FILE HANDLING =================
-const fileInput = {
-  click: () => fileInputRef.value?.click(),
-};
+const openFilePicker = () => fileInputRef.value?.click();
 
 const onFileChange = (e) => {
   const f = e.target.files[0];
@@ -304,10 +297,8 @@ const onDrop = (e) => {
 
 const setFile = (f) => {
   if (!f) return;
-  if (!f.type.startsWith("image/")) {
-    pushToast("Only images allowed.", "error");
-    return;
-  }
+  if (!f.type.startsWith("image/")) return pushToast("Only images allowed.", "error");
+
   selectedFile.value = f;
   preview.value = URL.createObjectURL(f);
   fileName.value = f.name;
@@ -326,12 +317,16 @@ const resetForm = () => {
   uploadStatus.value = "";
 };
 
+
+const getCleanUrl = (url) => {
+  if (!url) return "";
+  const match = url.match(/^(.*?\.(?:jpg|jpeg|png))/i);
+  return match ? match[1] : url;
+};
+
 // ================= CREATE =================
 const createCareer = async () => {
-  if (!selectedFile.value) {
-    pushToast("Please attach an image.", "error");
-    return;
-  }
+  if (!selectedFile.value) return pushToast("Please attach an image.", "error");
 
   isSubmitting.value = true;
   uploadStatus.value = "Uploading file...";
@@ -345,12 +340,12 @@ const createCareer = async () => {
       body: fd,
     });
 
-    let fileObj = Array.isArray(uploadRes) ? uploadRes[0] : uploadRes;
-    if (!fileObj || !fileObj.name) throw new Error("Invalid upload response");
+    const fileObj = Array.isArray(uploadRes) ? uploadRes[0] : uploadRes;
+    if (!fileObj?.name) throw new Error("Invalid upload response");
 
-    const finalUrl = fileObj.url
-      ? fileObj.url
-      : `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/files/humanResource/files/${fileObj.name}`;
+    const finalUrl =
+      fileObj.url ||
+      `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/files/humanResource/files/${fileObj.name}`;
 
     uploadStatus.value = "Saving record...";
 
@@ -366,7 +361,6 @@ const createCareer = async () => {
     });
 
     pushToast("Successfully uploaded.", "success");
-
     toggleAdd.value = false;
     resetForm();
     await reloadList();
@@ -382,21 +376,18 @@ const createCareer = async () => {
 // ================= DELETE =================
 const deleteCareer = async () => {
   if (!idToBeDeleted.value) return;
-
   isDeleting.value = true;
 
   try {
     await $fetch(`${endpoint}/api/humanResource/${idToBeDeleted.value}/delete/`, {
       method: "DELETE",
-      headers: {
-        Authorization: userStore.user.token,
-      },
+      headers: { Authorization: userStore.user.token },
     });
 
     pushToast("Deleted successfully.", "success");
     toggleConfirmDelete.value = false;
     await reloadList();
-  } catch (err) {
+  } catch {
     pushToast("Failed to delete.", "error");
   } finally {
     isDeleting.value = false;

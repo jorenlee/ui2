@@ -31,6 +31,14 @@ const fetchCareers = async () => {
   }
 };
 
+
+const getCleanUrl = (url) => {
+  if (!url) return "";
+  const match = url.match(/^(.*?\.(?:jpg|jpeg|png))/i);
+  return match ? match[1] : url;
+};
+
+
 // Handle image click
 const openModal = (imgUrl) => {
   selectedImage.value = imgUrl;
@@ -132,7 +140,7 @@ onBeforeUnmount(() => {
             >
               <img
                 class="mx-auto w-full border shadow-lg rounded-md transition-transform duration-300 group-hover:scale-105"
-                :src="j.url"
+                :src="getCleanUrl(j.url)"
                 :alt="c.title || 'career image'"
               />
             </div>
