@@ -87,18 +87,18 @@
           @dragover.prevent="dragging = true"
           @dragleave.prevent="dragging = false"
           @drop.prevent="onDrop"
-          @click="fileInput.click()"
+          @click="fileInputRef?.click()"
         >
           <input
             ref="fileInputRef"
             type="file"
             accept="image/*"
-            @change="onFileChange"
             class="hidden"
+            @change="onFileChange"
           />
 
           <div v-if="preview" class="flex items-center gap-3 justify-center">
-            <img :src="getCleanUrl(preview)" class="h-20 rounded object-cover" />
+            <img :src="preview" class="h-20 rounded object-cover" />
             <div class="text-sm text-gray-700">
               {{ fileName }}
               <br />
@@ -136,7 +136,7 @@
     <div v-if="toggleView" class="fixed inset-0 z-50 flex items-center justify-center">
       <div class="absolute inset-0 bg-black opacity-80" @click="closeView"></div>
       <div class="relative z-10">
-        <img :src="getCleanUrl(viewImage)" class="max-w-[90vw] max-h-[85vh] rounded-lg shadow-lg" />
+        <img :src="viewImage" class="max-w-[90vw] max-h-[85vh] rounded-lg shadow-lg" />
         <button class="absolute top-2 right-2 bg-white rounded-full p-2 shadow" @click="closeView">✕</button>
       </div>
     </div>
@@ -179,15 +179,13 @@
     </div>
   </div>
 </template>
+
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useUserStore } from "@/stores/user";
-import { useRouter } from "vue-router";
 
 const userStore = useUserStore();
-const router = useRouter();
 const endpoint = userStore.mainDevServer;
-
 
 // ================= STATE =================
 const loading = ref(true);
@@ -282,17 +280,15 @@ const toggleDeleteBtn = (id = null) => {
 };
 
 // ================= FILE HANDLING =================
-const openFilePicker = () => fileInputRef.value?.click();
-
 const onFileChange = (e) => {
-  const f = e.target.files[0];
-  setFile(f);
+  const f = e.target.files?.[0];
+  if (f) setFile(f);
 };
 
 const onDrop = (e) => {
   dragging.value = false;
-  const f = e.dataTransfer.files[0];
-  setFile(f);
+  const f = e.dataTransfer?.files?.[0];
+  if (f) setFile(f);
 };
 
 const setFile = (f) => {
@@ -308,7 +304,7 @@ const removeFile = () => {
   selectedFile.value = null;
   preview.value = "";
   fileName.value = "";
-  if (fileInputRef.value) fileInputRef.value.value = "";
+  if (fileInputRef) fileInputRef.value = "";
 };
 
 const resetForm = () => {
@@ -317,11 +313,10 @@ const resetForm = () => {
   uploadStatus.value = "";
 };
 
-
+// ================= CLEAN URL =================
 const getCleanUrl = (url) => {
   if (!url) return "";
-  const match = url.match(/^(.*?\.(?:jpg|jpeg|png))/i);
-  return match ? match[1] : url;
+  return url.split("?")[0].split("#")[0].trim();
 };
 
 // ================= CREATE =================
