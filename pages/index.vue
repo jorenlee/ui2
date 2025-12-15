@@ -79,7 +79,7 @@ onBeforeUnmount(() => {
         <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Panagsadya%20(2).png" class="w-full" />
        </a>   -->
 
-      <div class="bg-[#031d03] text-white">
+      <!-- <div class="bg-[#031d03] text-white">
         <p
           class="text-center text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg py-5"
         >
@@ -90,9 +90,9 @@ onBeforeUnmount(() => {
         <div v-if="display === 'mobile'">
           <SliderMobile />
         </div>
-      </div>
+      </div> -->
 
-      <NewsAndUpdates />
+      <!-- <NewsAndUpdates /> -->
 
       <NetworkLogo class="py-10" />
     </div>
