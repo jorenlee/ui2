@@ -10,12 +10,18 @@ const searchQuery = ref("");
 const searchResults = ref([]);
 const searchLoading = ref(false);
 const allContent = ref([]);
+const openMobile = ref(true);
 
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
 
 const closeMenu = () => {
   menuDetails.value = false;
+  openMobile.value = null;
+};
+
+const toggleMobile = (label) => {
+  openMobile.value = openMobile.value === label ? null : label;
 };
 
 const handleScroll = () => {
@@ -128,18 +134,92 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("scroll", handleScroll);
 });
+
+/* -------------------- NAV DATA -------------------- */
+const desktopNav = [
+  {
+    label: "Academics",
+    href: "#",
+    children: [
+      { label: "Tertiary Education", href: "/academics/tertiary-education" },
+      { label: "Basic Education", href: "/academics/basic-education" },
+      { label: "Career and Counseling Center", href: "/ccc" },
+    ],
+  },
+  { label: "Administration", href: "/administration" },
+  {
+    label: "Research",
+    href: "/research",
+    children: [
+      {
+        label: "Institutional Research & Publication Office",
+        href: "/research",
+      },
+      { label: "Research Publications", href: "/research/publications" },
+      { label: "E-journals", href: "/research/e-journals" },
+    ],
+  },
+  { label: "Sustainability", href: "/sdgs" },
+  { label: "Social Actions", href: "/social-actions" },
+  {
+    label: "Campus Life",
+    href: "/campus-life",
+    children: [
+      {
+        label: "Lasallian Mission Center",
+        href: "/campus-life/lasallian-mission-center",
+      },
+      {
+        label: "Lasallian Formation Center",
+        href: "/campus-life/lasallian-formation-center",
+      },
+      {
+        label: "Student Activities Center",
+        href: "/campus-life/student-activities-center",
+      },
+      { label: "Activities", href: "/campus-life/activities" },
+    ],
+  },
+  { label: "Campus Dev", href: "/campus/dev" },
+  {
+    label: "Services",
+    href: "#",
+    children: [
+      { label: "Campus Pass", href: "/campus-pass" },
+      { label: "Registrar", href: "/registrar" },
+      { label: "Procurement", href: "/procurement" },
+      { label: "Library", href: "/library" },
+      { label: "Student Affairs", href: "/social-media" },
+      { label: "Human Resource", href: "/hr" },
+      { label: "Document Reviewer", href: "/drs" },
+      { label: "News and Updates", href: "/news-updates" },
+    ],
+  },
+  {
+    label: "About",
+    href: "/about",
+    children: [
+      { label: "LSU", href: "/about" },
+      { label: "The Founder's Life", href: "/about/founders-life" },
+      { label: "Vocations", href: "/about/vocations" },
+      { label: "Contact", href: "/about/contact" },
+      { label: "The Hymn", href: "/about/hymn" },
+      { label: "Lasallian Prayer", href: "/about/lasallian-prayer" },
+    ],
+  },
+];
 </script>
 
 <template>
   <div
-    class="fixed main-header w-full font-montserrat border-b-4 border-green-800 transition-all duration-300"
+    class="fixed z-50 w-full font-montserrat border-b-4 border-green-800 transition-all duration-300"
     :class="
-      isScrolled ? 'bg-white/90 backdrop-blur-md shadow-lg lg:py-1' : 'bg-white'
+      isScrolled ? 'bg-white/90 backdrop-blur-md shadow-lg' : 'bg-white'
     "
   >
-    <div class="container mx-auto lg:px-4 px-2 transition-all duration-300">
+    <div class="container mx-auto lg:px-4 px-2">
       <div class="flex justify-between items-center">
-        <!-- Logo and Search -->
+        <!-- Logo + Search -->
         <div class="flex items-center gap-4">
           <a href="/" class="flex items-center hover:opacity-90 transition">
             <img
@@ -150,220 +230,48 @@ onBeforeUnmount(() => {
             />
           </a>
 
-          <!-- Search Icon with Expandable Input -->
-          <div class="relative group">
-            <button
-              class="bg-green-900 text-white hover:text-white hover:bg-green-800 transition-all duration-300 pr-1 shadow-xl py-2 pl-2.5 rounded-full flex items-center gap-2 overflow-hidden"
-              @click="openSearchModal"
-              aria-label="Search"
-            >
-              <i class="fa fa-search text-xl flex-shrink-0"></i>
-              <input
-                type="text"
-                class="w-0 group-hover:w-32 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-transparent border-none outline-none text-sm text-white placeholder-green-200"
-                placeholder="Search..."
-                readonly
-              />
-            </button>
-          </div>
+          <!-- Search Button -->
+          <button
+            @click="openSearchModal"
+            aria-label="Search"
+            class="group flex items-center gap-2 rounded-full bg-green-900 pl-3 px-1.5 py-2 text-white shadow-xl transition hover:bg-green-800"
+          >
+            <i class="fa fa-search text-xl"></i>
+            <input
+              readonly
+              placeholder="Search..."
+              class="w-0 opacity-0 bg-transparent text-sm placeholder-green-200 outline-none transition-all duration-300 group-hover:w-32 group-hover:opacity-100"
+            />
+          </button>
         </div>
 
-        <!-- Desktop Navigation -->
+        <!-- Desktop Nav -->
         <nav class="hidden lg:block">
           <ul class="flex items-center gap-1">
-            <li class="relative nav-dropdown">
+            <li
+              class="relative group"
+              v-for="item in desktopNav"
+              :key="item.label"
+            >
               <a
-                href="#"
-                class="nav-link"
-                :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
-                >Academics</a
+                :href="item.href || '#'"
+                class="block whitespace-nowrap px-2 text-sm font-medium text-green-900 transition hover:bg-green-700 hover:text-white"
+                :class="isScrolled ? 'lg:py-5 py-6' : 'lg:py-7 py-6'"
               >
-              <ul class="dropdown-menu">
-                <li>
-                  <a href="/academics/tertiary-education" class="dropdown-item"
-                    >Tertiary Education</a
-                  >
-                </li>
-                <li>
-                  <a href="/academics/basic-education" class="dropdown-item"
-                    >Basic Education</a
-                  >
-                </li>
-                <li>
-                  <a href="/ccc" class="dropdown-item"
-                    >Career and Counseling Center</a
-                  >
-                </li>
-              </ul>
-            </li>
-            <li>
-              <a
-                href="/administration"
-                class="nav-link"
-                :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
-                >Administration</a
-              >
-            </li>
-            <li class="relative nav-dropdown">
-              <a
-                href="/research"
-                class="nav-link"
-                :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
-                >Research</a
-              >
-              <ul class="dropdown-menu">
-                <li>
-                  <a href="/research" class="dropdown-item"
-                    >Institutional Research and Publication Office</a
-                  >
-                </li>
-                <li>
-                  <a href="/research/publications" class="dropdown-item"
-                    >Research Publications</a
-                  >
-                </li>
-                <li>
-                  <a href="/research/e-journals" class="dropdown-item"
-                    >E-journals</a
-                  >
-                </li>
-              </ul>
-            </li>
-            <li>
-              <a
-                href="/sdgs"
-                class="nav-link"
-                :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
-                >Sustainability</a
-              >
-            </li>
-            <li>
-              <a
-                href="/social-actions"
-                class="nav-link"
-                :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
-                >Social Actions</a
-              >
-            </li>
-            <li class="relative nav-dropdown">
-              <a
-                href="/campus-life"
-                class="nav-link"
-                :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
-                >Campus Life</a
-              >
-              <ul class="dropdown-menu">
-                <li>
-                  <a
-                    href="/campus-life/lasallian-mission-center"
-                    class="dropdown-item"
-                    >Lasallian Mission Center</a
-                  >
-                </li>
-                <li>
-                  <a
-                    href="/campus-life/lasallian-formation-center"
-                    class="dropdown-item"
-                    >Lasallian Formation Center</a
-                  >
-                </li>
-                <li>
-                  <a
-                    href="/campus-life/student-activities-center"
-                    class="dropdown-item"
-                    >Student Activities Center</a
-                  >
-                </li>
+                {{ item.label }}
+              </a>
 
-                <!-- <li>
-                  <a href="/etc" class="dropdown-item"> BlendFlex Learning</a>
-                </li> -->
-
-                <li>
-                  <a href="/campus-life/activities" class="dropdown-item"
-                    >Activities</a
-                  >
-                </li>
-              </ul>
-            </li>
-            <li>
-              <a
-                href="/campus/dev"
-                class="nav-link"
-                :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
-                >Campus Dev</a
+              <ul
+                v-if="item.children"
+                class="invisible absolute right-0 top-full z-50 min-w-[220px] border-t-4 border-green-900 bg-white shadow-xl opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
               >
-            </li>
-            <li class="relative nav-dropdown">
-              <a
-                href="#"
-                class="nav-link"
-                :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
-                >Services</a
-              >
-              <ul class="dropdown-menu">
-                <li>
-                  <a href="/campus-pass" class="dropdown-item">Campus Pass</a>
-                </li>
-                <li>
-                  <a href="/registrar" class="dropdown-item">Registrar</a>
-                </li>
-                <li>
-                  <a href="/procurement" class="dropdown-item">Procurement</a>
-                </li>
-                <li>
-                  <a href="/library" class="dropdown-item">Library</a>
-                </li>
-                <li>
-                  <a href="/social-media" class="dropdown-item"
-                    >Student Affairs</a
+                <li v-for="child in item.children" :key="child.label">
+                  <a
+                    :href="child.href"
+                    class="block border-b border-gray-100 px-5 py-3 text-sm text-gray-800 transition hover:bg-green-50 hover:text-green-900"
                   >
-                </li>
-                <li>
-                  <a href="/hr" class="dropdown-item">Human Resource</a>
-                </li>
-                <li>
-                  <a href="/drs" class="dropdown-item">Document Reviewer</a>
-                </li>
-                <li>
-                  <a href="/news-updates" class="dropdown-item"
-                    >News and Updates</a
-                  >
-                </li>
-                <!-- <li>
-                  <a href="/npcc" class="dropdown-item">IT Services</a>
-                </li> -->
-              </ul>
-            </li>
-            <li class="relative nav-dropdown">
-              <a
-                href="/about"
-                class="nav-link"
-                :class="isScrolled ? 'lg:py-3.5 py-6' : 'py-6'"
-                >About</a
-              >
-              <ul class="dropdown-menu">
-                <li>
-                  <a href="/about" class="dropdown-item">LSU</a>
-                </li>
-                <li>
-                  <a href="/about/founders-life" class="dropdown-item"
-                    >The Founder's Life</a
-                  >
-                </li>
-                <li>
-                  <a href="/about/vocations" class="dropdown-item">Vocations</a>
-                </li>
-                <li>
-                  <a href="/about/contact" class="dropdown-item">Contact</a>
-                </li>
-                <li>
-                  <a href="/about/hymn" class="dropdown-item">The Hymn</a>
-                </li>
-                <li>
-                  <a href="/about/lasallian-prayer" class="dropdown-item"
-                    >Lasallian Prayer</a
-                  >
+                    {{ child.label }}
+                  </a>
                 </li>
               </ul>
             </li>
@@ -373,7 +281,7 @@ onBeforeUnmount(() => {
         <!-- Mobile Toggle -->
         <button
           @click="menuDetails = !menuDetails"
-          class="lg:hidden text-green-900 hover:text-green-700 transition p-2"
+          class="lg:hidden p-2 text-green-900 transition hover:text-green-700"
           aria-label="Toggle menu"
         >
           <i
@@ -384,239 +292,70 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Mobile Menu with Transition -->
-    <Transition name="mobile-menu">
+    <!-- Mobile Menu (Accordion) -->
+    <transition
+      enter-active-class="transition-all duration-300"
+      enter-from-class="max-h-0 opacity-0"
+      enter-to-class="max-h-screen opacity-100"
+      leave-active-class="transition-all duration-300"
+      leave-from-class="max-h-screen opacity-100"
+      leave-to-class="max-h-0 opacity-0"
+    >
       <div
         v-if="menuDetails"
-        class="fixed lg:top-[60px] left-0 w-full bg-white shadow-2xl z-40 border-t-2 border-green-800 overflow-y-auto"
+        class="fixed left-0 w-full overflow-y-auto border-t-2 border-green-800 bg-white shadow-2xl"
         style="max-height: calc(100vh - 86px)"
       >
-        <div class="pb-20">
-          <ul class="space-y-0">
-            <li>
-              <a
-                href="#"
-                class="mobile-menu-item font-bold bg-gray-100 text-green-950"
-                >Academics</a
-              >
-              <ul>
-                <li>
-                  <a
-                    href="/academics/tertiary-education"
-                    class="mobile-submenu-item"
-                    >Tertiary Education</a
-                  >
-                </li>
-                <li>
-                  <a
-                    href="/academics/basic-education"
-                    class="mobile-submenu-item"
-                    >Basic Education</a
-                  >
-                </li>
-                <li>
-                  <a href="/ccc" class="mobile-submenu-item"
-                    >Career and Counseling Center</a
-                  >
-                </li>
-              </ul>
-            </li>
+        <ul class="pb-20">
+          <li v-for="item in desktopNav" :key="item.label" class="border-b">
+            <button
+              v-if="item.children"
+              @click="toggleMobile(item.label)"
+              class="flex w-full items-center justify-between bg-gray-100 px-5 py-4 font-bold text-green-950"
+            >
+              {{ item.label }}
+            </button>
 
-            <li>
-              <a href="/administration" class="mobile-menu-item border-y"
-                >Administration</a
-              >
-            </li>
+            <a
+              v-else
+              :href="item.href"
+              class="block px-5 py-4 text-green-900 transition hover:bg-green-50"
+            >
+              {{ item.label }}
+            </a>
 
-            <li>
-              <a
-                href="#"
-                class="mobile-menu-item font-bold bg-gray-100 border-b text-green-950"
-                >Research</a
-              >
-              <ul>
-                <li class="bg-[#f7faf7]">
-                  <a
-                    href="/research/institutional-research"
-                    class="mobile-submenu-item"
-                    >Institutional Research and Publication Office</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/research/publications" class="mobile-submenu-item"
-                    >Research Publications</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/research/e-journals" class="mobile-submenu-item"
-                    >E-journals</a
-                  >
-                </li>
-              </ul>
-            </li>
-
-            <li>
-              <a href="/sdgs" class="mobile-menu-item border-y"
-                >Sustainability</a
-              >
-            </li>
-
-            <li>
-              <a href="/social-actions" class="mobile-menu-item border-y"
-                >Social Actions</a
-              >
-            </li>
-
-            <li>
-              <a
-                href="#"
-                class="mobile-menu-item font-bold bg-gray-100 border-b text-green-950"
-                >Campus Life</a
-              >
-              <ul>
-                <li class="bg-[#f7faf7]">
-                  <a
-                    href="/campus-life/lasallian-mission-center"
-                    class="mobile-submenu-item"
-                    >Lasallian Mission Center</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a
-                    href="/campus-life/lasallian-formation-center"
-                    class="mobile-submenu-item"
-                    >Lasallian Formation Center</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a
-                    href="/campus-life/student-activities-center"
-                    class="mobile-submenu-item"
-                    >Student Activities Center</a
-                  >
-                </li>
-
-                <!-- <li class="bg-[#f7faf7]">
-                  <a href="/etc" class="mobile-submenu-item"
-                    >BlendFlex Learning</a
-                  >
-                </li> -->
-
-                <li class="bg-[#f7faf7]">
-                  <a href="/campus-life/activities" class="mobile-submenu-item"
-                    >Activities</a
-                  >
-                </li>
-              </ul>
-            </li>
-
-            <li>
-              <a href="/campus/dev" class="mobile-menu-item border-y"
-                >Campus Dev</a
-              >
-            </li>
-
-            <li>
-              <a
-                href="#"
-                class="mobile-menu-item font-bold bg-gray-100 border-b text-green-950"
-                >Services</a
-              >
-              <ul>
-                <li class="bg-[#f7faf7]">
-                  <a href="/campus-pass" class="mobile-submenu-item"
-                    >Campus Pass</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/registrar" class="mobile-submenu-item">Registrar</a>
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/procurement" class="mobile-submenu-item"
-                    >Procurement</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/library" class="mobile-submenu-item">Library</a>
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/social-media" class="mobile-submenu-item"
-                    >Student Affairs</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/hr" class="mobile-submenu-item">Human Resource</a>
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/drs" class="mobile-submenu-item"
-                    >Document Reviewer</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/news-updates" class="mobile-submenu-item"
-                    >News and Updates</a
-                  >
-                </li>
-
-                <!-- <li class="bg-[#f7faf7]">
-                  <a href="/npcc" class="mobile-submenu-item">IT Services</a>
-                </li> -->
-              </ul>
-            </li>
-
-            <li>
-              <a
-                href="/about"
-                class="mobile-menu-item font-bold bg-gray-100 border-b text-green-950"
-                >About</a
-              >
-              <ul>
-                <li class="bg-[#f7faf7]">
-                  <a href="/about" class="mobile-submenu-item">LSU</a>
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/about/founders-life" class="mobile-submenu-item"
-                    >The Founder's Life</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/about/vocations" class="mobile-submenu-item"
-                    >Vocations</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/about/contact" class="mobile-submenu-item"
-                    >Contact</a
-                  >
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/about/hymn" class="mobile-submenu-item">The Hymn</a>
-                </li>
-                <li class="bg-[#f7faf7]">
-                  <a href="/about/lasallian-prayer" class="mobile-submenu-item"
-                    >Lasallian Prayer</a
-                  >
-                </li>
-              </ul>
-            </li>
-          </ul>
-        </div>
+            <ul
+              v-if="item.children"
+              class="bg-[#f7faf7]"
+            >
+              <li v-for="child in item.children" :key="child.label">
+                <a
+                  :href="child.href"
+                  class="block border-b border-gray-100 px-8 py-3 text-sm text-gray-700 transition hover:bg-white hover:text-green-900"
+                >
+                  {{ child.label }}
+                </a>
+              </li>
+            </ul>
+          </li>
+        </ul>
       </div>
-    </Transition>
+    </transition>
   </div>
+
+  
 
   <!-- Search Modal -->
   <div
     v-if="showSearchModal"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
     @click="closeSearchModal"
   >
     <div
-      class="bg-white rounded-lg shadow-xl w-11/12 max-w-2xl max-h-[80vh] overflow-hidden"
+      class="w-11/12 max-w-2xl overflow-hidden rounded-lg bg-white shadow-xl"
       @click.stop
     >
-      <!-- Modal Header -->
-      <div class="flex items-center justify-between p-4 border-b">
+      <div class="flex items-center justify-between border-b p-4">
         <h3 class="text-lg font-semibold text-green-800">
           Search News & Updates
         </h3>
@@ -628,52 +367,49 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <!-- Search Input -->
-      <div class="p-4 border-b">
+      <div class="border-b p-4">
         <div class="relative">
           <input
             v-model="searchQuery"
-            type="text"
-            placeholder="Search by title, author, or content..."
-            class="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
             @input="performSearch"
+            placeholder="Search by title, author, or content..."
+            class="w-full rounded-md border px-4 py-2 pl-10 focus:outline-none focus:ring-2 focus:ring-green-500"
           />
           <i
-            class="fa fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
           ></i>
         </div>
       </div>
 
-      <!-- Search Results -->
-      <div class="p-4 max-h-96 overflow-y-auto">
-        <div v-if="searchLoading" class="text-center py-8">
-          <i class="fa fa-spinner fa-spin text-green-600 text-2xl"></i>
+      <div class="max-h-96 overflow-y-auto p-4">
+        <div v-if="searchLoading" class="py-8 text-center">
+          <i class="fa fa-spinner fa-spin text-2xl text-green-600"></i>
           <p class="mt-2 text-gray-600">Searching...</p>
         </div>
 
         <div
           v-else-if="searchResults.length === 0 && searchQuery"
-          class="text-center py-8"
+          class="py-8 text-center"
         >
-          <i class="fa fa-search text-gray-400 text-3xl"></i>
+          <i class="fa fa-search text-3xl text-gray-400"></i>
           <p class="mt-2 text-gray-600">
             No results found for "{{ searchQuery }}"
           </p>
         </div>
 
-        <div v-else-if="searchResults.length > 0" class="space-y-3">
+        <div v-else-if="searchResults.length" class="space-y-3">
           <div
             v-for="item in searchResults"
             :key="item.id"
-            class="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors"
             @click="goToArticle(item.id)"
+            class="cursor-pointer rounded-lg border p-3 transition hover:bg-gray-50"
           >
-            <h4 class="font-semibold text-green-800 mb-1">{{ item.title }}</h4>
-            <p class="text-sm text-gray-600 mb-2">{{ item.authors }}</p>
-            <p class="text-xs text-gray-500 line-clamp-2">
+            <h4 class="mb-1 font-semibold text-green-800">{{ item.title }}</h4>
+            <p class="mb-2 text-sm text-gray-600">{{ item.authors }}</p>
+            <p class="line-clamp-2 text-xs text-gray-500">
               {{ item.descriptions }}
             </p>
-            <div class="flex items-center justify-between mt-2">
+            <div class="mt-2 flex items-center justify-between">
               <span class="text-xs text-gray-400">{{
                 formatDate(item.date)
               }}</span>
@@ -681,7 +417,7 @@ onBeforeUnmount(() => {
                 <span
                   v-for="badge in getSdgBadges(item).slice(0, 3)"
                   :key="badge.number"
-                  class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                  class="rounded-full bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-800"
                 >
                   SDG {{ badge.number }}
                 </span>
@@ -690,7 +426,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div v-else class="text-center py-8 text-gray-500">
+        <div v-else class="py-8 text-center text-gray-500">
           <i class="fa fa-search text-3xl"></i>
           <p class="mt-2">Start typing to search news & updates</p>
         </div>
@@ -698,102 +434,3 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
-
-<style scoped>
-/* Scroll shrink effect handled by Tailwind classes */
-
-/* Mobile Menu Slide Transition */
-.mobile-menu-enter-from,
-.mobile-menu-leave-to {
-  max-height: 0;
-  opacity: 0;
-  transform: translateY(-10px);
-}
-.mobile-menu-enter-active,
-.mobile-menu-leave-active {
-  transition: all 0.35s ease;
-}
-.mobile-menu-enter-to,
-.mobile-menu-leave-from {
-  max-height: calc(100vh - 86px);
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Main Header */
-.main-header {
-  z-index: 50;
-}
-
-/* Desktop Navigation Links */
-.nav-link {
-  @apply text-green-900 text-sm font-medium px-2
-         hover:bg-green-700 hover:text-white
-         transition-all duration-200
-         block whitespace-nowrap;
-}
-
-/* Dropdown Container */
-.nav-dropdown {
-  @apply relative;
-}
-
-.nav-dropdown:hover .dropdown-menu {
-  @apply block;
-}
-
-/* Dropdown Menu */
-.dropdown-menu {
-  @apply hidden absolute top-full left-0
-         bg-white text-gray-800
-         shadow-xl border-t-2 border-green-700
-         min-w-[220px] py-1 z-50;
-}
-
-.dropdown-menu-wide {
-  @apply min-w-[260px];
-}
-
-/* Services and About dropdowns positioned to the right */
-.nav-dropdown:nth-last-child(2) .dropdown-menu,
-.nav-dropdown:last-child .dropdown-menu {
-  @apply right-0 left-auto;
-}
-
-/* Dropdown Items */
-.dropdown-item {
-  @apply block px-5 py-3 text-sm
-         hover:bg-green-50 hover:text-green-900
-         transition-colors duration-150
-         border-b border-gray-100;
-}
-
-.dropdown-item:last-child {
-  @apply border-b-0;
-}
-
-/* Mobile Menu Items */
-.mobile-menu-item {
-  @apply block px-5 py-4
-         text-green-900 text-base
-         hover:bg-green-50 hover:text-green-700
-         transition-colors duration-150;
-}
-
-.mobile-menu-header {
-  @apply block px-5 py-3
-         text-green-800 text-sm uppercase
-         bg-gray-100;
-}
-
-.mobile-submenu-item {
-  @apply block px-8 py-3 text-sm text-gray-700
-         hover:bg-white hover:text-green-900
-         transition-colors duration-150
-         border-b border-gray-100;
-}
-
-.mobile-submenu-item:last-child {
-  @apply border-b-0;
-}
-</style>
