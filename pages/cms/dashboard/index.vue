@@ -149,6 +149,9 @@
           <div v-else-if="currentView === 'hr-job-vacancy-list'">
             <SuperAdminDashboardServicesHr />
           </div>
+          <div v-else-if="currentView === 'hr-raffle'">
+            <SuperAdminDashboardServicesHrRaffle />
+          </div>
         </div>
 
         <!-- FOOTER -->
@@ -349,6 +352,12 @@ const menuList = [
         icon: "fa-list-alt",
         type: "button",
         view: "hr-job-vacancy-list",
+      },
+       {
+        label: "Raffle Draw",
+        icon: "fa-list-alt",
+        type: "button",
+        view: "hr-raffle",
       },
     ],
   },
