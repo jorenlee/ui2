@@ -8,11 +8,11 @@
       Anim<img
         src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/spinthewheellogo.jpeg"
         alt="Wheel Logo"
-        class="ml-1 lg:w-10 w-6 lg:h-10 h-6 lg:mt-4 mt-3 rounded-full pointer-events-none"
+        class="ml-1 lg:w-10 w-6 lg:h-10 h-6 lg:mt-4 mt-2 rounded-full pointer-events-none"
       />
       <span class="lg:ml-5 ml-3">Wheel</span>
     </h2>
-    <p class="text-green-800 mb-5 tracking-tighter lg:text-sm text-xs text-center">
+    <p class="text-green-800 mb-5 tracking-tighter whitespace-nowrap lg:text-sm text-[10px] text-center">
       Powered by
       <span class="font-bold"
         >Network, Programs and Computerization Center (NPCC)</span
