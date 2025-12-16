@@ -222,6 +222,7 @@ const profileImageUrl = computed(() => {
 const superAdminEmails = [
   "jorenleeluna24@gmail.com",
   "npc@lsu.edu.ph",
+    "michaeljohn.puertogalera@lsu.edu.ph",
 ];
 // const contentWritersEmails = [
 //   "wenny.caseros@lsu.edu.ph",
@@ -273,7 +274,6 @@ const contentWritersEmails = [
   "markjohn.dalagan@lsu.edu.ph",
   "menchie.grana@lsu.edu.ph",
   "meredith.embuscado@lsu.edu.ph",
-  "michaeljohn.puertogalera@lsu.edu.ph",
   "naiza.amba@lsu.edu.ph",
   "roselyn.tuastomban@lsu.edu.ph",
   "tednudgent.tacan@lsu.edu.ph",
