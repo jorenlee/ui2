@@ -1,14 +1,14 @@
 <template>
   <div
-    class="w-full flex flex-col items-center gap-x-6 relative overflow-hidden bg-[#f9fffb] p-10"
+    class="w-full flex flex-col items-center gap-x-6 relative overflow-hidden bg-[#f9fffb] lg:p-10 py-3"
   >
     <h2
-      class="lg:text-6xl text-4xl font-extrabold festive-title z-10 text-green-800 tracking-tighter flex"
+      class="lg:text-6xl text-[45px] text-center font-extrabold festive-title z-10 text-green-800 tracking-tighter flex leading-tight"
     >
       Anim<img
         src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/spinthewheellogo.jpeg"
         alt="Wheel Logo"
-        class="ml-1 lg:w-10 w-6 lg:h-10 h-6 lg:mt-4 mt-2 rounded-full pointer-events-none"
+        class="ml-1 lg:w-10 w-7 lg:h-10 h-7 lg:mt-4 mt-[18px] rounded-full pointer-events-none"
       />
       <span class="lg:ml-5 ml-3">Wheel</span>
     </h2>
@@ -69,7 +69,7 @@
     </div>
 
     <!-- CSV Upload -->
-    <div class="w-full max-w-md lg:flex items-center shadow-xl p-2 rounded-2xl gap-2 z-10 mt-4 text-xs">
+    <div class="w-10/12 lg:w-fit mx-auto lg:flex items-center shadow-xl p-2 rounded-2xl gap-2 z-10 mt-4 text-xs">
       <input type="file" accept=".csv" @change="handleCSV" class="flex-1" />
       <button
         @click="loadCSV"

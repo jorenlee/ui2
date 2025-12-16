@@ -119,9 +119,9 @@
                 LSU Central
               </p>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
+            <button @click="logOut" class="flex items-center hover:font-bold pt-1">
               <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5 lg:flex hidden">Log Out</h1>
+              <p class="text-xs text-white p-1.5 lg:flex hidden">Log Out</p>
             </button>
           </div>
         </div>
