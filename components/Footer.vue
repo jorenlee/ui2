@@ -85,7 +85,7 @@ const quickLinks = [
 
             <!-- Quick Links -->
             <div
-              class="border-t border-green-700 pt-6 w-full sm:w-10/12 mx-auto lg:mx-0"
+              class="border-t border-green-900 pt-6 w-full sm:w-10/12 mx-auto lg:mx-0"
             >
               <h3 class="text-sm font-bold uppercase mb-3 text-green-200">
                 Quick Links
@@ -113,7 +113,7 @@ const quickLinks = [
           <!-- Right Section -->
           <div class="w-full lg:w-4/12 flex justify-center mt-10 lg:mt-0">
             <div
-              class="bg-green-800/50 border-2 border-green-700 p-6 w-full sm:w-8/12 lg:w-full text-center"
+              class="bg-green-800/50 border-2 border-green-800 p-6 w-full sm:w-8/12 lg:w-full text-center"
             >
               <h3 class="text-sm font-bold uppercase mb-4 text-green-200">
                 <i class="fa fa-share-alt mr-2"></i>Connect With Us
@@ -124,7 +124,7 @@ const quickLinks = [
                   <a
                     :href="social.url"
                     :title="social.name"
-                    class="group block bg-white/10 hover:bg-white/20 border border-green-600 hover:border-white p-3 transition"
+                    class="group block bg-white/10 hover:bg-white/20 border border-green-900 hover:border-white p-3 transition"
                   >
                     <img
                       :src="social.icon"

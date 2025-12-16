@@ -1,24 +1,12 @@
 <script setup>
-import {
-  onMounted,
-  ref,
-  onBeforeUnmount,
-  toRaw,
-  computed,
-  nextTick,
-  watch,
-} from "vue";
+import { ref, onBeforeUnmount, toRaw, computed } from "vue";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
-import { useRouter } from "vue-router";
 import scheduleJSON from "../time.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
-// import "@vuepic/vue-datepicker/dist/main.css";
 import "../css/main.css";
 import _ from "lodash";
-import { normalizeTimeLabel, parseScheduleToEvents, scheduleToForm, parseApiDateToInput } from '../schedules/useSchedules.js'
 
-const router = useRouter();
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
 
@@ -26,31 +14,18 @@ const endpoint = ref(userStore.mainDevServer);
 const date = ref();
 const highlightedDates = ref([]);
 const timeSelection = ref(scheduleJSON.timeSelection);
-const developerEmail = ref(userStore.user.developerEmail);
 const bookingLibrary = ref([]);
-const calendarEvents = ref([])
 const isEditingOrViewing = ref(false);
 const loadingState = ref(false);
 const editForm = ref(false);
 const library = ref({});
 const confirmModal = ref(false);
-const toggleSideBarMenu = ref(true);
+
 
 // Performance optimizations
 let autoRefreshInterval = null;
 let lastDataHash = "";
 const REFRESH_INTERVAL = 2000; // Reduced from 1000ms to 2000ms
-const allowedUsers = [
-  developerEmail.value,
-  "monaliza.mugot@lsu.edu.ph",
-  "marilyn.bejec@lsu.edu.ph",
-  "applejane.ebarle@lsu.edu.ph",
-  "janekaren.gudmalin@lsu.edu.ph",
-  "macy.beniola@lsu.edu.ph",
-  "lynn.lumacad@lsu.edu.ph",
-  "zosette.salas@lsu.edu.ph",
-];
-
 // Computed properties for better performance
 const filteredBookings = computed(() => {
   if (!date.value) return [];
@@ -267,11 +242,6 @@ const submitToGmail = debounce(async () => {
   }
 }, 500);
 
-const startAutoRefresh = () => {
-  clearInterval(autoRefreshInterval);
-  autoRefreshInterval = setInterval(fetchBookingDataSilently, REFRESH_INTERVAL);
-};
-
 const stopAutoRefresh = () => {
   if (autoRefreshInterval) {
     clearInterval(autoRefreshInterval);
@@ -282,6 +252,7 @@ const stopAutoRefresh = () => {
 const btnShowModal = () => {
   confirmModal.value = true;
 };
+
 const btnConfirm = () => {
   loadingState.value = true;
   confirmModal.value = false;
@@ -296,20 +267,8 @@ const btnCloseModal = () => {
   confirmModal.value = false;
 };
 
-const loadBookings = async () => {
-  try {
-    const data = await $fetch(`${endpoint.value}/api/library/schedule/booking/list/`)
-    bookingLibrary.value = Array.isArray(data) ? data : []
-    calendarEvents.value = parseScheduleToEvents(bookingLibrary.value) // same events as calendar component
-  } catch (e) {
-    console.error(e)
-  }
-}
-
 // Initialize
 await fetchBookingData();
-
-
 
 onBeforeUnmount(() => {
   stopAutoRefresh();
@@ -358,23 +317,6 @@ onBeforeUnmount(() => {
                       <div class="">
                         <div class="flex justify-between w-full">
                           <div class="">
-                            <!--<div
-                              v-for="(d, i) in dataList"
-                              :key="i"
-                              :class="{
-                                'text-red-700': d.status === 'pending',
-                                'text-yellow-500': d.status === 'reserved',
-                                'text-green-900': d.status === 'received',
-                                'text-blue-300': d.status === 'returned',
-                              }"
-                            >
-                              <span v-if="t === d.booking_time">
-                                <span class="text-xs -mt-0.5 mb-3 block">{{
-                                  d.booking_time
-                                }}</span>
-                              </span>
-                            </div>-->
-                            <!-- {{ d.booking_time }} JSON -->
                             <div
                               class="text-xs w-full"
                               :class="_.includes(t.time, t) ? 'hidden' : ''"
@@ -382,34 +324,11 @@ onBeforeUnmount(() => {
                               {{ t }}
                             </div>
                           </div>
-                          <!-- <div v-for="(d, i) in dataList" :key="i" class="">
-                            <span class="" :class="t === d.booking_time ? '' : 'hidden'">
-                              <div class="mx-auto lg:flex justify-center">
-                                <button @click="toggleDeleteBtn(d.id)" class="">
-                                  <i
-                                    class="fa fa-history text-green-500 rounded-lg uppercase text-sm "
-                                    aria-hidden="true"
-                                  ></i>
-                                </button>
-                              </div>
-                            </span>
-                          </div> -->
                         </div>
                         <div class="text-xs">
-                          <!--<div class="relative">
-                            <p v-for="(d, i) in dataList" :key="i">
-                              <span
-                                :class="t === d.booking_time ? '' : 'hidden'"
-                              >
-                                {{ d.booking_date }}
-                              </span>
-                            </p>
-                          </div>-->
-
                           <p v-for="(d, i) in dataList" :key="i">
                             <span v-if="t === d.booking_time">
                               <span>{{ d.email }}</span>
-                              <!-- <span>{{ d.borrower_category }}</span> -->
                             </span>
                           </p>
 
@@ -442,44 +361,11 @@ onBeforeUnmount(() => {
                               </div>
                             </span>
                           </div>
-                          <!-- 
-                          <p
-                            :class="
-                              _.includes(time, t) ? ' bg-red-500 text-white' : 'hidden'
-                            "
-                            class="shadow text-center block p-1 mt-2"
-                          >
-                            Pending
-                          </p> -->
-                          <!-- <p
-                          class="shadow text-center block p-1 my-2 bg-green-900 text-white"
-                        >
-                          Done
-                        </p> -->
                         </div>
                       </div>
                     </li>
                   </ul>
                 </div>
-                <!-- 
-                <div
-                  class="z-10 px-10 border-4 rounded-lg bg-white shadow-2xl absolute top-[70px] left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-                  v-show="toggleConfirmDelete"
-                >
-                  <div class="mt-6 mb-12">Done or Close Appointment?</div>
-                  <div class="flex gap-20 mx-auto w-fit my-5">
-                    <span
-                      class="bg-green-900 text-white px-3 py-1 rounded-lg"
-                      @click="deleteAppointment"
-                      >Confirm</span
-                    >
-                    <span
-                      class="bg-red-900 text-white px-3 py-1 rounded-lg"
-                      @click="toggleDeleteBtn"
-                      >Cancel</span
-                    >
-                  </div>
-                </div> -->
               </div>
             </div>
           </div>
@@ -716,7 +602,7 @@ onBeforeUnmount(() => {
               v-show="loadingState"
               class="text-green-800 font-bold lg:text-lg text-sm text-center w-fit mx-auto"
             >
-              sending email, please wait ...
+              Sending Email, please wait ...
             </div>
           </div>
         </div>

@@ -102,7 +102,7 @@
       <!-- MAIN CONTENT -->
       <div class="w-full flex flex-col">
         <!-- HEADER -->
-        <div class="bg-green-800 w-full z-50">
+        <div class="bg-green-900 w-full z-50">
           <div class="flex mx-auto justify-between py-2 px-3.5">
             <div
               @click="toggleSideBarMenu = !toggleSideBarMenu"
@@ -132,9 +132,7 @@
             <SuperAdminDashboardWelcome />
           </div>
           <div v-else-if="currentView === 'form'">
-            <SuperAdminDashboardCmsForm
-              @contentSubmitted="handleContentSubmitted"
-            />
+            <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted"/>
           </div>
           <div v-else-if="currentView === 'list'">
             <SuperAdminDashboardCmsList />
@@ -191,6 +189,7 @@ const currentView = ref("welcome");
 const isUserAuthenticated = ref(false);
 const openGroups = ref([
   "Content Management",
+  "Human Resource",
   "Library Management",
   "External Links",
 ]);
@@ -281,8 +280,7 @@ const contentWritersEmails = [
 const hrMenuEmails = [
   "hr@lsu.edu.ph",
   "npc@lsu.edu.ph",
-  "jorenleeluna24@gmail.com",
-  "jorenlee.luna@lsu.edu.ph",
+    "jorenlee.luna@lsu.edu.ph",
 ];
 const libraryMenuEmails = [
   "monaliza.mugot@lsu.edu.ph",
