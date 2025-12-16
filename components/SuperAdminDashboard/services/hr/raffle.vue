@@ -1,29 +1,33 @@
 <template>
-  <div class="w-full flex flex-col items-center gap-x-6 relative overflow-hidden pt-44">
-    <h2 class="text-6xl font-extrabold festive-title z-10 text-green-800 tracking-tighter">
-       Anim🎡 Wheel
+  <div class="w-full flex flex-col items-center gap-x-6 relative overflow-hidden bg-[#f5fff8] p-10">
+    <h2 class="text-6xl font-extrabold festive-title z-10 text-green-800 tracking-tighter flex">
+       Anim<img
+          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/spinthewheellogo.jpeg"
+          alt="Wheel Logo"
+          class="ml-1 w-10 h-10 mt-4 rounded-full pointer-events-none"
+        /> <span class="ml-5">Wheel</span>
     </h2>
-    <p class="text-green-800 mb-10 tracking-tighter text-sm">Powered by <span class="font-bold">Network, Programs and Computerization Center (NPCC)</span></p>
+    <p class="text-green-800 mb-5 tracking-tighter text-sm">Powered by <span class="font-bold">Network, Programs and Computerization Center (NPCC)</span></p>
 
 
     
-     <div>
+     <div class="">
         <!-- Spin Controls -->
-        <div class="flex gap-x-44 z-10">
+        <div class="flex gap-x-44 z-10 ">
           <button
             @click="startSpin"
             :disabled="spinning || names.length < 2"
-            class="px-6 py-2 bg-green-600 text-white rounded disabled:opacity-40"
+            class="px-6 py-2 bg-green-600 text-white uppercase rounded-full disabled:opacity-40"
           >
-            Start Spin
+            Start 
           </button>
 
           <button
             @click="stopSpinManually"
             :disabled="!spinning || stopping"
-            class="px-6 py-2 bg-red-600 text-white rounded disabled:opacity-40"
+            class="px-6 py-2 bg-red-600 text-white uppercase rounded-full disabled:opacity-40"
           >
-            Stop Spin
+            Stop 
           </button>
         </div>
 
@@ -35,7 +39,7 @@
 
       
 
-    <div class="flex w-11/12 mx-auto justify-center">
+    <div class="flex w-11/12 mx-auto justify-center mt-5">
       <!-- Wheel -->
       <div class="relative z-10">
         <!-- Arrow -->
@@ -64,7 +68,7 @@
         <!-- CSV Upload -->
         <div class="w-full max-w-md flex gap-2 z-10 mt-4">
           <input type="file" accept=".csv" @change="handleCSV" class="flex-1" />
-          <button @click="loadCSV" class="px-4 py-2 bg-blue-600 text-white rounded">
+          <button @click="loadCSV" class="px-4 py-2 bg-blue-600 text-white rounded-full uppercase">
             Upload CSV
           </button>
         </div>
@@ -75,7 +79,7 @@
           :disabled="winnersLog.length === 0"
           class="mt-4 px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-40"
         >
-          Download Winners Log
+         <i class="fa fa-download mr-3"></i> Download Winners 
         </button>
 
 
@@ -86,7 +90,7 @@
     >
       <div class="bg-white rounded-xl w-96 p-8 text-center animate-scale-in">
         <h3 class="text-lg font-semibold">🎉 Winner 🎉</h3>
-        <p class="text-3xl font-extrabold text-green-700 my-4">
+        <p class="text-3xl font-extrabold text-green-700 my-4 uppercase">
           {{ winner }}
         </p>
 
@@ -117,7 +121,7 @@
 
     <!-- Sounds -->
     <audio ref="winAudio" src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/mixkit-ethereal-fairy-win-sound-2019.wav" />
-    <audio ref="rollAudio" src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/ChristmasLoopMelody.mp3" />
+    <audio ref="rollAudio" src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/ChristmasLoopMelody37s.mp3" />
     <audio ref="tickAudio" src="https://assets.mixkit.co/sfx/preview/mixkit-jingle-bells-583.mp3" />
   </div>
 </template>
@@ -125,7 +129,7 @@
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount, computed } from "vue";
 
-const size = 1000;
+const size = 1200;
 const canvasRef = ref(null);
 
 const rollAudio = ref(null);

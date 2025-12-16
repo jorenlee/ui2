@@ -127,26 +127,26 @@
         </div>
 
         <!-- CONTENT AREA -->
-        <div class="flex-1 bg-gray-50 overflow-y-auto p-4">
-          <div v-if="currentView === 'welcome'">
+        <div class="flex-1 bg-gray-50 overflow-y-auto">
+          <div class="p-4" v-if="currentView === 'welcome'">
             <SuperAdminDashboardWelcome />
           </div>
-          <div v-else-if="currentView === 'form'">
+          <div class="p-4" v-else-if="currentView === 'form'">
             <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted"/>
           </div>
-          <div v-else-if="currentView === 'list'">
+          <div class="p-4" v-else-if="currentView === 'list'">
             <SuperAdminDashboardCmsList />
           </div>
-          <div v-else-if="currentView === 'appointments'">
+          <div class="p-4" v-else-if="currentView === 'appointments'">
             <SuperAdminDashboardServicesLibraryReserved />
           </div>
-          <div v-else-if="currentView === 'books'">
+          <div class="p-4" v-else-if="currentView === 'books'">
             <SuperAdminDashboardServicesLibraryBooks />
           </div>
-          <div v-else-if="currentView === 'schedules'">
+          <div class="p-4" v-else-if="currentView === 'schedules'">
             <SuperAdminDashboardServicesLibrarySchedules />
           </div>
-          <div v-else-if="currentView === 'hr-job-vacancy-list'">
+          <div class="p-4" v-else-if="currentView === 'hr-job-vacancy-list'">
             <SuperAdminDashboardServicesHr />
           </div>
           <div v-else-if="currentView === 'hr-raffle'">
