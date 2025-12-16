@@ -1,83 +1,88 @@
 <template>
   <div class="w-full flex flex-col items-center gap-6 relative overflow-hidden">
     <h2 class="text-2xl font-extrabold tracking-wide festive-title z-10">
-      🎡 Animo Wheel
+      🎡 Spin The Wheel
     </h2>
 
-
-    
-     <div>
-        <!-- Spin Controls -->
-        <div class="flex gap-x-44 z-10">
-          <button
-            @click="startSpin"
-            :disabled="spinning || names.length < 2"
-            class="px-6 py-2 bg-green-600 text-white rounded disabled:opacity-40"
-          >
-            Start Spin
-          </button>
-
-          <button
-            @click="stopSpinManually"
-            :disabled="!spinning || stopping"
-            class="px-6 py-2 bg-red-600 text-white rounded disabled:opacity-40"
-          >
-            Stop Spin
-          </button>
-        </div>
-
-
-
-
-
-      </div>
-
-      
-
-    <div class="flex w-11/12 mx-auto justify-center">
+<div class="flex w-11/12 mx-auto gap-x-12 items-center">
       <!-- Wheel -->
-      <div class="relative z-10">
-        <!-- Arrow -->
-        <div class="absolute -top-20 left-1/2 -translate-x-1/2 z-20">
-          <div class="wheel-arrow" :class="{ 'arrow-tick': arrowTick }" :style="{ transform: arrowTransform }"/>
-        </div>
-
-        <canvas
-          ref="canvasRef"
-          :width="size"
-          :height="size"
-          class="rounded-full shadow-2xl"
-        />
-
-        <!-- Logo in center -->
-        <img
-          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/spinthewheellogo.jpeg"
-          alt="Wheel Logo"
-          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full pointer-events-none"
-        />
+    <div class="relative z-10">
+      <!-- Arrow -->
+      <div class="absolute -top-20 left-1/2 -translate-x-1/2 z-20">
+        <div class="wheel-arrow" :class="{ 'arrow-tick': arrowTick }" :style="{ transform: arrowTransform }"/>
       </div>
 
-     
+      <canvas
+        ref="canvasRef"
+        :width="size"
+        :height="size"
+        class="rounded-full shadow-2xl"
+      />
     </div>
 
-        <!-- CSV Upload -->
-        <div class="w-full max-w-md flex gap-2 z-10 mt-4">
-          <input type="file" accept=".csv" @change="handleCSV" class="flex-1" />
-          <button @click="loadCSV" class="px-4 py-2 bg-blue-600 text-white rounded">
-            Upload CSV
-          </button>
-        </div>
+<div>
+      <!-- Spin Controls -->
+    <div class="flex gap-4 z-10">
+      <button
+        @click="startSpin"
+        :disabled="spinning || names.length < 2"
+        class="px-6 py-2 bg-green-600 text-white rounded disabled:opacity-40"
+      >
+        Start Spin
+      </button>
 
-        <!-- Download Winners -->
-        <button
-          @click="downloadWinners"
-          :disabled="winnersLog.length === 0"
-          class="mt-4 px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-40"
-        >
-          Download Winners Log
+      <button
+        @click="stopSpinManually"
+        :disabled="!spinning || stopping"
+        class="px-6 py-2 bg-red-600 text-white rounded disabled:opacity-40"
+      >
+        Stop Spin
+      </button>
+    </div>
+
+    <!-- Add Name -->
+    <div class="w-full max-w-md flex gap-2 z-10">
+      <input
+        v-model="newName"
+        placeholder="Add name"
+        class="flex-1 border rounded px-3 py-2"
+        @keyup.enter="addName"
+      />
+      <button @click="addName" class="px-4 py-2 bg-green-600 text-white rounded">
+        Add
+      </button>
+    </div>
+
+    <!-- Name List -->
+    <div class="w-full max-w-md bg-white rounded shadow z-10 p-3 max-h-60 overflow-y-auto">
+      <div
+        v-for="(n, i) in names"
+        :key="i"
+        class="flex justify-between items-center border-b last:border-0 py-1"
+      >
+        <span class="truncate">{{ n }}</span>
+        <button @click="removeName(i)" class="text-red-600 text-sm">
+          remove
         </button>
+      </div>
+    </div>
 
+    <!-- CSV Upload -->
+    <div class="w-full max-w-md flex gap-2 z-10">
+      <input type="file" accept=".csv" @change="handleCSV" class="flex-1" />
+      <button @click="loadCSV" class="px-4 py-2 bg-blue-600 text-white rounded">
+        Upload CSV
+      </button>
+    </div>
 
+    <!-- Auto Remove -->
+    <label class="flex items-center gap-2 text-sm z-10">
+      <input type="checkbox" v-model="autoRemove" />
+      🎁 Auto-remove winner
+    </label>
+</div>
+
+</div>
     <!-- Winner Modal -->
     <div
       v-if="showWinnerModal"
@@ -89,13 +94,7 @@
           {{ winner }}
         </p>
 
-        <!-- Countdown timer -->
-        <p v-if="countdown > 0" class="text-sm text-gray-500 mb-2 font-bold">
-          {{ countdown }}<span v-if="countdown !== 1"> seconds</span>
-        </p>
-
         <button
-          v-if="countdown === 0"
           @click="removeWinner"
           class="w-full mb-2 px-4 py-2 bg-red-500 text-white rounded"
         >
@@ -132,11 +131,8 @@ const names = ref([]);
 const newName = ref("");
 const winner = ref("");
 const showWinnerModal = ref(false);
-
+const autoRemove = ref(false);
 const csvFile = ref(null);
-
-// Log of winners with ISO timestamp
-const winnersLog = ref([]); // Each entry: { name: string, timestamp: string }
 
 const arrowTick = ref(false);
 const arrowWobble = ref(0);
@@ -148,10 +144,6 @@ let spinning = false;
 let stopping = false;
 let lastIndex = -1;
 let raf;
-
-// Countdown timer state
-const countdown = ref(12);
-let countdownInterval = null;
 
 const sliceBounce = ref({});
 const colors = ["#b91c1c", "#166534", "#facc15", "#9ca3af", "#991b1b", "#15803d"];
@@ -202,7 +194,7 @@ function startSpin() {
 
   spinning = true;
   stopping = false;
-  velocity = 12.0;
+  velocity = 12.0; // initial speed
   sliceBounce.value = {};
 
   rollAudio.value.loop = true;
@@ -217,23 +209,25 @@ function stopSpinManually() {
   if (!spinning || stopping) return;
   stopping = true;
 
+  // Smooth deceleration until wheel stops on winner slice
   const targetIndex = Math.floor(Math.random() * names.value.length);
   const slice = sliceAngle();
-  const targetAngle = Math.PI * 1.5 - targetIndex * slice - slice / 2;
+  const targetAngle = Math.PI * 1.5 - targetIndex * slice - slice / 2; // Arrow at top
 
   const startAngle = angle % (Math.PI * 2);
   let diff = ((targetAngle - startAngle + Math.PI * 4) % (Math.PI * 2));
 
-  const duration = 3500;
+  const duration = 3500; // 3.5s slow-down
   const startTime = performance.now();
 
   function decelerate(time) {
     const elapsed = time - startTime;
     const t = Math.min(elapsed / duration, 1);
+    // Ease out cubic for smooth deceleration
     const eased = 1 - Math.pow(1 - t, 3);
 
     angle = startAngle + diff * eased;
-    velocity = 0;
+    velocity = 0; // direct control, ignore previous velocity
 
     drawWheel();
     tickCheck();
@@ -249,7 +243,7 @@ function stopSpinManually() {
 function animate() {
   if (!stopping) {
     angle += velocity;
-    velocity *= 0.995;
+    velocity *= 0.995; // small friction
   }
 
   drawWheel();
@@ -284,19 +278,7 @@ function finalizeSpin(idx) {
   showWinnerModal.value = true;
   winAudio.value.play();
 
-  // Start 30-second countdown
-  countdown.value = 12;
-  if (countdownInterval) clearInterval(countdownInterval);
-  countdownInterval = setInterval(() => {
-    if (countdown.value > 0) countdown.value -= 1;
-    else clearInterval(countdownInterval);
-  }, 1000);
-
-  // Add to winners log with ISO timestamp
-  const timestamp = new Date().toISOString();
-  winnersLog.value.push({ name: winner.value, timestamp });
-
-
+  if (autoRemove.value) names.value.splice(idx, 1);
   spinning = false;
   stopping = false;
 }
@@ -332,25 +314,6 @@ function loadCSV() {
 }
 function closeModal() {
   showWinnerModal.value = false;
-  if (countdownInterval) clearInterval(countdownInterval);
-}
-
-// DOWNLOAD WINNERS LOG WITH ISO TIMESTAMP
-function downloadWinners() {
-  if (winnersLog.value.length === 0) return;
-
-  let csvContent = "data:text/csv;charset=utf-8,Rank,Winner,Timestamp\n";
-  winnersLog.value.forEach((entry, index) => {
-    csvContent += `${index + 1},${entry.name},${entry.timestamp}\n`;
-  });
-
-  const encodedUri = encodeURI(csvContent);
-  const link = document.createElement("a");
-  link.setAttribute("href", encodedUri);
-  link.setAttribute("download", "winners_log.csv");
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
 }
 
 // LIFECYCLE
@@ -358,10 +321,7 @@ onMounted(() => {
   ctx = canvasRef.value.getContext("2d");
   drawWheel();
 });
-onBeforeUnmount(() => {
-  cancelAnimationFrame(raf);
-  if (countdownInterval) clearInterval(countdownInterval);
-});
+onBeforeUnmount(() => cancelAnimationFrame(raf));
 watch(names, drawWheel, { deep: true });
 </script>
 

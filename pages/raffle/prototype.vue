@@ -4,37 +4,7 @@
       🎡 Animo Wheel
     </h2>
 
-
-    
-     <div>
-        <!-- Spin Controls -->
-        <div class="flex gap-x-44 z-10">
-          <button
-            @click="startSpin"
-            :disabled="spinning || names.length < 2"
-            class="px-6 py-2 bg-green-600 text-white rounded disabled:opacity-40"
-          >
-            Start Spin
-          </button>
-
-          <button
-            @click="stopSpinManually"
-            :disabled="!spinning || stopping"
-            class="px-6 py-2 bg-red-600 text-white rounded disabled:opacity-40"
-          >
-            Stop Spin
-          </button>
-        </div>
-
-
-
-
-
-      </div>
-
-      
-
-    <div class="flex w-11/12 mx-auto justify-center">
+    <div class="flex w-11/12 mx-auto gap-x-12 items-center">
       <!-- Wheel -->
       <div class="relative z-10">
         <!-- Arrow -->
@@ -57,8 +27,25 @@
         />
       </div>
 
-     
-    </div>
+      <div>
+        <!-- Spin Controls -->
+        <div class="flex gap-4 z-10">
+          <button
+            @click="startSpin"
+            :disabled="spinning || names.length < 2"
+            class="px-6 py-2 bg-green-600 text-white rounded disabled:opacity-40"
+          >
+            Start Spin
+          </button>
+
+          <button
+            @click="stopSpinManually"
+            :disabled="!spinning || stopping"
+            class="px-6 py-2 bg-red-600 text-white rounded disabled:opacity-40"
+          >
+            Stop Spin
+          </button>
+        </div>
 
         <!-- CSV Upload -->
         <div class="w-full max-w-md flex gap-2 z-10 mt-4">
@@ -68,6 +55,8 @@
           </button>
         </div>
 
+
+
         <!-- Download Winners -->
         <button
           @click="downloadWinners"
@@ -76,7 +65,8 @@
         >
           Download Winners Log
         </button>
-
+      </div>
+    </div>
 
     <!-- Winner Modal -->
     <div
@@ -90,8 +80,8 @@
         </p>
 
         <!-- Countdown timer -->
-        <p v-if="countdown > 0" class="text-sm text-gray-500 mb-2 font-bold">
-          {{ countdown }}<span v-if="countdown !== 1"> seconds</span>
+        <p v-if="countdown > 0" class="text-sm text-gray-500 mb-2">
+          {{ countdown }}<span v-if="countdown !== 1">s</span>...
         </p>
 
         <button
