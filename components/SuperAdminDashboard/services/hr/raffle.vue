@@ -108,6 +108,7 @@
         </button>
 
         <button
+           v-if="countdown === 0"
           @click="closeModal"
           class="w-full px-4 py-2 bg-gray-300 rounded"
         >
