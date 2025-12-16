@@ -1,18 +1,18 @@
 <template>
   <div
-    class="w-full flex flex-col items-center gap-x-6 relative overflow-hidden bg-[#f5fff8] p-10"
+    class="w-full flex flex-col items-center gap-x-6 relative overflow-hidden bg-[#f9fffb] p-10"
   >
     <h2
-      class="text-6xl font-extrabold festive-title z-10 text-green-800 tracking-tighter flex"
+      class="lg:text-6xl text-4xl font-extrabold festive-title z-10 text-green-800 tracking-tighter flex"
     >
       Anim<img
         src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/spinthewheellogo.jpeg"
         alt="Wheel Logo"
-        class="ml-1 w-10 h-10 mt-4 rounded-full pointer-events-none"
+        class="ml-1 lg:w-10 w-6 lg:h-10 h-6 lg:mt-4 mt-3 rounded-full pointer-events-none"
       />
-      <span class="ml-5">Wheel</span>
+      <span class="lg:ml-5 ml-3">Wheel</span>
     </h2>
-    <p class="text-green-800 mb-5 tracking-tighter text-sm">
+    <p class="text-green-800 mb-5 tracking-tighter lg:text-sm text-xs text-center">
       Powered by
       <span class="font-bold"
         >Network, Programs and Computerization Center (NPCC)</span
@@ -21,11 +21,11 @@
 
     <div class="">
       <!-- Spin Controls -->
-      <div class="flex gap-x-44 z-10">
+      <div class="flex lg:gap-x-44 gap-x-20 z-10">
         <button
           @click="startSpin"
           :disabled="spinning || names.length < 2"
-          class="px-6 py-2 bg-green-600 text-white uppercase rounded-full disabled:opacity-40"
+          class="px-6 py-2 bg-green-600 text-white uppercase rounded-full disabled:opacity-40 shadow-xl border"
         >
           Start
         </button>
@@ -33,14 +33,14 @@
         <button
           @click="stopSpinManually"
           :disabled="!spinning || stopping"
-          class="px-6 py-2 bg-red-600 text-white uppercase rounded-full disabled:opacity-40"
+          class="px-6 py-2 bg-red-600 text-white uppercase rounded-full disabled:opacity-40 shadow-xl border"
         >
           Stop
         </button>
       </div>
     </div>
 
-    <div class="flex w-11/12 mx-auto justify-center mt-5">
+    <div class="flex w-11/12 mx-auto justify-center lg:mt-5 mt-20">
       <!-- Wheel -->
       <div class="relative z-10">
         <!-- Arrow -->
@@ -56,7 +56,7 @@
           ref="canvasRef"
           :width="size"
           :height="size"
-          class="rounded-full shadow-2xl"
+          class="rounded-full shadow-2xl border-4 border-green-700"
         />
 
         <!-- Logo in center -->
@@ -69,11 +69,11 @@
     </div>
 
     <!-- CSV Upload -->
-    <div class="w-full max-w-md flex gap-2 z-10 mt-4">
+    <div class="w-full max-w-md lg:flex items-center shadow-xl p-2 rounded-2xl gap-2 z-10 mt-4 text-xs">
       <input type="file" accept=".csv" @change="handleCSV" class="flex-1" />
       <button
         @click="loadCSV"
-        class="px-4 py-2 bg-blue-600 text-white rounded-full uppercase"
+        class="px-4 py-2 bg-blue-600 text-white rounded-full uppercase lg:w-fit w-full mt-2 lg:mt-0"
       >
         Upload CSV
       </button>
@@ -83,7 +83,7 @@
     <button
       @click="downloadWinners"
       :disabled="winnersLog.length === 0"
-      class="mt-4 px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-40"
+      class="mt-10 px-4 py-2 bg-purple-600 text-white rounded disabled:opacity-40"
     >
       <i class="fa fa-download mr-3"></i> Download Winners
     </button>
@@ -93,9 +93,9 @@
       v-if="showWinnerModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
     >
-      <div class="bg-white rounded-xl w-96 p-8 text-center animate-scale-in">
+      <div class="bg-white rounded-xl p-8 text-center animate-scale-in lg:w-5/12 w-11/12 mx-auto">
         <h3 class="text-lg font-semibold">🎉 Winner 🎉</h3>
-        <p class="text-3xl font-extrabold text-green-700 my-4 uppercase">
+        <p class="text-3xl font-extrabold text-green-700 my-4 uppercase lg:whitespace-nowrap">
           {{ winner }}
         </p>
 
