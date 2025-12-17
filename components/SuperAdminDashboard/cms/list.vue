@@ -181,8 +181,6 @@ const updateFilters = () => {
     allFilters.length > 0 ? allFilters.join(", ") : "";
 };
 
-
-
 const getCategoryLabel = (item) => {
   if (!item?.filters) return "News";
 
@@ -541,6 +539,58 @@ const getSdgBadges = (item) => {
 
   return badges;
 };
+
+const superAdminEmails = [
+  // "jorenleeluna24@gmail.com",
+  "npc@lsu.edu.ph",
+  "michaeljohn.puertogalera@lsu.edu.ph",
+  "jason.yap@lsu.edu.ph",
+  // "jorenlee.luna@lsu.edu.ph"
+];
+
+const canVerify = (contributorEmail) => {
+  return directHeadEmails.some(
+    (d) =>
+      d.directHeadEmail === userStore.user.email &&
+      d.contributorEmail.includes(contributorEmail)
+  );
+};
+
+const mccEmails = ["mcc@lsu.edu.ph"];
+
+const npccEmails = ["npcc@lsu.edu.ph"];
+
+const directHeadEmails = [
+  {
+    department: "NPCC",
+    directHeadEmail: "jorenlee.luna@lsu.edu.ph",
+    contributorEmail: [
+      "jorenleeluna24@gmail.com",
+      "michaeljohn.puertogalera@lsu.edu.ph",
+    ],
+  },
+];
+
+const btnVerify = ref(false);
+const btnApprove = ref(false);
+const btnPublish = ref(false);
+
+const isVerified = ref(false);
+const isApproved = ref(false);
+const isPublished = ref(false);
+
+const toVerify = () => {
+  isVerified.value = true;
+};
+const toApprove = () => {
+  isVerified.value = true;
+  isApproved.value = true;
+};
+const toPublish = () => {
+  isVerified.value = true;
+  isApproved.value = true;
+  isPublished.value = true;
+};
 </script>
 <template>
   <div class="w-full min-h-screen flex flex-col">
@@ -566,6 +616,7 @@ const getSdgBadges = (item) => {
                     :class="
                       showEditModal ? 'grid grid-cols-2 lg:mb-3' : 'w-fit'
                     "
+                    v-if="userStore.user.email.includes(superAdminEmails)"
                   >
                     <div
                       class="bg-blue-50 p-2 lg:px-3 w-full lg:py-1 rounded-lg border-l-4 border-blue-500"
@@ -692,7 +743,7 @@ const getSdgBadges = (item) => {
                   <div class="hidden lg:block">
                     <!-- Table Header -->
                     <div
-                      class="grid grid-cols-5 gap-4 bg-gray-50 p-3 font-semibold text-gray-700 border-b text-sm"
+                      class="grid grid-cols-6 gap-4 bg-gray-50 p-3 font-semibold text-gray-700 border-b text-sm"
                     >
                       <span class="flex items-center">
                         <i class="fa fa-hashtag mr-2 text-gray-500"></i>ID
@@ -707,7 +758,11 @@ const getSdgBadges = (item) => {
                       <span class="flex items-center">
                         <i class="fa fa-file-text mr-2 text-gray-500"></i>Title
                       </span>
-                      <span class="flex items-center justify-center">
+
+                      <span class="flex items-center">
+                        <i class="fa fa-file-text mr-2 text-gray-500"></i>Status
+                      </span>
+                      <span class="flex items-center justify-end">
                         <i class="fa fa-cogs mr-2 text-gray-500"></i>Actions
                       </span>
                     </div>
@@ -717,58 +772,144 @@ const getSdgBadges = (item) => {
                       <div
                         v-for="j in paginatedInfo"
                         :key="j.id"
-                        class="grid grid-cols-5 gap-4 p-3 hover:bg-gray-50 transition-colors text-sm cursor-pointer"
                         @click="selectedItem = j"
-                        :class="
-                          selectedItem?.id === j.id
-                            ? 'bg-blue-50 border-l-4 border-blue-500'
-                            : ''
-                        "
                       >
-                        <span
-                          class="flex items-center text-gray-800 font-medium truncate"
-                          >{{ j.content_id }}</span
+                        <div
+                          :class="
+                            selectedItem?.id === j.id
+                              ? 'bg-blue-50 border-l-4 border-blue-500'
+                              : ''
+                          "
+                          class="grid grid-cols-6 gap-4 p-3 hover:bg-gray-50 transition-colors text-sm cursor-pointer"
+                          v-if="
+                            j.logs?.[0]?.personnel_email &&
+                            (canVerify(j.logs[0].personnel_email) ||
+                              superAdminEmails.includes(userStore.user.email) ||
+                              userStore.user.email ===
+                                j.logs[0].personnel_email)
+                          "
                         >
-                        <span
-                          class="flex items-center text-gray-600 truncate"
-                          >{{ j.authors }}</span
-                        >
-                        <span class="flex items-center text-gray-600 truncate">
-                          {{ getCategoryLabel(j) }}</span
-                        >
-
-                        <div>
                           <span
-                            class="flex items-center text-gray-800 truncate"
-                            >{{ j.title }}</span
+                            class="flex items-center text-gray-800 font-medium truncate"
+                            >{{ j.content_id }}</span
                           >
-                          <!-- SDG Badges -->
-                          <div v-if="getSdgBadges(j).length" class="mt-1">
-                            <div class="flex flex-wrap gap-1">
-                              <div
-                                v-for="badge in getSdgBadges(j)"
-                                :key="badge.number"
-                                class="inline-flex items-center"
+                          <div class="text-gray-600 truncate">
+                            <span class="block"> {{ j.authors }}</span>
+
+                            <span class="block">
+                              {{ j.logs[0].personnel_email }}</span
+                            >
+                          </div>
+
+                          <span
+                            class="flex items-center text-gray-600 truncate"
+                          >
+                            {{ getCategoryLabel(j) }}</span
+                          >
+
+                          <div class="flex items-center">
+                            <div>
+                              <span
+                                class="flex items-center text-gray-800 truncate"
+                                >{{ j.title }}</span
                               >
-                                <span
-                                  class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold text-white shadow-sm"
-                                  :style="{ backgroundColor: badge.color }"
-                                >
-                                  SDG {{ badge.number }}
-                                </span>
+                              <!-- SDG Badges -->
+                              <div v-if="getSdgBadges(j).length" class="mt-1">
+                                <div class="flex flex-wrap gap-1">
+                                  <div
+                                    v-for="badge in getSdgBadges(j)"
+                                    :key="badge.number"
+                                    class="inline-flex items-center"
+                                  >
+                                    <span
+                                      class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold text-white shadow-sm"
+                                      :style="{ backgroundColor: badge.color }"
+                                    >
+                                      SDG {{ badge.number }}
+                                    </span>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </div>
+
+                          <div class="w-full h-full flex items-center">
+                            <div>
+                              <ul
+                                class="flex items-center gap-x-2"
+                                :class="
+                                  showEditModal ? 'flex-wrap gap-y-2' : ''
+                                "
+                              >
+                                <!-- v-if="directHeadEmails.includes(userStore.user.email)" -->
+                                <li
+                                  v-if="canVerify(j.logs[0].personnel_email)"
+                                  @click="toVerify"
+                                  class="cursor-pointer bg-blue-700 text-white px-3 py-1 uppercase rounded-xl"
+                                >
+                                  Verify
+                                </li>
+                                <li
+                                  v-if="
+                                    mccEmails.includes(userStore.user.email)
+                                  "
+                                  @click="toApprove"
+                                  class="cursor-pointer bg-blue-700 text-white px-3 py-1 uppercase rounded-xl"
+                                >
+                                  Approve
+                                </li>
+                                <li
+                                  v-if="
+                                    npccEmails.includes(userStore.user.email)
+                                  "
+                                  @click="toPublish"
+                                  class="cursor-pointer bg-blue-700 text-white px-3 py-1 uppercase rounded-xl"
+                                >
+                                  Publish
+                                </li>
+                              </ul>
+
+                              <!-- instead of regular boolean, use the update api, to add data under logs array -->
+                              <ul
+                                class="flex items-center gap-x-2"
+                                :class="
+                                  showEditModal ? 'flex-wrap gap-y-2' : ''
+                                "
+                              >
+                                <li
+                                  v-if="isVerified"
+                                  class="flex items-center gap-x-1 text-xs bg-green-700 text-white px-2 py-1 rounded-xl"
+                                >
+                                  <i class="fa fa-check text-white"></i>
+                                  Verified
+                                </li>
+                                <li
+                                  v-if="isApproved"
+                                  class="flex items-center gap-x-1 text-xs bg-green-700 text-white px-2 py-1 rounded-xl"
+                                >
+                                  <i class="fa fa-check text-white"></i>
+                                  Approved
+                                </li>
+                                <li
+                                  v-if="isPublished"
+                                  class="flex items-center gap-x-1 text-xs bg-green-700 text-white px-2 py-1 rounded-xl"
+                                >
+                                  <i class="fa fa-check text-white"></i>
+                                  Published
+                                </li>
+                              </ul>
+                            </div>
+                          </div>
+                          <span class="flex justify-end">
+                            <button
+                              @click.stop="openEditModal(j)"
+                              class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition-colors flex items-center gap-1"
+                            >
+                              <i class="fa fa-edit text-xs"></i>
+                              <span class="hidden sm:inline text-xs">Edit</span>
+                            </button>
+                          </span>
                         </div>
-                        <span class="flex justify-center">
-                          <button
-                            @click.stop="openEditModal(j)"
-                            class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition-colors flex items-center gap-1"
-                          >
-                            <i class="fa fa-edit text-xs"></i>
-                            <span class="hidden sm:inline text-xs">Edit</span>
-                          </button>
-                        </span>
                       </div>
                     </div>
                   </div>

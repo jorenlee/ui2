@@ -285,12 +285,9 @@ const contentWritersEmails = [
   "tednudgent.tacan@lsu.edu.ph",
   "xie.medrano@lsu.edu.ph",
   "jenny.licanda@lsu.edu.ph",
-];
-const hrMenuEmails = [
-  "hr@lsu.edu.ph",
-  "npc@lsu.edu.ph",
   "jorenlee.luna@lsu.edu.ph",
 ];
+const hrMenuEmails = ["hr@lsu.edu.ph", "npc@lsu.edu.ph"];
 const libraryMenuEmails = [
   "monaliza.mugot@lsu.edu.ph",
   "marilyn.bejec@lsu.edu.ph",
