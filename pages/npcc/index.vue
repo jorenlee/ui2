@@ -101,7 +101,7 @@
                   <img
                     :src="member.profile || fallbackImg"
                     :alt="member.name"
-                    class="w-full h-full object-cover object-top transform -scale-x-100 hover:scale-x-100"
+                    class="w-full h-full object-cover object-top transform scale-x-100 hover:-scale-x-100"
                   />
                 </div>
 
@@ -109,7 +109,7 @@
                   <p class="text-xs mt-1 text-center lasalle-green-text">
                     {{ member.name }}
                   </p>
-                  <p class="text-xs font-bold text-center lasalle-green-text">
+                  <p class="text-xs font-bold text-center lasalle-green-text -mt-1">
                     {{ member.designation }}
                   </p>
                 </div>
@@ -131,7 +131,7 @@
               <img
                 :src="member.profile || fallbackImg"
                 :alt="member.name"
-                class="w-full h-full object-cover object-top"
+                class="w-full h-full object-cover object-top scale-x-100 hover:-scale-x-100"
               />
             </div>
 
@@ -178,13 +178,13 @@ const team = [
     designation: "IT Support",
     name: "Sir Jason",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/YAP,%20JASON%20%20IMG_9057.jpg",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/sirjasonweb.png",
   },
   {
     designation: "Lab Custodian - HEU",
     name: "Sir Mel",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/597369706_1194665839488930_7499936099824391382_n.jpg",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/sirrommel-web.jpg",
   },
   {
     designation: "Lab Custodian - BEU",
@@ -202,19 +202,19 @@ const team = [
     designation: "Network Administrator",
     name: "Sir John",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/Gonzaga,%20Flourence%20John%20S-2274.JPG",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/sirjohn.png",
   },
   {
     designation: "NPCC Director",
     name: "Sir Michael",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/sirmic.jpg",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/sirmic-web.png",
   },
   {
     designation: "Webmaster",
     name: "Ms Jo",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/jorenlee-web.jpg",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/jorenlee-profile-2025.png",
   },
 ];
 
