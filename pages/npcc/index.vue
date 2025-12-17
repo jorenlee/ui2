@@ -184,7 +184,7 @@ const team = [
     designation: "Lab Custodian - HEU",
     name: "Sir Mel",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/sirrommel-web.jpg",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/sirrommel.png",
   },
   {
     designation: "Lab Custodian - BEU",
@@ -196,7 +196,7 @@ const team = [
     designation: "PC Clinic",
     name: "Sir Gio",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/MORALES.png",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/sirgio.png",
   },
   {
     designation: "Network Administrator",
