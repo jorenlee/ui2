@@ -184,7 +184,7 @@ const team = [
     designation: "Lab Custodian - HEU",
     name: "Sir Mel",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/ROMMEL.jpg",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/597369706_1194665839488930_7499936099824391382_n.jpg",
   },
   {
     designation: "Lab Custodian - BEU",
