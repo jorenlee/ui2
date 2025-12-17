@@ -184,19 +184,19 @@ const team = [
     designation: "Lab Custodian - HEU",
     name: "Sir Mel",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/spinthewheellogo.jpeg",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/ROMMEL.jpg",
   },
   {
     designation: "Lab Custodian - BEU",
     name: "Sir Roy",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/spinthewheellogo.jpeg",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/SUAREZ,%20DENZEL%20ROY%20C.png",
   },
   {
     designation: "PC Clinic",
     name: "Sir Gio",
     profile:
-      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/spinthewheellogo.jpeg",
+      "https://lsu-media-styles.sgp1.digitaloceanspaces.com/npcc/MORALES.png",
   },
   {
     designation: "Network Administrator",
