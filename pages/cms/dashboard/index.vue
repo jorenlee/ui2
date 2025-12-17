@@ -119,7 +119,10 @@
                 LSU Central
               </p>
             </div>
-            <button @click="logOut" class="flex items-center hover:font-bold pt-1">
+            <button
+              @click="logOut"
+              class="flex items-center hover:font-bold pt-1"
+            >
               <i class="fa fa-sign-out text-white text-xl"></i>
               <p class="text-xs text-white p-1.5 lg:flex hidden">Log Out</p>
             </button>
@@ -132,7 +135,9 @@
             <SuperAdminDashboardWelcome />
           </div>
           <div class="p-4" v-else-if="currentView === 'form'">
-            <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted"/>
+            <SuperAdminDashboardCmsForm
+              @contentSubmitted="handleContentSubmitted"
+            />
           </div>
           <div class="p-4" v-else-if="currentView === 'list'">
             <SuperAdminDashboardCmsList />
@@ -222,7 +227,8 @@ const profileImageUrl = computed(() => {
 const superAdminEmails = [
   "jorenleeluna24@gmail.com",
   "npc@lsu.edu.ph",
-    "michaeljohn.puertogalera@lsu.edu.ph",
+  "michaeljohn.puertogalera@lsu.edu.ph",
+  "jason.yap@lsu.edu.ph",
 ];
 // const contentWritersEmails = [
 //   "wenny.caseros@lsu.edu.ph",
@@ -283,7 +289,7 @@ const contentWritersEmails = [
 const hrMenuEmails = [
   "hr@lsu.edu.ph",
   "npc@lsu.edu.ph",
-    "jorenlee.luna@lsu.edu.ph",
+  "jorenlee.luna@lsu.edu.ph",
 ];
 const libraryMenuEmails = [
   "monaliza.mugot@lsu.edu.ph",
@@ -353,7 +359,7 @@ const menuList = [
         type: "button",
         view: "hr-job-vacancy-list",
       },
-       {
+      {
         label: "Raffle Draw",
         icon: "fa-list-alt",
         type: "button",
