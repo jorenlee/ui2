@@ -193,6 +193,7 @@ const desktopNav = [
       { label: "Human Resource", href: "/hr" },
       { label: "Document Reviewer", href: "/drs" },
       { label: "News and Updates", href: "/news-updates" },
+        { label: "IT Services", href: "/npcc" },
     ],
   },
   {
