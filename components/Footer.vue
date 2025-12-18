@@ -142,16 +142,16 @@ const quickLinks = [
         </div>
 
         <!-- Copyright -->
-        <p class="text-sm lg:text-base text-center mt-10 mb-2">
+        <p class="text-sm lg:text-base text-center mt-28">
           © {{ presentYear }} La Salle University Ozamiz, Inc.
         </p>
 
-        <p class="text-xs text-center pb-5 w-10/12 mx-auto">
+        <a href="/npcc" class="text-xs text-center pb-5 w-fit mx-auto flex">
           Powered by
-          <span class="font-bold">
+          <span class="font-bold ml-1">
             Network, Programs and Computerization Center (NPCC)
           </span>
-        </p>
+        </a>
       </div>
     </div>
   </footer>
