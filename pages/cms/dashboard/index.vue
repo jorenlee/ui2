@@ -184,9 +184,30 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted} from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
+
+
+
+
+
+
+
+
+/* ---- AUTH GUARD ---- */
+onMounted(() => {
+  if (!userStore.isLoggedIn) {
+    router.replace("/cms/login");
+  }
+});
+
+/* ---- STATE ---- */
+const isUserAuthenticated = computed(() => userStore.isLoggedIn);
+
+definePageMeta({
+  middleware: "cms-auth",
+});
 
 // ---------------- STATE ----------------
 const router = useRouter();
@@ -194,7 +215,7 @@ const userStore = useUserStore();
 
 const toggleSideBarMenu = ref(false);
 const currentView = ref("welcome");
-const isUserAuthenticated = ref(false);
+
 const openGroups = ref([
   "Content Management",
   "Human Resource",
@@ -230,35 +251,7 @@ const superAdminEmails = [
   "michaeljohn.puertogalera@lsu.edu.ph",
   "jason.yap@lsu.edu.ph",
 ];
-// const contentWritersEmails = [
-//   "wenny.caseros@lsu.edu.ph",
-//   "mariaalexandra.benitez@lsu.edu.ph",
-//   "alexander.diaz@lsu.edu.ph",
-//   "carmelona.jumalon@lsu.edu.ph",
-//   "carmelona2.jumalon@lsu.edu.ph",
-//   "carousel.tagaylo@lsu.edu.ph",
-//   "carlvincent.codera@lsu.edu.ph",
-//   "cherrylyn.sanipa@lsu.edu.ph",
-//   "dean.lopez@lsu.edu.ph",
-//   "esmael.larubis@lsu.edu.ph",
-//   "israelgallogo@lsu.edu.ph",
-//   "jeanelyn.potestas@lsu.edu.ph",
-//   "jenel.cruz@lsu.edu.ph",
-//   "jerusalem.andrada@lsu.edu.ph",
-//   "joed.layna@lsu.edu.ph",
-//   "jumelah.padilla@lsu.edu.ph",
-//   "carmela.buenbrazo2@lsu.edu.ph",
-//   "macristina.llauder@lsu.edu.ph",
-//   "markjohn.dalagan@lsu.edu.ph",
-//   "menchie.grana@lsu.edu.ph",
-//   "meredith.embuscado@lsu.edu.ph",
-//   "michaeljohn.puertogalera@lsu.edu.ph",
-//   "naiza.amba@lsu.edu.ph",
-//   "roselyn.tuastomban@lsu.edu.ph",
-//   "tednudgent.tacan@lsu.edu.ph",
-//   "xie.medrano@lsu.edu.ph",
-//   "jenny.licanda@lsu.edu.ph",
-// ];
+
 const contentWritersEmails = [
   "mariaalexandra.benitez@lsu.edu.ph",
   "alexander.diaz@lsu.edu.ph",

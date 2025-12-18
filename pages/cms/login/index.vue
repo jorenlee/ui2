@@ -1,9 +1,17 @@
 <script setup>
 import { useUserStore } from "@/stores/user";
 import { useTokenClient } from "vue3-google-signin";
+import { onMounted } from "vue";
 
 const userStore = useUserStore();
 const router = useRouter();
+
+/* ---- AUTO REDIRECT IF LOGGED IN ---- */
+onMounted(() => {
+  if (userStore.isLoggedIn) {
+    router.replace("/cms/dashboard");
+  }
+});
 
 const handleOnError = (errorResponse) => {
   console.error("Google Login Error:", errorResponse);
@@ -11,16 +19,15 @@ const handleOnError = (errorResponse) => {
 
 const handleOnSuccess = async (response) => {
   try {
-    const userInfo = await $fetch("https://www.googleapis.com/oauth2/v1/userinfo?access_token=" + response.access_token);
-    
-    if (!userInfo?.email) {
-      console.error("No email found in response:", userInfo);
-      return;
-    }
-    
+    const userInfo = await $fetch(
+      "https://www.googleapis.com/oauth2/v1/userinfo?access_token=" +
+        response.access_token
+    );
+
+    if (!userInfo?.email) return;
+
     userStore.setToken(response.access_token, userInfo.email);
-    // console.log("User info:", userInfo);
-    router.push("/cms/dashboard");
+    router.replace("/cms/dashboard");
   } catch (error) {
     console.error("Login error:", error);
   }
@@ -31,6 +38,7 @@ const { isReady, login } = useTokenClient({
   onError: handleOnError,
 });
 </script>
+
 <template>
   <div class="lg:bg-gray-50">
     <div class="lg:h-screen flex items-center">

@@ -214,48 +214,6 @@ onMounted(async () => {
   }
 });
 
-onMounted(() => {
-  // setTimeout(() => {
-  const allowedEmails = [
-    "jorenleeluna24@gmail.com",
-    "jason.yap@lsu.edu.ph",
-    "npc@lsu.edu.ph",
-    "wenny.caseros@lsu.edu.ph",
-    "mariaalexandra.benitez@lsu.edu.ph",
-    "alexander.diaz@lsu.edu.ph",
-    "carmelona.jumalon@lsu.edu.ph",
-    "carmelona2.jumalon@lsu.edu.ph",
-    "carousel.tagaylo@lsu.edu.ph",
-    "carlvincent.codera@lsu.edu.ph",
-    "cherrylyn.sanipa@lsu.edu.ph",
-    "dean.lopez@lsu.edu.ph",
-    "esmael.larubis@lsu.edu.ph",
-    "israelgallogo@lsu.edu.ph",
-    "jeanelyn.potestas@lsu.edu.ph",
-    "jenel.cruz@lsu.edu.ph",
-    "jerusalem.andrada@lsu.edu.ph",
-    "jorenlee.luna@lsu.edu.ph",
-    "joed.layna@lsu.edu.ph",
-    "jumelah.padilla@lsu.edu.ph",
-    "carmela.buenbrazo2@lsu.edu.ph",
-    "macristina.llauder@lsu.edu.ph",
-    "markjohn.dalagan@lsu.edu.ph",
-    "menchie.grana@lsu.edu.ph",
-    "meredith.embuscado@lsu.edu.ph",
-    "michaeljohn.puertogalera@lsu.edu.ph",
-    "naiza.amba@lsu.edu.ph",
-    "roselyn.tuastomban@lsu.edu.ph",
-    "tednudgent.tacan@lsu.edu.ph",
-    "xie.medrano@lsu.edu.ph",
-    "jenny.licanda@lsu.edu.ph",
-  ];
-
-  //   if (!userStore.user.isAuthenticated || !allowedEmails.includes(userStore.user.email)) {
-  //     router.push("/unauthorized");
-  //   }
-  // }, 5000);
-});
-
 const openEditModal = async (item) => {
   editLoading.value = true;
   showEditModal.value = true;
@@ -358,10 +316,7 @@ const submitEdit = async () => {
   }
 };
 
-const logOut = () => {
-  userStore.removeToken();
-  router.push("/cms/login");
-};
+
 
 // Add file upload functions
 const handleFileSelect = async (e) => {
@@ -541,7 +496,7 @@ const getSdgBadges = (item) => {
 };
 
 const superAdminEmails = [
-  // "jorenleeluna24@gmail.com",
+  "jorenleeluna24@gmail.com",
   "npc@lsu.edu.ph",
   "michaeljohn.puertogalera@lsu.edu.ph",
   "jason.yap@lsu.edu.ph",
@@ -565,7 +520,7 @@ const directHeadEmails = [
     department: "NPCC",
     directHeadEmail: "jorenlee.luna@lsu.edu.ph",
     contributorEmail: [
-      "jorenleeluna24@gmail.com",
+      // "jorenleeluna24@gmail.com",
       "michaeljohn.puertogalera@lsu.edu.ph",
     ],
   },
@@ -743,11 +698,9 @@ const toPublish = () => {
                   <div class="hidden lg:block">
                     <!-- Table Header -->
                     <div
-                      class="grid grid-cols-6 gap-4 bg-gray-50 p-3 font-semibold text-gray-700 border-b text-sm"
+                      class="grid grid-cols-5 gap-4 bg-gray-50 p-3 font-semibold text-gray-700 border-b text-sm"
                     >
-                      <span class="flex items-center">
-                        <i class="fa fa-hashtag mr-2 text-gray-500"></i>ID
-                      </span>
+                    
                       <span class="flex items-center">
                         <i class="fa fa-user mr-2 text-gray-500"></i>Authors
                       </span>
@@ -774,25 +727,25 @@ const toPublish = () => {
                         :key="j.id"
                         @click="selectedItem = j"
                       >
+
+                       <!-- v-if="
+                            j.logs?.[0]?.personnel_email &&
+                            (canVerify(j.logs[0].personnel_email) ||
+                              superAdminEmails.includes(userStore.user.email) ||
+                              userStore.user.email ===
+                                j.logs[0].personnel_email)
+                          " -->
+
                         <div
                           :class="
                             selectedItem?.id === j.id
                               ? 'bg-blue-50 border-l-4 border-blue-500'
                               : ''
                           "
-                          class="grid grid-cols-6 gap-4 p-3 hover:bg-gray-50 transition-colors text-sm cursor-pointer"
-                          v-if="
-                            j.logs?.[0]?.personnel_email &&
-                            (canVerify(j.logs[0].personnel_email) ||
-                              superAdminEmails.includes(userStore.user.email) ||
-                              userStore.user.email ===
-                                j.logs[0].personnel_email)
-                          "
+                          class="grid grid-cols-5 gap-4 p-3 hover:bg-gray-50 transition-colors text-sm cursor-pointer"
+                         
                         >
-                          <span
-                            class="flex items-center text-gray-800 font-medium truncate"
-                            >{{ j.content_id }}</span
-                          >
+                         
                           <div class="text-gray-600 truncate">
                             <span class="block"> {{ j.authors }}</span>
 
@@ -810,7 +763,7 @@ const toPublish = () => {
                           <div class="flex items-center">
                             <div>
                               <span
-                                class="flex items-center text-gray-800 truncate"
+                                class="flex items-center text-gray-800 "
                                 >{{ j.title }}</span
                               >
                               <!-- SDG Badges -->
