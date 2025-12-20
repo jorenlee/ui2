@@ -240,9 +240,7 @@ const handleContentSubmitted = () => {
   currentView.value = "list";
 };
 
-const profileImageUrl = computed(() => {
-  return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/LSU%20Seal.PNG`;
-});
+const profileImageUrl = "https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/LSU%20Seal.PNG";
 
 // ---------------- ROLES ----------------
 const superAdminEmails = [

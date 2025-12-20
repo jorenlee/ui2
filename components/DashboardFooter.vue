@@ -14,7 +14,7 @@ const presentYear = ref(moment(new Date()).format("YYYY"));
         class="text-[9px] text-center text-white w-fit mx-auto flex whitespace-nowrap"
       >
         Powered by
-        <span class="font-bold">
+        <span class="font-bold ml-1">
           Network, Programs and Computerization Center (NPCC)
         </span>
       </a>
