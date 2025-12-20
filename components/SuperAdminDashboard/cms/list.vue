@@ -496,7 +496,7 @@ const getSdgBadges = (item) => {
 };
 
 const superAdminEmails = [
-  "jorenleeluna24@gmail.com",
+  // "jorenleeluna24@gmail.com",
   "npc@lsu.edu.ph",
   "michaeljohn.puertogalera@lsu.edu.ph",
   "jason.yap@lsu.edu.ph",
