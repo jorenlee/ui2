@@ -46,22 +46,22 @@
           </svg>
         </button>
 
-               <div
-              v-show="faq.open"
-              class="p-4 lg:text-sm text-[9px] text-white bg-green-900 border-t pl-10"
-            >
-              {{ faq.a }}
-            </div>
+        <div
+          v-show="faq.open"
+          class="p-4 lg:text-sm text-[9px] text-white bg-green-900 border-t pl-10"
+        >
+          {{ faq.a }}
+        </div>
       </div>
     </div>
 
     <!-- Contact -->
     <div class="mt-6 lg:p-4 p-2 border rounded-lg bg-gray-50">
-      <h3 class="font-medium">Contact / Support</h3>
+      <h3 class="font-medium">Contact Email for Concerns:</h3>
       <p class="lg:text-sm text-xs text-gray-700 mt-2">
-        For concerns, email
+        For further inquiries, please reach out to the Registrar’s Office at
         <a href="mailto:registrar@lsu.edu.ph" class="underline">
-          registrar@lsu.edu.ph </a
+          registrar@lsu.edu.ph</a
         >.
       </p>
     </div>
@@ -88,11 +88,11 @@ const faqs = ref([
     a: "Usually 1 to 3 working days.",
     open: false,
   },
-{
-  q: "Where will the Picture ID taking take place?",
-  a: "Picture ID taking will take place at the Registrar's Office after submitting or filling out the form.",
-  open: false,
-},
+  {
+    q: "Where will the Picture ID taking take place?",
+    a: "Picture ID taking will take place at the Registrar's Office after submitting or filling out the form.",
+    open: false,
+  },
 ]);
 
 // Toggle Accordion

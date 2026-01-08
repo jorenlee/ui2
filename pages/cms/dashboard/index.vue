@@ -251,6 +251,7 @@ const superAdminEmails = [
 ];
 
 const contentWritersEmails = [
+  "jackjun.caupayan@lsu.edu.ph",
   "mariaalexandra.benitez@lsu.edu.ph",
   "alexander.diaz@lsu.edu.ph",
   "carmelona.jumalon@lsu.edu.ph",
