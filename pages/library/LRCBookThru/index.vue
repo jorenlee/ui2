@@ -22,7 +22,7 @@ const books = ref([]);
 const searchForAvailableBooks = ref("");
 let highlightedDates = ref([]);
 const minDate = ref(new Date());
-let currentHour = ref(moment().format("HH:mm"));
+let currentHour = ref(moment().format("hh:mm A"));
 let id = ref();
 let limitCounter = ref(0);
 let allFieldsAreRequired = ref(false);
@@ -41,10 +41,9 @@ const submissionForm = ref(true);
 // ✅ Booking schedule info
 const schedule = ref({
   date: "",
-  time: "",
+  time: [], // MUST be array
   updated_at: new Date(),
 });
-
 const info = ref({
   borrower_category: "",
   id_number: "",
@@ -140,22 +139,30 @@ const setDate = (value) => {
 };
 
 const updateAvailableTimeSlots = () => {
-  const currentDate = moment().format("MM-DD-YYYY");
+  const today = moment().format("MM-DD-YYYY");
   const now = moment();
 
   const match = schedulesListsData.value.find(
-    (params) => params.date === schedule.value.date
+    (s) => s.date === schedule.value.date
   );
-  if (match) {
-    id.value = match.id;
-    schedule.value.time =
-      match.date === currentDate
-        ? match.time.filter((t) =>
-            moment(t.range_from_time, "HH:mm").isAfter(now)
-          )
-        : match.time;
+
+  if (!match || !Array.isArray(match.time)) {
+    schedule.value.time = [];
+    return;
   }
+
+  id.value = match.id;
+
+  schedule.value.time =
+    match.date === today
+      ? match.time.filter((t) =>
+          moment(t.range_from_time, "hh:mm A").isAfter(now)
+        )
+      : [...match.time];
 };
+
+
+
 
 const listAvailableBooksBtn = () => {
   searchIconBtnClicked.value = true;
@@ -284,6 +291,17 @@ const updateSchedule = async () => {
   });
 };
 
+const isTimeAvailable = (t) => {
+  if (!Array.isArray(schedule.value.time)) return false;
+
+  return schedule.value.time.some(
+    (s) =>
+      s.range_from_time === t._12_hour_format_from &&
+      s.range_to_time === t._12_hour_format_to
+  );
+};
+
+
 const createBtn = () => {
   submitForm();
 };
@@ -318,6 +336,10 @@ const submitAppointmentToGmail = async () => {
     body: info.value,
   });
 };
+
+watchEffect(() => {
+  console.log("schedule.time type:", typeof schedule.value.time, schedule.value.time);
+});
 </script>
 
 <template>
@@ -412,7 +434,7 @@ const submitAppointmentToGmail = async () => {
                           auto-apply
                           :highlight="highlightedDates"
                           @update:model-value="setDate(schedule.date)"
-                          :year-range="[2025, 2025]"
+                          :year-range="[2026, 2026]"
                           :disabled-week-days="[0, 7]"
                           week-start="0"
                           :allowed-dates="highlightedDates"
@@ -432,42 +454,43 @@ const submitAppointmentToGmail = async () => {
                   </h1>
                   <div class="w-full rounded-md justify-center">
                     <ul class="grid lg:grid-cols-3 grid-cols-2">
-                      <li
-                        class="flex items-center mb-3 font-semibold whitespace-nowrap w-fit justify-left lg:mx-7 mx-2.5 gap-x-2"
-                        v-for="(t, i) in timeSelection[0].time"
-                        :key="i"
-                      >
-                        <input
-                          type="radio"
-                          name="time"
-                          :value="t"
-                          class="mr-2 mt-0.5"
-                          v-model="pickedTime"
-                          v-if="_.find(schedule.time, t)"
-                          :id="i"
-                          required
-                        />
-                        <input
-                          type="radio"
-                          name="time"
-                          :value="t"
-                          class="mr-2 mt-0.5"
-                          v-else
-                          disabled
-                        />
-                        <label
-                          :for="i"
-                          class="lg:text-xs text-[10px]"
-                          :class="
-                            _.find(schedule.time, t)
-                              ? 'text-[#087830] font-bold'
-                              : ' text-gray-400 font-light'
-                          "
-                        >
-                          {{ t._12_hour_format_from }} -
-                          {{ t._12_hour_format_to }}
-                        </label>
-                      </li>
+<li
+  class="flex items-center mb-3 font-semibold whitespace-nowrap w-fit justify-left lg:mx-7 mx-2.5 gap-x-2"
+  v-for="(t, i) in timeSelection[0].time"
+  :key="i"
+>
+  <input
+    type="radio"
+    name="time"
+    :value="t"
+    class="mr-2 mt-0.5"
+    v-model="pickedTime"
+    v-if="isTimeAvailable(t)"
+    :id="i"
+    required
+  />
+
+  <input
+    type="radio"
+    class="mr-2 mt-0.5"
+    disabled
+    v-else
+  />
+
+  <label
+    :for="i"
+    class="lg:text-xs text-[10px]"
+    :class="
+      isTimeAvailable(t)
+        ? 'text-[#087830] font-bold'
+        : 'text-gray-400 font-light'
+    "
+  >
+    {{ t._12_hour_format_from }} - {{ t._12_hour_format_to }}
+  </label>
+</li>
+
+
                     </ul>
                   </div>
                 </div>
