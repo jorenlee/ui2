@@ -1,5 +1,5 @@
 <template>
-  <section class="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-md mb-10">
+  <section class="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-md my-10">
     <h1 class="lg:text-2xl font-semibold mb-2">Student ID Processing — FAQs</h1>
     <p class="text-sm text-gray-600 mb-6">
       Frequently Asked Questions about the Student ID processing.

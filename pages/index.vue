@@ -94,10 +94,11 @@ onBeforeUnmount(() => {
 
       <!-- <NewsAndUpdates /> -->
 
-      <NetworkLogo class="py-10" />
+
     </div>
 
     <FAQs />
+          <NetworkLogo class="py-10" />
     <!-- <TingogMagazine /> -->
     <Footer />
 
