@@ -64,63 +64,56 @@ const sections = [
 </script>
 
 <template>
-  <section class="bg-white py-20 space-y-24">
-    <div v-for="(section, sIndex) in sections" :key="sIndex" class="space-y-10">
-      <!-- MARQUEE CONTAINER -->
+  <section class="bg-white py-12">
+    <div v-for="(section, sIndex) in sections" :key="sIndex">
       <div class="relative overflow-hidden group">
         <!-- Fade edges -->
-        <div
-          class="pointer-events-none absolute left-0 top-0 h-full w-24 bg-gradient-to-r from-white to-transparent z-10"
-        ></div>
-        <div
-          class="pointer-events-none absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-white to-transparent z-10"
-        ></div>
+        <div class="pointer-events-none absolute left-0 top-0 h-full w-20 bg-gradient-to-r from-white to-transparent z-10"></div>
+        <div class="pointer-events-none absolute right-0 top-0 h-full w-20 bg-gradient-to-l from-white to-transparent z-10"></div>
 
-        <!-- MARQUEE -->
+        <!-- MARQUEE TRACK -->
         <div
-          class="flex animate-marquee whitespace-nowrap group-hover:[animation-play-state:paused]"
+          class="flex w-max animate-marquee whitespace-nowrap group-hover:[animation-play-state:paused]"
         >
-          <!-- TRACK A -->
-          <div class="flex shrink-0">
+          <!-- ORIGINAL -->
+          <div class="flex">
             <a
-              v-for="(logo, index) in section.logos"
-              :key="'a' + index"
+              v-for="(logo, i) in section.logos"
+              :key="'a' + i"
               :href="logo.href"
               target="_blank"
-              class="text-center justify-center px-7"
+              class="px-6 text-center flex flex-col items-center"
             >
               <img
                 :src="logo.src"
-                class="h-10 mx-auto object-contain opacity-80 hover:opacity-100 transition"
+                class="h-10 lg:h-12 object-contain opacity-80 hover:opacity-100 transition"
                 :class="logo.wide ? 'lg:h-16' : ''"
                 alt="logo"
               />
-              <span
-                class="text-[9px] text-gray-300 hover:text-black text-center"
-                >{{ logo.title }}</span
-              >
+              <span class="mt-1 text-[9px] text-gray-400 hover:text-black">
+                {{ logo.title }}
+              </span>
             </a>
           </div>
 
-          <!-- TRACK B (CLONE) -->
-          <div class="flex shrink-0">
+          <!-- CLONE -->
+          <div class="flex">
             <a
-              v-for="(logo, index) in section.logos"
-              :key="'b' + index"
+              v-for="(logo, i) in section.logos"
+              :key="'b' + i"
               :href="logo.href"
               target="_blank"
-              class="text-center justify-center px-7"
+              class="px-6 text-center flex flex-col items-center"
             >
               <img
                 :src="logo.src"
-                class="h-10 mx-auto object-contain opacity-80 hover:opacity-100 transition"
+                class="h-10 lg:h-12 object-contain opacity-80 hover:opacity-100 transition"
                 :class="logo.wide ? 'lg:h-16' : ''"
                 alt="logo"
               />
-              <span
-                class="text-[9px] text-gray-300 hover:text-black text-center"
-                >{{ logo.title }}</span
-              >
+              <span class="mt-1 text-[9px] text-gray-400 hover:text-black">
+                {{ logo.title }}
+              </span>
             </a>
           </div>
         </div>
@@ -130,7 +123,7 @@ const sections = [
 </template>
 
 <style scoped>
-@keyframes marquee {
+  @keyframes marquee {
   from {
     transform: translateX(0);
   }
@@ -139,7 +132,16 @@ const sections = [
   }
 }
 
+/* MOBILE: full cycle, fast */
 .animate-marquee {
-  animation: marquee 35s linear infinite;
+  animation: marquee 15s linear infinite;
 }
+
+/* DESKTOP: smoother */
+@media (min-width: 1024px) {
+  .animate-marquee {
+    animation-duration: 30s;
+  }
+}
+
 </style>
