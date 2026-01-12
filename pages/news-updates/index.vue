@@ -288,7 +288,7 @@ onBeforeUnmount(() => {
 
 // Pagination
 const currentPage = ref(1);
-const itemsPerPage = 32;
+
 
 // Group items by semantic sections using `filters` field
 const groupedSections = computed(() => {
@@ -388,8 +388,19 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
     <div class="lg:flex mx-auto">
       <div class="w-full py-5 relative">
         <div class="relative z-10 px-2 mx-auto">
+          <!-- Loading state -->
+          <div v-if="loading" class="flex items-center justify-center py-20">
+            <div class="flex flex-col items-center">
+              <svg class="animate-spin h-10 w-10 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+              <div class="mt-4 text-green-600 font-medium">Loading news & updates...</div>
+            </div>
+          </div>
+
           <!-- GROUPED CONTENT -->
-          <div v-if="filteredInfo.length" class="space-y-6">
+          <div v-else-if="filteredInfo.length" class="space-y-6">
             <!-- Top -->
             <div class="grid grid-cols-1 lg:grid-cols-6 gap-4">
               <!-- Latest -->
@@ -628,7 +639,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             </div>
 
             <!-- Research & Sustainability -->
-            <div class="flex gap-x-2">
+            <div class="lg:flex gap-x-2">
               <div class="w-fit bg-white rounded-lg p-4 border shadow-xl">
                 <h4 class="font-semibold text-lg mb-3">Research</h4>
                 <div
@@ -813,7 +824,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             </div>
             <!-- Educational -->
             <div class="bg-white rounded-lg p-4 border shadow-xl">
-              <h4 class="font-semibold mb-3 text-center shadow pb-3 text-lg">
+              <h4 class="font-semibold text-center pb-3 text-lg">
                 Educational and Technology
               </h4>
               <div
@@ -925,45 +936,24 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Filters -->
-          <div class="bg-white rounded-xl shadow-lg mb-2 px-4 py-3">
-            <div
-              class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
-            >
-              <!-- Filters -->
-              <!-- <div
-                class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto"
+            <!-- Filters -->
+            <div class="bg-white rounded-xl shadow-lg mb-2 px-4 py-3">
+              <div
+                class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
               >
-                <div class="w-full sm:w-48">
-                  <input
-                    type="date"
-                    v-model="selectedDate"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                  />
-                </div>
-
-                <button
-                  @click="clearFilters"
-                  class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm whitespace-nowrap"
+                <a
+                  href="/news-updates/list"
+                  class="text-sm text-green-600 hover:underline font-bold text-center flex w-full justify-center"
                 >
-                  Clear Filters
-                </button>
-              </div> -->
-
-              <!-- View All -->
-              <a
-                href="/news-updates/list"
-                class="text-sm text-green-600 hover:underline font-bold text-center flex w-full justify-center"
-              >
-                View All
-              </a>
+                  View All
+                </a>
+              </div>
             </div>
           </div>
-
-          <!-- Pagination and footer parts stay exactly the same below -->
-          <!-- (Keep the rest of your file unchanged) -->
+          <div v-else class="text-xs text-center text-gray-300">
+            No news and updates posted yet.
+          </div>
         </div>
       </div>
     </div>
