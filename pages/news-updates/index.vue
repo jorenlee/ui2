@@ -38,6 +38,8 @@ const scrollToTop = () => {
   });
 };
 
+const selectedDate = ref(""); // YYYY-MM-DD
+
 // SDG options for filter
 const sdgOptions = ref([
   { value: "sdg1", label: "SDG 1 - No Poverty" },
@@ -96,20 +98,15 @@ const availableMonths = computed(() => {
   return [...new Set(months)].sort((a, b) => a - b);
 });
 
-// Filtered info based on selected filters
 const filteredInfo = computed(() => {
   let filtered = info.value;
 
-  // Filter by SDG - exact match only
+  // SDG filter (unchanged)
   if (selectedSDG.value) {
     filtered = filtered.filter((item) => {
       if (!item.filters) return false;
       const filters = item.filters.toLowerCase();
-
-      // Extract SDG number from selectedSDG (e.g., "sdg1" -> "1")
       const selectedSdgNum = selectedSDG.value.replace("sdg", "");
-
-      // Check for exact SDG matches only
       const exactPatterns = [
         `sdg${selectedSdgNum}`,
         `sdg ${selectedSdgNum}`,
@@ -119,43 +116,43 @@ const filteredInfo = computed(() => {
         `goal ${selectedSdgNum}`,
         `sdg${selectedSdgNum.padStart(2, "0")}`,
       ];
-
-      return exactPatterns.some((pattern) => {
-        // Use word boundaries to ensure exact matches
-        const regex = new RegExp(`\\b${pattern}\\b`, "i");
-        return regex.test(filters);
-      });
+      return exactPatterns.some((p) =>
+        new RegExp(`\\b${p}\\b`, "i").test(filters)
+      );
     });
   }
 
-  // Filter by year (using date field)
+  // Year
   if (selectedYear.value) {
-    filtered = filtered.filter((item) => {
-      if (!item.date) return false;
-      return moment(item.date).year() === parseInt(selectedYear.value);
-    });
+    filtered = filtered.filter(
+      (item) =>
+        item.date && moment(item.date).year() === parseInt(selectedYear.value)
+    );
   }
 
-  // Filter by month (using date field)
+  // Month
   if (selectedMonth.value) {
+    filtered = filtered.filter(
+      (item) =>
+        item.date && moment(item.date).month() === parseInt(selectedMonth.value)
+    );
+  }
+
+  // 🔹 Exact Date (YYYY-MM-DD)
+  if (selectedDate.value) {
     filtered = filtered.filter((item) => {
       if (!item.date) return false;
-      return moment(item.date).month() === parseInt(selectedMonth.value);
+      return moment(item.date).format("YYYY-MM-DD") === selectedDate.value;
     });
   }
 
-  // Sort by date field (latest to oldest)
   return filtered.sort((a, b) => {
-    const dateA = moment(a.date);
-    const dateB = moment(b.date);
-
-    // Handle invalid dates by putting them at the end
-    if (!dateA.isValid() && !dateB.isValid()) return 0;
-    if (!dateA.isValid()) return 1;
-    if (!dateB.isValid()) return -1;
-
-    // Sort latest to oldest (descending)
-    return dateB.valueOf() - dateA.valueOf();
+    const aD = moment(a.date);
+    const bD = moment(b.date);
+    if (!aD.isValid() && !bD.isValid()) return 0;
+    if (!aD.isValid()) return 1;
+    if (!bD.isValid()) return -1;
+    return bD.valueOf() - aD.valueOf();
   });
 });
 
@@ -164,7 +161,12 @@ const clearFilters = () => {
   selectedSDG.value = "";
   selectedYear.value = "";
   selectedMonth.value = "";
+  selectedDate.value = "";
 };
+
+watch([selectedSDG, selectedYear, selectedMonth, selectedDate], () => {
+  currentPage.value = 1;
+});
 
 // Add computed property for SDG badges - exact matches only
 const getSdgBadges = (item) => {
@@ -383,63 +385,22 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
       </div>
     </div>
 
-    <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
+    <div class="lg:flex mx-auto">
       <div class="w-full py-5 relative">
-        <div class="relative z-10 lg:px-10 mx-auto">
-          <!-- Filters -->
-          <div class="bg-white rounded-lg shadow-sm px-4 mb-3 pt-3 pb-2">
-            <div class="lg:flex items-center gap-x-2">
-              <div class="w-full flex">
-                <div class="w-fit lg:mb-0 mb-3">
-                  Date Filter
-                  <label class="block text-sm font-medium text-gray-700"
-                    >Filter by Month</label
-                  >
-                  <select
-                    v-model="selectedMonth"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-                  >
-                    <option value="">All Months</option>
-                    <option
-                      v-for="month in availableMonths"
-                      :key="month"
-                      :value="month"
-                    >
-                      {{ moment().month(month).format("MMMM") }}
-                    </option>
-                  </select>
-                </div>
-
-                <div class="mt-5">
-                  <button
-                    @click="clearFilters"
-                    class="lg:w-fit w-full whitespace-nowrap px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors text-sm"
-                  >
-                    Clear Filters
-                  </button>
-                </div>
-              </div>
-
-              <a
-                href="/news-updates/list"
-                class="text-sm text-green-600 hover:underline float-right mt-2"
-              >
-                View All
-              </a>
-            </div>
-          </div>
-
+        <div class="relative z-10 px-2 mx-auto">
           <!-- GROUPED CONTENT -->
           <div v-if="filteredInfo.length" class="space-y-6">
             <!-- Top -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 lg:grid-cols-6 gap-4">
               <!-- Latest -->
-              <div class="lg:col-span-2 bg-white rounded-lg p-4">
-                <h4 class="font-semibold text-sm mb-2">
+              <div
+                class="lg:col-span-4 bg-white rounded-lg p-4 border shadow-xl"
+              >
+                <h4 class="font-semibold text-lg mb-2">
                   Latest (News Highlight)
                 </h4>
 
-                <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <!-- Side cards -->
                   <div class="order-2 lg:order-1 flex flex-col gap-3">
                     <div
@@ -449,7 +410,10 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                       :key="item.id"
                       class="group bg-white rounded-md overflow-hidden border hover:shadow-md transition"
                     >
-                      <a :href="'/news-updates/' + item.id" class="flex h-24">
+                      <a
+                        :href="'/news-updates/' + item.id"
+                        class="flex h-32 card-improved"
+                      >
                         <div class="w-1/3 h-full overflow-hidden">
                           <img
                             v-if="item.files && item.files.length"
@@ -459,19 +423,32 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                         </div>
                         <div class="p-2 w-2/3 flex flex-col justify-between">
                           <div>
-                            <div class="text-xs text-gray-500">{{ moment(item.date || item.created_at).format('MMM DD') }}</div>
-                            <div class="font-medium text-sm line-clamp-2">{{ item.title }}</div>
+                            <div class="text-xs text-gray-500">
+                              {{
+                                moment(item.date || item.created_at).format(
+                                  "MMM DD"
+                                )
+                              }}
+                            </div>
+                            <div class="font-medium text-sm line-clamp-2">
+                              {{ item.title }}
+                            </div>
                           </div>
                           <div>
                             <div class="flex items-center gap-2 mt-2 mb-2">
-                              <div v-for="badge in getSdgBadges(item).slice(0,3)" :key="badge.number" class="inline-flex items-center">
-                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm" :style="{ backgroundColor: badge.color }">SDG {{ badge.number }}</span>
-                              </div>
-                              <span v-if="getSdgBadges(item).length > 3" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600">+{{ getSdgBadges(item).length - 3 }} more</span>
+                              <span
+                                v-if="getSdgBadges(item).length > 3"
+                                class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                                >+{{ getSdgBadges(item).length - 3 }} more</span
+                              >
                             </div>
-                            <div class="flex items-center justify-between text-xs">
-                              <div class="text-xs text-gray-500">{{ item.filters }}</div>
-                              <div class="text-xs text-green-600 font-medium">Read More <i class="fas fa-arrow-right ml-1"></i></div>
+                            <div
+                              class="flex items-center justify-between text-xs"
+                            >
+                              <div class="text-xs text-green-600 font-medium">
+                                Read More
+                                <i class="fas fa-arrow-right ml-1"></i>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -480,7 +457,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                   </div>
 
                   <!-- Main highlight -->
-                  <div class="order-1 lg:order-2 lg:col-span-3">
+                  <div class="order-1 lg:order-2 lg:col-span-2">
                     <div
                       v-if="
                         groupedSections.newsHighlight &&
@@ -494,7 +471,9 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                         "
                         class="block"
                       >
-                        <div class="relative h-64 overflow-hidden">
+                        <div
+                          class="relative h-48 sm:h-64 overflow-hidden card-improved"
+                        >
                           <img
                             v-if="
                               groupedSections.newsHighlight[0].files?.length
@@ -527,21 +506,6 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           <h3 class="text-xl font-bold mb-2">
                             {{ groupedSections.newsHighlight[0].title }}
                           </h3>
-                          <div class="flex items-center gap-2 mb-2">
-                            <div
-                              v-for="badge in getSdgBadges(
-                                groupedSections.newsHighlight[0]
-                              ).slice(0, 1)"
-                              :key="badge.number"
-                              class="inline-flex items-center"
-                            >
-                              <span
-                                class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm"
-                                :style="{ backgroundColor: badge.color }"
-                                >SDG {{ badge.number }}</span
-                              >
-                            </div>
-                          </div>
                         </div>
                       </a>
                       <div class="px-4 pb-4 flex items-center justify-between">
@@ -551,17 +515,26 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                       </div>
                     </div>
                     <div v-else class="text-sm text-gray-500">
-                      No highlight available.
+                      <div v-if="selectedDate">
+                        No available for
+                        {{ moment(selectedDate).format("MMMM DD, YYYY") }}.
+                      </div>
+                      <div v-else>No highlight available.</div>
                     </div>
                   </div>
                 </div>
               </div>
 
               <!-- Announcements -->
-              <div class="bg-white rounded-lg p-4">
-                <h4 class="font-semibold text-sm mb-2">Announcements</h4>
+              <div
+                class="lg:col-span-2 bg-white rounded-lg p-4 border shadow-xl"
+              >
+                <h4 class="font-semibold text-lg mb-2">Announcements</h4>
                 <div
-                  v-if="groupedSections.announcements?.length"
+                  v-if="
+                    groupedSections.announcements &&
+                    groupedSections.announcements[0]
+                  "
                   class="space-y-3"
                 >
                   <div
@@ -572,8 +545,11 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                     :key="a.id"
                     class="border rounded-md p-3"
                   >
-                    <div class="flex items-start gap-3">
-                      <div class="w-1/4 h-20 overflow-hidden rounded-md">
+                    <div class="flex gap-3 h-32">
+                      <!-- Image Section -->
+                      <div
+                        class="w-1/4 h-full overflow-hidden rounded-md flex-shrink-0"
+                      >
                         <img
                           v-if="a.files?.length"
                           :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${a.files[0]}`"
@@ -586,37 +562,46 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           No Image
                         </div>
                       </div>
-                      <div class="flex-1">
-                        <div class="flex items-start justify-between mb-1">
-                          <div
-                            class="text-xs uppercase text-gray-600 font-medium"
-                          >
-                            {{ getCategoryLabel(a) }}
-                          </div>
-                          <div class="text-xs text-gray-400">
+
+                      <!-- Content Section -->
+                      <div class="flex-1 flex flex-col h-full">
+                        <!-- Top Info: Category + Date -->
+                        <div
+                          class="flex items-start justify-between text-xs uppercase text-gray-600 font-medium mb-1"
+                        >
+                          <div>{{ getCategoryLabel(a) }}</div>
+                          <div class="text-gray-400">
                             {{
                               moment(a.date || a.created_at).format("MMM DD")
                             }}
                           </div>
                         </div>
+
+                        <!-- Title -->
                         <a
                           :href="'/news-updates/' + a.id"
-                          class="block font-semibold text-lg text-gray-900 mb-1"
-                          >{{ a.title }}</a
+                          class="block font-semibold text-base text-gray-900 mb-1 line-clamp-2"
                         >
-                        <div class="flex items-center gap-2 mb-2">
-                          <div v-for="badge in getSdgBadges(a).slice(0,3)" :key="badge.number" class="inline-flex items-center">
-                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm" :style="{ backgroundColor: badge.color }">SDG {{ badge.number }}</span>
-                          </div>
-                          <span v-if="getSdgBadges(a).length > 3" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600">+{{ getSdgBadges(a).length - 3 }} more</span>
+                          {{ a.title }}
+                        </a>
+
+                        <!-- SDG Badges -->
+                        <div class="flex items-center gap-2 mb-2 flex-wrap">
+                          <span
+                            v-if="getSdgBadges(a).length > 3"
+                            class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                          >
+                            +{{ getSdgBadges(a).length - 3 }} more
+                          </span>
                         </div>
 
+                        <!-- Footer (sticks to bottom) -->
                         <div
-                          class="flex items-center justify-between pt-2 border-t border-gray-100"
+                          class="mt-auto flex items-center justify-between pt-2 border-t border-gray-100"
                         >
                           <div class="flex items-center text-xs text-gray-500">
-                            <i class="fas fa-calendar mr-1"></i
-                            >{{
+                            <i class="fas fa-calendar mr-1"></i>
+                            {{
                               moment(a.date || a.created_at).format(
                                 "MMMM DD, YYYY"
                               )
@@ -625,7 +610,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           <div
                             class="flex items-center text-xs text-green-600 font-medium"
                           >
-                            Read More<i class="fas fa-arrow-right ml-1"></i>
+                            Read More <i class="fas fa-arrow-right ml-1"></i>
                           </div>
                         </div>
                       </div>
@@ -633,78 +618,125 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                   </div>
                 </div>
                 <div v-else class="text-sm text-gray-500">
-                  No announcements.
+                  <div v-if="selectedDate">
+                    No available for
+                    {{ moment(selectedDate).format("MMMM DD, YYYY") }}.
+                  </div>
+                  <div v-else>No announcements.</div>
                 </div>
               </div>
             </div>
 
             <!-- Research & Sustainability -->
-            <div class="  gap-4">
-              <div class="bg-white rounded-lg p-4">
-                <h4 class="font-semibold mb-3">Research</h4>
-                <div class="grid grid-cols-3 gap-3">
+            <div class="flex gap-x-2">
+              <div class="w-fit bg-white rounded-lg p-4 border shadow-xl">
+                <h4 class="font-semibold text-lg mb-3">Research</h4>
+                <div
+                  class=""
+                  v-if="groupedSections.research && groupedSections.research[0]"
+                >
                   <div
                     v-for="r in (groupedSections.research || []).slice(0, 6)"
                     :key="r.id"
-                    class="group bg-gray-50 rounded-md overflow-hidden border hover:shadow-sm transition"
+                    class="group bg-gray-50 rounded-md overflow-hidden border hover:shadow-sm transition mb-3 card-improved"
                   >
                     <a :href="'/news-updates/' + r.id" class="block">
-                      <div class="flex h-24">
-                        <div class="w-1/3 h-full overflow-hidden">
+                      <div class="">
+                        <div class="w-full lg:h-4/6 overflow-hidden">
                           <img
                             v-if="r.files?.length"
                             :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${r.files[0]}`"
-                            class="w-full h-full object-cover group-hover:scale-105 transition"
+                            class="w-full lg:h-4/6 h-full object-cover group-hover:scale-105 transition"
                           />
                           <div
                             v-else
-                            class="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-400"
+                            class="w-full lg:h-4/6 h-full bg-gray-200 flex items-center justify-center text-xs text-gray-400"
                           >
                             No Image
                           </div>
                         </div>
-                        <div class="p-2 w-2/3 flex flex-col justify-between">
-                          <div class="font-medium text-sm line-clamp-2">{{ r.title }}</div>
+                        <div class="p-2 w-full flex flex-col justify-between">
+                          <div class="font-medium text-sm line-clamp-2">
+                            {{ r.title }}
+                          </div>
                           <div>
-                            <div class="flex items-center gap-2 mb-2">
-                              <div v-for="badge in getSdgBadges(r).slice(0,3)" :key="badge.number" class="inline-flex items-center">
-                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm" :style="{ backgroundColor: badge.color }">SDG {{ badge.number }}</span>
+                            <div
+                              class="flex whitespace-nowrap items-center gap-2 mb-2"
+                            >
+                              <div
+                                v-for="badge in getSdgBadges(r).slice(0, 3)"
+                                :key="badge.number"
+                                class="inline-flex items-center"
+                              >
+                                <span
+                                  class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm"
+                                  :style="{ backgroundColor: badge.color }"
+                                  >SDG {{ badge.number }}</span
+                                >
                               </div>
-                              <span v-if="getSdgBadges(r).length > 3" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600">+{{ getSdgBadges(r).length - 3 }} more</span>
+                              <span
+                                v-if="getSdgBadges(r).length > 3"
+                                class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                                >+{{ getSdgBadges(r).length - 3 }} more</span
+                              >
                             </div>
                             <div class="flex items-center justify-between">
-                              <div class="text-xs text-gray-400">{{ moment(r.date || r.created_at).format('MMM DD') }}</div>
-                              <div class="text-xs text-green-600 font-medium">Read More <i class="fas fa-arrow-right ml-1"></i></div>
+                              <div class="text-xs text-gray-400">
+                                {{
+                                  moment(r.date || r.created_at).format(
+                                    "MMM DD"
+                                  )
+                                }}
+                              </div>
+                              <div class="text-xs text-green-600 font-medium">
+                                Read More
+                                <i class="fas fa-arrow-right ml-1"></i>
+                              </div>
                             </div>
-                            <div class="text-xs text-gray-500 mt-1">{{ r.filters }}</div>
                           </div>
                         </div>
                       </div>
                     </a>
                   </div>
                 </div>
+
+                <div v-else class="text-sm text-gray-500">
+                  <div v-if="selectedDate">
+                    No available for
+                    {{ moment(selectedDate).format("MMMM DD, YYYY") }}.
+                  </div>
+                </div>
               </div>
 
-              <div class="bg-white rounded-lg p-4">
-                <h4 class="font-semibold mb-3">
-                  Sustainability (Social Action)
-                </h4>
-                <div class="grid grid-cols-2 gap-3">
+              <div class="bg-white rounded-lg p-4 border shadow-xl">
+                <h4 class="font-semibold mb-3 text-lg">Social Action</h4>
+                <div
+                  v-if="
+                    groupedSections.sustainability &&
+                    groupedSections.sustainability[0]
+                  "
+                  class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                >
                   <div
                     v-for="s in (groupedSections.sustainability || []).slice(
                       0,
                       8
                     )"
                     :key="s.id"
-                    class="group bg-gray-50 rounded-md overflow-hidden border hover:shadow-sm transition"
+                    class="group rounded-md overflow-hidden border hover:shadow-sm transition card-improved"
                   >
-                    <a :href="'/news-updates/' + s.id" class="block">
-                      <div class="flex h-20">
-                        <div class="w-1/3 h-full overflow-hidden">
+                    <a
+                      :href="'/news-updates/' + s.id"
+                      class="block group rounded-lg overflow-hidden transition-shadow duration-300 bg-white"
+                    >
+                      <div class="flex h-44">
+                        <!-- Image Section -->
+                        <div class="lg:w-6/12 w-full h-full overflow-hidden">
                           <img
                             v-if="s.files?.length"
                             :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${s.files[0]}`"
-                            class="w-full h-full object-cover group-hover:scale-105 transition"
+                            class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            alt="news image"
                           />
                           <div
                             v-else
@@ -713,45 +745,96 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                             No Image
                           </div>
                         </div>
-                        <div class="p-1 w-2/3 flex flex-col justify-between">
-                          <div class="text-sm line-clamp-2">{{ s.title }}</div>
-                          <div>
-                            <div class="flex items-center gap-2 mb-2">
-                              <div v-for="badge in getSdgBadges(s).slice(0,3)" :key="badge.number" class="inline-flex items-center">
-                                <span class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm" :style="{ backgroundColor: badge.color }"> {{ badge.number }}</span>
-                              </div>
-                              <span v-if="getSdgBadges(s).length > 3" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600">+{{ getSdgBadges(s).length - 3 }} more</span>
+
+                        <!-- Description Section -->
+                        <div class="px-2 w-2/3 flex flex-col h-full">
+                          <!-- Title -->
+                          <div class="mb-2">
+                            <div
+                              class="text-sm line-clamp-4 leading-tight text-gray-800 font-semibold"
+                            >
+                              {{ s.title }}
                             </div>
-                            <div class="flex items-center justify-between">
-                              <div class="text-xs text-gray-400">{{ moment(s.date || s.created_at).format('MMM DD') }}</div>
-                              <div class="text-xs text-green-600 font-medium">Read More <i class="fas fa-arrow-right ml-1"></i></div>
+                          </div>
+
+                          <!-- Spacer to push SDG + Footer to bottom -->
+                          <div class="flex-1"></div>
+
+                          <!-- SDG Badges Section -->
+                          <div class="flex items-center gap-1 flex-wrap mb-2">
+                            <div
+                              v-for="badge in getSdgBadges(s).slice(0, 3)"
+                              :key="badge.number"
+                              class="inline-flex items-center whitespace-nowrap text-[10px]"
+                            >
+                              <span
+                                class="inline-flex items-center px-2 py-1 rounded font-bold text-white shadow-sm"
+                                :style="{ backgroundColor: badge.color }"
+                              >
+                                {{ badge.number }}
+                              </span>
                             </div>
-                          
+
+                            <span
+                              v-if="getSdgBadges(s).length > 3"
+                              class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                            >
+                              +{{ getSdgBadges(s).length - 3 }} more
+                            </span>
+                          </div>
+
+                          <!-- Footer (Date + Read More) -->
+                          <div
+                            class="flex items-center justify-between text-xs text-gray-500"
+                          >
+                            <div>
+                              {{
+                                moment(s.date || s.created_at).format("MMM DD")
+                              }}
+                            </div>
+                            <div
+                              class="text-green-600 font-medium flex items-center gap-1"
+                            >
+                              Read More <i class="fas fa-arrow-right"></i>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </a>
                   </div>
                 </div>
+                <div v-else class="text-sm text-gray-500">
+                  <div v-if="selectedDate">
+                    No available for
+                    {{ moment(selectedDate).format("MMMM DD, YYYY") }}.
+                  </div>
+                </div>
               </div>
             </div>
             <!-- Educational -->
-            <div class="bg-white rounded-lg p-4">
-              <h4 class="font-semibold mb-3">
-                Educational and Technology (etc, npcc)
+            <div class="bg-white rounded-lg p-4 border shadow-xl">
+              <h4 class="font-semibold mb-3 text-center shadow pb-3 text-lg">
+                Educational and Technology
               </h4>
-              <div class="grid lg:grid-cols-4 grid-cols-2 gap-4">
+              <div
+                class="grid p-2 lg:grid-cols-4 gap-4"
+                v-if="
+                  groupedSections.sustainability &&
+                  groupedSections.sustainability[0]
+                "
+              >
                 <div
                   v-for="e in (groupedSections.educational || []).slice(0, 8)"
                   :key="e.id"
-                  class="group bg-white rounded-lg shadow-sm hover:shadow-md transition overflow-hidden"
+                  class="group bg-white rounded-lg shadow-xl hover:shadow-md transition overflow-hidden flex flex-col h-full"
                 >
-                  <a :href="'/news-updates/' + e.id" class="block">
+                  <a :href="'/news-updates/' + e.id" class="block h-full">
+                    <!-- Image -->
                     <div class="h-28 relative overflow-hidden">
                       <img
                         v-if="e.files && e.files.length > 0"
                         :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${e.files[0]}`"
-                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 rounded-lg"
                         alt="News thumbnail"
                       />
                       <div
@@ -760,7 +843,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                       >
                         <img
                           src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg"
-                          class="w-full h-full object-cover"
+                          class="w-full h-full object-cover rounded-lg"
                           alt="Default thumbnail"
                         />
                       </div>
@@ -776,25 +859,106 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                       </div>
                     </div>
 
-                    <div class="p-3">
-                      <div class="font-medium text-sm line-clamp-2">{{ e.title }}</div>
-                      <div>
-                        <div class="flex items-center gap-2 mt-2 mb-2">
-                          <div v-for="badge in getSdgBadges(e).slice(0,3)" :key="badge.number" class="inline-flex items-center">
-                            <span class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm" :style="{ backgroundColor: badge.color }">SDG {{ badge.number }}</span>
+                    <!-- Content -->
+                    <div class="p-3 flex flex-col flex-1">
+                      <!-- Title -->
+                      <div class="font-medium text-sm line-clamp-2 mb-1">
+                        {{ e.title }}
+                      </div>
+
+                      <!-- Description -->
+                      <div
+                        v-if="e.descriptions"
+                        class="text-sm text-gray-600 line-clamp-3"
+                      >
+                        {{ e.descriptions.substring(0, 120)
+                        }}{{ e.descriptions.length > 120 ? "..." : "" }}
+                      </div>
+
+                      <!-- Push everything below to bottom -->
+                      <div class="mt-auto">
+                        <!-- SDGs -->
+                        <div
+                          class="flex items-center gap-2 mt-3 mb-2 flex-wrap"
+                        >
+                          <div
+                            v-for="badge in getSdgBadges(e).slice(0, 3)"
+                            :key="badge.number"
+                            class="inline-flex items-center"
+                          >
+                            <span
+                              class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm"
+                              :style="{ backgroundColor: badge.color }"
+                            >
+                              SDG {{ badge.number }}
+                            </span>
                           </div>
-                          <span v-if="getSdgBadges(e).length > 3" class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600">+{{ getSdgBadges(e).length - 3 }} more</span>
+                          <span
+                            v-if="getSdgBadges(e).length > 3"
+                            class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                          >
+                            +{{ getSdgBadges(e).length - 3 }} more
+                          </span>
                         </div>
+
+                        <!-- Footer -->
                         <div class="flex items-center justify-between">
-                          <div class="text-xs text-gray-400">{{ moment(e.date || e.created_at).format('MMM DD') }}</div>
-                          <div class="text-xs text-green-600 font-medium">Read More <i class="fas fa-arrow-right ml-1"></i></div>
+                          <div class="text-xs text-gray-400">
+                            {{
+                              moment(e.date || e.created_at).format("MMM DD")
+                            }}
+                          </div>
+                          <div class="text-xs text-green-600 font-medium">
+                            Read More <i class="fas fa-arrow-right ml-1"></i>
+                          </div>
                         </div>
-                        <div class="text-xs text-gray-500 mt-1">{{ e.filters }}</div>
                       </div>
                     </div>
                   </a>
                 </div>
               </div>
+
+              <div v-else class="text-sm text-gray-500">
+                <div v-if="selectedDate">
+                  No available for
+                  {{ moment(selectedDate).format("MMMM DD, YYYY") }}.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="bg-white rounded-xl shadow-lg mb-2 px-4 py-3">
+            <div
+              class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
+            >
+              <!-- Filters -->
+              <!-- <div
+                class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto"
+              >
+                <div class="w-full sm:w-48">
+                  <input
+                    type="date"
+                    v-model="selectedDate"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  />
+                </div>
+
+                <button
+                  @click="clearFilters"
+                  class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm whitespace-nowrap"
+                >
+                  Clear Filters
+                </button>
+              </div> -->
+
+              <!-- View All -->
+              <a
+                href="/news-updates/list"
+                class="text-sm text-green-600 hover:underline font-bold text-center flex w-full justify-center"
+              >
+                View All
+              </a>
             </div>
           </div>
 
@@ -918,6 +1082,21 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
   /* Additional effects */
   font-weight: 100 !important;
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.5));
+}
+
+/* Card improvements for mobile/touch */
+.card-improved {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.card-improved:active {
+  transform: translateY(2px) scale(0.998);
+}
+.card-improved img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.card-improved {
+  padding: 0.35rem !important;
 }
 
 /* Line clamp utilities */
