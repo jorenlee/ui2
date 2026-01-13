@@ -81,33 +81,21 @@ onBeforeUnmount(() => {
 
       <div class="bg-[#031d03] text-white">
         <p
-          class="text-center text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg py-5"
+          class="text-center text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg lg:py-5 py-2"
         >
           Announcements
         </p>
-        <Slider class="lg:flex hidden" />
-
-        <div v-if="display === 'mobile'">
-          <SliderMobile />
-        </div>
+        <Slider />
       </div>
-
       <!-- <NewsAndUpdates /> -->
     </div>
-
-    <div >
-          <UniversityCalendar /> <FAQs />
+    <div>
+      <UniversityCalendar /> 
+      <FAQs />
     </div>
     <NetworkLogo class="py-10" />
     <!-- <TingogMagazine /> -->
-
-
-
     <Footer />
-
-
-
-
     <!-- Floating Scroll to Top Button -->
     <Transition
       enter-active-class="transition-all duration-300 ease-out"

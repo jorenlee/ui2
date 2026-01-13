@@ -3,7 +3,7 @@
     <div class="max-w-6xl mx-auto">
       <div class="flex">
         <h2
-          class="text-xl font-bold text-center mb-4 w-full uppercase text-white"
+          class="text-xl font-bold text-center mt-2 mb-4 w-full uppercase text-white"
         >
           University Calendar
         </h2>
@@ -23,7 +23,7 @@
         ></iframe>
       </div>
 
-      <p class="text-gray-100 text-center text-[10px] mt-3">
+      <p class="text-gray-100 text-center text-[10px] mt-3 leading-tight">
         Send an email to
         <a href="mailto:chancellor@lsu.edu.ph" class="font-bold"
           >chancellor@lsu.edu.ph</a

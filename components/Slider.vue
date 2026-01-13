@@ -16,17 +16,17 @@ let interval = null;
 const data = await $fetch(endpoint.value + "/api/cms/content/list/");
 
 /* ================= FILTER ANNOUNCEMENTS ================= */
-let filtered = data.filter(j => {
+let filtered = data.filter((j) => {
   if (!j.filters) return false;
   return j.filters
     .toLowerCase()
     .split(",")
-    .map(f => f.trim())
+    .map((f) => f.trim())
     .includes("announcements");
 });
 
 /* ================= IMAGE EXTENSION FILTER ================= */
-filtered = filtered.filter(j => {
+filtered = filtered.filter((j) => {
   const file = j.files?.[0]?.url || j.files?.[0];
   if (!file) return false;
   return /\.(jpg|jpeg|png)$/i.test(file);
@@ -44,7 +44,7 @@ if (baseSlides.length === 0) {
 
   slides.value = filtered.slice(0, slideLimit.value).map((j, index) => ({
     ...j,
-    radioId: `t-${index + 1}`
+    radioId: `t-${index + 1}`,
   }));
 }
 
@@ -61,10 +61,60 @@ const nextSlide = () => {
   activeRadio.value = slides.value[currentIndex.value].radioId;
 };
 
-onMounted(() => {
+const prevSlide = () => {
+  if (!slides.value.length) return;
+
+  currentIndex.value =
+    (currentIndex.value - 1 + slides.value.length) % slides.value.length;
+  activeRadio.value = slides.value[currentIndex.value].radioId;
+};
+
+const startAutoSlide = () => {
+  if (interval) clearInterval(interval);
   if (slides.value.length > 1) {
     interval = setInterval(nextSlide, 5000);
   }
+};
+
+const touchStartX = ref(0);
+const touchEndX = ref(0);
+const touchThreshold = 50; // px
+
+const getClientXFromEvent = (e) => {
+  if (e.touches && e.touches[0]) return e.touches[0].clientX;
+  if (e.changedTouches && e.changedTouches[0]) return e.changedTouches[0].clientX;
+  return e.clientX || 0;
+};
+
+const onTouchStart = (e) => {
+  touchStartX.value = getClientXFromEvent(e);
+  touchEndX.value = touchStartX.value;
+  if (interval) {
+    clearInterval(interval);
+    interval = null;
+  }
+};
+
+const onTouchMove = (e) => {
+  touchEndX.value = getClientXFromEvent(e);
+};
+
+const onTouchEnd = (e) => {
+  touchEndX.value = getClientXFromEvent(e);
+  const dx = touchEndX.value - touchStartX.value;
+  if (Math.abs(dx) > touchThreshold) {
+    if (dx < 0) {
+      nextSlide();
+    } else {
+      prevSlide();
+    }
+  }
+  // restart auto slide
+  startAutoSlide();
+};
+
+onMounted(() => {
+  startAutoSlide();
 
   // inject dynamic CSS
   const style = document.createElement("style");
@@ -161,7 +211,6 @@ watch(dynamicCSS, (newCSS) => {
 <template>
   <div class="relative">
     <div class="slider bg-[#031d03]">
-
       <!-- RADIO INPUTS -->
       <input
         v-for="j in slides"
@@ -173,31 +222,36 @@ watch(dynamicCSS, (newCSS) => {
         :value="j.radioId"
       />
 
-     <!-- SLIDES -->
-<div class="testimonials">
-  <label
-    v-for="j in slides"
-    :key="j.radioId"
-    class="item"
-    :for="j.radioId"
-  >
-    <a :href="`/news-updates/${j.id}`">
-      <img
-        v-if="cleanURL(j.files?.[0])"
-        :src="cleanURL(j.files?.[0])"
-        alt="announcement"
-      />
-    </a>
-  </label>
-</div>
-
-      <!-- DOTS -->
-      <div class="dots py-3">
+      <!-- SLIDES -->
+      <div
+        class="testimonials"
+        @touchstart="onTouchStart"
+        @touchmove="onTouchMove"
+        @touchend="onTouchEnd"
+        @mousedown="onTouchStart"
+        @mousemove="onTouchMove"
+        @mouseup="onTouchEnd"
+        @mouseleave="onTouchEnd"
+      >
         <label
           v-for="j in slides"
           :key="j.radioId"
+          class="item"
           :for="j.radioId"
-        ></label>
+        >
+          <a :href="`/news-updates/${j.id}`">
+            <img
+              v-if="cleanURL(j.files?.[0])"
+              :src="cleanURL(j.files?.[0])"
+              alt="announcement"
+            />
+          </a>
+        </label>
+      </div>
+
+      <!-- DOTS -->
+      <div class="dots py-3">
+        <label v-for="j in slides" :key="j.radioId" :for="j.radioId"></label>
       </div>
     </div>
 
@@ -217,9 +271,24 @@ watch(dynamicCSS, (newCSS) => {
           />
         </defs>
         <g class="parallax">
-          <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.7)" />
-          <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(255,255,255,0.5)" />
-          <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.3)" />
+          <use
+            xlink:href="#gentle-wave"
+            x="48"
+            y="0"
+            fill="rgba(255,255,255,0.7)"
+          />
+          <use
+            xlink:href="#gentle-wave"
+            x="48"
+            y="3"
+            fill="rgba(255,255,255,0.5)"
+          />
+          <use
+            xlink:href="#gentle-wave"
+            x="48"
+            y="5"
+            fill="rgba(255,255,255,0.3)"
+          />
           <use xlink:href="#gentle-wave" x="48" y="7" fill="#fff" />
         </g>
       </svg>
@@ -295,18 +364,51 @@ watch(dynamicCSS, (newCSS) => {
   animation: move-forever 25s cubic-bezier(0.55, 0.5, 0.45, 0.5) infinite;
 }
 
-.parallax > use:nth-child(1) { animation-delay: -2s; animation-duration: 7s; }
-.parallax > use:nth-child(2) { animation-delay: -3s; animation-duration: 10s; }
-.parallax > use:nth-child(3) { animation-delay: -4s; animation-duration: 13s; }
-.parallax > use:nth-child(4) { animation-delay: -5s; animation-duration: 20s; }
+.parallax > use:nth-child(1) {
+  animation-delay: -2s;
+  animation-duration: 7s;
+}
+.parallax > use:nth-child(2) {
+  animation-delay: -3s;
+  animation-duration: 10s;
+}
+.parallax > use:nth-child(3) {
+  animation-delay: -4s;
+  animation-duration: 13s;
+}
+.parallax > use:nth-child(4) {
+  animation-delay: -5s;
+  animation-duration: 20s;
+}
 
 @keyframes move-forever {
-  0% { transform: translate3d(-90px, 0, 0); }
-  100% { transform: translate3d(85px, 0, 0); }
+  0% {
+    transform: translate3d(-90px, 0, 0);
+  }
+  100% {
+    transform: translate3d(85px, 0, 0);
+  }
 }
 
 @media (max-width: 768px) {
-  .waves { height: 40px; min-height: 40px; }
-  h1 { font-size: 24px; }
+  .waves {
+    height: 40px;
+    min-height: 40px;
+  }
+  h1 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .testimonials {
+    min-height: 350px;
+    perspective: 500px;
+  }
+
+  .testimonials .item {
+    width: 350px;
+    height: 500px;
+  }
 }
 </style>
