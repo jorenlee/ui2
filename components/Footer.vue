@@ -50,6 +50,9 @@ const quickLinks = [
 ];
 </script>
 <template>
+
+<div class="text-center justify-center">
+         <GoogleAdsense />
   <footer
     class="w-full text-white relative border-t-8 border-green-800 bg-[url('https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/footer.jpg')] bg-cover bg-center"
   >
@@ -154,4 +157,5 @@ const quickLinks = [
       </div>
     </div>
   </footer>
+</div>
 </template>
