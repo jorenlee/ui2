@@ -18,12 +18,14 @@
     "vue": "latest"
   },
   "dependencies": {
-    "@fullcalendar/daygrid": "^6.1.19",
-    "@fullcalendar/interaction": "^6.1.19",
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/google-calendar": "^6.1.20",
+    "@fullcalendar/interaction": "^6.1.20",
     "@fullcalendar/list": "^6.1.19",
     "@fullcalendar/rrule": "^6.1.19",
-    "@fullcalendar/timegrid": "^6.1.19",
-    "@fullcalendar/vue3": "^6.1.19",
+    "@fullcalendar/timegrid": "^6.1.20",
+    "@fullcalendar/vue3": "^6.1.20",
     "@nuxtjs/google-adsense": "^3.0.0",
     "@pinia/nuxt": "^0.4.11",
     "@vavt/md-editor-extension": "^3.0.0",

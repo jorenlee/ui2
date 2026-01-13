@@ -95,9 +95,13 @@ onBeforeUnmount(() => {
       <!-- <NewsAndUpdates /> -->
     </div>
 
-    <FAQs />
+    <div >
+          <UniversityCalendar /> <FAQs />
+    </div>
     <NetworkLogo class="py-10" />
     <!-- <TingogMagazine /> -->
+
+
 
     <Footer />
 

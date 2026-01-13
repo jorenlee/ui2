@@ -135,9 +135,7 @@
             <SuperAdminDashboardWelcome />
           </div>
           <div class="p-4" v-else-if="currentView === 'form'">
-            <SuperAdminDashboardCmsForm
-              @contentSubmitted="handleContentSubmitted"
-            />
+            <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted"/>
           </div>
           <div class="p-4" v-else-if="currentView === 'list'">
             <SuperAdminDashboardCmsList />
@@ -154,8 +152,11 @@
           <div class="p-4" v-else-if="currentView === 'hr-job-vacancy-list'">
             <SuperAdminDashboardServicesHr />
           </div>
-          <div v-else-if="currentView === 'hr-raffle'">
+          <div class="p-4" v-else-if="currentView === 'hr-raffle'">
             <SuperAdminDashboardServicesHrRaffle />
+          </div>
+          <div class="p-4" v-else-if="currentView === 'university-calendar'">
+            <SuperAdminDashboardChancellorOffice />
           </div>
         </div>
 
@@ -188,13 +189,6 @@ import { ref, computed, watch, onMounted} from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 
-
-
-
-
-
-
-
 /* ---- AUTH GUARD ---- */
 onMounted(() => {
   if (!userStore.isLoggedIn) {
@@ -220,6 +214,7 @@ const openGroups = ref([
   "Content Management",
   "Human Resource",
   "Library Management",
+  "Office of The Chancellor",
   "External Links",
 ]);
 
@@ -244,10 +239,15 @@ const profileImageUrl = "https://lsu-media-styles.sgp1.digitaloceanspaces.com/Lo
 
 // ---------------- ROLES ----------------
 const superAdminEmails = [
+  "jorenlee.luna@lsu.edu.ph",
   "jorenleeluna24@gmail.com",
   "npc@lsu.edu.ph",
   "michaeljohn.puertogalera@lsu.edu.ph",
   "jason.yap@lsu.edu.ph",
+];
+
+const ochAdminEmails = [
+  "och@lsu.edu.ph"
 ];
 
 const contentWritersEmails = [
@@ -295,6 +295,7 @@ const rolesByEmail = {
   hr: hrMenuEmails,
   library: libraryMenuEmails,
   contentWriter: contentWritersEmails,
+  och: ochAdminEmails,
 };
 
 // ---------------- DETERMINE ROLE ----------------
@@ -305,6 +306,7 @@ const userRole = computed(() => {
   if (rolesByEmail.hr.includes(email)) return "hr";
   if (rolesByEmail.library.includes(email)) return "library";
   if (rolesByEmail.contentWriter.includes(email)) return "contentWriter";
+  if (rolesByEmail.och.includes(email)) return "och";
   return null;
 });
 
@@ -377,6 +379,18 @@ const menuList = [
         icon: "fa-calendar",
         type: "button",
         view: "schedules",
+      },
+    ],
+  },
+  {
+    group: "Office of The Chancellor",
+    allowedEmails: ochAdminEmails,
+    items: [
+      {
+        label: "University Calendar",
+        icon: "fa-calendar",
+        type: "button",
+        view: "university-calendar",
       },
     ],
   },

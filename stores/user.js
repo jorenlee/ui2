@@ -16,12 +16,10 @@ export const useUserStore = defineStore({
       token: null,
       expiresAt: null,
     },
-
     // CONFIG
     developerEmail: "jorenleeluna24@gmail.com",
     testEmail: "npc@lsu.edu.ph",
     registrarEmail: "registrar@lsu.edu.ph",
-
     mainDevServer: "https://apipdp.lsu.edu.ph/buang_ka_eyy",
   }),
 
