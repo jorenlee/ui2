@@ -99,7 +99,9 @@ onBeforeUnmount(() => {
     <NetworkLogo class="py-10" />
     <!-- <TingogMagazine /> -->
      
-    <GoogleAdsense />
+   <div class="w-full my-10 flex justify-center">
+     <GoogleAdsense />
+   </div>
     <Footer />
 
 
