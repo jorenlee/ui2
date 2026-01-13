@@ -1,8 +1,10 @@
 <template>
-  <div class="p-4 min-h-screen w-full bg-green-900 pt-10 pb-10">
+  <div class="p-4 min-h-screen w-full bg-green-900 lg:pt-12 pt-5 lg:pb-10 pb-5">
     <div class="max-w-6xl mx-auto">
       <div class="flex">
-        <h2 class="text-xl font-bold text-center mb-4 w-full uppercase text-white">
+        <h2
+          class="text-xl font-bold text-center mb-4 w-full uppercase text-white"
+        >
           University Calendar
         </h2>
       </div>
@@ -20,6 +22,15 @@
           scrolling="no"
         ></iframe>
       </div>
+
+      <p class="text-gray-100 text-center text-[10px] mt-3">
+        Send an email to
+        <a href="mailto:chancellor@lsu.edu.ph" class="font-bold"
+          >chancellor@lsu.edu.ph</a
+        >
+        to request additional information or inquire about other announcements
+        within the La Salle community.
+      </p>
     </div>
   </div>
 </template>
@@ -29,19 +40,19 @@ import { ref, onMounted, onBeforeUnmount } from "vue";
 
 const baseCalendarUrl =
   "https://calendar.google.com/calendar/embed?" +
-  "height=600" + 
+  "height=600" +
   "&wkst=1" +
   "&ctz=Asia%2FManila" +
-  "&showPrint=0" +          // hide print button
-  "&showTabs=0" +           // hide tabs (Agenda/Week/Month)
-  "&showTitle=0" +          // hide calendar title
-  "&showCalendars=0" +      // hide email/calendar list
-  "&showTz=0" +             // hide GMT/timezone
+  "&showPrint=0" + // hide print button
+  "&showTabs=0" + // hide tabs (Agenda/Week/Month)
+  "&showTitle=0" + // hide calendar title
+  "&showCalendars=0" + // hide email/calendar list
+  "&showTz=0" + // hide GMT/timezone
   "&src=Y2FsZW5kYXJAbHN1LmVkdS5waA" +
   "&src=ZW4ucGhpbGlwcGluZXMjaG9saWRheUBncm91cC52LmNhbGVuZGFyLmdvb2dsZS5jb20" +
   "&color=%23039be5" +
   "&color=%230b8043" +
-  "&mode=MONTH";            // month view only
+  "&mode=MONTH"; // month view only
 
 const iframeSrc = ref(`${baseCalendarUrl}&t=${Date.now()}`);
 
