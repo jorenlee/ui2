@@ -93,14 +93,17 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- <NewsAndUpdates /> -->
-
-
     </div>
 
     <FAQs />
-          <NetworkLogo class="py-10" />
+    <NetworkLogo class="py-10" />
     <!-- <TingogMagazine /> -->
+     
+    <GoogleAdsense />
     <Footer />
+
+
+
 
     <!-- Floating Scroll to Top Button -->
     <Transition
