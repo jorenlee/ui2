@@ -90,7 +90,7 @@ onBeforeUnmount(() => {
       <!-- <NewsAndUpdates /> -->
     </div>
     <div>
-      <UniversityCalendar /> 
+      <UniversityCalendar />
       <FAQs />
     </div>
     <NetworkLogo class="py-10" />
