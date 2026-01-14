@@ -511,17 +511,15 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             <!-- Top -->
             <div class="grid grid-cols-1 lg:grid-cols-6">
               <!-- Latest -->
-              <div class="lg:col-span-4 bg-white p-4 ">
-                <h4 class="font-semibold text-lg mb-2">
-                  Latest (News Highlight)
-                </h4>
+              <div class="lg:col-span-4 bg-white px-4">
+                <h4 class="font-bold text-xl mb-2">Latest (News Highlight)</h4>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <!-- Side cards with up/down arrows -->
                   <div class="order-2 lg:order-1">
                     <div
                       ref="sideListRef"
-                      class="overflow-y-hidden max-h-[60vh]"
+                      class="overflow-y-hidden max-h-[100vh]"
                     >
                       <transition-group
                         name="slide"
@@ -540,10 +538,10 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           ]"
                         >
                           <div
-                            class="flex h-34 card-improved cursor-pointer"
+                            class="flex h-54 card-improved cursor-pointer py-[5px] px-1"
                             @click="setHighlightById(item.id)"
                           >
-                            <div class="w-1/3 h-full overflow-hidden">
+                            <div class="w-1/3 flex items-center">
                               <img
                                 v-if="item.files && item.files.length"
                                 :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${item.files[0]}`"
@@ -551,7 +549,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                               />
                             </div>
                             <div
-                              class="p-2 w-2/3 flex flex-col justify-between"
+                              class="px-2 w-2/3 flex flex-col justify-between pb-2"
                             >
                               <div>
                                 <div class="text-xs text-gray-500">
@@ -561,8 +559,18 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                                     )
                                   }}
                                 </div>
-                                <div class="font-medium text-sm line-clamp-2">
+                                <div class="font-medium text-sm line-clamp-1">
                                   {{ item.title }}
+                                </div>
+                                <!-- Description -->
+                                <div
+                                  v-if="item.descriptions"
+                                  class="text-xs text-gray-600 line-clamp-2 mb-5"
+                                >
+                                  {{ item.descriptions.substring(0, 120)
+                                  }}{{
+                                    item.descriptions.length > 120 ? "..." : ""
+                                  }}
                                 </div>
                               </div>
                               <div
@@ -649,6 +657,18 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           <h3 class="text-xl font-bold">
                             {{ activeHighlight?.title }}
                           </h3>
+                          <!-- Description -->
+                          <div
+                            v-if="activeHighlight.descriptions"
+                            class="text-sm text-gray-600 line-clamp-3"
+                          >
+                            {{ activeHighlight.descriptions.substring(0, 300)
+                            }}{{
+                              activeHighlight.descriptions.length > 300
+                                ? "..."
+                                : ""
+                            }}
+                          </div>
                         </div>
                         <div
                           class="flex items-center gap-1 flex-wrap mb-2 px-4 pt-2"
@@ -726,7 +746,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
               </div>
 
               <!-- Announcements -->
-              <div class="lg:col-span-2 bg-white p-4 lg:border-l ">
+              <div class="lg:col-span-2 bg-white px-4 lg:border-l">
                 <h4 class="font-semibold text-lg mb-2">Announcements</h4>
                 <div
                   v-if="
@@ -839,7 +859,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             </div>
 
             <!-- Research & Sustainability -->
-            <div class="lg:flex gap-x-2 border-y py-3  border-t-gray-300 mt-3">
+            <div class="lg:flex gap-x-2 border-y py-3 border-t-gray-300 mt-3">
               <div class="w-fit bg-white p-4">
                 <h4 class="font-semibold text-lg mb-3">Research</h4>
                 <div
@@ -849,7 +869,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                   <div
                     v-for="r in (groupedSections.research || []).slice(0, 6)"
                     :key="r.id"
-                    class="group  overflow-hidden border-b hover:shadow-sm transition mb-3 card-improved"
+                    class="group overflow-hidden border-b hover:shadow-sm transition mb-3 card-improved"
                   >
                     <a :href="'/news-updates/' + r.id" class="block">
                       <div class="">
@@ -1037,7 +1057,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                 <div
                   v-for="e in (groupedSections.educational || []).slice(0, 8)"
                   :key="e.id"
-                  class="group bg-white transition overflow-hidden flex flex-col h-full"
+                  class="group bg-white transition overflow-hidden flex flex-col h-full border-b"
                 >
                   <a :href="'/news-updates/' + e.id" class="block h-full">
                     <!-- Image -->
@@ -1284,9 +1304,6 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 .card-improved img {
   -webkit-user-drag: none;
   user-select: none;
-}
-.card-improved {
-  padding: 0.35rem !important;
 }
 
 /* Line clamp utilities */

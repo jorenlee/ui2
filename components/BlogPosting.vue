@@ -197,7 +197,7 @@ onMounted(async () => {
 
       <div
         v-if="highlightedNews.length"
-        class="grid lg:grid-cols-4 grid-cols-1 gap-6 w-11/12 mx-auto"
+        class="grid lg:grid-cols-4 grid-cols-2 lg:gap-6 gap-2 w-11/12 mx-auto"
       >
         <div
           v-for="(j, i) in highlightedNews.slice(0, 4)"
@@ -206,20 +206,20 @@ onMounted(async () => {
         >
           <a :href="'news-updates/' + j.id" class="block">
             <!-- Image Section -->
-            <div class="relative h-48 overflow-hidden">
+            <div class="relative lg:h-48 overflow-hidden">
               <img
                 v-if="j.files && j.files.length > 0"
                 :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
-                class="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                class="w-full lg:h-full h-[100px] object-cover transition-transform duration-300 hover:scale-110"
                 alt="News thumbnail"
               />
               <div
                 v-else
-                class="w-full h-full bg-gray-200 flex items-center justify-center"
+                class="w-full lg:h-full h-[100px] bg-gray-200 flex items-center justify-center"
               >
                 <img
                   src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg"
-                  class="w-full h-full object-cover"
+                  class="w-full lg:h-full h-[100px] object-cover"
                   alt="Default thumbnail"
                 />
               </div>
@@ -238,7 +238,7 @@ onMounted(async () => {
             <!-- Content Section -->
             <div class="p-4">
               <!-- Category/Type Badge -->
-              <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center justify-between lg:mb-3">
                 <span
                   class="inline-block py-1 text-xs rounded-full uppercase tracking-wide font-light"
                 >
@@ -251,7 +251,7 @@ onMounted(async () => {
 
               <!-- Title -->
               <h3
-                class="text-lg font-bold text-gray-900 mb-3 line-clamp-2 leading-tight"
+                class="lg:text-lg text-sm font-bold text-gray-900 lg:mb-3 line-clamp-2 leading-tight"
               >
                 {{ j.title }}
               </h3>
@@ -277,7 +277,7 @@ onMounted(async () => {
                       class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm"
                       :style="{ backgroundColor: badge.color }"
                     >
-                      SDG {{ badge.number }}
+                     <span class="lg:flex hidden"> SDG </span>{{ badge.number }}
                     </span>
                   </div>
                   <span
@@ -293,12 +293,12 @@ onMounted(async () => {
               <div
                 class="flex items-center justify-between pt-2 border-t border-gray-100"
               >
-                <div class="flex items-center text-xs text-gray-500">
+                <div class="flex items-center lg:text-xs text-[10px] text-gray-500">
                   <i class="fas fa-calendar mr-1"></i>
                   {{ moment(j.date || j.created_at).format("MMM DD, YYYY") }}
                 </div>
                 <div
-                  class="flex items-center text-xs text-green-600 font-medium"
+                  class="flex items-center lg:text-xs text-[10px] text-green-600 font-medium"
                 >
                   Read More
                   <i class="fas fa-arrow-right ml-1"></i>
