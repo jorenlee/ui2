@@ -197,7 +197,7 @@ onMounted(async () => {
 
       <div
         v-if="highlightedNews.length"
-        class="grid lg:grid-cols-4 grid-cols-2 lg:gap-6 gap-2 w-11/12 mx-auto"
+        class="grid lg:grid-cols-4 grid-cols-2 lg:gap-6 gap-2 lg:w-11/12 mx-auto lg:px-0 px-2"
       >
         <div
           v-for="(j, i) in highlightedNews.slice(0, 4)"
@@ -236,22 +236,22 @@ onMounted(async () => {
             </div>
 
             <!-- Content Section -->
-            <div class="p-4">
+            <div class="lg:p-4 p-1">
               <!-- Category/Type Badge -->
-              <div class="flex items-center justify-between lg:mb-3">
+              <div class="flex items-center justify-between lg:mb-1">
                 <span
-                  class="inline-block py-1 text-xs rounded-full uppercase tracking-wide font-light"
+                  class="inline-block py-1 lg:text-xs text-[10px] rounded-full uppercase tracking-wide font-light"
                 >
                   {{ getCategoryLabel(j) }}
                 </span>
-                <span class="text-xs text-gray-400 whitespace-nowrap ml-2">
+                <span class="lg:text-xs text-[10px] text-gray-400 whitespace-nowrap ml-2">
                   {{ moment(j.date || j.created_at).format("MMM DD") }}
                 </span>
               </div>
 
               <!-- Title -->
               <h3
-                class="lg:text-lg text-sm font-bold text-gray-900 lg:mb-3 line-clamp-2 leading-tight"
+                class="lg:text-lg text-xs font-bold text-gray-900 lg:mb-2 line-clamp-2 leading-0"
               >
                 {{ j.title }}
               </h3>
@@ -259,7 +259,7 @@ onMounted(async () => {
               <!-- Description Preview -->
               <p
                 v-if="j.descriptions"
-                class="text-sm text-gray-600 mb-3 line-clamp-2"
+                class="lg:text-sm text-[10px] text-gray-600 mb-3 line-clamp-2"
               >
                 {{ j.descriptions.substring(0, 100)
                 }}{{ j.descriptions.length > 100 ? "..." : "" }}
@@ -274,7 +274,7 @@ onMounted(async () => {
                     class="inline-flex items-center"
                   >
                     <span
-                      class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm"
+                      class="inline-flex items-center lg:px-2 px-1 py-1 min-w-4 justify-center rounded lg:text-xs text-[10px] font-bold text-white shadow-sm"
                       :style="{ backgroundColor: badge.color }"
                     >
                      <span class="lg:flex hidden"> SDG </span>{{ badge.number }}
