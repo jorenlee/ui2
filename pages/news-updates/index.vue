@@ -299,19 +299,33 @@ const groupedSections = computed(() => {
     return keywords.some((kw) => f.includes(kw));
   };
 
-  return {
-    newsHighlight: data.filter((i) =>
-      isIn(i, ["news highlight", "news-highlight"])
-    ),
-    announcements: data.filter((i) => isIn(i, ["announcement"])),
-    research: data.filter((i) => isIn(i, ["research"])),
-    sustainability: data.filter((i) =>
-      isIn(i, ["sustainability", "social action", "social-action"])
-    ),
-    educational: data.filter((i) =>
-      isIn(i, ["educational", "technology", "tech", "npcc"])
-    ),
-    others: data.filter((i) => {
+  // helper: sort array by date descending (latest first)
+  const sortByDateDesc = (arr) => {
+    return (arr || []).slice().sort((a, b) => {
+      const aD = moment(a?.date || a?.created_at);
+      const bD = moment(b?.date || b?.created_at);
+      if (!aD.isValid() && !bD.isValid()) return 0;
+      if (!aD.isValid()) return 1;
+      if (!bD.isValid()) return -1;
+      return bD.valueOf() - aD.valueOf();
+    });
+  };
+
+  const newsHighlight = sortByDateDesc(
+    data.filter((i) => isIn(i, ["news highlight", "news-highlight"]))
+  );
+  const announcements = sortByDateDesc(
+    data.filter((i) => isIn(i, ["announcement"]))
+  );
+  const research = sortByDateDesc(data.filter((i) => isIn(i, ["research"])));
+  const sustainability = sortByDateDesc(
+    data.filter((i) => isIn(i, ["sustainability", "social action", "social-action"]))
+  );
+  const educational = sortByDateDesc(
+    data.filter((i) => isIn(i, ["educational", "technology", "tech", "npcc", "ict", "information and communications technology", "educational technology center"]))
+  );
+  const others = sortByDateDesc(
+    data.filter((i) => {
       const f = low(i.filters);
       return !(
         f.includes("news highlight") ||
@@ -325,7 +339,16 @@ const groupedSections = computed(() => {
         f.includes("tech") ||
         f.includes("npcc")
       );
-    }),
+    })
+  );
+
+  return {
+    newsHighlight,
+    announcements,
+    research,
+    sustainability,
+    educational,
+    others,
   };
 });
 
@@ -507,12 +530,12 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
           </div>
 
           <!-- GROUPED CONTENT -->
-          <div v-else-if="filteredInfo.length" class="space-y-6">
+          <div v-else-if="filteredInfo.length">
             <!-- Top -->
             <div class="grid grid-cols-1 lg:grid-cols-6">
               <!-- Latest -->
               <div class="lg:col-span-4 bg-white lg:px-4">
-                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-transparent bg-green-800 text-white py-1">Latest News Highlight</h4>
+                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white text-green-800 bg-green-800 py-1">Latest News Highlight</h4>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <!-- Side cards with up/down arrows -->
@@ -747,7 +770,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 
               <!-- Announcements -->
               <div class="lg:col-span-2 bg-white lg:px-4 lg:border-l">
-                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-transparent bg-green-800 text-white py-1">Announcements</h4>
+                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white text-green-800 bg-green-800 py-1">Announcements</h4>
                 <div
                   v-if="
                     groupedSections.announcements &&
@@ -861,7 +884,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             <!-- Research & Sustainability -->
             <div class="lg:flex gap-x-2 border-y py-3 border-t-gray-300 mt-3">
               <div class="w-fit bg-white lg:p-4">
-                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-transparent bg-green-800 text-white py-1">Research</h4>
+                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white text-green-800 bg-green-800 py-1">Research</h4>
                 <div
                   class=""
                   v-if="groupedSections.research && groupedSections.research[0]"
@@ -940,7 +963,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
               </div>
 
               <div class="bg-white lg:p-4 lg:border-l lg:pl-5">
-                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-transparent bg-green-800 text-white py-1">Social Action</h4>
+                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white text-green-800 bg-green-800 py-1">Social Action</h4>
                 <div
                   v-if="
                     groupedSections.sustainability &&
@@ -1044,14 +1067,14 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             </div>
             <!-- Educational -->
             <div class="bg-white lg:p-4 border-b">
-              <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-transparent bg-green-800 text-white py-1">
+              <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white text-green-800 bg-green-800 py-1">
                 Educational and Technology
               </h4>
               <div
-                class="grid p-2 lg:grid-cols-4 gap-4"
+                class="grid lg:grid-cols-4 gap-4"
                 v-if="
-                  groupedSections.sustainability &&
-                  groupedSections.sustainability[0]
+                  groupedSections.educational &&
+                  groupedSections.educational[0]
                 "
               >
                 <div
