@@ -1,9 +1,9 @@
 <template>
-  <div class="p-4 min-h-screen w-full bg-green-900 lg:pt-12 pt-5 lg:pb-10 pb-5">
+  <div class="p-4 min-h-auto w-full bg-green-900 lg:pt-12 pt-5 lg:pb-10 pb-5">
     <div class="max-w-6xl mx-auto">
       <div class="flex">
         <h2
-          class="text-xl font-bold text-center mt-2 mb-4 w-full uppercase text-white"
+          class="lg:text-xl text-lg font-bold text-center mt-2 mb-4 w-full uppercase text-white"
         >
           University Calendar
         </h2>
@@ -11,7 +11,7 @@
 
       <div class="bg-white rounded-lg shadow overflow-hidden">
         <iframe
-          class="w-full h-[100vh] border-0"
+          class="w-full lg:h-[100vh] h-[50vh] border-0"
           referrerpolicy="no-referrer"
           loading="lazy"
           :src="iframeSrc"
