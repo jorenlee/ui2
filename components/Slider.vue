@@ -236,7 +236,7 @@ watch(dynamicCSS, (newCSS) => {
         <label
           v-for="j in slides"
           :key="j.radioId"
-          class="item"
+          class="item bg-white"
           :for="j.radioId"
         >
           <a :href="`/news-updates/${j.id}`">
