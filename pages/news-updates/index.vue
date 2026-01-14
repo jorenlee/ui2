@@ -289,7 +289,6 @@ onBeforeUnmount(() => {
 // Pagination
 const currentPage = ref(1);
 
-
 // Group items by semantic sections using `filters` field
 const groupedSections = computed(() => {
   const data = filteredInfo.value || [];
@@ -330,6 +329,96 @@ const groupedSections = computed(() => {
   };
 });
 
+// Highlight carousel state: index + computed active item 🔧
+const highlightIndex = ref(0);
+const activeHighlight = computed(() => {
+  const arr = groupedSections.value.newsHighlight || [];
+  if (!arr.length) return null;
+  if (highlightIndex.value >= arr.length) highlightIndex.value = 0;
+  return arr[highlightIndex.value];
+});
+
+const setHighlightById = (id) => {
+  const arr = groupedSections.value.newsHighlight || [];
+  const idx = arr.findIndex((i) => i.id === id);
+  if (idx >= 0) {
+    highlightIndex.value = idx;
+    // ensure the selected item is visible in the side list
+    nextTick(() => scrollToActiveInSide());
+  }
+};
+
+const nextHighlight = () => {
+  const arr = groupedSections.value.newsHighlight || [];
+  if (!arr.length) return;
+  highlightIndex.value = (highlightIndex.value + 1) % arr.length;
+};
+
+const prevHighlight = () => {
+  const arr = groupedSections.value.newsHighlight || [];
+  if (!arr.length) return;
+  highlightIndex.value = (highlightIndex.value - 1 + arr.length) % arr.length;
+};
+
+// Side list helpers
+const sideListRef = ref(null);
+
+// Show up to 3 cards that follow the active highlight (circular)
+const visibleSideItems = computed(() => {
+  const arr = groupedSections.value.newsHighlight || [];
+  const len = arr.length;
+  if (len <= 1) return [];
+  const max = Math.min(3, len - 1); // don't repeat the active item
+  const start = (highlightIndex.value + 1) % len;
+  const out = [];
+  for (let i = 0; i < max; i++) {
+    out.push(arr[(start + i) % len]);
+  }
+  return out;
+});
+
+const scrollToActiveInSide = () => {
+  const el = sideListRef.value;
+  if (!el || !activeHighlight.value) return;
+  const activeEl = el.querySelector(`[data-id="${activeHighlight.value.id}"]`);
+  if (activeEl) {
+    activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    return;
+  }
+
+  // If active isn't currently in DOM (because visible items are neighbors), make the container scroll to top so the newly rendered neighbors are visible
+  el.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+const sidePrev = () => {
+  prevHighlight();
+  nextTick(() => scrollToActiveInSide());
+};
+const sideNext = () => {
+  nextHighlight();
+  nextTick(() => scrollToActiveInSide());
+};
+
+// fallback manual scroll helper (kept for completeness)
+const scrollSide = (dir = 1) => {
+  const el = sideListRef.value;
+  if (!el) return;
+  const amount = el.clientHeight || 300;
+  el.scrollBy({ top: dir * (amount / 2), behavior: "smooth" });
+};
+
+// reset highlight when source list changes
+watch(
+  () => groupedSections.value.newsHighlight,
+  (newList) => {
+    if (!newList || !newList.length) {
+      highlightIndex.value = 0;
+    } else {
+      if (highlightIndex.value >= newList.length) highlightIndex.value = 0;
+    }
+  }
+);
+
 // Reset page when filters change
 watch([selectedSDG, selectedYear, selectedMonth], () => {
   currentPage.value = 1;
@@ -337,7 +426,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 </script>
 
 <template>
-  <div class="bg-gray-50">
+  <div class="">
     <Header />
     <div class="">
       <div class="relative">
@@ -391,137 +480,237 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
           <!-- Loading state -->
           <div v-if="loading" class="flex items-center justify-center py-20">
             <div class="flex flex-col items-center">
-              <svg class="animate-spin h-10 w-10 text-green-600" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              <svg
+                class="animate-spin h-10 w-10 text-green-600"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                ></path>
               </svg>
-              <div class="mt-4 text-green-600 font-medium">Loading news & updates...</div>
+              <div class="mt-4 text-green-600 font-medium">
+                Loading news & updates...
+              </div>
             </div>
           </div>
 
           <!-- GROUPED CONTENT -->
           <div v-else-if="filteredInfo.length" class="space-y-6">
             <!-- Top -->
-            <div class="grid grid-cols-1 lg:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 lg:grid-cols-6">
               <!-- Latest -->
-              <div
-                class="lg:col-span-4 bg-white rounded-lg p-4 border shadow-xl"
-              >
+              <div class="lg:col-span-4 bg-white p-4 ">
                 <h4 class="font-semibold text-lg mb-2">
                   Latest (News Highlight)
                 </h4>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <!-- Side cards -->
-                  <div class="order-2 lg:order-1 flex flex-col gap-3">
+                  <!-- Side cards with up/down arrows -->
+                  <div class="order-2 lg:order-1">
                     <div
-                      v-for="item in (
-                        groupedSections.newsHighlight || []
-                      ).slice(1, 4)"
-                      :key="item.id"
-                      class="group bg-white rounded-md overflow-hidden border hover:shadow-md transition"
+                      ref="sideListRef"
+                      class="overflow-y-hidden max-h-[60vh]"
                     >
-                      <a
-                        :href="'/news-updates/' + item.id"
-                        class="flex h-32 card-improved"
+                      <transition-group
+                        name="slide"
+                        tag="div"
+                        class="flex flex-col gap-3"
                       >
-                        <div class="w-1/3 h-full overflow-hidden">
-                          <img
-                            v-if="item.files && item.files.length"
-                            :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${item.files[0]}`"
-                            class="w-full h-full object-cover group-hover:scale-105 transition"
-                          />
-                        </div>
-                        <div class="p-2 w-2/3 flex flex-col justify-between">
-                          <div>
-                            <div class="text-xs text-gray-500">
-                              {{
-                                moment(item.date || item.created_at).format(
-                                  "MMM DD"
-                                )
-                              }}
-                            </div>
-                            <div class="font-medium text-sm line-clamp-2">
-                              {{ item.title }}
-                            </div>
-                          </div>
-                          <div>
-                            <div class="flex items-center gap-2 mt-2 mb-2">
-                              <span
-                                v-if="getSdgBadges(item).length > 3"
-                                class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
-                                >+{{ getSdgBadges(item).length - 3 }} more</span
-                              >
+                        <div
+                          v-for="item in visibleSideItems"
+                          :key="item.id"
+                          :data-id="item.id"
+                          :class="[
+                            'group bg-white overflow-hidden border-b hover:shadow-md transition',
+                            item.id === activeHighlight?.id
+                              ? 'ring-2 ring-green-500'
+                              : '',
+                          ]"
+                        >
+                          <div
+                            class="flex h-34 card-improved cursor-pointer"
+                            @click="setHighlightById(item.id)"
+                          >
+                            <div class="w-1/3 h-full overflow-hidden">
+                              <img
+                                v-if="item.files && item.files.length"
+                                :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${item.files[0]}`"
+                                class="w-full h-full object-cover group-hover:scale-105 transition"
+                              />
                             </div>
                             <div
-                              class="flex items-center justify-between text-xs"
+                              class="p-2 w-2/3 flex flex-col justify-between"
                             >
-                              <div class="text-xs text-green-600 font-medium">
-                                Read More
-                                <i class="fas fa-arrow-right ml-1"></i>
+                              <div>
+                                <div class="text-xs text-gray-500">
+                                  {{
+                                    moment(item.date || item.created_at).format(
+                                      "MMM DD"
+                                    )
+                                  }}
+                                </div>
+                                <div class="font-medium text-sm line-clamp-2">
+                                  {{ item.title }}
+                                </div>
+                              </div>
+                              <div
+                                class="flex items-center gap-1 flex-wrap mb-2"
+                              >
+                                <div
+                                  v-for="badge in getSdgBadges(item).slice(
+                                    0,
+                                    3
+                                  )"
+                                  :key="badge.number"
+                                  class="inline-flex items-center whitespace-nowrap text-[10px]"
+                                >
+                                  <span
+                                    class="inline-flex items-center px-2 py-1 rounded font-bold text-white shadow-sm"
+                                    :style="{ backgroundColor: badge.color }"
+                                    >{{ badge.number }}</span
+                                  >
+                                </div>
+                                <span
+                                  v-if="getSdgBadges(item).length > 3"
+                                  class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                                  >+{{
+                                    getSdgBadges(item).length - 3
+                                  }}
+                                  more</span
+                                >
+                              </div>
+
+                              <div>
+                                <div
+                                  class="flex items-center justify-between text-xs"
+                                >
+                                  <a
+                                    :href="'/news-updates/' + item.id"
+                                    @click.stop
+                                    class="text-xs text-green-600 font-medium"
+                                    >Read More
+                                    <i class="fas fa-arrow-right ml-1"></i
+                                  ></a>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </a>
+                      </transition-group>
                     </div>
                   </div>
 
                   <!-- Main highlight -->
                   <div class="order-1 lg:order-2 lg:col-span-2">
                     <div
-                      v-if="
-                        groupedSections.newsHighlight &&
-                        groupedSections.newsHighlight[0]
-                      "
-                      class="group bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition"
+                      v-if="activeHighlight"
+                      class="group bg-white overflow-hidden border-b transition"
                     >
-                      <a
-                        :href="
-                          '/news-updates/' + groupedSections.newsHighlight[0].id
-                        "
-                        class="block"
-                      >
+                      <div class="block cursor-pointer">
                         <div
                           class="relative h-48 sm:h-64 overflow-hidden card-improved"
+                          @click="nextHighlight"
                         >
                           <img
-                            v-if="
-                              groupedSections.newsHighlight[0].files?.length
-                            "
-                            :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${groupedSections.newsHighlight[0].files[0]}`"
+                            v-if="activeHighlight.files?.length"
+                            :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${activeHighlight.files[0]}`"
                             class="w-full h-full object-cover group-hover:scale-105 transition"
                           />
                           <div
-                            class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"
+                            class="absolute inset-0 bg-gradient-to-t from-green/10 to-transparent"
                           ></div>
                         </div>
                         <div class="p-4">
                           <div class="flex items-center justify-between mb-2">
                             <div class="text-xs text-gray-400">
-                              {{
-                                getCategoryLabel(
-                                  groupedSections.newsHighlight[0]
-                                )
-                              }}
+                              {{ getCategoryLabel(activeHighlight) }}
                             </div>
                             <div class="text-xs text-gray-400">
                               {{
                                 moment(
-                                  groupedSections.newsHighlight[0].date ||
-                                    groupedSections.newsHighlight[0].created_at
+                                  activeHighlight?.date ||
+                                    activeHighlight?.created_at
                                 ).format("MMM DD")
                               }}
                             </div>
                           </div>
-                          <h3 class="text-xl font-bold mb-2">
-                            {{ groupedSections.newsHighlight[0].title }}
+                          <h3 class="text-xl font-bold">
+                            {{ activeHighlight?.title }}
                           </h3>
                         </div>
-                      </a>
+                        <div
+                          class="flex items-center gap-1 flex-wrap mb-2 px-4 pt-2"
+                        >
+                          <div
+                            v-for="badge in (
+                              getSdgBadges(activeHighlight) || []
+                            ).slice(0, 3)"
+                            :key="badge.number"
+                            class="inline-flex items-center whitespace-nowrap text-[10px]"
+                          >
+                            <span
+                              class="inline-flex items-center px-2 py-1 rounded font-bold text-white shadow-sm"
+                              :style="{ backgroundColor: badge.color }"
+                            >
+                              {{ badge.number }}
+                            </span>
+                          </div>
+
+                          <span
+                            v-if="
+                              activeHighlight &&
+                              getSdgBadges(activeHighlight).length > 3
+                            "
+                            class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                          >
+                            +{{ getSdgBadges(activeHighlight).length - 3 }} more
+                          </span>
+                        </div>
+                      </div>
                       <div class="px-4 pb-4 flex items-center justify-between">
-                        <div class="text-xs text-green-600 font-medium">
-                          Read More <i class="fas fa-arrow-right ml-1"></i>
+                        <a
+                          :href="'/news-updates/' + activeHighlight.id"
+                          class="text-xs text-green-600 font-medium"
+                          >Read More <i class="fas fa-arrow-right ml-1"></i
+                        ></a>
+                        <div class="flex items-center gap-2">
+                          <button
+                            @click.stop.prevent="prevHighlight"
+                            class="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-gray-600 hover:bg-green-600 hover:text-white"
+                          >
+                            <i class="fas fa-chevron-left"></i>
+                          </button>
+                          <div class="flex items-center gap-2 px-2">
+                            <button
+                              v-for="(h, i) in groupedSections.newsHighlight"
+                              :key="h.id"
+                              @click="highlightIndex = i"
+                              :class="[
+                                'w-2 h-2 rounded-full',
+                                i === highlightIndex
+                                  ? 'bg-green-600'
+                                  : 'bg-gray-300',
+                              ]"
+                            ></button>
+                          </div>
+                          <button
+                            @click.stop.prevent="nextHighlight"
+                            class="w-8 h-8 rounded-full bg-white shadow flex items-center justify-center text-gray-600 hover:bg-green-600 hover:text-white"
+                          >
+                            <i class="fas fa-chevron-right"></i>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -537,9 +726,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
               </div>
 
               <!-- Announcements -->
-              <div
-                class="lg:col-span-2 bg-white rounded-lg p-4 border shadow-xl"
-              >
+              <div class="lg:col-span-2 bg-white p-4 lg:border-l ">
                 <h4 class="font-semibold text-lg mb-2">Announcements</h4>
                 <div
                   v-if="
@@ -554,7 +741,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                       3
                     )"
                     :key="a.id"
-                    class="border rounded-md p-3"
+                    class="border-b p-3"
                   >
                     <div class="flex gap-3 h-32">
                       <!-- Image Section -->
@@ -596,8 +783,21 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           {{ a.title }}
                         </a>
 
-                        <!-- SDG Badges -->
-                        <div class="flex items-center gap-2 mb-2 flex-wrap">
+                        <!-- SDG Badges Section -->
+                        <div class="flex items-center gap-1 flex-wrap mb-2">
+                          <div
+                            v-for="badge in getSdgBadges(a).slice(0, 3)"
+                            :key="badge.number"
+                            class="inline-flex items-center whitespace-nowrap text-[10px]"
+                          >
+                            <span
+                              class="inline-flex items-center px-2 py-1 rounded font-bold text-white shadow-sm"
+                              :style="{ backgroundColor: badge.color }"
+                            >
+                              {{ badge.number }}
+                            </span>
+                          </div>
+
                           <span
                             v-if="getSdgBadges(a).length > 3"
                             class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
@@ -639,8 +839,8 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             </div>
 
             <!-- Research & Sustainability -->
-            <div class="lg:flex gap-x-2">
-              <div class="w-fit bg-white rounded-lg p-4 border shadow-xl">
+            <div class="lg:flex gap-x-2 border-y py-3  border-t-gray-300 mt-3">
+              <div class="w-fit bg-white p-4">
                 <h4 class="font-semibold text-lg mb-3">Research</h4>
                 <div
                   class=""
@@ -649,7 +849,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                   <div
                     v-for="r in (groupedSections.research || []).slice(0, 6)"
                     :key="r.id"
-                    class="group bg-gray-50 rounded-md overflow-hidden border hover:shadow-sm transition mb-3 card-improved"
+                    class="group  overflow-hidden border-b hover:shadow-sm transition mb-3 card-improved"
                   >
                     <a :href="'/news-updates/' + r.id" class="block">
                       <div class="">
@@ -719,7 +919,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                 </div>
               </div>
 
-              <div class="bg-white rounded-lg p-4 border shadow-xl">
+              <div class="bg-white p-4 lg:border-l pl-5">
                 <h4 class="font-semibold mb-3 text-lg">Social Action</h4>
                 <div
                   v-if="
@@ -734,7 +934,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                       8
                     )"
                     :key="s.id"
-                    class="group rounded-md overflow-hidden border hover:shadow-sm transition card-improved"
+                    class="group overflow-hidden border-b hover:shadow-sm transition card-improved"
                   >
                     <a
                       :href="'/news-updates/' + s.id"
@@ -823,7 +1023,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
               </div>
             </div>
             <!-- Educational -->
-            <div class="bg-white rounded-lg p-4 border shadow-xl">
+            <div class="bg-white p-4 border-b">
               <h4 class="font-semibold text-center pb-3 text-lg">
                 Educational and Technology
               </h4>
@@ -837,7 +1037,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                 <div
                   v-for="e in (groupedSections.educational || []).slice(0, 8)"
                   :key="e.id"
-                  class="group bg-white rounded-lg shadow-xl hover:shadow-md transition overflow-hidden flex flex-col h-full"
+                  class="group bg-white transition overflow-hidden flex flex-col h-full"
                 >
                   <a :href="'/news-updates/' + e.id" class="block h-full">
                     <!-- Image -->
@@ -845,7 +1045,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                       <img
                         v-if="e.files && e.files.length > 0"
                         :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${e.files[0]}`"
-                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 rounded-lg"
+                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         alt="News thumbnail"
                       />
                       <div
@@ -854,7 +1054,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                       >
                         <img
                           src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg"
-                          class="w-full h-full object-cover rounded-lg"
+                          class="w-full h-full object-cover"
                           alt="Default thumbnail"
                         />
                       </div>
@@ -938,7 +1138,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             </div>
 
             <!-- Filters -->
-            <div class="bg-white rounded-xl shadow-lg mb-2 px-4 py-3">
+            <div class="bg-white rounded-xl mb-2 px-4 py-3">
               <div
                 class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
               >
