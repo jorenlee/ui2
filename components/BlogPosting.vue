@@ -274,7 +274,7 @@ onMounted(async () => {
                     class="inline-flex items-center"
                   >
                     <span
-                      class="inline-flex items-center lg:px-2 px-1 py-1 min-w-4 justify-center rounded lg:text-xs text-[10px] font-bold text-white shadow-sm"
+                      class="inline-flex items-center lg:px-2 px-1 py-0.5 min-w-4 justify-center rounded lg:text-xs text-[10px] font-bold text-white shadow-sm"
                       :style="{ backgroundColor: badge.color }"
                     >
                      <span class="lg:flex hidden"> SDG </span>{{ badge.number }}
@@ -291,7 +291,7 @@ onMounted(async () => {
 
               <!-- Footer -->
               <div
-                class="flex items-center justify-between pt-2 border-t border-gray-100"
+                class="flex items-center justify-between pt-2 lg:pb-0 pb-1 border-t border-gray-100"
               >
                 <div class="flex items-center lg:text-xs text-[10px] text-gray-500">
                   <i class="fas fa-calendar mr-1"></i>
