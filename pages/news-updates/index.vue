@@ -454,7 +454,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
               </div>
               <div>
                 <i class="fas fa-caret-right"></i>
-                <a href="/new-updates" class="mx-2 hover:underline lg:h-10"
+                <a href="/news-updates" class="mx-2 hover:underline lg:h-10"
                   >News and Updates</a
                 >
               </div>
@@ -512,7 +512,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             <div class="grid grid-cols-1 lg:grid-cols-6">
               <!-- Latest -->
               <div class="lg:col-span-4 bg-white lg:px-4">
-                <h4 class="font-bold lg:text-xl text-sm my-2 lg:text-left text-center">Latest (News Highlight)</h4>
+                <h4 class="font-bold lg:text-xl text-sm my-2 lg:text-left text-center">Latest News Highlight</h4>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <!-- Side cards with up/down arrows -->
@@ -747,7 +747,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 
               <!-- Announcements -->
               <div class="lg:col-span-2 bg-white lg:px-4 lg:border-l">
-                <h4 class="font-semibold text-lg mb-2">Announcements</h4>
+                <h4 class="font-bold lg:text-xl text-sm my-2 lg:text-left text-center">Announcements</h4>
                 <div
                   v-if="
                     groupedSections.announcements &&
@@ -861,7 +861,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             <!-- Research & Sustainability -->
             <div class="lg:flex gap-x-2 border-y py-3 border-t-gray-300 mt-3">
               <div class="w-fit bg-white lg:p-4">
-                <h4 class="font-semibold text-lg mb-3">Research</h4>
+                <h4 class="font-bold lg:text-xl text-sm my-2 lg:text-left text-center">Research</h4>
                 <div
                   class=""
                   v-if="groupedSections.research && groupedSections.research[0]"
@@ -940,7 +940,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
               </div>
 
               <div class="bg-white lg:p-4 lg:border-l lg:pl-5">
-                <h4 class="font-semibold mb-3 text-lg">Social Action</h4>
+                <h4 class="font-bold lg:text-xl text-sm my-2 lg:text-left text-center">Social Action</h4>
                 <div
                   v-if="
                     groupedSections.sustainability &&
@@ -1044,7 +1044,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             </div>
             <!-- Educational -->
             <div class="bg-white lg:p-4 border-b">
-              <h4 class="font-semibold text-center pb-3 text-lg">
+              <h4 class="font-bold lg:text-xl text-sm my-2 lg:text-left text-center">
                 Educational and Technology
               </h4>
               <div
