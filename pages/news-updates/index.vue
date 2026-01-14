@@ -475,7 +475,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
     </div>
 
     <div class="lg:flex mx-auto">
-      <div class="w-full py-5 relative">
+      <div class="w-full lg:py-5 relative">
         <div class="relative z-10 px-2 mx-auto">
           <!-- Loading state -->
           <div v-if="loading" class="flex items-center justify-center py-20">
@@ -511,8 +511,8 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             <!-- Top -->
             <div class="grid grid-cols-1 lg:grid-cols-6">
               <!-- Latest -->
-              <div class="lg:col-span-4 bg-white px-4">
-                <h4 class="font-bold text-xl mb-2">Latest (News Highlight)</h4>
+              <div class="lg:col-span-4 bg-white lg:px-4">
+                <h4 class="font-bold lg:text-xl text-sm my-2 lg:text-left text-center">Latest (News Highlight)</h4>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <!-- Side cards with up/down arrows -->
@@ -640,7 +640,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                             class="absolute inset-0 bg-gradient-to-t from-green/10 to-transparent"
                           ></div>
                         </div>
-                        <div class="p-4">
+                        <div class="lg:p-4">
                           <div class="flex items-center justify-between mb-2">
                             <div class="text-xs text-gray-400">
                               {{ getCategoryLabel(activeHighlight) }}
@@ -654,13 +654,13 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                               }}
                             </div>
                           </div>
-                          <h3 class="text-xl font-bold">
+                          <h3 class="lg:text-xl text-xs font-bold">
                             {{ activeHighlight?.title }}
                           </h3>
                           <!-- Description -->
                           <div
                             v-if="activeHighlight.descriptions"
-                            class="text-sm text-gray-600 line-clamp-3"
+                            class="lg:text-sm text-[10px] text-gray-600 line-clamp-3"
                           >
                             {{ activeHighlight.descriptions.substring(0, 300)
                             }}{{
@@ -671,7 +671,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           </div>
                         </div>
                         <div
-                          class="flex items-center gap-1 flex-wrap mb-2 px-4 pt-2"
+                          class="flex items-center gap-1 flex-wrap mb-2 lg:px-4 pt-2"
                         >
                           <div
                             v-for="badge in (
@@ -699,7 +699,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           </span>
                         </div>
                       </div>
-                      <div class="px-4 pb-4 flex items-center justify-between">
+                      <div class="lg:px-4 pb-4 flex items-center justify-between">
                         <a
                           :href="'/news-updates/' + activeHighlight.id"
                           class="text-xs text-green-600 font-medium"
@@ -746,7 +746,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
               </div>
 
               <!-- Announcements -->
-              <div class="lg:col-span-2 bg-white px-4 lg:border-l">
+              <div class="lg:col-span-2 bg-white lg:px-4 lg:border-l">
                 <h4 class="font-semibold text-lg mb-2">Announcements</h4>
                 <div
                   v-if="
@@ -798,7 +798,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                         <!-- Title -->
                         <a
                           :href="'/news-updates/' + a.id"
-                          class="block font-semibold text-base text-gray-900 mb-1 line-clamp-2"
+                          class="block font-semibold lg:text-base text-xs text-gray-900 mb-1 line-clamp-2"
                         >
                           {{ a.title }}
                         </a>
@@ -860,7 +860,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 
             <!-- Research & Sustainability -->
             <div class="lg:flex gap-x-2 border-y py-3 border-t-gray-300 mt-3">
-              <div class="w-fit bg-white p-4">
+              <div class="w-fit bg-white lg:p-4">
                 <h4 class="font-semibold text-lg mb-3">Research</h4>
                 <div
                   class=""
@@ -887,7 +887,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           </div>
                         </div>
                         <div class="p-2 w-full flex flex-col justify-between">
-                          <div class="font-medium text-sm line-clamp-2">
+                          <div class="font-medium lg:text-sm text-xs mb-2 line-clamp-2">
                             {{ r.title }}
                           </div>
                           <div>
@@ -939,7 +939,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                 </div>
               </div>
 
-              <div class="bg-white p-4 lg:border-l pl-5">
+              <div class="bg-white lg:p-4 lg:border-l lg:pl-5">
                 <h4 class="font-semibold mb-3 text-lg">Social Action</h4>
                 <div
                   v-if="
@@ -962,7 +962,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                     >
                       <div class="flex h-44">
                         <!-- Image Section -->
-                        <div class="lg:w-6/12 w-full h-full overflow-hidden">
+                        <div class="w-6/12 h-full overflow-hidden">
                           <img
                             v-if="s.files?.length"
                             :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${s.files[0]}`"
@@ -978,11 +978,11 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                         </div>
 
                         <!-- Description Section -->
-                        <div class="px-2 w-2/3 flex flex-col h-full">
+                        <div class="p-2 w-2/3 flex flex-col h-full">
                           <!-- Title -->
                           <div class="mb-2">
                             <div
-                              class="text-sm line-clamp-4 leading-tight text-gray-800 font-semibold"
+                              class="lg:text-sm text-xs line-clamp-4 leading-tight text-gray-800 font-semibold"
                             >
                               {{ s.title }}
                             </div>
@@ -1043,7 +1043,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
               </div>
             </div>
             <!-- Educational -->
-            <div class="bg-white p-4 border-b">
+            <div class="bg-white lg:p-4 border-b">
               <h4 class="font-semibold text-center pb-3 text-lg">
                 Educational and Technology
               </h4>
@@ -1091,16 +1091,16 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                     </div>
 
                     <!-- Content -->
-                    <div class="p-3 flex flex-col flex-1">
+                    <div class="lg:p-3 pb-2 flex flex-col flex-1">
                       <!-- Title -->
-                      <div class="font-medium text-sm line-clamp-2 mb-1">
+                      <div class="font-medium lg:text-sm text-[10px] line-clamp-2 my-1">
                         {{ e.title }}
                       </div>
 
                       <!-- Description -->
                       <div
                         v-if="e.descriptions"
-                        class="text-sm text-gray-600 line-clamp-3"
+                        class="lg:text-sm text-[9px] text-gray-600 line-clamp-3"
                       >
                         {{ e.descriptions.substring(0, 120)
                         }}{{ e.descriptions.length > 120 ? "..." : "" }}
@@ -1110,7 +1110,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                       <div class="mt-auto">
                         <!-- SDGs -->
                         <div
-                          class="flex items-center gap-2 mt-3 mb-2 flex-wrap"
+                          class="flex items-center lg:gap-2 gap-x-1 mt-3 mb-2 flex-wrap"
                         >
                           <div
                             v-for="badge in getSdgBadges(e).slice(0, 3)"
@@ -1118,10 +1118,10 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                             class="inline-flex items-center"
                           >
                             <span
-                              class="inline-flex items-center px-2 py-1 rounded text-xs font-bold text-white shadow-sm"
+                              class="inline-flex items-center lg:px-2 px-1 py-1 rounded lg:text-xs text-[9px] min-w-5 font-bold text-white shadow-sm text-center justify-center"
                               :style="{ backgroundColor: badge.color }"
                             >
-                              SDG {{ badge.number }}
+                              <span class="lg:flex hidden">SDG</span> {{ badge.number }}
                             </span>
                           </div>
                           <span
@@ -1134,12 +1134,12 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 
                         <!-- Footer -->
                         <div class="flex items-center justify-between">
-                          <div class="text-xs text-gray-400">
+                          <div class="lg:text-xs text-[10px] text-gray-400">
                             {{
                               moment(e.date || e.created_at).format("MMM DD")
                             }}
                           </div>
-                          <div class="text-xs text-green-600 font-medium">
+                          <div class="lg:text-xs text-[10px] text-green-600 font-medium">
                             Read More <i class="fas fa-arrow-right ml-1"></i>
                           </div>
                         </div>
