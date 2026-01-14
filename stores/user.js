@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 
-const TOKEN_LIFETIME = 1000 * 60 * 2;
+const TOKEN_LIFETIME = 1000 * 60 * 60 * 24;
 
 // 1000 * 60 * 5; // 5 minutes
 
