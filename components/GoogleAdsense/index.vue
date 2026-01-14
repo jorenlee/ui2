@@ -1,7 +1,7 @@
 <template>
   <div v-if="isClient">
     <!-- Use the reusable Adsbygoogle component which waits for the AdSense script to load -->
-    <Adsbygoogle ad-slot="1745428489" />
+    <Adsbygoogle ad-slot="1745428489" class="mb-5"/>
      <Adsbygoogle ad-slot="2306527650" />
   </div>
 </template>

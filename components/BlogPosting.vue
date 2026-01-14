@@ -179,7 +179,7 @@ onMounted(async () => {
         background-image: url('https://lsu-media-styles.sgp1.digitaloceanspaces.com/481668685_1139543031299171_4009940609016510904_n.jpg');
       "
     ></div>
-    <div class="absolute inset-0 bg-[#363636df]"></div>
+    <div class="absolute inset-0 bg-[#0e1c10df]"></div>
     <!-- Dark overlay -->
 
     <!-- Content -->
