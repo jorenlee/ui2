@@ -251,6 +251,7 @@ const ochAdminEmails = [
 ];
 
 const contentWritersEmails = [
+    "monaliza.mugot@lsu.edu.ph",
   "jackjun.caupayan@lsu.edu.ph",
   "mariaalexandra.benitez@lsu.edu.ph",
   "alexander.diaz@lsu.edu.ph",
