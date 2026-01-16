@@ -34,7 +34,7 @@
           </div>
 
           <!-- SIDEBAR MENU -->
-          <div class="text-[10px] mt-2 px-4">
+          <div class="text-sm mt-2 px-4">
             <div
               v-for="menu in filteredMenuList"
               :key="menu.label || menu.group"
