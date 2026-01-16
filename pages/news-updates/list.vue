@@ -678,35 +678,47 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                     </div>
                   </div>
 
-<div>
-  <span
-    v-for="(item, i) in j.filters
-      .split(',')
-      .map(v => v.trim())
-      .filter(v =>
-        ['announcements', 'news highlight', 'news', 'events', 'announcement', 'news highlights', 'news', 'event']
-          .includes(v.toLowerCase())
-      )"
-    :key="i"
-    :class="[
-      'uppercase font-bold inline-block px-2 py-1 rounded-full text-xs mr-2 mb-2',
-      item.toLowerCase() === 'announcements' && 'bg-yellow-100 text-yellow-800',
-      item.toLowerCase() === 'news' && 'bg-pink-100 text-pink-800',
-      item.toLowerCase() === 'news highlight' && 'bg-red-100 text-red-800',
-      item.toLowerCase() === 'events' && 'bg-green-100 text-green-800',
-       item.toLowerCase() === 'announcement' && 'bg-yellow-100 text-yellow-800',
-
-      item.toLowerCase() === 'news highlights' && 'bg-red-100 text-red-800',
-      item.toLowerCase() === 'event' && 'bg-green-100 text-green-800',
-    ]"
-  >
-    {{ item }}
-  </span>
-</div>
-
-
-      
-
+                  <div>
+                    <span
+                      v-for="(item, i) in j.filters
+                        .split(',')
+                        .map((v) => v.trim())
+                        .filter((v) =>
+                          [
+                            'announcements',
+                            'news highlight',
+                            'news',
+                            'events',
+                            'announcement',
+                            'news highlights',
+                            'news',
+                            'event',
+                          ].includes(v.toLowerCase())
+                        )"
+                      :key="i"
+                      :class="[
+                        'uppercase font-bold inline-block px-2 py-1 rounded-full text-xs mr-2 mb-2',
+                        item.toLowerCase() === 'announcements' &&
+                          'bg-yellow-100 text-yellow-800',
+                        item.toLowerCase() === 'news' &&
+                          'bg-pink-100 text-pink-800',
+                        item.toLowerCase() === 'news highlight' &&
+                          'bg-red-100 text-red-800',
+                        item.toLowerCase() === 'events' &&
+                          'bg-green-100 text-green-800',
+                        item.toLowerCase() === 'announcement' &&
+                          'bg-yellow-100 text-yellow-800',
+                        item.toLowerCase() === 'new' &&
+                          'bg-pink-100 text-pink-800',
+                        item.toLowerCase() === 'news highlights' &&
+                          'bg-red-100 text-red-800',
+                        item.toLowerCase() === 'event' &&
+                          'bg-green-100 text-green-800',
+                      ]"
+                    >
+                      {{ item }}
+                    </span>
+                  </div>
 
                   <!-- Footer -->
                   <div
