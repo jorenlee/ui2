@@ -599,7 +599,7 @@ const logos = ref([
         </div>
 
         <!-- Pagination Controls -->
-        <div v-if="!loading && filteredLibrary.length > 0" class="flex items-center justify-center mt-4 space-x-2">
+        <div v-if="!loading && filteredLibrary.length > 0" class="flex items-center justify-center mt-4 space-x-2 mb-10">
           <button
             @click="prevPage"
             :disabled="currentPage === 1"
