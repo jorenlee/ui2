@@ -702,6 +702,8 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
           >
             <div
               v-if="selectedSDG || selectedYear || selectedMonth"
+
+              
               class="text-center py-12"
             >
               <div class="text-gray-500 text-lg">

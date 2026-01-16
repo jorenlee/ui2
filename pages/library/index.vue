@@ -1,4 +1,9 @@
 <script setup>
+import { useUserStore } from "@/stores/user";
+import { ref, onMounted, computed } from "vue";
+import moment from "moment";
+
+const userStore = useUserStore();
 const title = ["learning resource center", "(lrc)", "LRC"];
 const VMGO = [
   "The Learning Resource Center (LRC) aims to empower lifelong learning through a dynamic and inclusive hub of resources, innovation, collaboration, and linkages.",
@@ -13,6 +18,96 @@ const VMGO = [
     "Measure and Improve Impact: Implement regular assessment strategies to gauge the effectiveness of Learning Resource Center services and resources, using feedback to make informed enhanced enhancements that align with the evolving needs of the university community.",
   ],
 ];
+
+const library = ref(null);
+
+const endpoint = ref(userStore.mainDevServer);
+
+// SDG Colors mapping
+const sdgColors = {
+  1: "#e5243b", // No Poverty
+  2: "#dda63a", // Zero Hunger
+  3: "#4c9f38", // Good Health and Well-being
+  4: "#c5192d", // Quality Education
+  5: "#ff3a21", // Gender Equality
+  6: "#26bde2", // Clean Water and Sanitation
+  7: "#fcc30b", // Affordable and Clean Energy
+  8: "#a21942", // Decent Work and Economic Growth
+  9: "#fd6925", // Industry, Innovation and Infrastructure
+  10: "#dd1367", // Reduced Inequalities
+  11: "#fd9d24", // Sustainable Cities and Communities
+  12: "#bf8b2e", // Responsible Consumption and Production
+  13: "#3f7e44", // Climate Action
+  14: "#0a97d9", // Life Below Water
+  15: "#56c02b", // Life on Land
+  16: "#00689d", // Peace, Justice and Strong Institutions
+  17: "#19486a", // Partnerships for the Goals
+};
+
+// Helper function to get SDG color
+const getSdgColor = (sdgNumber) => {
+  return sdgColors[sdgNumber] || "#6b7280"; // Default gray if not found
+};
+
+// Add computed property for SDG badges - exact matches only
+const getSdgBadges = (item) => {
+  if (!item?.filters) return [];
+
+  const filters = item.filters.toLowerCase();
+  const badges = [];
+
+  // Check for exact SDG mentions using word boundaries
+  for (let i = 1; i <= 17; i++) {
+    const patterns = [
+      `\\bsdg${i}\\b`,
+      `\\bsdg ${i}\\b`,
+      `\\bsdg-${i}\\b`,
+      `\\bsdg_${i}\\b`,
+      `\\bgoal ${i}\\b`,
+      `\\bgoal${i}\\b`,
+      `\\bsdg${i.toString().padStart(2, "0")}\\b`,
+    ];
+
+    if (
+      patterns.some((pattern) => {
+        const regex = new RegExp(pattern, "i");
+        return regex.test(filters);
+      })
+    ) {
+      badges.push({
+        number: i,
+        color: getSdgColor(i),
+      });
+    }
+  }
+
+  return badges;
+};
+
+onMounted(async () => {
+  library.value = await $fetch(endpoint.value + "/api/cms/content/list/");
+});
+
+const filteredLibrary = computed(() => {
+  if (!library.value) return [];
+  return library.value.filter((item) => {
+    // Check if author field matches Learning Resource Center
+    if (
+      item.author &&
+      item.author.toLowerCase().includes("learning resource center")
+    ) {
+      return true;
+    }
+    // Check if filters field includes Learning Resource Center
+    if (
+      item.filters &&
+      item.filters.toLowerCase().includes("learning resource center")
+    ) {
+      return true;
+    }
+    return false;
+  });
+});
 
 const menuList = [
   { label: "Learning Resource Center", link: "/library" },
@@ -337,6 +432,115 @@ const logos = ref([
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div class="w-full px-5">
+        <div class="flex items-center justify-between mb-2">
+          <h4
+            class="w-full font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
+          >
+            Library | Learning Resource Center
+          </h4>
+        </div>
+        <div
+          v-if="filteredLibrary.length > 0"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+        >
+          <div
+            v-for="lib in (filteredLibrary || []).slice(0, 6)"
+            :key="lib.id"
+            class="group overflow-hidden border-b hover:shadow-sm transition card-improved"
+          >
+            <a
+              :href="'/news-updates/' + lib.id"
+              class="block group rounded-lg overflow-hidden transition-shadow duration-300 bg-white"
+            >
+              <div class="flex h-44">
+                <!-- Image Section -->
+                <div class="w-6/12 h-full overflow-hidden">
+                  <img
+                    v-if="lib.files?.length"
+                    :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${lib.files[0]}`"
+                    class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    alt="library resource"
+                  />
+                  <div
+                    v-else
+                    class="w-full h-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-400"
+                  >
+                    No Image
+                  </div>
+                </div>
+
+                <!-- Description Section -->
+                <div class="p-2 w-2/3 flex flex-col h-full">
+                  <!-- Author -->
+                  <div class="mb-1">
+                    <div class="text-xs text-gray-500 font-medium">
+                      Learning Resource Center
+                    </div>
+                  </div>
+
+                  <!-- Title -->
+                  <div class="mb-2">
+                    <div
+                      class="lg:text-sm text-xs line-clamp-3 leading-tight text-gray-800 font-semibold"
+                    >
+                      {{ lib.title }}
+                    </div>
+                  </div>
+
+                  <!-- Spacer to push keywords + Footer to bottom -->
+                  <div class="flex-1"></div>
+
+                  <!-- SDG Badges Section -->
+                  <div class="flex items-center gap-1 flex-wrap mb-2">
+                    <div
+                      v-for="badge in getSdgBadges(lib).slice(0, 3)"
+                      :key="badge.number"
+                      class="inline-flex items-center whitespace-nowrap text-[10px]"
+                    >
+                      <span
+                        class="inline-flex items-center px-2 py-1 rounded font-bold text-white shadow-sm"
+                        :style="{ backgroundColor: badge.color }"
+                      >
+                        {{ badge.number }}
+                      </span>
+                    </div>
+
+                    <span
+                      v-if="getSdgBadges(lib).length > 3"
+                      class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                    >
+                      +{{ getSdgBadges(lib).length - 3 }} more
+                    </span>
+                  </div>
+
+                  <!-- Footer (Date + Read More) -->
+                  <div
+                    class="flex items-center justify-between text-xs text-gray-500"
+                  >
+                    <div>
+                      {{ moment(lib.date || lib.created_at).format("MMM DD") }}
+                    </div>
+                    <div
+                      class="text-green-600 font-medium flex items-center gap-1"
+                    >
+                      Read More <i class="fas fa-arrow-right"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+        <div v-else class="text-sm text-gray-500">
+          <div v-if="selectedDate">
+            No library resources available for
+            {{ moment(selectedDate).format("MMMM DD, YYYY") }}.
+          </div>
+          <div v-else>No library resources available.</div>
         </div>
       </div>
     </div>

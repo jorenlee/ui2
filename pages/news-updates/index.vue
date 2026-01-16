@@ -319,10 +319,22 @@ const groupedSections = computed(() => {
   );
   const research = sortByDateDesc(data.filter((i) => isIn(i, ["research"])));
   const sustainability = sortByDateDesc(
-    data.filter((i) => isIn(i, ["sustainability", "social action", "social-action"]))
+    data.filter((i) =>
+      isIn(i, ["sustainability", "social action", "social-action"])
+    )
   );
   const educational = sortByDateDesc(
-    data.filter((i) => isIn(i, ["educational", "technology", "tech", "npcc", "ict", "information and communications technology", "educational technology center"]))
+    data.filter((i) =>
+      isIn(i, [
+        "educational",
+        "technology",
+        "tech",
+        "npcc",
+        "ict",
+        "information and communications technology",
+        "educational technology center",
+      ])
+    )
   );
   const others = sortByDateDesc(
     data.filter((i) => {
@@ -535,7 +547,11 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
             <div class="grid grid-cols-1 lg:grid-cols-6">
               <!-- Latest -->
               <div class="lg:col-span-4 bg-white lg:px-4">
-                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1">Latest News Highlight</h4>
+                <h4
+                  class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
+                >
+                  Latest News Highlight
+                </h4>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   <!-- Side cards with up/down arrows -->
@@ -722,7 +738,9 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           </span>
                         </div>
                       </div>
-                      <div class="lg:px-4 pb-4 flex items-center justify-between">
+                      <div
+                        class="lg:px-4 pb-4 flex items-center justify-between"
+                      >
                         <a
                           :href="'/news-updates/' + activeHighlight.id"
                           class="text-xs text-green-600 font-medium"
@@ -770,7 +788,11 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 
               <!-- Announcements -->
               <div class="lg:col-span-2 bg-white lg:px-4 lg:border-l">
-                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1">Announcements</h4>
+                <h4
+                  class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
+                >
+                  Announcements
+                </h4>
                 <div
                   v-if="
                     groupedSections.announcements &&
@@ -883,8 +905,12 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 
             <!-- Research & Sustainability -->
             <div class="lg:flex gap-x-2 border-y py-3 border-t-gray-300 mt-3">
-              <div class="w-fit bg-white lg:p-4">
-                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1">Research</h4>
+              <div class="lg:w-4/12 w-full bg-white lg:p-4">
+                <h4
+                  class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
+                >
+                  Research
+                </h4>
                 <div
                   class=""
                   v-if="groupedSections.research && groupedSections.research[0]"
@@ -910,7 +936,9 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                           </div>
                         </div>
                         <div class="p-2 w-full flex flex-col justify-between">
-                          <div class="font-medium lg:text-sm text-xs mb-2 line-clamp-2">
+                          <div
+                            class="font-medium lg:text-sm text-xs mb-2 line-clamp-2"
+                          >
                             {{ r.title }}
                           </div>
                           <div>
@@ -962,119 +990,243 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                 </div>
               </div>
 
-              <div class="bg-white lg:p-4 lg:border-l lg:pl-5">
-                <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1">Social Action</h4>
-                <div
-                  v-if="
-                    groupedSections.sustainability &&
-                    groupedSections.sustainability[0]
-                  "
-                  class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
-                >
-                  <div
-                    v-for="s in (groupedSections.sustainability || []).slice(
-                      0,
-                      8
-                    )"
-                    :key="s.id"
-                    class="group overflow-hidden border-b hover:shadow-sm transition card-improved"
+              <div class="w-full bg-white lg:p-4 lg:border-l lg:pl-5">
+                <div>
+                  <h4
+                    class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
                   >
-                    <a
-                      :href="'/news-updates/' + s.id"
-                      class="block group rounded-lg overflow-hidden transition-shadow duration-300 bg-white"
+                    Social Action
+                  </h4>
+                  <div
+                    v-if="
+                      groupedSections.sustainability &&
+                      groupedSections.sustainability[0]
+                    "
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                  >
+                    <div
+                      v-for="s in (groupedSections.sustainability || []).slice(
+                        0,
+                        8
+                      )"
+                      :key="s.id"
+                      class="group overflow-hidden border-b hover:shadow-sm transition card-improved"
                     >
-                      <div class="flex h-44">
-                        <!-- Image Section -->
-                        <div class="w-6/12 h-full overflow-hidden">
-                          <img
-                            v-if="s.files?.length"
-                            :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${s.files[0]}`"
-                            class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            alt="news image"
-                          />
-                          <div
-                            v-else
-                            class="w-full h-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-400"
-                          >
-                            No Image
-                          </div>
-                        </div>
-
-                        <!-- Description Section -->
-                        <div class="p-2 w-2/3 flex flex-col h-full">
-                          <!-- Title -->
-                          <div class="mb-2">
+                      <a
+                        :href="'/news-updates/' + s.id"
+                        class="block group rounded-lg overflow-hidden transition-shadow duration-300 bg-white"
+                      >
+                        <div class="flex h-44">
+                          <!-- Image Section -->
+                          <div class="w-6/12 h-full overflow-hidden">
+                            <img
+                              v-if="s.files?.length"
+                              :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${s.files[0]}`"
+                              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              alt="news image"
+                            />
                             <div
-                              class="lg:text-sm text-xs line-clamp-4 leading-tight text-gray-800 font-semibold"
+                              v-else
+                              class="w-full h-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-400"
                             >
-                              {{ s.title }}
+                              No Image
                             </div>
                           </div>
 
-                          <!-- Spacer to push SDG + Footer to bottom -->
-                          <div class="flex-1"></div>
-
-                          <!-- SDG Badges Section -->
-                          <div class="flex items-center gap-1 flex-wrap mb-2">
-                            <div
-                              v-for="badge in getSdgBadges(s).slice(0, 3)"
-                              :key="badge.number"
-                              class="inline-flex items-center whitespace-nowrap text-[10px]"
-                            >
-                              <span
-                                class="inline-flex items-center px-2 py-1 rounded font-bold text-white shadow-sm"
-                                :style="{ backgroundColor: badge.color }"
+                          <!-- Description Section -->
+                          <div class="p-2 w-2/3 flex flex-col h-full">
+                            <!-- Title -->
+                            <div class="mb-2">
+                              <div
+                                class="lg:text-sm text-xs line-clamp-4 leading-tight text-gray-800 font-semibold"
                               >
-                                {{ badge.number }}
+                                {{ s.title }}
+                              </div>
+                            </div>
+
+                            <!-- Spacer to push SDG + Footer to bottom -->
+                            <div class="flex-1"></div>
+
+                            <!-- SDG Badges Section -->
+                            <div class="flex items-center gap-1 flex-wrap mb-2">
+                              <div
+                                v-for="badge in getSdgBadges(s).slice(0, 3)"
+                                :key="badge.number"
+                                class="inline-flex items-center whitespace-nowrap text-[10px]"
+                              >
+                                <span
+                                  class="inline-flex items-center px-2 py-1 rounded font-bold text-white shadow-sm"
+                                  :style="{ backgroundColor: badge.color }"
+                                >
+                                  {{ badge.number }}
+                                </span>
+                              </div>
+
+                              <span
+                                v-if="getSdgBadges(s).length > 3"
+                                class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                              >
+                                +{{ getSdgBadges(s).length - 3 }} more
                               </span>
                             </div>
 
-                            <span
-                              v-if="getSdgBadges(s).length > 3"
-                              class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
-                            >
-                              +{{ getSdgBadges(s).length - 3 }} more
-                            </span>
-                          </div>
-
-                          <!-- Footer (Date + Read More) -->
-                          <div
-                            class="flex items-center justify-between text-xs text-gray-500"
-                          >
-                            <div>
-                              {{
-                                moment(s.date || s.created_at).format("MMM DD")
-                              }}
-                            </div>
+                            <!-- Footer (Date + Read More) -->
                             <div
-                              class="text-green-600 font-medium flex items-center gap-1"
+                              class="flex items-center justify-between text-xs text-gray-500"
                             >
-                              Read More <i class="fas fa-arrow-right"></i>
+                              <div>
+                                {{
+                                  moment(s.date || s.created_at).format(
+                                    "MMM DD"
+                                  )
+                                }}
+                              </div>
+                              <div
+                                class="text-green-600 font-medium flex items-center gap-1"
+                              >
+                                Read More <i class="fas fa-arrow-right"></i>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </a>
+                      </a>
+                    </div>
+                  </div>
+                  <div v-else class="text-sm text-gray-500">
+                    <div v-if="selectedDate">
+                      No available for
+                      {{ moment(selectedDate).format("MMMM DD, YYYY") }}.
+                    </div>
                   </div>
                 </div>
-                <div v-else class="text-sm text-gray-500">
-                  <div v-if="selectedDate">
-                    No available for
-                    {{ moment(selectedDate).format("MMMM DD, YYYY") }}.
+
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <h4
+                     class="w-full font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
+                  >
+                      Library | Learning Resource Center
+                    </h4>
+                  </div>
+                  <div
+                    v-if="
+                      groupedSections.others && groupedSections.others[0]
+                    "
+                    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
+                  >
+                    <div
+                      v-for="lib in (groupedSections.others || []).slice(0, 6)"
+                      :key="lib.id"
+                      class="group overflow-hidden border-b hover:shadow-sm transition card-improved"
+                    >
+                      <a
+                        :href="'/news-updates/' + lib.id"
+                        class="block group rounded-lg overflow-hidden transition-shadow duration-300 bg-white"
+                      >
+                        <div class="flex h-44">
+                          <!-- Image Section -->
+                          <div class="w-6/12 h-full overflow-hidden">
+                            <img
+                              v-if="lib.files?.length"
+                              :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${lib.files[0]}`"
+                              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              alt="library resource"
+                            />
+                            <div
+                              v-else
+                              class="w-full h-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-400"
+                            >
+                              No Image
+                            </div>
+                          </div>
+
+                          <!-- Description Section -->
+                          <div class="p-2 w-2/3 flex flex-col h-full">
+                            <!-- Author -->
+                            <div class="mb-1">
+                              <div class="text-xs text-gray-500 font-medium">
+                                Learning Resource Center
+                              </div>
+                            </div>
+
+                            <!-- Title -->
+                            <div class="mb-2">
+                              <div
+                                class="lg:text-sm text-xs line-clamp-3 leading-tight text-gray-800 font-semibold"
+                              >
+                                {{ lib.title }}
+                              </div>
+                            </div>
+
+                            <!-- Spacer to push keywords + Footer to bottom -->
+                            <div class="flex-1"></div>
+
+                            <!-- SDG Badges Section -->
+                            <div class="flex items-center gap-1 flex-wrap mb-2">
+                              <div
+                                v-for="badge in getSdgBadges(lib).slice(0, 3)"
+                                :key="badge.number"
+                                class="inline-flex items-center whitespace-nowrap text-[10px]"
+                              >
+                                <span
+                                  class="inline-flex items-center px-2 py-1 rounded font-bold text-white shadow-sm"
+                                  :style="{ backgroundColor: badge.color }"
+                                >
+                                  {{ badge.number }}
+                                </span>
+                              </div>
+
+                              <span
+                                v-if="getSdgBadges(lib).length > 3"
+                                class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                              >
+                                +{{ getSdgBadges(lib).length - 3 }} more
+                              </span>
+                            </div>
+
+                            <!-- Footer (Date + Read More) -->
+                            <div
+                              class="flex items-center justify-between text-xs text-gray-500"
+                            >
+                              <div>
+                                {{
+                                  moment(lib.date || lib.created_at).format(
+                                    "MMM DD"
+                                  )
+                                }}
+                              </div>
+                              <div
+                                class="text-green-600 font-medium flex items-center gap-1"
+                              >
+                                Read More <i class="fas fa-arrow-right"></i>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+                  <div v-else class="text-sm text-gray-500">
+                    <div v-if="selectedDate">
+                      No library resources available for
+                      {{ moment(selectedDate).format("MMMM DD, YYYY") }}.
+                    </div>
+                    <div v-else>No library resources available.</div>
                   </div>
                 </div>
               </div>
             </div>
             <!-- Educational -->
             <div class="bg-white lg:p-4 border-b">
-              <h4 class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1">
+              <h4
+                class="font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
+              >
                 Educational and Technology
               </h4>
               <div
                 class="grid lg:grid-cols-4 gap-4"
                 v-if="
-                  groupedSections.educational &&
-                  groupedSections.educational[0]
+                  groupedSections.educational && groupedSections.educational[0]
                 "
               >
                 <div
@@ -1116,7 +1268,9 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                     <!-- Content -->
                     <div class="lg:p-3 pb-2 flex flex-col flex-1">
                       <!-- Title -->
-                      <div class="font-medium lg:text-sm text-[10px] line-clamp-2 my-1">
+                      <div
+                        class="font-medium lg:text-sm text-[10px] line-clamp-2 my-1"
+                      >
                         {{ e.title }}
                       </div>
 
@@ -1144,7 +1298,8 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                               class="inline-flex items-center lg:px-2 px-1 py-1 rounded lg:text-xs text-[9px] min-w-5 font-bold text-white shadow-sm text-center justify-center"
                               :style="{ backgroundColor: badge.color }"
                             >
-                              <span class="lg:flex hidden">SDG</span> {{ badge.number }}
+                              <span class="lg:flex hidden">SDG</span>
+                              {{ badge.number }}
                             </span>
                           </div>
                           <span
@@ -1162,7 +1317,9 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                               moment(e.date || e.created_at).format("MMM DD")
                             }}
                           </div>
-                          <div class="lg:text-xs text-[10px] text-green-600 font-medium">
+                          <div
+                            class="lg:text-xs text-[10px] text-green-600 font-medium"
+                          >
                             Read More <i class="fas fa-arrow-right ml-1"></i>
                           </div>
                         </div>
