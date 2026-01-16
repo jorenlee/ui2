@@ -80,6 +80,27 @@ const sdgColors = {
   17: "#19486a", // Partnerships for the Goals
 };
 
+// Content Type filter
+const selectedType = ref("");
+const contentTypeOptions = [
+  { value: "", label: "All Contents" },
+  { value: "news highlight", label: "News Highlight" },
+  { value: "news", label: "News" },
+  { value: "event", label: "Events" },
+  { value: "announcement", label: "Announcements" },
+];
+
+const clearFilters = () => {
+  selectedSDG.value = "";
+  selectedYear.value = "";
+  selectedMonth.value = "";
+  selectedType.value = "";
+};
+
+watch([selectedSDG, selectedYear, selectedMonth, selectedType], () => {
+  currentPage.value = 1;
+});
+
 // Helper function to get SDG color
 const getSdgColor = (sdgNumber) => {
   return sdgColors[sdgNumber] || "#6b7280"; // Default gray if not found
@@ -152,6 +173,29 @@ const filteredInfo = computed(() => {
     });
   }
 
+  // Filter by Content Type
+  if (selectedType.value) {
+    filtered = filtered.filter((item) => {
+      const label = getCategoryLabel(item).toLowerCase();
+
+      // Normalize plural/singular
+      if (selectedType.value === "event") {
+        return label.includes("event");
+      }
+      if (selectedType.value === "announcement") {
+        return label.includes("announcement");
+      }
+      if (selectedType.value === "news highlight") {
+        return label.includes("news highlight");
+      }
+      if (selectedType.value === "news") {
+        return label === "news";
+      }
+
+      return true;
+    });
+  }
+
   // Sort by date field (latest to oldest)
   return filtered.sort((a, b) => {
     const dateA = moment(a.date);
@@ -166,13 +210,6 @@ const filteredInfo = computed(() => {
     return dateB.valueOf() - dateA.valueOf();
   });
 });
-
-// Clear filters
-const clearFilters = () => {
-  selectedSDG.value = "";
-  selectedYear.value = "";
-  selectedMonth.value = "";
-};
 
 // Add computed property for SDG badges - exact matches only
 const getSdgBadges = (item) => {
@@ -455,6 +492,25 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                 </select>
               </div>
 
+              <!-- Content Type Filter -->
+              <div class="w-full lg:mb-0 mb-3">
+                <label class="block text-sm font-medium text-gray-700">
+                  Filter by Content Type
+                </label>
+                <select
+                  v-model="selectedType"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                >
+                  <option
+                    v-for="opt in contentTypeOptions"
+                    :key="opt.value"
+                    :value="opt.value"
+                  >
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
               <!-- Clear Filters Button -->
               <div class="mt-5">
                 <button
@@ -622,6 +678,36 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                     </div>
                   </div>
 
+<div>
+  <span
+    v-for="(item, i) in j.filters
+      .split(',')
+      .map(v => v.trim())
+      .filter(v =>
+        ['announcements', 'news highlight', 'news', 'events', 'announcement', 'news highlights', 'news', 'event']
+          .includes(v.toLowerCase())
+      )"
+    :key="i"
+    :class="[
+      'uppercase font-bold inline-block px-2 py-1 rounded-full text-xs mr-2 mb-2',
+      item.toLowerCase() === 'announcements' && 'bg-yellow-100 text-yellow-800',
+      item.toLowerCase() === 'news' && 'bg-pink-100 text-pink-800',
+      item.toLowerCase() === 'news highlight' && 'bg-red-100 text-red-800',
+      item.toLowerCase() === 'events' && 'bg-green-100 text-green-800',
+       item.toLowerCase() === 'announcement' && 'bg-yellow-100 text-yellow-800',
+
+      item.toLowerCase() === 'news highlights' && 'bg-red-100 text-red-800',
+      item.toLowerCase() === 'event' && 'bg-green-100 text-green-800',
+    ]"
+  >
+    {{ item }}
+  </span>
+</div>
+
+
+      
+
+
                   <!-- Footer -->
                   <div
                     class="flex items-center justify-between pt-2 border-t border-gray-100"
@@ -702,8 +788,6 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
           >
             <div
               v-if="selectedSDG || selectedYear || selectedMonth"
-
-              
               class="text-center py-12"
             >
               <div class="text-gray-500 text-lg">
