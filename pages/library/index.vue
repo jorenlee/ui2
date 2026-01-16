@@ -1,6 +1,6 @@
 <script setup>
 import { useUserStore } from "@/stores/user";
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import moment from "moment";
 
 const userStore = useUserStore();
@@ -20,6 +20,7 @@ const VMGO = [
 ];
 
 const library = ref(null);
+const loading = ref(false);
 
 const endpoint = ref(userStore.mainDevServer);
 
@@ -85,7 +86,15 @@ const getSdgBadges = (item) => {
 };
 
 onMounted(async () => {
-  library.value = await $fetch(endpoint.value + "/api/cms/content/list/");
+  loading.value = true;
+  try {
+    library.value = await $fetch(endpoint.value + "/api/cms/content/list/");
+  } catch (err) {
+    console.error("Failed to load library content:", err);
+    library.value = [];
+  } finally {
+    loading.value = false;
+  }
 });
 
 const filteredLibrary = computed(() => {
@@ -108,6 +117,50 @@ const filteredLibrary = computed(() => {
     return false;
   });
 });
+
+// Pagination state
+const currentPage = ref(1);
+const pageSize = ref(9); // 3 columns x 3 rows by default
+
+const totalPages = computed(() => {
+  const total = (filteredLibrary.value || []).length;
+  return total ? Math.max(1, Math.ceil(total / pageSize.value)) : 1;
+});
+
+const pagedLibrary = computed(() => {
+  const items = filteredLibrary.value || [];
+  const start = (currentPage.value - 1) * pageSize.value;
+  return items.slice(start, start + pageSize.value);
+});
+
+// Create a derived list that memoizes SDG badges to avoid recomputing in template
+const pagedWithBadges = computed(() => {
+  return (pagedLibrary.value || []).map((item) => {
+    return {
+      ...item,
+      sdgBadges: getSdgBadges(item),
+    };
+  });
+});
+
+// Reset/validate page when filtered data or pageSize changes
+watch([filteredLibrary, pageSize], () => {
+  if (currentPage.value > totalPages.value) currentPage.value = 1;
+  if (currentPage.value < 1) currentPage.value = 1;
+});
+
+const goToPage = (n) => {
+  const page = Number(n) || 1;
+  if (page >= 1 && page <= totalPages.value) currentPage.value = page;
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) currentPage.value -= 1;
+};
+
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) currentPage.value += 1;
+};
 
 const menuList = [
   { label: "Learning Resource Center", link: "/library" },
@@ -435,20 +488,27 @@ const logos = ref([
         </div>
       </div>
 
-      <div class="w-full px-5">
-        <div class="flex items-center justify-between mb-2">
+      <div class="w-full px-5 lg:text-left text-center">
+        <div class="flex items-center mb-2">
           <h4
-            class="w-full font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
+            class="w-full font-bold lg:text-xl text-sm lg:my-2 text-center  justify-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
           >
-            Library | Learning Resource Center
+            Guide Tutorials and Library Resources
           </h4>
         </div>
+        <div v-if="loading" class="flex justify-center items-center py-10">
+          <svg class="animate-spin h-8 w-8 text-green-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+        </div>
+
         <div
-          v-if="filteredLibrary.length > 0"
+          v-else-if="filteredLibrary.length > 0"
           class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
         >
           <div
-            v-for="lib in (filteredLibrary || []).slice(0, 6)"
+            v-for="lib in pagedWithBadges"
             :key="lib.id"
             class="group overflow-hidden border-b hover:shadow-sm transition card-improved"
           >
@@ -463,7 +523,9 @@ const logos = ref([
                     v-if="lib.files?.length"
                     :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${lib.files[0]}`"
                     class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    alt="library resource"
+                    :alt="lib.title || 'library resource'"
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div
                     v-else
@@ -497,10 +559,10 @@ const logos = ref([
                   <!-- SDG Badges Section -->
                   <div class="flex items-center gap-1 flex-wrap mb-2">
                     <div
-                      v-for="badge in getSdgBadges(lib).slice(0, 3)"
-                      :key="badge.number"
-                      class="inline-flex items-center whitespace-nowrap text-[10px]"
-                    >
+                      v-for="badge in lib.sdgBadges.slice(0, 3)"
+                        :key="badge.number"
+                        class="inline-flex items-center whitespace-nowrap text-[10px]"
+                      >
                       <span
                         class="inline-flex items-center px-2 py-1 rounded font-bold text-white shadow-sm"
                         :style="{ backgroundColor: badge.color }"
@@ -510,10 +572,10 @@ const logos = ref([
                     </div>
 
                     <span
-                      v-if="getSdgBadges(lib).length > 3"
+                      v-if="lib.sdgBadges.length > 3"
                       class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
                     >
-                      +{{ getSdgBadges(lib).length - 3 }} more
+                      +{{ lib.sdgBadges.length - 3 }} more
                     </span>
                   </div>
 
@@ -535,13 +597,38 @@ const logos = ref([
             </a>
           </div>
         </div>
-        <div v-else class="text-sm text-gray-500">
-          <div v-if="selectedDate">
-            No library resources available for
-            {{ moment(selectedDate).format("MMMM DD, YYYY") }}.
+
+        <!-- Pagination Controls -->
+        <div v-if="!loading && filteredLibrary.length > 0" class="flex items-center justify-center mt-4 space-x-2">
+          <button
+            @click="prevPage"
+            :disabled="currentPage === 1"
+            class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          <div class="flex items-center gap-2 overflow-x-auto">
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              @click="goToPage(page)"
+              :class="page === currentPage ? 'bg-green-700 text-white' : 'bg-white text-gray-700'"
+              class="px-3 py-1 border rounded whitespace-nowrap"
+            >
+              {{ page }}
+            </button>
           </div>
-          <div v-else>No library resources available.</div>
+
+          <button
+            @click="nextPage"
+            :disabled="currentPage === totalPages"
+            class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
+      
       </div>
     </div>
     <div>
