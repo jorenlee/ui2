@@ -188,13 +188,27 @@ const filteredInfo = computed(() => {
       if (selectedType.value === "news highlight") {
         return label.includes("news highlight");
       }
-      if (selectedType.value === "news") {
-        return label === "news";
-      }
+    // Sort only when "News" is selected
+if (selectedType.value === "news") {
+  filtered = filtered.sort((a, b) => {
+    const dateA = moment(a.date || a.created_at);
+    const dateB = moment(b.date || b.created_at);
 
-      return true;
+    if (!dateA.isValid() && !dateB.isValid()) return 0;
+    if (!dateA.isValid()) return 1;
+    if (!dateB.isValid()) return -1;
+
+    // Latest to oldest
+    return dateB.valueOf() - dateA.valueOf();
+  });
+}
+
+return filtered;
     });
   }
+
+
+
 
   // Sort by date field (latest to oldest)
   return filtered.sort((a, b) => {
