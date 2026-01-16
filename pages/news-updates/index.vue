@@ -336,22 +336,8 @@ const groupedSections = computed(() => {
       ])
     )
   );
-  const others = sortByDateDesc(
-    data.filter((i) => {
-      const f = low(i.filters);
-      return !(
-        f.includes("news highlight") ||
-        f.includes("news-highlight") ||
-        f.includes("announcement") ||
-        f.includes("research") ||
-        f.includes("sustainability") ||
-        f.includes("social action") ||
-        f.includes("educational") ||
-        f.includes("technology") ||
-        f.includes("tech") ||
-        f.includes("npcc")
-      );
-    })
+  const library = sortByDateDesc(
+    data.filter((i) => isIn(i, ["library", "learning resource"]))
   );
 
   return {
@@ -360,7 +346,7 @@ const groupedSections = computed(() => {
     research,
     sustainability,
     educational,
-    others,
+    library,
   };
 });
 
@@ -1105,17 +1091,15 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                     <h4
                      class="w-full font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
                   >
-                      Library | Learning Resource Center
+                      Learning Resource Center
                     </h4>
                   </div>
                   <div
-                    v-if="
-                      groupedSections.others && groupedSections.others[0]
-                    "
+                    v-if="groupedSections.library"
                     class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"
                   >
                     <div
-                      v-for="lib in (groupedSections.others || []).slice(0, 6)"
+                      v-for="lib in (groupedSections.library || []).slice(0, 6)"
                       :key="lib.id"
                       class="group overflow-hidden border-b hover:shadow-sm transition card-improved"
                     >
