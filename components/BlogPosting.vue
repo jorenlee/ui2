@@ -18,7 +18,8 @@ const highlightedNews = computed(() => {
     .filter((item) => {
       // Only show items that have "highlight" in the filters field
       if (!item?.filters) return false;
-      return item.filters.toLowerCase().includes("highlight");
+      // return item.filters.toLowerCase().includes("highlight");
+      return item.filters.toLowerCase();
     })
     .sort((a, b) => {
       // Sort by date field (latest to oldest)
@@ -124,9 +125,7 @@ const getCategoryLabel = (item) => {
   if (filters.includes("news highlight")) return "News Highlight";
   if (filters.includes("announcement")) return "Announcement";
   if (filters.includes("event")) return "Event";
-
   if (filters.includes("news")) return "News";
-
   // If only SDGs, count them and return SDG label
   const sdgMatches = filters.match(/sdg\d+/gi) || [];
   if (sdgMatches.length > 0) {
@@ -197,7 +196,7 @@ onMounted(async () => {
 
       <div
         v-if="highlightedNews.length"
-        class="grid lg:grid-cols-4 grid-cols-2 lg:gap-6 gap-2 lg:w-11/12 mx-auto lg:px-0 px-2"
+        class="grid lg:grid-cols-4 grid-cols-2 lg:gap-3 gap-2 lg:w-11/12 mx-auto lg:px-0 px-2"
       >
         <div
           v-for="(j, i) in highlightedNews.slice(0, 4)"
@@ -244,10 +243,34 @@ onMounted(async () => {
                 >
                   {{ getCategoryLabel(j) }}
                 </span>
-                <span class="lg:text-xs text-[10px] text-gray-400 whitespace-nowrap ml-2">
-                  {{ moment(j.date || j.created_at).format("MMM DD") }}
+              <div class="flex items-center">
+            
+
+                       <!-- SDG Badges -->
+              <span v-if="getSdgBadges(j).length" class="">
+                <span class="flex items-center flex-wrap gap-1">
+                  <span
+                    v-for="badge in getSdgBadges(j).slice(0, 2)"
+                    :key="badge.number"
+                    class="inline-flex items-center"
+                  >
+                    <span
+                      class="inline-flex items-center lg:px-2 px-1 py-0.5 min-w-4 justify-center rounded lg:text-xs text-[10px] font-bold text-white shadow-sm"
+                      :style="{ backgroundColor: badge.color }"
+                    >
+                     <span class="lg:flex hidden"> SDG </span>{{ badge.number }}
+                    </span>
+                  </span>
+                  <span
+                    v-if="getSdgBadges(j).length > 2"
+                    class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                  >
+                    +{{ getSdgBadges(j).length - 2 }} more
+                  </span>
                 </span>
+              </span>
               </div>
+            </div>
 
               <!-- Title -->
               <h3
@@ -265,29 +288,7 @@ onMounted(async () => {
                 }}{{ j.descriptions.length > 100 ? "..." : "" }}
               </p>
 
-              <!-- SDG Badges -->
-              <div v-if="getSdgBadges(j).length" class="mb-3">
-                <div class="flex flex-wrap gap-1">
-                  <div
-                    v-for="badge in getSdgBadges(j).slice(0, 2)"
-                    :key="badge.number"
-                    class="inline-flex items-center"
-                  >
-                    <span
-                      class="inline-flex items-center lg:px-2 px-1 py-0.5 min-w-4 justify-center rounded lg:text-xs text-[10px] font-bold text-white shadow-sm"
-                      :style="{ backgroundColor: badge.color }"
-                    >
-                     <span class="lg:flex hidden"> SDG </span>{{ badge.number }}
-                    </span>
-                  </div>
-                  <span
-                    v-if="getSdgBadges(j).length > 2"
-                    class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
-                  >
-                    +{{ getSdgBadges(j).length - 2 }} more
-                  </span>
-                </div>
-              </div>
+       
 
               <!-- Footer -->
               <div
@@ -316,7 +317,7 @@ onMounted(async () => {
 
       <div class="w-11/12 mx-auto lg:mt-10 mt-5" v-if="highlightedNews.length">
         <a
-          href="/news-updates"
+          href="/news-updates/list"
           class="ml-auto mr-0 block w-fit whitespace-nowrap text-white text-lg rounded-xl mt-30 italic hover:font-bold hover:text-xl"
         >
           More
