@@ -2,38 +2,52 @@
   <div class="bg-gray-50">
     <Header />
 
-    <!-- BANNER -->
-    <div class="relative pt-14">
-      <Banner />
-
-      <!-- Mobile Banner Image -->
-      <img
-        src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
-        class="w-full lg:h-36 h-28 object-cover lg:hidden block"
-      />
-
-      <!-- Title -->
-      <div class="absolute inset-0 flex items-center">
-        <h1
-          class="font-bold uppercase text-white lg:text-xl text-sm w-11/12 mx-auto lg:mt-12 mt-6"
+    <div class="">
+      <div class="relative">
+        <Banner />
+        <img
+          src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
+          class="align-top w-full h-36 object-none lg:hidden block"
+        />
+        <div></div>
+        <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
+          <h2
+          class="font-bold uppercase text-white lg:text-xl text-sm w-11/12 mx-auto lg:my-12 my-6"
         >
           Network, Programs and Computerization Center
-        </h1>
-      </div>
+        </h2>
+        </div>
 
-      <!-- Breadcrumb -->
-      <div class="bg-white shadow-lg py-3">
-        <ul class="flex lasalle-green-text capitalize w-11/12 mx-auto text-xs">
-          <li>
-            <a href="/" class="mr-1">Home</a>
-          </li>
-          <li>
-            <i class="fas fa-caret-right mx-1"></i>
-            <span>NPCC</span>
-          </li>
-        </ul>
+        <div class="shadow-lg text-green-700">
+          <div class="lg:flex justify-between border-b border-gray-200 lg:pl-5">
+            <div
+              class="flex items-center capitalize text-xs lg:border-b-0 border-b lg:px-0 px-1.5 py-2"
+            >
+              <div>
+                <a href="/" class="mr-2 hover:underline lg:h-10">Home</a>
+              </div>
+              <div>
+                <i class="fas fa-caret-right"></i>
+                <a href="/npcc" class="mx-2 hover:underline lg:h-10"
+                  >NPCC</a
+                >
+              </div>
+            </div>
+            <div class="flex hover:text-green-800 text-white bg-white h-full">
+              <div
+                class="hover:bg-green-800 bg-white hover:text-white text-green-800 px-1 lg:px-4 lg:h-10 h-8 flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full"
+              >
+                <a href="/cms/login" class="flex items-center w-fit mx-auto">
+                  <i class="fa fa-user" aria-hidden="true"></i>
+                  <span class="ml-3 whitespace-nowrap">Admin Login</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+
 
     <!-- MAIN CONTENT -->
     <div class="w-11/12 mx-auto lg:py-12 py-5 space-y-10">
@@ -45,7 +59,7 @@
           <p class="text-sm mb-4">In need of technical assistance?</p>
 
           <NuxtLink
-            to="/npcc/tech-support"
+            to="/npcc/request"
             class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-green-700 text-white text-sm font-semibold hover:bg-green-800 transition"
           >
             <i class="fas fa-desktop"></i>
@@ -81,13 +95,17 @@
 
       <!-- MEET THE TEAM -->
       <section>
-        <h2 class="text-center font-bold text-4xl mb-5 text-green-800">
-          Meet the Team
-        </h2>
-
-        <!-- DESKTOP CIRCULAR LAYOUT (UNCHANGED) -->
+        <!-- DESKTOP CIRCULAR LAYOUT -->
         <div class="relative hidden sm:flex justify-center">
           <div class="relative w-[520px] h-[520px] lg:w-[720px] lg:h-[720px]">
+            <!-- CENTER TITLE -->
+            <h2
+              class="absolute inset-0 flex items-center justify-center text-center font-bold text-3xl lg:text-4xl text-green-800 pointer-events-none"
+            >
+              Meet the Team
+            </h2>
+
+            <!-- TEAM MEMBERS -->
             <div
               v-for="(member, index) in team"
               :key="index"
@@ -109,7 +127,9 @@
                   <p class="text-xs mt-1 text-center lasalle-green-text">
                     {{ member.name }}
                   </p>
-                  <p class="text-xs font-bold text-center lasalle-green-text -mt-1">
+                  <p
+                    class="text-xs font-bold text-center lasalle-green-text -mt-1"
+                  >
                     {{ member.designation }}
                   </p>
                 </div>
@@ -232,7 +252,7 @@ const mobileOrder = [
 const mobileTeam = computed(() =>
   mobileOrder
     .map((role) => team.find((member) => member.designation === role))
-    .filter(Boolean)
+    .filter(Boolean),
 );
 
 const getPosition = (index, total) => {

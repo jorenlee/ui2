@@ -119,7 +119,7 @@ const availableMonths = computed(() => {
   const months = info.value
     .filter(
       (item) =>
-        item.date && moment(item.date).year() === parseInt(selectedYear.value)
+        item.date && moment(item.date).year() === parseInt(selectedYear.value),
     )
     .map((item) => moment(item.date).month());
   return [...new Set(months)].sort((a, b) => a - b);
@@ -188,27 +188,24 @@ const filteredInfo = computed(() => {
       if (selectedType.value === "news highlight") {
         return label.includes("news highlight");
       }
-    // Sort only when "News" is selected
-if (selectedType.value === "news") {
-  filtered = filtered.sort((a, b) => {
-    const dateA = moment(a.date || a.created_at);
-    const dateB = moment(b.date || b.created_at);
+      // Sort only when "News" is selected
+      if (selectedType.value === "news") {
+        filtered = filtered.sort((a, b) => {
+          const dateA = moment(a.date || a.created_at);
+          const dateB = moment(b.date || b.created_at);
 
-    if (!dateA.isValid() && !dateB.isValid()) return 0;
-    if (!dateA.isValid()) return 1;
-    if (!dateB.isValid()) return -1;
+          if (!dateA.isValid() && !dateB.isValid()) return 0;
+          if (!dateA.isValid()) return 1;
+          if (!dateB.isValid()) return -1;
 
-    // Latest to oldest
-    return dateB.valueOf() - dateA.valueOf();
-  });
-}
+          // Latest to oldest
+          return dateB.valueOf() - dateA.valueOf();
+        });
+      }
 
-return filtered;
+      return filtered;
     });
   }
-
-
-
 
   // Sort by date field (latest to oldest)
   return filtered.sort((a, b) => {
@@ -274,7 +271,7 @@ const hasVideoContent = (item) => {
       (link) =>
         link.includes("youtube.com") ||
         link.includes("youtu.be") ||
-        link.includes("facebook.com/reel")
+        link.includes("facebook.com/reel"),
     )
   ) {
     return true;
@@ -362,7 +359,7 @@ const visiblePages = computed(() => {
   const pages = [];
   let startPage = Math.max(
     1,
-    currentPage.value - Math.floor(maxVisiblePages / 2)
+    currentPage.value - Math.floor(maxVisiblePages / 2),
   );
   let endPage = Math.min(totalPages.value, startPage + maxVisiblePages - 1);
 
@@ -707,7 +704,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                             'news highlights',
                             'news',
                             'event',
-                          ].includes(v.toLowerCase())
+                          ].includes(v.toLowerCase()),
                         )"
                       :key="i"
                       :class="[
@@ -869,7 +866,8 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37),
+  box-shadow:
+    0 8px 32px 0 rgba(31, 38, 135, 0.37),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 
   /* Floating effect */
@@ -879,7 +877,8 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 
 .glass-effect:hover {
   transform: translateY(-15px);
-  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5),
+  box-shadow:
+    0 12px 40px 0 rgba(31, 38, 135, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
@@ -941,26 +940,36 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
   -webkit-text-stroke: 2px white;
   -webkit-text-fill-color: #ffffff;
   paint-order: stroke fill;
-  text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white,
-    1px 1px 0 white, -2px -2px 0 white, 2px -2px 0 white, -2px 2px 0 white,
+  text-shadow:
+    -1px -1px 0 white,
+    1px -1px 0 white,
+    -1px 1px 0 white,
+    1px 1px 0 white,
+    -2px -2px 0 white,
+    2px -2px 0 white,
+    -2px 2px 0 white,
     2px 2px 0 white;
 }
 
 /* Custom text shadow for enhanced depth and floating effect */
 .custom-text-shadow {
   text-shadow:
-    /* Primary dark shadows for depth */ 0 4px 8px
-      rgba(138, 125, 125, 0.8),
-    0 6px 12px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.4),
+    /* Primary dark shadows for depth */
+    0 4px 8px rgba(138, 125, 125, 0.8),
+    0 6px 12px rgba(0, 0, 0, 0.6),
+    0 8px 16px rgba(0, 0, 0, 0.4),
     0 10px 20px rgba(0, 0, 0, 0.3),
     /* Secondary gray shadows for floating effect */ 0 12px 24px
       rgba(128, 128, 128, 0.5),
-    0 16px 32px rgba(128, 128, 128, 0.3), 0 20px 40px rgba(128, 128, 128, 0.2),
+    0 16px 32px rgba(128, 128, 128, 0.3),
+    0 20px 40px rgba(128, 128, 128, 0.2),
     0 24px 48px rgba(128, 128, 128, 0.1),
     /* Subtle glow effect for prominence */ 0 0 10px rgba(255, 255, 255, 0.4),
-    0 0 20px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.1),
+    0 0 20px rgba(255, 255, 255, 0.2),
+    0 0 30px rgba(255, 255, 255, 0.1),
     /* Sharp definition shadows for clarity */ 1px 1px 2px rgba(0, 0, 0, 0.9),
-    2px 2px 4px rgba(0, 0, 0, 0.8), 3px 3px 6px rgba(0, 0, 0, 0.6),
+    2px 2px 4px rgba(0, 0, 0, 0.8),
+    3px 3px 6px rgba(0, 0, 0, 0.6),
     4px 4px 8px rgba(0, 0, 0, 0.4);
 
   /* Additional effects */

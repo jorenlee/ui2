@@ -158,6 +158,9 @@
           <div class="p-4" v-else-if="currentView === 'university-calendar'">
             <SuperAdminDashboardChancellorOffice />
           </div>
+          <div class="p-4" v-else-if="currentView === 'npcc'">
+            NPCC Management Content
+          </div>
         </div>
 
         <!-- FOOTER -->
@@ -215,6 +218,7 @@ const openGroups = ref([
   "Human Resource",
   "Library Management",
   "Office of The Chancellor",
+  "NPCC IT Services",
   "External Links",
 ]);
 
@@ -251,7 +255,7 @@ const ochAdminEmails = [
 ];
 
 const contentWritersEmails = [
-    "monaliza.mugot@lsu.edu.ph",
+  "monaliza.mugot@lsu.edu.ph",
   "jackjun.caupayan@lsu.edu.ph",
   "mariaalexandra.benitez@lsu.edu.ph",
   "alexander.diaz@lsu.edu.ph",
@@ -291,12 +295,19 @@ const libraryMenuEmails = [
   "zosette.salas@lsu.edu.ph",
 ];
 
+const npccMenuEmails = [
+  "jorenlee.luna@lsu.edu.ph",
+  "jason.yap@lsu.edu.ph",
+  "michaeljohn.puertogalera@lsu.edu.ph",
+];
+
 const rolesByEmail = {
   superAdmin: superAdminEmails,
   hr: hrMenuEmails,
   library: libraryMenuEmails,
   contentWriter: contentWritersEmails,
   och: ochAdminEmails,
+  npcc: npccMenuEmails,
 };
 
 // ---------------- DETERMINE ROLE ----------------
@@ -308,6 +319,7 @@ const userRole = computed(() => {
   if (rolesByEmail.library.includes(email)) return "library";
   if (rolesByEmail.contentWriter.includes(email)) return "contentWriter";
   if (rolesByEmail.och.includes(email)) return "och";
+  if (rolesByEmail.npcc.includes(email)) return "npcc";
   return null;
 });
 
@@ -338,6 +350,18 @@ const menuList = [
         icon: "fa-list-alt",
         type: "button",
         view: "list",
+      },
+    ],
+  },
+  {
+    group: "NPCC IT Services",
+    allowedEmails: npccMenuEmails,
+    items: [
+      {
+        label: "NPCC Management",
+        icon: "fa-cogs",
+        type: "button",
+        view: "npcc",
       },
     ],
   },

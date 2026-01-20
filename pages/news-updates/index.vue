@@ -92,7 +92,7 @@ const availableMonths = computed(() => {
   const months = info.value
     .filter(
       (item) =>
-        item.date && moment(item.date).year() === parseInt(selectedYear.value)
+        item.date && moment(item.date).year() === parseInt(selectedYear.value),
     )
     .map((item) => moment(item.date).month());
   return [...new Set(months)].sort((a, b) => a - b);
@@ -117,7 +117,7 @@ const filteredInfo = computed(() => {
         `sdg${selectedSdgNum.padStart(2, "0")}`,
       ];
       return exactPatterns.some((p) =>
-        new RegExp(`\\b${p}\\b`, "i").test(filters)
+        new RegExp(`\\b${p}\\b`, "i").test(filters),
       );
     });
   }
@@ -126,7 +126,7 @@ const filteredInfo = computed(() => {
   if (selectedYear.value) {
     filtered = filtered.filter(
       (item) =>
-        item.date && moment(item.date).year() === parseInt(selectedYear.value)
+        item.date && moment(item.date).year() === parseInt(selectedYear.value),
     );
   }
 
@@ -134,7 +134,8 @@ const filteredInfo = computed(() => {
   if (selectedMonth.value) {
     filtered = filtered.filter(
       (item) =>
-        item.date && moment(item.date).month() === parseInt(selectedMonth.value)
+        item.date &&
+        moment(item.date).month() === parseInt(selectedMonth.value),
     );
   }
 
@@ -217,7 +218,7 @@ const hasVideoContent = (item) => {
       (link) =>
         link.includes("youtube.com") ||
         link.includes("youtu.be") ||
-        link.includes("facebook.com/reel")
+        link.includes("facebook.com/reel"),
     )
   ) {
     return true;
@@ -312,16 +313,16 @@ const groupedSections = computed(() => {
   };
 
   const newsHighlight = sortByDateDesc(
-    data.filter((i) => isIn(i, ["news highlight", "news-highlight"]))
+    data.filter((i) => isIn(i, ["news highlight", "news-highlight"])),
   );
   const announcements = sortByDateDesc(
-    data.filter((i) => isIn(i, ["announcement"]))
+    data.filter((i) => isIn(i, ["announcement"])),
   );
   const research = sortByDateDesc(data.filter((i) => isIn(i, ["research"])));
   const sustainability = sortByDateDesc(
     data.filter((i) =>
-      isIn(i, ["sustainability", "social action", "social-action"])
-    )
+      isIn(i, ["sustainability", "social action", "social-action"]),
+    ),
   );
   const educational = sortByDateDesc(
     data.filter((i) =>
@@ -333,11 +334,11 @@ const groupedSections = computed(() => {
         "ict",
         "information and communications technology",
         "educational technology center",
-      ])
-    )
+      ]),
+    ),
   );
   const library = sortByDateDesc(
-    data.filter((i) => isIn(i, ["library", "learning resource"]))
+    data.filter((i) => isIn(i, ["library", "learning resource"])),
   );
 
   return {
@@ -437,7 +438,7 @@ watch(
     } else {
       if (highlightIndex.value >= newList.length) highlightIndex.value = 0;
     }
-  }
+  },
 );
 
 // Reset page when filters change
@@ -580,7 +581,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                                 <div class="text-xs text-gray-500">
                                   {{
                                     moment(item.date || item.created_at).format(
-                                      "MMM DD"
+                                      "MMM DD",
                                     )
                                   }}
                                 </div>
@@ -604,7 +605,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                                 <div
                                   v-for="badge in getSdgBadges(item).slice(
                                     0,
-                                    3
+                                    3,
                                   )"
                                   :key="badge.number"
                                   class="inline-flex items-center whitespace-nowrap text-[10px]"
@@ -674,7 +675,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                               {{
                                 moment(
                                   activeHighlight?.date ||
-                                    activeHighlight?.created_at
+                                    activeHighlight?.created_at,
                                 ).format("MMM DD")
                               }}
                             </div>
@@ -789,7 +790,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                   <div
                     v-for="a in (groupedSections.announcements || []).slice(
                       0,
-                      3
+                      3,
                     )"
                     :key="a.id"
                     class="border-b p-3"
@@ -865,7 +866,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                             <i class="fas fa-calendar mr-1"></i>
                             {{
                               moment(a.date || a.created_at).format(
-                                "MMMM DD, YYYY"
+                                "MMMM DD, YYYY",
                               )
                             }}
                           </div>
@@ -952,7 +953,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                               <div class="text-xs text-gray-400">
                                 {{
                                   moment(r.date || r.created_at).format(
-                                    "MMM DD"
+                                    "MMM DD",
                                   )
                                 }}
                               </div>
@@ -993,7 +994,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                     <div
                       v-for="s in (groupedSections.sustainability || []).slice(
                         0,
-                        8
+                        8,
                       )"
                       :key="s.id"
                       class="group overflow-hidden border-b hover:shadow-sm transition card-improved"
@@ -1063,7 +1064,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                               <div>
                                 {{
                                   moment(s.date || s.created_at).format(
-                                    "MMM DD"
+                                    "MMM DD",
                                   )
                                 }}
                               </div>
@@ -1089,8 +1090,8 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                 <div>
                   <div class="flex items-center justify-between mb-2">
                     <h4
-                     class="w-full font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
-                  >
+                      class="w-full font-bold lg:text-xl text-sm lg:my-2 lg:text-left text-center lg:bg-white lg:text-green-800 text-white bg-green-800 py-1"
+                    >
                       Learning Resource Center
                     </h4>
                   </div>
@@ -1175,7 +1176,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                               <div>
                                 {{
                                   moment(lib.date || lib.created_at).format(
-                                    "MMM DD"
+                                    "MMM DD",
                                   )
                                 }}
                               </div>
@@ -1359,7 +1360,8 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37),
+  box-shadow:
+    0 8px 32px 0 rgba(31, 38, 135, 0.37),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 
   /* Floating effect */
@@ -1369,7 +1371,8 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 
 .glass-effect:hover {
   transform: translateY(-15px);
-  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5),
+  box-shadow:
+    0 12px 40px 0 rgba(31, 38, 135, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
@@ -1431,26 +1434,36 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
   -webkit-text-stroke: 2px white;
   -webkit-text-fill-color: #ffffff;
   paint-order: stroke fill;
-  text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white,
-    1px 1px 0 white, -2px -2px 0 white, 2px -2px 0 white, -2px 2px 0 white,
+  text-shadow:
+    -1px -1px 0 white,
+    1px -1px 0 white,
+    -1px 1px 0 white,
+    1px 1px 0 white,
+    -2px -2px 0 white,
+    2px -2px 0 white,
+    -2px 2px 0 white,
     2px 2px 0 white;
 }
 
 /* Custom text shadow for enhanced depth and floating effect */
 .custom-text-shadow {
   text-shadow:
-    /* Primary dark shadows for depth */ 0 4px 8px
-      rgba(138, 125, 125, 0.8),
-    0 6px 12px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.4),
+    /* Primary dark shadows for depth */
+    0 4px 8px rgba(138, 125, 125, 0.8),
+    0 6px 12px rgba(0, 0, 0, 0.6),
+    0 8px 16px rgba(0, 0, 0, 0.4),
     0 10px 20px rgba(0, 0, 0, 0.3),
     /* Secondary gray shadows for floating effect */ 0 12px 24px
       rgba(128, 128, 128, 0.5),
-    0 16px 32px rgba(128, 128, 128, 0.3), 0 20px 40px rgba(128, 128, 128, 0.2),
+    0 16px 32px rgba(128, 128, 128, 0.3),
+    0 20px 40px rgba(128, 128, 128, 0.2),
     0 24px 48px rgba(128, 128, 128, 0.1),
     /* Subtle glow effect for prominence */ 0 0 10px rgba(255, 255, 255, 0.4),
-    0 0 20px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.1),
+    0 0 20px rgba(255, 255, 255, 0.2),
+    0 0 30px rgba(255, 255, 255, 0.1),
     /* Sharp definition shadows for clarity */ 1px 1px 2px rgba(0, 0, 0, 0.9),
-    2px 2px 4px rgba(0, 0, 0, 0.8), 3px 3px 6px rgba(0, 0, 0, 0.6),
+    2px 2px 4px rgba(0, 0, 0, 0.8),
+    3px 3px 6px rgba(0, 0, 0, 0.6),
     4px 4px 8px rgba(0, 0, 0, 0.4);
 
   /* Additional effects */
@@ -1460,7 +1473,9 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 
 /* Card improvements for mobile/touch */
 .card-improved {
-  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 .card-improved:active {
   transform: translateY(2px) scale(0.998);
