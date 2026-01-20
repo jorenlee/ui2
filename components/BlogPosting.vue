@@ -318,10 +318,12 @@ onMounted(async () => {
       <div class="w-11/12 mx-auto lg:mt-10 mt-5" v-if="highlightedNews.length">
         <a
           href="/news-updates/list"
-          class="ml-auto mr-0 block w-fit whitespace-nowrap text-white text-lg rounded-xl mt-30 italic hover:font-bold hover:text-xl"
+          class="justify-center text-center block w-full border-0 whitespace-nowrap text-white text-lg rounded-xl mt-30 italic hover:font-bold hover:text-xl hover:animate-bounce"
         >
-          More
-          <i class="fa fa-angle-double-right italic" aria-hidden="true"></i>
+          <span class="block">
+            More
+          </span>
+          <i class="fa fa-angle-double-down italic -mt-1 block w-full" aria-hidden="true"></i>
         </a>
       </div>
     </div>
