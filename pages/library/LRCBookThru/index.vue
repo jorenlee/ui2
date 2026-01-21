@@ -63,7 +63,9 @@ const fetchInitialData = async () => {
   try {
     isLoading.value = true;
 
-    const scheds = await $fetch(endpoint.value + "/api/library/schedule/booking/list/");
+    const scheds = await $fetch(
+      endpoint.value + "/api/library/schedule/booking/list/",
+    );
     schedulesListsData.value = scheds || [];
 
     highlightedDates.value = schedulesListsData.value.map((s) => s.date);
@@ -99,7 +101,7 @@ let silentFetchInterval = null;
 const fetchSchedulesSilently = async () => {
   try {
     const fresh = await $fetch(
-      endpoint.value + "/api/library/schedule/booking/list/"
+      endpoint.value + "/api/library/schedule/booking/list/",
     );
     if (JSON.stringify(schedulesListsData.value) !== JSON.stringify(fresh)) {
       schedulesListsData.value = fresh || [];
@@ -143,7 +145,7 @@ const updateAvailableTimeSlots = () => {
   const now = moment();
 
   const match = schedulesListsData.value.find(
-    (s) => s.date === schedule.value.date
+    (s) => s.date === schedule.value.date,
   );
 
   if (!match || !Array.isArray(match.time)) {
@@ -156,13 +158,10 @@ const updateAvailableTimeSlots = () => {
   schedule.value.time =
     match.date === today
       ? match.time.filter((t) =>
-          moment(t.range_from_time, "hh:mm A").isAfter(now)
+          moment(t.range_from_time, "hh:mm A").isAfter(now),
         )
       : [...match.time];
 };
-
-
-
 
 const listAvailableBooksBtn = () => {
   searchIconBtnClicked.value = true;
@@ -172,7 +171,7 @@ const listAvailableBooksBtn = () => {
     filterSearchBooks.value = books.value.filter((params) =>
       params.title
         .toLowerCase()
-        .includes(searchForAvailableBooks.value.toLowerCase())
+        .includes(searchForAvailableBooks.value.toLowerCase()),
     );
   } else {
     filterSearchBooks.value = 0;
@@ -195,7 +194,7 @@ const addBooks = async (obj) => {
 const editForm = async (obj) => {
   let booksData =
     (await $fetch(
-      endpoint.value + "/api/library/reports/book/" + obj.id + "/"
+      endpoint.value + "/api/library/reports/book/" + obj.id + "/",
     ).catch((error) => error.data)) || 0;
   booksData.number_of_copies--;
   await $fetch(
@@ -204,7 +203,7 @@ const editForm = async (obj) => {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: booksData,
-    }
+    },
   );
 };
 
@@ -226,7 +225,7 @@ const removeRow = (obj) => {
 const reverseEditForm = async (obj) => {
   let booksData =
     (await $fetch(
-      endpoint.value + "/api/library/reports/book/" + obj.id + "/"
+      endpoint.value + "/api/library/reports/book/" + obj.id + "/",
     ).catch((error) => error.data)) || 0;
   booksData.number_of_copies++;
   await $fetch(
@@ -235,7 +234,7 @@ const reverseEditForm = async (obj) => {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: booksData,
-    }
+    },
   );
 };
 
@@ -272,7 +271,7 @@ const updateSchedule = async () => {
           schedule.value.time,
           (params) =>
             params.range_from_time !== pickedTime.value.range_from_time &&
-            params.range_to_time !== pickedTime.value.range_to_time
+            params.range_to_time !== pickedTime.value.range_to_time,
         );
 
   await $fetch(
@@ -285,7 +284,7 @@ const updateSchedule = async () => {
         time: timeList.value,
         updated_at: schedule.value.updated_at,
       },
-    }
+    },
   ).then(() => {
     submitAppointmentToGmail();
   });
@@ -297,10 +296,9 @@ const isTimeAvailable = (t) => {
   return schedule.value.time.some(
     (s) =>
       s.range_from_time === t._12_hour_format_from &&
-      s.range_to_time === t._12_hour_format_to
+      s.range_to_time === t._12_hour_format_to,
   );
 };
-
 
 const createBtn = () => {
   submitForm();
@@ -338,7 +336,11 @@ const submitAppointmentToGmail = async () => {
 };
 
 watchEffect(() => {
-  console.log("schedule.time type:", typeof schedule.value.time, schedule.value.time);
+  console.log(
+    "schedule.time type:",
+    typeof schedule.value.time,
+    schedule.value.time,
+  );
 });
 </script>
 
@@ -402,21 +404,40 @@ watchEffect(() => {
             <form v-on:submit.prevent="createBtn" class="px-3">
               <div class="lg:w-fit w-auto mx-auto lg:flex lg:gap-20">
                 <div>
-                 <div v-if="isLoading" class="flex justify-center items-center lg:py-10">
-  <div class="border w-[310px] h-[310px] shadow  flex items-center space-y-2 text-gray-600">
-<div class="flex w-fit mx-auto gap-x-5"> 
-
-    <svg class="animate-spin h-6 w-6 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-      <path class="opacity-75" fill="currentColor"
-        d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
-    </svg>
-    <p class="text-sm font-medium">Scanning available schedules ...</p>
-
-</div>
-  </div>
-</div>
-
+                  <div
+                    v-if="isLoading"
+                    class="flex justify-center items-center lg:py-10"
+                  >
+                    <div
+                      class="border w-[310px] h-[310px] shadow flex items-center space-y-2 text-gray-600"
+                    >
+                      <div class="flex w-fit mx-auto gap-x-5">
+                        <svg
+                          class="animate-spin h-6 w-6 text-blue-500"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            class="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            stroke-width="4"
+                          ></circle>
+                          <path
+                            class="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                          />
+                        </svg>
+                        <p class="text-sm font-medium">
+                          Scanning available schedules ...
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
                   <div class="lg:w-fit mb-1" v-else>
                     <div class="">
@@ -454,43 +475,42 @@ watchEffect(() => {
                   </h1>
                   <div class="w-full rounded-md justify-center">
                     <ul class="grid lg:grid-cols-3 grid-cols-2">
-<li
-  class="flex items-center mb-3 font-semibold whitespace-nowrap w-fit justify-left lg:mx-7 mx-2.5 gap-x-2"
-  v-for="(t, i) in timeSelection[0].time"
-  :key="i"
->
-  <input
-    type="radio"
-    name="time"
-    :value="t"
-    class="mr-2 mt-0.5"
-    v-model="pickedTime"
-    v-if="isTimeAvailable(t)"
-    :id="i"
-    required
-  />
+                      <li
+                        class="flex items-center mb-3 font-semibold whitespace-nowrap w-fit justify-left lg:mx-7 mx-2.5 gap-x-2"
+                        v-for="(t, i) in timeSelection[0].time"
+                        :key="i"
+                      >
+                        <input
+                          type="radio"
+                          name="time"
+                          :value="t"
+                          class="mr-2 mt-0.5"
+                          v-model="pickedTime"
+                          v-if="isTimeAvailable(t)"
+                          :id="i"
+                          required
+                        />
 
-  <input
-    type="radio"
-    class="mr-2 mt-0.5"
-    disabled
-    v-else
-  />
+                        <input
+                          type="radio"
+                          class="mr-2 mt-0.5"
+                          disabled
+                          v-else
+                        />
 
-  <label
-    :for="i"
-    class="lg:text-xs text-[10px]"
-    :class="
-      isTimeAvailable(t)
-        ? 'text-[#087830] font-bold'
-        : 'text-gray-400 font-light'
-    "
-  >
-    {{ t._12_hour_format_from }} - {{ t._12_hour_format_to }}
-  </label>
-</li>
-
-
+                        <label
+                          :for="i"
+                          class="lg:text-xs text-[10px]"
+                          :class="
+                            isTimeAvailable(t)
+                              ? 'text-[#087830] font-bold'
+                              : 'text-gray-400 font-light'
+                          "
+                        >
+                          {{ t._12_hour_format_from }} -
+                          {{ t._12_hour_format_to }}
+                        </label>
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -654,7 +674,7 @@ watchEffect(() => {
                               v-for="(b, i) in _.orderBy(
                                 filterSearchBooks,
                                 'id',
-                                'asc'
+                                'asc',
                               )"
                               :key="i"
                               :class="i % 2 ? 'lg:bg-gray-100' : ''"
@@ -815,7 +835,7 @@ watchEffect(() => {
                 >
                   Date and Time and other fields are required!
                 </div>
-                <div class="mt-5 mb-3 w-fit lg:mx-auto mx-auto">
+                <div class="mt-5 mb-3 w-fit lg:mx-auto mx-auto" v-if="info.books.length > 0">
                   <button
                     class="hover:text-green-800 border border-green-800 text-white hover:bg-white bg-green-800 uppercase text-xs rounded-md w-fit mx-auto px-5 py-2 text-center font-bold lg:mb-0 mb-5"
                   >
