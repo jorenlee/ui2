@@ -486,7 +486,14 @@ const CATEGORY_OPTIONS = ["Hardware", "Software", "Network", "Accessory", "Devic
 const ITEM_TYPE_OPTIONS = ["Laptop", "Desktop", "Printer", "Ink", "Scanner", "Monitor", "Keyboard", "Mouse", "Router", "Switch", "UPS", "Cable", "Others"];
 const SEMESTER_OPTIONS = ["First Semester", "Second Semester", "Summer"];
 const STATUS_OPTIONS = ["New", "Used", "For Repair", "For Disposal", "Returned", "Issued", "Replaced", "Condemned", "Serviceable", "Unserviceable"];
-const TECHNICIANS_PERSONNEL = ["Michael John Puertogalera","Jo Renlee Luna","Jason Yap","Flourence John Gonzaga","Rommel Rosal","Denzel Roy Suarez","Giovanni Morales"];
+const TECHNICIANS_PERSONNEL = [
+  "Michael John Puertogalera",
+  "Jo Renlee Luna",
+  "Jason Yap",
+  "Flourence John Gonzaga",
+  "Rommel Rosal",
+  "Denzel Roy Suarez",
+  "Giovanni Jose Morales"];
 const ACADEMIC_YEAR_OPTIONS = (() => {
   const currentYear = moment().year();
   const years = [];

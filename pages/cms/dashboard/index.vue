@@ -248,6 +248,10 @@ const superAdminEmails = [
   "npc@lsu.edu.ph",
   "michaeljohn.puertogalera@lsu.edu.ph",
   "jason.yap@lsu.edu.ph",
+  "johny14_gonzaga@lsu.edu.ph",
+  "giovanni.morales@lsu.edu.ph",
+  "rommel.rosal@lsu.edu.ph",
+  "denzelroy.suarez@lsu.edu.ph"
 ];
 
 const ochAdminEmails = [
