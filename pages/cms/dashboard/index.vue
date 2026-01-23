@@ -159,7 +159,7 @@
             <SuperAdminDashboardChancellorOffice />
           </div>
           <div class="p-4" v-else-if="currentView === 'npcc'">
-            NPCC Management Content
+            <SuperAdminDashboardServicesIt />
           </div>
         </div>
 

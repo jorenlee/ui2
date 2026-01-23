@@ -238,8 +238,11 @@ onBeforeUnmount(() => {
                       v-for="d in dataList"
                       :key="d.id"
                       v-show="d.booking_time === t"
-                      class="mt-1"
+                      class="mt-1 text-xs"
                     >
+                   <p>
+                     {{ d.firstname }} {{ d.lastname }}
+                   </p>
                       <button
                         @click="goToEdit(d.id)"
                         class="w-full py-0.5 rounded-sm flex items-center justify-between px-3 text-white border hover:bg-white"
