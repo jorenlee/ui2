@@ -1,10 +1,13 @@
 <template>
   <div class="p-6 text-sm">
-    <h2 class="text-xl font-bold mb-4">NPCC Tech Support</h2>
+    <h2 class="text-xl font-bold mb-4">NPCC Tech Support & IT Services</h2>
 
     <!-- ACTION BAR -->
-    <div class="flex flex-wrap gap-3 items-center mb-4">
-      <select v-model="statusFilter" class="input w-auto">
+    <div class="flex gap-3 items-center mb-4">
+      <select
+        v-model="statusFilter"
+        class="input w-full rounded p-2 text-xs border shadow"
+      >
         <option value="">All Status</option>
         <option value="pending">Pending</option>
         <option value="inprogress">In Progress</option>
@@ -12,87 +15,73 @@
       </select>
 
       <button
-        class="ml-auto bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        class="ml-auto bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 whitespace-nowrap"
         @click="openCreateModal"
       >
         + Walk-in Ticket
       </button>
     </div>
 
-    <!-- TABLE HEADER (Desktop) -->
+    <!-- ================= DATE LIST TABLE ================= -->
     <div
-      class="hidden md:grid grid-cols-11 bg-gray-100 border text-xs font-semibold"
+      v-for="items in groupedByDate"
+      :key="items"
+      class="mb-6 border rounded"
     >
-      <div class="p-2 border">Ticket</div>
-      <div class="p-2 border">Tech Type</div>
-      <div class="p-2 border">Hardware</div>
-      <div class="p-2 border">Email</div>
-      <div class="p-2 border">Office</div>
-      <div class="p-2 border">Device</div>
-      <div class="p-2 border">Issue</div>
-      <div class="p-2 border">Software</div>
-      <div class="p-2 border">Technician</div>
-      <div class="p-2 border">Status</div>
-      <div class="p-2 border">Created</div>
-    </div>
-
-    <!-- TABLE ROWS (Desktop) -->
-    <div
-      v-for="item in filteredRequests"
-      :key="item.id"
-      class="border md:grid md:grid-cols-11 text-sm hover:bg-gray-50 cursor-pointer"
-      @click="openModal(item)"
-    >
-      <div class="p-2 border font-semibold">{{ item.ticket_id }}</div>
-      <div class="p-2 border">{{ item.tech_type || "-" }}</div>
-      <div class="p-2 border">{{ item.device_hardware || "-" }}</div>
-      <div class="p-2 border break-all">{{ item.requestor_lsu_email }}</div>
-      <div class="p-2 border">{{ item.center_office_room }}</div>
-      <div class="p-2 border">{{ item.office_device || "-" }}</div>
-      <div class="p-2 border truncate">{{ item.issue_or_request || "-" }}</div>
-      <div class="p-2 border">{{ item.software || "-" }}</div>
-      <div class="p-2 border text-xs">
-        <span v-if="item.technicians_assigned?.length">
-          {{ item.technicians_assigned.join(", ") }}
-        </span>
-        <span v-else>-</span>
+      <div class="lg:flex w-full">
+        <div class="w-full text-center bg-green-800 p-2 text-white">
+          Ticket ID
+        </div>
+        <div class="w-full text-center bg-green-800 p-2 text-white">
+          Full Name
+        </div>
+        <div class="w-full text-center bg-green-800 p-2 text-white">
+          Requestor LSU Email
+        </div>
+        <div class="w-full text-center bg-green-800 p-2 text-white">
+          Personnel Assigned
+        </div>
+        <div class="w-full text-center bg-green-800 p-2 text-white">
+          Status Logs
+        </div>
+        <div class="w-full text-center bg-green-800 p-2 text-white">
+          Created
+        </div>
+        <div class="w-full text-center bg-green-800 p-2 text-white">Action</div>
       </div>
-      <div class="p-2 border">
-        <span
-          v-if="latestStatus(item)"
-          class="px-2 py-1 rounded text-xs font-semibold"
-          :class="itemStatusClass(latestStatus(item).status)"
+
+      <div class="divide-y">
+        <div
+          v-for="item in items"
+          :key="item.id"
+          class="grid lg:grid-cols-7 text-sm hover:bg-gray-50 cursor-pointer items-center"
+          @click="openModal(item)"
         >
-          {{ latestStatus(item).status }}
-        </span>
-      </div>
-      <div class="p-2 border text-xs">
-        {{ formatDate(item.created_at) }}
-      </div>
-    </div>
-
-    <!-- MOBILE TABLE -->
-    <div
-      v-for="item in filteredRequests"
-      :key="item.id + '-mobile'"
-      class="border p-3 rounded mb-2 hover:bg-gray-50 cursor-pointer md:hidden"
-      @click="openModal(item)"
-    >
-      <div class="flex justify-between">
-        <div>
-          <div class="font-semibold">{{ item.ticket_id }}</div>
-          <div class="text-xs text-gray-500">
-            {{ item.requestor_lsu_email }} • {{ item.center_office_room }}
+          <div class="p-2 text-center font-semibold">{{ item.ticket_id }}</div>
+          <div class="p-2 text-center">{{ item.requestor_fullname }}</div>
+          <div class="p-2 text-center">{{ item.requestor_lsu_email }}</div>
+          <div class="p-2 text-center text-xs">
+            {{ item.technicians_assigned?.join(", ") || "-" }}
+          </div>
+          <div class="p-2 text-center">
+            <span
+              class="px-2 py-1 rounded text-xs font-semibold"
+              :class="ticketStatusClass(latestStatus(item)?.status)"
+            >
+              {{ latestStatus(item)?.status || "-" }}
+            </span>
+          </div>
+          <div class="p-2 text-center text-xs">
+            {{ moment(item.created_at).format("MMMM DD, YYYY hh:mm A") }}
+          </div>
+          <div class="p-2 text-center font-semibold">
+            <div
+              class="bg-yellow-600 text-white hover:bg-yellow-800 hover:font-bold rounded p-2 w-fit mx-auto"
+            >
+              Edit / View
+            </div>
           </div>
         </div>
-
-        <span
-          v-if="latestStatus(item)"
-          class="px-2 py-1 rounded text-xs font-semibold"
-          :class="itemStatusClass(latestStatus(item).status)"
-        >
-          {{ latestStatus(item).status }}
-        </span>
       </div>
     </div>
 
@@ -239,14 +228,18 @@
                 >
                 <div class="flex">
                   <select
-                    v-model="info.center_office_room"
+                    v-model="item.center_office_room"
                     class="input border w-full p-2 rounded"
                   >
+               
                     <option disabled value="">Select Location</option>
-                    <option>OCH</option>
-                    <option>NPCC</option>
-                    <option>Registrar</option>
-                    <option value="OTHER">Other</option>
+                     <option
+                      v-for="office in CENTER_OFFICE_ROOM_OPTIONS"
+                      :key="office"
+                      :value="office"
+                    >
+                      {{ office }}
+                    </option>
                   </select>
 
                   <input
@@ -419,7 +412,7 @@
 
         <!-- LOGS -->
         <div v-if="!isCreate" class="border rounded p-4 mb-4">
-          <h4 class="font-semibold mb-2">Status History</h4>
+          <h4 class="font-semibold mb-2">Status Logs</h4>
 
           <div
             v-for="(log, i) in info.logs"
@@ -429,7 +422,9 @@
           >
             <div class="flex justify-between font-semibold">
               <span>{{ log.status }}</span>
-              <span>{{ formatDate(log.timestamp) }}</span>
+              <span>
+                {{ moment(log.timestamp).format("MMMM DD, YYYY hh:mm A") }}
+              </span>
             </div>
             <div class="italic">{{ log.remarks }}</div>
           </div>
@@ -452,7 +447,7 @@
   </div>
 </template>
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
 
@@ -464,6 +459,54 @@ const showModal = ref(false);
 const isCreate = ref(false);
 const statusFilter = ref("");
 const customOffice = ref("");
+
+// ================= FETCH DATA =================
+const fetchRequests = async () => {
+  try {
+    const res = await $fetch(endpoint.value + "/api/cits/tech-support/list/");
+    requests.value = res.data || res;
+  } catch (err) {
+    console.error("Failed to fetch tech support list", err);
+  }
+};
+
+onMounted(fetchRequests);
+
+// ================= STATUS HELPERS =================
+const latestStatus = (item) =>
+  item.logs?.length ? item.logs[item.logs.length - 1] : null;
+
+// Backend-aligned filter mapping
+const TICKET_STATUS_FILTER_MAP = {
+  pending: ["Pending"],
+  inprogress: ["Inprogress", "Reviewed"],
+  completed: ["Completed", "Done", "Closed"],
+};
+
+// Fixed filter
+const filteredRequests = computed(() => {
+  if (!statusFilter.value) return requests.value;
+
+  return requests.value.filter((r) => {
+    const status = latestStatus(r)?.status;
+    return TICKET_STATUS_FILTER_MAP[statusFilter.value]?.includes(status);
+  });
+});
+
+// ================= GROUP BY DATE =================
+const groupedByDate = computed(() => {
+  const groups = {};
+
+  filteredRequests.value.forEach((item) => {
+    const key = moment(item.created_at).format("YYYY-MM-DD");
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(item);
+  });
+
+  return groups;
+});
+
+const formatDate = (d) => moment(d).format("hh:mm A");
 
 // Date helpers
 const getCurrentSemester = () => {
@@ -482,10 +525,51 @@ const getAcademicYear = () => {
 const getTodayDateChecked = () => moment().format("DD/MM/YYYY hh:mm A");
 
 // Dropdown options
-const CATEGORY_OPTIONS = ["Hardware", "Software", "Network", "Accessory", "Device", "Others"];
-const ITEM_TYPE_OPTIONS = ["Laptop", "Desktop", "Printer", "Ink", "Scanner", "Monitor", "Keyboard", "Mouse", "Router", "Switch", "UPS", "Cable", "Others"];
+const CATEGORY_OPTIONS = [
+  "Hardware",
+  "Software",
+  "Network",
+  "Computer Peripherals"
+];
+const ITEM_TYPE_OPTIONS = [
+  "Laptop",
+  "Desktop",
+  "Printer",
+  "Ink",
+  "Scanner",
+  "Monitor",
+  "Keyboard",
+  "Mouse",
+  "Router",
+  "Switch",
+  "UPS",
+  "Cable",
+  "Others",
+  "N/A",
+];
+
+const CENTER_OFFICE_ROOM_OPTIONS = [
+  "OCH",
+  "NPCC",
+  "Registrar",
+  "N/A",
+  "OTHER"
+];
+
 const SEMESTER_OPTIONS = ["First Semester", "Second Semester", "Summer"];
-const STATUS_OPTIONS = ["New", "Used", "For Repair", "For Disposal", "Returned", "Issued", "Replaced", "Condemned", "Serviceable", "Unserviceable"];
+const STATUS_OPTIONS = [
+  "New",
+  "Used",
+  "For Repair",
+  "For Disposal",
+  "Returned",
+  "Issued",
+  "Replaced",
+  "Condemned",
+  "Serviceable",
+  "Unserviceable",
+  "Running",
+];
 const TECHNICIANS_PERSONNEL = [
   "Michael John Puertogalera",
   "Jo Renlee Luna",
@@ -493,7 +577,8 @@ const TECHNICIANS_PERSONNEL = [
   "Flourence John Gonzaga",
   "Rommel Rosal",
   "Denzel Roy Suarez",
-  "Giovanni Jose Morales"];
+  "Giovanni Jose Morales",
+];
 const ACADEMIC_YEAR_OPTIONS = (() => {
   const currentYear = moment().year();
   const years = [];
@@ -516,7 +601,7 @@ const emptyItem = () => ({
   status: "Used",
   remarks: "",
   current_semester: getCurrentSemester(), // dropdown
-  academic_year: getAcademicYear(),       // dropdown
+  academic_year: getAcademicYear(), // dropdown
   custom_semester: "",
   custom_academic_year: "",
   date_checked: getTodayDateChecked(),
@@ -568,8 +653,8 @@ const openModal = (item) => {
     technicians_assigned: Array.isArray(cloned.technicians_assigned)
       ? cloned.technicians_assigned
       : cloned.technician_assigned
-      ? [cloned.technician_assigned]
-      : [],
+        ? [cloned.technician_assigned]
+        : [],
   };
   showModal.value = true;
 };
@@ -605,7 +690,7 @@ const createTicket = async () => {
     status: item.status?.trim() || "Used",
     remarks: item.remarks?.trim() || "N/A",
     current_semester: item.current_semester, // keep dropdown
-    academic_year: item.academic_year,       // keep dropdown
+    academic_year: item.academic_year, // keep dropdown
     date_checked: item.date_checked || getTodayDateChecked(),
   }));
 
@@ -627,10 +712,13 @@ const createTicket = async () => {
   };
 
   try {
-    const res = await $fetch(endpoint.value + "/api/cits/tech-support/create/", {
-      method: "POST",
-      body: payload,
-    });
+    const res = await $fetch(
+      endpoint.value + "/api/cits/tech-support/create/",
+      {
+        method: "POST",
+        body: payload,
+      },
+    );
 
     if (res.status === "created") {
       alert("Ticket created successfully!");
@@ -645,16 +733,26 @@ const createTicket = async () => {
   }
 };
 
-// Helpers
-const latestStatus = (item) => (item.logs?.length ? item.logs[item.logs.length - 1] : null);
-
-const filteredRequests = computed(() =>
-  requests.value.filter((r) =>
-    statusFilter.value ? latestStatus(r)?.status === statusFilter.value : true
-  )
-);
-
-const formatDate = (d) => new Date(d).toLocaleString();
+const ticketStatusClass = (status) => {
+  switch (status) {
+    case "Pending":
+      return "bg-yellow-100 text-yellow-800";
+    case "Inprogress":
+      return "bg-blue-100 text-blue-800";
+    case "Reviewed":
+      return "bg-purple-100 text-purple-800";
+    case "Completed":
+    case "Done":
+      return "bg-green-100 text-green-800";
+    case "Closed":
+      return "bg-gray-200 text-gray-800";
+    case "Cancelled":
+    case "Unsuccessful":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-50 text-gray-700";
+  }
+};
 
 const itemStatusClass = (status) => {
   switch (status) {
