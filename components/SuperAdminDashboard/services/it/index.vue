@@ -23,12 +23,7 @@
     </div>
 
     <!-- ================= DATE LIST TABLE ================= -->
-    <div
-      v-for="items in groupedByDate"
-      :key="items"
-      class="mb-6 border rounded"
-    >
-      <div class="lg:flex w-full">
+    <div class="lg:flex w-full">
         <div class="w-full text-center bg-green-800 p-2 text-white">
           Ticket ID
         </div>
@@ -49,12 +44,17 @@
         </div>
         <div class="w-full text-center bg-green-800 p-2 text-white">Action</div>
       </div>
-
+    <div
+      v-for="items in groupedByDate"
+      :key="items"
+      class="border rounded"
+    >
       <div class="divide-y">
         <div
           v-for="item in items"
           :key="item.id"
-          class="grid lg:grid-cols-7 text-sm hover:bg-gray-50 cursor-pointer items-center"
+          class="grid lg:grid-cols-7 text-sm hover:bg-gray-50  cursor-pointer items-center"
+           :class="item.id % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-gray-100'"
           @click="openModal(item)"
         >
           <div class="p-2 text-center font-semibold">{{ item.ticket_id }}</div>
