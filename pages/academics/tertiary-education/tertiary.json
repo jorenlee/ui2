@@ -383,6 +383,28 @@
               "goals":[],
               "objectivesDescription":"",
               "objectives":[]
+            },
+            {
+              "abbr":"BEE-Gen",
+              "title":"Bachelor of Elementary Education - Generalist",
+              "description":"",
+              "vision":"",
+              "mission":"",
+              "goalDescription":"",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
+            },
+            {
+              "abbr":"BSN-Ed",
+              "title":"Bachelor of Special Needs Education",
+              "description":"",
+              "vision":"",
+              "mission":"",
+              "goalDescription":"",
+              "goals":[],
+              "objectivesDescription":"",
+              "objectives":[]
             }
           ]
           },
