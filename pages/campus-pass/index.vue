@@ -2,34 +2,116 @@
 import { useUserStore } from "@/stores/user";
 import _ from "lodash";
 import VueDatePicker from "@vuepic/vue-datepicker";
-import "./css/main.css";
+import "@vuepic/vue-datepicker/dist/main.css";
 import moment from "moment";
 import { ref, computed } from "vue";
 
+/* =========================
+   BASIC STATE
+========================= */
 const pleaseFillUpAllRequiredFields = ref(false);
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
+
 const formDisplay = ref(true);
 const thankYouDisplay = ref(false);
-const next3Days = ref();
-
 const submitCounter = ref(1);
 
 const bulkUploadDisplay = ref(false);
-
 const manualListDisplay = ref(false);
+const listMembers = ref(false);
+const supportingDocuments = ref(false);
+const displayCalendar = ref(false);
+
+/* =========================
+   DATE PICKER STATE
+========================= */
+const datePicked = ref([]);
+
+/**
+ * Earliest selectable date (3 days from today)
+ */
+const next3Days = ref(null);
+next3Days.value = (() => {
+  const d = new Date();
+  d.setDate(d.getDate() + 3);
+  d.setHours(0, 0, 0, 0);
+  return d;
+})();
+
+/**
+ * Disable:
+ * - ALL past dates
+ * - today
+ * - next 2 days
+ */
+const disabledDates = computed(() => {
+  const dates = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Disable past 1 year (safe range)
+  for (let i = 1; i <= 365; i++) {
+    const past = new Date(today);
+    past.setDate(today.getDate() - i);
+    dates.push(past);
+  }
+
+  // Disable today + next 2 days
+  const d0 = new Date(today);
+  const d1 = new Date(today);
+  const d2 = new Date(today);
+
+  d1.setDate(d1.getDate() + 1);
+  d2.setDate(d2.getDate() + 2);
+
+  dates.push(d0, d1, d2);
+
+  return dates;
+});
+
+/**
+ * Highlight valid future dates (green)
+ */
+const dayClass = (date) => {
+  if (!next3Days.value) return "";
+
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+
+  // Available dates (3 days onward)
+  if (d >= next3Days.value) {
+    return "available-date";
+  }
+
+  return "";
+};
+
+
+/**
+ * Safe multi-date formatter
+ */
+const setDate = (value) => {
+  if (!value) return;
+
+  const dates = Array.isArray(value) ? value : [value];
+
+  info.value.schedule = dates
+    .map(d => moment(d).format("LL"))
+    .join("; ");
+};
+
+/* =========================
+   CSV / MANUAL INPUT
+========================= */
+const fileInput = ref(null);
+const csvData = ref(null);
 
 const addCSVBTN = () => {
   bulkUploadDisplay.value = true;
   manualListDisplay.value = false;
   info.value.name_list = [
-    {
-      firstname: "",
-      middlename: "-",
-      lastname: "",
-      email: "",
-      checkin: "",
-    },
+    { firstname: "", middlename: "-", lastname: "", email: "", checkin: "" },
   ];
 };
 
@@ -39,89 +121,39 @@ const addManuallyBTN = () => {
   csvData.value = null;
 };
 
-const disabledDates = computed(() => {
-  const today = new Date();
-
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const afterTomorrow = new Date(tomorrow);
-  afterTomorrow.setDate(afterTomorrow.getDate() + 1);
-
-  const afterNextTomorrow = new Date(afterTomorrow);
-  afterNextTomorrow.setDate(afterNextTomorrow.getDate() + 1);
-
-  return [tomorrow, afterTomorrow, (next3Days.value = afterTomorrow)];
-});
-
-const displayCalendar = ref(false);
-const datePicked = ref();
-const setDate = (value) => {
-  let scheduleString = "";
-  for (let i = 0; i < value.length; i++) {
-    const formattedDate = moment(value[i]).format("LL");
-    scheduleString += formattedDate;
-
-    if (i < value.length - 1) {
-      // Add a separator if it's not the last date
-      scheduleString += "; "; // Or whatever separator you prefer (e.g., "; ", "\n")
-    }
-  }
-
-  info.value.schedule = scheduleString;
-
-  // console.log(info.value.schedule)
-};
-
-const fileInput = ref(null);
-const csvData = ref(null);
-
 const uploadedFile = (e) => {
   const file = e.target.files[0];
-
-  if (!file) {
-    console.error("No file selected.");
-    return;
-  }
+  if (!file) return;
 
   const reader = new FileReader();
-
   reader.onload = (event) => {
-    const csvText = event.target.result;
-    csvData.value = parseCSV(csvText);
-    console.log("Parsed CSV Data:", csvData.value);
+    csvData.value = parseCSV(event.target.result);
   };
-
-  reader.onerror = (error) => {
-    console.error("Error reading file:", error);
-  };
-
   reader.readAsText(file);
 };
 
 function parseCSV(csvText) {
-  const results = [];
   const lines = csvText.split(/\r\n|\n/);
-
-  if (lines.length <= 1) return []; // Empty or only headers
+  if (lines.length <= 1) return [];
 
   const headers = lines[0].split(",");
 
-  for (let i = 1; i < lines.length - 1; i++) {
-    const values = lines[i].split(",");
+  return lines.slice(1).map(line => {
+    const values = line.split(",");
     const entry = {};
-
-    for (let j = 0; j < headers.length; j++) {
-      entry[headers[j].trim()] = values[j] ? values[j].trim() : "";
-    }
-    results.push(entry);
-  }
-  return results;
+    headers.forEach((h, i) => {
+      entry[h.trim()] = values[i]?.trim() || "";
+    });
+    return entry;
+  });
 }
 
-const dateToday = moment().format('LLL')
-const trackingIdFormat = "LSUCP" + moment().valueOf()
-  // type_of_access: ["Urgent Access"],
+/* =========================
+   FORM DATA
+========================= */
+const dateToday = moment().format("LLL");
+const trackingIdFormat = "LSUCP" + moment().valueOf();
+
 const info = ref({
   incharge_firstname: "",
   incharge_middlename: "-",
@@ -135,22 +167,17 @@ const info = ref({
   approved_gso_docs_link: "",
   attendees: "Individual",
   name_list: [
-    {
-      firstname: "",
-      middlename: "-",
-      lastname: "",
-      email: "",
-      checkin: "",
-    },
+    { firstname: "", middlename: "-", lastname: "", email: "", checkin: "" },
   ],
   approval_status: "pending",
   remarks: "N/A",
   tracking_id: trackingIdFormat,
 });
-const listMembers = ref(false);
-const supportingDocuments = ref(false);
 
-const addRow = async (obj) => {
+/* =========================
+   ROW MANAGEMENT
+========================= */
+const addRow = (obj) => {
   info.value.name_list.push({
     firstname: obj.firstname,
     middlename: "-",
@@ -159,102 +186,67 @@ const addRow = async (obj) => {
     checkin: "",
   });
 };
+
 const removeRow = (item) => {
-  if (info.value.name_list.length > 0) {
-    _.pull(info.value.name_list, item);
-  }
+  _.pull(info.value.name_list, item);
 };
+
+/* =========================
+   ACCESS TYPE LOGIC
+========================= */
 const needSupportingDocs = () => {
-  console.log(info.value.type_of_access);
-  if (
-    info.value.type_of_access.includes("Day Access") ||
-    info.value.type_of_access.includes("Night Access") ||
-    info.value.type_of_access.includes("Overnight")
-  ) {
-    supportingDocuments.value = true;
-    displayCalendar.value = true;
-  } else if (info.value.type_of_access.length === 0) {
+  const requiresDocs = ["Day Access", "Night Access", "Overnight"]
+    .some(type => info.value.type_of_access.includes(type));
+
+  supportingDocuments.value = requiresDocs;
+  displayCalendar.value = requiresDocs;
+
+  if (!info.value.type_of_access.length) {
     info.value.type_of_access = ["Urgent Access"];
-  } else {
-    supportingDocuments.value = false;
-    displayCalendar.value = false;
   }
 };
 
+/* =========================
+   ATTENDEES TYPE
+========================= */
+const typeOfAttendees = () => {
+  const isGroup = info.value.attendees === "Group";
+  listMembers.value = isGroup;
 
-const submitForm = () => {
-  if (csvData.value !== null) {
-    info.value.name_list = csvData.value;
+  if (!isGroup) {
+    info.value.name_list = [
+      { firstname: "", middlename: "-", lastname: "", email: "", checkin: "" },
+    ];
   }
-  // else {
-  //   info.value.name_list = [{
-  //     firstname: '',
-  //     middlename: '',
-  //     lastname: '',
-  //     email: ''
-  //   }]
-  // }
+};
 
-  console.log(info.value);
+/* =========================
+   SUBMIT + EMAIL
+========================= */
+const submitForm = () => {
+  if (csvData.value) info.value.name_list = csvData.value;
   postAPI();
 };
 
 const postAPI = async () => {
-  if (info.value.date === "") {
-    console.log("Please Input Date!");
-  }
-  if (info.value.approved_activities_link === "") {
-    info.value.approved_activities_link = "-";
-  }
-  if (info.value.approved_gso_docs_link === "") {
-    info.value.approved_gso_docs_link = "-";
-  }
-  if (info.value.incharge_middlename === "") {
-    info.value.incharge_middlename = "N/A";
-  } 
-  if (info.value.type_of_access.length === 0) {
-    info.value.type_of_access = ["N/A"];
-  }
-  else if (submitCounter.value === 1) {
-    submitCounter.value = 0;
-    await $fetch(endpoint.value + "/api/campus-pass/create/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: info.value,
-    }).then((response) => {
-      formDisplay.value = false;
-      thankYouDisplay.value = true;
-      submitCounter.value = 0;
-      console.log(response);
-      submitAppointmentToGmail();
-    });
-  }
+  if (submitCounter.value !== 1) return;
+  submitCounter.value = 0;
+
+  await $fetch(`${endpoint.value}/api/campus-pass/create/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: info.value,
+  });
+
+  formDisplay.value = false;
+  thankYouDisplay.value = true;
+  submitAppointmentToGmail();
 };
-const typeOfAttendees = () => {
-  if (info.value.attendees === "Individual") {
-    listMembers.value = false;
-    info.value.name_list = [
-      {
-        firstname: "",
-        middlename: "-",
-        lastname: "",
-        email: "",
-        checkin: "",
-      },
-    ];
-  }
-  if (info.value.attendees === "Group") {
-    listMembers.value = true;
-  }
-};
+
 const submitAppointmentToGmail = async () => {
   await $fetch(endpoint.value + "/api/campus-pass/to-gmail-pending/", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: {
       incharge_firstname: info.value.incharge_firstname,
       incharge_contact_email: info.value.incharge_contact_email,
@@ -264,12 +256,11 @@ const submitAppointmentToGmail = async () => {
       tracking_id: info.value.tracking_id,
       purpose: info.value.purpose,
     },
-  }).then((response) => {
-    console.log('response',response);
   });
 };
-
 </script>
+
+
 <template>
   <div class="bg-gray-50">
     <Header />
@@ -597,19 +588,21 @@ const submitAppointmentToGmail = async () => {
                               <!-- <input type="date" class="px-2 py-2.5 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs" v-model="info.date" /> -->
                               <!-- @update:model-value="setDate(dateDisplay)" -->
                               <div class="border-b-2 border-green-700">
-                                <VueDatePicker
-                                  v-model="datePicked"
-                                  :enable-time-picker="false"
-                                  name="schedule"
-                                  :multi-dates="true"
-                                  auto-apply
-                                  :year-range="[2025, 2025]"
-                                  week-start="0"
-                                  :disabled-dates="disabledDates"
-                                  :min-date="next3Days"
-                                  @update:model-value="setDate(datePicked)"
-                                />
-                              </div>
+<VueDatePicker
+  v-model="datePicked"
+  :enable-time-picker="false"
+  name="schedule"
+  :multi-dates="true"
+  auto-apply
+  week-start="0"
+  :disabled-dates="disabledDates"
+  :min-date="next3Days"
+  :day-class="dayClass"
+  @update:model-value="setDate"
+/>
+
+</div>
+
                             </div>
                           </div>
                         </div>
@@ -1016,6 +1009,7 @@ const submitAppointmentToGmail = async () => {
     <Footer />
   </div>
 </template>
+
 <style scoped>
 input[type="radio"] {
   margin: 3px auto auto auto;
@@ -1024,4 +1018,30 @@ input[type="radio"] {
 .error {
   color: red;
 }
+
+.valid-future-date {
+  background-color: #16a34a !important; /* green-600 */
+  color: white !important;
+  border-radius: 6px;
+}
+
+/* Available future dates */
+.available-date {
+  background-color: #16a34a !important; /* Tailwind green-600 */
+  color: #ffffff !important;
+  border-radius: 6px;
+}
+
+/* Hover effect */
+.available-date:hover {
+  background-color: #15803d !important; /* green-700 */
+}
+
+/* Keep selected date readable */
+.dp__active_date {
+  background-color: #14532d !important; /* darker green */
+}
+
+
+
 </style>
