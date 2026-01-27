@@ -3,56 +3,143 @@
     <h2 class="text-xl font-bold mb-4">NPCC Tech Support & IT Services</h2>
 
     <!-- ACTION BAR -->
-    <div class="flex gap-3 items-center mb-4">
-      <select
-        v-model="statusFilter"
-        class="input w-full rounded p-2 text-xs border shadow"
-      >
-        <option value="">All Status</option>
-        <option value="pending">Pending</option>
-        <option value="inprogress">In Progress</option>
-        <option value="completed">Completed</option>
-      </select>
+    <div class="bg-white border rounded-lg p-4 mb-4 shadow-sm">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+        <!-- Status Filter -->
+        <div>
+          <label class="text-xs font-semibold text-gray-700 mb-1 block"
+            >Status</label
+          >
+          <select
+            v-model="statusFilter"
+            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
+          >
+            <option value="">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="inprogress">In Progress</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
 
-      <button
-        class="ml-auto bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 whitespace-nowrap"
-        @click="openCreateModal"
-      >
-        + Walk-in Ticket
-      </button>
+        <!-- Technician Filter -->
+        <div>
+          <label class="text-xs font-semibold text-gray-700 mb-1 block"
+            >Technician</label
+          >
+          <select
+            v-model="technicianFilter"
+            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
+          >
+            <option value="">All Technicians</option>
+            <option
+              v-for="tech in TECHNICIANS_PERSONNEL"
+              :key="tech"
+              :value="tech"
+            >
+              {{ tech }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Search Filter -->
+        <div>
+          <label class="text-xs font-semibold text-gray-700 mb-1 block"
+            >Search</label
+          >
+          <input
+            v-model="searchFilter"
+            type="text"
+            placeholder="Ticket ID, Name, Email..."
+            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
+          />
+        </div>
+
+        <!-- Date Range Filter -->
+        <div>
+          <label class="text-xs font-semibold text-gray-700 mb-1 block"
+            >Date Range</label
+          >
+          <select
+            v-model="dateFilter"
+            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
+          >
+            <option value="">All Time</option>
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="year">This Year</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center">
+        <button
+          @click="clearFilters"
+          class="text-xs text-gray-600 hover:text-gray-800 underline"
+        >
+          Clear Filters
+        </button>
+        <button
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 whitespace-nowrap text-sm font-semibold shadow-sm"
+          @click="openCreateModal"
+        >
+          <i class="fa fa-plus mr-1"></i> Walk-in Ticket
+        </button>
+      </div>
+    </div>
+
+    <!-- Results Count -->
+    <div class="mb-3 text-sm text-gray-600 font-semibold">
+      Showing {{ filteredRequests.length }} of {{ requests.length }} ticket(s)
     </div>
 
     <!-- ================= DATE LIST TABLE HEADER ================= -->
-    <div class="w-full lg:flex hidden">
-      <div class="w-full text-center bg-green-800 p-2 text-white">
-        Ticket ID
+    <div class="w-full lg:grid hidden grid-cols-7 bg-gradient-to-r from-green-700 to-green-600 rounded-t-lg shadow-md overflow-hidden">
+      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+        <i class="fa fa-ticket mr-1"></i> Ticket ID
       </div>
-      <div class="w-full text-center bg-green-800 p-2 text-white">
-        Full Name
+      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+        <i class="fa fa-user mr-1"></i> Full Name
       </div>
-      <div class="w-full text-center bg-green-800 p-2 text-white">
-        Requestor LSU Email
+      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+        <i class="fa fa-envelope mr-1"></i> LSU Email
       </div>
-      <div class="w-full text-center bg-green-800 p-2 text-white">
-        Personnel Assigned
+      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+        <i class="fa fa-users mr-1"></i> Personnel
       </div>
-      <div class="w-full text-center bg-green-800 p-2 text-white">
-        Status Logs
+      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+        <i class="fa fa-info-circle mr-1"></i> Status
       </div>
-      <div class="w-full text-center bg-green-800 p-2 text-white">Created</div>
-      <div class="w-full text-center bg-green-800 p-2 text-white">Action</div>
+      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+        <i class="fa fa-calendar mr-1"></i> Created
+      </div>
+      <div class="text-center p-3 text-white font-bold text-sm">
+        <i class="fa fa-cog mr-1"></i> Action
+      </div>
     </div>
 
     <!-- Toaster -->
     <transition name="fade">
       <div
         v-if="toaster.show"
-        class="px-4 py-2 rounded shadow-lg text-white font-medium mb-5 text-center"
+        class="fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-2xl text-white font-medium flex items-center gap-3 max-w-md"
         :class="{
           'bg-green-600': toaster.type === 'success',
+          'bg-red-600': toaster.type === 'error',
+          'bg-blue-600': toaster.type === 'info',
+          'bg-yellow-600': toaster.type === 'warning',
         }"
       >
-        {{ toaster.message }}
+        <i
+          class="fa text-xl"
+          :class="{
+            'fa-check-circle': toaster.type === 'success',
+            'fa-exclamation-circle': toaster.type === 'error',
+            'fa-info-circle': toaster.type === 'info',
+            'fa-exclamation-triangle': toaster.type === 'warning',
+          }"
+        ></i>
+        <span>{{ toaster.message }}</span>
       </div>
     </transition>
 
@@ -191,8 +278,24 @@
       class="fixed inset-0 bg-black/40 flex justify-center items-center z-50"
     >
       <div
-        class="bg-white w-full max-w-3xl rounded-lg p-6 max-h-[90vh] overflow-y-auto"
+        class="bg-white w-full max-w-3xl rounded-lg p-6 max-h-[90vh] overflow-y-auto relative"
       >
+        <!-- Loading Overlay -->
+        <div
+          v-if="modalLoading"
+          class="absolute inset-0 bg-white/95 flex items-center justify-center z-10 rounded-lg backdrop-blur-sm"
+        >
+          <div class="text-center bg-white p-8 rounded-lg shadow-2xl border-2 border-green-600">
+            <div
+              class="inline-block h-16 w-16 animate-spin rounded-full border-4 border-solid border-green-600 border-r-transparent"
+            ></div>
+            <p class="mt-4 text-base font-bold text-gray-800">
+              {{ isCreate ? "Creating ticket..." : "Saving changes..." }}
+            </p>
+            <p class="mt-1 text-xs text-gray-600">Please wait, processing your request...</p>
+          </div>
+        </div>
+
         <h3 class="text-lg font-bold mb-4 text-center w-full">
           {{ isCreate ? "Create Ticket (Job Request)" : "Ticket Details" }}
         </h3>
@@ -560,13 +663,22 @@
 
         <!-- ACTIONS -->
         <div class="flex justify-end gap-3">
-          <button class="px-4 py-2 bg-gray-300 rounded" @click="closeModal">
+          <button
+            class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 font-semibold"
+            @click="closeModal"
+            :disabled="modalLoading"
+          >
             Cancel
           </button>
           <button
-            class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-900"
+            class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-900 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             @click="isCreate ? createTicket() : saveChanges()"
+            :disabled="modalLoading"
           >
+            <i
+              class="fa mr-1"
+              :class="isCreate ? 'fa-plus' : 'fa-save'"
+            ></i>
             {{ isCreate ? "Create" : "Save" }}
           </button>
         </div>
@@ -586,6 +698,9 @@ const requests = ref([]);
 const showModal = ref(false);
 const isCreate = ref(false);
 const statusFilter = ref("");
+const technicianFilter = ref("");
+const searchFilter = ref("");
+const dateFilter = ref("");
 const customOffice = ref("");
 
 const successfullySavedData = ref(false);
@@ -641,6 +756,7 @@ const TECHNICIANS_PERSONNEL = [
 ];
 
 const loading = ref(false);
+const modalLoading = ref(false);
 
 const fetchRequests = async () => {
   loading.value = true;
@@ -691,14 +807,65 @@ const TICKET_STATUS_FILTER_MAP = {
   completed: ["Completed", "Done", "Closed"],
 };
 
-// Fixed filter
-const filteredRequests = computed(() => {
-  if (!statusFilter.value) return requests.value;
+// Clear filters function
+const clearFilters = () => {
+  statusFilter.value = "";
+  technicianFilter.value = "";
+  searchFilter.value = "";
+  dateFilter.value = "";
+};
 
-  return requests.value.filter((r) => {
-    const status = latestStatus(r)?.status;
-    return TICKET_STATUS_FILTER_MAP[statusFilter.value]?.includes(status);
-  });
+// Enhanced filter
+const filteredRequests = computed(() => {
+  let filtered = [...requests.value];
+
+  // Status filter
+  if (statusFilter.value) {
+    filtered = filtered.filter((r) => {
+      const status = latestStatus(r)?.status;
+      return TICKET_STATUS_FILTER_MAP[statusFilter.value]?.includes(status);
+    });
+  }
+
+  // Technician filter
+  if (technicianFilter.value) {
+    filtered = filtered.filter((r) =>
+      r.technicians_assigned?.includes(technicianFilter.value)
+    );
+  }
+
+  // Search filter
+  if (searchFilter.value) {
+    const search = searchFilter.value.toLowerCase();
+    filtered = filtered.filter(
+      (r) =>
+        r.ticket_id?.toLowerCase().includes(search) ||
+        r.requestor_fullname?.toLowerCase().includes(search) ||
+        r.requestor_lsu_email?.toLowerCase().includes(search)
+    );
+  }
+
+  // Date filter
+  if (dateFilter.value) {
+    const now = moment();
+    filtered = filtered.filter((r) => {
+      const created = moment(r.created_at);
+      switch (dateFilter.value) {
+        case "today":
+          return created.isSame(now, "day");
+        case "week":
+          return created.isSame(now, "week");
+        case "month":
+          return created.isSame(now, "month");
+        case "year":
+          return created.isSame(now, "year");
+        default:
+          return true;
+      }
+    });
+  }
+
+  return filtered;
 });
 
 // Date helpers
@@ -810,30 +977,14 @@ const normalizeOffice = () => {
     info.value.center_office_room = customOffice.value || "Other";
 };
 
-// Submit ticket
 const createTicket = async () => {
   if (!info.value.item_request.length) {
-    alert("Please add at least one item.");
+    showToaster("Please add at least one item.", "warning");
     return;
   }
 
+  modalLoading.value = true;
   normalizeOffice();
-
-  // Map fields to match backend schema
-  const item_request = info.value.item_request.map((item) => ({
-    name: item.name?.trim() || "N/A",
-    serial_number_code: item.serial_number_code?.trim() || "N/A",
-    details: item.details?.trim() || "N/A",
-    category_type: item.category_type?.trim() || "N/A",
-    item_type: item.item_type?.trim() || "N/A",
-    center_office_room: item.center_office_room?.trim() || "N/A",
-    quantity: String(item.quantity || 1), // backend expects string
-    status: item.status?.trim() || "Used",
-    remarks: item.remarks?.trim() || "N/A",
-    current_semester: item.current_semester, // keep dropdown
-    academic_year: item.academic_year, // keep dropdown
-    date_checked: item.date_checked || getTodayDateChecked(),
-  }));
 
   const payload = {
     ticket_id: info.value.ticket_id || `TID${Date.now()}`,
@@ -849,31 +1000,44 @@ const createTicket = async () => {
             remarks: "Initial status",
           },
         ],
-    item_request,
+    item_request: info.value.item_request.map((item) => ({
+      name: item.name?.trim() || "N/A",
+      serial_number_code: item.serial_number_code?.trim() || "N/A",
+      details: item.details?.trim() || "N/A",
+      category_type: item.category_type?.trim() || "N/A",
+      item_type: item.item_type?.trim() || "N/A",
+      center_office_room: item.center_office_room?.trim() || "N/A",
+      quantity: String(item.quantity || 1),
+      status: item.status?.trim() || "Used",
+      remarks: item.remarks?.trim() || "N/A",
+      current_semester: item.current_semester,
+      academic_year: item.academic_year,
+      date_checked: item.date_checked || getTodayDateChecked(),
+    })),
   };
 
   try {
-    const res = await $fetch(
-      endpoint.value + "/api/cits/tech-support/create/",
-      {
-        method: "POST",
-        body: payload,
-      },
-    );
+    const res = await $fetch(endpoint.value + "/api/cits/tech-support/create/", {
+      method: "POST",
+      body: payload,
+    });
 
     if (res.status === "created") {
-      showToaster("Created successfully!", "success");
-
+      showToaster("✅ Ticket created successfully! Confirmation email sent.", "success");
       showModal.value = false;
+      await fetchRequests(); // Refresh the list
     } else if (res.status === "errors") {
       console.error("Form errors:", res.errors);
-      alert("Failed to create ticket. Check console for errors.");
+      showToaster("❌ Failed to create ticket. Check console for errors.", "error");
     }
   } catch (err) {
     console.error("Failed to create ticket:", err);
-    alert("Failed to create ticket. Check console for details.");
+    showToaster("❌ Failed to create ticket. Please try again.", "error");
+  } finally {
+    modalLoading.value = false;
   }
 };
+
 
 const toaster = ref({
   show: false,
@@ -893,10 +1057,11 @@ const showToaster = (message, type = "success", duration = 3000) => {
 
 const saveChanges = async () => {
   if (!info.value.item_request.length) {
-    alert("Please add at least one item.");
+    showToaster("Please add at least one item.", "warning");
     return;
   }
 
+  modalLoading.value = true;
   normalizeOffice();
 
   // Map items (same mapping as create)
@@ -936,17 +1101,18 @@ const saveChanges = async () => {
     );
 
     if (res.status === "updated") {
-      showToaster("Saved successfully!", "success");
-
+      showToaster("✅ Changes saved successfully!", "success");
       showModal.value = false;
-      fetchRequests(); // refresh list
+      await fetchRequests(); // refresh list
     } else {
       console.error("Update failed:", res);
-      alert("Failed to update ticket.");
+      showToaster("❌ Failed to update ticket.", "error");
     }
   } catch (err) {
     console.error("Failed to update ticket:", err);
-    alert("Failed to update ticket. Check console for details.");
+    showToaster("❌ Failed to update ticket. Please try again.", "error");
+  } finally {
+    modalLoading.value = false;
   }
 };
 

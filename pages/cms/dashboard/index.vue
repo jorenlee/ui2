@@ -300,9 +300,14 @@ const libraryMenuEmails = [
 ];
 
 const npccMenuEmails = [
+  "michaeljohn.puertogalera@lsu.edu.ph",
   "jorenlee.luna@lsu.edu.ph",
   "jason.yap@lsu.edu.ph",
-  "michaeljohn.puertogalera@lsu.edu.ph",
+  "johny14_gonzaga@lsu.edu.ph",
+  "rommel.rosal@lsu.edu.ph",
+  "denzelroy.suarez@lsu.edu.ph",
+  "giovanni.morales@lsu.edu.ph",
+  "dev@lsu.edu.ph"
 ];
 
 const rolesByEmail = {
