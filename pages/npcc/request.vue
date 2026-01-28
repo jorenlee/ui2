@@ -88,42 +88,27 @@
 
                 <!-- Confirmation Modal -->
                 <div
-                  v-if="showConfirmation"
+               v-if="showConfirmation"
                   class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm"
                   @click.self="showConfirmation = false"
                 >
                   <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-fade-in">
-                    <div class="bg-gradient-to-r from-green-600 to-green-700 p-6">
-                      <div class="flex items-center justify-center">
-                        <div class="bg-white rounded-full p-3">
-                          <i class="fas fa-question-circle text-green-600 text-4xl"></i>
-                        </div>
-                      </div>
-                      <h3 class="text-white text-xl font-bold text-center mt-4">
+                    <div class="flex items-center bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 gap-x-5 justify-center">
+                      
+                      <h3 class="text-white text-xl font-bold text-center">
                         Confirm Submission
                       </h3>
+                      <div class="flex items-center justify-center">
+                        <div class=" rounded-full">
+                          <i class="fas fa-question-circle text-white text-4xl"></i>
+                        </div>
+                      </div>
                     </div>
 
                     <div class="p-6">
                       <p class="text-gray-700 text-center mb-6">
                         Are you sure you want to submit this tech support request?
                       </p>
-
-                      <!-- Summary -->
-                      <div class="bg-gray-50 rounded-lg p-4 mb-6 space-y-2 text-sm">
-                        <div class="flex justify-between">
-                          <span class="text-gray-600">Requestor:</span>
-                          <span class="font-semibold text-gray-800">{{ info.requestor_fullname }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                          <span class="text-gray-600">Email:</span>
-                          <span class="font-semibold text-gray-800">{{ info.requestor_lsu_email }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                          <span class="text-gray-600">Items:</span>
-                          <span class="font-semibold text-gray-800">{{ info.item_request.length }} request(s)</span>
-                        </div>
-                      </div>
 
                       <div class="flex gap-3">
                         <button
@@ -311,7 +296,7 @@
 
                         <div class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
-                            ><i class="fas fa-comment-dots text-green-600 mr-1"></i>Concern <span class="text-red-600">*</span></label
+                            ><i class="fas fa-comment-dots text-green-600 mr-1"></i>Other Details <span class="text-red-600">*</span></label
                           >
                           <textarea
                             v-model="item.name"
@@ -361,18 +346,10 @@ const menuList = [
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
 
-const requests = ref([]);
-const showModal = ref(false);
-const isCreate = ref(false);
-const statusFilter = ref("");
-const technicianFilter = ref("");
-const searchFilter = ref("");
-const dateFilter = ref("");
 const customOffice = ref("");
-
-const successfullySavedData = ref(false);
 const showConfirmation = ref(false);
 const showSuccess = ref(false);
+const isCreate = ref(true);
 
 // Dropdown options
 const CATEGORY_OPTIONS = [
@@ -413,16 +390,9 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Automate",
     "Canvas LMS",
     "Microsoft Office",
-    "Microsoft Teams",
-    "Microsoft Outlook",
-    "Microsoft Excel",
-    "Microsoft Word",
-    "Microsoft PowerPoint",
-    "Adobe Acrobat",
-    "Zoom",
+    "LSU Website",
   ],
   Network: [
-    "Internet Connection",
     "WiFi Access",
     "Network Configuration",
   ],
@@ -452,185 +422,14 @@ const getItemOptions = (category) => {
 
 const CENTER_OFFICE_ROOM_OPTIONS = ["OCH", "NPCC", "Registrar", "N/A", "OTHER"];
 
-const SEMESTER_OPTIONS = ["First Semester", "Second Semester", "Summer"];
-const STATUS_OPTIONS = [
-  "New",
-  "Used",
-  "For Repair",
-  "For Disposal",
-  "Returned",
-  "Issued",
-  "Replaced",
-  "Condemned",
-  "Serviceable",
-  "Unserviceable",
-  "Running",
-];
-const TECHNICIANS_PERSONNEL = [
-  "Michael John Puertogalera",
-  "Jo Renlee Luna",
-  "Jason Yap",
-  "Flourence John Gonzaga",
-  "Rommel Rosal",
-  "Denzel Roy Suarez",
-  "Giovanni Jose Morales",
-];
-
-const loading = ref(false);
 const modalLoading = ref(false);
-
-const fetchRequests = async () => {
-  loading.value = true;
-  try {
-    const res = await $fetch(endpoint.value + "/api/cits/tech-support/list/");
-    requests.value = res.data || res;
-  } catch (err) {
-    console.error("Failed to fetch tech support list", err);
-  } finally {
-    loading.value = false;
-  }
-};
-
-onMounted(fetchRequests);
-
-const newLog = reactive({ status: "", remarks: "" });
-
-function addStatusLog() {
-  if (!newLog.status) {
-    alert("Please select a status");
-    return;
-  }
-
-  if (!info.value.logs) info.value.logs = [];
-
-  info.value.logs.push({
-    status: newLog.status,
-    remarks: newLog.remarks || "N/A",
-    timestamp: new Date(),
-  });
-
-  // Update ticket's current_status
-  info.value.current_status = newLog.status;
-
-  // Reset input
-  newLog.status = "";
-  newLog.remarks = "";
-}
-
-// ================= STATUS HELPERS =================
-const latestStatus = (item) =>
-  item.logs?.length ? item.logs[item.logs.length - 1] : null;
-
-// Backend-aligned filter mapping
-const TICKET_STATUS_FILTER_MAP = {
-  pending: ["Pending"],
-  inprogress: ["Inprogress", "Reviewed"],
-  completed: ["Completed", "Done", "Closed"],
-};
-
-// Clear filters function
-const clearFilters = () => {
-  statusFilter.value = "";
-  technicianFilter.value = "";
-  searchFilter.value = "";
-  dateFilter.value = "";
-};
-
-// Enhanced filter
-const filteredRequests = computed(() => {
-  let filtered = [...requests.value];
-
-  // Status filter
-  if (statusFilter.value) {
-    filtered = filtered.filter((r) => {
-      const status = latestStatus(r)?.status;
-      return TICKET_STATUS_FILTER_MAP[statusFilter.value]?.includes(status);
-    });
-  }
-
-  // Technician filter
-  if (technicianFilter.value) {
-    filtered = filtered.filter((r) =>
-      r.technicians_assigned?.includes(technicianFilter.value),
-    );
-  }
-
-  // Search filter
-  if (searchFilter.value) {
-    const search = searchFilter.value.toLowerCase();
-    filtered = filtered.filter(
-      (r) =>
-        r.ticket_id?.toLowerCase().includes(search) ||
-        r.requestor_fullname?.toLowerCase().includes(search) ||
-        r.requestor_lsu_email?.toLowerCase().includes(search),
-    );
-  }
-
-  // Date filter
-  if (dateFilter.value) {
-    const now = moment();
-    filtered = filtered.filter((r) => {
-      const created = moment(r.created_at);
-      switch (dateFilter.value) {
-        case "today":
-          return created.isSame(now, "day");
-        case "week":
-          return created.isSame(now, "week");
-        case "month":
-          return created.isSame(now, "month");
-        case "year":
-          return created.isSame(now, "year");
-        default:
-          return true;
-      }
-    });
-  }
-
-  return filtered;
-});
-
-// Date helpers
-const getCurrentSemester = () => {
-  const month = moment().month() + 1;
-  if (month >= 1 && month <= 5) return "Second Semester";
-  if (month >= 6 && month <= 7) return "Summer";
-  return "First Semester";
-};
-
-const getAcademicYear = () => {
-  const year = moment().year();
-  const month = moment().month() + 1;
-  return month >= 6 ? `A.Y ${year} - ${year + 1}` : `A.Y ${year - 1} - ${year}`;
-};
-
-const getTodayDateChecked = () => moment().format("DD/MM/YYYY hh:mm A");
-
-const ACADEMIC_YEAR_OPTIONS = (() => {
-  const currentYear = moment().year();
-  const years = [];
-  for (let i = -5; i <= 1; i++) {
-    const start = currentYear + i;
-    years.push(`A.Y ${start} - ${start + 1}`);
-  }
-  return years;
-})();
 
 // Empty item template
 const emptyItem = () => ({
   name: "",
-  serial_number_code: "",
-  details: "",
   category_type: "",
   item_type: "",
   center_office_room: "",
-  quantity: 1,
-  status: "Used",
-  remarks: "",
-  current_semester: getCurrentSemester(), // dropdown
-  academic_year: getAcademicYear(), // dropdown
-  custom_semester: "",
-  custom_academic_year: "",
-  date_checked: getTodayDateChecked(),
 });
 
 // Form info
@@ -639,37 +438,18 @@ const info = ref({
   requestor_fullname: "",
   requestor_lsu_email: "",
   center_office_room: "",
-  technicians_assigned: [],
+  technicians_assigned: ["Michael John Puertogalera"],
   logs: [
     {
       timestamp: new Date().toISOString(),
-      remarks: "N/A",
       status: "Pending",
+      remarks: "Initial status",
     },
   ],
   item_request: [emptyItem()],
 });
 
-const openModal = (item) => {
-  isCreate.value = false;
 
-  // Directly assign reactive ref
-  info.value = reactive({
-    ...item,
-    technicians_assigned: Array.isArray(item.technicians_assigned)
-      ? item.technicians_assigned
-      : item.technician_assigned
-        ? [item.technician_assigned]
-        : [],
-    logs: item.logs ? [...item.logs] : [],
-  });
-
-  showModal.value = true;
-};
-
-const closeModal = () => (showModal.value = false);
-const addItem = () => info.value.item_request.push(emptyItem());
-const removeItem = (index) => info.value.item_request.splice(index, 1);
 
 // Normalize office before submit
 const normalizeOffice = () => {
@@ -725,7 +505,7 @@ const createTicket = async () => {
     ticket_id: info.value.ticket_id || `TID${Date.now()}`,
     requestor_fullname: info.value.requestor_fullname?.trim() || "N/A",
     requestor_lsu_email: info.value.requestor_lsu_email?.trim() || "N/A",
-    technicians_assigned: info.value.technicians_assigned || [],
+    technicians_assigned: info.value.technicians_assigned || ["Michael John Puertogalera"],
     logs: info.value.logs?.length
       ? info.value.logs
       : [
@@ -737,17 +517,17 @@ const createTicket = async () => {
         ],
     item_request: info.value.item_request.map((item) => ({
       name: item.name?.trim() || "N/A",
-      serial_number_code: item.serial_number_code?.trim() || "N/A",
-      details: item.details?.trim() || "N/A",
       category_type: item.category_type?.trim() || "N/A",
       item_type: item.item_type?.trim() || "N/A",
       center_office_room: item.center_office_room?.trim() || "N/A",
-      quantity: String(item.quantity || 1),
-      status: item.status?.trim() || "Used",
-      remarks: item.remarks?.trim() || "N/A",
-      current_semester: item.current_semester,
-      academic_year: item.academic_year,
-      date_checked: item.date_checked || getTodayDateChecked(),
+      status: "N/A",
+      academic_year: "N/A",
+      serial_number_code: "N/A",
+      current_semester: "N/A",
+      details: "N/A",
+      quantity: "N/A",
+      date_checked: "N/A",
+      remarks: "N/A",
     })),
   };
 
@@ -766,7 +546,6 @@ const createTicket = async () => {
         "✅ Ticket created successfully! Confirmation email sent.",
         "success",
       );
-      await fetchRequests(); // Refresh the list
     } else if (res.status === "errors") {
       console.error("Form errors:", res.errors);
       showToaster(
@@ -789,12 +568,12 @@ const resetForm = () => {
     requestor_fullname: "",
     requestor_lsu_email: "",
     center_office_room: "",
-    technicians_assigned: [],
+    technicians_assigned: ["Michael John Puertogalera"],
     logs: [
       {
         timestamp: new Date().toISOString(),
-        remarks: "N/A",
         status: "Pending",
+        remarks: "Initial status",
       },
     ],
     item_request: [emptyItem()],
@@ -829,17 +608,17 @@ const saveChanges = async () => {
   // Map items (same mapping as create)
   const item_request = info.value.item_request.map((item) => ({
     name: item.name?.trim() || "N/A",
-    serial_number_code: item.serial_number_code?.trim() || "N/A",
-    details: item.details?.trim() || "N/A",
     category_type: item.category_type?.trim() || "N/A",
     item_type: item.item_type?.trim() || "N/A",
     center_office_room: item.center_office_room?.trim() || "N/A",
-    quantity: String(item.quantity || 1),
-    status: item.status?.trim() || "Used",
-    remarks: item.remarks?.trim() || "N/A",
-    current_semester: item.current_semester,
-    academic_year: item.academic_year,
-    date_checked: item.date_checked || getTodayDateChecked(),
+    status: "N/A",
+    academic_year: "N/A",
+    serial_number_code: "N/A",
+    current_semester: "N/A",
+    details: "N/A",
+    quantity: "N/A",
+    date_checked: "N/A",
+    remarks: "N/A",
   }));
 
   const payload = {
@@ -847,11 +626,10 @@ const saveChanges = async () => {
     requestor_fullname: info.value.requestor_fullname?.trim() || "N/A",
     requestor_lsu_email: info.value.requestor_lsu_email?.trim() || "N/A",
     center_office_room: info.value.center_office_room,
-    technicians_assigned: info.value.technicians_assigned || [],
+    technicians_assigned: info.value.technicians_assigned || ["Michael John Puertogalera"],
     logs: info.value.logs || [],
     item_request,
   };
-  addStatusLog();
 
   try {
     const res = await $fetch(
@@ -864,8 +642,6 @@ const saveChanges = async () => {
 
     if (res.status === "updated") {
       showToaster("✅ Changes saved successfully!", "success");
-      showModal.value = false;
-      await fetchRequests(); // refresh list
     } else {
       console.error("Update failed:", res);
       showToaster("❌ Failed to update ticket.", "error");
@@ -878,53 +654,7 @@ const saveChanges = async () => {
   }
 };
 
-const ticketStatusClass = (status) => {
-  switch (status) {
-    case "Pending":
-      return "bg-yellow-100 text-yellow-800";
-    case "Inprogress":
-      return "bg-blue-100 text-blue-800";
-    case "Reviewed":
-      return "bg-purple-100 text-purple-800";
-    case "Completed":
-    case "Done":
-      return "bg-green-100 text-green-800";
-    case "Closed":
-      return "bg-gray-200 text-gray-800";
-    case "Cancelled":
-    case "Unsuccessful":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-50 text-gray-700";
-  }
-};
 
-const itemStatusClass = (status) => {
-  switch (status) {
-    case "New":
-      return "bg-blue-100 text-blue-800";
-    case "Used":
-      return "bg-yellow-100 text-yellow-800";
-    case "For Repair":
-      return "bg-orange-100 text-orange-800";
-    case "For Disposal":
-      return "bg-red-100 text-red-800";
-    case "Returned":
-      return "bg-green-100 text-green-800";
-    case "Issued":
-      return "bg-purple-100 text-purple-800";
-    case "Replaced":
-      return "bg-teal-100 text-teal-800";
-    case "Condemned":
-      return "bg-gray-100 text-gray-700";
-    case "Serviceable":
-      return "bg-indigo-100 text-indigo-800";
-    case "Unserviceable":
-      return "bg-pink-100 text-pink-800";
-    default:
-      return "bg-gray-50 text-gray-700";
-  }
-};
 </script>
 
 <style scoped>
