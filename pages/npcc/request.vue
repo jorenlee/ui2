@@ -505,7 +505,7 @@ const createTicket = async () => {
     ticket_id: info.value.ticket_id || `TID${Date.now()}`,
     requestor_fullname: info.value.requestor_fullname?.trim() || "N/A",
     requestor_lsu_email: info.value.requestor_lsu_email?.trim() || "N/A",
-    technicians_assigned: info.value.technicians_assigned || ["Michael John Puertogalera"],
+    technicians_assigned: info.value.technicians_assigned || [],
     logs: info.value.logs?.length
       ? info.value.logs
       : [
@@ -517,17 +517,17 @@ const createTicket = async () => {
         ],
     item_request: info.value.item_request.map((item) => ({
       name: item.name?.trim() || "N/A",
+      serial_number_code: item.serial_number_code?.trim() || "N/A",
+      details: item.details?.trim() || "N/A",
       category_type: item.category_type?.trim() || "N/A",
       item_type: item.item_type?.trim() || "N/A",
       center_office_room: item.center_office_room?.trim() || "N/A",
-      status: "N/A",
-      academic_year: "N/A",
-      serial_number_code: "N/A",
-      current_semester: "N/A",
-      details: "N/A",
-      quantity: "N/A",
-      date_checked: "N/A",
-      remarks: "N/A",
+      quantity: String(item.quantity || "N/A"),
+      status: item.status?.trim() || "N/A",
+      remarks: item.remarks?.trim() || "N/A",
+      current_semester: item.current_semester || "N/A",
+      academic_year: item.academic_year || "N/A",
+      date_checked: item.date_checked || "N/A",
     })),
   };
 
@@ -594,64 +594,6 @@ const showToaster = (message, type = "success", duration = 3000) => {
   setTimeout(() => {
     toaster.value.show = false;
   }, duration);
-};
-
-const saveChanges = async () => {
-  if (!info.value.item_request.length) {
-    showToaster("Please add at least one item.", "warning");
-    return;
-  }
-
-  modalLoading.value = true;
-  normalizeOffice();
-
-  // Map items (same mapping as create)
-  const item_request = info.value.item_request.map((item) => ({
-    name: item.name?.trim() || "N/A",
-    category_type: item.category_type?.trim() || "N/A",
-    item_type: item.item_type?.trim() || "N/A",
-    center_office_room: item.center_office_room?.trim() || "N/A",
-    status: "N/A",
-    academic_year: "N/A",
-    serial_number_code: "N/A",
-    current_semester: "N/A",
-    details: "N/A",
-    quantity: "N/A",
-    date_checked: "N/A",
-    remarks: "N/A",
-  }));
-
-  const payload = {
-    ticket_id: info.value.ticket_id,
-    requestor_fullname: info.value.requestor_fullname?.trim() || "N/A",
-    requestor_lsu_email: info.value.requestor_lsu_email?.trim() || "N/A",
-    center_office_room: info.value.center_office_room,
-    technicians_assigned: info.value.technicians_assigned || ["Michael John Puertogalera"],
-    logs: info.value.logs || [],
-    item_request,
-  };
-
-  try {
-    const res = await $fetch(
-      endpoint.value + `/api/cits/tech-support/${info.value.id}/edit/`,
-      {
-        method: "PUT", // or PATCH depending on backend
-        body: payload,
-      },
-    );
-
-    if (res.status === "updated") {
-      showToaster("✅ Changes saved successfully!", "success");
-    } else {
-      console.error("Update failed:", res);
-      showToaster("❌ Failed to update ticket.", "error");
-    }
-  } catch (err) {
-    console.error("Failed to update ticket:", err);
-    showToaster("❌ Failed to update ticket. Please try again.", "error");
-  } finally {
-    modalLoading.value = false;
-  }
 };
 
 
