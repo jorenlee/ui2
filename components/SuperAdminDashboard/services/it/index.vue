@@ -88,29 +88,131 @@
       </div>
     </div>
 
-    <!-- Results Count -->
-    <div class="mb-3 text-sm text-gray-600 font-semibold">
-      Showing {{ filteredRequests.length }} of {{ requests.length }} ticket(s)
+    <!-- Results Count & Real-time Indicator -->
+    <div class="mb-3 flex justify-between items-center">
+      <div class="text-sm text-gray-600 font-semibold">
+        Showing {{ paginatedRequests.length }} of {{ filteredRequests.length }} ticket(s)
+        <span class="text-gray-400">({{ requests.length }} total)</span>
+      </div>
+      <div class="flex items-center gap-2 text-xs text-green-600">
+        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <span class="font-medium">Live Updates Active</span>
+      </div>
+    </div>
+
+    <!-- Color Legend -->
+    <div class="mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 shadow-sm">
+      <div class="flex flex-wrap gap-x-6 gap-y-2 items-center justify-center text-xs">
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 bg-green-100 border-2 border-green-300 rounded"></div>
+          <span class="font-medium text-gray-700">
+            <span class="text-green-600">●</span> New ticket (&lt; 24 hours)
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 bg-yellow-100 border-2 border-yellow-300 rounded"></div>
+          <span class="font-medium text-gray-700">
+            <span class="text-yellow-600">●</span> Aging ticket (24-48 hours)
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 bg-red-100 border-2 border-red-300 rounded"></div>
+          <span class="font-medium text-gray-700">
+            <span class="text-red-600">●</span> Overdue ticket (48+ hours, not done)
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 bg-white border-2 border-gray-300 rounded"></div>
+          <span class="font-medium text-gray-700">
+            <span class="text-gray-500">●</span> Completed tickets
+          </span>
+        </div>
+      </div>
     </div>
 
     <!-- ================= DATE LIST TABLE HEADER ================= -->
-    <div class="w-full lg:grid hidden grid-cols-6 bg-gradient-to-r from-green-700 to-green-600 rounded-t-lg shadow-md overflow-hidden">
-      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+    <div class="w-full lg:flex hidden bg-gradient-to-r from-green-700 to-green-600 rounded-t-lg shadow-md overflow-hidden">
+      <div
+        @click="sortBy('ticket_id')"
+        class="lg:w-6/12 w-full flex items-center  p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+      >
         <i class="fa fa-ticket mr-1"></i> Ticket ID
+        <span class="ml-1 inline-flex flex-col text-xs leading-none">
+          <i
+            class="fa fa-caret-up"
+            :class="sortColumn === 'ticket_id' && sortDirection === 'asc' ? 'text-white' : 'text-green-300 opacity-50'"
+          ></i>
+          <i
+            class="fa fa-caret-down -mt-1"
+            :class="sortColumn === 'ticket_id' && sortDirection === 'desc' ? 'text-white' : 'text-green-300 opacity-50'"
+          ></i>
+        </span>
       </div>
-      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+      <div
+        @click="sortBy('requestor_fullname')"
+        class="w-full flex items-center  p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+      >
         <i class="fa fa-user mr-1"></i> Full Name
+        <span class="ml-1 inline-flex flex-col text-xs leading-none">
+          <i
+            class="fa fa-caret-up"
+            :class="sortColumn === 'requestor_fullname' && sortDirection === 'asc' ? 'text-white' : 'text-green-300 opacity-50'"
+          ></i>
+          <i
+            class="fa fa-caret-down -mt-1"
+            :class="sortColumn === 'requestor_fullname' && sortDirection === 'desc' ? 'text-white' : 'text-green-300 opacity-50'"
+          ></i>
+        </span>
       </div>
-      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+      <div
+        @click="sortBy('requestor_lsu_email')"
+        class="w-full flex items-center  p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+      >
         <i class="fa fa-envelope mr-1"></i> LSU Email
+        <span class="ml-1 inline-flex flex-col text-xs leading-none">
+          <i
+            class="fa fa-caret-up"
+            :class="sortColumn === 'requestor_lsu_email' && sortDirection === 'asc' ? 'text-white' : 'text-green-300 opacity-50'"
+          ></i>
+          <i
+            class="fa fa-caret-down -mt-1"
+            :class="sortColumn === 'requestor_lsu_email' && sortDirection === 'desc' ? 'text-white' : 'text-green-300 opacity-50'"
+          ></i>
+        </span>
       </div>
-      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+      <div
+        @click="sortBy('technicians_assigned')"
+        class="w-full flex items-center  p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+      >
         <i class="fa fa-users mr-1"></i> Personnel
+        <span class="ml-1 inline-flex flex-col text-xs leading-none">
+          <i
+            class="fa fa-caret-up"
+            :class="sortColumn === 'technicians_assigned' && sortDirection === 'asc' ? 'text-white' : 'text-green-300 opacity-50'"
+          ></i>
+          <i
+            class="fa fa-caret-down -mt-1"
+            :class="sortColumn === 'technicians_assigned' && sortDirection === 'desc' ? 'text-white' : 'text-green-300 opacity-50'"
+          ></i>
+        </span>
       </div>
-      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
+      <div
+        @click="sortBy('status')"
+        class="lg:w-6/12 w-full flex items-center  p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+      >
         <i class="fa fa-info-circle mr-1"></i> Status
+        <span class="ml-1 inline-flex flex-col text-xs leading-none">
+          <i
+            class="fa fa-caret-up"
+            :class="sortColumn === 'status' && sortDirection === 'asc' ? 'text-white' : 'text-green-300 opacity-50'"
+          ></i>
+          <i
+            class="fa fa-caret-down -mt-1"
+            :class="sortColumn === 'status' && sortDirection === 'desc' ? 'text-white' : 'text-green-300 opacity-50'"
+          ></i>
+        </span>
       </div>
-      <div class="text-center p-3 text-white font-bold text-sm">
+      <div class="lg:w-fit w-full py-3 px-5 text-white font-bold text-sm whitespace-nowrap">
         <i class="fa fa-cog mr-1"></i> Action
       </div>
     </div>
@@ -169,30 +271,30 @@
 
     <!-- ================= DATA LIST ================= -->
     <div v-else>
-      <div v-for="(item, index) in filteredRequests" :key="item.id">
+      <div v-for="(item, index) in paginatedRequests" :key="item.id">
         <!-- ================= DESKTOP ROW ================= -->
         <div
-          class="hidden lg:grid grid-cols-6 items-center text-sm cursor-pointer hover:bg-gray-100 border"
-          :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
+          class="hidden lg:flex items-center text-sm cursor-pointer border py-1 transition-colors"
+          :class="getRowColorClass(item) || (index % 2 === 0 ? 'bg-white hover:bg-gray-100' : 'bg-gray-50 hover:bg-gray-100')"
           @click="openModal(item)"
         >
-          <div class="p-3 text-center font-semibold">
+          <div class="lg:w-6/12 w-full px-3 text-left font-semibold">
             {{ item.ticket_id }}
           </div>
 
-          <div class="p-3 text-center">
+          <div class="w-full px-3 text-left uppercase whitespace-nowrap text-xs">
             {{ item.requestor_fullname }}
           </div>
 
-          <div class="p-3 text-center text-xs">
+          <div class="w-full px-3 text-left text-xs">
             {{ item.requestor_lsu_email }}
           </div>
 
-          <div class="p-3 text-center text-xs">
+          <div class="w-full px-3 text-left text-xs">
             {{ item.technicians_assigned?.join(", ") || "-" }}
           </div>
 
-          <div class="p-3 text-center">
+          <div class="lg:w-6/12 w-full px-3 text-left">
             <span
               class="px-2 py-1 rounded text-xs font-semibold"
               :class="ticketStatusClass(latestStatus(item)?.status)"
@@ -201,9 +303,9 @@
             </span>
           </div>
 
-          <div class="p-3 text-center">
+          <div class="lg:w-fit w-full px-3 text-left">
             <span
-              class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-yellow-800"
+              class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-yellow-800 whitespace-nowrap"
             >
               Edit / View
             </span>
@@ -212,7 +314,8 @@
 
         <!-- ================= MOBILE CARD ================= -->
         <div
-          class="lg:hidden border p-4 space-y-2 hover:bg-gray-50 cursor-pointer"
+          class="lg:hidden border p-4 space-y-2 cursor-pointer transition-colors"
+          :class="getRowColorClass(item) || 'hover:bg-gray-50'"
           @click="openModal(item)"
         >
           <div class="flex justify-between items-center">
@@ -265,6 +368,71 @@
       </div>
     </div>
 
+    <!-- ================= PAGINATION ================= -->
+    <div v-if="totalPages > 1" class="mt-6 flex justify-center items-center gap-2">
+      <!-- First Page -->
+      <button
+        @click="goToPage(1)"
+        :disabled="currentPage === 1"
+        class="px-3 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        title="First Page"
+      >
+        <i class="fa fa-angle-double-left"></i>
+      </button>
+
+      <!-- Previous Page -->
+      <button
+        @click="goToPage(currentPage - 1)"
+        :disabled="currentPage === 1"
+        class="px-3 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        title="Previous Page"
+      >
+        <i class="fa fa-angle-left"></i>
+      </button>
+
+      <!-- Page Numbers -->
+      <div class="flex gap-1">
+        <button
+          v-for="page in visiblePages"
+          :key="page"
+          @click="goToPage(page)"
+          :class="[
+            'px-4 py-2 rounded border transition-colors font-semibold text-sm',
+            currentPage === page
+              ? 'bg-green-600 text-white border-green-600'
+              : 'bg-white hover:bg-gray-100'
+          ]"
+        >
+          {{ page }}
+        </button>
+      </div>
+
+      <!-- Next Page -->
+      <button
+        @click="goToPage(currentPage + 1)"
+        :disabled="currentPage === totalPages"
+        class="px-3 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        title="Next Page"
+      >
+        <i class="fa fa-angle-right"></i>
+      </button>
+
+      <!-- Last Page -->
+      <button
+        @click="goToPage(totalPages)"
+        :disabled="currentPage === totalPages"
+        class="px-3 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        title="Last Page"
+      >
+        <i class="fa fa-angle-double-right"></i>
+      </button>
+
+      <!-- Page Info -->
+      <div class="ml-4 text-sm text-gray-600 font-medium">
+        Page {{ currentPage }} of {{ totalPages }}
+      </div>
+    </div>
+
     <!-- MODAL -->
     <div
       v-if="showModal"
@@ -298,16 +466,7 @@
           <h4 class="font-semibold mb-2">Basic Information</h4>
           <div class="gap-3">
             <div class="lg:flex w-full gap-x-2 mb-4">
-              <div class="w-full">
-                <label class="text-sm font-semibold mb-1 block"
-                  >Ticket ID</label
-                >
-                <input
-                  v-model="info.ticket_id"
-                  disabled
-                  class="input w-full p-2 rounded border"
-                />
-              </div>
+            
 
               <div class="w-full">
                 <label class="text-sm font-semibold mb-1 block"
@@ -680,7 +839,7 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, reactive } from "vue";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
 
@@ -695,6 +854,17 @@ const technicianFilter = ref("");
 const searchFilter = ref("");
 const dateFilter = ref("");
 const customOffice = ref("");
+
+// Pagination
+const currentPage = ref(1);
+const itemsPerPage = ref(20);
+
+// Sorting
+const sortColumn = ref("created_at");
+const sortDirection = ref("asc"); // oldest first by default
+
+// Real-time update
+let realtimeInterval = null;
 
 const successfullySavedData = ref(false);
 
@@ -751,19 +921,40 @@ const TECHNICIANS_PERSONNEL = [
 const loading = ref(false);
 const modalLoading = ref(false);
 
-const fetchRequests = async () => {
-  loading.value = true;
+const fetchRequests = async (silent = false) => {
+  if (!silent) loading.value = true;
   try {
     const res = await $fetch(endpoint.value + "/api/cits/tech-support/list/");
     requests.value = res.data || res;
   } catch (err) {
     console.error("Failed to fetch tech support list", err);
   } finally {
-    loading.value = false;
+    if (!silent) loading.value = false;
   }
 };
 
-onMounted(fetchRequests);
+// Real-time updates every second
+const startRealtimeUpdates = () => {
+  realtimeInterval = setInterval(() => {
+    fetchRequests(true); // silent update
+  }, 1000);
+};
+
+const stopRealtimeUpdates = () => {
+  if (realtimeInterval) {
+    clearInterval(realtimeInterval);
+    realtimeInterval = null;
+  }
+};
+
+onMounted(() => {
+  fetchRequests();
+  startRealtimeUpdates();
+});
+
+onUnmounted(() => {
+  stopRealtimeUpdates();
+});
 
 const newLog = reactive({ status: "", remarks: "" });
 
@@ -806,9 +997,21 @@ const clearFilters = () => {
   technicianFilter.value = "";
   searchFilter.value = "";
   dateFilter.value = "";
+  currentPage.value = 1;
 };
 
-// Enhanced filter
+// Sort function
+const sortBy = (column) => {
+  if (sortColumn.value === column) {
+    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+  } else {
+    sortColumn.value = column;
+    sortDirection.value = "asc";
+  }
+  currentPage.value = 1; // Reset to first page when sorting
+};
+
+// Enhanced filter with sorting
 const filteredRequests = computed(() => {
   let filtered = [...requests.value];
 
@@ -858,8 +1061,110 @@ const filteredRequests = computed(() => {
     });
   }
 
+  // Sorting
+  filtered.sort((a, b) => {
+    let aVal, bVal;
+
+    switch (sortColumn.value) {
+      case "ticket_id":
+        aVal = a.ticket_id || "";
+        bVal = b.ticket_id || "";
+        break;
+      case "requestor_fullname":
+        aVal = a.requestor_fullname || "";
+        bVal = b.requestor_fullname || "";
+        break;
+      case "requestor_lsu_email":
+        aVal = a.requestor_lsu_email || "";
+        bVal = b.requestor_lsu_email || "";
+        break;
+      case "technicians_assigned":
+        aVal = a.technicians_assigned?.join(", ") || "";
+        bVal = b.technicians_assigned?.join(", ") || "";
+        break;
+      case "status":
+        aVal = latestStatus(a)?.status || "";
+        bVal = latestStatus(b)?.status || "";
+        break;
+      case "created_at":
+      default:
+        aVal = moment(a.created_at).valueOf();
+        bVal = moment(b.created_at).valueOf();
+        break;
+    }
+
+    if (sortDirection.value === "asc") {
+      return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    } else {
+      return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+    }
+  });
+
   return filtered;
 });
+
+// Paginated results
+const paginatedRequests = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredRequests.value.slice(start, end);
+});
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredRequests.value.length / itemsPerPage.value);
+});
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
+
+// Visible page numbers for pagination
+const visiblePages = computed(() => {
+  const pages = [];
+  const maxVisible = 5;
+  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
+  let end = Math.min(totalPages.value, start + maxVisible - 1);
+
+  if (end - start + 1 < maxVisible) {
+    start = Math.max(1, end - maxVisible + 1);
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  return pages;
+});
+
+// Get row background color based on ticket age and status
+const getRowColorClass = (item) => {
+  const status = latestStatus(item)?.status?.toLowerCase();
+  const isDone = status === 'done' || status === 'completed' || status === 'closed';
+
+  // If ticket is done/completed/closed, use default alternating colors
+  if (isDone) {
+    return '';
+  }
+
+  const createdAt = moment(item.created_at);
+  const now = moment();
+  const hoursPassed = now.diff(createdAt, 'hours');
+
+  // New ticket (less than 24 hours) - green
+  if (hoursPassed < 24) {
+    return 'bg-green-50 hover:bg-green-100';
+  }
+  // 24-48 hours - yellow
+  else if (hoursPassed < 48) {
+    return 'bg-yellow-50 hover:bg-yellow-100';
+  }
+  // 48+ hours and not done - red
+  else {
+    return 'bg-red-50 hover:bg-red-100';
+  }
+};
 
 // Date helpers
 const getCurrentSemester = () => {
