@@ -287,7 +287,8 @@ const contentWritersEmails = [
   "xie.medrano@lsu.edu.ph",
   "jenny.licanda@lsu.edu.ph",
   "jorenlee.luna@lsu.edu.ph",
-  "edm@lsu.edu.ph"
+  "edm@lsu.edu.ph",
+  "israelgallogo@lsu.edu.ph",
 ];
 const hrMenuEmails = ["hr@lsu.edu.ph", "npc@lsu.edu.ph"];
 const libraryMenuEmails = [
