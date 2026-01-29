@@ -94,7 +94,7 @@
     </div>
 
     <!-- ================= DATE LIST TABLE HEADER ================= -->
-    <div class="w-full lg:grid hidden grid-cols-7 bg-gradient-to-r from-green-700 to-green-600 rounded-t-lg shadow-md overflow-hidden">
+    <div class="w-full lg:grid hidden grid-cols-6 bg-gradient-to-r from-green-700 to-green-600 rounded-t-lg shadow-md overflow-hidden">
       <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
         <i class="fa fa-ticket mr-1"></i> Ticket ID
       </div>
@@ -109,9 +109,6 @@
       </div>
       <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
         <i class="fa fa-info-circle mr-1"></i> Status
-      </div>
-      <div class="text-center p-3 text-white font-bold text-sm border-r border-green-500">
-        <i class="fa fa-calendar mr-1"></i> Created
       </div>
       <div class="text-center p-3 text-white font-bold text-sm">
         <i class="fa fa-cog mr-1"></i> Action
@@ -175,7 +172,7 @@
       <div v-for="(item, index) in filteredRequests" :key="item.id">
         <!-- ================= DESKTOP ROW ================= -->
         <div
-          class="hidden lg:grid grid-cols-7 items-center text-sm cursor-pointer hover:bg-gray-100 border"
+          class="hidden lg:grid grid-cols-6 items-center text-sm cursor-pointer hover:bg-gray-100 border"
           :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'"
           @click="openModal(item)"
         >
@@ -202,10 +199,6 @@
             >
               {{ latestStatus(item)?.status || "-" }}
             </span>
-          </div>
-
-          <div class="p-3 text-center text-xs">
-            {{ moment(item.created_at).format("MMM DD, YYYY hh:mm A") }}
           </div>
 
           <div class="p-3 text-center">
