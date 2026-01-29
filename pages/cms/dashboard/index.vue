@@ -243,16 +243,22 @@ const profileImageUrl = "https://lsu-media-styles.sgp1.digitaloceanspaces.com/Lo
 
 // ---------------- ROLES ----------------
 const superAdminEmails = [
-  "jorenlee.luna@lsu.edu.ph",
   "jorenleeluna24@gmail.com",
-  "npc@lsu.edu.ph",
   "michaeljohn.puertogalera@lsu.edu.ph",
   "jason.yap@lsu.edu.ph",
-  "johny14_gonzaga@lsu.edu.ph",
-  "giovanni.morales@lsu.edu.ph",
-  "rommel.rosal@lsu.edu.ph",
-  "denzelroy.suarez@lsu.edu.ph"
 ];
+
+
+const npccMenuEmails = [
+  "michaeljohn.puertogalera@lsu.edu.ph",
+  "jorenlee.luna@lsu.edu.ph",
+  "jason.yap@lsu.edu.ph",
+  "johny14_gonzaga@lsu.edu.ph",
+  "rommel.rosal@lsu.edu.ph",
+  "denzelroy.suarez@lsu.edu.ph",
+  "giovanni.morales@lsu.edu.ph",
+];
+
 
 const ochAdminEmails = [
   "och@lsu.edu.ph"
@@ -286,7 +292,6 @@ const contentWritersEmails = [
   "tednudgent.tacan@lsu.edu.ph",
   "xie.medrano@lsu.edu.ph",
   "jenny.licanda@lsu.edu.ph",
-  "jorenlee.luna@lsu.edu.ph",
   "edm@lsu.edu.ph",
   "israelgallogo@lsu.edu.ph",
 ];
@@ -301,16 +306,7 @@ const libraryMenuEmails = [
   "zosette.salas@lsu.edu.ph",
 ];
 
-const npccMenuEmails = [
-  "michaeljohn.puertogalera@lsu.edu.ph",
-  "jorenlee.luna@lsu.edu.ph",
-  "jason.yap@lsu.edu.ph",
-  "johny14_gonzaga@lsu.edu.ph",
-  "rommel.rosal@lsu.edu.ph",
-  "denzelroy.suarez@lsu.edu.ph",
-  "giovanni.morales@lsu.edu.ph",
-  "dev@lsu.edu.ph"
-];
+
 
 const rolesByEmail = {
   superAdmin: superAdminEmails,
