@@ -282,7 +282,7 @@ onMounted(async () => {
           <div
             v-for="(j, i) in visibleNews"
             :key="j.id || i"
-            class="bg-white border-2 rounded border-green-50 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
+            class="bg-white border-2 rounded-lg border-green-50 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
           >
             <a :href="'news-updates/' + j.id" class="block">
               <!-- Image Section -->
@@ -320,11 +320,11 @@ onMounted(async () => {
                 <!-- Category/Type Badge -->
                 <div class="flex items-center justify-between lg:mb-1">
                   <span
-                    class="inline-block py-1 lg:text-xs text-[10px] rounded-full uppercase tracking-wide font-light"
+                    class="inline-block py-1 lg:text-xs text-[10px] rounded-full uppercase tracking-wide font-light text-[#1d1d1d]"
                   >
                     {{ getCategoryLabel(j) }}
                   </span>
-                  <div class="flex items-center">
+                  <div class="flex items-center]">
                     <!-- SDG Badges -->
                     <span v-if="getSdgBadges(j).length" class="">
                       <span class="flex items-center flex-wrap gap-1">
@@ -334,16 +334,16 @@ onMounted(async () => {
                           class="inline-flex items-center"
                         >
                           <span
-                            class="inline-flex items-center lg:px-2 px-1 py-0.5 min-w-4 justify-center rounded lg:text-xs text-[10px] font-bold text-white shadow-sm"
+                            class="inline-flex items-center lg:px-2 px-1 py-0.5 min-w-4 justify-center rounded font-bold text-[#ffffff] shadow-sm text-[10px]"
                             :style="{ backgroundColor: badge.color }"
                           >
-                            <span class="lg:flex hidden"> SDG </span
+                            <span class="lg:flex hidden text-[10px] pr-1"> SDG </span
                             >{{ badge.number }}
                           </span>
                         </span>
                         <span
                           v-if="getSdgBadges(j).length > 2"
-                          class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                          class="inline-flex items-center px-2 py-1 rounded font-medium bg-gray-200 text-gray-600 text-[10px]"
                         >
                           +{{ getSdgBadges(j).length - 2 }} more
                         </span>
@@ -354,7 +354,7 @@ onMounted(async () => {
 
                 <!-- Title -->
                 <h3
-                  class="lg:text-lg text-xs font-bold text-gray-900 lg:mb-2 line-clamp-2 leading-0"
+                  class="lg:text-sm text-xs font-bold text-[#1d1d1d] lg:mb-2 line-clamp-2 leading-0"
                 >
                   {{ j.title }}
                 </h3>
@@ -362,7 +362,7 @@ onMounted(async () => {
                 <!-- Description Preview -->
                 <p
                   v-if="j.descriptions"
-                  class="lg:text-sm text-[10px] text-gray-600 mb-3 line-clamp-2"
+                  class="lg:text-xs text-[10px] text-[#1d1d1d] mb-3 line-clamp-2 font-montserrat"
                 >
                   {{ j.descriptions.substring(0, 100)
                   }}{{ j.descriptions.length > 100 ? "..." : "" }}
@@ -373,13 +373,13 @@ onMounted(async () => {
                   class="flex items-center justify-between pt-2 lg:pb-0 pb-1 border-t border-gray-100"
                 >
                   <div
-                    class="flex items-center lg:text-xs text-[10px] text-gray-500"
+                    class="flex items-center lg:text-xs text-[10px] text-[#1d1d1d]"
                   >
                     <i class="fas fa-calendar mr-1"></i>
                     {{ moment(j.date || j.created_at).format("MMM DD, YYYY") }}
                   </div>
                   <div
-                    class="flex items-center lg:text-xs text-[10px] text-green-600 font-medium"
+                    class="flex items-center lg:text-xs text-[10px] text-[#1d1d1d] font-medium"
                   >
                     Read More
                     <i class="fas fa-arrow-right ml-1"></i>

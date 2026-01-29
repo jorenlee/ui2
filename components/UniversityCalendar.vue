@@ -1,6 +1,6 @@
 <template>
   <div class="p-4 min-h-auto w-full bg-green-900 lg:pt-12 pt-5 lg:pb-10 pb-5">
-    <div class="max-w-6xl mx-auto">
+    <div class="w-full mx-auto">
       <div class="flex">
         <h2
           class="lg:text-xl text-lg font-bold text-center mt-2 mb-4 w-full uppercase text-white"

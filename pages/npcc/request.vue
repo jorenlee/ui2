@@ -522,7 +522,7 @@ const createTicket = async () => {
       category_type: item.category_type?.trim() || "N/A",
       item_type: item.item_type?.trim() || "N/A",
       center_office_room: item.center_office_room?.trim() || "N/A",
-      quantity: String(item.quantity || "N/A"),
+      quantity: String(item.quantity || "1"),
       status: item.status?.trim() || "N/A",
       remarks: item.remarks?.trim() || "N/A",
       current_semester: item.current_semester || "N/A",

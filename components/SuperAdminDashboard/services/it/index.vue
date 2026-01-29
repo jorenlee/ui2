@@ -16,7 +16,7 @@
           >
             <option value="">All Status</option>
             <option value="pending">Pending</option>
-            <option value="inprogress">In Progress</option>
+            <option value="in progress">In Progress</option>
             <option value="completed">Completed</option>
           </select>
         </div>
@@ -91,20 +91,23 @@
     <!-- Results Count & Real-time Indicator -->
     <div class="mb-3 flex justify-between items-center">
       <div class="text-sm text-gray-600 font-semibold">
-        Showing {{ paginatedRequests.length }} of {{ filteredRequests.length }} ticket(s)
+        Showing {{ paginatedRequests.length }} of
+        {{ filteredRequests.length }} ticket(s)
         <span class="text-gray-400">({{ requests.length }} total)</span>
-      </div>
-      <div class="flex items-center gap-2 text-xs text-green-600">
-        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-        <span class="font-medium">Live Updates Active</span>
       </div>
     </div>
 
     <!-- Mood Icon Legend -->
-    <div class="mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 shadow-sm">
-      <div class="flex flex-wrap gap-x-6 gap-y-2 items-center justify-center text-xs">
+    <div
+      class="mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 shadow-sm"
+    >
+      <div
+        class="flex flex-wrap gap-x-6 gap-y-2 items-center justify-center text-xs"
+      >
         <div class="flex items-center gap-2">
-          <div class="w-6 h-6 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-md">
+          <div
+            class="w-6 h-6 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-md"
+          >
             <span class="text-lg">😊</span>
           </div>
           <span class="font-medium text-gray-700">
@@ -112,7 +115,9 @@
           </span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-6 h-6 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md">
+          <div
+            class="w-6 h-6 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md"
+          >
             <span class="text-lg">😐</span>
           </div>
           <span class="font-medium text-gray-700">
@@ -120,7 +125,9 @@
           </span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-6 h-6 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center shadow-md">
+          <div
+            class="w-6 h-6 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center shadow-md"
+          >
             <span class="text-lg">☹️</span>
           </div>
           <span class="font-medium text-gray-700">
@@ -128,99 +135,143 @@
           </span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-6 h-6 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center shadow-md">
-            <span class="text-lg">✓</span>
+          <div
+            class="w-6 h-6 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center shadow-md"
+          >
+            <span class="text-lg">🏆</span>
           </div>
-          <span class="font-medium text-gray-700">
-            Completed tickets
-          </span>
+          <span class="font-medium text-gray-700"> Completed tickets </span>
         </div>
       </div>
     </div>
 
     <!-- ================= DATE LIST TABLE HEADER ================= -->
-    <div class="w-full lg:flex hidden bg-gradient-to-r from-green-700 to-green-600 rounded-t-lg shadow-md overflow-hidden">
+    <div
+      class="w-full lg:flex hidden bg-gradient-to-r from-green-700 to-green-600 rounded-t-lg shadow-md overflow-hidden"
+    >
       <div
         @click="sortBy('ticket_id')"
-        class="lg:w-6/12 w-full flex items-center  p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-ticket mr-1"></i> Ticket ID
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
-            :class="sortColumn === 'ticket_id' && sortDirection === 'asc' ? 'text-white' : 'text-green-300 opacity-50'"
+            :class="
+              sortColumn === 'ticket_id' && sortDirection === 'asc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
           ></i>
           <i
             class="fa fa-caret-down -mt-1"
-            :class="sortColumn === 'ticket_id' && sortDirection === 'desc' ? 'text-white' : 'text-green-300 opacity-50'"
+            :class="
+              sortColumn === 'ticket_id' && sortDirection === 'desc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
           ></i>
         </span>
       </div>
       <div
         @click="sortBy('requestor_fullname')"
-        class="w-full flex items-center  p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-user mr-1"></i> Full Name
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
-            :class="sortColumn === 'requestor_fullname' && sortDirection === 'asc' ? 'text-white' : 'text-green-300 opacity-50'"
+            :class="
+              sortColumn === 'requestor_fullname' && sortDirection === 'asc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
           ></i>
           <i
             class="fa fa-caret-down -mt-1"
-            :class="sortColumn === 'requestor_fullname' && sortDirection === 'desc' ? 'text-white' : 'text-green-300 opacity-50'"
+            :class="
+              sortColumn === 'requestor_fullname' && sortDirection === 'desc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
           ></i>
         </span>
       </div>
       <div
         @click="sortBy('requestor_lsu_email')"
-        class="w-full flex items-center  p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-envelope mr-1"></i> LSU Email
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
-            :class="sortColumn === 'requestor_lsu_email' && sortDirection === 'asc' ? 'text-white' : 'text-green-300 opacity-50'"
+            :class="
+              sortColumn === 'requestor_lsu_email' && sortDirection === 'asc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
           ></i>
           <i
             class="fa fa-caret-down -mt-1"
-            :class="sortColumn === 'requestor_lsu_email' && sortDirection === 'desc' ? 'text-white' : 'text-green-300 opacity-50'"
+            :class="
+              sortColumn === 'requestor_lsu_email' && sortDirection === 'desc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
           ></i>
         </span>
       </div>
       <div
         @click="sortBy('technicians_assigned')"
-        class="w-full flex items-center  p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-users mr-1"></i> Personnel
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
-            :class="sortColumn === 'technicians_assigned' && sortDirection === 'asc' ? 'text-white' : 'text-green-300 opacity-50'"
+            :class="
+              sortColumn === 'technicians_assigned' && sortDirection === 'asc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
           ></i>
           <i
             class="fa fa-caret-down -mt-1"
-            :class="sortColumn === 'technicians_assigned' && sortDirection === 'desc' ? 'text-white' : 'text-green-300 opacity-50'"
+            :class="
+              sortColumn === 'technicians_assigned' && sortDirection === 'desc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
           ></i>
         </span>
       </div>
       <div
         @click="sortBy('status')"
-        class="lg:w-6/12 w-full flex items-center  p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-info-circle mr-1"></i> Status
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
-            :class="sortColumn === 'status' && sortDirection === 'asc' ? 'text-white' : 'text-green-300 opacity-50'"
+            :class="
+              sortColumn === 'status' && sortDirection === 'asc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
           ></i>
           <i
             class="fa fa-caret-down -mt-1"
-            :class="sortColumn === 'status' && sortDirection === 'desc' ? 'text-white' : 'text-green-300 opacity-50'"
+            :class="
+              sortColumn === 'status' && sortDirection === 'desc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
           ></i>
         </span>
       </div>
-      <div class="lg:w-fit w-full py-3 px-5 text-white font-bold text-sm whitespace-nowrap">
+      <div
+        class="lg:w-fit w-full py-3 px-5 text-white font-bold text-sm whitespace-nowrap"
+      >
         <i class="fa fa-cog mr-1"></i> Action
       </div>
     </div>
@@ -283,14 +334,20 @@
         <!-- ================= DESKTOP ROW ================= -->
         <div
           class="hidden lg:flex items-center text-sm cursor-pointer border py-1 transition-colors"
-          :class="index % 2 === 0 ? 'bg-white hover:bg-gray-100' : 'bg-gray-50 hover:bg-gray-100'"
+          :class="
+            index % 2 === 0
+              ? 'bg-white hover:bg-gray-100'
+              : 'bg-gray-50 hover:bg-gray-100'
+          "
           @click="openModal(item)"
         >
           <div class="lg:w-6/12 w-full px-3 text-left font-semibold">
             {{ item.ticket_id }}
           </div>
 
-          <div class="w-full px-3 text-left uppercase whitespace-nowrap text-xs">
+          <div
+            class="w-full px-3 text-left uppercase whitespace-nowrap text-xs"
+          >
             {{ item.requestor_fullname }}
           </div>
 
@@ -314,7 +371,7 @@
               </div>
               <!-- Status Badge -->
               <span
-                class="px-2 py-1 rounded text-xs font-semibold"
+                class="px-2 py-1 rounded text-xs font-semibold whitespace-nowrap"
                 :class="ticketStatusClass(latestStatus(item)?.status)"
               >
                 {{ latestStatus(item)?.status || "-" }}
@@ -398,7 +455,10 @@
     </div>
 
     <!-- ================= PAGINATION ================= -->
-    <div v-if="totalPages > 1" class="mt-6 flex justify-center items-center gap-2">
+    <div
+      v-if="totalPages > 1"
+      class="mt-6 flex justify-center items-center gap-2"
+    >
       <!-- First Page -->
       <button
         @click="goToPage(1)"
@@ -429,7 +489,7 @@
             'px-4 py-2 rounded border transition-colors font-semibold text-sm',
             currentPage === page
               ? 'bg-green-600 text-white border-green-600'
-              : 'bg-white hover:bg-gray-100'
+              : 'bg-white hover:bg-gray-100',
           ]"
         >
           {{ page }}
@@ -468,400 +528,434 @@
       class="fixed inset-0 bg-black/40 flex justify-center items-center z-50"
     >
       <div
-        class="bg-white w-full max-w-3xl rounded-lg p-6 max-h-[90vh] overflow-y-auto relative"
+        class="bg-white w-11/12 rounded-lg p-6 h-5/6 overflow-y-auto relative"
       >
         <!-- Loading Overlay -->
         <div
           v-if="modalLoading"
-          class="absolute inset-0 bg-white/95 flex items-center justify-center z-10 rounded-lg backdrop-blur-sm"
+          class="absolute inset-0 bg-white/95 h-full flex items-center justify-center z-10 rounded-lg backdrop-blur-sm"
         >
-          <div class="text-center bg-white p-8 rounded-lg shadow-2xl border-2 border-green-600">
+          <div
+            class="text-center bg-white p-8 rounded-lg shadow-2xl border-2 border-green-600"
+          >
             <div
               class="inline-block h-16 w-16 animate-spin rounded-full border-4 border-solid border-green-600 border-r-transparent"
             ></div>
             <p class="mt-4 text-base font-bold text-gray-800">
               {{ isCreate ? "Creating ticket..." : "Saving changes..." }}
             </p>
-            <p class="mt-1 text-xs text-gray-600">Please wait, processing your request...</p>
+            <p class="mt-1 text-xs text-gray-600">
+              Please wait, processing your request...
+            </p>
           </div>
         </div>
+        <div v-if="!modalLoading">
+          <h3 class="text-lg font-bold mb-4 text-center w-full">
+            {{ isCreate ? "Create Ticket (Job Request)" : "Ticket Details" }}
+          </h3>
 
-        <h3 class="text-lg font-bold mb-4 text-center w-full">
-          {{ isCreate ? "Create Ticket (Job Request)" : "Ticket Details" }}
-        </h3>
+          <!-- BASIC INFO -->
+          <div class="border rounded p-4 mb-4">
+            <h4 class="font-semibold mb-2">Basic Information</h4>
+            <div class="gap-3">
+              <div class="lg:flex w-full gap-x-2 mb-4">
+                <div class="w-full">
+                  <label class="text-sm font-semibold mb-1 block"
+                    >Full Name / Requestor</label
+                  >
+                  <input
+                    v-model="info.requestor_fullname"
+                    placeholder="Full Name"
+                    class="input w-full p-2 rounded border"
+                    :disabled="!isCreate"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                  />
+                </div>
 
-        <!-- BASIC INFO -->
-        <div class="border rounded p-4 mb-4">
-          <h4 class="font-semibold mb-2">Basic Information</h4>
-          <div class="gap-3">
-            <div class="lg:flex w-full gap-x-2 mb-4">
-            
+                <div class="w-full">
+                  <label class="text-sm font-semibold mb-1 block"
+                    >Requestor LSU Email</label
+                  >
+                  <input
+                    v-model="info.requestor_lsu_email"
+                    placeholder="e.g johndoe@lsu.edu.ph"
+                    class="input w-full p-2 rounded border"
+                    :disabled="!isCreate"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                  />
+                </div>
+              </div>
 
-              <div class="w-full">
+              <div class="md:col-span-2">
                 <label class="text-sm font-semibold mb-1 block"
-                  >Full Name / Requestor</label
+                  >Assigned Personnel / Technician / Resolved By</label
                 >
-                <input
-                  v-model="info.requestor_fullname"
-                  placeholder="Full Name"
-                  class="input w-full p-2 rounded border"
-                />
-              </div>
-
-              <div class="w-full">
-                <label class="text-sm font-semibold mb-1 block"
-                  >Requestor LSU Email</label
-                >
-                <input
-                  v-model="info.requestor_lsu_email"
-                  placeholder="e.g johndoe@lsu.edu.ph"
-                  class="input w-full p-2 rounded border"
-                />
-              </div>
-            </div>
-
-            <div class="md:col-span-2">
-              <label class="text-sm font-semibold mb-1 block"
-                >Assigned Personnel / Technician / Resolved By</label
-              >
-              <div class="border rounded flex flex-wrap">
-                <label
-                  v-for="tech in TECHNICIANS_PERSONNEL"
-                  :key="tech"
-                  class="flex items-center gap-x-2 text-sm cursor-pointer lg:w-4/12 w-full whitespace-nowrap p-2 rounded leading-0 shadow"
-                >
-                  <input
-                    type="checkbox"
-                    :value="tech"
-                    v-model="info.technicians_assigned"
-                    class="accent-blue-600"
-                  />
-                  <span>{{ tech }}</span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ITEM REQUEST -->
-        <div class="border rounded-lg p-4 mb-4 bg-gray-50">
-          <h4 class="font-semibold mb-3">
-            Material Use / Device / Hardware / Software
-          </h4>
-
-          <div
-            v-for="(item, index) in info.item_request"
-            :key="index"
-            class="border rounded p-4 mb-4 bg-white"
-          >
-            <div class="flex justify-between items-center mb-2">
-              <h5 class="font-semibold text-sm uppercase">
-                Item #{{ index + 1 }}
-              </h5>
-              <button
-                class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-900 text-xs"
-                @click.stop="removeItem(index)"
-              >
-                <i class="fa fa-trash text-xs"></i>
-              </button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-x-2 text-sm">
-              <!-- CATEGORY & NAME -->
-              <div class="w-full flex gap-x-2">
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5"
-                    >Category <span class="text-red-600">*</span></label
+                <div class="border rounded flex flex-wrap">
+                  <label
+                    v-for="tech in TECHNICIANS_PERSONNEL"
+                    :key="tech"
+                    class="flex items-center gap-x-2 text-sm cursor-pointer lg:w-4/12 w-full whitespace-nowrap p-2 rounded leading-0 shadow"
                   >
-                  <select
-                    v-model="item.category_type"
-                    class="input rounded border p-2 w-full"
-                  >
-                    <option disabled value="">Select Category</option>
-                    <option
-                      v-for="cat in CATEGORY_OPTIONS"
-                      :key="cat"
-                      :value="cat"
-                    >
-                      {{ cat }}
-                    </option>
-                  </select>
+                    <input
+                      type="checkbox"
+                      :value="tech"
+                      v-model="info.technicians_assigned"
+                      class="accent-blue-600"
+                    />
+                    <span>{{ tech }}</span>
+                  </label>
                 </div>
-
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5"
-                    >Item Name <span class="text-red-600">*</span></label
-                  >
-                  <input
-                    v-model="item.name"
-                    class="input rounded border p-2 w-full"
-                    placeholder="Item Name"
-                  />
-                </div>
-              </div>
-
-              <!-- OFFICE -->
-              <div class="w-full mb-3">
-                <label class="block font-semibold mb-0.5"
-                  >Office / Room / Center / Location / Area
-                  <span class="text-red-600">*</span></label
-                >
-                <div class="flex">
-                  <select
-                    v-model="item.center_office_room"
-                    class="input border w-full p-2 rounded"
-                  >
-                    <option disabled value="">Select Location</option>
-                    <option
-                      v-for="office in CENTER_OFFICE_ROOM_OPTIONS"
-                      :key="office"
-                      :value="office"
-                    >
-                      {{ office }}
-                    </option>
-                  </select>
-
-                  <input
-                    v-if="info.center_office_room === 'OTHER'"
-                    v-model="customOffice"
-                    class="input rounded border ml-2 flex-1 p-2"
-                    placeholder="Specific or Exact"
-                  />
-                </div>
-              </div>
-
-              <!-- ITEM TYPE & QUANTITY -->
-              <div class="w-full flex gap-x-2">
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5"
-                    >Hardware Type</label
-                  >
-                  <select
-                    v-model="item.item_type"
-                    class="input rounded border p-2 w-full"
-                  >
-                    <option disabled value="">Select Item Type</option>
-                    <option
-                      v-for="type in ITEM_TYPE_OPTIONS"
-                      :key="type"
-                      :value="type"
-                    >
-                      {{ type }}
-                    </option>
-                  </select>
-                </div>
-
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5">Quantity</label>
-                  <input
-                    v-model.number="item.quantity"
-                    type="number"
-                    min="1"
-                    placeholder="Quantity"
-                    @input="item.quantity = Math.max(1, item.quantity)"
-                    class="input rounded border p-2 w-full"
-                  />
-                </div>
-              </div>
-
-              <!-- SERIAL & STATUS -->
-              <div class="w-full mb-3">
-                <label class="block font-semibold mb-0.5">Serial / Code</label>
-                <input
-                  v-model="item.serial_number_code"
-                  class="input rounded border p-2 w-full"
-                  placeholder="Serial / Code"
-                />
-              </div>
-
-              <div class="w-full flex gap-x-2">
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5"
-                    >Current Semester</label
-                  >
-                  <select
-                    v-model="item.current_semester"
-                    class="input rounded border p-2 w-full"
-                  >
-                    <option disabled value="">Select Semester</option>
-                    <option
-                      v-for="sem in SEMESTER_OPTIONS"
-                      :key="sem"
-                      :value="sem"
-                    >
-                      {{ sem }}
-                    </option>
-                    <option value="OTHER">Other / Custom</option>
-                  </select>
-                  <input
-                    v-if="item.current_semester === 'OTHER'"
-                    v-model="item.custom_semester"
-                    class="input rounded border p-2 w-full mt-1"
-                    placeholder="Enter semester"
-                  />
-                </div>
-
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5"
-                    >Academic Year</label
-                  >
-                  <select
-                    v-model="item.academic_year"
-                    class="input rounded border p-2 w-full"
-                  >
-                    <option disabled value="">Select Academic Year</option>
-                    <option
-                      v-for="ay in ACADEMIC_YEAR_OPTIONS"
-                      :key="ay"
-                      :value="ay"
-                    >
-                      {{ ay }}
-                    </option>
-                    <option value="OTHER">Other / Custom</option>
-                  </select>
-                  <input
-                    v-if="item.academic_year === 'OTHER'"
-                    v-model="item.custom_academic_year"
-                    class="input rounded border p-2 w-full mt-1"
-                    placeholder="e.g. A.Y 2018 - 2019"
-                  />
-                </div>
-              </div>
-
-              <div class="w-full flex gap-x-2">
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5">Date Checked</label>
-                  <input
-                    type="text"
-                    v-model="item.date_checked"
-                    class="input rounded border p-2 w-full"
-                    placeholder="DD/MM/YYYY hh:mm AM/PM"
-                  />
-                </div>
-
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5">Status</label>
-                  <select
-                    v-model="item.status"
-                    class="input rounded border p-2 w-full"
-                  >
-                    <option disabled value="">Select Status</option>
-                    <option v-for="s in STATUS_OPTIONS" :key="s" :value="s">
-                      {{ s }}
-                    </option>
-                    <option value="OTHER">Other / Custom</option>
-                  </select>
-                  <input
-                    v-if="item.status === 'OTHER'"
-                    v-model="item.custom_status"
-                    class="input rounded border p-2 w-full mt-1"
-                    placeholder="Enter custom status"
-                  />
-                </div>
-              </div>
-
-              <div class="w-full mb-3">
-                <label class="block font-semibold mb-0.5">Details</label>
-                <textarea
-                  v-model="item.details"
-                  class="input rounded border px-2 py-2.5 w-full"
-                  placeholder="Details (Brand, Model, Specs, etc.)"
-                  rows="1"
-                />
-              </div>
-              <div class="w-full mb-3">
-                <label class="block font-semibold mb-0.5">Remarks</label>
-                <textarea
-                  v-model="item.remarks"
-                  class="input rounded border px-2 py-2.5 w-full"
-                  rows="1"
-                  placeholder="Remarks"
-                />
               </div>
             </div>
           </div>
 
-          <button
-            class="w-6/12 mx-auto block mt-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
-            @click.stop="addItem"
-          >
-            + Add Another Item
-          </button>
-        </div>
-        <!-- LOGS -->
-        <div v-if="!isCreate" class="border rounded p-4 mb-4">
-          <h4 class="font-semibold mb-2">Status Logs</h4>
+          <!-- ITEM REQUEST -->
+          <div class="border rounded-lg p-4 mb-4 bg-gray-50">
+            <h4 class="font-semibold mb-3">
+              Material Use / Device / Hardware / Software
+            </h4>
 
-          <!-- Existing logs display (read-only) -->
-          <div
-            v-for="(log, i) in info.logs"
-            :key="i"
-            class="text-xs p-2 rounded mb-2"
-            :class="itemStatusClass(log.status)"
-          >
-            <div class="flex justify-between font-semibold">
-              <span>{{ log.status }}</span>
-              <span>{{
-                moment(log.timestamp).format("MMMM DD, YYYY hh:mm A")
-              }}</span>
-            </div>
-            <div class="italic">{{ log.remarks }}</div>
-          </div>
-
-          <div class="mt-4 border-t pt-2 flex flex-col gap-2">
-            <label class="text-xs font-semibold">Update Status:</label>
-            <select
-              v-model="newLog.status"
-              class="input rounded border p-1 text-xs w-full"
+            <div
+              v-for="(item, index) in info.item_request"
+              :key="index"
+              class="border rounded p-4 mb-4 bg-white"
             >
-              <option disabled value="">Select Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Unsuccessful">Unsuccessful</option>
-              <option value="Inprogress">Inprogress</option>
-              <option value="Done">Done</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-              <option value="Reviewed">Reviewed</option>
-              <option value="Closed">Closed</option>
-            </select>
+              <div class="flex justify-between items-center mb-2">
+                <h5 class="font-semibold text-sm uppercase">
+                  Item #{{ index + 1 }}
+                </h5>
+                <button
+                  class="bg-red-600 text-white px-2 py-1 rounded hover:bg-red-900 text-xs"
+                  @click.stop="removeItem(index)"
+                >
+                  <i class="fa fa-trash text-xs"></i>
+                </button>
+              </div>
 
-            <label class="text-xs font-semibold">Remarks:</label>
-            <input
-              v-model="newLog.remarks"
-              type="text"
-              placeholder="Enter remarks"
-              class="input rounded border p-1 text-xs w-full"
-            />
-            <!-- 
-<button
-  class="bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700 w-32"
-  @click="addStatusLog"
->
-  Update Status
-</button> -->
+              <div class="grid grid-cols-2 gap-x-2 text-sm">
+                <!-- CATEGORY & NAME -->
+                <div class="w-full flex gap-x-2">
+                  <div class="w-full mb-3">
+                    <label class="block font-semibold mb-0.5"
+                      >Tech Type <span class="text-red-600">*</span></label
+                    >
+                    <select
+                      v-model="item.category_type"
+                      class="input rounded border p-2 w-full"
+                      @change="item.item_type = ''"
+                    >
+                      <option disabled value="">Select Category</option>
+                      <option
+                        v-for="cat in CATEGORY_OPTIONS"
+                        :key="cat"
+                        :value="cat"
+                      >
+                        {{ cat }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="w-full mb-3">
+                    <label class="block font-semibold mb-0.5"
+                      >Item Name <span class="text-red-600">*</span></label
+                    >
+                    <input
+                      v-model="item.name"
+                      class="input rounded border p-2 w-full"
+                      placeholder="Item Name"
+                    />
+                  </div>
+                </div>
+
+                <!-- OFFICE -->
+                <div class="w-full mb-3">
+                  <label class="block font-semibold mb-0.5"
+                    >Office / Room / Center / Location / Area
+                    <span class="text-red-600">*</span></label
+                  >
+                  <div class="flex">
+                    <select
+                      v-model="item.center_office_room"
+                      class="input border w-full p-2 rounded"
+                    >
+                      <option disabled value="">Select Location</option>
+                      <option
+                        v-for="office in CENTER_OFFICE_ROOM_OPTIONS"
+                        :key="office"
+                        :value="office"
+                      >
+                        {{ office }}
+                      </option>
+                    </select>
+
+                    <input
+                      v-if="info.center_office_room === 'OTHER'"
+                      v-model="customOffice"
+                      class="input rounded border ml-2 flex-1 p-2"
+                      placeholder="Specific or Exact"
+                    />
+                  </div>
+                </div>
+
+                <!-- ITEM TYPE & QUANTITY -->
+                <div class="w-full flex gap-x-2">
+                  <div class="w-full mb-3">
+                    <label class="block font-semibold mb-0.5"
+                      >Specific Type</label
+                    >
+                    <select
+                      v-model="item.item_type"
+                      class="input rounded border p-2 w-full"
+                      :disabled="!item.category_type"
+                    >
+                      <option disabled value="">
+                        {{
+                          item.category_type
+                            ? "Select Specific Type"
+                            : "Select Category First"
+                        }}
+                      </option>
+                      <option
+                        v-for="type in getSpecificTypeOptions(
+                          item.category_type,
+                        )"
+                        :key="type"
+                        :value="type"
+                      >
+                        {{ type }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="w-full mb-3">
+                    <label class="block font-semibold mb-0.5">Quantity</label>
+                    <input
+                      v-model.number="item.quantity"
+                      type="number"
+                      min="1"
+                      placeholder="Quantity"
+                      @input="item.quantity = Math.max(1, item.quantity)"
+                      class="input rounded border p-2 w-full"
+                    />
+                  </div>
+                </div>
+
+                <!-- SERIAL & STATUS -->
+                <div class="w-full mb-3">
+                  <label class="block font-semibold mb-0.5"
+                    >Serial / Code</label
+                  >
+                  <input
+                    v-model="item.serial_number_code"
+                    class="input rounded border p-2 w-full"
+                    placeholder="Serial / Code"
+                  />
+                </div>
+
+                <div class="w-full flex gap-x-2">
+                  <div class="w-full mb-3">
+                    <label class="block font-semibold mb-0.5"
+                      >Current Semester</label
+                    >
+                    <select
+                      v-model="item.current_semester"
+                      class="input rounded border p-2 w-full"
+                    >
+                      <option disabled value="">Select Semester</option>
+                      <option
+                        v-for="sem in SEMESTER_OPTIONS"
+                        :key="sem"
+                        :value="sem"
+                      >
+                        {{ sem }}
+                      </option>
+                      <option value="OTHER">Other / Custom</option>
+                    </select>
+                    <input
+                      v-if="item.current_semester === 'OTHER'"
+                      v-model="item.custom_semester"
+                      class="input rounded border p-2 w-full mt-1"
+                      placeholder="Enter semester"
+                    />
+                  </div>
+
+                  <div class="w-full mb-3">
+                    <label class="block font-semibold mb-0.5"
+                      >Academic Year</label
+                    >
+                    <select
+                      v-model="item.academic_year"
+                      class="input rounded border p-2 w-full"
+                    >
+                      <option disabled value="">Select Academic Year</option>
+                      <option
+                        v-for="ay in ACADEMIC_YEAR_OPTIONS"
+                        :key="ay"
+                        :value="ay"
+                      >
+                        {{ ay }}
+                      </option>
+                      <option value="OTHER">Other / Custom</option>
+                    </select>
+                    <input
+                      v-if="item.academic_year === 'OTHER'"
+                      v-model="item.custom_academic_year"
+                      class="input rounded border p-2 w-full mt-1"
+                      placeholder="e.g. A.Y 2018 - 2019"
+                    />
+                  </div>
+                </div>
+
+                <div class="w-full flex gap-x-2">
+                  <div class="w-full mb-3">
+                    <label class="block font-semibold mb-0.5"
+                      >Date Checked</label
+                    >
+                    <input
+                      type="text"
+                      v-model="item.date_checked"
+                      class="input rounded border p-2 w-full"
+                      placeholder="DD/MM/YYYY hh:mm AM/PM"
+                    />
+                  </div>
+
+                  <div class="w-full mb-3">
+                    <label class="block font-semibold mb-0.5">Status</label>
+                    <select
+                      v-model="item.status"
+                      class="input rounded border p-2 w-full"
+                    >
+                      <option disabled value="">Select Status</option>
+                      <option v-for="s in STATUS_OPTIONS" :key="s" :value="s">
+                        {{ s }}
+                      </option>
+                      <option value="OTHER">Other / Custom</option>
+                    </select>
+                    <input
+                      v-if="item.status === 'OTHER'"
+                      v-model="item.custom_status"
+                      class="input rounded border p-2 w-full mt-1"
+                      placeholder="Enter custom status"
+                    />
+                  </div>
+                </div>
+
+                <div class="w-full mb-3">
+                  <label class="block font-semibold mb-0.5">Details</label>
+                  <textarea
+                    v-model="item.details"
+                    class="input rounded border px-2 py-2.5 w-full"
+                    placeholder="Details (Brand, Model, Specs, etc.)"
+                    rows="1"
+                  />
+                </div>
+                <div class="w-full mb-3">
+                  <label class="block font-semibold mb-0.5">Remarks</label>
+                  <textarea
+                    v-model="item.remarks"
+                    class="input rounded border px-2 py-2.5 w-full"
+                    rows="1"
+                    placeholder="Remarks"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="w-6/12 mx-auto block mt-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+              @click.stop="addItem"
+            >
+              + Add Another Item
+            </button>
           </div>
-        </div>
+          <!-- LOGS -->
+          <div v-if="!isCreate" class="border rounded p-4 mb-4">
+            <h4 class="font-semibold mb-3 flex items-center gap-2">
+              <i class="fa fa-history text-blue-600"></i>
+              Status History
+            </h4>
 
-        <!-- ACTIONS -->
-        <div class="flex justify-end gap-3">
-          <button
-            class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 font-semibold"
-            @click="closeModal"
-            :disabled="modalLoading"
-          >
-            Cancel
-          </button>
-          <button
-            class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-900 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="isCreate ? createTicket() : saveChanges()"
-            :disabled="modalLoading"
-          >
-            <i
-              class="fa mr-1"
-              :class="isCreate ? 'fa-plus' : 'fa-save'"
-            ></i>
-            {{ isCreate ? "Create" : "Save" }}
-          </button>
+            <!-- Existing logs display (read-only) -->
+            <div class="max-h-48 overflow-y-auto mb-3 space-y-2">
+              <div
+                v-for="(log, i) in info.logs"
+                :key="i"
+                class="text-xs p-2 rounded"
+                :class="itemStatusClass(log.status)"
+              >
+                <div class="flex justify-between font-semibold">
+                  <span>{{ log.status }}</span>
+                  <span>{{
+                    moment(log.timestamp).format("MMM DD, YYYY hh:mm A")
+                  }}</span>
+                </div>
+                <div class="italic text-xs mt-1">{{ log.remarks }}</div>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-t bg-blue-50 p-3 rounded">
+              <div class="flex items-center gap-2 mb-2">
+                <i class="fa fa-edit text-blue-600"></i>
+                <label class="text-sm font-semibold"
+                  >Update Status (Optional)</label
+                >
+              </div>
+              <p class="text-xs text-gray-600 mb-3 italic">
+                💡 You can save changes without updating the status
+              </p>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <label class="text-xs font-semibold mb-1 block">Status</label>
+                  <select
+                    v-model="newLog.status"
+                    class="input rounded border p-2 text-xs w-full"
+                  >
+                    <option value="">No status update</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Unsuccessful">Unsuccessful</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Done">Done</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Reviewed">Reviewed</option>
+                    <option value="Closed">Closed</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label class="text-xs font-semibold mb-1 block"
+                    >Remarks</label
+                  >
+                  <input
+                    v-model="newLog.remarks"
+                    type="text"
+                    placeholder="Optional remarks"
+                    class="input rounded border p-2 text-xs w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ACTIONS -->
+          <div class="flex justify-end gap-3">
+            <button
+              class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 font-semibold"
+              @click="closeModal"
+              :disabled="modalLoading"
+            >
+              Cancel
+            </button>
+            <button
+              class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-900 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              @click="isCreate ? createTicket() : saveChanges()"
+              :disabled="modalLoading"
+            >
+              <i class="fa mr-1" :class="isCreate ? 'fa-plus' : 'fa-save'"></i>
+              {{ isCreate ? "Create" : "Save" }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -904,22 +998,58 @@ const CATEGORY_OPTIONS = [
   "Network",
   "Computer Peripherals",
 ];
-const ITEM_TYPE_OPTIONS = [
-  "Laptop",
-  "Desktop",
-  "Printer",
-  "Ink",
-  "Scanner",
-  "Monitor",
-  "Keyboard",
-  "Mouse",
-  "Router",
-  "Switch",
-  "UPS",
-  "Cable",
-  "Others",
-  "N/A",
-];
+
+const ITEM_TYPE_OPTIONS_MAP = {
+  Hardware: [
+    "Laptop",
+    "Desktop",
+    "Printer",
+    "Scanner",
+    "Monitor",
+    "Keyboard",
+    "Mouse",
+    "Projector",
+    "Webcam",
+    "Headset",
+    "Speaker",
+    "Microphone",
+    "External Hard Drive",
+    "USB Flash Drive",
+    "Power Supply",
+    "Motherboard",
+    "RAM",
+    "Graphics Card",
+    "CPU",
+    "Cooling Fan",
+    "Others",
+  ],
+  Software: [
+    "Gmail",
+    "Google Workspace",
+    "Automate",
+    "Canvas LMS",
+    "Microsoft Office",
+    "LSU Website",
+  ],
+  Network: ["WiFi Access", "Network Configuration"],
+  "Computer Peripherals": [
+    "Screwdriver Set",
+    "Cable Ties",
+    "Thermal Paste",
+    "Cleaning Kit",
+    "Cable Tester",
+    "Crimping Tool",
+    "Anti-static Wrist Strap",
+    "Compressed Air",
+    "HDMI Cable",
+    "VGA Cable",
+    "Ethernet Cable",
+    "USB Cable",
+    "Power Cable",
+    "Extension Cord",
+    "Others",
+  ],
+};
 
 const CENTER_OFFICE_ROOM_OPTIONS = ["OCH", "NPCC", "Registrar", "N/A", "OTHER"];
 
@@ -988,9 +1118,9 @@ onUnmounted(() => {
 const newLog = reactive({ status: "", remarks: "" });
 
 function addStatusLog() {
+  // Make status update optional - only add if status is provided
   if (!newLog.status) {
-    alert("Please select a status");
-    return;
+    return; // Skip adding log if no status selected
   }
 
   if (!info.value.logs) info.value.logs = [];
@@ -1016,7 +1146,7 @@ const latestStatus = (item) =>
 // Backend-aligned filter mapping
 const TICKET_STATUS_FILTER_MAP = {
   pending: ["Pending"],
-  inprogress: ["Inprogress", "Reviewed"],
+  "in progress": ["In Progress", "Reviewed"],
   completed: ["Completed", "Done", "Closed"],
 };
 
@@ -1055,7 +1185,7 @@ const filteredRequests = computed(() => {
   // Technician filter
   if (technicianFilter.value) {
     filtered = filtered.filter((r) =>
-      r.technicians_assigned?.includes(technicianFilter.value)
+      r.technicians_assigned?.includes(technicianFilter.value),
     );
   }
 
@@ -1066,7 +1196,7 @@ const filteredRequests = computed(() => {
       (r) =>
         r.ticket_id?.toLowerCase().includes(search) ||
         r.requestor_fullname?.toLowerCase().includes(search) ||
-        r.requestor_lsu_email?.toLowerCase().includes(search)
+        r.requestor_lsu_email?.toLowerCase().includes(search),
     );
   }
 
@@ -1167,46 +1297,58 @@ const visiblePages = computed(() => {
   return pages;
 });
 
+// Get specific type options based on category
+const getSpecificTypeOptions = (categoryType) => {
+  if (!categoryType || !ITEM_TYPE_OPTIONS_MAP[categoryType]) {
+    return [];
+  }
+  return ITEM_TYPE_OPTIONS_MAP[categoryType];
+};
+
 // Get mood icon based on ticket age and status
 const getMoodIcon = (item) => {
   const status = latestStatus(item)?.status?.toLowerCase();
-  const isDone = status === 'done' || status === 'completed' || status === 'closed' || status === 'reviewed';
+  const isDone =
+    status === "done" ||
+    status === "completed" ||
+    status === "closed" ||
+    status === "reviewed";
 
   // If ticket is done/completed/closed/reviewed - white/gray checkmark
   if (isDone) {
     return {
-      emoji: '✓',
-      bgClass: 'bg-gradient-to-br from-gray-200 to-gray-300',
-      title: 'Completed'
+      emoji: "🏆",
+      bgClass: "bg-gradient-to-br from-gray-200 to-gray-300",
+      title: "Completed",
     };
   }
 
   const createdAt = moment(item.created_at);
   const now = moment();
-  const hoursPassed = now.diff(createdAt, 'hours');
+  const hoursPassed = now.diff(createdAt, "hours");
 
   // New ticket (less than 24 hours) - green happy face
   if (hoursPassed < 24) {
     return {
-      emoji: '😊',
-      bgClass: 'bg-gradient-to-br from-green-400 to-green-500',
-      title: 'New ticket (< 24 hours)'
+      emoji: "😊",
+      bgClass: "bg-gradient-to-br from-green-400 to-green-500",
+      title: "New ticket (< 24 hours)",
     };
   }
   // 24-48 hours - yellow neutral face
   else if (hoursPassed < 48) {
     return {
-      emoji: '😐',
-      bgClass: 'bg-gradient-to-br from-yellow-400 to-yellow-500',
-      title: 'Aging ticket (24-48 hours)'
+      emoji: "😐",
+      bgClass: "bg-gradient-to-br from-yellow-400 to-yellow-500",
+      title: "Aging ticket (24-48 hours)",
     };
   }
   // 48+ hours and not done - red sad face
   else {
     return {
-      emoji: '☹️',
-      bgClass: 'bg-gradient-to-br from-red-400 to-red-500',
-      title: 'Overdue ticket (48+ hours)'
+      emoji: "☹️",
+      bgClass: "bg-gradient-to-br from-red-400 to-red-500",
+      title: "Overdue ticket (48+ hours)",
     };
   }
 };
@@ -1360,18 +1502,27 @@ const createTicket = async () => {
   };
 
   try {
-    const res = await $fetch(endpoint.value + "/api/cits/tech-support/create/", {
-      method: "POST",
-      body: payload,
-    });
+    const res = await $fetch(
+      endpoint.value + "/api/cits/tech-support/create/",
+      {
+        method: "POST",
+        body: payload,
+      },
+    );
 
     if (res.status === "created") {
-      showToaster("✅ Ticket created successfully! Confirmation email sent.", "success");
+      showToaster(
+        "✅ Ticket created successfully! Confirmation email sent.",
+        "success",
+      );
       showModal.value = false;
       await fetchRequests(); // Refresh the list
     } else if (res.status === "errors") {
       console.error("Form errors:", res.errors);
-      showToaster("❌ Failed to create ticket. Check console for errors.", "error");
+      showToaster(
+        "❌ Failed to create ticket. Check console for errors.",
+        "error",
+      );
     }
   } catch (err) {
     console.error("Failed to create ticket:", err);
@@ -1380,7 +1531,6 @@ const createTicket = async () => {
     modalLoading.value = false;
   }
 };
-
 
 const toaster = ref({
   show: false,
@@ -1463,7 +1613,7 @@ const ticketStatusClass = (status) => {
   switch (status) {
     case "Pending":
       return "bg-yellow-100 text-yellow-800";
-    case "Inprogress":
+    case "In Progress":
       return "bg-blue-100 text-blue-800";
     case "Reviewed":
       return "bg-purple-100 text-purple-800";
