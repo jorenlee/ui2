@@ -12,6 +12,10 @@ const errorMsg = ref("");
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
 
+// Carousel state
+const currentSlide = ref(0);
+const itemsPerSlide = ref(4); // Default for desktop
+
 // Computed property to filter and sort highlighted news
 const highlightedNews = computed(() => {
   return info.value
@@ -106,7 +110,7 @@ const hasVideoContent = (item) => {
       (link) =>
         link.includes("youtube.com") ||
         link.includes("youtu.be") ||
-        link.includes("facebook.com/reel")
+        link.includes("facebook.com/reel"),
     )
   ) {
     return true;
@@ -149,6 +153,32 @@ const isVideoFile = (filename) => {
   return videoExtensions.some((ext) => filename.toLowerCase().includes(ext));
 };
 
+// Carousel navigation functions
+const totalSlides = computed(() => {
+  return Math.ceil(highlightedNews.value.length / itemsPerSlide.value);
+});
+
+const canGoPrev = computed(() => currentSlide.value > 0);
+const canGoNext = computed(() => currentSlide.value < totalSlides.value - 1);
+
+const nextSlide = () => {
+  if (canGoNext.value) {
+    currentSlide.value++;
+  }
+};
+
+const prevSlide = () => {
+  if (canGoPrev.value) {
+    currentSlide.value--;
+  }
+};
+
+const visibleNews = computed(() => {
+  const start = currentSlide.value * itemsPerSlide.value;
+  const end = start + itemsPerSlide.value;
+  return highlightedNews.value.slice(start, end);
+});
+
 onMounted(async () => {
   try {
     const res = await $fetch(endpoint.value + "/api/cms/content/list/");
@@ -165,6 +195,9 @@ onMounted(async () => {
 
   if (window.innerWidth < 800) {
     display.value = "mobile";
+    itemsPerSlide.value = 2; // Show 2 items on mobile
+  } else {
+    itemsPerSlide.value = 4; // Show 4 items on desktop
   }
 });
 </script>
@@ -174,11 +207,11 @@ onMounted(async () => {
     <!-- Background Image -->
     <div
       class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
-      style="
-        background-image: url('https://lsu-media-styles.sgp1.digitaloceanspaces.com/481668685_1139543031299171_4009940609016510904_n.jpg');
-      "
     ></div>
-    <div class="absolute inset-0 bg-[#0e1c10df]"></div>
+    <!-- style="
+        background-image: url('https://lsu-media-styles.sgp1.digitaloceanspaces.com/481668685_1139543031299171_4009940609016510904_n.jpg');
+      " -->
+    <div class="absolute inset-0 bg-[#fffafadf]"></div>
     <!-- Dark overlay -->
 
     <!-- Content -->
@@ -187,126 +220,174 @@ onMounted(async () => {
         <div class="lg:mb-8 mb-3 w-fit mx-auto">
           <!-- Title -->
           <h2
-            class="text-left text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg"
+            class="text-left text-green-800 lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg"
           >
             News and Updates
           </h2>
         </div>
       </div>
 
+      <!-- Loading State -->
       <div
-        v-if="highlightedNews.length"
-        class="grid lg:grid-cols-4 grid-cols-2 lg:gap-3 gap-2 lg:w-11/12 mx-auto lg:px-0 px-2"
+        v-if="loading"
+        class="flex flex-col items-center justify-center py-20 lg:w-11/12 mx-auto"
       >
-        <div
-          v-for="(j, i) in highlightedNews.slice(0, 4)"
-          :key="i"
-          class="bg-white rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
+        <div class="relative">
+          <!-- Spinner -->
+          <div
+            class="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"
+          ></div>
+          <!-- Pulse effect -->
+          <div
+            class="absolute inset-0 w-16 h-16 border-4 border-green-300 rounded-full animate-ping opacity-20"
+          ></div>
+        </div>
+        <p class="mt-6 text-green-700 font-semibold text-lg animate-pulse">
+          Loading News & Updates...
+        </p>
+        <p class="mt-2 text-gray-500 text-sm">
+          Please wait while we fetch the latest content
+        </p>
+      </div>
+
+      <!-- Carousel Container -->
+      <div
+        v-else-if="highlightedNews.length"
+        class="relative lg:w-11/12 mx-auto lg:px-0 px-2"
+      >
+        <!-- Left Arrow -->
+        <button
+          v-if="canGoPrev"
+          @click="prevSlide"
+          class="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 lg:-left-6 -left-2"
+          aria-label="Previous slide"
         >
-          <a :href="'news-updates/' + j.id" class="block">
-            <!-- Image Section -->
-            <div class="relative lg:h-48 overflow-hidden">
-              <img
-                v-if="j.files && j.files.length > 0"
-                :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
-                class="w-full lg:h-full h-[100px] object-cover transition-transform duration-300 hover:scale-110"
-                alt="News thumbnail"
-              />
-              <div
-                v-else
-                class="w-full lg:h-full h-[100px] bg-gray-200 flex items-center justify-center"
-              >
+          <i class="fas fa-chevron-left text-xl"></i>
+        </button>
+
+        <!-- Right Arrow -->
+        <button
+          v-if="canGoNext"
+          @click="nextSlide"
+          class="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 lg:-right-6"
+          aria-label="Next slide"
+        >
+          <i class="fas fa-chevron-right text-xl"></i>
+        </button>
+
+        <!-- News Grid -->
+        <div
+          class="grid lg:grid-cols-4 grid-cols-1 lg:gap-3 gap-2 transition-all duration-500"
+        >
+          <div
+            v-for="(j, i) in visibleNews"
+            :key="j.id || i"
+            class="bg-white border-2 rounded border-green-50 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
+          >
+            <a :href="'news-updates/' + j.id" class="block">
+              <!-- Image Section -->
+              <div class="relative lg:h-48 overflow-hidden">
                 <img
-                  src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg"
-                  class="w-full lg:h-full h-[100px] object-cover"
-                  alt="Default thumbnail"
+                  v-if="j.files && j.files.length > 0"
+                  :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
+                  class="w-full lg:h-full h-[100px] object-cover transition-transform duration-300 hover:scale-110"
+                  alt="News thumbnail"
                 />
-              </div>
-
-              <!-- Play button overlay for videos -->
-              <div
-                v-if="hasVideoContent(j)"
-                class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30"
-              >
-                <div class="bg-red-600 rounded-full p-3 shadow-lg">
-                  <i class="fas fa-play text-white text-xl ml-1"></i>
-                </div>
-              </div>
-            </div>
-
-            <!-- Content Section -->
-            <div class="lg:p-4 p-1">
-              <!-- Category/Type Badge -->
-              <div class="flex items-center justify-between lg:mb-1">
-                <span
-                  class="inline-block py-1 lg:text-xs text-[10px] rounded-full uppercase tracking-wide font-light"
-                >
-                  {{ getCategoryLabel(j) }}
-                </span>
-              <div class="flex items-center">
-            
-
-                       <!-- SDG Badges -->
-              <span v-if="getSdgBadges(j).length" class="">
-                <span class="flex items-center flex-wrap gap-1">
-                  <span
-                    v-for="badge in getSdgBadges(j).slice(0, 2)"
-                    :key="badge.number"
-                    class="inline-flex items-center"
-                  >
-                    <span
-                      class="inline-flex items-center lg:px-2 px-1 py-0.5 min-w-4 justify-center rounded lg:text-xs text-[10px] font-bold text-white shadow-sm"
-                      :style="{ backgroundColor: badge.color }"
-                    >
-                     <span class="lg:flex hidden"> SDG </span>{{ badge.number }}
-                    </span>
-                  </span>
-                  <span
-                    v-if="getSdgBadges(j).length > 2"
-                    class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
-                  >
-                    +{{ getSdgBadges(j).length - 2 }} more
-                  </span>
-                </span>
-              </span>
-              </div>
-            </div>
-
-              <!-- Title -->
-              <h3
-                class="lg:text-lg text-xs font-bold text-gray-900 lg:mb-2 line-clamp-2 leading-0"
-              >
-                {{ j.title }}
-              </h3>
-
-              <!-- Description Preview -->
-              <p
-                v-if="j.descriptions"
-                class="lg:text-sm text-[10px] text-gray-600 mb-3 line-clamp-2"
-              >
-                {{ j.descriptions.substring(0, 100)
-                }}{{ j.descriptions.length > 100 ? "..." : "" }}
-              </p>
-
-       
-
-              <!-- Footer -->
-              <div
-                class="flex items-center justify-between pt-2 lg:pb-0 pb-1 border-t border-gray-100"
-              >
-                <div class="flex items-center lg:text-xs text-[10px] text-gray-500">
-                  <i class="fas fa-calendar mr-1"></i>
-                  {{ moment(j.date || j.created_at).format("MMM DD, YYYY") }}
-                </div>
                 <div
-                  class="flex items-center lg:text-xs text-[10px] text-green-600 font-medium"
+                  v-else
+                  class="w-full lg:h-full h-[100px] bg-gray-200 flex items-center justify-center"
                 >
-                  Read More
-                  <i class="fas fa-arrow-right ml-1"></i>
+                  <img
+                    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg"
+                    class="w-full lg:h-full h-[100px] object-cover"
+                    alt="Default thumbnail"
+                  />
+                </div>
+
+                <!-- Play button overlay for videos -->
+                <div
+                  v-if="hasVideoContent(j)"
+                  class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30"
+                >
+                  <div class="bg-red-600 rounded-full p-3 shadow-lg">
+                    <i class="fas fa-play text-white text-xl ml-1"></i>
+                  </div>
                 </div>
               </div>
-            </div>
-          </a>
+
+              <!-- Content Section -->
+              <div class="lg:p-4 p-1">
+                <!-- Category/Type Badge -->
+                <div class="flex items-center justify-between lg:mb-1">
+                  <span
+                    class="inline-block py-1 lg:text-xs text-[10px] rounded-full uppercase tracking-wide font-light"
+                  >
+                    {{ getCategoryLabel(j) }}
+                  </span>
+                  <div class="flex items-center">
+                    <!-- SDG Badges -->
+                    <span v-if="getSdgBadges(j).length" class="">
+                      <span class="flex items-center flex-wrap gap-1">
+                        <span
+                          v-for="badge in getSdgBadges(j).slice(0, 2)"
+                          :key="badge.number"
+                          class="inline-flex items-center"
+                        >
+                          <span
+                            class="inline-flex items-center lg:px-2 px-1 py-0.5 min-w-4 justify-center rounded lg:text-xs text-[10px] font-bold text-white shadow-sm"
+                            :style="{ backgroundColor: badge.color }"
+                          >
+                            <span class="lg:flex hidden"> SDG </span
+                            >{{ badge.number }}
+                          </span>
+                        </span>
+                        <span
+                          v-if="getSdgBadges(j).length > 2"
+                          class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-200 text-gray-600"
+                        >
+                          +{{ getSdgBadges(j).length - 2 }} more
+                        </span>
+                      </span>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Title -->
+                <h3
+                  class="lg:text-lg text-xs font-bold text-gray-900 lg:mb-2 line-clamp-2 leading-0"
+                >
+                  {{ j.title }}
+                </h3>
+
+                <!-- Description Preview -->
+                <p
+                  v-if="j.descriptions"
+                  class="lg:text-sm text-[10px] text-gray-600 mb-3 line-clamp-2"
+                >
+                  {{ j.descriptions.substring(0, 100)
+                  }}{{ j.descriptions.length > 100 ? "..." : "" }}
+                </p>
+
+                <!-- Footer -->
+                <div
+                  class="flex items-center justify-between pt-2 lg:pb-0 pb-1 border-t border-gray-100"
+                >
+                  <div
+                    class="flex items-center lg:text-xs text-[10px] text-gray-500"
+                  >
+                    <i class="fas fa-calendar mr-1"></i>
+                    {{ moment(j.date || j.created_at).format("MMM DD, YYYY") }}
+                  </div>
+                  <div
+                    class="flex items-center lg:text-xs text-[10px] text-green-600 font-medium"
+                  >
+                    Read More
+                    <i class="fas fa-arrow-right ml-1"></i>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -315,15 +396,39 @@ onMounted(async () => {
         No news posted yet.
       </div>
 
-      <div class="w-11/12 mx-auto lg:mt-10 mt-5" v-if="highlightedNews.length">
+      <!-- More Button -->
+      <div
+        class="w-11/12 mx-auto lg:mt-10 mt-5"
+        v-if="highlightedNews.length && !loading"
+      >
         <a
           href="/news-updates/list"
-          class="justify-center text-center block w-full border-0 whitespace-nowrap text-white text-lg rounded-xl mt-30 italic hover:font-bold hover:text-xl hover:animate-bounce"
+          class="group relative flex flex-col items-center justify-center w-full max-w-xs mx-auto px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden"
         >
-          <span class="block">
-            More
-          </span>
-          <i class="fa fa-angle-double-down italic -mt-1 block w-full" aria-hidden="true"></i>
+          <!-- Animated background effect -->
+          <div
+            class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"
+          ></div>
+
+          <!-- Content -->
+          <div class="relative z-10 flex items-center gap-x-5">
+            <div class="lg:text-lg text-xs font-bold tracking-wide">
+              View More News
+              <!-- Animated icon -->
+            </div>
+
+            <div class=" animate-bounce">
+              <i
+                class="fa fa-angle-double-down text-2xl mt-2"
+                aria-hidden="true"
+              ></i>
+            </div>
+            <!-- <div class="flex items-center gap-2 text-sm font-medium opacity-90">
+              <span>See all updates</span>
+              <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform duration-300"></i>
+        
+            </div> -->
+          </div>
         </a>
       </div>
     </div>
@@ -344,7 +449,8 @@ onMounted(async () => {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37),
+  box-shadow:
+    0 8px 32px 0 rgba(31, 38, 135, 0.37),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 
   /* Floating effect */
@@ -354,7 +460,8 @@ onMounted(async () => {
 
 .glass-effect:hover {
   transform: translateY(-15px);
-  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5),
+  box-shadow:
+    0 12px 40px 0 rgba(31, 38, 135, 0.5),
     inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
@@ -416,26 +523,36 @@ onMounted(async () => {
   -webkit-text-stroke: 2px white;
   -webkit-text-fill-color: #ffffff;
   paint-order: stroke fill;
-  text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white,
-    1px 1px 0 white, -2px -2px 0 white, 2px -2px 0 white, -2px 2px 0 white,
+  text-shadow:
+    -1px -1px 0 white,
+    1px -1px 0 white,
+    -1px 1px 0 white,
+    1px 1px 0 white,
+    -2px -2px 0 white,
+    2px -2px 0 white,
+    -2px 2px 0 white,
     2px 2px 0 white;
 }
 
 /* Custom text shadow for enhanced depth and floating effect */
 .custom-text-shadow {
   text-shadow:
-    /* Primary dark shadows for depth */ 0 4px 8px
-      rgba(138, 125, 125, 0.8),
-    0 6px 12px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.4),
+    /* Primary dark shadows for depth */
+    0 4px 8px rgba(138, 125, 125, 0.8),
+    0 6px 12px rgba(0, 0, 0, 0.6),
+    0 8px 16px rgba(0, 0, 0, 0.4),
     0 10px 20px rgba(0, 0, 0, 0.3),
     /* Secondary gray shadows for floating effect */ 0 12px 24px
       rgba(128, 128, 128, 0.5),
-    0 16px 32px rgba(128, 128, 128, 0.3), 0 20px 40px rgba(128, 128, 128, 0.2),
+    0 16px 32px rgba(128, 128, 128, 0.3),
+    0 20px 40px rgba(128, 128, 128, 0.2),
     0 24px 48px rgba(128, 128, 128, 0.1),
     /* Subtle glow effect for prominence */ 0 0 10px rgba(255, 255, 255, 0.4),
-    0 0 20px rgba(255, 255, 255, 0.2), 0 0 30px rgba(255, 255, 255, 0.1),
+    0 0 20px rgba(255, 255, 255, 0.2),
+    0 0 30px rgba(255, 255, 255, 0.1),
     /* Sharp definition shadows for clarity */ 1px 1px 2px rgba(0, 0, 0, 0.9),
-    2px 2px 4px rgba(0, 0, 0, 0.8), 3px 3px 6px rgba(0, 0, 0, 0.6),
+    2px 2px 4px rgba(0, 0, 0, 0.8),
+    3px 3px 6px rgba(0, 0, 0, 0.6),
     4px 4px 8px rgba(0, 0, 0, 0.4);
 
   /* Additional effects */
