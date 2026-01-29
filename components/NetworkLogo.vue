@@ -4,7 +4,7 @@ const sections = [
     logos: [
       {
         src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/Lasallian%20East%20Asia%20District.jpg",
-        href: "https://www.lasalle.org",
+        href: "https://lasalle-lead.org/",
         title: "Affiliation",
       },
       {
@@ -41,6 +41,16 @@ const sections = [
       {
         src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/PEAC.png",
         href: "https://peac.org.ph",
+        title: "Accreditation",
+      },
+      {
+        src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/gradeA.png",
+        href: "https://securityheaders.com",
+        title: "Accreditation",
+      },
+      {
+        src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/NPCSeal.png",
+        href: "https://privacy.gov.ph/",
         title: "Accreditation",
       },
       {
@@ -90,9 +100,6 @@ const sections = [
                 :class="logo.wide ? 'lg:h-16' : ''"
                 alt="logo"
               />
-              <span class="mt-1 text-[9px] text-gray-400 hover:text-black">
-                {{ logo.title }}
-              </span>
             </a>
           </div>
 
@@ -111,9 +118,6 @@ const sections = [
                 :class="logo.wide ? 'lg:h-16' : ''"
                 alt="logo"
               />
-              <span class="mt-1 text-[9px] text-gray-400 hover:text-black">
-                {{ logo.title }}
-              </span>
             </a>
           </div>
         </div>

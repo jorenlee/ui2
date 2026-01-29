@@ -3,7 +3,7 @@
     <ul class="w-full">
       <li class="w-full">
         <span
-          class="bg-green-800 uppercase text-white px-5 py-2 font-bold flex border-b-2 text-base"
+          class="bg-green-800 uppercase text-white px-5 py-0.5 font-bold flex border-b-2 text-base"
         >
           {{ title }}
         </span>

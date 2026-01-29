@@ -314,20 +314,9 @@
                </div>
               </div>
             </div>
-            <div class="text-center lg:my-5 my-2 bg-white lg:rounded-2xl w-11/12 mx-auto lg:pt-2 pt-1 shadow-md">
-              <h1 class="font-bold tracking-widest lasalle-green-text uppercase mt-5 lg:mb-12 mb-5 lg:text-xl">
-                Subscribed E-Resources
-              </h1>
-              <div class="w-11/12 mx-auto lg:flex items-center lg:pb-10 pb-5 grid grid-cols-2 md:grid-cols-4 lg:gap-2 gap-5">
-                <div class="lg:w-1/4" v-for="(j,i) in logos" :key="i">
-                  <div class="flex lg:h-44 h-32">
-                    <img :src="j.image" class="lg:w-[160px] w-[140px] lg:h-44 mb-1 mx-auto object-contain" :alt="j.title" />
-                  </div>
-                  <h3 class="text-center uppercase lasalle-green-text text-sm leading-tight">
-                    {{j.title}}
-                  </h3>
-                </div>
-              </div>
+                  <div class="text-center lg:my-5 my-2 bg-white lg:rounded-2xl lg:pt-2 pt-1 shadow-md">
+             
+                <LibraryElectronicResources />
             </div>
             <div class="text-center bg-white w-11/12 mx-auto shadow-md lg:my-5 my-2">
               <h1 class="w-fit lg:flex block mx-auto font-bold lasalle-green-text uppercase py-2 text-xs">
