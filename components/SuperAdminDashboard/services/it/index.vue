@@ -100,31 +100,39 @@
       </div>
     </div>
 
-    <!-- Color Legend -->
+    <!-- Mood Icon Legend -->
     <div class="mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 shadow-sm">
       <div class="flex flex-wrap gap-x-6 gap-y-2 items-center justify-center text-xs">
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-green-100 border-2 border-green-300 rounded"></div>
+          <div class="w-6 h-6 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-md">
+            <span class="text-lg">😊</span>
+          </div>
           <span class="font-medium text-gray-700">
-          New ticket (&lt; 24 hours)
+            New ticket (&lt; 24 hours)
           </span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-yellow-100 border-2 border-yellow-300 rounded"></div>
+          <div class="w-6 h-6 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md">
+            <span class="text-lg">😐</span>
+          </div>
           <span class="font-medium text-gray-700">
-           Aging ticket (24-48 hours)
+            Aging ticket (24-48 hours)
           </span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-red-100 border-2 border-red-300 rounded"></div>
+          <div class="w-6 h-6 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center shadow-md">
+            <span class="text-lg">☹️</span>
+          </div>
           <span class="font-medium text-gray-700">
-         Overdue ticket (48+ hours, not done)
+            Overdue ticket (48+ hours, not done)
           </span>
         </div>
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-white border-2 border-gray-300 rounded"></div>
+          <div class="w-6 h-6 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center shadow-md">
+            <span class="text-lg">✓</span>
+          </div>
           <span class="font-medium text-gray-700">
-          Completed tickets
+            Completed tickets
           </span>
         </div>
       </div>
@@ -275,7 +283,7 @@
         <!-- ================= DESKTOP ROW ================= -->
         <div
           class="hidden lg:flex items-center text-sm cursor-pointer border py-1 transition-colors"
-          :class="getRowColorClass(item) || (index % 2 === 0 ? 'bg-white hover:bg-gray-100' : 'bg-gray-50 hover:bg-gray-100')"
+          :class="index % 2 === 0 ? 'bg-white hover:bg-gray-100' : 'bg-gray-50 hover:bg-gray-100'"
           @click="openModal(item)"
         >
           <div class="lg:w-6/12 w-full px-3 text-left font-semibold">
@@ -295,12 +303,23 @@
           </div>
 
           <div class="lg:w-6/12 w-full px-3 text-left">
-            <span
-              class="px-2 py-1 rounded text-xs font-semibold"
-              :class="ticketStatusClass(latestStatus(item)?.status)"
-            >
-              {{ latestStatus(item)?.status || "-" }}
-            </span>
+            <div class="flex items-center gap-2">
+              <!-- Mood Icon -->
+              <div
+                class="w-6 h-6 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
+                :class="getMoodIcon(item).bgClass"
+                :title="getMoodIcon(item).title"
+              >
+                <span class="text-sm">{{ getMoodIcon(item).emoji }}</span>
+              </div>
+              <!-- Status Badge -->
+              <span
+                class="px-2 py-1 rounded text-xs font-semibold"
+                :class="ticketStatusClass(latestStatus(item)?.status)"
+              >
+                {{ latestStatus(item)?.status || "-" }}
+              </span>
+            </div>
           </div>
 
           <div class="lg:w-fit w-full px-3 text-left">
@@ -314,8 +333,7 @@
 
         <!-- ================= MOBILE CARD ================= -->
         <div
-          class="lg:hidden border p-4 space-y-2 cursor-pointer transition-colors"
-          :class="getRowColorClass(item) || 'hover:bg-gray-50'"
+          class="lg:hidden border p-4 space-y-2 cursor-pointer transition-colors hover:bg-gray-50"
           @click="openModal(item)"
         >
           <div class="flex justify-between items-center">
@@ -323,12 +341,23 @@
               {{ item.ticket_id }}
             </span>
 
-            <span
-              class="px-2 py-1 rounded text-xs font-semibold"
-              :class="ticketStatusClass(latestStatus(item)?.status)"
-            >
-              {{ latestStatus(item)?.status || "-" }}
-            </span>
+            <div class="flex items-center gap-2">
+              <!-- Mood Icon -->
+              <div
+                class="w-6 h-6 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
+                :class="getMoodIcon(item).bgClass"
+                :title="getMoodIcon(item).title"
+              >
+                <span class="text-sm">{{ getMoodIcon(item).emoji }}</span>
+              </div>
+              <!-- Status Badge -->
+              <span
+                class="px-2 py-1 rounded text-xs font-semibold"
+                :class="ticketStatusClass(latestStatus(item)?.status)"
+              >
+                {{ latestStatus(item)?.status || "-" }}
+              </span>
+            </div>
           </div>
 
           <div>
@@ -1138,31 +1167,47 @@ const visiblePages = computed(() => {
   return pages;
 });
 
-// Get row background color based on ticket age and status
-const getRowColorClass = (item) => {
+// Get mood icon based on ticket age and status
+const getMoodIcon = (item) => {
   const status = latestStatus(item)?.status?.toLowerCase();
   const isDone = status === 'done' || status === 'completed' || status === 'closed' || status === 'reviewed';
 
-  // If ticket is done/completed/closed, use default alternating colors
+  // If ticket is done/completed/closed/reviewed - white/gray checkmark
   if (isDone) {
-    return '';
+    return {
+      emoji: '✓',
+      bgClass: 'bg-gradient-to-br from-gray-200 to-gray-300',
+      title: 'Completed'
+    };
   }
 
   const createdAt = moment(item.created_at);
   const now = moment();
   const hoursPassed = now.diff(createdAt, 'hours');
 
-  // New ticket (less than 24 hours) - green
+  // New ticket (less than 24 hours) - green happy face
   if (hoursPassed < 24) {
-    return 'bg-green-50 hover:bg-green-100';
+    return {
+      emoji: '😊',
+      bgClass: 'bg-gradient-to-br from-green-400 to-green-500',
+      title: 'New ticket (< 24 hours)'
+    };
   }
-  // 24-48 hours - yellow
+  // 24-48 hours - yellow neutral face
   else if (hoursPassed < 48) {
-    return 'bg-yellow-50 hover:bg-yellow-100';
+    return {
+      emoji: '😐',
+      bgClass: 'bg-gradient-to-br from-yellow-400 to-yellow-500',
+      title: 'Aging ticket (24-48 hours)'
+    };
   }
-  // 48+ hours and not done - red
+  // 48+ hours and not done - red sad face
   else {
-    return 'bg-red-50 hover:bg-red-100';
+    return {
+      emoji: '☹️',
+      bgClass: 'bg-gradient-to-br from-red-400 to-red-500',
+      title: 'Overdue ticket (48+ hours)'
+    };
   }
 };
 
