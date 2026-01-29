@@ -106,25 +106,25 @@
         <div class="flex items-center gap-2">
           <div class="w-4 h-4 bg-green-100 border-2 border-green-300 rounded"></div>
           <span class="font-medium text-gray-700">
-            <span class="text-green-600">●</span> New ticket (&lt; 24 hours)
+          New ticket (&lt; 24 hours)
           </span>
         </div>
         <div class="flex items-center gap-2">
           <div class="w-4 h-4 bg-yellow-100 border-2 border-yellow-300 rounded"></div>
           <span class="font-medium text-gray-700">
-            <span class="text-yellow-600">●</span> Aging ticket (24-48 hours)
+           Aging ticket (24-48 hours)
           </span>
         </div>
         <div class="flex items-center gap-2">
           <div class="w-4 h-4 bg-red-100 border-2 border-red-300 rounded"></div>
           <span class="font-medium text-gray-700">
-            <span class="text-red-600">●</span> Overdue ticket (48+ hours, not done)
+         Overdue ticket (48+ hours, not done)
           </span>
         </div>
         <div class="flex items-center gap-2">
           <div class="w-4 h-4 bg-white border-2 border-gray-300 rounded"></div>
           <span class="font-medium text-gray-700">
-            <span class="text-gray-500">●</span> Completed tickets
+          Completed tickets
           </span>
         </div>
       </div>
@@ -1141,7 +1141,7 @@ const visiblePages = computed(() => {
 // Get row background color based on ticket age and status
 const getRowColorClass = (item) => {
   const status = latestStatus(item)?.status?.toLowerCase();
-  const isDone = status === 'done' || status === 'completed' || status === 'closed';
+  const isDone = status === 'done' || status === 'completed' || status === 'closed' || status === 'reviewed';
 
   // If ticket is done/completed/closed, use default alternating colors
   if (isDone) {
