@@ -108,6 +108,10 @@ const selectedSDGs = ref([]);
 const showImagePreview = ref(false);
 const previewImageUrl = ref("");
 
+// Drag and drop state for file reordering
+const draggedIndex = ref(null);
+const dragOverIndex = ref(null);
+
 // File type checking functions
 const isImageFile = (filename) => {
   const imageExtensions = ["jpg", "jpeg", "png", "gif", "webp", "svg"];
@@ -158,6 +162,51 @@ const handleImageError = (event, filename) => {
     fallback.innerHTML =
       '<div class="w-full h-24 bg-gray-200 rounded flex items-center justify-center"><i class="fa fa-image text-gray-400 text-2xl"></i></div>';
   }
+};
+
+// ============ DRAG AND DROP SORTING FOR EDIT FILES ============
+const handleDragStart = (index) => {
+  draggedIndex.value = index;
+};
+
+const handleDragOver = (e, index) => {
+  e.preventDefault();
+  dragOverIndex.value = index;
+};
+
+const handleDragLeave = () => {
+  dragOverIndex.value = null;
+};
+
+const handleDrop = (e, dropIndex) => {
+  e.preventDefault();
+
+  if (draggedIndex.value === null || draggedIndex.value === dropIndex) {
+    draggedIndex.value = null;
+    dragOverIndex.value = null;
+    return;
+  }
+
+  // Reorder the files array
+  const items = [...editContent.value.files];
+  const draggedItem = items[draggedIndex.value];
+
+  // Remove from old position
+  items.splice(draggedIndex.value, 1);
+
+  // Insert at new position
+  items.splice(dropIndex, 0, draggedItem);
+
+  editContent.value.files = items;
+
+  // Reset drag state
+  draggedIndex.value = null;
+  dragOverIndex.value = null;
+};
+
+const handleDragEnd = () => {
+  draggedIndex.value = null;
+  dragOverIndex.value = null;
 };
 
 // Add method to update filters based on checkbox selection
@@ -1131,15 +1180,57 @@ const toPublish = () => {
                         v-if="editContent.files && editContent.files.length > 0"
                         class="space-y-2"
                       >
-                        <h4 class="text-xs font-medium text-gray-700">
-                          Current Files:
-                        </h4>
+                        <div class="flex items-center justify-between mb-2">
+                          <h4 class="text-xs font-medium text-gray-700">
+                            Current Files ({{ editContent.files.length }})
+                          </h4>
+                          <p class="text-xs text-gray-500 flex items-center gap-1">
+                            <i class="fa fa-arrows-alt text-green-600"></i>
+                            Drag to reorder
+                          </p>
+                        </div>
                         <div class="grid grid-cols-3 gap-2">
                           <div
                             v-for="(file, index) in editContent.files"
                             :key="index"
-                            class="bg-gray-50 p-2 rounded border"
+                            draggable="true"
+                            @dragstart="handleDragStart(index)"
+                            @dragover="handleDragOver($event, index)"
+                            @dragleave="handleDragLeave"
+                            @drop="handleDrop($event, index)"
+                            @dragend="handleDragEnd"
+                            :class="[
+                              'bg-white p-2 rounded-lg border-2 transition-all duration-300 cursor-grab active:cursor-grabbing relative group hover:shadow-xl',
+                              dragOverIndex === index && draggedIndex !== index
+                                ? 'border-green-500 bg-green-50 scale-110 shadow-2xl ring-4 ring-green-300 animate-pulse'
+                                : 'border-gray-300 hover:border-blue-400',
+                              draggedIndex === index ? 'opacity-40 scale-90 rotate-2 shadow-2xl ring-4 ring-blue-300' : 'opacity-100',
+                            ]"
                           >
+                            <!-- Drag Handle Icon - Always Visible -->
+                            <div
+                              class="absolute top-2 left-2 z-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg w-8 h-8 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform"
+                            >
+                              <i class="fa fa-grip-vertical text-white text-sm"></i>
+                            </div>
+
+                            <!-- Drag Instruction Overlay -->
+                            <div
+                              class="absolute inset-0 bg-blue-500 bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 pointer-events-none z-10 flex items-center justify-center rounded-lg"
+                            >
+                              <div
+                                class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg"
+                              >
+                                <i class="fa fa-arrows-alt mr-1"></i>Drag to reorder
+                              </div>
+                            </div>
+
+                            <!-- Order Badge -->
+                            <div
+                              class="absolute top-2 right-2 z-20 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg font-bold text-sm border-2 border-white group-hover:scale-125 transition-transform"
+                            >
+                              {{ index + 1 }}
+                            </div>
                             <!-- Image Preview -->
                             <div v-if="isImageFile(file)" class="mb-2">
                               <img

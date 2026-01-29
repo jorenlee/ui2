@@ -338,6 +338,54 @@ const closeImagePreview = () => {
   previewImageUrl.value = "";
 };
 
+// ============ DRAG AND DROP SORTING ============
+const draggedIndex = ref(null);
+const dragOverIndex = ref(null);
+
+const handleDragStart = (index) => {
+  draggedIndex.value = index;
+};
+
+const handleDragOver = (e, index) => {
+  e.preventDefault();
+  dragOverIndex.value = index;
+};
+
+const handleDragLeave = () => {
+  dragOverIndex.value = null;
+};
+
+const handleDrop = (e, dropIndex) => {
+  e.preventDefault();
+
+  if (draggedIndex.value === null || draggedIndex.value === dropIndex) {
+    draggedIndex.value = null;
+    dragOverIndex.value = null;
+    return;
+  }
+
+  // Reorder the array
+  const items = [...selectedFiles.value];
+  const draggedItem = items[draggedIndex.value];
+
+  // Remove from old position
+  items.splice(draggedIndex.value, 1);
+
+  // Insert at new position
+  items.splice(dropIndex, 0, draggedItem);
+
+  selectedFiles.value = items;
+
+  // Reset drag state
+  draggedIndex.value = null;
+  dragOverIndex.value = null;
+};
+
+const handleDragEnd = () => {
+  draggedIndex.value = null;
+  dragOverIndex.value = null;
+};
+
 // ---------------- FILE UPLOAD ----------------
 const uploadFile = async (file) => {
   const formData = new FormData();
@@ -746,17 +794,49 @@ const displayToast = (message, type = "success", duration = 3000) => {
 
               <!-- File Previews -->
               <div v-if="selectedFiles.length > 0" class="mt-6">
-                <h3 class="text-sm font-semibold text-gray-700 mb-4">
-                  Uploaded Files ({{ selectedFiles.length }})
-                </h3>
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-sm font-semibold text-gray-700">
+                    Uploaded Files ({{ selectedFiles.length }})
+                  </h3>
+                  <p class="text-xs text-gray-500 flex items-center gap-2">
+                    <i class="fa fa-arrows-alt text-green-600"></i>
+                    Drag to reorder
+                  </p>
+                </div>
                 <div
                   class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
                 >
                   <div
                     v-for="(fileObj, index) in selectedFiles"
                     :key="index"
-                    class="relative border border-gray-200 rounded-lg overflow-hidden bg-gray-50 hover:shadow-md transition group"
+                    draggable="true"
+                    @dragstart="handleDragStart(index)"
+                    @dragover="handleDragOver($event, index)"
+                    @dragleave="handleDragLeave"
+                    @drop="handleDrop($event, index)"
+                    @dragend="handleDragEnd"
+                    :class="[
+                      'relative border-2 rounded-lg overflow-hidden bg-white hover:shadow-xl transition-all duration-300 group cursor-grab active:cursor-grabbing',
+                      draggedIndex === index ? 'opacity-40 scale-90 rotate-2 shadow-2xl ring-4 ring-blue-300' : '',
+                      dragOverIndex === index && draggedIndex !== index ? 'border-green-500 bg-green-50 scale-110 shadow-2xl ring-4 ring-green-300 animate-pulse' : 'border-gray-300 hover:border-blue-400',
+                    ]"
                   >
+                    <!-- Drag Handle Icon - Always Visible -->
+                    <div class="absolute top-2 left-2 z-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg w-8 h-8 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <i class="fa fa-grip-vertical text-white text-sm"></i>
+                    </div>
+
+                    <!-- Drag Instruction Overlay -->
+                    <div class="absolute inset-0 bg-blue-500 bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 pointer-events-none z-10 flex items-center justify-center">
+                      <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+                        <i class="fa fa-arrows-alt mr-1"></i>Drag to reorder
+                      </div>
+                    </div>
+
+                    <!-- Sequence Number Badge -->
+                    <div class="absolute top-1/2 right-2 z-20 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg font-bold text-sm border-2 border-white group-hover:scale-125 transition-transform">
+                      {{ index + 1 }}
+                    </div>
                     <!-- Image Preview -->
                     <div v-if="fileObj.type === 'image'" class="relative">
                       <img
@@ -923,5 +1003,14 @@ const displayToast = (message, type = "success", duration = 3000) => {
 .slide-fade-leave-to {
   transform: translateX(10px);
   opacity: 0;
+}
+
+/* Drag and drop styles */
+.cursor-move {
+  cursor: move;
+}
+
+.cursor-move:active {
+  cursor: grabbing;
 }
 </style>
