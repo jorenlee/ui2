@@ -95,9 +95,17 @@ const editContent = ref({
   date: "",
   links: [],
   files: [],
+  is_verified: false,
+  is_approved: false,
+  is_published: false,
 });
 const editLoading = ref(false);
 const editSubmitting = ref(false);
+
+// Approval Status Filters
+const approvalVerified = ref(false);
+const approvalApproved = ref(false);
+const approvalPublished = ref(false);
 
 // Add these variables to your script setup
 const selectedFiles = ref([]);
@@ -182,6 +190,16 @@ const pageFiltersList = ref([
 
 const selectedPageFilters = ref([]);
 
+// ---------------- CONTENT TYPE FILTERS ----------------
+const contentTypeList = ref([
+  "News Highlights",
+  "News",
+  "Events",
+  "Announcements",
+]);
+
+const selectedContentTypes = ref([]);
+
 const updatePageFilters = () => {
   const existing = editContent.value.filters || "";
   const existingArr = existing
@@ -209,6 +227,99 @@ const updatePageFilters = () => {
   editContent.value.filters =
     uniqueCombined.length > 0 ? uniqueCombined.join(", ") : "";
 };
+
+// Method to update content type filters
+const updateContentTypes = () => {
+  const existing = editContent.value.filters || "";
+  const existingArr = existing
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean);
+
+  // Map known content types to canonical labels
+  const contentTypesMap = contentTypeList.value.reduce((acc, label) => {
+    acc[normalize(label)] = label;
+    return acc;
+  }, {});
+
+  const contentTypesSet = new Set(Object.keys(contentTypesMap));
+
+  // Remove any existing entries that match known content types (case-insensitive)
+  const cleaned = existingArr.filter((f) => {
+    const nf = normalize(f);
+    if (contentTypesSet.has(nf)) return false;
+    return true;
+  });
+
+  const combined = [...cleaned, ...selectedContentTypes.value];
+  const uniqueCombined = sanitizeList(combined);
+  editContent.value.filters =
+    uniqueCombined.length > 0 ? uniqueCombined.join(", ") : "";
+};
+
+// ---------------- APPROVAL STATUS FILTERS ----------------
+const updateApprovalStatus = () => {
+  // Sequential validation: must be verified before approved, approved before published
+  if (!approvalVerified.value) {
+    approvalApproved.value = false;
+    approvalPublished.value = false;
+  }
+  if (!approvalApproved.value) {
+    approvalPublished.value = false;
+  }
+
+  // Update editContent
+  editContent.value.is_verified = approvalVerified.value;
+  editContent.value.is_approved = approvalApproved.value;
+  editContent.value.is_published = approvalPublished.value;
+
+  // Update filters field to include approval status
+  const existing = editContent.value.filters || "";
+  const existingArr = existing
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean);
+
+  // Define approval status keywords
+  const approvalKeywords = ["Verified", "Approved", "Published"];
+
+  // Remove any existing approval status entries
+  const cleaned = existingArr.filter((f) => {
+    const normalized = normalize(f);
+    return !approvalKeywords.some(keyword => normalize(keyword) === normalized);
+  });
+
+  // Add selected approval statuses
+  const selectedApprovals = [];
+  if (approvalVerified.value) selectedApprovals.push("Verified");
+  if (approvalApproved.value) selectedApprovals.push("Approved");
+  if (approvalPublished.value) selectedApprovals.push("Published");
+
+  const combined = [...cleaned, ...selectedApprovals];
+  const uniqueCombined = sanitizeList(combined);
+  editContent.value.filters =
+    uniqueCombined.length > 0 ? uniqueCombined.join(", ") : "";
+};
+
+// Watch for changes to enforce sequential validation
+watch(approvalVerified, (newVal) => {
+  if (!newVal) {
+    approvalApproved.value = false;
+    approvalPublished.value = false;
+  }
+  updateApprovalStatus();
+});
+
+watch(approvalApproved, (newVal) => {
+  if (!newVal) {
+    approvalPublished.value = false;
+  }
+  updateApprovalStatus();
+});
+
+watch(approvalPublished, () => {
+  updateApprovalStatus();
+});
 
 const updateAuthorFilters = () => {
   const existing = editContent.value.filters || "";
@@ -464,7 +575,16 @@ const openEditModal = async (item) => {
       date: response.date || "",
       links: response.links || [],
       files: response.files || [],
+      is_verified: response.is_verified || false,
+      is_approved: response.is_approved || false,
+      is_published: response.is_published || false,
     };
+
+    // Populate approval status checkboxes from response or filters field
+    const filters = (response.filters || "").toLowerCase();
+    approvalVerified.value = response.is_verified || filters.includes("verified");
+    approvalApproved.value = response.is_approved || filters.includes("approved");
+    approvalPublished.value = response.is_published || filters.includes("published");
 
     // Populate selectedAuthors based on existing authors
     if (response.authors) {
@@ -508,9 +628,17 @@ const openEditModal = async (item) => {
         const pageFilterLower = pageFilter.toLowerCase();
         return filterLower.includes(pageFilterLower);
       });
+
+      // Populate selectedContentTypes based on existing filters
+      selectedContentTypes.value = contentTypeList.value.filter((contentType) => {
+        const filterLower = filters.toLowerCase();
+        const contentTypeLower = contentType.toLowerCase();
+        return filterLower.includes(contentTypeLower);
+      });
     } else {
       selectedSDGs.value = [];
       selectedPageFilters.value = [];
+      selectedContentTypes.value = [];
     }
   } catch (error) {
     console.error("Error fetching content:", error);
@@ -523,7 +651,11 @@ const closeEditModal = () => {
   showEditModal.value = false;
   selectedSDGs.value = [];
   selectedPageFilters.value = [];
+  selectedContentTypes.value = [];
   selectedAuthors.value = [];
+  approvalVerified.value = false;
+  approvalApproved.value = false;
+  approvalPublished.value = false;
   editContent.value = {
     id: null,
     content_id: "",
@@ -534,6 +666,9 @@ const closeEditModal = () => {
     date: "",
     links: [],
     files: [],
+    is_verified: false,
+    is_approved: false,
+    is_published: false,
   };
 };
 
@@ -823,10 +958,7 @@ const toPublish = () => {
         <div class="w-full min-h-screen flex flex-col">
           <div class="flex-1 flex flex-col lg:flex-row">
             <!-- Content List Section -->
-            <div
-              class="flex-1"
-              :class="showEditModal ? 'lg:pr-2' : ''"
-            >
+            <div class="flex-1" :class="showEditModal ? 'lg:pr-2' : ''">
               <div v-show="tableDisplay">
                 <!-- Search and Filter Bar -->
                 <div
@@ -1004,7 +1136,9 @@ const toPublish = () => {
                           "
                           class="lg:flex gap-4 px-3 py-1 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
-                          <div class="text-gray-600 truncate lg:w-10/12 w-full px-2">
+                          <div
+                            class="text-gray-600 truncate lg:w-10/12 w-full px-2"
+                          >
                             <span class="block"> {{ j.authors }}</span>
 
                             <span class="block">
@@ -1029,7 +1163,7 @@ const toPublish = () => {
                                       class="inline-flex items-center px-1.5 py-0.5 rounded font-bold text-white shadow-sm text-[8px]"
                                       :style="{ backgroundColor: badge.color }"
                                     >
-                                       {{ badge.number }}
+                                      {{ badge.number }}
                                     </span>
                                   </div>
                                 </div>
@@ -1393,6 +1527,114 @@ const toPublish = () => {
                           </label>
                         </div>
                       </div>
+                    </div>
+
+
+                    <div>
+                      <label
+                        class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                        >News and Updates Content Type</label
+                      >
+                      <div
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50"
+                      >
+                        <div
+                          v-for="contentType in contentTypeList"
+                          :key="contentType"
+                          class="flex items-center hover:bg-white px-2 rounded transition"
+                        >
+                          <input
+                            type="checkbox"
+                            :id="`content-${contentType}`"
+                            :value="contentType"
+                            v-model="selectedContentTypes"
+                            @change="updateContentTypes"
+                            class="mr-3 w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+                          />
+                          <label
+                            :for="`content-${contentType}`"
+                            class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                          >
+                            <span class="text-xs">{{ contentType }}</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+
+                    <!-- Approval Level Status Filter -->
+                    <div>
+                      <label
+                        class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                        >Approval Level Status Filter</label
+                      >
+                      <div
+                        class="grid grid-cols-1 md:grid-cols-3 gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50"
+                      >
+                        <!-- Verified -->
+                        <div
+                          class="flex items-center hover:bg-white px-2 rounded transition"
+                        >
+                          <input
+                            type="checkbox"
+                            id="approval-verified"
+                            v-model="approvalVerified"
+                            class="mr-3 w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
+                          />
+                          <label
+                            for="approval-verified"
+                            class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                          >
+                            <span class="text-xs font-medium">Verified</span>
+                          </label>
+                        </div>
+
+                        <!-- Approved -->
+                        <div
+                          class="flex items-center hover:bg-white px-2 rounded transition"
+                          :class="{ 'opacity-50': !approvalVerified }"
+                        >
+                          <input
+                            type="checkbox"
+                            id="approval-approved"
+                            v-model="approvalApproved"
+                            :disabled="!approvalVerified"
+                            class="mr-3 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <label
+                            for="approval-approved"
+                            class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                            :class="{ 'cursor-not-allowed': !approvalVerified }"
+                          >
+                            <span class="text-xs font-medium">Approved</span>
+                          </label>
+                        </div>
+
+                        <!-- Published -->
+                        <div
+                          class="flex items-center hover:bg-white px-2 rounded transition"
+                          :class="{ 'opacity-50': !approvalApproved || !approvalVerified }"
+                        >
+                          <input
+                            type="checkbox"
+                            id="approval-published"
+                            v-model="approvalPublished"
+                            :disabled="!approvalApproved || !approvalVerified"
+                            class="mr-3 w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded cursor-pointer disabled:cursor-not-allowed"
+                          />
+                          <label
+                            for="approval-published"
+                            class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                            :class="{ 'cursor-not-allowed': !approvalApproved || !approvalVerified }"
+                          >
+                            <span class="text-xs font-medium">Published</span>
+                          </label>
+                        </div>
+                      </div>
+                      <p class="text-xs text-gray-500 mt-2">
+                        <i class="fa fa-info-circle mr-1"></i>
+                        Must be verified before approved, and approved before published
+                      </p>
                     </div>
 
                     <!-- Description -->

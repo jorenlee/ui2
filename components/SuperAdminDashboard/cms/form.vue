@@ -21,6 +21,9 @@ const content = ref({
   date: "",
   links: [""], // ARRAY OF STRINGS (default one empty input)
   files: [], // ← ARRAY OF STRINGS e.g ['filename.jpg', filename.pdf, filename.mp4]
+  is_verified: false,
+  is_approved: false,
+  is_published: false,
   logs: [
     {
       personnel_fullname: userStore.user.name,
@@ -55,6 +58,24 @@ const sdgOptions = ref([
 ]);
 
 const selectedSDGs = ref([]);
+
+// ---------------- OTHER FILTERS (BY PAGE) ----------------
+const pageFiltersList = ref(["BOT", "Programs", "Organizational Chart", "College", "OER"]);
+const selectedPageFilters = ref([]);
+
+// ---------------- CONTENT TYPE FILTERS ----------------
+const contentTypeList = ref([
+  "News Highlights",
+  "News",
+  "Events",
+  "Announcements",
+]);
+const selectedContentTypes = ref([]);
+
+// ---------------- APPROVAL STATUS FILTERS ----------------
+const approvalVerified = ref(false);
+const approvalApproved = ref(false);
+const approvalPublished = ref(false);
 
 // Add SDG colors mapping
 const sdgColors = {
@@ -117,6 +138,128 @@ const updateFilters = () => {
   const unique = sanitizeList(merged);
   content.value.filters = unique.length > 0 ? unique.join(", ") : "";
 };
+
+// Method to update page filters
+const updatePageFilters = () => {
+  const existing = content.value.filters || "";
+  const existingArr = existing
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean);
+
+  // Map known page filters to canonical labels
+  const pageFiltersMap = pageFiltersList.value.reduce((acc, label) => {
+    acc[normalize(label)] = label;
+    return acc;
+  }, {});
+
+  const pageFiltersSet = new Set(Object.keys(pageFiltersMap));
+
+  // Remove any existing entries that match known page filters (case-insensitive)
+  const cleaned = existingArr.filter((f) => {
+    const nf = normalize(f);
+    if (pageFiltersSet.has(nf)) return false;
+    return true;
+  });
+
+  const combined = [...cleaned, ...selectedPageFilters.value];
+  const uniqueCombined = sanitizeList(combined);
+  content.value.filters =
+    uniqueCombined.length > 0 ? uniqueCombined.join(", ") : "";
+};
+
+// Method to update content type filters
+const updateContentTypes = () => {
+  const existing = content.value.filters || "";
+  const existingArr = existing
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean);
+
+  // Map known content types to canonical labels
+  const contentTypesMap = contentTypeList.value.reduce((acc, label) => {
+    acc[normalize(label)] = label;
+    return acc;
+  }, {});
+
+  const contentTypesSet = new Set(Object.keys(contentTypesMap));
+
+  // Remove any existing entries that match known content types (case-insensitive)
+  const cleaned = existingArr.filter((f) => {
+    const nf = normalize(f);
+    if (contentTypesSet.has(nf)) return false;
+    return true;
+  });
+
+  const combined = [...cleaned, ...selectedContentTypes.value];
+  const uniqueCombined = sanitizeList(combined);
+  content.value.filters =
+    uniqueCombined.length > 0 ? uniqueCombined.join(", ") : "";
+};
+
+// Method to update approval status with sequential validation
+const updateApprovalStatus = () => {
+  // Sequential validation: must be verified before approved, approved before published
+  if (!approvalVerified.value) {
+    approvalApproved.value = false;
+    approvalPublished.value = false;
+  }
+  if (!approvalApproved.value) {
+    approvalPublished.value = false;
+  }
+
+  // Update content
+  content.value.is_verified = approvalVerified.value;
+  content.value.is_approved = approvalApproved.value;
+  content.value.is_published = approvalPublished.value;
+
+  // Update filters field to include approval status
+  const existing = content.value.filters || "";
+  const existingArr = existing
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean);
+
+  // Define approval status keywords
+  const approvalKeywords = ["Verified", "Approved", "Published"];
+
+  // Remove any existing approval status entries
+  const cleaned = existingArr.filter((f) => {
+    const normalized = normalize(f);
+    return !approvalKeywords.some(keyword => normalize(keyword) === normalized);
+  });
+
+  // Add selected approval statuses
+  const selectedApprovals = [];
+  if (approvalVerified.value) selectedApprovals.push("Verified");
+  if (approvalApproved.value) selectedApprovals.push("Approved");
+  if (approvalPublished.value) selectedApprovals.push("Published");
+
+  const combined = [...cleaned, ...selectedApprovals];
+  const uniqueCombined = sanitizeList(combined);
+  content.value.filters =
+    uniqueCombined.length > 0 ? uniqueCombined.join(", ") : "";
+};
+
+// Watch for changes to enforce sequential validation
+watch(approvalVerified, (newVal) => {
+  if (!newVal) {
+    approvalApproved.value = false;
+    approvalPublished.value = false;
+  }
+  updateApprovalStatus();
+});
+
+watch(approvalApproved, (newVal) => {
+  if (!newVal) {
+    approvalPublished.value = false;
+  }
+  updateApprovalStatus();
+});
+
+watch(approvalPublished, () => {
+  updateApprovalStatus();
+});
 
 // ---------------- AUTHORS ----------------
 const authorsList = ref([
@@ -559,10 +702,18 @@ const resetForm = () => {
     descriptions: "",
     date: "",
     links: [""],
+    is_verified: false,
+    is_approved: false,
+    is_published: false,
   };
   selectedFiles.value = [];
   selectedSDGs.value = [];
   selectedAuthors.value = [];
+  selectedPageFilters.value = [];
+  selectedContentTypes.value = [];
+  approvalVerified.value = false;
+  approvalApproved.value = false;
+  approvalPublished.value = false;
   submitMessage.value = "";
 };
 
@@ -755,6 +906,145 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     </label>
                   </div>
                 </div>
+              </div>
+
+              <!-- Other Filters Group (By Page Filter) -->
+              <div class="mt-6">
+                <label
+                  class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                  >Other Filters Group</label
+                >
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50"
+                >
+                  <div
+                    v-for="pageFilter in pageFiltersList"
+                    :key="pageFilter"
+                    class="flex items-center hover:bg-white px-2 rounded transition"
+                  >
+                    <input
+                      type="checkbox"
+                      :id="`page-${pageFilter}`"
+                      :value="pageFilter"
+                      v-model="selectedPageFilters"
+                      @change="updatePageFilters"
+                      class="mr-3 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                    />
+                    <label
+                      :for="`page-${pageFilter}`"
+                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                    >
+                      <span class="text-xs">{{ pageFilter }}</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- News and Updates Content Type -->
+              <div class="mt-6">
+                <label
+                  class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                  >News and Updates Content Type</label
+                >
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50"
+                >
+                  <div
+                    v-for="contentType in contentTypeList"
+                    :key="contentType"
+                    class="flex items-center hover:bg-white px-2 rounded transition"
+                  >
+                    <input
+                      type="checkbox"
+                      :id="`content-${contentType}`"
+                      :value="contentType"
+                      v-model="selectedContentTypes"
+                      @change="updateContentTypes"
+                      class="mr-3 w-4 h-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
+                    />
+                    <label
+                      :for="`content-${contentType}`"
+                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                    >
+                      <span class="text-xs">{{ contentType }}</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Approval Level Status Filter -->
+              <div class="mt-6">
+                <label
+                  class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                  >Approval Level Status Filter</label
+                >
+                <div
+                  class="grid grid-cols-1 md:grid-cols-3 gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50"
+                >
+                  <!-- Verified -->
+                  <div
+                    class="flex items-center hover:bg-white px-2 rounded transition"
+                  >
+                    <input
+                      type="checkbox"
+                      id="approval-verified"
+                      v-model="approvalVerified"
+                      class="mr-3 w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
+                    />
+                    <label
+                      for="approval-verified"
+                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                    >
+                      <span class="text-xs font-medium">Verified</span>
+                    </label>
+                  </div>
+
+                  <!-- Approved -->
+                  <div
+                    class="flex items-center hover:bg-white px-2 rounded transition"
+                    :class="{ 'opacity-50': !approvalVerified }"
+                  >
+                    <input
+                      type="checkbox"
+                      id="approval-approved"
+                      v-model="approvalApproved"
+                      :disabled="!approvalVerified"
+                      class="mr-3 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer disabled:cursor-not-allowed"
+                    />
+                    <label
+                      for="approval-approved"
+                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                      :class="{ 'cursor-not-allowed': !approvalVerified }"
+                    >
+                      <span class="text-xs font-medium">Approved</span>
+                    </label>
+                  </div>
+
+                  <!-- Published -->
+                  <div
+                    class="flex items-center hover:bg-white px-2 rounded transition"
+                    :class="{ 'opacity-50': !approvalApproved || !approvalVerified }"
+                  >
+                    <input
+                      type="checkbox"
+                      id="approval-published"
+                      v-model="approvalPublished"
+                      :disabled="!approvalApproved || !approvalVerified"
+                      class="mr-3 w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded cursor-pointer disabled:cursor-not-allowed"
+                    />
+                    <label
+                      for="approval-published"
+                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                      :class="{ 'cursor-not-allowed': !approvalApproved || !approvalVerified }"
+                    >
+                      <span class="text-xs font-medium">Published</span>
+                    </label>
+                  </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                  <i class="fa fa-info-circle mr-1"></i>
+                  Must be verified before approved, and approved before published
+                </p>
               </div>
             </div>
 
