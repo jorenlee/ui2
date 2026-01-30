@@ -966,7 +966,7 @@ const toPublish = () => {
                   <div class="hidden lg:block">
                     <!-- Table Header -->
                     <div
-                      class="lg:flex gap-4 bg-gray-50 px-3 py-1 font-semibold text-gray-700 border-b text-[10px]"
+                      class="lg:flex gap-4 bg-gray-50 px-3 py-1 font-semibold text-gray-700 border-b text-xs"
                     >
                       <span class="flex items-center lg:w-10/12 w-full">
                         <i class="fa fa-user mr-2 text-gray-500"></i>Authors
@@ -982,7 +982,7 @@ const toPublish = () => {
                     </div>
 
                     <!-- Table Body -->
-                    <div class="divide-y divide-gray-200 text-[10px]">
+                    <div class="divide-y divide-gray-200 text-xs">
                       <div
                         v-for="j in paginatedInfo"
                         :key="j.id"
@@ -1004,7 +1004,7 @@ const toPublish = () => {
                           "
                           class="lg:flex gap-4 px-3 py-1 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
-                          <div class="text-gray-600 truncate lg:w-10/12 w-full">
+                          <div class="text-gray-600 truncate lg:w-10/12 w-full px-2">
                             <span class="block"> {{ j.authors }}</span>
 
                             <span class="block">
@@ -1012,7 +1012,7 @@ const toPublish = () => {
                             >
                           </div>
 
-                          <div class="flex items-center w-full">
+                          <div class="flex items-center w-full px-2">
                             <div>
                               <span class="flex items-center text-gray-800">{{
                                 j.title
