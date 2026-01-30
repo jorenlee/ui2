@@ -4,12 +4,12 @@ const router = useRouter();
 import { useUserStore } from "@/stores/user";
 const userStore = useUserStore();
 
-import { MdPreview } from 'md-editor-v3';
-import './lib/preview.css';
+import { MdPreview } from "md-editor-v3";
+import "./lib/preview.css";
 const endpoint = ref(userStore.mainDevServer);
-const procurements = await $fetch(endpoint.value + "/api/procurements/list").catch((error) => error.data)
-
-
+const procurements = await $fetch(
+  endpoint.value + "/api/procurements/list",
+).catch((error) => error.data);
 
 const displayID = ref();
 
@@ -17,10 +17,10 @@ const procurement = ref();
 
 const getID = async (id) => {
   displayID.value = id;
-  procurement.value = await $fetch(endpoint.value + "/api/procurements/" + displayID + "/").catch((error) => error.data)
-}
-
-
+  procurement.value = await $fetch(
+    endpoint.value + "/api/procurements/" + displayID + "/",
+  ).catch((error) => error.data);
+};
 
 const goToDetail = (id) => {
   router.push("/procurement/" + id);
@@ -39,9 +39,6 @@ useHead({
     },
   ],
 });
-
-
-
 </script>
 
 <template>
@@ -53,21 +50,28 @@ useHead({
           <Banner />
           <img
             src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
-            class="align-top w-full h-36 object-none lg:hidden block" />
+            class="align-top w-full h-36 object-none lg:hidden block"
+          />
           <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
-            <h1 class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto">
+            <h1
+              class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto"
+            >
               LSU Central Procurement Unit
             </h1>
           </div>
           <div class="shadow-lg">
             <div class="w-11/12 mx-auto flex">
-              <ul class="flex pt-2.5 pb-3 w-full lasalle-green-text capitalize mx-auto text-xs">
+              <ul
+                class="flex pt-2.5 pb-3 w-full lasalle-green-text capitalize mx-auto text-xs"
+              >
                 <li>
                   <a href="/" class="mr-1"> Home </a>
                 </li>
                 <li>
                   <i class="fas fa-caret-right mr-1"></i>
-                  <a href="https://fb.com/lsu.cpu" class="mr-1"> Procurement </a>
+                  <a href="https://fb.com/lsu.cpu" class="mr-1">
+                    Procurement
+                  </a>
                 </li>
               </ul>
             </div>
@@ -78,16 +82,16 @@ useHead({
       <div class="flex w-11/12 mx-auto">
         <div class="w-3/12 border-r pr-3 mr-10">
           <ul class="mx-auto mt-10">
-            <li @click="getID(i)"
+            <li
+              @click="getID(i)"
               class="border hover:bg-green-900 bg-white hover:text-white text-green-900 py-1 px-3 capitalize text-xs justify-between flex items-center"
-              v-for="(p, i) in procurements" :key="i">
+              v-for="(p, i) in procurements"
+              :key="i"
+            >
               <span>{{ p.title }}</span>
               <span><i class="fa fa-caret-right text-2xl"></i></span>
             </li>
           </ul>
-
-
-
         </div>
         <div class="w-9/12 lg:py-8 py-4 mx-auto">
           <ul class="lg:grid lg:grid-cols-3 text-center gap-10">
@@ -161,7 +165,11 @@ useHead({
           class="lg:w-8/12 w-11/12 mx-auto"
         /> -->
 
-          <h1 class="text-green-800 text-xl text-center uppercase font-bold mb-5">Bid Announcement</h1>
+          <h1
+            class="text-green-800 text-xl text-center uppercase font-bold mb-5"
+          >
+            Bid Announcement
+          </h1>
           <!-- <div class="mx-auto w-11/12 shadow lg:p-10 p-4 lg:mt-7 mt-5 text-sm">
             <p class="mb-5 lg:mt-10 font-bold">Dear Prospect Bidders,</p>
             <p>We are pleased to invite you to participate in our upcoming projects. Below are the links to the formal

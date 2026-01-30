@@ -618,7 +618,7 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
                     class="w-full h-full bg-gray-200 flex items-center justify-center"
                   >
                     <img
-                      src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg"
+                      src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png"
                       class="w-full h-full object-cover"
                       alt="Default thumbnail"
                     />

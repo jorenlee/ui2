@@ -259,7 +259,7 @@ onMounted(async () => {
         <button
           v-if="canGoPrev"
           @click="prevSlide"
-          class="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 lg:-left-6 -left-2"
+          class="absolute top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 lg:-left-6 -left-2"
           aria-label="Previous slide"
         >
           <i class="fas fa-chevron-left text-xl"></i>
@@ -298,7 +298,7 @@ onMounted(async () => {
                   class="w-full lg:h-full h-[100px] bg-gray-200 flex items-center justify-center"
                 >
                   <img
-                    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Default%20Img.jpg"
+                    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png"
                     class="w-full lg:h-full h-[100px] object-cover"
                     alt="Default thumbnail"
                   />
@@ -307,9 +307,9 @@ onMounted(async () => {
                 <!-- Play button overlay for videos -->
                 <div
                   v-if="hasVideoContent(j)"
-                  class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30"
+                  class="absolute inset-0 flex items-center justify-center bg-[#ffffff] bg-opacity-30"
                 >
-                  <div class="bg-red-600 rounded-full p-3 shadow-lg">
+                  <div class="bg-green-600 rounded-lg px-5 py-1 shadow-lg">
                     <i class="fas fa-play text-white text-xl ml-1"></i>
                   </div>
                 </div>
