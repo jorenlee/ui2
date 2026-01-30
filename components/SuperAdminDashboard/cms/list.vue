@@ -1098,10 +1098,10 @@ const toPublish = () => {
                   <div class="hidden lg:block">
                     <!-- Table Header -->
                     <div
-                      class="lg:flex gap-4 bg-gray-50 px-3 py-1 font-semibold text-gray-700 border-b text-sm"
+                      class="lg:flex gap-4 bg-gray-50 px-3 py-2 font-semibold text-gray-700 border-b text-sm"
                     >
-                      <span class="flex items-center justify-center w-20">
-                        <i class="fa fa-clock-o mr-2 text-gray-500"></i>Status
+                      <span class="flex items-center w-20">
+                       <i class="fa fa-check-circle mr-2 text-gray-500"></i>Status
                       </span>
 
                       <span class="flex items-center lg:w-3/12 w-full">
@@ -1208,75 +1208,6 @@ const toPublish = () => {
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </div>
-
-                          <div class="w-fit h-full flex items-center">
-                            <div>
-                              <ul
-                                class="flex items-center gap-x-2"
-                                :class="
-                                  showEditModal ? 'flex-wrap gap-y-2' : ''
-                                "
-                              >
-                                <!-- v-if="directHeadEmails.includes(userStore.user.email)" -->
-                                <!-- v-if="canVerify(j.logs[0].personnel_email)" -->
-                                <li
-                                  v-if="canVerify(j.logs[0].personnel_email)"
-                                  @click="toVerify"
-                                  class="cursor-pointer bg-blue-700 text-white px-3 py-1 uppercase rounded-xl"
-                                >
-                                  Verify
-                                </li>
-                                <li
-                                  v-if="
-                                    mccEmails.includes(userStore.user.email)
-                                  "
-                                  @click="toApprove"
-                                  class="cursor-pointer bg-blue-700 text-white px-3 py-1 uppercase rounded-xl"
-                                >
-                                  Approve
-                                </li>
-                                <li
-                                  v-if="
-                                    npccEmails.includes(userStore.user.email)
-                                  "
-                                  @click="toPublish"
-                                  class="cursor-pointer bg-blue-700 text-white px-3 py-1 uppercase rounded-xl"
-                                >
-                                  Publish
-                                </li>
-                              </ul>
-
-                              <!-- instead of regular boolean, use the update api, to add data under logs array -->
-                              <ul
-                                class="flex items-center gap-x-2"
-                                :class="
-                                  showEditModal ? 'flex-wrap gap-y-2' : ''
-                                "
-                              >
-                                <li
-                                  v-if="isVerified"
-                                  class="flex items-center gap-x-1 text-xs bg-green-700 text-white px-2 py-1 rounded-xl"
-                                >
-                                  <i class="fa fa-check text-white"></i>
-                                  Verified
-                                </li>
-                                <li
-                                  v-if="isApproved"
-                                  class="flex items-center gap-x-1 text-xs bg-green-700 text-white px-2 py-1 rounded-xl"
-                                >
-                                  <i class="fa fa-check text-white"></i>
-                                  Approved
-                                </li>
-                                <li
-                                  v-if="isPublished"
-                                  class="flex items-center gap-x-1 text-xs bg-green-700 text-white px-2 py-1 rounded-xl"
-                                >
-                                  <i class="fa fa-check text-white"></i>
-                                  Published
-                                </li>
-                              </ul>
                             </div>
                           </div>
                           <span class="flex justify-end">
