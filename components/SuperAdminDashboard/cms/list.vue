@@ -1141,28 +1141,40 @@ const toPublish = () => {
                           class="lg:flex gap-4 px-3 py-1 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
                         <div class="flex flex-col gap-1 items-center justify-center w-20 py-2">
-                          <!-- Status States - Simple Colored Circles -->
+                          <!-- Status States - Show only the highest status achieved -->
 
-                          <!-- Verified - Yellow Circle -->
+                          <!-- Published - Green Circle (Highest Priority) -->
                           <div
-                            v-if="j.is_verified"
-                            class="w-6 h-6 rounded-full bg-yellow-400"
-                            title="Verified"
-                          ></div>
-
-                          <!-- Approved - Blue Circle -->
-                          <div
-                            v-if="j.is_approved"
-                            class="w-6 h-6 rounded-full bg-blue-500"
-                            title="Approved"
-                          ></div>
-
-                          <!-- Published - Green Circle -->
-                          <div
-                            v-if="j.is_published"
-                            class="w-6 h-6 rounded-full bg-green-500"
+                            v-if="j.is_published || (j.filters && j.filters.toLowerCase().includes('published'))"
+                            class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shadow-md"
                             title="Published"
-                          ></div>
+                          >
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                          </div>
+
+                          <!-- Approved - Blue Circle (Medium Priority) -->
+                          <div
+                            v-else-if="j.is_approved || (j.filters && j.filters.toLowerCase().includes('approved'))"
+                            class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center shadow-md"
+                            title="Approved"
+                          >
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                          </div>
+
+                          <!-- Verified - Yellow Circle (Lowest Priority) -->
+                          <div
+                            v-else-if="j.is_verified || (j.filters && j.filters.toLowerCase().includes('verified'))"
+                            class="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center shadow-md"
+                            title="Verified"
+                          >
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                          </div>
                         </div>
                           <div
                             class="text-gray-600 truncate lg:w-3/12 w-full px-2"
