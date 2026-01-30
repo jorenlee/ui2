@@ -141,6 +141,162 @@ const getFileUrl = (filename) => {
   return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${filename}`;
 };
 
+// ---------------- AUTHORS ----------------
+const authorsList = ref([
+  "Arts and Culture Center",
+  "Basic Education Unit",
+  "Educational Technology Center",
+  "Higher Education Unit",
+  "Marketing and Communications Center",
+  "Network Programs and Computerization Center",
+  "Student Affairs Center",
+  "Tingog Campus Press",
+  "University Student Government",
+]);
+
+const selectedAuthors = ref([]);
+
+// Helper functions for normalization and sanitization
+const normalize = (str) => {
+  return str.toLowerCase().trim();
+};
+
+const sanitizeList = (arr) => {
+  const seen = new Set();
+  return arr.filter((item) => {
+    const normalized = normalize(item);
+    if (seen.has(normalized)) return false;
+    seen.add(normalized);
+    return true;
+  });
+};
+
+// ---------------- OTHER FILTERS (BY PAGE) ----------------
+const pageFiltersList = ref([
+  "BOT",
+  "Programs",
+  "Organizational Chart",
+  "College",
+  "OER",
+]);
+
+const selectedPageFilters = ref([]);
+
+const updatePageFilters = () => {
+  const existing = editContent.value.filters || "";
+  const existingArr = existing
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean);
+
+  // Map known page filters to canonical labels
+  const pageFiltersMap = pageFiltersList.value.reduce((acc, label) => {
+    acc[normalize(label)] = label;
+    return acc;
+  }, {});
+
+  const pageFiltersSet = new Set(Object.keys(pageFiltersMap));
+
+  // Remove any existing entries that match known page filters (case-insensitive)
+  const cleaned = existingArr.filter((f) => {
+    const nf = normalize(f);
+    if (pageFiltersSet.has(nf)) return false;
+    return true;
+  });
+
+  const combined = [...cleaned, ...selectedPageFilters.value];
+  const uniqueCombined = sanitizeList(combined);
+  editContent.value.filters =
+    uniqueCombined.length > 0 ? uniqueCombined.join(", ") : "";
+};
+
+const updateAuthorFilters = () => {
+  const existing = editContent.value.filters || "";
+  const existingArr = existing
+    .split(",")
+    .map((f) => f.trim())
+    .filter(Boolean);
+
+  const authorsFromContent = editContent.value.authors
+    ? editContent.value.authors
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+
+  // Map known authors to canonical labels
+  const authorsMap = authorsList.value.reduce((acc, label) => {
+    acc[normalize(label)] = label;
+    return acc;
+  }, {});
+  const authorsFromContentCanonical = authorsFromContent.map(
+    (a) => authorsMap[normalize(a)] || a
+  );
+  const authorsFromContentSet = new Set(
+    authorsFromContentCanonical.map((a) => normalize(a))
+  );
+  const authorsListSet = new Set(Object.keys(authorsMap));
+
+  // Remove any existing entries that match known authors or authors from content (case-insensitive)
+  const cleaned = existingArr.filter((f) => {
+    const nf = normalize(f);
+    if (authorsFromContentSet.has(nf)) return false;
+    if (authorsListSet.has(nf)) return false;
+    return true;
+  });
+
+  const combined = [...cleaned, ...authorsFromContentCanonical];
+  const uniqueCombined = sanitizeList(combined);
+  editContent.value.filters =
+    uniqueCombined.length > 0 ? uniqueCombined.join(", ") : "";
+};
+
+const updateAuthors = () => {
+  // Ensure selectedAuthors are unique and normalized
+  const uniqueAuthors = sanitizeList(selectedAuthors.value);
+  // Map to canonical labels when possible
+  const authorsMap = authorsList.value.reduce((acc, label) => {
+    acc[normalize(label)] = label;
+    return acc;
+  }, {});
+  const mapped = uniqueAuthors.map((a) => authorsMap[normalize(a)] || a);
+  selectedAuthors.value = mapped;
+  editContent.value.authors = mapped.join(", ");
+  updateAuthorFilters();
+};
+
+// Keep selectedAuthors in sync when user manually edits the authors text field.
+watch(
+  () => editContent.value.authors,
+  (newVal) => {
+    const typed = newVal
+      ? newVal
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [];
+    const authorsMap = authorsList.value.reduce((acc, label) => {
+      acc[normalize(label)] = label;
+      return acc;
+    }, {});
+    const mapped = typed.map((a) => authorsMap[normalize(a)] || a);
+    const uniqMapped = sanitizeList(mapped);
+
+    // Normalize the authors field if there are duplicates or extra spaces
+    const normalized = uniqMapped.join(", ");
+    if ((newVal || "").trim() !== normalized) {
+      editContent.value.authors = normalized;
+      return; // change will retrigger watcher and handle updates
+    }
+
+    selectedAuthors.value = uniqMapped.filter((a) =>
+      authorsList.value.includes(a)
+    );
+    updateAuthorFilters();
+  }
+);
+
+
 const openImagePreview = (imageUrl) => {
   previewImageUrl.value = imageUrl;
   showImagePreview.value = true;
@@ -269,7 +425,7 @@ const openEditModal = async (item) => {
 
   try {
     const response = await $fetch(
-      `${endpoint.value}/api/cms/content/${item.id}/`
+      `${endpoint.value}/api/cms/content/${item.id}/`,
     );
     editContent.value = {
       id: response.id,
@@ -282,6 +438,16 @@ const openEditModal = async (item) => {
       links: response.links || [],
       files: response.files || [],
     };
+
+    // Populate selectedAuthors based on existing authors
+    if (response.authors) {
+      const authorsArr = response.authors.split(",").map((a) => a.trim());
+      selectedAuthors.value = authorsArr.filter((author) =>
+        authorsList.value.includes(author)
+      );
+    } else {
+      selectedAuthors.value = [];
+    }
 
     // Populate selectedSDGs based on existing filters using exact matching
     if (response.filters) {
@@ -308,8 +474,16 @@ const openEditModal = async (item) => {
           });
         })
         .map((sdg) => sdg.value);
+
+      // Populate selectedPageFilters based on existing filters
+      selectedPageFilters.value = pageFiltersList.value.filter((pageFilter) => {
+        const filterLower = filters.toLowerCase();
+        const pageFilterLower = pageFilter.toLowerCase();
+        return filterLower.includes(pageFilterLower);
+      });
     } else {
       selectedSDGs.value = [];
+      selectedPageFilters.value = [];
     }
   } catch (error) {
     console.error("Error fetching content:", error);
@@ -321,6 +495,8 @@ const openEditModal = async (item) => {
 const closeEditModal = () => {
   showEditModal.value = false;
   selectedSDGs.value = [];
+  selectedPageFilters.value = [];
+  selectedAuthors.value = [];
   editContent.value = {
     id: null,
     content_id: "",
@@ -364,8 +540,6 @@ const submitEdit = async () => {
     editSubmitting.value = false;
   }
 };
-
-
 
 // Add file upload functions
 const handleFileSelect = async (e) => {
@@ -467,14 +641,14 @@ const filteredInfo = computed(() => {
         item.title?.toLowerCase().includes(query) ||
         item.authors?.toLowerCase().includes(query) ||
         item.descriptions?.toLowerCase().includes(query) ||
-        item.filters?.toLowerCase().includes(query)
+        item.filters?.toLowerCase().includes(query),
     );
   }
 
   // Filter by category
   if (selectedFilter.value) {
     filtered = filtered.filter((item) =>
-      item.filters?.toLowerCase().includes(selectedFilter.value.toLowerCase())
+      item.filters?.toLowerCase().includes(selectedFilter.value.toLowerCase()),
     );
   }
 
@@ -482,7 +656,7 @@ const filteredInfo = computed(() => {
 });
 
 const totalPages = computed(() =>
-  Math.ceil(filteredInfo.value.length / itemsPerPage)
+  Math.ceil(filteredInfo.value.length / itemsPerPage),
 );
 
 const paginatedInfo = computed(() => {
@@ -494,7 +668,7 @@ const visiblePages = computed(() => {
   const pages = [];
   const start = Math.max(
     1,
-    currentPage.value - Math.floor(maxVisiblePages / 2)
+    currentPage.value - Math.floor(maxVisiblePages / 2),
   );
   const end = Math.min(totalPages.value, start + maxVisiblePages - 1);
 
@@ -556,7 +730,7 @@ const canVerify = (contributorEmail) => {
   return directHeadEmails.some(
     (d) =>
       d.directHeadEmail === userStore.user.email &&
-      d.contributorEmail.includes(contributorEmail)
+      d.contributorEmail.includes(contributorEmail),
   );
 };
 
@@ -749,7 +923,6 @@ const toPublish = () => {
                     <div
                       class="grid grid-cols-5 gap-4 bg-gray-50 p-3 font-semibold text-gray-700 border-b text-sm"
                     >
-                    
                       <span class="flex items-center">
                         <i class="fa fa-user mr-2 text-gray-500"></i>Authors
                       </span>
@@ -776,8 +949,7 @@ const toPublish = () => {
                         :key="j.id"
                         @click="selectedItem = j"
                       >
-
-                       <!-- v-if="
+                        <!-- v-if="
                             j.logs?.[0]?.personnel_email &&
                             (canVerify(j.logs[0].personnel_email) ||
                               superAdminEmails.includes(userStore.user.email) ||
@@ -792,9 +964,7 @@ const toPublish = () => {
                               : ''
                           "
                           class="grid grid-cols-5 gap-4 p-3 hover:bg-gray-50 transition-colors text-sm cursor-pointer"
-                         
                         >
-                         
                           <div class="text-gray-600 truncate">
                             <span class="block"> {{ j.authors }}</span>
 
@@ -811,10 +981,9 @@ const toPublish = () => {
 
                           <div class="flex items-center">
                             <div>
-                              <span
-                                class="flex items-center text-gray-800 "
-                                >{{ j.title }}</span
-                              >
+                              <span class="flex items-center text-gray-800">{{
+                                j.title
+                              }}</span>
                               <!-- SDG Badges -->
                               <div v-if="getSdgBadges(j).length" class="mt-1">
                                 <div class="flex flex-wrap gap-1">
@@ -1059,6 +1228,33 @@ const toPublish = () => {
                       />
                     </div>
 
+                                <!-- Default Filters (Authors Selection) -->
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                >Default Filters</label
+              >
+              <div
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50"
+              >
+                <div v-for="author in authorsList" :key="author">
+                  <label
+                    :for="author"
+                    class="cursor-pointer text-xs text-gray-700 flex items-center"
+                  >
+                    <input
+                      :id="author"
+                      type="checkbox"
+                      :value="author"
+                      v-model="selectedAuthors"
+                      @change="updateAuthors"
+                      class="mr-2 w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
+                    />
+                    {{ author }}
+                  </label>
+                </div>
+              </div>
+            </div>
+
                     <!-- Date -->
                     <div>
                       <label
@@ -1085,6 +1281,83 @@ const toPublish = () => {
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
                         placeholder="e.g., SDG1, SDG4, SDG17"
                       />
+                    </div>
+
+                    <!-- SDGs Selection -->
+                    <div>
+                      <label
+                        class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                        >Sustainable Development Goals (SDGs)</label
+                      >
+                      <div
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50"
+                      >
+                        <div
+                          v-for="sdg in sdgOptions"
+                          :key="sdg.value"
+                          class="flex items-center hover:bg-white px-2 rounded transition"
+                        >
+                          <input
+                            type="checkbox"
+                            :id="sdg.value"
+                            :value="sdg.value"
+                            v-model="selectedSDGs"
+                            @change="updateFilters"
+                            class="mr-3 w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
+                            :style="{
+                              accentColor: getSdgColor(
+                                parseInt(sdg.value.replace('sdg', '')),
+                              ),
+                            }"
+                          />
+                          <label
+                            :for="sdg.value"
+                            class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                          >
+                            <span
+                              class="inline-block w-3 h-3 rounded-full mr-2 flex-shrink-0"
+                              :style="{
+                                backgroundColor: getSdgColor(
+                                  parseInt(sdg.value.replace('sdg', '')),
+                                ),
+                              }"
+                            ></span>
+                            <span class="text-xs">{{ sdg.label }}</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Other Filters Group (By Page Filter) -->
+                    <div>
+                      <label
+                        class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                        >Other Filters Group</label
+                      >
+                      <div
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50"
+                      >
+                        <div
+                          v-for="pageFilter in pageFiltersList"
+                          :key="pageFilter"
+                          class="flex items-center hover:bg-white px-2 rounded transition"
+                        >
+                          <input
+                            type="checkbox"
+                            :id="`page-${pageFilter}`"
+                            :value="pageFilter"
+                            v-model="selectedPageFilters"
+                            @change="updatePageFilters"
+                            class="mr-3 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                          />
+                          <label
+                            :for="`page-${pageFilter}`"
+                            class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                          >
+                            <span class="text-xs">{{ pageFilter }}</span>
+                          </label>
+                        </div>
+                      </div>
                     </div>
 
                     <!-- Description -->
@@ -1184,7 +1457,9 @@ const toPublish = () => {
                           <h4 class="text-xs font-medium text-gray-700">
                             Current Files ({{ editContent.files.length }})
                           </h4>
-                          <p class="text-xs text-gray-500 flex items-center gap-1">
+                          <p
+                            class="text-xs text-gray-500 flex items-center gap-1"
+                          >
                             <i class="fa fa-arrows-alt text-green-600"></i>
                             Drag to reorder
                           </p>
@@ -1204,14 +1479,18 @@ const toPublish = () => {
                               dragOverIndex === index && draggedIndex !== index
                                 ? 'border-green-500 bg-green-50 scale-110 shadow-2xl ring-4 ring-green-300 animate-pulse'
                                 : 'border-gray-300 hover:border-blue-400',
-                              draggedIndex === index ? 'opacity-40 scale-90 rotate-2 shadow-2xl ring-4 ring-blue-300' : 'opacity-100',
+                              draggedIndex === index
+                                ? 'opacity-40 scale-90 rotate-2 shadow-2xl ring-4 ring-blue-300'
+                                : 'opacity-100',
                             ]"
                           >
                             <!-- Drag Handle Icon - Always Visible -->
                             <div
                               class="absolute top-2 left-2 z-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg w-8 h-8 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform"
                             >
-                              <i class="fa fa-grip-vertical text-white text-sm"></i>
+                              <i
+                                class="fa fa-grip-vertical text-white text-sm"
+                              ></i>
                             </div>
 
                             <!-- Drag Instruction Overlay -->
@@ -1221,7 +1500,8 @@ const toPublish = () => {
                               <div
                                 class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg"
                               >
-                                <i class="fa fa-arrows-alt mr-1"></i>Drag to reorder
+                                <i class="fa fa-arrows-alt mr-1"></i>Drag to
+                                reorder
                               </div>
                             </div>
 

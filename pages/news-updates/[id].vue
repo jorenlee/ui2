@@ -540,6 +540,10 @@ const prevImage = () => {
                   :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${file}`"
                   :alt="`Image ${index + 1}`"
                   class="w-full h-32 object-cover rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
+                  @error="(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.innerHTML = '<div class=\'w-full h-32 bg-gray-200 rounded-lg flex flex-col items-center justify-center\'><i class=\'fas fa-image text-gray-400 text-3xl mb-2\'></i><p class=\'text-xs text-gray-500 px-2 text-center break-all\'>' + file + '</p><p class=\'text-xs text-red-500\'>Failed to load</p></div>';
+                  }"
                 />
                 <div
                   class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 rounded-lg flex items-center justify-center"
