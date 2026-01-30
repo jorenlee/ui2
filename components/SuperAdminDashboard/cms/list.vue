@@ -230,10 +230,10 @@ const updateAuthorFilters = () => {
     return acc;
   }, {});
   const authorsFromContentCanonical = authorsFromContent.map(
-    (a) => authorsMap[normalize(a)] || a
+    (a) => authorsMap[normalize(a)] || a,
   );
   const authorsFromContentSet = new Set(
-    authorsFromContentCanonical.map((a) => normalize(a))
+    authorsFromContentCanonical.map((a) => normalize(a)),
   );
   const authorsListSet = new Set(Object.keys(authorsMap));
 
@@ -252,20 +252,50 @@ const updateAuthorFilters = () => {
 };
 
 const updateAuthors = () => {
-  // Ensure selectedAuthors are unique and normalized
-  const uniqueAuthors = sanitizeList(selectedAuthors.value);
-  // Map to canonical labels when possible
+  // Get existing authors from the text field
+  const existingAuthors = editContent.value.authors
+    ? editContent.value.authors
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+
+  // Map to canonical labels for comparison
   const authorsMap = authorsList.value.reduce((acc, label) => {
     acc[normalize(label)] = label;
     return acc;
   }, {});
+
+  // Filter out authors that are in authorsList but not in selectedAuthors
+  const authorsListNormalized = authorsList.value.map((a) => normalize(a));
+  const selectedAuthorsNormalized = selectedAuthors.value.map((a) =>
+    normalize(a),
+  );
+
+  const filteredExisting = existingAuthors.filter((author) => {
+    const normalizedAuthor = normalize(author);
+    // Keep if it's not in the authorsList (custom author) OR if it's selected
+    return (
+      !authorsListNormalized.includes(normalizedAuthor) ||
+      selectedAuthorsNormalized.includes(normalizedAuthor)
+    );
+  });
+
+  // Combine filtered existing with newly selected authors
+  const allAuthors = [...filteredExisting, ...selectedAuthors.value];
+
+  // Ensure unique and normalized
+  const uniqueAuthors = sanitizeList(allAuthors);
   const mapped = uniqueAuthors.map((a) => authorsMap[normalize(a)] || a);
-  selectedAuthors.value = mapped;
+
+  // Update the authors field
   editContent.value.authors = mapped.join(", ");
-  updateAuthorFilters();
+
+  // Don't call updateAuthorFilters() - authors should not be added to filters
 };
 
 // Keep selectedAuthors in sync when user manually edits the authors text field.
+// Note: We don't update selectedAuthors here to avoid conflicts with checkbox selections
 watch(
   () => editContent.value.authors,
   (newVal) => {
@@ -289,13 +319,10 @@ watch(
       return; // change will retrigger watcher and handle updates
     }
 
-    selectedAuthors.value = uniqMapped.filter((a) =>
-      authorsList.value.includes(a)
-    );
-    updateAuthorFilters();
-  }
+    // Don't update selectedAuthors to avoid circular updates and conflicts
+    // The checkboxes will manage their own state
+  },
 );
-
 
 const openImagePreview = (imageUrl) => {
   previewImageUrl.value = imageUrl;
@@ -443,7 +470,7 @@ const openEditModal = async (item) => {
     if (response.authors) {
       const authorsArr = response.authors.split(",").map((a) => a.trim());
       selectedAuthors.value = authorsArr.filter((author) =>
-        authorsList.value.includes(author)
+        authorsList.value.includes(author),
       );
     } else {
       selectedAuthors.value = [];
@@ -584,9 +611,27 @@ const validateFile = (file) => {
   return true;
 };
 
+// Format filename: replace spaces with underscores and remove parentheses
+const formatFilename = (filename) => {
+  const lastDotIndex = filename.lastIndexOf(".");
+  const name = filename.substring(0, lastDotIndex);
+  const extension = filename.substring(lastDotIndex);
+
+  const formattedName = name
+    .replace(/\s+/g, "_") // Replace all spaces with underscores
+    .replace(/[()]/g, ""); // Remove all parentheses
+
+  return formattedName + extension;
+};
+
 const uploadFile = async (file) => {
   const formData = new FormData();
-  formData.append("file", file);
+
+  // Format the filename before uploading
+  const formattedFilename = formatFilename(file.name);
+  const renamedFile = new File([file], formattedFilename, { type: file.type });
+
+  formData.append("file", renamedFile);
 
   try {
     const res = await $fetch(`${endpoint.value}/api/cms/content/file/upload/`, {
@@ -595,15 +640,15 @@ const uploadFile = async (file) => {
       timeout: 60000, // 60 seconds
     });
 
-    showToast(`✅ File uploaded: ${file.name}`, "success");
-    return { finalName: res.filename || res.name || file.name };
+    showToast(`✅ File uploaded: ${formattedFilename}`, "success");
+    return { finalName: res.filename || res.name || formattedFilename };
   } catch (error) {
     console.error("Upload error:", error);
 
     if (error.status === 413) {
-      showToast(`❌ File too large: ${file.name} (Max 50MB)`, "error");
+      showToast(`❌ File too large: ${formattedFilename} (Max 50MB)`, "error");
     } else {
-      showToast(`❌ Upload failed: ${file.name}`, "error");
+      showToast(`❌ Upload failed: ${formattedFilename}`, "error");
     }
     return null;
   }
@@ -615,7 +660,7 @@ const removeFile = (index) => {
 
 // Pagination and filtering
 const currentPage = ref(1);
-const itemsPerPage = 10;
+const itemsPerPage = 20;
 const maxVisiblePages = 4;
 const searchQuery = ref("");
 const selectedFilter = ref("");
@@ -779,7 +824,7 @@ const toPublish = () => {
           <div class="flex-1 flex flex-col lg:flex-row">
             <!-- Content List Section -->
             <div
-              class="flex-1 p-3 lg:p-5"
+              class="flex-1"
               :class="showEditModal ? 'lg:pr-2' : ''"
             >
               <div v-show="tableDisplay">
@@ -921,29 +966,23 @@ const toPublish = () => {
                   <div class="hidden lg:block">
                     <!-- Table Header -->
                     <div
-                      class="grid grid-cols-5 gap-4 bg-gray-50 p-3 font-semibold text-gray-700 border-b text-sm"
+                      class="lg:flex gap-4 bg-gray-50 px-3 py-1 font-semibold text-gray-700 border-b text-[10px]"
                     >
-                      <span class="flex items-center">
+                      <span class="flex items-center lg:w-10/12 w-full">
                         <i class="fa fa-user mr-2 text-gray-500"></i>Authors
                       </span>
-                      <span class="flex items-center">
-                        <i class="fa fa-file-text mr-2 text-gray-500"></i
-                        >Content Type
-                      </span>
-                      <span class="flex items-center">
+
+                      <span class="flex items-center w-full">
                         <i class="fa fa-file-text mr-2 text-gray-500"></i>Title
                       </span>
 
-                      <span class="flex items-center">
-                        <i class="fa fa-file-text mr-2 text-gray-500"></i>Status
-                      </span>
-                      <span class="flex items-center justify-end">
+                      <span class="flex items-center justify-end w-fit">
                         <i class="fa fa-cogs mr-2 text-gray-500"></i>Actions
                       </span>
                     </div>
 
                     <!-- Table Body -->
-                    <div class="divide-y divide-gray-200">
+                    <div class="divide-y divide-gray-200 text-[10px]">
                       <div
                         v-for="j in paginatedInfo"
                         :key="j.id"
@@ -963,9 +1002,9 @@ const toPublish = () => {
                               ? 'bg-blue-50 border-l-4 border-blue-500'
                               : ''
                           "
-                          class="grid grid-cols-5 gap-4 p-3 hover:bg-gray-50 transition-colors text-sm cursor-pointer"
+                          class="lg:flex gap-4 px-3 py-1 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
-                          <div class="text-gray-600 truncate">
+                          <div class="text-gray-600 truncate lg:w-10/12 w-full">
                             <span class="block"> {{ j.authors }}</span>
 
                             <span class="block">
@@ -973,13 +1012,7 @@ const toPublish = () => {
                             >
                           </div>
 
-                          <span
-                            class="flex items-center text-gray-600 truncate"
-                          >
-                            {{ getCategoryLabel(j) }}</span
-                          >
-
-                          <div class="flex items-center">
+                          <div class="flex items-center w-full">
                             <div>
                               <span class="flex items-center text-gray-800">{{
                                 j.title
@@ -993,10 +1026,10 @@ const toPublish = () => {
                                     class="inline-flex items-center"
                                   >
                                     <span
-                                      class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold text-white shadow-sm"
+                                      class="inline-flex items-center px-1.5 py-0.5 rounded font-bold text-white shadow-sm text-[8px]"
                                       :style="{ backgroundColor: badge.color }"
                                     >
-                                      SDG {{ badge.number }}
+                                       {{ badge.number }}
                                     </span>
                                   </div>
                                 </div>
@@ -1004,7 +1037,7 @@ const toPublish = () => {
                             </div>
                           </div>
 
-                          <div class="w-full h-full flex items-center">
+                          <div class="w-fit h-full flex items-center">
                             <div>
                               <ul
                                 class="flex items-center gap-x-2"
@@ -1013,6 +1046,7 @@ const toPublish = () => {
                                 "
                               >
                                 <!-- v-if="directHeadEmails.includes(userStore.user.email)" -->
+                                <!-- v-if="canVerify(j.logs[0].personnel_email)" -->
                                 <li
                                   v-if="canVerify(j.logs[0].personnel_email)"
                                   @click="toVerify"
@@ -1228,32 +1262,33 @@ const toPublish = () => {
                       />
                     </div>
 
-                                <!-- Default Filters (Authors Selection) -->
-            <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
-                >Default Filters</label
-              >
-              <div
-                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50"
-              >
-                <div v-for="author in authorsList" :key="author">
-                  <label
-                    :for="author"
-                    class="cursor-pointer text-xs text-gray-700 flex items-center"
-                  >
-                    <input
-                      :id="author"
-                      type="checkbox"
-                      :value="author"
-                      v-model="selectedAuthors"
-                      @change="updateAuthors"
-                      class="mr-2 w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
-                    />
-                    {{ author }}
-                  </label>
-                </div>
-              </div>
-            </div>
+                    <!-- Default Authors (Authors Selection) -->
+                    <div>
+                      <label
+                        class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                        >Default Authors</label
+                      >
+                      <div
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50"
+                      >
+                        <div v-for="author in authorsList" :key="author">
+                          <label
+                            :for="author"
+                            class="cursor-pointer text-xs text-gray-700 flex items-center"
+                          >
+                            <input
+                              :id="author"
+                              type="checkbox"
+                              :value="author"
+                              v-model="selectedAuthors"
+                              @change="updateAuthors"
+                              class="mr-2 w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer"
+                            />
+                            {{ author }}
+                          </label>
+                        </div>
+                      </div>
+                    </div>
 
                     <!-- Date -->
                     <div>

@@ -175,17 +175,42 @@ const updateAuthorFilters = () => {
 };
 
 const updateAuthors = () => {
-  // Ensure selectedAuthors are unique and normalized
-  const uniqueAuthors = sanitizeList(selectedAuthors.value);
-  // Map to canonical labels when possible
+  // Get existing authors from the text field
+  const existingAuthors = content.value.authors
+    ? content.value.authors
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
+
+  // Map to canonical labels for comparison
   const authorsMap = authorsList.value.reduce((acc, label) => {
     acc[normalize(label)] = label;
     return acc;
   }, {});
+
+  // Filter out authors that are in authorsList but not in selectedAuthors
+  const authorsListNormalized = authorsList.value.map(a => normalize(a));
+  const selectedAuthorsNormalized = selectedAuthors.value.map(a => normalize(a));
+
+  const filteredExisting = existingAuthors.filter((author) => {
+    const normalizedAuthor = normalize(author);
+    // Keep if it's not in the authorsList (custom author) OR if it's selected
+    return !authorsListNormalized.includes(normalizedAuthor) ||
+           selectedAuthorsNormalized.includes(normalizedAuthor);
+  });
+
+  // Combine filtered existing with newly selected authors
+  const allAuthors = [...filteredExisting, ...selectedAuthors.value];
+
+  // Ensure unique and normalized
+  const uniqueAuthors = sanitizeList(allAuthors);
   const mapped = uniqueAuthors.map((a) => authorsMap[normalize(a)] || a);
-  selectedAuthors.value = mapped;
+
+  // Update the authors field
   content.value.authors = mapped.join(", ");
-  updateAuthorFilters();
+
+  // Don't call updateAuthorFilters() - authors should not be added to filters
 };
 
 // Initialize selectedAuthors from content.authors on mount
@@ -206,12 +231,12 @@ onMounted(() => {
     selectedAuthors.value = uniqMapped.filter((a) =>
       authorsList.value.includes(a)
     );
-    // Ensure filters include initial authors
-    updateAuthorFilters();
+    // Don't call updateAuthorFilters() - authors should not be added to filters
   }
 });
 
 // Keep selectedAuthors in sync when user manually edits the authors text field.
+// Note: We don't update selectedAuthors here to avoid conflicts with checkbox selections
 watch(
   () => content.value.authors,
   (newVal) => {
@@ -235,10 +260,8 @@ watch(
       return; // change will retrigger watcher and handle updates
     }
 
-    selectedAuthors.value = uniqMapped.filter((a) =>
-      authorsList.value.includes(a)
-    );
-    updateAuthorFilters();
+    // Don't update selectedAuthors to avoid circular updates and conflicts
+    // The checkboxes will manage their own state
   }
 );
 
@@ -387,9 +410,27 @@ const handleDragEnd = () => {
 };
 
 // ---------------- FILE UPLOAD ----------------
+// Format filename: replace spaces with underscores and remove parentheses
+const formatFilename = (filename) => {
+  const lastDotIndex = filename.lastIndexOf('.');
+  const name = filename.substring(0, lastDotIndex);
+  const extension = filename.substring(lastDotIndex);
+
+  const formattedName = name
+    .replace(/\s+/g, '_')  // Replace all spaces with underscores
+    .replace(/[()]/g, ''); // Remove all parentheses
+
+  return formattedName + extension;
+};
+
 const uploadFile = async (file) => {
   const formData = new FormData();
-  formData.append("file", file);
+
+  // Format the filename before uploading
+  const formattedFilename = formatFilename(file.name);
+  const renamedFile = new File([file], formattedFilename, { type: file.type });
+
+  formData.append("file", renamedFile);
 
   try {
     const res = await $fetch(`${endpoint.value}/api/cms/content/file/upload/`, {
@@ -401,17 +442,17 @@ const uploadFile = async (file) => {
       timeout: 60000, // 60 seconds
     });
 
-    showToast(`✅ File uploaded: ${file.name}`, "success");
-    return { finalName: res.filename || res.name || file.name };
+    showToast(`✅ File uploaded: ${formattedFilename}`, "success");
+    return { finalName: res.filename || res.name || formattedFilename };
   } catch (error) {
     console.error("Upload error:", error);
 
     if (error.status === 413) {
-      showToast(`❌ File too large: ${file.name} (Max 50MB)`, "error");
+      showToast(`❌ File too large: ${formattedFilename} (Max 50MB)`, "error");
     } else if (error.message?.includes("CORS")) {
-      showToast(`❌ CORS error: ${file.name}`, "error");
+      showToast(`❌ CORS error: ${formattedFilename}`, "error");
     } else {
-      showToast(`❌ Upload failed: ${file.name}`, "error");
+      showToast(`❌ Upload failed: ${formattedFilename}`, "error");
     }
     return null;
   }
@@ -621,8 +662,8 @@ const displayToast = (message, type = "success", duration = 3000) => {
 
             <!-- Authors Selection -->
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2"
-                >Auto Select Authors</label
+              <label class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                >Default Authors</label
               >
               <div
                 class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50"
