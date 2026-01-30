@@ -1100,7 +1100,11 @@ const toPublish = () => {
                     <div
                       class="lg:flex gap-4 bg-gray-50 px-3 py-1 font-semibold text-gray-700 border-b text-sm"
                     >
-                      <span class="flex items-center lg:w-10/12 w-full">
+                      <span class="flex items-center justify-center w-20">
+                        <i class="fa fa-clock-o mr-2 text-gray-500"></i>Status
+                      </span>
+
+                      <span class="flex items-center lg:w-3/12 w-full">
                         <i class="fa fa-user mr-2 text-gray-500"></i>Authors
                       </span>
 
@@ -1136,8 +1140,32 @@ const toPublish = () => {
                           "
                           class="lg:flex gap-4 px-3 py-1 hover:bg-gray-50 transition-colors cursor-pointer"
                         >
+                        <div class="flex flex-col gap-1 items-center justify-center w-20 py-2">
+                          <!-- Status States - Simple Colored Circles -->
+
+                          <!-- Verified - Yellow Circle -->
                           <div
-                            class="text-gray-600 truncate lg:w-10/12 w-full px-2"
+                            v-if="j.is_verified"
+                            class="w-6 h-6 rounded-full bg-yellow-400"
+                            title="Verified"
+                          ></div>
+
+                          <!-- Approved - Blue Circle -->
+                          <div
+                            v-if="j.is_approved"
+                            class="w-6 h-6 rounded-full bg-blue-500"
+                            title="Approved"
+                          ></div>
+
+                          <!-- Published - Green Circle -->
+                          <div
+                            v-if="j.is_published"
+                            class="w-6 h-6 rounded-full bg-green-500"
+                            title="Published"
+                          ></div>
+                        </div>
+                          <div
+                            class="text-gray-600 truncate lg:w-3/12 w-full px-2"
                           >
                             <span class="block"> {{ j.authors }}</span>
 
