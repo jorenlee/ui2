@@ -9,7 +9,9 @@
           class="align-top w-full h-36 object-none lg:hidden block"
         />
         <div></div>
-        <div class="lg:pt-14 pb-3 absolute top-1/2 transform -translate-y-1/2 w-full">
+        <div
+          class="lg:pt-14 pb-3 absolute top-1/2 transform -translate-y-1/2 w-full"
+        >
           <h2
             class="font-bold uppercase text-white lg:text-xl text-sm w-11/12 mx-auto lg:my-12 my-6"
           >
@@ -30,7 +32,7 @@
                 <a href="/npcc" class="mx-2 hover:underline lg:h-10">NPCC</a>
               </div>
             </div>
-            <div class="flex hover:text-green-800 text-white bg-white h-full">
+            <div class="flex hover:text-green-800 text-white bg-white h-full z-50">
               <div
                 class="hover:bg-green-800 bg-white hover:text-white text-green-800 px-1 lg:px-4 lg:h-10 h-8 flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full"
               >
@@ -88,26 +90,32 @@
 
                 <!-- Confirmation Modal -->
                 <div
-               v-if="showConfirmation"
+                  v-if="showConfirmation"
                   class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm"
                   @click.self="showConfirmation = false"
                 >
-                  <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-fade-in">
-                    <div class="flex items-center bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 gap-x-5 justify-center">
-                      
+                  <div
+                    class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-fade-in"
+                  >
+                    <div
+                      class="flex items-center bg-gradient-to-r from-green-600 to-green-700 px-6 py-4 gap-x-5 justify-center"
+                    >
                       <h3 class="text-white text-xl font-bold text-center">
                         Confirm Submission
                       </h3>
                       <div class="flex items-center justify-center">
-                        <div class=" rounded-full">
-                          <i class="fas fa-question-circle text-white text-4xl"></i>
+                        <div class="rounded-full">
+                          <i
+                            class="fas fa-question-circle text-white text-4xl"
+                          ></i>
                         </div>
                       </div>
                     </div>
 
                     <div class="p-6">
                       <p class="text-gray-700 text-center mb-6">
-                        Are you sure you want to submit this tech support request?
+                        Are you sure you want to submit this tech support
+                        request?
                       </p>
 
                       <div class="flex gap-3">
@@ -129,62 +137,85 @@
                 </div>
 
                 <!-- Success Modal -->
+
                 <div
                   v-if="showSuccess"
                   class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm"
                   @click.self="showSuccess = false"
                 >
-                  <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-fade-in">
-                    <div class="bg-gradient-to-r from-green-500 to-green-600 p-6">
+                  <div
+                    class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden animate-fade-in"
+                  >
+                    <div
+                      class="bg-gradient-to-r from-green-500 to-green-600 p-6"
+                    >
                       <div class="flex items-center justify-center">
                         <div class="bg-white rounded-full p-3 animate-bounce">
-                          <i class="fas fa-check-circle text-green-600 text-5xl"></i>
+                          <i
+                            class="fas fa-check-circle text-green-600 text-5xl"
+                          ></i>
                         </div>
                       </div>
-                      <h3 class="text-white text-2xl font-bold text-center mt-4">
+                      <h3
+                        class="text-white text-2xl font-bold text-center mt-4"
+                      >
                         Request Submitted!
                       </h3>
                     </div>
 
                     <div class="p-6">
                       <p class="text-gray-700 text-center mb-4">
-                        Your tech support request has been successfully submitted.
+                        Your tech support request has been successfully
+                        submitted.
                       </p>
                       <p class="text-sm text-gray-600 text-center mb-6">
-                        A confirmation email has been sent to <strong>{{ info.requestor_lsu_email }}</strong>
+                        A confirmation email has been sent to
+                        <strong>{{ info.requestor_lsu_email }}</strong>
                       </p>
 
-                      <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-6">
-                        <p class="text-sm text-green-800 text-center font-semibold">
-                          <i class="fas fa-ticket-alt mr-2"></i>Ticket ID: {{ info.ticket_id }}
+                      <div
+                        class="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-6"
+                      >
+                        <p
+                          class="text-sm text-green-800 text-center font-semibold"
+                        >
+                          <i class="fas fa-ticket-alt mr-2"></i>Ticket ID:
+                          {{ info.ticket_id }}
                         </p>
                       </div>
 
                       <button
                         @click="resetForm"
-                        class="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors"
+                        class="w-full px-4 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-300 font-semibold transition-colors"
                       >
-                        <i class="fas fa-plus mr-2"></i>Submit Another Request
+                        <i class="fas fa-close mr-2"></i>Closed
                       </button>
                     </div>
                   </div>
                 </div>
 
                 <!-- ITEM REQUEST -->
-                <div class="border-2 border-green-100 rounded-xl lg:p-6 p-2 mb-6 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+                <div
+                  class="border-2 border-green-100 rounded-xl lg:p-6 p-2 mb-6 bg-gradient-to-br from-gray-50 to-white shadow-sm"
+                >
                   <div class="mb-6">
-                    <h3 class="text-lg font-bold text-green-800 mb-1 flex items-center">
+                    <h3
+                      class="text-lg font-bold text-green-800 mb-1 flex items-center"
+                    >
                       <i class="fas fa-user-circle mr-2"></i>
                       Requestor Information
                     </h3>
-                    <p class="text-xs text-gray-500">Please provide your contact details</p>
+                    <p class="text-xs text-gray-500">
+                      Please provide your contact details
+                    </p>
                   </div>
 
                   <div class="grid lg:grid-cols-2 gap-4 mb-6">
                     <div class="w-full">
-                      <label class="text-sm font-semibold mb-2 block text-gray-700"
-                        ><i class="fas fa-user text-green-600 mr-1"></i>Full Name
-                        <span class="text-red-600">*</span></label
+                      <label
+                        class="text-sm font-semibold mb-2 block text-gray-700"
+                        ><i class="fas fa-user text-green-600 mr-1"></i>Full
+                        Name <span class="text-red-600">*</span></label
                       >
                       <input
                         v-model="info.requestor_fullname"
@@ -194,9 +225,10 @@
                     </div>
 
                     <div class="w-full">
-                      <label class="text-sm font-semibold mb-2 block text-gray-700"
-                        ><i class="fas fa-envelope text-green-600 mr-1"></i>LSU Email
-                        <span class="text-red-600">*</span></label
+                      <label
+                        class="text-sm font-semibold mb-2 block text-gray-700"
+                        ><i class="fas fa-envelope text-green-600 mr-1"></i>LSU
+                        Email <span class="text-red-600">*</span></label
                       >
                       <input
                         v-model="info.requestor_lsu_email"
@@ -207,11 +239,15 @@
                   </div>
 
                   <div class="border-t-2 border-gray-200 pt-6">
-                    <h3 class="text-lg font-bold text-green-800 mb-1 flex items-center">
+                    <h3
+                      class="text-lg font-bold text-green-800 mb-1 flex items-center"
+                    >
                       <i class="fas fa-tools mr-2"></i>
                       Request Details
                     </h3>
-                    <p class="text-xs text-gray-500 mb-4">Describe your technical support needs</p>
+                    <p class="text-xs text-gray-500 mb-4">
+                      Describe your technical support needs
+                    </p>
 
                     <div
                       v-for="(item, index) in info.item_request"
@@ -222,7 +258,8 @@
                         <!-- OFFICE -->
                         <div class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
-                            ><i class="fas fa-building text-green-600 mr-1"></i>Center/Office/Room
+                            ><i class="fas fa-building text-green-600 mr-1"></i
+                            >Center/Office/Room
                             <span class="text-red-600">*</span></label
                           >
                           <div class="flex gap-2">
@@ -230,9 +267,7 @@
                               v-model="item.center_office_room"
                               class="input border-2 border-gray-200 w-full p-3 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                             >
-                              <option disabled value="">
-                                Select Location
-                              </option>
+                              <option disabled value="">Select Location</option>
                               <option
                                 v-for="office in CENTER_OFFICE_ROOM_OPTIONS"
                                 :key="office"
@@ -252,7 +287,8 @@
 
                         <div class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700">
-                            <i class="fas fa-tag text-green-600 mr-1"></i>Tech Type <span class="text-red-600">*</span>
+                            <i class="fas fa-tag text-green-600 mr-1"></i>Tech
+                            Type <span class="text-red-600">*</span>
                           </label>
                           <select
                             v-model="item.category_type"
@@ -273,7 +309,8 @@
                         <!-- ITEM TYPE -->
                         <div class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
-                            ><i class="fas fa-laptop text-green-600 mr-1"></i>Specific Concern
+                            ><i class="fas fa-laptop text-green-600 mr-1"></i
+                            >Specific Concern
                             <span class="text-red-600">*</span></label
                           >
                           <select
@@ -282,7 +319,11 @@
                             class="input rounded-lg border-2 border-gray-200 p-3 w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                           >
                             <option disabled value="">
-                              {{ item.category_type ? 'Select ' + item.category_type : 'Select Tech Type First' }}
+                              {{
+                                item.category_type
+                                  ? "Select " + item.category_type
+                                  : "Select Tech Type First"
+                              }}
                             </option>
                             <option
                               v-for="type in getItemOptions(item.category_type)"
@@ -296,7 +337,11 @@
 
                         <div class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
-                            ><i class="fas fa-comment-dots text-green-600 mr-1"></i>Other Details <span class="text-red-600">*</span></label
+                            ><i
+                              class="fas fa-comment-dots text-green-600 mr-1"
+                            ></i
+                            >Other Details
+                            <span class="text-red-600">*</span></label
                           >
                           <textarea
                             v-model="item.name"
@@ -392,10 +437,7 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Microsoft Office",
     "LSU Website",
   ],
-  Network: [
-    "WiFi Access",
-    "Network Configuration",
-  ],
+  Network: ["WiFi Access", "Network Configuration"],
   "Computer Peripherals": [
     "Screwdriver Set",
     "Cable Ties",
@@ -449,8 +491,6 @@ const info = ref({
   item_request: [emptyItem()],
 });
 
-
-
 // Normalize office before submit
 const normalizeOffice = () => {
   if (info.value.center_office_room === "OTHER")
@@ -471,11 +511,18 @@ const handleSubmitClick = () => {
 
   // Check if all items have required fields
   const hasEmptyFields = info.value.item_request.some(
-    item => !item.center_office_room || !item.category_type || !item.item_type || !item.name
+    (item) =>
+      !item.center_office_room ||
+      !item.category_type ||
+      !item.item_type ||
+      !item.name,
   );
 
   if (hasEmptyFields) {
-    showToaster("Please fill in all required fields for each request.", "warning");
+    showToaster(
+      "Please fill in all required fields for each request.",
+      "warning",
+    );
     return;
   }
 
@@ -595,8 +642,6 @@ const showToaster = (message, type = "success", duration = 3000) => {
     toaster.value.show = false;
   }, duration);
 };
-
-
 </script>
 
 <style scoped>

@@ -270,7 +270,7 @@
         </span>
       </div>
       <div
-        class="lg:w-fit w-full py-3 px-5 text-white font-bold text-sm whitespace-nowrap"
+        class="lg:w-fit w-full py-3 pl-3 pr-8 text-white font-bold text-sm whitespace-nowrap"
       >
         <i class="fa fa-cog mr-1"></i> Action
       </div>

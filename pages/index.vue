@@ -51,34 +51,7 @@ onBeforeUnmount(() => {
     <div class="lg:relative block z-0">
       <div class=""></div>
       <BlogPosting />
-
-      <a
-        href="/sdgs"
-        class="lg:bg-gray-50 bg-white lg:py-20 lg:border block px-10"
-      >
-        <div class="w-fit mx-auto lg:py-10 py-5">
-          <div class="lg:flex items-center gap-x-5 w-fit mx-auto">
-            <img
-              src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/lsu-corporate-logo-green.png"
-              class="lg:w-80 w-32 mx-auto"
-            />
-            <div class="w-0.5 h-[200px] bg-black lg:flex hidden"></div>
-            <img
-              src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/E_SDG_logo_Square_WEB.png.png"
-              class="w-80 lg:py-0 py-5"
-            />
-          </div>
-          <div
-            class="text-green-900 lg:text-2xl text-xs text-center lg:mt-8 font-roboto font-semibold"
-          >
-            La Salle University supports the Sustainable Development Goals.
-          </div>
-        </div>
-      </a>
-      <!-- <a href="https://drive.google.com/drive/folders/1F29IJ8LNDYJ8ElYvDwWDjsqI9NmAj5Y7?fbclid=IwY2xjawOMRIRleHRuA2FlbQIxMABicmlkETFIOWZPbWtCSXJreTcxWlhjc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHuqxEsKN2qFstVGA0sT5OgjH0MZpaaIvR9qqgmuEvh-9i-FRNG252cSFsFfI_aem_5T6KSJaDAR26zcAYCWywFg" class="w-10/12 mx-auto" target="_blank">
-        <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Panagsadya%20(2).png" class="w-full" />
-       </a>   -->
-
+      <SDG />
       <div class="bg-[#031d03] text-white">
         <p
           class="text-center text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg lg:py-5 py-2"
