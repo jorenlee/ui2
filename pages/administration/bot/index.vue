@@ -1,14 +1,12 @@
 <script setup>
-import { ref, onMounted, nextTick, computed } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 import { useUserStore } from "@/stores/user";
-import moment from "moment";
 
 const info = ref([]);
-const loading = ref(true);
-const errorMsg = ref("");
-
 const userStore = useUserStore();
 const endpoint = ref(userStore.mainDevServer);
+
+let intervalId = null;
 
 /* ======================================
    BOARD OF TRUSTEES (BOT ONLY)
@@ -24,7 +22,6 @@ const botMembers = computed(() => {
   const getOrderNumber = (filters) => {
     if (!filters) return Number.MAX_SAFE_INTEGER;
 
-    // Matches: "BOT, 1", "Published, BOT, 12"
     const match = filters.match(/,\s*(\d+)/);
     return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
   };
@@ -32,34 +29,39 @@ const botMembers = computed(() => {
   return info.value
     .filter((item) => {
       if (!item?.filters) return false;
-
       const filters = item.filters.toLowerCase();
-
-      // must be Published
       if (!filters.includes("published")) return false;
-
-      // MUST be Board of Trustees
       if (!filters.includes("bot")) return false;
-
-      // exclude unwanted filters
       return !excludedFilters.some((word) => filters.includes(word));
     })
-    .sort((a, b) => {
-      return getOrderNumber(a.filters) - getOrderNumber(b.filters);
-    });
+    .sort((a, b) => getOrderNumber(a.filters) - getOrderNumber(b.filters));
 });
 
-onMounted(async () => {
+/* ======================================
+   SILENT REAL-TIME FETCH
+====================================== */
+const fetchBOT = async () => {
   try {
     const res = await $fetch(endpoint.value + "/api/cms/content/list/");
-    info.value = Array.isArray(res) ? res : [];
+    // Only update if data changed
+    if (JSON.stringify(res) !== JSON.stringify(info.value)) {
+      info.value = Array.isArray(res) ? res : [];
+    }
   } catch (error) {
-    console.error("Error fetching list:", error);
-    errorMsg.value = "Failed to load news & updates.";
-  } finally {
-    loading.value = false;
+    console.error("Silent fetch error:", error);
   }
-  await nextTick();
+};
+
+onMounted(() => {
+  // initial fetch
+  fetchBOT();
+
+  // silent auto-refresh every 1 second
+  intervalId = setInterval(fetchBOT, 1000);
+});
+
+onBeforeUnmount(() => {
+  if (intervalId) clearInterval(intervalId);
 });
 </script>
 
@@ -99,9 +101,7 @@ onMounted(async () => {
             </li>
             <li>
               <i class="fas fa-caret-right mr-1"></i>
-              <a href="/administration" class="mr-1">
-                Board of Trustees
-              </a>
+              <a href="/administration" class="mr-1"> Board of Trustees </a>
             </li>
           </ul>
         </div>
@@ -160,49 +160,72 @@ onMounted(async () => {
         </ul>
       </div>
 
-      <!-- =========================
-        BOARD OF TRUSTEES GRID
-      ========================== -->
-      <div class="lg:w-9/12 my-5 bg-white shadow p-5">
-        <h2
-          class="text-green-800 font-bold uppercase text-lg mb-4 border-b pb-2"
-        >
-          Board of Trustees
-        </h2>
-
-        <div v-if="loading" class="text-center py-10 text-gray-500 text-sm">
-          Loading Board of Trustees...
+      <div
+        class="lg:w-9/12 my-8 bg-white border border-green-100 rounded-xl shadow-sm p-6"
+      >
+        <!-- HEADER -->
+        <div class="mb-6">
+          <h2
+            class="text-green-800 font-extrabold uppercase text-lg tracking-wide border-b-2 border-green-600 pb-2"
+          >
+            Board of Trustees
+          </h2>
+          <p class="text-xs text-gray-500 mt-1">
+            Leadership and governance of the institution
+          </p>
         </div>
 
+        <!-- LOADING -->
+        <div v-if="loading" class="text-center py-14 text-gray-500 text-sm">
+          Loading Board of Trustees…
+        </div>
+
+        <!-- ERROR -->
         <div
           v-else-if="errorMsg"
-          class="text-center py-10 text-red-600 text-sm"
+          class="text-center py-14 text-red-600 text-sm font-medium"
         >
           {{ errorMsg }}
         </div>
 
+        <!-- GRID -->
         <div
           v-else
-          class="grid grid-cols-1 md:grid-cols-2 md:grid-cols-4 gap-4"
+          class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"
         >
           <div
             v-for="(member, index) in botMembers"
             :key="index"
-            class="text-center hover:shadow-lg transition shadow pb-3"
+            class="group bg-white border-4 border-green-50 rounded-xl overflow-hidden shadow-xl hover:shadow-md transition duration-300"
           >
-            <img
-              :src="member.links?.[0] || 'https://via.placeholder.com/300'"
-              class="w-80 h-80 mx-auto object-cover rounded-xl"
-              alt="Board of Trustee"
-            />
-            <h3
-              class="mt-3 font-bold text-xs sm:text-sm text-gray-800 uppercase"
-            >
-              {{ member.title }}
-            </h3>
-            <p class="text-xs text-gray-600 mt-1">
-              {{ member.descriptions }}
-            </p>
+            <!-- IMAGE -->
+            <div class="relative overflow-hidden pt-7">
+              <img
+                :src="member.links?.[0] || 'https://via.placeholder.com/300'"
+                class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500"
+                alt="Board of Trustee"
+              />
+              <div
+                class="absolute inset-0 bg-green-900/0 group-hover:bg-green-900/10 transition"
+              ></div>
+            </div>
+
+            <!-- INFO -->
+            <div class="p-4 text-center">
+              <h3
+                class="font-bold text-sm text-green-900 uppercase leading-tight"
+              >
+                {{ member.title }}
+              </h3>
+              <p class="text-xs text-gray-600 mt-1">
+                {{ member.descriptions }}
+              </p>
+
+              <!-- ACCENT LINE -->
+              <div
+                class="mt-3 h-0.5 w-10 mx-auto bg-green-600 rounded-full"
+              ></div>
+            </div>
           </div>
         </div>
       </div>

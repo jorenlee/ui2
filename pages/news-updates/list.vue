@@ -8,7 +8,6 @@ import {
   onBeforeUnmount,
 } from "vue";
 import { useUserStore } from "@/stores/user";
-import _ from "lodash";
 import moment from "moment";
 
 const display = ref("desktop");
@@ -20,6 +19,7 @@ const errorMsg = ref("");
 const selectedSDG = ref("");
 const selectedYear = ref("");
 const selectedMonth = ref("");
+const selectedType = ref("");
 
 // Scroll to top button
 const showScrollButton = ref(false);
@@ -61,27 +61,26 @@ const sdgOptions = ref([
 
 // SDG Colors mapping
 const sdgColors = {
-  1: "#e5243b", // No Poverty
-  2: "#dda63a", // Zero Hunger
-  3: "#4c9f38", // Good Health and Well-being
-  4: "#c5192d", // Quality Education
-  5: "#ff3a21", // Gender Equality
-  6: "#26bde2", // Clean Water and Sanitation
-  7: "#fcc30b", // Affordable and Clean Energy
-  8: "#a21942", // Decent Work and Economic Growth
-  9: "#fd6925", // Industry, Innovation and Infrastructure
-  10: "#dd1367", // Reduced Inequalities
-  11: "#fd9d24", // Sustainable Cities and Communities
-  12: "#bf8b2e", // Responsible Consumption and Production
-  13: "#3f7e44", // Climate Action
-  14: "#0a97d9", // Life Below Water
-  15: "#56c02b", // Life on Land
-  16: "#00689d", // Peace, Justice and Strong Institutions
-  17: "#19486a", // Partnerships for the Goals
+  1: "#e5243b",
+  2: "#dda63a",
+  3: "#4c9f38",
+  4: "#c5192d",
+  5: "#ff3a21",
+  6: "#26bde2",
+  7: "#fcc30b",
+  8: "#a21942",
+  9: "#fd6925",
+  10: "#dd1367",
+  11: "#fd9d24",
+  12: "#bf8b2e",
+  13: "#3f7e44",
+  14: "#0a97d9",
+  15: "#56c02b",
+  16: "#00689d",
+  17: "#19486a",
 };
 
 // Content Type filter
-const selectedType = ref("");
 const contentTypeOptions = [
   { value: "", label: "All Contents" },
   { value: "news highlight", label: "News Highlight" },
@@ -97,6 +96,8 @@ const clearFilters = () => {
   selectedType.value = "";
 };
 
+// Reset page when filters change
+const currentPage = ref(1);
 watch([selectedSDG, selectedYear, selectedMonth, selectedType], () => {
   currentPage.value = 1;
 });
@@ -109,7 +110,7 @@ const getSdgColor = (sdgNumber) => {
 // Get available years and months from data
 const availableYears = computed(() => {
   const years = info.value
-    .filter((item) => item.date) // Only items with date field
+    .filter((item) => item.date)
     .map((item) => moment(item.date).year());
   return [...new Set(years)].sort((a, b) => b - a);
 });
@@ -125,20 +126,40 @@ const availableMonths = computed(() => {
   return [...new Set(months)].sort((a, b) => a - b);
 });
 
-// Filtered info based on selected filters
+// Excluded filters and must be Published
+const excludedFilters = [
+  "bot",
+  "programs",
+  "organizational chart",
+  "college",
+  "oer",
+];
+
+// Filtered info based on all filters
 const filteredInfo = computed(() => {
   let filtered = info.value;
 
-  // Filter by SDG - exact match only
+  filtered = filtered.filter((item) => {
+    if (!item?.filters) return false;
+
+    const filters = item.filters.toLowerCase();
+
+    // Must be published
+    if (!filters.includes("published")) return false;
+
+    // Exclude unwanted filters
+    for (const excl of excludedFilters) {
+      if (filters.includes(excl)) return false;
+    }
+
+    return true;
+  });
+
+  // Filter by SDG
   if (selectedSDG.value) {
+    const selectedSdgNum = selectedSDG.value.replace("sdg", "");
     filtered = filtered.filter((item) => {
-      if (!item.filters) return false;
       const filters = item.filters.toLowerCase();
-
-      // Extract SDG number from selectedSDG (e.g., "sdg1" -> "1")
-      const selectedSdgNum = selectedSDG.value.replace("sdg", "");
-
-      // Check for exact SDG matches only
       const exactPatterns = [
         `sdg${selectedSdgNum}`,
         `sdg ${selectedSdgNum}`,
@@ -148,88 +169,60 @@ const filteredInfo = computed(() => {
         `goal ${selectedSdgNum}`,
         `sdg${selectedSdgNum.padStart(2, "0")}`,
       ];
-
-      return exactPatterns.some((pattern) => {
-        // Use word boundaries to ensure exact matches
-        const regex = new RegExp(`\\b${pattern}\\b`, "i");
-        return regex.test(filters);
-      });
+      return exactPatterns.some(
+        (pattern) => new RegExp(`\\b${pattern}\\b`, "i").test(filters),
+      );
     });
   }
 
-  // Filter by year (using date field)
+  // Filter by year
   if (selectedYear.value) {
-    filtered = filtered.filter((item) => {
-      if (!item.date) return false;
-      return moment(item.date).year() === parseInt(selectedYear.value);
-    });
+    filtered = filtered.filter(
+      (item) =>
+        item.date &&
+        moment(item.date).year() === parseInt(selectedYear.value),
+    );
   }
 
-  // Filter by month (using date field)
+  // Filter by month
   if (selectedMonth.value) {
-    filtered = filtered.filter((item) => {
-      if (!item.date) return false;
-      return moment(item.date).month() === parseInt(selectedMonth.value);
-    });
+    filtered = filtered.filter(
+      (item) =>
+        item.date &&
+        moment(item.date).month() === parseInt(selectedMonth.value),
+    );
   }
 
   // Filter by Content Type
   if (selectedType.value) {
     filtered = filtered.filter((item) => {
       const label = getCategoryLabel(item).toLowerCase();
-
-      // Normalize plural/singular
-      if (selectedType.value === "event") {
-        return label.includes("event");
-      }
-      if (selectedType.value === "announcement") {
+      if (selectedType.value === "event") return label.includes("event");
+      if (selectedType.value === "announcement")
         return label.includes("announcement");
-      }
-      if (selectedType.value === "news highlight") {
+      if (selectedType.value === "news highlight")
         return label.includes("news highlight");
-      }
-      // Sort only when "News" is selected
-      if (selectedType.value === "news") {
-        filtered = filtered.sort((a, b) => {
-          const dateA = moment(a.date || a.created_at);
-          const dateB = moment(b.date || b.created_at);
-
-          if (!dateA.isValid() && !dateB.isValid()) return 0;
-          if (!dateA.isValid()) return 1;
-          if (!dateB.isValid()) return -1;
-
-          // Latest to oldest
-          return dateB.valueOf() - dateA.valueOf();
-        });
-      }
-
-      return filtered;
+      if (selectedType.value === "news") return label.includes("news");
+      return true;
     });
   }
 
-  // Sort by date field (latest to oldest)
+  // Sort latest to oldest
   return filtered.sort((a, b) => {
     const dateA = moment(a.date);
     const dateB = moment(b.date);
-
-    // Handle invalid dates by putting them at the end
     if (!dateA.isValid() && !dateB.isValid()) return 0;
     if (!dateA.isValid()) return 1;
     if (!dateB.isValid()) return -1;
-
-    // Sort latest to oldest (descending)
     return dateB.valueOf() - dateA.valueOf();
   });
 });
 
-// Add computed property for SDG badges - exact matches only
+// SDG badges
 const getSdgBadges = (item) => {
   if (!item?.filters) return [];
-
   const filters = item.filters.toLowerCase();
   const badges = [];
-
-  // Check for exact SDG mentions using word boundaries
   for (let i = 1; i <= 17; i++) {
     const patterns = [
       `\\bsdg${i}\\b`,
@@ -240,31 +233,16 @@ const getSdgBadges = (item) => {
       `\\bgoal${i}\\b`,
       `\\bsdg${i.toString().padStart(2, "0")}\\b`,
     ];
-
-    if (
-      patterns.some((pattern) => {
-        const regex = new RegExp(pattern, "i");
-        return regex.test(filters);
-      })
-    ) {
-      badges.push({
-        number: i,
-        color: getSdgColor(i),
-      });
+    if (patterns.some((pattern) => new RegExp(pattern, "i").test(filters))) {
+      badges.push({ number: i, color: getSdgColor(i) });
     }
   }
-
   return badges;
 };
 
-// Helper function to check if item has video content
+// Helper functions for video detection
 const hasVideoContent = (item) => {
-  // Check for video files
-  if (item.files && item.files.some((file) => isVideoFile(file))) {
-    return true;
-  }
-
-  // Check for video links
+  if (item.files && item.files.some((file) => isVideoFile(file))) return true;
   if (
     item.links &&
     item.links.some(
@@ -273,14 +251,11 @@ const hasVideoContent = (item) => {
         link.includes("youtu.be") ||
         link.includes("facebook.com/reel"),
     )
-  ) {
+  )
     return true;
-  }
-
   return false;
 };
 
-// Helper function to check if file is video
 const isVideoFile = (filename) => {
   const videoExtensions = [
     ".mp4",
@@ -294,27 +269,21 @@ const isVideoFile = (filename) => {
   return videoExtensions.some((ext) => filename.toLowerCase().includes(ext));
 };
 
-// Add helper function to extract category from filters or use default
+// Extract category label
 const getCategoryLabel = (item) => {
   if (!item.filters) return "News";
-
   const filters = item.filters.toLowerCase();
-
-  // Check for explicit category keywords first
   if (filters.includes("announcement")) return "Announcement";
   if (filters.includes("event")) return "Event";
   if (filters.includes("news highlight")) return "News Highlight";
   if (filters.includes("news")) return "News";
-
-  // If only SDGs, count them and return SDG label
   const sdgMatches = filters.match(/sdg\d+/gi) || [];
-  if (sdgMatches.length > 0) {
+  if (sdgMatches.length > 0)
     return `${sdgMatches.length} SDG${sdgMatches.length > 1 ? "s" : ""}`;
-  }
-
-  return "News"; // Default fallback
+  return "News";
 };
 
+// Fetch data
 onMounted(async () => {
   try {
     const res = await $fetch(endpoint.value + "/api/cms/content/list/");
@@ -327,12 +296,8 @@ onMounted(async () => {
   }
 
   await nextTick();
+  if (window.innerWidth < 800) display.value = "mobile";
 
-  if (window.innerWidth < 800) {
-    display.value = "mobile";
-  }
-
-  // Add scroll event listener
   window.addEventListener("scroll", handleScroll);
 });
 
@@ -341,18 +306,16 @@ onBeforeUnmount(() => {
 });
 
 // Pagination
-const currentPage = ref(1);
 const itemsPerPage = 32;
 const maxVisiblePages = 5;
 
-const totalPages = computed(() => {
-  return Math.ceil(filteredInfo.value.length / itemsPerPage);
-});
+const totalPages = computed(() =>
+  Math.ceil(filteredInfo.value.length / itemsPerPage),
+);
 
 const paginatedInfo = computed(() => {
   const startIndex = (currentPage.value - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  return filteredInfo.value.slice(startIndex, endIndex);
+  return filteredInfo.value.slice(startIndex, startIndex + itemsPerPage);
 });
 
 const visiblePages = computed(() => {
@@ -367,17 +330,11 @@ const visiblePages = computed(() => {
     startPage = Math.max(1, endPage - maxVisiblePages + 1);
   }
 
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
+  for (let i = startPage; i <= endPage; i++) pages.push(i);
   return pages;
 });
-
-// Reset page when filters change
-watch([selectedSDG, selectedYear, selectedMonth], () => {
-  currentPage.value = 1;
-});
 </script>
+
 
 <template>
   <div class="bg-gray-50">
