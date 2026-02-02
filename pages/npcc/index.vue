@@ -33,7 +33,7 @@
                 >
               </div>
             </div>
-            <div class="flex hover:text-green-800 text-white bg-white h-full">
+            <div class="flex hover:text-green-800 text-white bg-white h-full z-50">
               <div
                 class="hover:bg-green-800 bg-white hover:text-white text-green-800 px-1 lg:px-4 lg:h-10 h-8 flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full"
               >
