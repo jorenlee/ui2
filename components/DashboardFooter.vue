@@ -4,8 +4,8 @@ const presentYear = ref(moment(new Date()).format("YYYY"));
 </script>
 <template>
   <div class="">
-    <div class="bg-green-900 p-3">
-      <h2 class="text-center text-white text-xs leading-0">
+    <div class="bg-green-900 px-3 py-1.5">
+      <h2 class="text-center text-white text-[10px] leading-0">
         <span class="font-bold mr-1">Copyright © {{ presentYear }} </span
         ><span>La Salle University Ozamiz, Inc.</span>
       </h2>
