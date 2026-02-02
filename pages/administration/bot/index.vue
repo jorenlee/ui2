@@ -191,7 +191,7 @@ onBeforeUnmount(() => {
         <!-- GRID -->
         <div
           v-else
-          class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6"
+          class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-x-7 gap-y-5"
         >
           <div
             v-for="(member, index) in botMembers"
