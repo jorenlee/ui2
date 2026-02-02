@@ -152,7 +152,6 @@ watch(
 
 // ---------------- MENU ----------------
 const subMenuList = [
-
   {
     group: "Content Management",
     allowedEmails: contentWritersEmails,
@@ -240,7 +239,6 @@ const subMenuList = [
   },
 ];
 
-
 const menuList = [
   {
     label: "Dashboard",
@@ -248,7 +246,8 @@ const menuList = [
     type: "button",
     view: "Dashboard",
   },
-  { label: "Profile", icon: "fa-user", type: "button", view: "profile" },
+  { label: "Search", icon: "fa-search", type: "button", view: "Search" },
+  { label: "Profile", icon: "fa-user", type: "button", view: "Profile" },
 ];
 
 const filteredMenuList = computed(() => {
@@ -427,100 +426,40 @@ const navigateTo = (url) => router.push(url);
           <nav
             class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg rounded-t-2xl"
           >
-            <div class="flex justify-evenly items-center p-1">
-              <!-- HOME -->
-
-              <div class="flex justify-center">
-                <!-- Display only the first menu item as a card/button -->
-                <div
-                  v-if="menuList[0]"
-                  class="bg-white hover:shadow-lg px-3 rounded-lg transition-shadow"
-                >
-                  <button
-                    @click="
-                      menuList[0].type === 'button'
-                        ? (currentView = menuList[0].view)
-                        : navigateTo(menuList[0].to)
-                    "
-                    class="flex flex-col items-center text-xs p-1"
-                    :class="
-                      currentView === menuList[0].view
-                        ? 'text-green-900'
-                        : 'text-gray-400'
-                    "
-                  >
-                    <div
-                      class="w-10 h-10 flex items-center justify-center rounded-xl"
-                      :class="
-                        currentView === menuList[0].view ? 'bg-green-100' : ''
-                      "
-                    >
-                      <i :class="['fa', menuList[0].icon, 'text-lg']"></i>
-                    </div>
-                    <span>{{ menuList[0].label }}</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- RESEARCH -->
-              <button
-                @click="active = 'Research'"
-                class="flex flex-col items-center text-xs"
-                :class="
-                  active === 'Research' ? 'text-green-900' : 'text-gray-400'
-                "
+            <div class="flex justify-evenly items-center">
+              <div
+                v-for="(menu, index) in menuList"
+                :key="index"
+                class="flex justify-center"
               >
                 <div
-                  class="w-10 h-10 flex items-center justify-center rounded-xl"
-                  :class="active === 'Research' ? 'bg-green-100' : ''"
-                >
-                  <i class="fa fa-search text-lg"></i>
-                </div>
-                Search
-              </button>
-
-              <div class="flex justify-center">
-                <!-- Display only the first menu item as a card/button -->
-                <div
-                  v-if="menuList[1]"
+                  v-if="menu"
                   class="bg-white hover:shadow-lg px-3 rounded-lg transition-shadow"
                 >
                   <button
                     @click="
-                      menuList[0].type === 'button'
-                        ? (currentView = menuList[1].view)
-                        : navigateTo(menuList[1].to)
+                      menu.type === 'button'
+                        ? (currentView = menu.view)
+                        : navigateTo(menu.to)
                     "
-                    class="flex flex-col items-center text-xs p-1"
+                    class="flex flex-col items-center text-[10px] p-1"
                     :class="
-                      currentView === menuList[0].view
-                        ? 'text-green-900'
-                        : 'text-green-800'
+                      currentView === menu.view
+                        ? 'text-green-700'
+                        : 'text-green-900'
                     "
                   >
                     <div
-                      class="w-10 h-10 flex items-center justify-center rounded-xl"
-                      :class="
-                        currentView === menuList[1].view ? 'bg-green-100' : ''
-                      "
+                      class="w-5 h-5 flex items-center justify-center rounded-xl"
+                      :class="currentView === menu.view ? 'bg-green-100' : ''"
                     >
-                      <i :class="['fa', menuList[1].icon, 'text-lg']"></i>
+                      <i :class="['fa', menu.icon, 'text-xs']"></i>
                     </div>
-                    <span>{{ menuList[1].label }}</span>
+                    <span>{{ menu.label }}</span>
                   </button>
                 </div>
               </div>
             </div>
-
-            <!-- <div
-            class="flex items-center text-white bg-green-900 lg:py-[16px] py-[8px]"
-          >
-            <div class="flex items-center w-full px-2">
-              <i class="fa fa-user mx-2" aria-hidden="true"></i>
-              <h1 class="text-sm">{{ userStore.user.email }}</h1>
-            </div>
-           
-          </div> -->
 
             <DashboardFooter />
           </nav>
