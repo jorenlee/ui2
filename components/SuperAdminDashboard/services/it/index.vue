@@ -550,9 +550,19 @@
           </div>
         </div>
         <div v-if="!modalLoading">
-          <h3 class="text-lg font-bold mb-4 text-center w-full">
-            {{ isCreate ? "Create Ticket (Job Request)" : "Ticket Details" }}
-          </h3>
+          <div class="flex items-center pb-5">
+            <h3 class="text-lg font-bold text-center w-full">
+              {{ isCreate ? "Create Ticket (Job Request)" : "Ticket Details" }}
+            </h3>
+
+            <button
+              class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 font-semibold"
+              @click="closeModal"
+              :disabled="modalLoading"
+            >
+             <i class="fa fa-times"></i>
+            </button>
+          </div>
 
           <!-- BASIC INFO -->
           <div class="border rounded p-4 mb-4">
