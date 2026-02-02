@@ -16,29 +16,40 @@ const endpoint = ref(userStore.mainDevServer);
 const currentSlide = ref(0);
 const itemsPerSlide = ref(4); // Default for desktop
 
-// Computed property to filter and sort highlighted news
 const highlightedNews = computed(() => {
+  const excludedFilters = [
+    "bot",
+    "programs",
+    "organizational chart",
+    "college",
+    "oer",
+  ];
+
   return info.value
     .filter((item) => {
-      // Only show items that have "highlight" in the filters field
       if (!item?.filters) return false;
-      // return item.filters.toLowerCase().includes("highlight");
-      return item.filters.toLowerCase();
+
+      const filters = item.filters.toLowerCase();
+
+      // must be Published
+      if (!filters.includes("published")) return false;
+
+      // exclude unwanted filters
+      return !excludedFilters.some((word) => filters.includes(word));
     })
     .sort((a, b) => {
-      // Sort by date field (latest to oldest)
       const dateA = moment(a.date);
       const dateB = moment(b.date);
 
-      // Handle invalid dates by putting them at the end
       if (!dateA.isValid() && !dateB.isValid()) return 0;
       if (!dateA.isValid()) return 1;
       if (!dateB.isValid()) return -1;
 
-      // Sort latest to oldest (descending)
+      // latest to oldest
       return dateB.valueOf() - dateA.valueOf();
     });
 });
+
 
 // SDG Colors mapping
 const sdgColors = {
