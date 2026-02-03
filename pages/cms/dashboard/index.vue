@@ -289,7 +289,7 @@ const navigateTo = (url) => router.push(url);
             <div class="w-auto flex items-center lg:px-1.5">
               <!-- PROFILE IMAGE -->
               <div class="w-fit mx-auto">
-                <img :src="profileImageUrl" class="w-10 mx-auto" />
+                <img :src="profileImageUrl" class="lg:w-10 w-5 mx-auto" />
               </div>
               <p
                 class="text-white whitespace-nowrap lg:ml-5 ml-3 font-bold uppercase lg:text-sm text-xs"

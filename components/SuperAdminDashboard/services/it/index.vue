@@ -1,15 +1,79 @@
 <template>
-  <div class="lg:p-6 text-sm">
-    <h2 class="text-xl font-bold mb-4">NPCC Tech Support & IT Services</h2>
+  <div class="lg:p-1 text-sm">
+    <div class="lg:flex items-center justify-between">
+      <h2 class="lg:text-xl text-sm font-bold lg:mb-4">NPCC Tech Support & IT Services</h2>
+
+
+
+          <!-- Mood Icon Legend -->
+    <div
+      class="lg:flex hidden mb-4 p-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 shadow-sm"
+    >
+      <div
+        class="text-[10px] flex gap-x-6 gap-y-2 items-center justify-center text-xs"
+      >
+        <div class="flex items-center gap-1">
+          <div
+            class="w-6 h-6 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-md"
+          >
+            <span class="text-lg">😊</span>
+          </div>
+          <span class="font-medium text-gray-700">
+            New ticket (&lt; 24 hours)
+          </span>
+        </div>
+        <div class="flex items-center gap-1">
+          <div
+            class="w-6 h-6 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md"
+          >
+            <span class="text-lg">😐</span>
+          </div>
+          <span class="font-medium text-gray-700">
+            Aging ticket (24-48 hours)
+          </span>
+        </div>
+        <div class="flex items-center gap-1">
+          <div
+            class="w-6 h-6 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center shadow-md"
+          >
+            <span class="text-lg">☹️</span>
+          </div>
+          <span class="font-medium text-gray-700">
+            Overdue ticket (48+ hours, not done)
+          </span>
+        </div>
+        <div class="flex items-center gap-1">
+          <div
+            class="w-6 h-6 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center shadow-md"
+          >
+            <span class="text-lg">🏆</span>
+          </div>
+          <span class="font-medium text-gray-700"> Completed tickets </span>
+        </div>
+      </div>
+    </div>
+
+
+
+      <!-- Results Count & Real-time Indicator -->
+      <div class="mb-3 flex justify-between items-center">
+        <div class="text-xs text-green-800 font-semibold">
+          Showing {{ paginatedRequests.length }} of
+          {{ filteredRequests.length }} ticket(s)
+          <span class="font-bold uppercase">| {{ requests.length }} total</span>
+        </div>
+      </div>
+    </div>
 
     <!-- ACTION BAR -->
-    <div class="bg-white border rounded-lg p-4 mb-4 shadow-sm">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+    <div class="bg-white border rounded-lg py-1 px-2 mb-4 shadow-sm">
+      <div class="lg:flex grid grid-cols-2 gap-3 mb-3 w-full">
         <!-- Status Filter -->
-        <div>
+        <div class="w-full">
           <label class="text-xs font-semibold text-gray-700 mb-1 block"
-            >Status</label
-          >
+            >Status
+          </label>
+
           <select
             v-model="statusFilter"
             class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
@@ -22,7 +86,7 @@
         </div>
 
         <!-- Technician Filter -->
-        <div>
+        <div class="w-full">
           <label class="text-xs font-semibold text-gray-700 mb-1 block"
             >Technician</label
           >
@@ -42,7 +106,7 @@
         </div>
 
         <!-- Search Filter -->
-        <div>
+        <div class="w-full">
           <label class="text-xs font-semibold text-gray-700 mb-1 block"
             >Search</label
           >
@@ -55,7 +119,7 @@
         </div>
 
         <!-- Date Range Filter -->
-        <div>
+        <div class="w-full">
           <label class="text-xs font-semibold text-gray-700 mb-1 block"
             >Date Range</label
           >
@@ -70,80 +134,28 @@
             <option value="year">This Year</option>
           </select>
         </div>
-      </div>
 
-      <div class="flex justify-between items-center">
-        <button
-          @click="clearFilters"
-          class="text-xs text-gray-600 hover:text-gray-800 underline"
-        >
-          Clear Filters
-        </button>
-        <button
-          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 whitespace-nowrap text-sm font-semibold shadow-sm"
-          @click="openCreateModal"
-        >
-          <i class="fa fa-plus mr-1"></i> Walk-in Ticket
-        </button>
+        <div class="lg:w-fit w-full flex justify-between items-center">
+          <button
+            @click="clearFilters"
+            class="lg:mt-5 w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 whitespace-nowrap lg:text-sm text-xs font-semibold shadow-sm"
+          >
+            Clear Filters
+          </button>
+        </div>
+
+        <div class="w-full flex justify-between items-center">
+          <button
+            class="lg:mt-5 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 whitespace-nowrap lg:text-sm text-xs font-semibold shadow-sm "
+            @click="openCreateModal"
+          >
+            <i class="fa fa-plus mr-1"></i> Walk-in Ticket
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Results Count & Real-time Indicator -->
-    <div class="mb-3 flex justify-between items-center">
-      <div class="text-sm text-gray-600 font-semibold">
-        Showing {{ paginatedRequests.length }} of
-        {{ filteredRequests.length }} ticket(s)
-        <span class="text-gray-400">({{ requests.length }} total)</span>
-      </div>
-    </div>
 
-    <!-- Mood Icon Legend -->
-    <div
-      class="mb-4 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 shadow-sm"
-    >
-      <div
-        class="flex flex-wrap gap-x-6 gap-y-2 items-center justify-center text-xs"
-      >
-        <div class="flex items-center gap-2">
-          <div
-            class="w-6 h-6 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-md"
-          >
-            <span class="text-lg">😊</span>
-          </div>
-          <span class="font-medium text-gray-700">
-            New ticket (&lt; 24 hours)
-          </span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div
-            class="w-6 h-6 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md"
-          >
-            <span class="text-lg">😐</span>
-          </div>
-          <span class="font-medium text-gray-700">
-            Aging ticket (24-48 hours)
-          </span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div
-            class="w-6 h-6 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center shadow-md"
-          >
-            <span class="text-lg">☹️</span>
-          </div>
-          <span class="font-medium text-gray-700">
-            Overdue ticket (48+ hours, not done)
-          </span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div
-            class="w-6 h-6 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center shadow-md"
-          >
-            <span class="text-lg">🏆</span>
-          </div>
-          <span class="font-medium text-gray-700"> Completed tickets </span>
-        </div>
-      </div>
-    </div>
 
     <!-- ================= DATE LIST TABLE HEADER ================= -->
     <div
@@ -341,7 +353,7 @@
           "
           @click="openModal(item)"
         >
-          <div class="lg:w-6/12 w-full px-3 text-left font-semibold">
+          <div class="lg:w-6/12 w-full px-3 text-left text-xs">
             {{ item.ticket_id }}
           </div>
 
@@ -457,9 +469,10 @@
     <!-- ================= PAGINATION ================= -->
     <div
       v-if="totalPages > 1"
-      class="mt-6 flex justify-center items-center gap-2"
+      class="mt-6 gap-2"
     >
-      <!-- First Page -->
+<div class="flex justify-center items-center gap-2">
+        <!-- First Page -->
       <button
         @click="goToPage(1)"
         :disabled="currentPage === 1"
@@ -515,9 +528,10 @@
       >
         <i class="fa fa-angle-double-right"></i>
       </button>
+</div>
 
       <!-- Page Info -->
-      <div class="ml-4 text-sm text-gray-600 font-medium">
+      <div class="ml-4 text-sm text-gray-600 font-medium w-full text-center py-2">
         Page {{ currentPage }} of {{ totalPages }}
       </div>
     </div>
@@ -560,7 +574,7 @@
               @click="closeModal"
               :disabled="modalLoading"
             >
-             <i class="fa fa-times"></i>
+              <i class="fa fa-times"></i>
             </button>
           </div>
 
@@ -597,8 +611,8 @@
               </div>
 
               <div class="md:col-span-2">
-                <label class="text-sm font-semibold mb-1 block"
-                  >Assigned Personnel / Technician / Resolved By</label
+                <label class="text-sm font-semibold mb-1 block">
+                  Assigned Personnel / Technician / Resolved By</label
                 >
                 <div class="border rounded flex flex-wrap">
                   <label
