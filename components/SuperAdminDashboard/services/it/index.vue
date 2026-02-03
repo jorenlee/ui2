@@ -539,10 +539,10 @@
     <!-- MODAL -->
     <div
       v-if="showModal"
-      class="fixed inset-0 bg-black/40 flex justify-center items-center z-50"
+      class="fixed inset-0 bg-black/40 flex justify-center items-center z-50 lg:px-0 px-2"
     >
       <div
-        class="bg-white w-11/12 rounded-lg p-6 h-5/6 overflow-y-auto relative"
+        class="bg-white lg:w-11/12 rounded-lg lg:p-6 py-2 h-5/6 overflow-y-auto relative px-2"
       >
         <!-- Loading Overlay -->
         <div
@@ -555,7 +555,7 @@
             <div
               class="inline-block h-16 w-16 animate-spin rounded-full border-4 border-solid border-green-600 border-r-transparent"
             ></div>
-            <p class="mt-4 text-base font-bold text-gray-800">
+            <p class="mt-4 lg:text-sm text-xs font-bold text-gray-800">
               {{ isCreate ? "Creating ticket..." : "Saving changes..." }}
             </p>
             <p class="mt-1 text-xs text-gray-600">
@@ -564,8 +564,8 @@
           </div>
         </div>
         <div v-if="!modalLoading">
-          <div class="flex items-center pb-5">
-            <h3 class="text-lg font-bold text-center w-full">
+          <div class="flex lg:text-sm text-xs items-center lg:pb-5 pb-2">
+            <h3 class="font-bold text-center w-full">
               {{ isCreate ? "Create Ticket (Job Request)" : "Ticket Details" }}
             </h3>
 
@@ -579,31 +579,30 @@
           </div>
 
           <!-- BASIC INFO -->
-          <div class="border rounded p-4 mb-4">
-            <h4 class="font-semibold mb-2">Basic Information</h4>
+          <div class="border rounded p-2 mb-2">
             <div class="gap-3">
-              <div class="lg:flex w-full gap-x-2 mb-4">
+              <div class="lg:flex w-full gap-x-2 mb-2 lg:space-y-0 space-y-2">
                 <div class="w-full">
-                  <label class="text-sm font-semibold mb-1 block"
+                  <label class="text-xs  mb-1 block"
                     >Full Name / Requestor</label
                   >
                   <input
                     v-model="info.requestor_fullname"
                     placeholder="Full Name"
-                    class="input w-full p-2 rounded border"
+                    class="input w-full px-2 py-1 rounded border text-xs"
                     :disabled="!isCreate"
                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   />
                 </div>
 
                 <div class="w-full">
-                  <label class="text-sm font-semibold mb-1 block"
+                  <label class="text-xs  mb-1 block"
                     >Requestor LSU Email</label
                   >
                   <input
                     v-model="info.requestor_lsu_email"
                     placeholder="e.g johndoe@lsu.edu.ph"
-                    class="input w-full p-2 rounded border"
+                    class="input w-full px-2 py-1 rounded border text-xs"
                     :disabled="!isCreate"
                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   />
@@ -611,14 +610,13 @@
               </div>
 
               <div class="md:col-span-2">
-                <label class="text-sm font-semibold mb-1 block">
-                  Assigned Personnel / Technician / Resolved By</label
-                >
+                <label class="text-xs  mb-1 block">
+                  Assigned Personnel</label>
                 <div class="border rounded flex flex-wrap">
                   <label
                     v-for="tech in TECHNICIANS_PERSONNEL"
                     :key="tech"
-                    class="flex items-center gap-x-2 text-sm cursor-pointer lg:w-4/12 w-full whitespace-nowrap p-2 rounded leading-0 shadow"
+                    class="flex items-center gap-x-2 text-xs cursor-pointer lg:w-4/12 w-full whitespace-nowrap py-1 px-2 rounded leading-0 shadow"
                   >
                     <input
                       type="checkbox"
@@ -634,17 +632,17 @@
           </div>
 
           <!-- ITEM REQUEST -->
-          <div class="border rounded-lg p-4 mb-4 bg-gray-50">
-            <h4 class="font-semibold mb-3">
-              Material Use / Device / Hardware / Software
+          <div class="border rounded-lg p-2 mb-2 bg-gray-50">
+            <h4 class="text-center text-xs mb-1">
+              {{ isCreate ? "Add Details or Concerns" : "Details or Concerns" }}
             </h4>
 
             <div
               v-for="(item, index) in info.item_request"
               :key="index"
-              class="border rounded p-4 mb-4 bg-white"
+              class="border rounded p-1 mb-4 bg-white"
             >
-              <div class="flex justify-between items-center mb-2">
+              <div class="flex justify-between items-center mb-1">
                 <h5 class="font-semibold text-sm uppercase">
                   Item #{{ index + 1 }}
                 </h5>
@@ -656,16 +654,16 @@
                 </button>
               </div>
 
-              <div class="grid grid-cols-2 gap-x-2 text-sm">
+              <div class="grid lg:grid-cols-2 gap-x-2 text-sm">
                 <!-- CATEGORY & NAME -->
-                <div class="w-full flex gap-x-2">
-                  <div class="w-full mb-3">
-                    <label class="block font-semibold mb-0.5"
+                <div class="w-full lg:flex gap-x-2">
+                  <div class="w-full mb-1">
+                    <label class="block text-xs mb-0.5"
                       >Tech Type <span class="text-red-600">*</span></label
                     >
                     <select
                       v-model="item.category_type"
-                      class="input rounded border p-2 w-full"
+                      class="input rounded border px-2 py-1 w-full text-xs"
                       @change="item.item_type = ''"
                     >
                       <option disabled value="">Select Category</option>
@@ -679,28 +677,28 @@
                     </select>
                   </div>
 
-                  <div class="w-full mb-3">
-                    <label class="block font-semibold mb-0.5"
-                      >Item Name <span class="text-red-600">*</span></label
+                  <div class="w-full mb-1">
+                    <label class="block text-xs mb-0.5"
+                      >Concern or Request <span class="text-red-600">*</span></label
                     >
                     <input
                       v-model="item.name"
-                      class="input rounded border p-2 w-full"
+                      class="input rounded border text-xs px-2 py-1 w-full"
                       placeholder="Item Name"
                     />
                   </div>
                 </div>
 
                 <!-- OFFICE -->
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5"
-                    >Office / Room / Center / Location / Area
+                <div class="w-full mb-1">
+                  <label class="block text-xs mb-0.5"
+                    >Office or Area
                     <span class="text-red-600">*</span></label
                   >
                   <div class="flex">
                     <select
                       v-model="item.center_office_room"
-                      class="input border w-full p-2 rounded"
+                      class="input border w-full rounded text-xs px-2 py-1"
                     >
                       <option disabled value="">Select Location</option>
                       <option
@@ -722,14 +720,14 @@
                 </div>
 
                 <!-- ITEM TYPE & QUANTITY -->
-                <div class="w-full flex gap-x-2">
-                  <div class="w-full mb-3">
-                    <label class="block font-semibold mb-0.5"
+                <div class="w-full lg:flex gap-x-2">
+                  <div class="w-full mb-1">
+                    <label class="block mb-0.5 text-xs"
                       >Specific Type</label
                     >
                     <select
                       v-model="item.item_type"
-                      class="input rounded border p-2 w-full"
+                      class="input rounded border text-xs px-2 py-1 w-full"
                       :disabled="!item.category_type"
                     >
                       <option disabled value="">
@@ -751,39 +749,35 @@
                     </select>
                   </div>
 
-                  <div class="w-full mb-3">
-                    <label class="block font-semibold mb-0.5">Quantity</label>
+                  <div class="w-full mb-1">
+                    <label class="block mb-0.5 text-xs">Quantity</label>
                     <input
                       v-model.number="item.quantity"
                       type="number"
                       min="1"
                       placeholder="Quantity"
                       @input="item.quantity = Math.max(1, item.quantity)"
-                      class="input rounded border p-2 w-full"
+                      class="input rounded border px-2 py-1 w-full text-xs"
                     />
                   </div>
                 </div>
 
                 <!-- SERIAL & STATUS -->
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5"
-                    >Serial / Code</label
-                  >
+                <div class="w-full mb-1">
+                  <label class="block text-xs mb-0.5">Serial / Code</label>
                   <input
                     v-model="item.serial_number_code"
-                    class="input rounded border p-2 w-full"
+                    class="input text-xs rounded border px-2 py-1 w-full"
                     placeholder="Serial / Code"
                   />
                 </div>
 
-                <div class="w-full flex gap-x-2">
-                  <div class="w-full mb-3">
-                    <label class="block font-semibold mb-0.5"
-                      >Current Semester</label
-                    >
+                <div class="w-full lg:flex gap-x-2">
+                  <div class="w-full mb-1">
+                    <label class="block text-xs mb-0.5">Current Semester</label>
                     <select
                       v-model="item.current_semester"
-                      class="input rounded border p-2 w-full"
+                      class="input rounded text-xs border px-2 py-1 w-full"
                     >
                       <option disabled value="">Select Semester</option>
                       <option
@@ -803,13 +797,13 @@
                     />
                   </div>
 
-                  <div class="w-full mb-3">
-                    <label class="block font-semibold mb-0.5"
+                  <div class="w-full mb-1">
+                    <label class="block text-xs mb-0.5"
                       >Academic Year</label
                     >
                     <select
                       v-model="item.academic_year"
-                      class="input rounded border p-2 w-full"
+                      class="input rounded border px-2 py-1 text-xs w-full"
                     >
                       <option disabled value="">Select Academic Year</option>
                       <option
@@ -824,30 +818,30 @@
                     <input
                       v-if="item.academic_year === 'OTHER'"
                       v-model="item.custom_academic_year"
-                      class="input rounded border p-2 w-full mt-1"
+                      class="input rounded border text-xs px-2 py-1 w-full mt-1"
                       placeholder="e.g. A.Y 2018 - 2019"
                     />
                   </div>
                 </div>
 
-                <div class="w-full flex gap-x-2">
-                  <div class="w-full mb-3">
-                    <label class="block font-semibold mb-0.5"
+                <div class="w-full lg:flex gap-x-2">
+                  <div class="w-full mb-1">
+                    <label class="block text-xs mb-0.5"
                       >Date Checked</label
                     >
                     <input
                       type="text"
                       v-model="item.date_checked"
-                      class="input rounded border p-2 w-full"
+                      class="input rounded border px-2 py-1 w-full text-xs"
                       placeholder="DD/MM/YYYY hh:mm AM/PM"
                     />
                   </div>
 
-                  <div class="w-full mb-3">
-                    <label class="block font-semibold mb-0.5">Status</label>
+                  <div class="w-full mb-1">
+                    <label class="block mb-0.5 text-xs">Status</label>
                     <select
                       v-model="item.status"
-                      class="input rounded border p-2 w-full"
+                      class="input rounded border px-2 py-1 w-full text-xs"
                     >
                       <option disabled value="">Select Status</option>
                       <option v-for="s in STATUS_OPTIONS" :key="s" :value="s">
@@ -858,26 +852,26 @@
                     <input
                       v-if="item.status === 'OTHER'"
                       v-model="item.custom_status"
-                      class="input rounded border p-2 w-full mt-1"
+                      class="input rounded border px-2 py-1 w-full mt-1 text-xs"
                       placeholder="Enter custom status"
                     />
                   </div>
                 </div>
 
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5">Details</label>
+                <div class="w-full mb-1">
+                  <label class="block mb-0.5 text-xs">Details</label>
                   <textarea
                     v-model="item.details"
-                    class="input rounded border px-2 py-2.5 w-full"
+                    class="input rounded border text-xs px-2 py-1 w-full"
                     placeholder="Details (Brand, Model, Specs, etc.)"
                     rows="1"
                   />
                 </div>
-                <div class="w-full mb-3">
-                  <label class="block font-semibold mb-0.5">Remarks</label>
+                <div class="w-full mb-1">
+                  <label class="block mb-0.5 text-xs">Remarks</label>
                   <textarea
                     v-model="item.remarks"
-                    class="input rounded border px-2 py-2.5 w-full"
+                    class="input rounded border text-xs px-2 py-1 w-full"
                     rows="1"
                     placeholder="Remarks"
                   />
@@ -886,7 +880,7 @@
             </div>
 
             <button
-              class="w-6/12 mx-auto block mt-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+              class="w-auto mx-auto block mt-2 bg-purple-600 text-white px-4 py-1 rounded hover:bg-purple-700 whitespace-nowrap"
               @click.stop="addItem"
             >
               + Add Another Item
@@ -963,7 +957,7 @@
           </div>
 
           <!-- ACTIONS -->
-          <div class="flex justify-end gap-3">
+          <div class="flex justify-between gap-3 mt-10">
             <button
               class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 font-semibold"
               @click="closeModal"
