@@ -1,16 +1,4 @@
-<script setup>
-
-// Optional: show toggle (for L, S, U content if still used)
-const show = reactive({
-  L: false,
-  S: false,
-  U: false,
-});
-const toggle = (letter) => {
-  show[letter] = !show[letter];
-};
-
-</script>
+<script setup></script>
 
 <template>
   <div class="bg-gray-50">
@@ -53,174 +41,170 @@ const toggle = (letter) => {
       </div>
       <div class="my-5">
         <div class="w-full justify-center flex items-center">
+          <div class="">
+            <div
+              class="w-full max-w-7xl bg-[#fff] shadow-md lg:rounded-lg overflow-hidden relative"
+            >
               <div class="">
+                <!-- Left Side: Header and Logo -->
                 <div
-                  class="w-full max-w-7xl bg-[#fff] shadow-md lg:rounded-lg overflow-hidden relative"
+                  class="w-full lg:w-3/10 flex flex-col justify-center items-center lg:py-5 py-3 relative bg-gray-50 border-gray-200"
                 >
-                  <div class="">
-                    <!-- Left Side: Header and Logo -->
-                    <div
-                      class="w-full lg:w-3/10 flex flex-col justify-center items-center lg:py-5 py-3 relative bg-gray-50 border-gray-200"
+                  <div class="relative text-center">
+                    <img
+                      src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/lsu-c-v.png"
+                      alt="La Salle University Logo"
+                      class="lg:w-3/12 w-6/12 h-auto object-contain my-2 mx-auto"
+                    />
+                    <!-- <h1 class="text-[#008028] text-4xl font-medium my-2">La Salle University</h1> -->
+                    <h2
+                      class="text-[#008028] text-xl font-bold uppercase tracking-wider"
                     >
-                      <div class="relative text-center">
-                        <img
-                          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/lsu-c-v.png"
-                          alt="La Salle University Logo"
-                          class="lg:w-3/12 w-6/12 h-auto object-contain my-2 mx-auto"
-                        />
-                        <!-- <h1 class="text-[#008028] text-4xl font-medium my-2">La Salle University</h1> -->
-                        <h2
-                          class="text-[#008028] text-xl font-bold uppercase tracking-wider"
-                        >
-                          EDUCATION POLICY
-                        </h2>
-                      </div>
-                      <!-- Background image overlay -->
-                      <div
-                        class="absolute inset-0 opacity-20 pointer-events-none"
-                      ></div>
-                    </div>
-
-                    <!-- Right Side: Content -->
-                    <div
-                      class="w-full px-5 lg:py-5 py-2 relative overflow-y-auto"
-                    >
-                      <!-- Introduction Paragraph -->
-                      <p
-                        class="lg:text-xs text-[10px] text-gray-800 mb-2 text-justify"
-                      >
-                        La Salle University stands at the forefront of
-                        cultivating a vibrant learning community guided by
-                        Gospel values within the region. Our active engagement
-                        in societal transformation is driven by a commitment to
-                        innovative education, rigorous research, and robust
-                        community extension services, all rooted in the rich
-                        tradition of Lasallian values. We tirelessly strive for
-                        the betterment of society by imparting knowledge that
-                        goes beyond the academic realm, including the
-                        responsible management and dissemination of intellectual
-                        property generated through research and innovation.
-                      </p>
-
-                      <div class="flex gap-x-4 mb-3">
-                        <!-- L Section -->
-                        <div
-                          class="shadow-md text-center text-green-900 w-full cursor-pointer hover:bg-green-100"
-                          @click="toggle('L')"
-                        >
-                          <div
-                            class="lg:text-6xl text-3xl font-bold text-[#008028] leading-none flex items-start justify-center"
-                          >
-                            L
-                          </div>
-                          <i
-                            class="fa fa-angle-double-down text-[10px] lg:-mt-1 mb-1 block text-gray-200"
-                            aria-hidden="true"
-                          ></i>
-                        </div>
-
-                        <!-- S Section -->
-                        <div
-                          class="shadow-md text-center text-green-900 w-full cursor-pointer hover:bg-green-100"
-                          @click="toggle('S')"
-                        >
-                          <div
-                            class="lg:text-6xl text-3xl font-bold text-[#008028] leading-none flex items-start justify-center"
-                          >
-                            S
-                          </div>
-                          <i
-                            class="fa fa-angle-double-down text-[10px] lg:-mt-1 mb-1 block text-gray-200"
-                            aria-hidden="true"
-                          ></i>
-                        </div>
-
-                        <!-- U Section -->
-                        <div
-                          class="shadow-md text-center text-green-900 w-full cursor-pointer hover:bg-green-100"
-                          @click="toggle('U')"
-                        >
-                          <div
-                            class="lg:text-6xl text-3xl font-bold text-[#008028] leading-none flex items-start justify-center"
-                          >
-                            U
-                          </div>
-                          <i
-                            class="fa fa-angle-double-down text-[10px] lg:-mt-1 mb-1 block text-gray-200"
-                            aria-hidden="true"
-                          ></i>
-                        </div>
-                      </div>
-
-                      <div v-show="show.L" class="flex-1 mb-3">
-                        <p class="text-xs text-[#008028] text-justify m-0">
-                          <span class="font-bold">L</span>ifelong learning is
-                          our passion. We are dedicated to delivering
-                          outstanding learning experiences across all
-                          educational levels. We prioritize learners' and
-                          stakeholders' satisfaction while ensuring compliance
-                          with relevant regulations.
-                        </p>
-                      </div>
-                      <div v-show="show.S" class="flex-1 mb-3">
-                        <p class="text-xs text-[#008028] text-justify m-0">
-                          <span class="font-bold">S</span>ervice to the Almighty
-                          and society is a calling. By integrating Gospel values
-                          into our educational fabric, we aim to instill a
-                          strong moral compass in our students, empowering them
-                          to make meaningful contributions to their communities.
-                          Our holistic and pragmatic approach, combining
-                          academic rigor with a focus on societal
-                          responsibility, positions La Salle University as a
-                          trailblazer in shaping well-rounded individuals poised
-                          to impact the world positively.
-                        </p>
-                      </div>
-
-                      <div v-show="show.U" class="flex-1 mb-3">
-                        <p class="text-xs text-[#008028] text-justify m-0">
-                          <span class="font-bold">U</span>nwavering excellence
-                          is our commitment. LSU strives to be abreast with the
-                          appropriate scientific and technological developments,
-                          adhere to the ethical conduct of educational research,
-                          and support an inclusive and sustainable society. We
-                          shall continually improve the efficiency of our
-                          management systems, including the processes for
-                          protecting and promoting intellectual property, as
-                          well as the evaluation and expansion of community
-                          extension programs, ensuring the consistent
-                          advancement of the institution.
-                        </p>
-                      </div>
-
-                      <!-- Footer with Document Info and Signature -->
-                      <footer
-                        class="flex flex-col md:flex-row justify-between items-start md:items-end mt-3 lg:pt-4 pt-2 border-t border-gray-200"
-                      >
-                        <div class="text-left lg:mt-4 mt-2 md:mt-0">
-                          <p
-                            class="text-[10px] font-bold text-[#008028] whitespace-nowrap"
-                          >
-                            (SGD) BR. REY E. MEJIAS FSC
-                          </p>
-                          <p class="text-xs text-gray-700">
-                            University President
-                          </p>
-                        </div>
-                        <div class="w-full">
-                          <p
-                            class="text-right text-gray-500 lg:text-[10px] text-[7px]"
-                          >
-                            ECM PO-01, REV. 01
-                          </p>
-                        </div>
-                      </footer>
-                    </div>
+                      EDUCATION POLICY
+                    </h2>
                   </div>
+                  <!-- Background image overlay -->
+                  <div
+                    class="absolute inset-0 opacity-20 pointer-events-none"
+                  ></div>
+                </div>
+
+                <!-- Right Side: Content -->
+                <div class="w-full lg:py-5 py-2 relative overflow-y-auto">
+                  <!-- Right Side: Content -->
+                  <div
+                    class="w-full px-5 lg:py-5 py-2 relative overflow-y-auto"
+                  >
+                    <!-- Intro -->
+                    <p
+                      class="text-sm lg:text-base text-gray-700 leading-relaxed mb-4"
+                    >
+                      La Salle University stands at the forefront of cultivating
+                      a vibrant learning community guided by Gospel values
+                      within the region. Our active engagement in societal
+                      transformation is driven by a commitment to innovative
+                      education, rigorous research, and robust community
+                      extension services, all rooted in the rich tradition of
+                      Lasallian values.
+                    </p>
+
+                    <p
+                      class="text-sm lg:text-base text-gray-700 leading-relaxed mb-6"
+                    >
+                      We strive to improve society by imparting knowledge that
+                      extends beyond academia, including the responsible
+                      management and dissemination of research-generated
+                      intellectual property.
+                    </p>
+
+                    <!-- Lifelong Learning -->
+                    <div class="flex gap-3 mb-5">
+                      <span
+                        class="text-[#008028] font-extrabold text-3xl leading-none"
+                        >L</span
+                      >
+                      <p
+                        class="text-sm lg:text-base text-gray-700 leading-relaxed"
+                      >
+                        <span class="font-semibold text-[#008028]">
+                          Lifelong learning is our passion.
+                        </span>
+                        We dedicate ourselves to delivering outstanding learning
+                        services across all educational levels. We prioritize
+                        learners’ and stakeholders’ satisfaction while ensuring
+                        compliance with relevant regulations.
+                      </p>
+                    </div>
+
+                    <!-- Service -->
+                    <div class="flex gap-3 mb-5">
+                      <span
+                        class="text-[#008028] font-extrabold text-3xl leading-none"
+                        >S</span
+                      >
+                      <p
+                        class="text-sm lg:text-base text-gray-700 leading-relaxed"
+                      >
+                        <span class="font-semibold text-[#008028]">
+                          Service to the Almighty and society is our calling.
+                        </span>
+                        We aim to instill a strong moral compass in our
+                        students, empowering them to make meaningful
+                        contributions to their communities by integrating Gospel
+                        values into our educational fabric.
+                      </p>
+                    </div>
+
+                    <p
+                      class="text-sm lg:text-base text-gray-700 leading-relaxed mb-6"
+                    >
+                      Our holistic and pragmatic approach—combining academic
+                      rigor with a focus on societal responsibility—positions La
+                      Salle University as a trailblazer in shaping well-rounded
+                      individuals poised to impact the world positively.
+                    </p>
+
+                    <!-- Unwavering Excellence -->
+                    <div class="flex gap-3 mb-6">
+                      <span
+                        class="text-[#008028] font-extrabold text-3xl leading-none"
+                        >U</span
+                      >
+                      <p
+                        class="text-sm lg:text-base text-gray-700 leading-relaxed"
+                      >
+                        <span class="font-semibold text-[#008028]">
+                          Unwavering excellence is our commitment.
+                        </span>
+                        We strive to stay abreast of relevant scientific and
+                        technological developments, adhere to ethical standards
+                        in educational research, and support an inclusive and
+                        sustainable society.
+                      </p>
+                    </div>
+
+                    <p
+                      class="text-sm lg:text-base text-gray-700 leading-relaxed mb-6"
+                    >
+                      We shall continually improve the efficiency of our
+                      management systems, including the protection and promotion
+                      of intellectual property, proactive institutional risk
+                      management to ensure continuity and resilience, informed
+                      decision-making, and the evaluation and expansion of
+                      community extension programs to ensure the consistent
+                      advancement of the institution.
+                    </p>
+
+                    <!-- Footer with Document Info and Signature -->
+                    <footer
+                      class="flex flex-col md:flex-row justify-between items-start md:items-end mt-6 pt-4 border-t border-gray-200"
+                    >
+                      <div class="text-left">
+                        <p
+                          class="text-[10px] font-bold text-[#008028] whitespace-nowrap"
+                        >
+                          (SGD) BR. REY E. MEJIAS FSC
+                        </p>
+                        <p class="text-xs text-gray-700">
+                          University President
+                        </p>
+                      </div>
+                      <div class="w-full">
+                        <p
+                          class="text-right text-gray-500 lg:text-[10px] text-[7px]"
+                        >
+                          ECM PO-01, REV. 02
+                        </p>
+                      </div>
+                    </footer>
+                  </div>
+
+               
                 </div>
               </div>
             </div>
-
+          </div>
+        </div>
       </div>
     </div>
     <Footer />
