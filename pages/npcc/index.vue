@@ -48,7 +48,6 @@
       </div>
     </div>
 
-
     <!-- MAIN CONTENT -->
     <div class="w-11/12 mx-auto lg:py-12 py-5 space-y-10">
       <!-- ABOUT + CTA -->
