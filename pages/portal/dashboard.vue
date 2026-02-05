@@ -45,7 +45,10 @@ const filteredMenuList = computed(() => {
   <div class="">
     <!-- <UniversityDashboard /> -->
 
-    <div v-if="currentView === 'Logout'" class="p-4 flex flex-col items-center justify-center gap-4 h-screen">
+    <div
+      v-if="currentView === 'Logout'"
+      class="p-4 flex flex-col items-center justify-center gap-4 h-screen"
+    >
       <!-- Card -->
       <div
         class="w-full max-w-sm bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-5 text-center shadow-lg lg:-mt-32"
@@ -85,19 +88,16 @@ const filteredMenuList = computed(() => {
       </div>
     </div>
 
-                  <div class="w-full p-4" v-if="currentView === 'Profile'">
-            <SuperAdminDashboardWelcome />
-          </div>
+    <div class="w-full p-4" v-if="currentView === 'Profile'">
+      <SuperAdminDashboardWelcome />
+    </div>
 
     <!-- Menu -->
     <div v-else-if="currentView === 'Menu'" class="p-4 text-green-900">
       <div>
-
         <UniversityPortalITServicesList />
       </div>
     </div>
-
-
 
     <div>
       <!-- BOTTOM NAV -->

@@ -610,10 +610,11 @@
                   <label
                     v-for="tech in TECHNICIANS_PERSONNEL"
                     :key="tech.email"
-                    class="flex items-center gap-x-2 text-xs lg:w-4/12 w-full whitespace-nowrap py-1 px-2 rounded leading-0 shadow"
+                    class="flex items-center gap-x-2 text-xs lg:w-4/12 w-full whitespace-nowrap py-1 px-2 rounded leading-0 shadow transition-all"
                     :class="{
                       'cursor-pointer': !info.ticket_locked_by_email || isAssignedTechnician,
-                      'cursor-not-allowed opacity-50': info.ticket_locked_by_email && !isAssignedTechnician
+                      'cursor-not-allowed opacity-50': info.ticket_locked_by_email && !isAssignedTechnician,
+                      'bg-green-50 border-2 border-green-500 font-semibold': tech.email === userStore.user?.email
                     }"
                   >
                     <input
@@ -623,7 +624,12 @@
                       :disabled="info.ticket_locked_by_email && !isAssignedTechnician"
                       class="accent-blue-600"
                     />
-                    <span>{{ tech.name }}</span>
+                    <span :class="{ 'text-green-700': tech.email === userStore.user?.email }">
+                      {{ tech.name }}
+                      <span v-if="tech.email === userStore.user?.email" class="text-green-600 ml-1">
+                        (You)
+                      </span>
+                    </span>
                     <i v-if="info.technicians_assigned?.some(t => t.email === tech.email) && info.ticket_locked_by_email"
                        class="fas fa-lock text-orange-500 text-xs ml-1"></i>
                   </label>
@@ -649,45 +655,11 @@
             </h4>
             <div class="border rounded p-2 mb-2 bg-white">
               <div class="grid lg:grid-cols-2 gap-x-2 text-sm">
-                <!-- OFFICE -->
+                <!-- 1. CATEGORY -->
                 <div class="w-full mb-1">
                   <label class="block text-xs mb-0.5"
-                    >Office or Area 
-                    
-                     <span v-if="isCreate" class="text-red-600">*</span>
-                    
-                    </label
+                    >Category           <span v-if="isCreate" class="text-red-600">*</span> </label
                   >
-                  <div class="flex">
-                    <select
-                      v-model="info.issue_concern_request_center_office_room"
-                      class="input border w-full rounded text-xs px-2 py-1"
-                       :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
-                    >
-                      <option disabled value="">Select Location</option>
-                      <option
-                        v-for="office in CENTER_OFFICE_ROOM_OPTIONS"
-                        :key="office"
-                        :value="office"
-                      >
-                        {{ office }}
-                      </option>
-                    </select>
-
-                    <input
-                      v-if="info.issue_concern_request_center_office_room === 'OTHER'"
-                      v-model="customOffice"
-                      class="input rounded border ml-2 flex-1 px-2 py-1 text-xs"
-                      placeholder="Specific or Exact"
-                    />
-                  </div>
-                </div>
-
-                <!-- TECH TYPE -->
-                <div class="w-full mb-1">
-                  <label class="block text-xs mb-0.5"
-                    >Tech Type           <span v-if="isCreate" class="text-red-600">*</span> </label
-                  > 
                   <select
                     v-model="info.issue_concern_request_category_type"
                     class="input rounded border px-2 py-1 w-full text-xs"
@@ -705,10 +677,10 @@
                   </select>
                 </div>
 
-                <!-- SPECIFIC TYPE -->
+                <!-- 2. SPECIFIC CONCERN -->
                 <div class="w-full mb-1">
                   <label class="block mb-0.5 text-xs"
-                    >Specific Type           <span v-if="isCreate" class="text-red-600">*</span> </label
+                    >Specific Concern           <span v-if="isCreate" class="text-red-600">*</span> </label
                   >
                   <select
                     v-model="info.issue_concern_request_item_type"
@@ -735,22 +707,24 @@
                   </select>
                 </div>
 
-                <!-- OWNER TYPE -->
-                <div class="w-full mb-1">
-                  <label class="block text-xs mb-0.5">Owner Type           <span v-if="isCreate" class="text-red-600">*</span></label>
-                  <select
-                    v-model="info.owner_type"
-                    class="input rounded border px-2 py-1 w-full text-xs"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                <!-- 3. DESCRIPTION -->
+                <div class="w-full mb-1 lg:col-span-2">
+                  <label class="block mb-0.5 text-xs"
+                    >Details / Description
+                              <span v-if="isCreate" class="text-red-600">*</span> </label
                   >
-                    <option value="LSU">LSU</option>
-                    <option value="Personal">Personal</option>
-                  </select>
+                  <textarea
+                    v-model="info.issue_concern_request_details"
+                    class="input rounded border text-xs px-2 py-1 w-full"
+                    placeholder="Describe the issue, concern, or request in detail..."
+                    rows="3"
+                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                  />
                 </div>
 
-                <!-- CLIENT ROLE -->
+                <!-- 4. REQUESTOR ROLE (formerly Client Role) -->
                 <div class="w-full mb-1">
-                  <label class="block text-xs mb-0.5">Client Role</label>
+                  <label class="block text-xs mb-0.5">Requestor Role</label>
                   <select
                     v-model="info.client_role"
                     class="input rounded border px-2 py-1 w-full text-xs"
@@ -766,19 +740,51 @@
                   </select>
                 </div>
 
-                <!-- DETAILS -->
-                <div class="w-full mb-1 lg:col-span-2">
-                  <label class="block mb-0.5 text-xs"
-                    >Details / Description
-                              <span v-if="isCreate" class="text-red-600">*</span> </label
+                <!-- 5. CENTER/OFFICE/ROOM -->
+                <div class="w-full mb-1">
+                  <label class="block text-xs mb-0.5">
+                    {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Center/Office/Room' }}
+                     <span v-if="isCreate" class="text-red-600">*</span>
+                    </label
                   >
-                  <textarea
-                    v-model="info.issue_concern_request_details"
-                    class="input rounded border text-xs px-2 py-1 w-full"
-                    placeholder="Describe the issue, concern, or request in detail..."
-                    rows="3"
+                  <div class="flex">
+                    <select
+                      v-model="info.issue_concern_request_center_office_room"
+                      class="input border w-full rounded text-xs px-2 py-1"
+                       :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    >
+                      <option disabled value="">
+                        {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Select Computer Lab' : 'Select Location' }}
+                      </option>
+                      <option
+                        v-for="office in getLocationOptions"
+                        :key="office"
+                        :value="office"
+                      >
+                        {{ office }}
+                      </option>
+                    </select>
+
+                    <input
+                      v-if="info.issue_concern_request_center_office_room === 'OTHER'"
+                      v-model="customOffice"
+                      class="input rounded border ml-2 flex-1 px-2 py-1 text-xs"
+                      placeholder="Specific or Exact"
+                    />
+                  </div>
+                </div>
+
+                <!-- 6. OWNER TYPE -->
+                <div class="w-full mb-1">
+                  <label class="block text-xs mb-0.5">Owner Type           <span v-if="isCreate" class="text-red-600">*</span></label>
+                  <select
+                    v-model="info.owner_type"
+                    class="input rounded border px-2 py-1 w-full text-xs"
                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
-                  />
+                  >
+                    <option value="LSU">LSU</option>
+                    <option value="Personal">Personal</option>
+                  </select>
                 </div>
 
                 <!-- BUY ME COFFEE -->
@@ -1020,8 +1026,42 @@ const CATEGORY_OPTIONS = [
   "Hardware",
   "Software",
   "Network",
-  "Computer Peripherals",
+  "Computer Lab",
+  "Accounts",
+  "Other",
 ];
+
+// Computer Lab location options
+const COMPUTER_LAB_LOCATIONS = {
+  "BVM and SJ Buildings": [
+    "BVM 4F Computer Lab",
+    "BVM 2F Computer Lab",
+    "SJ Computer Lab",
+  ],
+  "LS Building": [
+    "LS209 - Maclab",
+    "LS211 - Networking",
+    "LS212 - Programming",
+    "LS213 - Multimedia",
+    "LS215 - Openlab",
+  ],
+};
+
+// Computed property to get location options based on category
+const getLocationOptions = computed(() => {
+  // If Computer Lab is selected, show computer lab locations
+  if (info.value.issue_concern_request_category_type === "Computer Lab") {
+    // Combine all computer lab locations
+    const allLabLocations = [
+      ...COMPUTER_LAB_LOCATIONS["BVM and SJ Buildings"],
+      ...COMPUTER_LAB_LOCATIONS["LS Building"],
+    ];
+    return allLabLocations;
+  }
+
+  // Otherwise, show default office options
+  return CENTER_OFFICE_ROOM_OPTIONS;
+});
 
 const ITEM_TYPE_OPTIONS_MAP = {
   Hardware: [
@@ -1056,7 +1096,23 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "LSU Website",
   ],
   Network: ["WiFi Access", "Network Configuration"],
-  "Computer Peripherals": [
+  "Computer Lab": [
+    "Computer Setup",
+    "Software Installation",
+    "Hardware Issue",
+    "Network Connectivity",
+    "Maintenance",
+    "Others",
+  ],
+  Accounts: [
+    "Email Account",
+    "Google Workspace",
+    "Canvas LMS",
+    "System Access",
+    "Password Reset",
+    "Others",
+  ],
+  Other: [
     "Screwdriver Set",
     "Cable Ties",
     "Thermal Paste",
@@ -1095,30 +1151,46 @@ const TECHNICIANS_PERSONNEL = [
   {
     name: "Michael John Puertogalera",
     email: "michaeljohn.puertogalera@lsu.edu.ph",
-  },
-  {
-    name: "Jo Renlee Luna",
-    email: "jorenlee.luna@lsu.edu.ph",
+    specializations: ["Accounts", "Software"],
+    role: "Accounts / Software",
   },
   {
     name: "Jason Yap",
     email: "jason.yap@lsu.edu.ph",
+    specializations: ["Network", "Accounts", "Software"],
+    role: "Network / Accounts / Software",
   },
   {
     name: "Flourence John Gonzaga",
     email: "johny14_gonzaga@lsu.edu.ph",
-  },
-  {
-    name: "Rommel Rosal",
-    email: "rommel.rosal@lsu.edu.ph",
+    specializations: ["Network", "Accounts", "Software"],
+    role: "Network / Accounts / Software",
   },
   {
     name: "Denzel Roy Suarez",
     email: "denzelroy.suarez@lsu.edu.ph",
+    specializations: ["Computer Lab"],
+    location: "BVM and SJ Buildings",
+    role: "Computer Laboratory: BVM and SJ Buildings Rooms",
+  },
+  {
+    name: "Rommel Rosal",
+    email: "rommel.rosal@lsu.edu.ph",
+    specializations: ["Computer Lab"],
+    location: "LS Building",
+    role: "Computer Laboratory: LS Building Rooms",
   },
   {
     name: "Giovanni Jose Morales",
     email: "giovanni.morales@lsu.edu.ph",
+    specializations: ["Hardware"],
+    role: "PC and Printers and Other Hardwares - Whole LSU Campus Admins and Staffs",
+  },
+  {
+    name: "Jo Renlee Luna",
+    email: "jorenlee.luna@lsu.edu.ph",
+    specializations: ["Software"],
+    role: "LSU Website",
   },
 ];
 
@@ -1519,16 +1591,30 @@ const info = ref({
   ],
 });
 
+// Computed property to get logged-in technician
+const loggedInTechnician = computed(() => {
+  const userEmail = userStore.user?.email;
+  if (!userEmail) return null;
+
+  return TECHNICIANS_PERSONNEL.find(tech => tech.email === userEmail);
+});
+
 // Modal controls
 const openCreateModal = () => {
   isCreate.value = true;
   receiptFile.value = null;
   receiptPreview.value = "";
+
+  // Auto-assign logged-in technician if they are in the personnel list
+  const defaultTechnicians = loggedInTechnician.value
+    ? [{ name: loggedInTechnician.value.name, email: loggedInTechnician.value.email }]
+    : [];
+
   info.value = {
     ticket_id: "TID" + Date.now(),
     requestor_fullname: "",
     requestor_lsu_email: "",
-    technicians_assigned: [],
+    technicians_assigned: defaultTechnicians,
     issue_concern_request_details: "",
     issue_concern_request_category_type: "",
     issue_concern_request_item_type: "",
@@ -1576,7 +1662,61 @@ const normalizeOffice = () => {
     info.value.issue_concern_request_center_office_room = customOffice.value || "Other";
 };
 
+// Check if user has unrated tickets (ANY status - pending, in progress, completed, etc.)
+const checkForUnratedTickets = async (email) => {
+  try {
+    const res = await $fetch(
+      endpoint.value + "/api/cits/request-ticket/list/"
+    );
+
+    if (res && Array.isArray(res)) {
+      // Filter tickets for this user
+      const userTickets = res.filter(
+        (ticket) => ticket.requestor_lsu_email === email
+      );
+
+      // Check if ANY ticket (regardless of status) is missing rating or feedback
+      const unratedTickets = userTickets.filter((ticket) => {
+        const hasNoRating = !ticket.evaluation_feedback_client_star_rating ||
+                           ticket.evaluation_feedback_client_star_rating === "" ||
+                           ticket.evaluation_feedback_client_star_rating === null;
+        const hasNoFeedback = !ticket.evaluation_feedback_client_comment ||
+                             ticket.evaluation_feedback_client_comment === "" ||
+                             ticket.evaluation_feedback_client_comment === null;
+
+        // Consider a ticket unrated if it's missing BOTH rating AND feedback
+        return hasNoRating && hasNoFeedback;
+      });
+
+      return unratedTickets.length > 0 ? unratedTickets.length : false;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Error checking for unrated tickets:", error);
+    // If there's an error, allow submission to proceed
+    return false;
+  }
+};
+
 const createTicket = async () => {
+  // Validate required fields
+  if (!info.value.requestor_fullname || !info.value.requestor_lsu_email) {
+    showToaster("❌ Please fill in all required fields (Name and Email).", "error");
+    return;
+  }
+
+  // Check for unrated tickets
+  const unratedCount = await checkForUnratedTickets(info.value.requestor_lsu_email);
+  if (unratedCount) {
+    showToaster(
+      `❌ This user has ${unratedCount} unrated ticket${unratedCount > 1 ? 's' : ''}. Please ask them to rate all previous tickets before creating a new one.`,
+      "error",
+      5000
+    );
+    return;
+  }
+
   modalLoading.value = true;
   normalizeOffice();
 
@@ -1819,6 +1959,130 @@ const itemStatusClass = (status) => {
       return "bg-gray-50 text-gray-700";
   }
 };
+
+// Function to auto-assign technicians based on category and specific concern
+const autoAssignTechnicians = (category, specificConcern = null) => {
+  // Check for specific concern first (highest priority)
+  if (specificConcern === "LSU Website") {
+    // Only assign Jo Renlee for LSU Website
+    const joRenlee = TECHNICIANS_PERSONNEL.find(
+      (tech) => tech.email === "jorenlee.luna@lsu.edu.ph"
+    );
+    if (joRenlee) {
+      info.value.technicians_assigned = [
+        {
+          name: joRenlee.name,
+          email: joRenlee.email,
+        },
+      ];
+      return;
+    }
+  }
+
+  if (!category) {
+    // Reset to default if no category
+    info.value.technicians_assigned = [
+      {
+        name: "Michael John Puertogalera",
+        email: "michaeljohn.puertogalera@lsu.edu.ph",
+      },
+    ];
+    return;
+  }
+
+  // Filter technicians based on their specializations
+  const assignedTechs = TECHNICIANS_PERSONNEL.filter((tech) =>
+    tech.specializations?.includes(category)
+  );
+
+  // If no match found, assign default (Michael)
+  if (assignedTechs.length === 0) {
+    info.value.technicians_assigned = [
+      {
+        name: "Michael John Puertogalera",
+        email: "michaeljohn.puertogalera@lsu.edu.ph",
+      },
+    ];
+  } else {
+    // Assign matched technicians
+    info.value.technicians_assigned = assignedTechs.map((tech) => ({
+      name: tech.name,
+      email: tech.email,
+    }));
+  }
+};
+
+// Function to refine technician assignment based on Computer Lab location
+const refineComputerLabAssignment = (location) => {
+  if (!location || info.value.issue_concern_request_category_type !== "Computer Lab") {
+    return;
+  }
+
+  // Determine which technician based on location
+  let assignedTech = null;
+
+  if (location.startsWith("BVM") || location.startsWith("SJ")) {
+    // BVM and SJ Buildings -> Denzel Roy Suarez
+    assignedTech = TECHNICIANS_PERSONNEL.find(
+      (tech) => tech.name === "Denzel Roy Suarez"
+    );
+  } else if (location.startsWith("LS")) {
+    // LS Building -> Rommel Rosal
+    assignedTech = TECHNICIANS_PERSONNEL.find(
+      (tech) => tech.name === "Rommel Rosal"
+    );
+  }
+
+  if (assignedTech) {
+    info.value.technicians_assigned = [
+      {
+        name: assignedTech.name,
+        email: assignedTech.email,
+      },
+    ];
+  }
+};
+
+// Watch for category changes to auto-assign technicians
+watch(
+  () => info.value.issue_concern_request_category_type,
+  (newCategory) => {
+    // Only auto-assign when creating new tickets
+    if (isCreate.value) {
+      autoAssignTechnicians(newCategory, info.value.issue_concern_request_item_type);
+      // Clear location when category changes
+      info.value.issue_concern_request_center_office_room = "";
+      // Clear specific concern when category changes
+      info.value.issue_concern_request_item_type = "";
+    }
+  }
+);
+
+// Watch for specific concern changes to refine technician assignment
+watch(
+  () => info.value.issue_concern_request_item_type,
+  (newSpecificConcern) => {
+    // Only auto-assign when creating new tickets
+    if (isCreate.value) {
+      // Re-assign based on specific concern
+      autoAssignTechnicians(
+        info.value.issue_concern_request_category_type,
+        newSpecificConcern
+      );
+    }
+  }
+);
+
+// Watch for Computer Lab location changes to refine technician assignment
+watch(
+  () => info.value.issue_concern_request_center_office_room,
+  (newLocation) => {
+    // Only auto-assign when creating new tickets
+    if (isCreate.value) {
+      refineComputerLabAssignment(newLocation);
+    }
+  }
+);
 </script>
 
 <style>

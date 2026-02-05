@@ -52,7 +52,7 @@ const handleContentSubmitted = () => {
 
 // ---------------- ROLES ----------------
 const superAdminEmails = [
-  "jorenleeluna24@gmail.com",
+  "jorenlee.luna@lsu.edu.ph",
   "michaeljohn.puertogalera@lsu.edu.ph",
   "jason.yap@lsu.edu.ph",
 ];
