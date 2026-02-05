@@ -8,7 +8,6 @@
           src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
           class="align-top w-full h-36 object-none lg:hidden block"
         />
-        <div></div>
         <div
           class="lg:pt-14 pb-3 absolute top-1/2 transform -translate-y-1/2 w-full"
         >
@@ -32,7 +31,9 @@
                 <a href="/npcc" class="mx-2 hover:underline lg:h-10">NPCC</a>
               </div>
             </div>
-            <div class="flex hover:text-green-800 text-white bg-white h-full z-50">
+            <div
+              class="flex hover:text-green-800 text-white bg-white h-full z-50"
+            >
               <div
                 class="hover:bg-green-800 bg-white hover:text-white text-green-800 px-1 lg:px-4 lg:h-10 h-8 flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full"
               >
@@ -61,6 +62,40 @@
           <h2 class="lasalle-green-text font-bold text-xl text-center mb-3">
             Request for Tech Support
           </h2>
+
+          <!-- Unrated Completed Tickets Notification Banner -->
+          <div
+            v-if="hasUnratedCompletedTickets"
+            class="mb-4 p-4 bg-gradient-to-r from-orange-50 to-red-50 border-l-4 border-orange-500 rounded-lg shadow-md animate-fade-in"
+          >
+            <div class="flex items-start gap-3">
+              <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-orange-600 text-2xl"></i>
+              </div>
+              <div class="flex-1">
+                <h3 class="text-orange-800 font-bold text-sm mb-1">
+                  <i class="fas fa-star mr-1"></i>
+                  Pending Feedback Required
+                </h3>
+                <p class="text-orange-700 text-xs mb-2">
+                  You have <strong>{{ unratedTicketsCount }}</strong> completed ticket{{ unratedTicketsCount > 1 ? 's' : '' }}
+                  that {{ unratedTicketsCount > 1 ? 'need' : 'needs' }} your rating and feedback.
+                </p>
+                <p class="text-orange-600 text-xs mb-3">
+                  <i class="fas fa-info-circle mr-1"></i>
+                  Please provide your feedback before submitting a new request. Your feedback helps us improve our services!
+                </p>
+                <a
+                  href="/portal/login"
+                  class="inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
+                >
+                  <i class="fas fa-sign-in-alt mr-2"></i>
+                  Go to Portal to Rate Tickets
+                  <i class="fas fa-arrow-right ml-2"></i>
+                </a>
+              </div>
+            </div>
+          </div>
 
           <div>
             <!-- MODAL -->
@@ -250,11 +285,48 @@
                     </p>
 
                     <div
-                      v-for="(item, index) in info.item_request"
-                      :key="index"
-                      class="bg-white rounded-lg lg:p-5 p-2 mb-4 border-2 border-gray-100 hover:border-green-200 transition-all"
+                      class="bg-white rounded-lg lg:p-5 p-2 mb-4 border-2 border-gray-100"
                     >
                       <div class="grid lg:grid-cols-2 gap-4 text-sm">
+
+                        
+                        <!-- OWNER TYPE -->
+                        <div class="w-full">
+                          <label class="block font-semibold mb-2 text-gray-700">
+                            <i class="fas fa-user-tag text-green-600 mr-1"></i
+                            >Owner Type <span class="text-red-600">*</span>
+                          </label>
+                          <select
+                            v-model="info.owner_type"
+                            class="input rounded-lg border-2 border-gray-200 p-3 w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                          >
+                            <option value="LSU">LSU</option>
+                            <option value="Personal">Personal</option>
+                          </select>
+                        </div>
+
+                        <!-- CLIENT ROLE -->
+                        <div class="w-full">
+                          <label class="block font-semibold mb-2 text-gray-700">
+                            <i class="fas fa-id-badge text-green-600 mr-1"></i
+                            >Client Role <span class="text-red-600">*</span>
+                          </label>
+                          <select
+                            v-model="info.client_role"
+                            class="input rounded-lg border-2 border-gray-200 p-3 w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                          >
+                            <option value="">Select Role</option>
+                            <option value="Student">Student</option>
+                            <option value="Faculty">Faculty</option>
+                            <option value="Staff">Staff</option>
+                            <option value="Alumni">Alumni</option>
+                            <option value="Public">Public</option>
+                             <option value="Admin">Admin</option>
+                          </select>
+                        </div>
+
+
+                        
                         <!-- OFFICE -->
                         <div class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
@@ -264,7 +336,9 @@
                           >
                           <div class="flex gap-2">
                             <select
-                              v-model="item.center_office_room"
+                              v-model="
+                                info.issue_concern_request_center_office_room
+                              "
                               class="input border-2 border-gray-200 w-full p-3 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                             >
                               <option disabled value="">Select Location</option>
@@ -277,7 +351,10 @@
                               </option>
                             </select>
                             <input
-                              v-if="info.center_office_room === 'OTHER'"
+                              v-if="
+                                info.issue_concern_request_center_office_room ===
+                                'OTHER'
+                              "
                               v-model="customOffice"
                               class="input rounded-lg border-2 border-gray-200 flex-1 p-3 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                               placeholder="Specify location"
@@ -291,8 +368,8 @@
                             Type <span class="text-red-600">*</span>
                           </label>
                           <select
-                            v-model="item.category_type"
-                            @change="item.item_type = ''"
+                            v-model="info.issue_concern_request_category_type"
+                            @change="info.issue_concern_request_item_type = ''"
                             class="input rounded-lg border-2 border-gray-200 p-3 w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                           >
                             <option disabled value="">Select Type</option>
@@ -314,19 +391,24 @@
                             <span class="text-red-600">*</span></label
                           >
                           <select
-                            v-model="item.item_type"
-                            :disabled="!item.category_type"
+                            v-model="info.issue_concern_request_item_type"
+                            :disabled="
+                              !info.issue_concern_request_category_type
+                            "
                             class="input rounded-lg border-2 border-gray-200 p-3 w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
                           >
                             <option disabled value="">
                               {{
-                                item.category_type
-                                  ? "Select " + item.category_type
+                                info.issue_concern_request_category_type
+                                  ? "Select " +
+                                    info.issue_concern_request_category_type
                                   : "Select Tech Type First"
                               }}
                             </option>
                             <option
-                              v-for="type in getItemOptions(item.category_type)"
+                              v-for="type in getItemOptions(
+                                info.issue_concern_request_category_type,
+                              )"
                               :key="type"
                               :value="type"
                             >
@@ -340,32 +422,79 @@
                             ><i
                               class="fas fa-comment-dots text-green-600 mr-1"
                             ></i
-                            >Other Details
+                            >Description
                             <span class="text-red-600">*</span></label
                           >
                           <textarea
-                            v-model="item.name"
+                            v-model="info.issue_concern_request_details"
                             class="input rounded-lg border-2 border-gray-200 px-3 py-3 w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none resize-none"
                             placeholder="Describe your issue or request in detail..."
                             rows="3"
                           />
                         </div>
+
+                        <!-- BUY ME COFFEE -->
+                         <!-- hide for now -->
+                        <!-- <div class="w-full">
+                          <label class="block font-semibold mb-2 text-gray-700">
+                            <i class="fas fa-coffee text-green-600 mr-1"></i>Buy
+                            Me Coffee
+                          </label>
+                          <select
+                            v-model="info.buy_me_coffee"
+                            class="input rounded-lg border-2 border-gray-200 p-3 w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                          >
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                          </select>
+                        </div> -->
+
+                        <!-- GCASH RECEIPT UPLOAD -->
+                        <div
+                          v-if="info.buy_me_coffee === 'Yes'"
+                          class="w-full lg:col-span-2"
+                        >
+                          <label class="block font-semibold mb-2 text-gray-700">
+                            <i class="fas fa-receipt text-green-600 mr-1"></i
+                            >GCash Receipt
+                          </label>
+                          <input
+                            type="file"
+                            @change="handleReceiptUpload"
+                            accept="image/*"
+                            class="input rounded-lg border-2 border-gray-200 p-3 w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                          />
+
+                          <div class="relative inline-block">
+                            <img
+                              :src="receiptPreview"
+                              alt="Receipt Preview"
+                              class="max-w-xs rounded-lg border-2 border-gray-300"
+                            />
+                            <button
+                              @click="removeReceipt"
+                              class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-red-600"
+                            >
+                              <i class="fas fa-times"></i>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <!-- ACTIONS -->
-                <div class="flex justify-center gap-3 mb-10">
-                  <button
-                    class="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
-                    @click="handleSubmitClick"
-                    :disabled="modalLoading"
-                  >
-                    <i class="fas fa-paper-plane mr-2"></i>
-                    Submit Request
-                  </button>
-                </div>
+              <!-- ACTIONS -->
+              <div class="flex justify-center gap-3 mb-10">
+                <button
+                  class="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                  @click="handleSubmitClick"
+                  :disabled="modalLoading"
+                >
+                  <i class="fas fa-paper-plane mr-2"></i>
+                  Submit Request
+                </button>
               </div>
             </div>
           </div>
@@ -395,6 +524,8 @@ const customOffice = ref("");
 const showConfirmation = ref(false);
 const showSuccess = ref(false);
 const isCreate = ref(true);
+const hasUnratedCompletedTickets = ref(false);
+const unratedTicketsCount = ref(0);
 
 // Dropdown options
 const CATEGORY_OPTIONS = [
@@ -465,63 +596,168 @@ const getItemOptions = (category) => {
 const CENTER_OFFICE_ROOM_OPTIONS = ["OCH", "NPCC", "Registrar", "N/A", "OTHER"];
 
 const modalLoading = ref(false);
+const receiptFile = ref(null);
+const receiptPreview = ref("");
 
-// Empty item template
-const emptyItem = () => ({
-  name: "",
-  category_type: "",
-  item_type: "",
-  center_office_room: "",
-});
+// Technicians list with name and email
+const TECHNICIANS_PERSONNEL = [
+  {
+    name: "Michael John Puertogalera",
+    email: "michaeljohn.puertogalera@lsu.edu.ph",
+  },
+  {
+    name: "Jo Renlee Luna",
+    email: "jorenlee.luna@lsu.edu.ph",
+  },
+  {
+    name: "Jason Yap",
+    email: "jason.yap@lsu.edu.ph",
+  },
+  {
+    name: "Flourence John Gonzaga",
+    email: "johny14_gonzaga@lsu.edu.ph",
+  },
+  {
+    name: "Rommel Rosal",
+    email: "rommel.rosal@lsu.edu.ph",
+  },
+  {
+    name: "Denzel Roy Suarez",
+    email: "denzelroy.suarez@lsu.edu.ph",
+  },
+  {
+    name: "Giovanni Jose Morales",
+    email: "giovanni.morales@lsu.edu.ph",
+  },
+];
 
-// Form info
+// Form info - Updated for ITServicesModelV2
 const info = ref({
   ticket_id: "TID" + Date.now(),
   requestor_fullname: "",
   requestor_lsu_email: "",
-  center_office_room: "",
-  technicians_assigned: ["Michael John Puertogalera"],
+  technicians_assigned: [
+    {
+      name: "Michael John Puertogalera",
+      email: "michaeljohn.puertogalera@lsu.edu.ph",
+    },
+  ],
+  issue_concern_request_details: "",
+  issue_concern_request_category_type: "",
+  issue_concern_request_item_type: "",
+  issue_concern_request_center_office_room: "",
+  owner_type: "LSU",
+  client_role: "",
+  buy_me_coffee: "No",
   logs: [
     {
       timestamp: new Date().toISOString(),
       status: "Pending",
       remarks: "Initial status",
+      assigned_technician_name: "",
+      assigned_technician_lsu_email: "",
     },
   ],
-  item_request: [emptyItem()],
 });
+
+// Handle receipt file upload
+const handleReceiptUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    receiptFile.value = file;
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      receiptPreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+const removeReceipt = () => {
+  receiptFile.value = null;
+  receiptPreview.value = "";
+};
 
 // Normalize office before submit
 const normalizeOffice = () => {
-  if (info.value.center_office_room === "OTHER")
-    info.value.center_office_room = customOffice.value || "Other";
+  if (info.value.issue_concern_request_center_office_room === "OTHER")
+    info.value.issue_concern_request_center_office_room =
+      customOffice.value || "Other";
 };
 
-const handleSubmitClick = () => {
+// Check if user has unrated tickets (specifically completed/done tickets)
+const checkForUnratedTickets = async (email) => {
+  try {
+    const res = await $fetch(
+      endpoint.value + "/api/cits/request-ticket/list/"
+    );
+
+    if (res && Array.isArray(res)) {
+      // Filter tickets for this user
+      const userTickets = res.filter(
+        (ticket) => ticket.requestor_lsu_email === email
+      );
+
+      // Check if any COMPLETED/DONE ticket is missing rating or feedback
+      const unratedCompletedTickets = userTickets.filter((ticket) => {
+        // Check if ticket status is "Done" or "Completed"
+        const isCompleted = ticket.current_status === "Done" ||
+                           ticket.current_status === "Completed" ||
+                           (ticket.logs && ticket.logs.some(log =>
+                             log.status === "Done" || log.status === "Completed"
+                           ));
+
+        if (!isCompleted) return false;
+
+        const hasNoRating = !ticket.evaluation_feedback_client_star_rating ||
+                           ticket.evaluation_feedback_client_star_rating === "";
+        const hasNoFeedback = !ticket.evaluation_feedback_client_comment ||
+                             ticket.evaluation_feedback_client_comment === "";
+
+        // Consider a ticket unrated if it's completed but missing either rating or feedback
+        return hasNoRating || hasNoFeedback;
+      });
+
+      // Update reactive variables for notification banner
+      unratedTicketsCount.value = unratedCompletedTickets.length;
+      hasUnratedCompletedTickets.value = unratedCompletedTickets.length > 0;
+
+      return unratedCompletedTickets.length > 0;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Error checking for unrated tickets:", error);
+    // If there's an error, allow submission to proceed
+    return false;
+  }
+};
+
+const handleSubmitClick = async () => {
   // Validate required fields
   if (!info.value.requestor_fullname || !info.value.requestor_lsu_email) {
     showToaster("Please fill in all required fields.", "warning");
     return;
   }
 
-  if (!info.value.item_request.length) {
-    showToaster("Please add at least one item.", "warning");
+  if (
+    !info.value.issue_concern_request_center_office_room ||
+    !info.value.issue_concern_request_category_type ||
+    !info.value.issue_concern_request_item_type ||
+    !info.value.issue_concern_request_details
+  ) {
+    showToaster("Please fill in all request details.", "warning");
     return;
   }
 
-  // Check if all items have required fields
-  const hasEmptyFields = info.value.item_request.some(
-    (item) =>
-      !item.center_office_room ||
-      !item.category_type ||
-      !item.item_type ||
-      !item.name,
-  );
-
-  if (hasEmptyFields) {
+  // Check for unrated completed tickets before allowing new submission
+  const hasUnratedTickets = await checkForUnratedTickets(info.value.requestor_lsu_email);
+  if (hasUnratedTickets) {
     showToaster(
-      "Please fill in all required fields for each request.",
+      `⚠️ You have ${unratedTicketsCount.value} completed ticket${unratedTicketsCount.value > 1 ? 's' : ''} without rating/feedback. Please visit the portal to complete your feedback before submitting a new request.`,
       "warning",
+      8000
     );
     return;
   }
@@ -540,50 +776,56 @@ const confirmSubmit = () => {
 };
 
 const createTicket = async () => {
-  if (!info.value.item_request.length) {
-    showToaster("Please add at least one item.", "warning");
-    return;
-  }
-
   modalLoading.value = true;
   normalizeOffice();
 
-  const payload = {
-    ticket_id: info.value.ticket_id || `TID${Date.now()}`,
-    requestor_fullname: info.value.requestor_fullname?.trim() || "N/A",
-    requestor_lsu_email: info.value.requestor_lsu_email?.trim() || "N/A",
-    technicians_assigned: info.value.technicians_assigned || [],
-    logs: info.value.logs?.length
-      ? info.value.logs
-      : [
-          {
-            timestamp: new Date().toISOString(),
-            status: "Pending",
-            remarks: "Initial status",
-          },
-        ],
-    item_request: info.value.item_request.map((item) => ({
-      name: item.name?.trim() || "N/A",
-      serial_number_code: item.serial_number_code?.trim() || "N/A",
-      details: item.details?.trim() || "N/A",
-      category_type: item.category_type?.trim() || "N/A",
-      item_type: item.item_type?.trim() || "N/A",
-      center_office_room: item.center_office_room?.trim() || "N/A",
-      quantity: String(item.quantity || "1"),
-      status: item.status?.trim() || "N/A",
-      remarks: item.remarks?.trim() || "N/A",
-      current_semester: item.current_semester || "N/A",
-      academic_year: item.academic_year || "N/A",
-      date_checked: item.date_checked || "N/A",
-    })),
-  };
+  // Create FormData for file upload
+  const formData = new FormData();
+  formData.append("ticket_id", info.value.ticket_id || `TID${Date.now()}`);
+  formData.append(
+    "requestor_fullname",
+    info.value.requestor_fullname?.trim() || "",
+  );
+  formData.append(
+    "requestor_lsu_email",
+    info.value.requestor_lsu_email?.trim() || "",
+  );
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(info.value.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    info.value.issue_concern_request_details?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    info.value.issue_concern_request_category_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    info.value.issue_concern_request_item_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    info.value.issue_concern_request_center_office_room?.trim() || "",
+  );
+  formData.append("owner_type", info.value.owner_type || "LSU");
+  formData.append("client_role", info.value.client_role || "");
+  formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
+  formData.append("logs", JSON.stringify(info.value.logs || []));
+
+  // Add receipt file if exists
+  if (receiptFile.value) {
+    formData.append("buy_me_coffee_gcash_receipt", receiptFile.value);
+  }
 
   try {
     const res = await $fetch(
-      endpoint.value + "/api/cits/tech-support/create/",
+      endpoint.value + "/api/cits/request-ticket/create/",
       {
         method: "POST",
-        body: payload,
+        body: formData,
       },
     );
 
@@ -610,20 +852,34 @@ const createTicket = async () => {
 
 const resetForm = () => {
   showSuccess.value = false;
+  receiptFile.value = null;
+  receiptPreview.value = "";
   info.value = {
     ticket_id: "TID" + Date.now(),
     requestor_fullname: "",
     requestor_lsu_email: "",
-    center_office_room: "",
-    technicians_assigned: ["Michael John Puertogalera"],
+    technicians_assigned: [
+      {
+        name: "Michael John Puertogalera",
+        email: "michaeljohn.puertogalera@lsu.edu.ph",
+      },
+    ],
+    issue_concern_request_details: "",
+    issue_concern_request_category_type: "",
+    issue_concern_request_item_type: "",
+    issue_concern_request_center_office_room: "",
+    owner_type: "LSU",
+    client_role: "",
+    buy_me_coffee: "No",
     logs: [
       {
         timestamp: new Date().toISOString(),
         status: "Pending",
         remarks: "Initial status",
+        assigned_technician_name: "",
+        assigned_technician_lsu_email: "",
       },
     ],
-    item_request: [emptyItem()],
   };
 };
 
@@ -642,6 +898,16 @@ const showToaster = (message, type = "success", duration = 3000) => {
     toaster.value.show = false;
   }, duration);
 };
+
+// Check for unrated completed tickets on page load
+onMounted(async () => {
+  // Get user email from store or form
+  const userEmail = userStore.userEmail || userStore.user?.email || info.value.requestor_lsu_email;
+
+  if (userEmail) {
+    await checkForUnratedTickets(userEmail);
+  }
+});
 </script>
 
 <style scoped>

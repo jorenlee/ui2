@@ -50,9 +50,6 @@ const handleContentSubmitted = () => {
   currentView.value = "list";
 };
 
-const profileImageUrl =
-  "https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/LSU%20Seal.PNG";
-
 // ---------------- ROLES ----------------
 const superAdminEmails = [
   "jorenleeluna24@gmail.com",
@@ -157,36 +154,19 @@ const subMenuList = [
     allowedEmails: contentWritersEmails,
     items: [
       { label: "Content Form", icon: "fa-list", type: "button", view: "form" },
-      {
-        label: "All Contents Lists",
-        icon: "fa-list-alt",
-        type: "button",
-        view: "list",
-      },
+      { label: "All Contents Lists", icon: "fa-list-alt", type: "button", view: "list",},
     ],
   },
   {
     group: "NPCC IT Services",
     allowedEmails: npccMenuEmails,
-    items: [
-      {
-        label: "NPCC Management",
-        icon: "fa-cogs",
-        type: "button",
-        view: "npcc",
-      },
-    ],
+    items: [{ label: "NPCC Management", icon: "fa-cogs", type: "button", view: "npcc" }],
   },
   {
     group: "Human Resource",
     allowedEmails: hrMenuEmails,
     items: [
-      {
-        label: "Job Vacancies",
-        icon: "fa-list-alt",
-        type: "button",
-        view: "hr-job-vacancy-list",
-      },
+      { label: "Job Vacancies", icon: "fa-list-alt", type: "button", view: "hr-job-vacancy-list"},
       {
         label: "Raffle Draw",
         icon: "fa-list-alt",
@@ -240,14 +220,10 @@ const subMenuList = [
 ];
 
 const menuList = [
-  {
-    label: "Dashboard",
-    icon: "fa-home",
-    type: "button",
-    view: "Dashboard",
-  },
+  { label: "Menu", icon: "fa-bars", type: "button", view: "Menu" },
   { label: "Search", icon: "fa-search", type: "button", view: "Search" },
   { label: "Profile", icon: "fa-user", type: "button", view: "Profile" },
+  { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
 ];
 
 const filteredMenuList = computed(() => {
@@ -280,108 +256,66 @@ const navigateTo = (url) => router.push(url);
 <template>
   <div class="h-screen flex flex-col">
     <!-- AUTHENTICATED VIEW -->
+    <div v-if="currentView === 'Logout'" class="p-4 flex flex-col items-center justify-center gap-4 h-screen">
+      <!-- Card -->
+      <div class="w-full max-w-sm bg-white/5 backdrop-blur-md border border-white/10 rounded-xl p-5 text-center shadow-lg lg:-mt-32">
+        <!-- Icon -->
+        <div class="mx-auto mb-3 w-12 h-12 flex items-center justify-center rounded-full bg-red-500/10 text-red-400"><i class="fa fa-sign-out text-2xl"></i></div>
+        <!-- Text -->
+        <h3 class="text-base font-semibold text-white">Logout Confirmation</h3>
+        <p class="text-sm text-black mt-1">Are you sure you want to log out of your account?</p>
+        <!-- Actions -->
+        <div class="mt-5 flex gap-3 justify-center">
+          <!-- Cancel -->
+          <button @click="currentView = 'Profile'" class="px-4 py-2 text-sm rounded-lg border hover:bg-black hover:text-white text-black transition">Cancel</button>
+          <!-- Logout -->
+          <button @click="logOut" class="px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600 transition flex items-center gap-2">
+            <i class="fa fa-sign-out"></i>Logout
+          </button>
+        </div>
+      </div>
+    </div>
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->
       <div class="w-full flex flex-col mb-32">
-        <!-- HEADER -->
-        <div class="bg-green-900 w-full z-50">
-          <div class="flex mx-auto justify-between py-2 px-3.5">
-            <div class="w-auto flex items-center lg:px-1.5">
-              <!-- PROFILE IMAGE -->
-              <div class="w-fit mx-auto">
-                <img :src="profileImageUrl" class="lg:w-10 w-5 mx-auto" />
-              </div>
-              <p
-                class="text-white whitespace-nowrap lg:ml-5 ml-3 font-bold uppercase lg:text-sm text-xs"
-              >
-                LSU Central
-              </p>
-            </div>
-            <button
-              @click="logOut"
-              class="flex items-center hover:font-bold pt-1"
-            >
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <p class="text-xs text-white p-1.5 lg:flex hidden">Log Out</p>
-            </button>
-          </div>
-        </div>
-
         <!-- CONTENT AREA -->
         <div class="overflow-y-auto">
-          <div class="w-full p-4" v-if="currentView === 'profile'">
-            <SuperAdminDashboardWelcome />
-          </div>
-
-          <div class="p-4" v-if="currentView === 'Dashboard'">
+          <div class="w-full p-4" v-if="currentView === 'Profile'"><SuperAdminDashboardWelcome /></div>
+          <div class="p-4" v-if="currentView === 'Menu'">
             <div class="grid grid-cols-1 lg:grid-cols-6 gap-4">
               <!-- MENU CARDS -->
               <div
-                v-for="menu in filteredMenuList"
-                :key="menu.label || menu.group"
-                class="bg-white rounded-xl shadow hover:shadow-lg transition-all duration-300 cursor-pointer group"
-              >
+                v-for="menu in filteredMenuList" :key="menu.label || menu.group" class="bg-white rounded-xl shadow hover:shadow-lg transition-all duration-300 cursor-pointer group">
                 <!-- GROUP CARD -->
                 <template v-if="menu.group">
                   <button
-                    class="w-full flex flex-col items-center justify-center p-4 text-center text-sm font-semibold text-gray-700 hover:text-green-700 transition-colors"
-                    @click="toggleGroup(menu.group)"
-                  >
-                    <div
-                      class="w-12 h-12 flex items-center justify-center rounded-full bg-green-50 group-hover:bg-green-100 transition-colors mb-2"
-                    >
+                    class="w-full flex flex-col items-center justify-center p-4 text-center text-sm font-semibold text-gray-700 hover:text-green-700 transition-colors" @click="toggleGroup(menu.group)">
+                    <div class="w-12 h-12 flex items-center justify-center rounded-full bg-green-50 group-hover:bg-green-100 transition-colors mb-2">
                       <i class="fa fa-folder-open text-lg text-green-600"></i>
                     </div>
                     <span class="text-xs truncate">{{ menu.group }}</span>
-                    <i
-                      class="fa fa-chevron-down mt-1 text-xs transition-transform duration-300"
-                      :class="{ 'rotate-180': openGroups.includes(menu.group) }"
-                    ></i>
+                    <i class="fa fa-chevron-down mt-1 text-xs transition-transform duration-300" 
+                    :class="{ 'rotate-180': openGroups.includes(menu.group) }"></i>
                   </button>
-
                   <transition name="slide-fade">
-                    <ul
-                      v-if="openGroups.includes(menu.group)"
-                      class="mt-2 space-y-1 px-4 pb-3"
-                    >
+                    <ul v-if="openGroups.includes(menu.group)" class="mt-2 space-y-1 px-4 pb-3">
                       <li
                         v-for="item in menu.items"
                         :key="item.label"
                         class="flex items-center gap-2 px-2 py-1 rounded hover:bg-green-50 text-gray-700 text-sm transition-colors"
-                        :class="
-                          currentView === item.view
-                            ? 'bg-green-100 text-green-700 font-semibold'
-                            : ''
-                        "
-                        @click="
-                          item.type === 'button'
-                            ? (currentView = item.view)
-                            : navigateTo(item.to)
-                        "
-                      >
+                        :class="currentView === item.view ? 'bg-green-100 text-green-700 font-semibold' : ''"
+                        @click="item.type === 'button' ? (currentView = item.view) : navigateTo(item.to)">
                         <i :class="['fa', item.icon, 'text-sm']"></i>
                         <span class="truncate">{{ item.label }}</span>
                       </li>
                     </ul>
                   </transition>
                 </template>
-
-                <!-- STANDALONE BUTTON CARD -->
                 <template v-else>
-                  <div
-                    class="flex flex-col items-center justify-center p-4 text-center text-sm font-semibold text-gray-700 hover:text-green-700 transition-colors"
-                    @click="
-                      menu.type === 'button'
-                        ? (currentView = menu.view)
-                        : navigateTo(menu.to)
-                    "
-                  >
-                    <div
-                      class="w-12 h-12 flex items-center justify-center rounded-full bg-green-50 group-hover:bg-green-100 transition-colors mb-2"
-                    >
-                      <i
-                        :class="['fa', menu.icon, 'text-lg text-green-600']"
-                      ></i>
+                  <div class="flex flex-col items-center justify-center p-4 text-center text-sm font-semibold text-gray-700 hover:text-green-700 transition-colors" 
+                    @click="menu.type === 'button' ? (currentView = menu.view) : navigateTo(menu.to)">
+                    <div class="w-12 h-12 flex items-center justify-center rounded-full bg-green-50 group-hover:bg-green-100 transition-colors mb-2">
+                      <i :class="['fa', menu.icon, 'text-lg text-green-600']"></i>
                     </div>
                     <span class="truncate">{{ menu.label }}</span>
                   </div>
@@ -389,11 +323,8 @@ const navigateTo = (url) => router.push(url);
               </div>
             </div>
           </div>
-
           <div class="p-4" v-else-if="currentView === 'form'">
-            <SuperAdminDashboardCmsForm
-              @contentSubmitted="handleContentSubmitted"
-            />
+            <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted"/>
           </div>
           <div class="p-4" v-else-if="currentView === 'list'">
             <SuperAdminDashboardCmsList />
@@ -420,12 +351,8 @@ const navigateTo = (url) => router.push(url);
             <SuperAdminDashboardServicesIt />
           </div>
         </div>
-
         <div>
-          <!-- BOTTOM NAV -->
-          <nav
-            class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg rounded-t-2xl"
-          >
+          <nav class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg rounded-t-2xl">
             <div class="flex justify-evenly items-center">
               <div
                 v-for="(menu, index) in menuList"
@@ -460,25 +387,18 @@ const navigateTo = (url) => router.push(url);
                 </div>
               </div>
             </div>
-
             <DashboardFooter />
           </nav>
         </div>
       </div>
     </div>
-
     <!-- UNAUTHORIZED VIEW -->
     <div v-else class="flex items-center justify-center h-screen bg-gray-50">
       <div class="text-center">
         <i class="fa fa-lock text-4xl text-gray-400 mb-4"></i>
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">
-          Unauthorized Access
-        </h1>
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Unauthorized Access</h1>
         <p class="text-gray-600 mb-6">Please log in to access the dashboard.</p>
-        <NuxtLink
-          to="/cms/login"
-          class="inline-block bg-green-800 hover:bg-green-900 text-white px-6 py-2 rounded-lg font-bold transition-colors"
-        >
+        <NuxtLink to="/cms/login" class="inline-block bg-green-800 hover:bg-green-900 text-white px-6 py-2 rounded-lg font-bold transition-colors">
           <i class="fa fa-sign-in mr-2"></i>Go to Login
         </NuxtLink>
       </div>

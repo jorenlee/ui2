@@ -20,11 +20,11 @@ const menuList = [
         />
         <div></div>
         <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
-         <h2
-          class="font-bold uppercase text-white lg:text-xl text-sm w-11/12 mx-auto lg:my-12 my-6"
-        >
-          Network, Programs and Computerization Center
-        </h2>
+          <h2
+            class="font-bold uppercase text-white lg:text-xl text-sm w-11/12 mx-auto lg:my-12 my-6"
+          >
+            Network, Programs and Computerization Center
+          </h2>
         </div>
 
         <div class="shadow-lg text-green-700">
@@ -37,9 +37,7 @@ const menuList = [
               </div>
               <div>
                 <i class="fas fa-caret-right"></i>
-                <a href="/npcc" class="mx-2 hover:underline lg:h-10"
-                  >NPCC</a
-                >
+                <a href="/npcc" class="mx-2 hover:underline lg:h-10">NPCC</a>
               </div>
             </div>
             <div class="flex hover:text-green-800 text-white bg-white h-full">
@@ -57,11 +55,8 @@ const menuList = [
       </div>
     </div>
 
-
-
     <!-- Content Layout -->
     <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
-
       <!-- Side Menu -->
       <div class="shadow lg:w-3/12 my-5 bg-white rounded-lg overflow-hidden">
         <DynamicSideMenu :items="menuList" title="Sub Pages" />
@@ -69,15 +64,12 @@ const menuList = [
 
       <!-- Main Content -->
       <div class="lg:w-9/12 mx-auto lg:my-5 my-3 prose max-w-full text-justify">
-
         <div class="bg-white p-6 shadow rounded-lg">
-
           <!-- ADMISSION TITLE -->
           <h2 class="lasalle-green-text font-bold text-xl">Track Request</h2>
-
+          <UniversityLogin title="Student Login" routeURL="/portal/dashboard" />
         </div>
       </div>
-
     </div>
 
     <Footer />

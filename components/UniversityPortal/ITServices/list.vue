@@ -1,64 +1,31 @@
-
 <template>
   <div class="lg:p-1 text-sm">
+    <!-- User Info Banner -->
+<div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+  <div class="flex items-center gap-2">
+    <i class="fa fa-user-circle text-green-700 text-xl"></i>
+    <div>
+      <p class="text-xs text-gray-600">Logged in as:</p>
+      <p class="text-sm font-bold text-green-800">{{ userStore.userEmail || userStore.user.email }}</p>
+    </div>
+  </div>
+  <p class="text-xs text-gray-600 mt-2">
+    <i class="fa fa-info-circle mr-1"></i>
+    You can only view and manage your own tickets
+  </p>
+</div>
+
     <div class="lg:flex items-center justify-between">
       <h2 class="lg:text-xl text-sm font-bold lg:mb-4">
         NPCC Tech Support & IT Services
       </h2>
-      <!-- Mood Icon Legend -->
-      <div
-        class="lg:flex hidden mb-4 p-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 shadow-sm"
-      >
-        <div
-          class="text-[10px] flex gap-x-6 gap-y-2 items-center justify-center text-xs"
-        >
-          <div class="flex items-center gap-1">
-            <div
-              class="w-6 h-6 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-md"
-            >
-              <span class="text-lg">😊</span>
-            </div>
-            <span class="font-medium text-gray-700">
-              New ticket (&lt; 24 hours)
-            </span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div
-              class="w-6 h-6 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md"
-            >
-              <span class="text-lg">😐</span>
-            </div>
-            <span class="font-medium text-gray-700">
-              Aging ticket (24-48 hours)
-            </span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div
-              class="w-6 h-6 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center shadow-md"
-            >
-              <span class="text-lg">☹️</span>
-            </div>
-            <span class="font-medium text-gray-700">
-              Overdue ticket (48+ hours, not done)
-            </span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div
-              class="w-6 h-6 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center shadow-md"
-            >
-              <span class="text-lg">🏆</span>
-            </div>
-            <span class="font-medium text-gray-700"> Completed tickets </span>
-          </div>
-        </div>
-      </div>
 
       <!-- Results Count & Real-time Indicator -->
       <div class="mb-3 flex justify-between items-center">
         <div class="text-xs text-green-800 font-semibold">
           Showing {{ paginatedRequests.length }} of
           {{ filteredRequests.length }} ticket(s)
-          <span class="font-bold uppercase">| {{ requests.length }} total</span>
+          <span class="font-bold uppercase">| {{ filteredRequests.length }} total</span>
         </div>
       </div>
     </div>
@@ -139,15 +106,6 @@
             class="lg:mt-5 w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 whitespace-nowrap lg:text-sm text-xs font-semibold shadow-sm"
           >
             Clear Filters
-          </button>
-        </div>
-
-        <div class="w-full flex justify-between items-center">
-          <button
-            class="lg:mt-5 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 whitespace-nowrap lg:text-sm text-xs font-semibold shadow-sm"
-            @click="openCreateModal"
-          >
-            <i class="fa fa-plus mr-1"></i> Walk-in Ticket
           </button>
         </div>
       </div>
@@ -255,7 +213,7 @@
       </div>
       <div
         @click="sortBy('status')"
-        class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-info-circle mr-1"></i> Status
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -278,9 +236,15 @@
         </span>
       </div>
       <div
-        class="lg:w-fit w-full py-3 pl-3 pr-8 text-white font-bold text-sm whitespace-nowrap"
+        class="lg:w-full py-3 pl-3 pr-8 text-white font-bold text-sm whitespace-nowrap border-r border-green-500"
       >
-        <i class="fa fa-cog mr-1"></i> Action
+        <i class="fa fa-star mr-1"></i> Rating
+      </div>
+
+      <div
+        class="lg:w-full py-3 pl-3 pr-8 text-white font-bold text-sm whitespace-nowrap border-r border-green-500"
+      >
+        <i class="fa fa-star mr-1"></i> Feedback Comment (Optional)
       </div>
     </div>
 
@@ -364,19 +328,11 @@
           </div>
 
           <div class="w-full px-3 text-left text-xs">
-            {{ item.technicians_assigned?.map(t => t.name).join(", ") || "-" }}
+            {{ item.technicians_assigned.map((tech) => tech.name)?.join(", ") || "-" }}
           </div>
 
-          <div class="lg:w-6/12 w-full px-3 text-left">
+          <div class="lg:w-full px-3 text-left">
             <div class="flex items-center gap-2">
-              <!-- Mood Icon -->
-              <div
-                class="w-6 h-6 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
-                :class="getMoodIcon(item).bgClass"
-                :title="getMoodIcon(item).title"
-              >
-                <span class="text-sm">{{ getMoodIcon(item).emoji }}</span>
-              </div>
               <!-- Status Badge -->
               <span
                 class="px-2 py-1 rounded text-xs font-semibold whitespace-nowrap"
@@ -387,68 +343,155 @@
             </div>
           </div>
 
-          <div class="lg:w-fit w-full px-3 text-left">
-            <span
-              class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-yellow-800 whitespace-nowrap"
-            >
-              Edit / View
-            </span>
-          </div>
-        </div>
-
-        <!-- ================= MOBILE CARD ================= -->
-        <div
-          class="lg:hidden border p-4 space-y-2 cursor-pointer transition-colors hover:bg-gray-50"
-          @click="openModal(item)"
-        >
-          <div class="flex justify-between items-center">
-            <span class="font-bold text-sm">
-              {{ item.ticket_id }}
-            </span>
-
-            <div class="flex items-center gap-2">
-              <!-- Mood Icon -->
-              <div
-                class="w-6 h-6 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
-                :class="getMoodIcon(item).bgClass"
-                :title="getMoodIcon(item).title"
+          <!-- Star Rating -->
+          <div class="lg:w-full px-3 text-left">
+            <div class="flex items-center gap-1 flex-wrap">
+              <button
+                v-for="star in 5"
+                :key="star"
+                @click.stop="isTicketCompletedForRating(item) && updateRating(item, star)"
+                :disabled="!isTicketCompletedForRating(item)"
+                class="text-lg transition-transform"
+                :class="{
+                  'hover:scale-125 cursor-pointer': isTicketCompletedForRating(item),
+                  'cursor-not-allowed opacity-50': !isTicketCompletedForRating(item)
+                }"
+                :title="isTicketCompletedForRating(item) ? `Rate ${star} star${star > 1 ? 's' : ''}` : 'Rating available when ticket is Done/Completed'"
               >
-                <span class="text-sm">{{ getMoodIcon(item).emoji }}</span>
-              </div>
-              <!-- Status Badge -->
+                <i
+                  class="fa fa-star"
+                  :class="
+                    star <= (item.evaluation_feedback_client_star_rating || 0)
+                      ? 'text-yellow-400'
+                      : 'text-gray-300'
+                  "
+                ></i>
+              </button>
               <span
-                class="px-2 py-1 rounded text-xs font-semibold"
-                :class="ticketStatusClass(latestStatus(item)?.status)"
+                v-if="item.evaluation_feedback_client_star_rating"
+                class="text-xs text-gray-600 ml-1"
               >
-                {{ latestStatus(item)?.status || "-" }}
+                ({{ item.evaluation_feedback_client_star_rating }})
+              </span>
+              <span
+                v-if="!isTicketCompletedForRating(item)"
+                class="text-[10px] text-orange-600 ml-2"
+              >
+                <i class="fas fa-lock"></i> Available when Done/Completed
               </span>
             </div>
           </div>
 
-          <div>
-            <p class="text-sm font-semibold">
-              {{ item.requestor_fullname }}
-            </p>
-            <p class="text-xs text-gray-600">
-              {{ item.requestor_lsu_email }}
-            </p>
+          <div
+            class="w-full px-3 text-left uppercase whitespace-nowrap text-xs"
+          >
+            <textarea
+              v-model="item.evaluation_feedback_client_comment"
+              :disabled="!isTicketCompletedForRating(item)"
+              class="input rounded border text-xs px-2 py-1 w-full"
+              :class="{
+                'bg-gray-100 cursor-not-allowed': !isTicketCompletedForRating(item),
+                'bg-white': isTicketCompletedForRating(item)
+              }"
+              :placeholder="isTicketCompletedForRating(item) ? 'Share your feedback or comments about the service...' : 'Feedback available when ticket is Done/Completed'"
+              rows="3"
+            />
           </div>
+        </div>
 
-          <div class="text-xs text-gray-700">
-            <span class="font-semibold">Technician:</span>
-            {{ item.technicians_assigned?.map(t => t.name).join(", ") || "—" }}
-          </div>
-
-          <div class="flex justify-between items-center pt-2">
-            <span class="text-xs text-gray-500">
-              {{ moment(item.created_at).format("MMM DD, YYYY hh:mm A") }}
-            </span>
-
+        <!-- ================= MOBILE CARD VIEW ================= -->
+        <div
+          class="lg:hidden border rounded-lg mb-3 bg-white shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+          @click="openModal(item)"
+        >
+          <!-- Card Header with Ticket ID and Status -->
+          <div class="bg-gradient-to-r from-green-600 to-green-500 p-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+              <i class="fa fa-ticket text-white text-sm"></i>
+              <span class="text-white font-bold text-sm">{{ item.ticket_id }}</span>
+            </div>
             <span
-              class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold"
+              class="px-2 py-1 rounded text-xs font-semibold"
+              :class="ticketStatusClass(latestStatus(item)?.status)"
             >
-              Edit / View
+              {{ latestStatus(item)?.status || "-" }}
             </span>
+          </div>
+
+          <!-- Card Body -->
+          <div class="p-3 space-y-2">
+            <!-- Requestor Info -->
+            <div class="flex items-start gap-2">
+              <i class="fa fa-user text-green-600 text-sm mt-0.5"></i>
+              <div class="flex-1">
+                <p class="text-xs text-gray-500">Requestor</p>
+                <p class="text-sm font-semibold text-gray-800">{{ item.requestor_fullname }}</p>
+                <p class="text-xs text-gray-600">{{ item.requestor_lsu_email }}</p>
+              </div>
+            </div>
+
+            <!-- Technicians -->
+            <div class="flex items-start gap-2">
+              <i class="fa fa-users text-blue-600 text-sm mt-0.5"></i>
+              <div class="flex-1">
+                <p class="text-xs text-gray-500">Assigned Personnel</p>
+                <p class="text-sm text-gray-800">
+                  {{ item.technicians_assigned.map((tech) => tech.name)?.join(", ") || "-" }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Rating Section (only show if completed) -->
+            <div v-if="isTicketCompletedForRating(item)" class="border-t pt-2 mt-2">
+              <div class="flex items-center gap-2 mb-2">
+                <i class="fa fa-star text-yellow-500 text-sm"></i>
+                <p class="text-xs text-gray-500 font-semibold">Rate Your Experience</p>
+              </div>
+              <div class="flex items-center gap-1 mb-2">
+                <button
+                  v-for="star in 5"
+                  :key="star"
+                  @click.stop="updateRating(item, star)"
+                  class="text-xl transition-transform hover:scale-125"
+                >
+                  <i
+                    class="fa fa-star"
+                    :class="
+                      star <= (item.evaluation_feedback_client_star_rating || 0)
+                        ? 'text-yellow-400'
+                        : 'text-gray-300'
+                    "
+                  ></i>
+                </button>
+                <span
+                  v-if="item.evaluation_feedback_client_star_rating"
+                  class="text-xs text-gray-600 ml-2"
+                >
+                  ({{ item.evaluation_feedback_client_star_rating }}/5)
+                </span>
+              </div>
+              <textarea
+                v-model="item.evaluation_feedback_client_comment"
+                @click.stop
+                class="input rounded border text-xs px-2 py-1 w-full bg-white"
+                placeholder="Share your feedback..."
+                rows="2"
+              />
+            </div>
+
+            <!-- Rating Locked Message -->
+            <div v-else class="border-t pt-2 mt-2 bg-orange-50 rounded p-2">
+              <div class="flex items-center gap-2 text-orange-600">
+                <i class="fas fa-lock text-sm"></i>
+                <p class="text-xs">Rating available when ticket is Done/Completed</p>
+              </div>
+            </div>
+
+            <!-- Created Date -->
+            <div class="flex items-center gap-2 text-xs text-gray-500 pt-1">
+              <i class="fa fa-clock"></i>
+              <span>{{ moment(item.created_at).format("MMM DD, YYYY h:mm A") }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -464,12 +507,12 @@
 
     <!-- ================= PAGINATION ================= -->
     <div v-if="totalPages > 1" class="mt-6 gap-2">
-      <div class="flex justify-center items-center gap-2">
+      <div class="flex justify-center items-center gap-1 lg:gap-2 flex-wrap">
         <!-- First Page -->
         <button
           @click="goToPage(1)"
           :disabled="currentPage === 1"
-          class="px-3 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="lg:px-3 px-2 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs lg:text-sm"
           title="First Page"
         >
           <i class="fa fa-angle-double-left"></i>
@@ -479,7 +522,7 @@
         <button
           @click="goToPage(currentPage - 1)"
           :disabled="currentPage === 1"
-          class="px-3 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="lg:px-3 px-2 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs lg:text-sm"
           title="Previous Page"
         >
           <i class="fa fa-angle-left"></i>
@@ -492,7 +535,7 @@
             :key="page"
             @click="goToPage(page)"
             :class="[
-              'px-4 py-2 rounded border transition-colors font-semibold text-sm',
+              'lg:px-4 px-3 py-2 rounded border transition-colors font-semibold text-xs lg:text-sm',
               currentPage === page
                 ? 'bg-green-600 text-white border-green-600'
                 : 'bg-white hover:bg-gray-100',
@@ -506,7 +549,7 @@
         <button
           @click="goToPage(currentPage + 1)"
           :disabled="currentPage === totalPages"
-          class="px-3 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="lg:px-3 px-2 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs lg:text-sm"
           title="Next Page"
         >
           <i class="fa fa-angle-right"></i>
@@ -516,7 +559,7 @@
         <button
           @click="goToPage(totalPages)"
           :disabled="currentPage === totalPages"
-          class="px-3 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="lg:px-3 px-2 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-xs lg:text-sm"
           title="Last Page"
         >
           <i class="fa fa-angle-double-right"></i>
@@ -525,7 +568,7 @@
 
       <!-- Page Info -->
       <div
-        class="ml-4 text-sm text-gray-600 font-medium w-full text-center py-2"
+        class="text-xs lg:text-sm text-gray-600 font-medium w-full text-center py-2"
       >
         Page {{ currentPage }} of {{ totalPages }}
       </div>
@@ -534,10 +577,10 @@
     <!-- MODAL -->
     <div
       v-if="showModal"
-      class="fixed inset-0 bg-black/40 flex justify-center items-center z-50 lg:px-0 px-2"
+      class="fixed inset-0 bg-black/40 flex justify-center items-center z-50 lg:p-4 p-2"
     >
       <div
-        class="bg-white lg:w-11/12 rounded-lg lg:p-6 py-2 h-5/6 overflow-y-auto relative px-2"
+        class="bg-white lg:w-11/12 w-full rounded-lg lg:p-6 p-3 lg:h-5/6 h-full lg:max-h-[90vh] max-h-full overflow-y-auto relative"
       >
         <!-- Loading Overlay -->
         <div
@@ -559,17 +602,18 @@
           </div>
         </div>
         <div v-if="!modalLoading">
-          <div class="flex lg:text-sm text-xs items-center lg:pb-5 pb-2">
-            <h3 class="font-bold lg:text-center text-left w-full">
+          <div class="flex lg:text-sm text-xs items-center lg:pb-5 pb-3 sticky top-0 bg-white z-10 lg:static border-b lg:border-0 mb-3">
+            <h3 class="font-bold lg:text-center text-left w-full lg:text-base text-sm">
               {{ isCreate ? "Create Ticket (Job Request)" : "Ticket Details" }}
             </h3>
 
             <button
-              class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 font-semibold"
+              class="lg:px-4 px-3 lg:py-2 py-1.5 bg-blue-300 rounded text-black hover:bg-gray-400 font-semibold text-xs lg:text-sm whitespace-nowrap"
               @click="closeModal"
               :disabled="modalLoading"
             >
-              <i class="fa fa-times"></i>
+              <i class="fa fa-times lg:mr-1"></i>
+              <span class="hidden lg:inline">Close</span>
             </button>
           </div>
           <!-- BASIC INFO -->
@@ -600,44 +644,23 @@
                 </div>
               </div>
               <div class="md:col-span-2">
-                <label class="text-xs mb-1 block">
-                  Assigned Personnel
-                  <span v-if="info.ticket_locked_by_email" class="ml-2 text-orange-600 font-semibold">
-                    <i class="fas fa-lock"></i> Ticket Locked
-                  </span>
-                </label>
-                <div class="border rounded flex flex-wrap">
+                <label class="text-xs mb-1 block"> Assigned Personnel</label>
+                <div class="border rounded flex flex-wrap bg-gray-50">
                   <label
                     v-for="tech in TECHNICIANS_PERSONNEL"
-                    :key="tech.email"
+                    :key="tech"
                     class="flex items-center gap-x-2 text-xs lg:w-4/12 w-full whitespace-nowrap py-1 px-2 rounded leading-0 shadow"
-                    :class="{
-                      'cursor-pointer': !info.ticket_locked_by_email || isAssignedTechnician,
-                      'cursor-not-allowed opacity-50': info.ticket_locked_by_email && !isAssignedTechnician
-                    }"
+                    :class="{ 'cursor-not-allowed': !isCreate }"
                   >
                     <input
                       type="checkbox"
                       :value="tech"
                       v-model="info.technicians_assigned"
-                      :disabled="info.ticket_locked_by_email && !isAssignedTechnician"
                       class="accent-blue-600"
+                      :disabled="!isCreate"
                     />
-                    <span>{{ tech.name }}</span>
-                    <i v-if="info.technicians_assigned?.some(t => t.email === tech.email) && info.ticket_locked_by_email"
-                       class="fas fa-lock text-orange-500 text-xs ml-1"></i>
+                     <span>{{ tech.name }}</span>
                   </label>
-                </div>
-
-                <!-- Transfer Ticket Button (only for assigned technicians) -->
-                <div v-if="!isCreate && isAssignedTechnician && info.ticket_locked_by_email" class="mt-2">
-                  <button
-                    @click="showTransferModal = true"
-                    class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg transition-colors shadow-sm"
-                  >
-                    <i class="fas fa-exchange-alt mr-1"></i>
-                    Transfer Ticket to Other Personnel
-                  </button>
                 </div>
               </div>
             </div>
@@ -652,17 +675,14 @@
                 <!-- OFFICE -->
                 <div class="w-full mb-1">
                   <label class="block text-xs mb-0.5"
-                    >Office or Area 
-                    
-                     <span v-if="isCreate" class="text-red-600">*</span>
-                    
-                    </label
+                    >Office or Area </label
                   >
                   <div class="flex">
                     <select
                       v-model="info.issue_concern_request_center_office_room"
                       class="input border w-full rounded text-xs px-2 py-1"
-                       :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                      :disabled="!isCreate"
+                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                     >
                       <option disabled value="">Select Location</option>
                       <option
@@ -675,10 +695,15 @@
                     </select>
 
                     <input
-                      v-if="info.issue_concern_request_center_office_room === 'OTHER'"
+                      v-if="
+                        info.issue_concern_request_center_office_room ===
+                        'OTHER'
+                      "
                       v-model="customOffice"
                       class="input rounded border ml-2 flex-1 px-2 py-1 text-xs"
                       placeholder="Specific or Exact"
+                      :disabled="!isCreate"
+                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                     />
                   </div>
                 </div>
@@ -686,13 +711,14 @@
                 <!-- TECH TYPE -->
                 <div class="w-full mb-1">
                   <label class="block text-xs mb-0.5"
-                    >Tech Type           <span v-if="isCreate" class="text-red-600">*</span> </label
-                  > 
+                    >Tech Type </label
+                  >
                   <select
                     v-model="info.issue_concern_request_category_type"
                     class="input rounded border px-2 py-1 w-full text-xs"
                     @change="info.issue_concern_request_item_type = ''"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   >
                     <option disabled value="">Select Category</option>
                     <option
@@ -708,13 +734,13 @@
                 <!-- SPECIFIC TYPE -->
                 <div class="w-full mb-1">
                   <label class="block mb-0.5 text-xs"
-                    >Specific Type           <span v-if="isCreate" class="text-red-600">*</span> </label
+                    >Specific Type </label
                   >
                   <select
                     v-model="info.issue_concern_request_item_type"
                     class="input rounded border text-xs px-2 py-1 w-full"
-                    :disabled="!info.issue_concern_request_category_type"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate || !info.issue_concern_request_category_type"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   >
                     <option disabled value="">
                       {{
@@ -737,11 +763,12 @@
 
                 <!-- OWNER TYPE -->
                 <div class="w-full mb-1">
-                  <label class="block text-xs mb-0.5">Owner Type           <span v-if="isCreate" class="text-red-600">*</span></label>
+                  <label class="block text-xs mb-0.5">Owner Type</label>
                   <select
                     v-model="info.owner_type"
                     class="input rounded border px-2 py-1 w-full text-xs"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   >
                     <option value="LSU">LSU</option>
                     <option value="Personal">Personal</option>
@@ -754,7 +781,8 @@
                   <select
                     v-model="info.client_role"
                     class="input rounded border px-2 py-1 w-full text-xs"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   >
                     <option value="">Select Role</option>
                     <option value="Student">Student</option>
@@ -762,7 +790,7 @@
                     <option value="Staff">Staff</option>
                     <option value="Alumni">Alumni</option>
                     <option value="Public">Public</option>
-                        <option value="Admin">Admin</option>
+                    <option value="Admin">Admin</option>
                   </select>
                 </div>
 
@@ -770,14 +798,15 @@
                 <div class="w-full mb-1 lg:col-span-2">
                   <label class="block mb-0.5 text-xs"
                     >Details / Description
-                              <span v-if="isCreate" class="text-red-600">*</span> </label
+                    </label
                   >
                   <textarea
                     v-model="info.issue_concern_request_details"
                     class="input rounded border text-xs px-2 py-1 w-full"
                     placeholder="Describe the issue, concern, or request in detail..."
                     rows="3"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   />
                 </div>
 
@@ -819,7 +848,38 @@
                   </div>
                 </div>
 
-                <!-- EVALUATION RATING (for completed tickets) -->
+                <!-- EVALUATION RATING (only show when ticket is completed/done) -->
+                <div v-if="!isCreate && isModalTicketCompleted" class="w-full mb-1 lg:col-span-2">
+                  <label class="block text-xs mb-0.5">
+                    <i class="fa fa-star text-yellow-500 mr-1"></i>
+                    Client Evaluation Rating
+                  </label>
+                  <select
+                    v-model="info.evaluation_feedback_client_star_rating"
+                    class="input rounded border px-2 py-1 w-full text-xs"
+                  >
+                    <option value="">Not Rated</option>
+                    <option value="1">⭐ 1 Star</option>
+                    <option value="2">⭐⭐ 2 Stars</option>
+                    <option value="3">⭐⭐⭐ 3 Stars</option>
+                    <option value="4">⭐⭐⭐⭐ 4 Stars</option>
+                    <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
+                  </select>
+                </div>
+
+                <!-- FEEDBACK COMMENT (only show when ticket is completed/done) -->
+                <div v-if="!isCreate && isModalTicketCompleted" class="w-full mb-1 lg:col-span-2">
+                  <label class="block text-xs mb-0.5">
+                    <i class="fa fa-comment text-blue-500 mr-1"></i>
+                    Feedback Comment (Optional)
+                  </label>
+                  <textarea
+                    v-model="info.evaluation_feedback_client_comment"
+                    class="input rounded border text-xs px-2 py-1 w-full"
+                    placeholder="Share your feedback or comments about the service..."
+                    rows="3"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -847,135 +907,25 @@
                 <div class="italic text-xs mt-1">{{ log.remarks }}</div>
               </div>
             </div>
-
-            <div class="mt-3 pt-3 border-t bg-blue-50 p-3 rounded">
-              <div class="flex items-center gap-2 mb-2">
-                <i class="fa fa-edit text-blue-600"></i>
-                <label class="text-sm font-semibold"
-                  >Update Status (Optional)</label
-                >
-              </div>
-              <p class="text-xs text-gray-600 mb-3 italic">
-                💡 You can save changes without updating the status
-              </p>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <label class="text-xs font-semibold mb-1 block">Status</label>
-                  <select
-                    v-model="newLog.status"
-                    class="input rounded border p-2 text-xs w-full"
-                  >
-                    <option value="">No status update</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Unsuccessful">Unsuccessful</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Done">Done</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                    <option value="Reviewed">Reviewed</option>
-                    <option value="Closed">Closed</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label class="text-xs font-semibold mb-1 block"
-                    >Remarks</label
-                  >
-                  <input
-                    v-model="newLog.remarks"
-                    type="text"
-                    placeholder="Optional remarks"
-                    class="input rounded border p-2 text-xs w-full"
-                  />
-                </div>
-              </div>
-
-              <!-- Info message for In Progress status -->
-              <div v-if="newLog.status === 'In Progress'" class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                <i class="fas fa-info-circle mr-1"></i>
-                <span>When you set status to "In Progress", a log entry will be created for each assigned technician above.</span>
-              </div>
-            </div>
           </div>
 
           <!-- ACTIONS -->
-          <div class="flex justify-between gap-3 mt-10">
+          <div class="flex flex-col lg:flex-row justify-between gap-2 lg:gap-3 mt-6 lg:mt-10 sticky bottom-0 bg-white pt-3 border-t lg:static lg:border-0 lg:pt-0">
             <button
-              class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 font-semibold"
+              class="lg:px-4 px-3 lg:py-2 py-2.5 bg-gray-300 rounded hover:bg-gray-400 font-semibold text-sm lg:text-base w-full lg:w-auto order-2 lg:order-1"
               @click="closeModal"
               :disabled="modalLoading"
             >
+              <i class="fa fa-times mr-1"></i>
               Cancel
             </button>
             <button
-              class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-900 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              class="lg:px-4 px-3 lg:py-2 py-2.5 bg-green-700 text-white rounded hover:bg-green-900 font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-sm lg:text-base w-full lg:w-auto order-1 lg:order-2"
               @click="isCreate ? createTicket() : saveChanges()"
               :disabled="modalLoading"
             >
               <i class="fa mr-1" :class="isCreate ? 'fa-plus' : 'fa-save'"></i>
-              {{ isCreate ? "Create" : "Save" }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Transfer Ticket Modal -->
-    <div
-      v-if="showTransferModal"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm"
-      @click.self="showTransferModal = false"
-    >
-      <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden animate-fade-in">
-        <div class="flex items-center bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 gap-x-3">
-          <i class="fas fa-exchange-alt text-white text-2xl"></i>
-          <h3 class="text-white text-xl font-bold">Transfer Ticket to Other Personnel</h3>
-        </div>
-
-        <div class="p-6">
-          <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p class="text-xs text-blue-800">
-              <i class="fas fa-info-circle mr-1"></i>
-              <strong>Current Assignment:</strong>
-              {{ info.technicians_assigned?.map(t => t.name).join(', ') || 'None' }}
-            </p>
-            <p class="text-xs text-blue-700 mt-1">
-              Select new technician(s) to transfer this ticket. The client and new technicians will be notified via email.
-            </p>
-          </div>
-
-          <label class="text-sm font-semibold mb-2 block">Select New Technician(s):</label>
-          <div class="border rounded-lg p-3 max-h-64 overflow-y-auto">
-            <label
-              v-for="tech in TECHNICIANS_PERSONNEL"
-              :key="tech.email"
-              class="flex items-center gap-x-2 text-sm cursor-pointer py-2 px-3 rounded hover:bg-gray-50"
-            >
-              <input
-                type="checkbox"
-                :value="tech"
-                v-model="transferTechnicians"
-                class="accent-purple-600"
-              />
-              <span>{{ tech.name }}</span>
-              <span class="text-xs text-gray-500">({{ tech.email }})</span>
-            </label>
-          </div>
-
-          <div class="flex gap-3 mt-6">
-            <button
-              @click="showTransferModal = false"
-              class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition-colors"
-            >
-              <i class="fas fa-times mr-2"></i>Cancel
-            </button>
-            <button
-              @click="confirmTransferTicket"
-              :disabled="transferTechnicians.length === 0"
-              class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <i class="fas fa-check mr-2"></i>Confirm Transfer
+              {{ isCreate ? "Create Ticket" : "Save Changes" }}
             </button>
           </div>
         </div>
@@ -999,8 +949,6 @@ const technicianFilter = ref("");
 const searchFilter = ref("");
 const dateFilter = ref("");
 const customOffice = ref("");
-const showTransferModal = ref(false);
-const transferTechnicians = ref([]);
 
 // Pagination
 const currentPage = ref(1);
@@ -1132,13 +1080,12 @@ const fetchRequests = async (silent = false) => {
     requests.value = res.data || res;
 
     console.log(requests.value);
-
   } catch (err) {
     console.error("Failed to fetch tech support list", err);
   } finally {
     if (!silent) loading.value = false;
   }
-}
+};
 
 // Real-time updates every second
 const startRealtimeUpdates = () => {
@@ -1163,10 +1110,7 @@ onUnmounted(() => {
   stopRealtimeUpdates();
 });
 
-const newLog = reactive({
-  status: "",
-  remarks: "",
-});
+const newLog = reactive({ status: "", remarks: "" });
 
 function addStatusLog() {
   // Make status update optional - only add if status is provided
@@ -1176,33 +1120,11 @@ function addStatusLog() {
 
   if (!info.value.logs) info.value.logs = [];
 
-  // Special handling for "In Progress" status - create log entry for each assigned technician
-  if (newLog.status === "In Progress" && info.value.technicians_assigned && info.value.technicians_assigned.length > 0) {
-    // Create a log entry for each assigned technician
-    info.value.technicians_assigned.forEach((tech) => {
-      info.value.logs.push({
-        status: "In Progress",
-        remarks: newLog.remarks || "N/A",
-        timestamp: new Date().toISOString(),
-        assigned_technician_name: tech.name || "",
-        assigned_technician_lsu_email: tech.email || "",
-      });
-    });
-
-    // Lock the ticket to the first assigned technician
-    if (info.value.technicians_assigned[0]?.email) {
-      info.value.ticket_locked_by_email = info.value.technicians_assigned[0].email;
-    }
-  } else {
-    // For other statuses, add a single log entry with empty technician fields
-    info.value.logs.push({
-      status: newLog.status,
-      remarks: newLog.remarks || "N/A",
-      timestamp: new Date().toISOString(),
-      assigned_technician_name: "",
-      assigned_technician_lsu_email: "",
-    });
-  }
+  info.value.logs.push({
+    status: newLog.status,
+    remarks: newLog.remarks || "N/A",
+    timestamp: new Date(),
+  });
 
   // Update ticket's current_status
   info.value.current_status = newLog.status;
@@ -1215,6 +1137,18 @@ function addStatusLog() {
 // ================= STATUS HELPERS =================
 const latestStatus = (item) =>
   item.logs?.length ? item.logs[item.logs.length - 1] : null;
+
+// Check if ticket is completed/done for rating
+const isTicketCompletedForRating = (item) => {
+  const currentStatus = item.current_status || latestStatus(item)?.status;
+  return currentStatus === "Done" || currentStatus === "Completed";
+};
+
+// Check if modal ticket is completed (for showing rating/feedback fields)
+const isModalTicketCompleted = computed(() => {
+  const currentStatus = info.value.current_status || latestStatus(info.value)?.status;
+  return currentStatus === "Done" || currentStatus === "Completed";
+});
 
 // Backend-aligned filter mapping
 const TICKET_STATUS_FILTER_MAP = {
@@ -1244,29 +1178,17 @@ const sortBy = (column) => {
 };
 
 // Enhanced filter with sorting
-// Check if logged-in user is an assigned technician
-const isAssignedTechnician = computed(() => {
-  if (!info.value.technicians_assigned || !userStore.user?.email) return false;
-
-  return info.value.technicians_assigned.some(
-    (tech) => tech.email === userStore.user.email || tech.email === userStore.userEmail
-  );
-});
-
-// Check if ticket is completed/done (for enabling rating)
-const isTicketCompleted = computed(() => {
-  if (!info.value.current_status) return false;
-
-  return info.value.current_status === "Done" ||
-         info.value.current_status === "Completed" ||
-         (info.value.logs && info.value.logs.some(log =>
-           log.status === "Done" || log.status === "Completed"
-         ));
-});
-
 const filteredRequests = computed(() => {
   let filtered = [...requests.value];
 
+
+// Filter by logged-in user's email (only show their own tickets)
+const userEmail = userStore.userEmail || userStore.user.email;
+if (userEmail) {
+  filtered = filtered.filter((r) => {
+    return r.requestor_lsu_email === userEmail;
+  });
+}
   // Status filter
   if (statusFilter.value) {
     filtered = filtered.filter((r) => {
@@ -1278,7 +1200,7 @@ const filteredRequests = computed(() => {
   // Technician filter
   if (technicianFilter.value) {
     filtered = filtered.filter((r) =>
-      r.technicians_assigned?.some((tech) => tech.name === technicianFilter.value),
+      r.technicians_assigned?.includes(technicianFilter.value),
     );
   }
 
@@ -1507,7 +1429,6 @@ const info = ref({
   client_role: "",
   buy_me_coffee: "No",
   evaluation_feedback_client_star_rating: "",
-  ticket_locked_by_email: "",
   logs: [
     {
       timestamp: new Date().toISOString(),
@@ -1537,7 +1458,6 @@ const openCreateModal = () => {
     client_role: "",
     buy_me_coffee: "No",
     evaluation_feedback_client_star_rating: "",
-    ticket_locked_by_email: "",
     logs: [
       {
         timestamp: new Date().toISOString(),
@@ -1573,7 +1493,8 @@ const closeModal = () => (showModal.value = false);
 // Normalize office before submit
 const normalizeOffice = () => {
   if (info.value.issue_concern_request_center_office_room === "OTHER")
-    info.value.issue_concern_request_center_office_room = customOffice.value || "Other";
+    info.value.issue_concern_request_center_office_room =
+      customOffice.value || "Other";
 };
 
 const createTicket = async () => {
@@ -1582,13 +1503,34 @@ const createTicket = async () => {
 
   const formData = new FormData();
   formData.append("ticket_id", info.value.ticket_id || `TID${Date.now()}`);
-  formData.append("requestor_fullname", info.value.requestor_fullname?.trim() || "");
-  formData.append("requestor_lsu_email", info.value.requestor_lsu_email?.trim() || "");
-  formData.append("technicians_assigned", JSON.stringify(info.value.technicians_assigned || []));
-  formData.append("issue_concern_request_details", info.value.issue_concern_request_details?.trim() || "");
-  formData.append("issue_concern_request_category_type", info.value.issue_concern_request_category_type?.trim() || "");
-  formData.append("issue_concern_request_item_type", info.value.issue_concern_request_item_type?.trim() || "");
-  formData.append("issue_concern_request_center_office_room", info.value.issue_concern_request_center_office_room?.trim() || "");
+  formData.append(
+    "requestor_fullname",
+    info.value.requestor_fullname?.trim() || "",
+  );
+  formData.append(
+    "requestor_lsu_email",
+    info.value.requestor_lsu_email?.trim() || "",
+  );
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(info.value.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    info.value.issue_concern_request_details?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    info.value.issue_concern_request_category_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    info.value.issue_concern_request_item_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    info.value.issue_concern_request_center_office_room?.trim() || "",
+  );
   formData.append("owner_type", info.value.owner_type || "LSU");
   formData.append("client_role", info.value.client_role || "");
   formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
@@ -1652,18 +1594,45 @@ const saveChanges = async () => {
 
   const formData = new FormData();
   formData.append("ticket_id", info.value.ticket_id);
-  formData.append("requestor_fullname", info.value.requestor_fullname?.trim() || "");
-  formData.append("requestor_lsu_email", info.value.requestor_lsu_email?.trim() || "");
-  formData.append("technicians_assigned", JSON.stringify(info.value.technicians_assigned || []));
-  formData.append("issue_concern_request_details", info.value.issue_concern_request_details?.trim() || "");
-  formData.append("issue_concern_request_category_type", info.value.issue_concern_request_category_type?.trim() || "");
-  formData.append("issue_concern_request_item_type", info.value.issue_concern_request_item_type?.trim() || "");
-  formData.append("issue_concern_request_center_office_room", info.value.issue_concern_request_center_office_room?.trim() || "");
+  formData.append(
+    "requestor_fullname",
+    info.value.requestor_fullname?.trim() || "",
+  );
+  formData.append(
+    "requestor_lsu_email",
+    info.value.requestor_lsu_email?.trim() || "",
+  );
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(info.value.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    info.value.issue_concern_request_details?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    info.value.issue_concern_request_category_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    info.value.issue_concern_request_item_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    info.value.issue_concern_request_center_office_room?.trim() || "",
+  );
   formData.append("owner_type", info.value.owner_type || "LSU");
   formData.append("client_role", info.value.client_role || "");
   formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
-  formData.append("evaluation_feedback_client_star_rating", info.value.evaluation_feedback_client_star_rating || "");
-  formData.append("ticket_locked_by_email", info.value.ticket_locked_by_email || "");
+  formData.append(
+    "evaluation_feedback_client_star_rating",
+    info.value.evaluation_feedback_client_star_rating || "",
+  );
+  formData.append(
+    "evaluation_feedback_client_comment",
+    info.value.evaluation_feedback_client_comment || "",
+  );
   formData.append("logs", JSON.stringify(info.value.logs || []));
 
   if (receiptFile.value) {
@@ -1695,60 +1664,45 @@ const saveChanges = async () => {
   }
 };
 
-// Transfer ticket to other personnel
-const confirmTransferTicket = async () => {
-  if (transferTechnicians.value.length === 0) {
-    showToaster("⚠️ Please select at least one technician to transfer to.", "warning");
-    return;
-  }
-
-  modalLoading.value = true;
-
-  // Store old technicians for notification
-  const oldTechnicians = [...(info.value.technicians_assigned || [])];
-
-  // Update technicians_assigned with new selection
-  info.value.technicians_assigned = [...transferTechnicians.value];
-
-  // Update ticket_locked_by_email to first new technician
-  if (transferTechnicians.value[0]?.email) {
-    info.value.ticket_locked_by_email = transferTechnicians.value[0].email;
-  }
-
-  // Add transfer log entry
-  if (!info.value.logs) info.value.logs = [];
-  info.value.logs.push({
-    status: "Transferred",
-    remarks: `Ticket transferred from ${oldTechnicians.map(t => t.name).join(', ')} to ${transferTechnicians.value.map(t => t.name).join(', ')}`,
-    timestamp: new Date().toISOString(),
-    assigned_technician_name: transferTechnicians.value[0]?.name || "",
-    assigned_technician_lsu_email: transferTechnicians.value[0]?.email || "",
-  });
-
-  // Save changes
+// Update star rating
+const updateRating = async (item, rating) => {
   const formData = new FormData();
-  formData.append("ticket_id", info.value.ticket_id);
-  formData.append("requestor_fullname", info.value.requestor_fullname?.trim() || "");
-  formData.append("requestor_lsu_email", info.value.requestor_lsu_email?.trim() || "");
-  formData.append("technicians_assigned", JSON.stringify(info.value.technicians_assigned || []));
-  formData.append("issue_concern_request_details", info.value.issue_concern_request_details?.trim() || "");
-  formData.append("issue_concern_request_category_type", info.value.issue_concern_request_category_type?.trim() || "");
-  formData.append("issue_concern_request_item_type", info.value.issue_concern_request_item_type?.trim() || "");
-  formData.append("issue_concern_request_center_office_room", info.value.issue_concern_request_center_office_room?.trim() || "");
-  formData.append("owner_type", info.value.owner_type || "LSU");
-  formData.append("client_role", info.value.client_role || "");
-  formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
-  formData.append("evaluation_feedback_client_star_rating", info.value.evaluation_feedback_client_star_rating || "");
-  formData.append("ticket_locked_by_email", info.value.ticket_locked_by_email || "");
-  formData.append("logs", JSON.stringify(info.value.logs || []));
-
-  if (receiptFile.value) {
-    formData.append("buy_me_coffee_gcash_receipt", receiptFile.value);
-  }
+  formData.append("ticket_id", item.ticket_id);
+  formData.append("requestor_fullname", item.requestor_fullname || "");
+  formData.append("requestor_lsu_email", item.requestor_lsu_email || "");
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(item.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    item.issue_concern_request_details || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    item.issue_concern_request_category_type || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    item.issue_concern_request_item_type || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    item.issue_concern_request_center_office_room || "",
+  );
+  formData.append("owner_type", item.owner_type || "LSU");
+  formData.append("client_role", item.client_role || "");
+  formData.append("buy_me_coffee", item.buy_me_coffee || "No");
+  formData.append("evaluation_feedback_client_star_rating", String(rating));
+  formData.append(
+    "evaluation_feedback_client_comment",
+    item.evaluation_feedback_client_comment || "",
+  );
+  formData.append("logs", JSON.stringify(item.logs || []));
 
   try {
     const res = await $fetch(
-      endpoint.value + `/api/cits/request-ticket/${info.value.id}/edit/`,
+      endpoint.value + `/api/cits/request-ticket/${item.id}/edit/`,
       {
         method: "POST",
         body: formData,
@@ -1756,19 +1710,18 @@ const confirmTransferTicket = async () => {
     );
 
     if (res.status === "updated") {
-      showToaster("✅ Ticket transferred successfully! Notifications sent to client and new technicians.", "success", 5000);
-      showTransferModal.value = false;
-      transferTechnicians.value = [];
-      await fetchRequests(); // refresh list
+      showToaster(
+        `✅ Rating updated to ${rating} star${rating > 1 ? "s" : ""}!`,
+        "success",
+      );
+      await fetchRequests(true); // silent refresh
     } else {
-      console.error("Transfer failed:", res);
-      showToaster("❌ Failed to transfer ticket.", "error");
+      console.error("Rating update failed:", res);
+      showToaster("❌ Failed to update rating.", "error");
     }
   } catch (err) {
-    console.error("Failed to transfer ticket:", err);
-    showToaster("❌ Failed to transfer ticket. Please try again.", "error");
-  } finally {
-    modalLoading.value = false;
+    console.error("Failed to update rating:", err);
+    showToaster("❌ Failed to update rating. Please try again.", "error");
   }
 };
 
