@@ -17,7 +17,7 @@ definePageMeta({
 const router = useRouter();
 const userStore = useUserStore();
 const toggleSideBarMenu = ref(false);
-const currentView = ref("profile");
+const currentView = ref("Menu");
 const openGroups = ref([
   "Content Management",
   "Human Resource",
