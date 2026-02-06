@@ -223,7 +223,7 @@
                         @click="resetForm"
                         class="w-full px-4 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-300 font-semibold transition-colors"
                       >
-                        <i class="fas fa-close mr-2"></i>Closed
+                        <i class="fas fa-close mr-2"></i>Close
                       </button>
                     </div>
                   </div>

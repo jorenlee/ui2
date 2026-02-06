@@ -858,7 +858,8 @@
               </div>
             </div>
 
-            <div class="mt-3 pt-3 border-t bg-blue-50 p-3 rounded">
+            <!-- UPDATE STATUS SECTION - Only show if user is assigned technician when ticket is locked -->
+            <div v-if="!info.ticket_locked_by_email || isAssignedTechnician" class="mt-3 pt-3 border-t bg-blue-50 p-3 rounded">
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa fa-edit text-blue-600"></i>
                 <label class="text-sm font-semibold"
@@ -904,6 +905,36 @@
               <div v-if="newLog.status === 'In Progress'" class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
                 <i class="fas fa-info-circle mr-1"></i>
                 <span>When you set status to "In Progress", a log entry will be created for each assigned technician above.</span>
+              </div>
+            </div>
+
+            <!-- READ-ONLY STATUS VIEW - Show when ticket is locked and user is NOT assigned -->
+            <div v-else-if="info.ticket_locked_by_email && !isAssignedTechnician" class="mt-3 pt-3 border-t bg-gray-50 p-3 rounded">
+              <div class="flex items-center gap-2 mb-2">
+                <i class="fas fa-lock text-orange-600"></i>
+                <label class="text-sm font-semibold text-gray-700"
+                  >Status Updates (View Only)</label
+                >
+              </div>
+              <p class="text-xs text-orange-600 mb-3 italic">
+                <i class="fas fa-info-circle mr-1"></i>
+                This ticket is locked. Only assigned personnel can update the status.
+              </p>
+
+              <!-- Current Status Display -->
+              <div class="bg-white border rounded p-3">
+                <div class="text-xs font-semibold text-gray-600 mb-2">Current Status:</div>
+                <div class="flex items-center gap-2">
+                  <span
+                    class="px-3 py-1.5 rounded text-xs font-semibold"
+                    :class="ticketStatusClass(latestStatus(info)?.status)"
+                  >
+                    {{ latestStatus(info)?.status || "Pending" }}
+                  </span>
+                  <span class="text-xs text-gray-500">
+                    {{ latestStatus(info)?.remarks || "N/A" }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

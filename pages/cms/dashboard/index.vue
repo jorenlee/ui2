@@ -2,28 +2,22 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
-
 /* ---- AUTH GUARD ---- */
 onMounted(() => {
   if (!userStore.isLoggedIn) {
     router.replace("/cms/login");
   }
 });
-
 /* ---- STATE ---- */
 const isUserAuthenticated = computed(() => userStore.isLoggedIn);
-
 definePageMeta({
   middleware: "cms-auth",
 });
-
 // ---------------- STATE ----------------
 const router = useRouter();
 const userStore = useUserStore();
-
 const toggleSideBarMenu = ref(false);
 const currentView = ref("profile");
-
 const openGroups = ref([
   "Content Management",
   "Human Resource",
@@ -32,7 +26,6 @@ const openGroups = ref([
   "NPCC IT Services",
   "External Links",
 ]);
-
 const toggleGroup = (groupName) => {
   if (openGroups.value.includes(groupName)) {
     openGroups.value = openGroups.value.filter((g) => g !== groupName);
@@ -40,23 +33,19 @@ const toggleGroup = (groupName) => {
     openGroups.value.push(groupName);
   }
 };
-
 const logOut = () => {
   userStore.removeToken();
   router.push("/cms/login");
 };
-
 const handleContentSubmitted = () => {
   currentView.value = "list";
 };
-
 // ---------------- ROLES ----------------
 const superAdminEmails = [
   "jorenlee.luna@lsu.edu.ph",
   "michaeljohn.puertogalera@lsu.edu.ph",
   "jason.yap@lsu.edu.ph",
 ];
-
 const npccMenuEmails = [
   "michaeljohn.puertogalera@lsu.edu.ph",
   "jorenlee.luna@lsu.edu.ph",
@@ -66,9 +55,7 @@ const npccMenuEmails = [
   "denzelroy.suarez@lsu.edu.ph",
   "giovanni.morales@lsu.edu.ph",
 ];
-
 const ochAdminEmails = ["och@lsu.edu.ph"];
-
 const contentWritersEmails = [
   "monaliza.mugot@lsu.edu.ph",
   "jackjun.caupayan@lsu.edu.ph",
@@ -110,7 +97,6 @@ const libraryMenuEmails = [
   "lynn.lumacad@lsu.edu.ph",
   "zosette.salas@lsu.edu.ph",
 ];
-
 const rolesByEmail = {
   superAdmin: superAdminEmails,
   hr: hrMenuEmails,
@@ -119,7 +105,6 @@ const rolesByEmail = {
   och: ochAdminEmails,
   npcc: npccMenuEmails,
 };
-
 // ---------------- DETERMINE ROLE ----------------
 const userRole = computed(() => {
   const email = userStore.user?.email;
@@ -132,7 +117,6 @@ const userRole = computed(() => {
   if (rolesByEmail.npcc.includes(email)) return "npcc";
   return null;
 });
-
 // ---------------- WATCH EMAIL ----------------
 watch(
   () => userStore.user?.email,
@@ -146,7 +130,6 @@ watch(
   },
   { immediate: true },
 );
-
 // ---------------- MENU ----------------
 const subMenuList = [
   {
@@ -217,8 +200,7 @@ const subMenuList = [
       { label: "LSU Home Page", icon: "fa-globe", type: "link", to: "/" },
     ],
   },
-];
-
+]
 const menuList = [
   { label: "Menu", icon: "fa-bars", type: "button", view: "Menu" },
   { label: "Search", icon: "fa-search", type: "button", view: "Search" },
