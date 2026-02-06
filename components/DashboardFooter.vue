@@ -13,7 +13,10 @@
         <div class="w-full flex items-center">
           <div>
             <h2 class="text-left text-white text-[10px] leading-0">
-              <span class="font-bold mr-1">Copyright © {{ presentYear }} </span>
+              <span class="mr-1"><span class="font-bold">LSU Central</span> | 
+            
+            <span class="font-bold">Copyright © {{ presentYear }}</span>
+            </span>
               <span>La Salle University Ozamiz, Inc.</span>
             </h2>
             <a
