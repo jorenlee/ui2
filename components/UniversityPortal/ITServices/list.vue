@@ -19,7 +19,7 @@
 
     <div class="lg:flex items-center justify-between">
       <h2 class="lg:text-xl text-sm font-bold lg:mb-4">
-        NPCC Tech Support & IT Services
+       Requested Tickets
       </h2>
 
       <!-- Results Count & Real-time Indicator -->
@@ -37,42 +37,8 @@
     <!-- ACTION BAR -->
     <div class="bg-white border rounded-lg py-1 px-2 mb-4 shadow-sm">
       <div class="lg:flex grid grid-cols-2 gap-3 mb-3 w-full">
-        <!-- Status Filter -->
-        <div class="w-full">
-          <label class="text-xs font-semibold text-gray-700 mb-1 block"
-            >Status
-          </label>
 
-          <select
-            v-model="statusFilter"
-            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="in progress">In Progress</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
 
-        <!-- Technician Filter -->
-        <div class="w-full">
-          <label class="text-xs font-semibold text-gray-700 mb-1 block"
-            >Technician</label
-          >
-          <select
-            v-model="technicianFilter"
-            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">All Technicians</option>
-            <option
-              v-for="tech in TECHNICIANS_PERSONNEL"
-              :key="tech.email"
-              :value="tech.name"
-            >
-              {{ tech.name }}
-            </option>
-          </select>
-        </div>
 
         <!-- Search Filter -->
         <div class="w-full">
@@ -87,31 +53,7 @@
           />
         </div>
 
-        <!-- Date Range Filter -->
-        <div class="w-full">
-          <label class="text-xs font-semibold text-gray-700 mb-1 block"
-            >Date Range</label
-          >
-          <select
-            v-model="dateFilter"
-            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">All Time</option>
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="year">This Year</option>
-          </select>
-        </div>
 
-        <div class="lg:w-fit w-full flex justify-between items-center">
-          <button
-            @click="clearFilters"
-            class="lg:mt-5 w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 whitespace-nowrap lg:text-sm text-xs font-semibold shadow-sm"
-          >
-            Clear Filters
-          </button>
-        </div>
       </div>
     </div>
 
@@ -121,7 +63,7 @@
     >
       <div
         @click="sortBy('ticket_id')"
-        class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="w-1/4 flex items-center justify-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-ticket mr-1"></i> Ticket ID
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -143,16 +85,17 @@
           ></i>
         </span>
       </div>
+
       <div
-        @click="sortBy('requestor_fullname')"
-        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        @click="sortBy('category')"
+        class="w-1/4 flex items-center justify-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
-        <i class="fa fa-user mr-1"></i> Full Name
+        <i class="fa fa-tag mr-1"></i> Category
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
             :class="
-              sortColumn === 'requestor_fullname' && sortDirection === 'asc'
+              sortColumn === 'category' && sortDirection === 'asc'
                 ? 'text-white'
                 : 'text-green-300 opacity-50'
             "
@@ -160,64 +103,17 @@
           <i
             class="fa fa-caret-down -mt-1"
             :class="
-              sortColumn === 'requestor_fullname' && sortDirection === 'desc'
+              sortColumn === 'category' && sortDirection === 'desc'
                 ? 'text-white'
                 : 'text-green-300 opacity-50'
             "
           ></i>
         </span>
       </div>
-      <div
-        @click="sortBy('requestor_lsu_email')"
-        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
-      >
-        <i class="fa fa-envelope mr-1"></i> Email
-        <span class="ml-1 inline-flex flex-col text-xs leading-none">
-          <i
-            class="fa fa-caret-up"
-            :class="
-              sortColumn === 'requestor_lsu_email' && sortDirection === 'asc'
-                ? 'text-white'
-                : 'text-green-300 opacity-50'
-            "
-          ></i>
-          <i
-            class="fa fa-caret-down -mt-1"
-            :class="
-              sortColumn === 'requestor_lsu_email' && sortDirection === 'desc'
-                ? 'text-white'
-                : 'text-green-300 opacity-50'
-            "
-          ></i>
-        </span>
-      </div>
-      <div
-        @click="sortBy('technicians_assigned')"
-        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
-      >
-        <i class="fa fa-users mr-1"></i> Personnel
-        <span class="ml-1 inline-flex flex-col text-xs leading-none">
-          <i
-            class="fa fa-caret-up"
-            :class="
-              sortColumn === 'technicians_assigned' && sortDirection === 'asc'
-                ? 'text-white'
-                : 'text-green-300 opacity-50'
-            "
-          ></i>
-          <i
-            class="fa fa-caret-down -mt-1"
-            :class="
-              sortColumn === 'technicians_assigned' && sortDirection === 'desc'
-                ? 'text-white'
-                : 'text-green-300 opacity-50'
-            "
-          ></i>
-        </span>
-      </div>
+
       <div
         @click="sortBy('status')"
-        class="lg:w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="w-1/4 flex items-center justify-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-info-circle mr-1"></i> Status
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -240,7 +136,7 @@
         </span>
       </div>
       <div
-        class="lg:w-full py-3 pl-3 pr-8 text-white font-bold text-sm whitespace-nowrap border-r border-green-500"
+        class="w-1/4 flex items-center justify-center py-3 px-3 text-white font-bold text-sm whitespace-nowrap"
       >
         <i class="fa fa-star mr-1"></i> Rating
       </div>
@@ -311,28 +207,20 @@
           "
           @click="openModal(item)"
         >
-          <div class="lg:w-6/12 w-full px-3 text-left text-xs">
+          <div class="w-1/4 px-3 flex items-center justify-center text-xs">
             {{ item.ticket_id }}
           </div>
 
-          <div
-            class="w-full px-3 text-left uppercase whitespace-nowrap text-xs"
-          >
-            {{ item.requestor_fullname }}
+          <div class="w-1/4 px-3 flex items-center justify-center">
+            <div class="flex items-center gap-2">
+              <i class="fa fa-tag text-blue-600 text-xs"></i>
+              <span class="text-xs font-medium text-gray-700">
+                {{ item.issue_concern_request_category_type || "-" }}
+              </span>
+            </div>
           </div>
 
-          <div class="w-full px-3 text-left text-xs">
-            {{ item.requestor_lsu_email }}
-          </div>
-
-          <div class="w-full px-3 text-left text-xs">
-            {{
-              item.technicians_assigned.map((tech) => tech.name)?.join(", ") ||
-              "-"
-            }}
-          </div>
-
-          <div class="lg:w-full px-3 text-left">
+          <div class="w-1/4 px-3 flex items-center justify-center">
             <div class="flex items-center gap-2">
               <!-- Status Badge -->
               <span
@@ -345,7 +233,7 @@
           </div>
 
           <!-- Star Rating -->
-          <div class="lg:w-full px-3 text-left">
+          <div class="w-1/4 px-3 flex items-center justify-center">
             <div class="flex items-center gap-1 flex-wrap">
               <button
                 v-for="star in 5"
@@ -394,21 +282,21 @@
 
         <!-- ================= MOBILE CARD VIEW ================= -->
         <div
-          class="lg:hidden border rounded-lg mb-3 bg-white shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+          class="lg:hidden border border-gray-200 rounded-xl mb-3 bg-white shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-all"
           @click="openModal(item)"
         >
           <!-- Card Header with Ticket ID and Status -->
           <div
-            class="bg-gradient-to-r from-green-600 to-green-500 p-3 flex justify-between items-center"
+            class="bg-gradient-to-r from-green-600 to-green-500 p-4 flex justify-between items-center"
           >
             <div class="flex items-center gap-2">
-              <i class="fa fa-ticket text-white text-sm"></i>
-              <span class="text-white font-bold text-sm">{{
+              <i class="fa fa-ticket text-white text-base"></i>
+              <span class="text-white font-bold text-base">{{
                 item.ticket_id
               }}</span>
             </div>
             <span
-              class="px-2 py-1 rounded text-xs font-semibold"
+              class="px-3 py-1.5 rounded-lg text-xs font-bold shadow-sm"
               :class="ticketStatusClass(latestStatus(item)?.status)"
             >
               {{ latestStatus(item)?.status || "-" }}
@@ -416,27 +304,44 @@
           </div>
 
           <!-- Card Body -->
-          <div class="p-3 space-y-2">
-            <!-- Requestor Info -->
-            <div class="flex items-start gap-2">
-              <i class="fa fa-user text-green-600 text-sm mt-0.5"></i>
+          <div class="p-4 space-y-3">
+            <!-- Category -->
+            <div class="flex items-center gap-3 pb-3 border-b border-gray-100">
+              <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fa fa-tag text-blue-600 text-sm"></i>
+              </div>
               <div class="flex-1">
-                <p class="text-xs text-gray-500">Requestor</p>
-                <p class="text-sm font-semibold text-gray-800">
+                <p class="text-xs font-semibold text-gray-500 mb-0.5">Category</p>
+                <p class="text-sm font-bold text-gray-800">
+                  {{ item.issue_concern_request_category_type || "-" }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Requestor Info -->
+            <div class="flex items-start gap-3 pb-3 border-b border-gray-100">
+              <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fa fa-user text-green-600 text-sm"></i>
+              </div>
+              <div class="flex-1">
+                <p class="text-xs font-semibold text-gray-500 mb-0.5">Requestor</p>
+                <p class="text-sm font-bold text-gray-800">
                   {{ item.requestor_fullname }}
                 </p>
-                <p class="text-xs text-gray-600">
+                <p class="text-xs text-gray-600 mt-0.5">
                   {{ item.requestor_lsu_email }}
                 </p>
               </div>
             </div>
 
             <!-- Technicians -->
-            <div class="flex items-start gap-2">
-              <i class="fa fa-users text-blue-600 text-sm mt-0.5"></i>
+            <div class="flex items-start gap-3 pb-3 border-b border-gray-100">
+              <div class="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i class="fa fa-users text-purple-600 text-sm"></i>
+              </div>
               <div class="flex-1">
-                <p class="text-xs text-gray-500">Assigned Personnel</p>
-                <p class="text-sm text-gray-800">
+                <p class="text-xs font-semibold text-gray-500 mb-0.5">Assigned Personnel</p>
+                <p class="text-sm font-medium text-gray-800">
                   {{
                     item.technicians_assigned
                       .map((tech) => tech.name)
@@ -449,45 +354,49 @@
             <!-- Rating Section (only show if completed) -->
             <div
               v-if="isTicketCompletedForRating(item)"
-              class="border-t pt-2 mt-2"
+              class="pt-3"
             >
-              <div class="flex items-center gap-2 mb-2">
-                <i class="fa fa-star text-yellow-500 text-sm"></i>
-                <p class="text-xs text-gray-500 font-semibold">
-                  Rate Your Experience
-                </p>
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <i class="fa fa-star text-yellow-600 text-sm"></i>
+                </div>
+                <div class="flex-1">
+                  <p class="text-xs font-semibold text-gray-500 mb-2">
+                    Rate Your Experience
+                  </p>
+                  <div class="flex items-center gap-1 mb-3">
+                    <button
+                      v-for="star in 5"
+                      :key="star"
+                      @click.stop="updateRating(item, star)"
+                      class="text-2xl transition-all hover:scale-110 active:scale-95"
+                    >
+                      <i
+                        class="fa fa-star"
+                        :class="
+                          star <= (item.evaluation_feedback_client_star_rating || 0)
+                            ? 'text-yellow-400'
+                            : 'text-gray-300'
+                        "
+                      ></i>
+                    </button>
+                    <span
+                      v-if="item.evaluation_feedback_client_star_rating"
+                      class="text-sm font-bold text-gray-700 ml-2"
+                    >
+                      {{ item.evaluation_feedback_client_star_rating }}/5
+                    </span>
+                  </div>
+                  <textarea
+                    v-model="item.evaluation_feedback_client_comment"
+                    @blur="updateFeedbackComment(item)"
+                    @click.stop
+                    class="input rounded-lg border border-gray-300 text-sm px-3 py-2 w-full bg-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                    placeholder="Share your feedback or comments..."
+                    rows="3"
+                  />
+                </div>
               </div>
-              <div class="flex items-center gap-1 mb-2">
-                <button
-                  v-for="star in 5"
-                  :key="star"
-                  @click.stop="updateRating(item, star)"
-                  class="text-xl transition-transform hover:scale-125"
-                >
-                  <i
-                    class="fa fa-star"
-                    :class="
-                      star <= (item.evaluation_feedback_client_star_rating || 0)
-                        ? 'text-yellow-400'
-                        : 'text-gray-300'
-                    "
-                  ></i>
-                </button>
-                <span
-                  v-if="item.evaluation_feedback_client_star_rating"
-                  class="text-xs text-gray-600 ml-2"
-                >
-                  ({{ item.evaluation_feedback_client_star_rating }}/5)
-                </span>
-              </div>
-              <textarea
-                v-model="item.evaluation_feedback_client_comment"
-                @blur="updateFeedbackComment(item)"
-                @click.stop
-                class="input rounded border text-xs px-2 py-1 w-full bg-white"
-                placeholder="Share your feedback..."
-                rows="2"
-              />
             </div>
 
             <!-- Rating Locked Message -->
@@ -595,7 +504,7 @@
       class="fixed inset-0 bg-black/40 flex justify-center items-center z-50 lg:p-4 p-2"
     >
       <div
-        class="bg-white lg:w-11/12 w-full rounded-lg lg:p-6 p-3 lg:h-5/6 h-full lg:max-h-[90vh] max-h-full overflow-y-auto relative"
+        class="bg-white lg:w-4/12 w-full rounded-lg lg:p-6 p-3 lg:h-5/6 h-full lg:max-h-[90vh] max-h-full overflow-y-auto relative"
       >
         <!-- Loading Overlay -->
         <div
@@ -638,16 +547,25 @@
       
   
           <!-- REQUEST DETAILS -->
-          <div class="border rounded-lg p-2 mb-2 bg-gray-50">
-            <h4 class="text-center text-xs mb-1">
-              {{ isCreate ? "Add Details or Concerns" : "Details or Concerns" }}
-            </h4>
-            <div class="border rounded p-2 mb-2 bg-white">
-              <div class="grid lg:grid-cols-2 gap-x-2 gap-y-2 text-sm">
-                <!-- 1. CATEGORY -->
-                <div class="w-full">
-                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">Category</label>
-                  <div v-if="!isCreate" class="text-sm text-gray-800">
+          <div class="bg-white border border-gray-200 rounded-xl shadow-sm mb-4 overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-gray-200 px-4 py-3">
+              <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-info-circle text-blue-600"></i>
+                {{ isCreate ? "Add Details or Concerns" : "Details or Concerns" }}
+              </h4>
+            </div>
+
+            <!-- Content -->
+            <div class="p-4 space-y-4">
+              <!-- 1. CATEGORY -->
+              <div class="flex items-start gap-3 pb-3 border-b border-gray-100">
+                <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-tag text-blue-600 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs font-semibold text-gray-500 mb-1">Category</label>
+                  <div v-if="!isCreate" class="text-sm font-medium text-gray-900">
                     {{ info.issue_concern_request_category_type || "N/A" }}
                   </div>
                   <select
@@ -666,19 +584,24 @@
                     </option>
                   </select>
                 </div>
+              </div>
 
-                <!-- 2. SPECIFIC CONCERN (Hidden for LSU Webpages and Student Portal) -->
-                <div
-                  v-if="
-                    info.issue_concern_request_category_type !==
-                      'LSU Webpages' &&
-                    info.issue_concern_request_category_type !==
-                      'Student Portal'
-                  "
-                  class="w-full"
-                >
-                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">Specific Concern</label>
-                  <div v-if="!isCreate" class="text-sm text-gray-800">
+              <!-- 2. SPECIFIC CONCERN (Hidden for LSU Webpages and Student Portal) -->
+              <div
+                v-if="
+                  info.issue_concern_request_category_type !==
+                    'LSU Webpages' &&
+                  info.issue_concern_request_category_type !==
+                    'Student Portal'
+                "
+                class="flex items-start gap-3 pb-3 border-b border-gray-100"
+              >
+                <div class="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-list-ul text-purple-600 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs font-semibold text-gray-500 mb-1">Specific Concern</label>
+                  <div v-if="!isCreate" class="text-sm font-medium text-gray-900">
                     {{ info.issue_concern_request_item_type || "N/A" }}
                   </div>
                   <select
@@ -705,17 +628,22 @@
                     </option>
                   </select>
                 </div>
+              </div>
 
-                <!-- 3. DESCRIPTION (Hidden for Student Portal) -->
-                <div
-                  v-if="
-                    info.issue_concern_request_category_type !==
-                    'Student Portal'
-                  "
-                  class="w-full lg:col-span-2"
-                >
-                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">Details / Description</label>
-                  <div v-if="!isCreate" class="text-sm text-gray-800 whitespace-pre-wrap">
+              <!-- 3. DESCRIPTION (Hidden for Student Portal) -->
+              <div
+                v-if="
+                  info.issue_concern_request_category_type !==
+                  'Student Portal'
+                "
+                class="flex items-start gap-3 pb-3 border-b border-gray-100"
+              >
+                <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-align-left text-green-600 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs font-semibold text-gray-500 mb-1">Details / Description</label>
+                  <div v-if="!isCreate" class="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">
                     {{ info.issue_concern_request_details || "N/A" }}
                   </div>
                   <textarea
@@ -726,62 +654,23 @@
                     rows="3"
                   />
                 </div>
+              </div>
 
-                <!-- 4. REQUESTOR ROLE (formerly Client Role) (Hidden for LSU Webpages and Student Portal) -->
-                <div
-                  v-if="
-                    info.issue_concern_request_category_type !==
-                      'LSU Webpages' &&
-                    info.issue_concern_request_category_type !==
-                      'Student Portal'
-                  "
-                  class="w-full"
-                >
-                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">Requestor Role</label>
-                  <div v-if="!isCreate" class="text-sm text-gray-800">
-                    {{ info.client_role || "N/A" }}
-                  </div>
-                  <select
-                    v-else
-                    v-model="info.client_role"
-                    class="input rounded border px-2 py-1 w-full text-xs"
-                  >
-                    <option value="">Select Role</option>
-                    <option value="Student">Student</option>
-                    <option value="Faculty">Faculty</option>
-                    <option value="Staff">Staff</option>
-                    <!-- Hide Public and Alumni for Others category -->
-                    <option
-                      v-if="
-                        info.issue_concern_request_category_type !== 'Others'
-                      "
-                      value="Alumni"
-                    >
-                      Alumni
-                    </option>
-                    <option
-                      v-if="
-                        info.issue_concern_request_category_type !== 'Others'
-                      "
-                      value="Public"
-                    >
-                      Public
-                    </option>
-                    <option value="Admin">Admin</option>
-                  </select>
+              <!-- 4. CENTER/OFFICE/ROOM (Hidden for Accounts, Student Portal, and Others) -->
+              <div
+                v-if="
+                  info.issue_concern_request_category_type !== 'Accounts' &&
+                  info.issue_concern_request_category_type !==
+                    'Student Portal' &&
+                  info.issue_concern_request_category_type !== 'Others'
+                "
+                class="flex items-start gap-3 pb-3 border-b border-gray-100"
+              >
+                <div class="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-map-marker-alt text-orange-600 text-sm"></i>
                 </div>
-
-                <!-- 5. CENTER/OFFICE/ROOM (Hidden for Accounts, Student Portal, and Others) -->
-                <div
-                  v-if="
-                    info.issue_concern_request_category_type !== 'Accounts' &&
-                    info.issue_concern_request_category_type !==
-                      'Student Portal' &&
-                    info.issue_concern_request_category_type !== 'Others'
-                  "
-                  class="w-full"
-                >
-                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs font-semibold text-gray-500 mb-1">
                     {{
                       info.issue_concern_request_category_type ===
                       "Computer Lab"
@@ -789,7 +678,7 @@
                         : "Center/Office/Room"
                     }}
                   </label>
-                  <div v-if="!isCreate" class="text-sm text-gray-800">
+                  <div v-if="!isCreate" class="text-sm font-medium text-gray-900">
                     {{ info.issue_concern_request_center_office_room || "N/A" }}
                   </div>
                   <div v-else class="flex">
@@ -826,23 +715,27 @@
                   </div>
                 </div>
 
-                <!-- 6. OWNER TYPE (Hidden for Hardware, Network, Computer Lab, Accounts, LSU Webpages, Student Portal) -->
-                <div
-                  v-if="
-                    info.issue_concern_request_category_type !== 'Hardware' &&
-                    info.issue_concern_request_category_type !== 'Network' &&
-                    info.issue_concern_request_category_type !==
-                      'Computer Lab' &&
-                    info.issue_concern_request_category_type !== 'Accounts' &&
-                    info.issue_concern_request_category_type !==
-                      'LSU Webpages' &&
-                    info.issue_concern_request_category_type !==
-                      'Student Portal'
-                  "
-                  class="w-full"
-                >
-                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">Owner Type</label>
-                  <div v-if="!isCreate" class="text-sm text-gray-800">
+              <!-- 5. OWNER TYPE (Hidden for Hardware, Network, Computer Lab, Accounts, LSU Webpages, Student Portal) -->
+              <div
+                v-if="
+                  info.issue_concern_request_category_type !== 'Hardware' &&
+                  info.issue_concern_request_category_type !== 'Network' &&
+                  info.issue_concern_request_category_type !==
+                    'Computer Lab' &&
+                  info.issue_concern_request_category_type !== 'Accounts' &&
+                  info.issue_concern_request_category_type !==
+                    'LSU Webpages' &&
+                  info.issue_concern_request_category_type !==
+                    'Student Portal'
+                "
+                class="flex items-start gap-3 pb-3 border-b border-gray-100"
+              >
+                <div class="flex-shrink-0 w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-user-tag text-teal-600 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs font-semibold text-gray-500 mb-1">Owner Type</label>
+                  <div v-if="!isCreate" class="text-sm font-medium text-gray-900">
                     {{ info.owner_type || "N/A" }}
                   </div>
                   <select
@@ -854,6 +747,7 @@
                     <option value="Personal">Personal</option>
                   </select>
                 </div>
+              </div>
 
                 <!-- BUY ME COFFEE -->
                 <!-- <div class="w-full mb-1">
@@ -893,40 +787,74 @@
                   </div>
                 </div>
 
-                <!-- EVALUATION RATING (only show when ticket is completed/done) -->
-                <div
-                  v-if="!isCreate && isModalTicketCompleted"
-                  class="w-full mb-1 lg:col-span-2"
-                >
-                  <label class="block text-xs mb-0.5">
-                    <i class="fa fa-star text-yellow-500 mr-1"></i>
-                    Client Evaluation Rating
-                  </label>
-                  <select
-                    v-model="info.evaluation_feedback_client_star_rating"
-                    class="input rounded border px-2 py-1 w-full text-xs"
-                  >
-                    <option value="">Not Rated</option>
-                    <option value="1">⭐ 1 Star</option>
-                    <option value="2">⭐⭐ 2 Stars</option>
-                    <option value="3">⭐⭐⭐ 3 Stars</option>
-                    <option value="4">⭐⭐⭐⭐ 4 Stars</option>
-                    <option value="5">⭐⭐⭐⭐⭐ 5 Stars</option>
-                  </select>
-                </div>
+              </div>
+            </div>
+          </div>
 
-                <!-- FEEDBACK COMMENT (only show when ticket is completed/done) -->
-                <div
-                  v-if="!isCreate && isModalTicketCompleted"
-                  class="w-full mb-1 lg:col-span-2"
-                >
-                  <label class="block text-xs mb-0.5">
-                    <i class="fa fa-comment text-blue-500 mr-1"></i>
-                    Feedback Comment (Optional)
-                  </label>
+          <!-- RATING & FEEDBACK SECTION (only show when ticket is completed/done) -->
+          <div v-if="!isCreate && isModalTicketCompleted" class="bg-white border border-gray-200 rounded-xl shadow-sm mb-4 overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-yellow-50 to-amber-50 border-b border-gray-200 px-4 py-3">
+              <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-star text-yellow-600"></i>
+                Rating & Feedback
+              </h4>
+            </div>
+
+            <!-- Content -->
+            <div class="p-4 space-y-4">
+              <!-- EVALUATION RATING -->
+              <div class="flex items-start gap-3 pb-3 border-b border-gray-100">
+                <div class="flex-shrink-0 w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-star text-yellow-600 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs font-semibold text-gray-500 mb-2">Client Evaluation Rating</label>
+
+                  <!-- Star Rating Display -->
+                  <div class="flex items-center gap-1 mb-2">
+                    <button
+                      v-for="star in 5"
+                      :key="star"
+                      @click="info.evaluation_feedback_client_star_rating = String(star)"
+                      class="text-2xl transition-all hover:scale-110 focus:outline-none"
+                      type="button"
+                    >
+                      <i
+                        class="fa fa-star"
+                        :class="
+                          star <= (info.evaluation_feedback_client_star_rating || 0)
+                            ? 'text-yellow-400'
+                            : 'text-gray-300'
+                        "
+                      ></i>
+                    </button>
+                    <span
+                      v-if="info.evaluation_feedback_client_star_rating"
+                      class="text-sm font-medium text-gray-700 ml-2"
+                    >
+                      {{ info.evaluation_feedback_client_star_rating }}/5
+                    </span>
+                    <span
+                      v-else
+                      class="text-xs text-gray-500 ml-2 italic"
+                    >
+                      Click to rate
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- FEEDBACK COMMENT -->
+              <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <i class="fas fa-comment text-blue-600 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <label class="block text-xs font-semibold text-gray-500 mb-2">Feedback Comment (Optional)</label>
                   <textarea
                     v-model="info.evaluation_feedback_client_comment"
-                    class="input rounded border text-xs px-2 py-1 w-full"
+                    class="input rounded-lg border border-gray-300 text-sm px-3 py-2 w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Share your feedback or comments about the service..."
                     rows="3"
                   />
@@ -934,28 +862,40 @@
               </div>
             </div>
           </div>
-          <!-- LOGS -->
-          <div v-if="!isCreate" class="border rounded p-4 mb-4">
-            <h4 class="font-semibold mb-3 flex items-center gap-2">
-              <i class="fa fa-history text-blue-600"></i>
-              Status History
-            </h4>
 
-            <!-- Existing logs display (read-only) - Deduplicated for client view -->
-            <div class="max-h-48 overflow-y-auto mb-3 space-y-2">
-              <div
-                v-for="(log, i) in deduplicatedLogs"
-                :key="i"
-                class="text-xs p-2 rounded"
-                :class="itemStatusClass(log.status)"
-              >
-                <div class="flex justify-between font-semibold">
-                  <span>{{ log.status }}</span>
-                  <span>{{
-                    moment(log.timestamp).format("MMM DD, YYYY hh:mm A")
-                  }}</span>
+          <!-- STATUS HISTORY -->
+          <div v-if="!isCreate" class="bg-white border border-gray-200 rounded-xl shadow-sm mb-4 overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-200 px-4 py-3">
+              <h4 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <i class="fas fa-history text-purple-600"></i>
+                Status History
+              </h4>
+            </div>
+
+            <!-- Content -->
+            <div class="p-4">
+              <!-- Existing logs display (read-only) - Deduplicated for client view -->
+              <div class="max-h-64 overflow-y-auto space-y-3">
+                <div
+                  v-for="(log, i) in deduplicatedLogs"
+                  :key="i"
+                  class="flex items-start gap-3 p-3 rounded-lg border"
+                  :class="itemStatusClass(log.status)"
+                >
+                  <div class="flex-shrink-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm">
+                    <i class="fas fa-circle text-xs" :class="getStatusIconColor(log.status)"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-1">
+                      <span class="font-bold text-sm">{{ log.status }}</span>
+                      <span class="text-xs text-gray-600">{{
+                        moment(log.timestamp).format("MMM DD, YYYY hh:mm A")
+                      }}</span>
+                    </div>
+                    <div class="text-xs mt-1.5 text-gray-700 italic leading-relaxed">{{ log.remarks }}</div>
+                  </div>
                 </div>
-                <div class="italic text-xs mt-1">{{ log.remarks }}</div>
               </div>
             </div>
           </div>
@@ -1515,6 +1455,10 @@ const filteredRequests = computed(() => {
       case "ticket_id":
         aVal = a.ticket_id || "";
         bVal = b.ticket_id || "";
+        break;
+      case "category":
+        aVal = a.issue_concern_request_category_type || "";
+        bVal = b.issue_concern_request_category_type || "";
         break;
       case "requestor_fullname":
         aVal = a.requestor_fullname || "";
@@ -2210,6 +2154,27 @@ const itemStatusClass = (status) => {
       return "bg-pink-100 text-pink-800";
     default:
       return "bg-gray-50 text-gray-700";
+  }
+};
+
+const getStatusIconColor = (status) => {
+  switch (status) {
+    case "Pending":
+      return "text-yellow-500";
+    case "In Progress":
+      return "text-blue-500";
+    case "Completed":
+      return "text-green-500";
+    case "Cancelled":
+      return "text-red-500";
+    case "Unsuccessful":
+      return "text-orange-500";
+    case "Reviewed":
+      return "text-purple-500";
+    case "Closed":
+      return "text-gray-500";
+    default:
+      return "text-gray-400";
   }
 };
 </script>
