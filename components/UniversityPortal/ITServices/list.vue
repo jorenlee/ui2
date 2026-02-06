@@ -743,9 +743,9 @@
                   </select>
                 </div>
 
-                <!-- 5. CENTER/OFFICE/ROOM (Hidden for Software, Accounts, Student Portal, and Others) -->
+                <!-- 5. CENTER/OFFICE/ROOM (Hidden for Accounts, Student Portal, and Others) -->
                 <div
-                  v-if="info.issue_concern_request_category_type !== 'Software' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'"
+                  v-if="info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'"
                   class="w-full mb-1"
                 >
                   <label class="block text-xs mb-0.5">

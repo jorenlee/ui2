@@ -383,8 +383,8 @@
                           </select>
                         </div>
 
-                        <!-- 5. CENTER/OFFICE/ROOM (Hidden for Public, Alumni, Software, Accounts, Student Portal, and Others) -->
-                        <div v-if="info.client_role !== 'Public' && info.client_role !== 'Alumni' && info.issue_concern_request_category_type !== 'Software' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'" class="w-full">
+                        <!-- 5. CENTER/OFFICE/ROOM (Hidden for Public, Alumni, Accounts, Student Portal, and Others) -->
+                        <div v-if="info.client_role !== 'Public' && info.client_role !== 'Alumni' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'" class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
                             ><i class="fas fa-building text-green-600 mr-1"></i>
                             {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Center/Office/Room' }}
@@ -785,11 +785,10 @@ const removeReceipt = () => {
 
 // Normalize office before submit
 const normalizeOffice = () => {
-  // Set N/A for Public, Alumni, Software, Accounts, Student Portal, and Others (LSU Webpages REQUIRES it)
+  // Set N/A for Public, Alumni, Accounts, Student Portal, and Others (LSU Webpages and Software REQUIRE it)
   if (
     info.value.client_role === 'Public' ||
     info.value.client_role === 'Alumni' ||
-    info.value.issue_concern_request_category_type === 'Software' ||
     info.value.issue_concern_request_category_type === 'Accounts' ||
     info.value.issue_concern_request_category_type === 'Student Portal' ||
     info.value.issue_concern_request_category_type === 'Others'
@@ -880,11 +879,10 @@ const handleSubmitClick = async () => {
     return;
   }
 
-  // Check Center/Office/Room only if not Public, Alumni, Software, Accounts, Student Portal, or Others
+  // Check Center/Office/Room only if not Public, Alumni, Accounts, Student Portal, or Others
   const requiresOffice =
     info.value.client_role !== 'Public' &&
     info.value.client_role !== 'Alumni' &&
-    info.value.issue_concern_request_category_type !== 'Software' &&
     info.value.issue_concern_request_category_type !== 'Accounts' &&
     info.value.issue_concern_request_category_type !== 'Student Portal' &&
     info.value.issue_concern_request_category_type !== 'Others';
