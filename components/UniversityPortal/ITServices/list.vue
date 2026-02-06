@@ -1,19 +1,21 @@
 <template>
   <div class="lg:p-1 text-sm">
     <!-- User Info Banner -->
-<div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-  <div class="flex items-center gap-2">
-    <i class="fa fa-user-circle text-green-700 text-xl"></i>
-    <div>
-      <p class="text-xs text-gray-600">Logged in as:</p>
-      <p class="text-sm font-bold text-green-800">{{ userStore.userEmail || userStore.user.email }}</p>
+    <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+      <div class="flex items-center gap-2">
+        <i class="fa fa-user-circle text-green-700 text-xl"></i>
+        <div>
+          <p class="text-xs text-gray-600">Logged in as:</p>
+          <p class="text-sm font-bold text-green-800">
+            {{ userStore.userEmail || userStore.user.email }}
+          </p>
+        </div>
+      </div>
+      <p class="text-xs text-gray-600 mt-2">
+        <i class="fa fa-info-circle mr-1"></i>
+        You can only view and manage your own tickets
+      </p>
     </div>
-  </div>
-  <p class="text-xs text-gray-600 mt-2">
-    <i class="fa fa-info-circle mr-1"></i>
-    You can only view and manage your own tickets
-  </p>
-</div>
 
     <div class="lg:flex items-center justify-between">
       <h2 class="lg:text-xl text-sm font-bold lg:mb-4">
@@ -25,7 +27,9 @@
         <div class="text-xs text-green-800 font-semibold">
           Showing {{ paginatedRequests.length }} of
           {{ filteredRequests.length }} ticket(s)
-          <span class="font-bold uppercase">| {{ filteredRequests.length }} total</span>
+          <span class="font-bold uppercase"
+            >| {{ filteredRequests.length }} total</span
+          >
         </div>
       </div>
     </div>
@@ -240,8 +244,6 @@
       >
         <i class="fa fa-star mr-1"></i> Rating
       </div>
-
-    
     </div>
 
     <!-- Toaster -->
@@ -324,7 +326,10 @@
           </div>
 
           <div class="w-full px-3 text-left text-xs">
-            {{ item.technicians_assigned.map((tech) => tech.name)?.join(", ") || "-" }}
+            {{
+              item.technicians_assigned.map((tech) => tech.name)?.join(", ") ||
+              "-"
+            }}
           </div>
 
           <div class="lg:w-full px-3 text-left">
@@ -345,14 +350,22 @@
               <button
                 v-for="star in 5"
                 :key="star"
-                @click.stop="isTicketCompletedForRating(item) && updateRating(item, star)"
+                @click.stop="
+                  isTicketCompletedForRating(item) && updateRating(item, star)
+                "
                 :disabled="!isTicketCompletedForRating(item)"
                 class="text-lg transition-transform"
                 :class="{
-                  'hover:scale-125 cursor-pointer': isTicketCompletedForRating(item),
-                  'cursor-not-allowed opacity-50': !isTicketCompletedForRating(item)
+                  'hover:scale-125 cursor-pointer':
+                    isTicketCompletedForRating(item),
+                  'cursor-not-allowed opacity-50':
+                    !isTicketCompletedForRating(item),
                 }"
-                :title="isTicketCompletedForRating(item) ? `Rate ${star} star${star > 1 ? 's' : ''}` : 'Rating available when ticket is Completed'"
+                :title="
+                  isTicketCompletedForRating(item)
+                    ? `Rate ${star} star${star > 1 ? 's' : ''}`
+                    : 'Rating available when ticket is Completed'
+                "
               >
                 <i
                   class="fa fa-star"
@@ -377,7 +390,6 @@
               </span>
             </div>
           </div>
-
         </div>
 
         <!-- ================= MOBILE CARD VIEW ================= -->
@@ -386,10 +398,14 @@
           @click="openModal(item)"
         >
           <!-- Card Header with Ticket ID and Status -->
-          <div class="bg-gradient-to-r from-green-600 to-green-500 p-3 flex justify-between items-center">
+          <div
+            class="bg-gradient-to-r from-green-600 to-green-500 p-3 flex justify-between items-center"
+          >
             <div class="flex items-center gap-2">
               <i class="fa fa-ticket text-white text-sm"></i>
-              <span class="text-white font-bold text-sm">{{ item.ticket_id }}</span>
+              <span class="text-white font-bold text-sm">{{
+                item.ticket_id
+              }}</span>
             </div>
             <span
               class="px-2 py-1 rounded text-xs font-semibold"
@@ -406,8 +422,12 @@
               <i class="fa fa-user text-green-600 text-sm mt-0.5"></i>
               <div class="flex-1">
                 <p class="text-xs text-gray-500">Requestor</p>
-                <p class="text-sm font-semibold text-gray-800">{{ item.requestor_fullname }}</p>
-                <p class="text-xs text-gray-600">{{ item.requestor_lsu_email }}</p>
+                <p class="text-sm font-semibold text-gray-800">
+                  {{ item.requestor_fullname }}
+                </p>
+                <p class="text-xs text-gray-600">
+                  {{ item.requestor_lsu_email }}
+                </p>
               </div>
             </div>
 
@@ -417,16 +437,25 @@
               <div class="flex-1">
                 <p class="text-xs text-gray-500">Assigned Personnel</p>
                 <p class="text-sm text-gray-800">
-                  {{ item.technicians_assigned.map((tech) => tech.name)?.join(", ") || "-" }}
+                  {{
+                    item.technicians_assigned
+                      .map((tech) => tech.name)
+                      ?.join(", ") || "-"
+                  }}
                 </p>
               </div>
             </div>
 
             <!-- Rating Section (only show if completed) -->
-            <div v-if="isTicketCompletedForRating(item)" class="border-t pt-2 mt-2">
+            <div
+              v-if="isTicketCompletedForRating(item)"
+              class="border-t pt-2 mt-2"
+            >
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa fa-star text-yellow-500 text-sm"></i>
-                <p class="text-xs text-gray-500 font-semibold">Rate Your Experience</p>
+                <p class="text-xs text-gray-500 font-semibold">
+                  Rate Your Experience
+                </p>
               </div>
               <div class="flex items-center gap-1 mb-2">
                 <button
@@ -465,14 +494,18 @@
             <div v-else class="border-t pt-2 mt-2 bg-orange-50 rounded p-2">
               <div class="flex items-center gap-2 text-orange-600">
                 <i class="fas fa-lock text-sm"></i>
-                <p class="text-xs">Rating available when ticket is Done/Completed</p>
+                <p class="text-xs">
+                  Rating available when ticket is Done/Completed
+                </p>
               </div>
             </div>
 
             <!-- Created Date -->
             <div class="flex items-center gap-2 text-xs text-gray-500 pt-1">
               <i class="fa fa-clock"></i>
-              <span>{{ moment(item.created_at).format("MMM DD, YYYY h:mm A") }}</span>
+              <span>{{
+                moment(item.created_at).format("MMM DD, YYYY h:mm A")
+              }}</span>
             </div>
           </div>
         </div>
@@ -584,8 +617,12 @@
           </div>
         </div>
         <div v-if="!modalLoading">
-          <div class="flex lg:text-sm text-xs items-center lg:pb-5 pb-3 sticky top-0 bg-white z-10 lg:static border-b lg:border-0 mb-3">
-            <h3 class="font-bold lg:text-center text-left w-full lg:text-base text-sm">
+          <div
+            class="flex lg:text-sm text-xs items-center lg:pb-5 pb-3 sticky top-0 bg-white z-10 lg:static border-b lg:border-0 mb-3"
+          >
+            <h3
+              class="font-bold lg:text-center text-left w-full lg:text-base text-sm"
+            >
               {{ isCreate ? "Create Ticket (Job Request)" : "Ticket Details" }}
             </h3>
 
@@ -598,73 +635,26 @@
               <span class="hidden lg:inline">Close</span>
             </button>
           </div>
-          <!-- BASIC INFO -->
-          <div class="border rounded p-2 mb-2">
-            <div class="gap-3">
-              <div class="lg:flex w-full gap-x-2 mb-2 lg:space-y-0 space-y-2">
-                <div class="w-full">
-                  <label class="text-xs mb-1 block"
-                    >Full Name / Requestor</label
-                  >
-                  <input
-                    v-model="info.requestor_fullname"
-                    placeholder="Full Name"
-                    class="input w-full px-2 py-1 rounded border text-xs"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
-                  />
-                </div>
-                <div class="w-full">
-                  <label class="text-xs mb-1 block">Requestor LSU Email</label>
-                  <input
-                    v-model="info.requestor_lsu_email"
-                    placeholder="e.g johndoe@lsu.edu.ph"
-                    class="input w-full px-2 py-1 rounded border text-xs"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
-                  />
-                </div>
-              </div>
-              <div class="md:col-span-2">
-                <label class="text-xs mb-1 block">
-                  <i class="fa fa-users text-blue-600 mr-1"></i>
-                  Assigned Personnel
-                </label>
-                <div class="border rounded p-3 bg-gray-50">
-                  <ul v-if="info.technicians_assigned && info.technicians_assigned.length > 0" class="space-y-1">
-                    <li
-                      v-for="tech in info.technicians_assigned"
-                      :key="tech.email"
-                      class="flex items-center gap-2 text-xs text-gray-700"
-                    >
-                      <i class="fa fa-circle text-blue-500" style="font-size: 6px;"></i>
-                      <span class="font-medium">{{ tech.name }}</span>
-                      <span class="text-gray-500">({{ tech.email }})</span>
-                    </li>
-                  </ul>
-                  <p v-else class="text-xs text-gray-500 italic">No personnel assigned yet</p>
-                </div>
-              </div>
-            </div>
-          </div>
+      
+  
           <!-- REQUEST DETAILS -->
           <div class="border rounded-lg p-2 mb-2 bg-gray-50">
             <h4 class="text-center text-xs mb-1">
               {{ isCreate ? "Add Details or Concerns" : "Details or Concerns" }}
             </h4>
             <div class="border rounded p-2 mb-2 bg-white">
-              <div class="grid lg:grid-cols-2 gap-x-2 text-sm">
+              <div class="grid lg:grid-cols-2 gap-x-2 gap-y-2 text-sm">
                 <!-- 1. CATEGORY -->
-                <div class="w-full mb-1">
-                  <label class="block text-xs mb-0.5"
-                    >Category </label
-                  >
+                <div class="w-full">
+                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">Category</label>
+                  <div v-if="!isCreate" class="text-sm text-gray-800">
+                    {{ info.issue_concern_request_category_type || "N/A" }}
+                  </div>
                   <select
+                    v-else
                     v-model="info.issue_concern_request_category_type"
                     class="input rounded border px-2 py-1 w-full text-xs"
                     @change="info.issue_concern_request_item_type = ''"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   >
                     <option disabled value="">Select Category</option>
                     <option
@@ -678,15 +668,24 @@
                 </div>
 
                 <!-- 2. SPECIFIC CONCERN (Hidden for LSU Webpages and Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1">
-                  <label class="block mb-0.5 text-xs"
-                    >Specific Concern </label
-                  >
+                <div
+                  v-if="
+                    info.issue_concern_request_category_type !==
+                      'LSU Webpages' &&
+                    info.issue_concern_request_category_type !==
+                      'Student Portal'
+                  "
+                  class="w-full"
+                >
+                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">Specific Concern</label>
+                  <div v-if="!isCreate" class="text-sm text-gray-800">
+                    {{ info.issue_concern_request_item_type || "N/A" }}
+                  </div>
                   <select
+                    v-else
                     v-model="info.issue_concern_request_item_type"
                     class="input rounded border text-xs px-2 py-1 w-full"
-                    :disabled="!isCreate || !info.issue_concern_request_category_type"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!info.issue_concern_request_category_type"
                   >
                     <option disabled value="">
                       {{
@@ -708,58 +707,103 @@
                 </div>
 
                 <!-- 3. DESCRIPTION (Hidden for Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1 lg:col-span-2">
-                  <label class="block mb-0.5 text-xs"
-                    >Details / Description
-                    </label
-                  >
+                <div
+                  v-if="
+                    info.issue_concern_request_category_type !==
+                    'Student Portal'
+                  "
+                  class="w-full lg:col-span-2"
+                >
+                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">Details / Description</label>
+                  <div v-if="!isCreate" class="text-sm text-gray-800 whitespace-pre-wrap">
+                    {{ info.issue_concern_request_details || "N/A" }}
+                  </div>
                   <textarea
+                    v-else
                     v-model="info.issue_concern_request_details"
                     class="input rounded border text-xs px-2 py-1 w-full"
                     placeholder="Describe the issue, concern, or request in detail..."
                     rows="3"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   />
                 </div>
 
                 <!-- 4. REQUESTOR ROLE (formerly Client Role) (Hidden for LSU Webpages and Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1">
-                  <label class="block text-xs mb-0.5">Requestor Role</label>
+                <div
+                  v-if="
+                    info.issue_concern_request_category_type !==
+                      'LSU Webpages' &&
+                    info.issue_concern_request_category_type !==
+                      'Student Portal'
+                  "
+                  class="w-full"
+                >
+                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">Requestor Role</label>
+                  <div v-if="!isCreate" class="text-sm text-gray-800">
+                    {{ info.client_role || "N/A" }}
+                  </div>
                   <select
+                    v-else
                     v-model="info.client_role"
                     class="input rounded border px-2 py-1 w-full text-xs"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   >
                     <option value="">Select Role</option>
                     <option value="Student">Student</option>
                     <option value="Faculty">Faculty</option>
                     <option value="Staff">Staff</option>
                     <!-- Hide Public and Alumni for Others category -->
-                    <option v-if="info.issue_concern_request_category_type !== 'Others'" value="Alumni">Alumni</option>
-                    <option v-if="info.issue_concern_request_category_type !== 'Others'" value="Public">Public</option>
+                    <option
+                      v-if="
+                        info.issue_concern_request_category_type !== 'Others'
+                      "
+                      value="Alumni"
+                    >
+                      Alumni
+                    </option>
+                    <option
+                      v-if="
+                        info.issue_concern_request_category_type !== 'Others'
+                      "
+                      value="Public"
+                    >
+                      Public
+                    </option>
                     <option value="Admin">Admin</option>
                   </select>
                 </div>
 
                 <!-- 5. CENTER/OFFICE/ROOM (Hidden for Accounts, Student Portal, and Others) -->
                 <div
-                  v-if="info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'"
-                  class="w-full mb-1"
+                  v-if="
+                    info.issue_concern_request_category_type !== 'Accounts' &&
+                    info.issue_concern_request_category_type !==
+                      'Student Portal' &&
+                    info.issue_concern_request_category_type !== 'Others'
+                  "
+                  class="w-full"
                 >
-                  <label class="block text-xs mb-0.5">
-                    {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Center/Office/Room' }}
+                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">
+                    {{
+                      info.issue_concern_request_category_type ===
+                      "Computer Lab"
+                        ? "Computer Lab Location"
+                        : "Center/Office/Room"
+                    }}
                   </label>
-                  <div class="flex">
+                  <div v-if="!isCreate" class="text-sm text-gray-800">
+                    {{ info.issue_concern_request_center_office_room || "N/A" }}
+                  </div>
+                  <div v-else class="flex">
                     <select
                       v-model="info.issue_concern_request_center_office_room"
                       class="input border w-full rounded text-xs px-2 py-1"
-                      :disabled="!isCreate"
-                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                     >
                       <option disabled value="">
-                        {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Select Computer Lab' : 'Select Location' }}
+                        {{
+                          info.issue_concern_request_category_type ===
+                          "Computer Lab"
+                            ? "Select Computer Lab"
+                            : "Select Location"
+                        }}
                       </option>
                       <option
                         v-for="office in getLocationOptions"
@@ -778,20 +822,33 @@
                       v-model="customOffice"
                       class="input rounded border ml-2 flex-1 px-2 py-1 text-xs"
                       placeholder="Specific or Exact"
-                      :disabled="!isCreate"
-                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                     />
                   </div>
                 </div>
 
                 <!-- 6. OWNER TYPE (Hidden for Hardware, Network, Computer Lab, Accounts, LSU Webpages, Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'Hardware' && info.issue_concern_request_category_type !== 'Network' && info.issue_concern_request_category_type !== 'Computer Lab' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1">
-                  <label class="block text-xs mb-0.5">Owner Type</label>
+                <div
+                  v-if="
+                    info.issue_concern_request_category_type !== 'Hardware' &&
+                    info.issue_concern_request_category_type !== 'Network' &&
+                    info.issue_concern_request_category_type !==
+                      'Computer Lab' &&
+                    info.issue_concern_request_category_type !== 'Accounts' &&
+                    info.issue_concern_request_category_type !==
+                      'LSU Webpages' &&
+                    info.issue_concern_request_category_type !==
+                      'Student Portal'
+                  "
+                  class="w-full"
+                >
+                  <label class="block text-xs font-semibold text-gray-600 mb-0.5">Owner Type</label>
+                  <div v-if="!isCreate" class="text-sm text-gray-800">
+                    {{ info.owner_type || "N/A" }}
+                  </div>
                   <select
+                    v-else
                     v-model="info.owner_type"
                     class="input rounded border px-2 py-1 w-full text-xs"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   >
                     <option value="LSU">LSU</option>
                     <option value="Personal">Personal</option>
@@ -837,7 +894,10 @@
                 </div>
 
                 <!-- EVALUATION RATING (only show when ticket is completed/done) -->
-                <div v-if="!isCreate && isModalTicketCompleted" class="w-full mb-1 lg:col-span-2">
+                <div
+                  v-if="!isCreate && isModalTicketCompleted"
+                  class="w-full mb-1 lg:col-span-2"
+                >
                   <label class="block text-xs mb-0.5">
                     <i class="fa fa-star text-yellow-500 mr-1"></i>
                     Client Evaluation Rating
@@ -856,7 +916,10 @@
                 </div>
 
                 <!-- FEEDBACK COMMENT (only show when ticket is completed/done) -->
-                <div v-if="!isCreate && isModalTicketCompleted" class="w-full mb-1 lg:col-span-2">
+                <div
+                  v-if="!isCreate && isModalTicketCompleted"
+                  class="w-full mb-1 lg:col-span-2"
+                >
                   <label class="block text-xs mb-0.5">
                     <i class="fa fa-comment text-blue-500 mr-1"></i>
                     Feedback Comment (Optional)
@@ -898,7 +961,9 @@
           </div>
 
           <!-- ACTIONS -->
-          <div class="flex flex-col lg:flex-row justify-between gap-2 lg:gap-3 mt-6 lg:mt-10 sticky bottom-0 bg-white pt-3 border-t lg:static lg:border-0 lg:pt-0">
+          <div
+            class="flex flex-col lg:flex-row justify-between gap-2 lg:gap-3 mt-6 lg:mt-10 sticky bottom-0 bg-white pt-3 border-t lg:static lg:border-0 lg:pt-0"
+          >
             <button
               class="lg:px-4 px-3 lg:py-2 py-2.5 bg-gray-300 rounded hover:bg-gray-400 font-semibold text-sm lg:text-base w-full lg:w-auto order-2 lg:order-1"
               @click="closeModal"
@@ -987,11 +1052,7 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Cooling Fan",
     "Others",
   ],
-  Software: [
-    "Installation",
-    "Repair",
-    "Uninstall",
-  ],
+  Software: ["Installation", "Repair", "Uninstall"],
   Network: ["WiFi Access", "Network Configuration"],
   "Computer Lab": [
     "Computer Setup",
@@ -1001,13 +1062,7 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Maintenance",
     "Others",
   ],
-  Accounts: [
-    "LSU Gmail",
-    "Canvas",
-    "Microsoft",
-    "Student Portal",
-    "Others",
-  ],
+  Accounts: ["LSU Gmail", "Canvas", "Microsoft", "Student Portal", "Others"],
   "LSU Webpages": [
     "Update Content",
     "Fix Errors",
@@ -1015,10 +1070,7 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Remove Page",
     "Others",
   ],
-  "Student Portal": [
-    "Forgot Password",
-    "Others",
-  ],
+  "Student Portal": ["Forgot Password", "Others"],
   Others: [
     "Screwdriver Set",
     "Cable Ties",
@@ -1177,14 +1229,14 @@ onUnmounted(() => {
 const autoAssignTechnicians = (category, specificConcern = null) => {
   // Get Michael John Puertogalera (always included in all tickets)
   const michael = TECHNICIANS_PERSONNEL.find(
-    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph",
   );
 
   // Check for specific concern first (highest priority)
   if (specificConcern === "LSU Website") {
     // For LSU Website: assign Jo Renlee + Michael
     const joRenlee = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.email === "jorenlee.luna@lsu.edu.ph"
+      (tech) => tech.email === "jorenlee.luna@lsu.edu.ph",
     );
 
     const assignedTechs = [];
@@ -1220,7 +1272,7 @@ const autoAssignTechnicians = (category, specificConcern = null) => {
 
   // Filter technicians based on their specializations
   const assignedTechs = TECHNICIANS_PERSONNEL.filter((tech) =>
-    tech.specializations?.includes(category)
+    tech.specializations?.includes(category),
   );
 
   // Always include Michael in all assignments
@@ -1231,7 +1283,7 @@ const autoAssignTechnicians = (category, specificConcern = null) => {
 
   // Make sure Michael is included (avoid duplicates)
   const hasMichael = finalAssignedTechs.some(
-    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph",
   );
 
   if (!hasMichael && michael) {
@@ -1256,13 +1308,16 @@ const autoAssignTechnicians = (category, specificConcern = null) => {
 
 // Function to refine technician assignment based on Computer Lab location
 const refineComputerLabAssignment = (location) => {
-  if (!location || info.value.issue_concern_request_category_type !== "Computer Lab") {
+  if (
+    !location ||
+    info.value.issue_concern_request_category_type !== "Computer Lab"
+  ) {
     return;
   }
 
   // Get Michael John Puertogalera (always included)
   const michael = TECHNICIANS_PERSONNEL.find(
-    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph",
   );
 
   // Determine which technician based on location
@@ -1271,12 +1326,12 @@ const refineComputerLabAssignment = (location) => {
   if (location.startsWith("BVM") || location.startsWith("SJ")) {
     // BVM and SJ Buildings -> Denzel Roy Suarez
     assignedTech = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.name === "Denzel Roy Suarez"
+      (tech) => tech.name === "Denzel Roy Suarez",
     );
   } else if (location.startsWith("LS")) {
     // LS Building -> Rommel Rosal
     assignedTech = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.name === "Rommel Rosal"
+      (tech) => tech.name === "Rommel Rosal",
     );
   }
 
@@ -1337,7 +1392,8 @@ const isTicketCompletedForRating = (item) => {
 
 // Check if modal ticket is completed (for showing rating/feedback fields)
 const isModalTicketCompleted = computed(() => {
-  const currentStatus = info.value.current_status || latestStatus(info.value)?.status;
+  const currentStatus =
+    info.value.current_status || latestStatus(info.value)?.status;
   return currentStatus === "Completed";
 });
 
@@ -1348,7 +1404,7 @@ const deduplicatedLogs = computed(() => {
   const uniqueStatuses = new Map();
 
   // Iterate through logs and keep only the latest entry for each unique status
-  info.value.logs.forEach(log => {
+  info.value.logs.forEach((log) => {
     if (!uniqueStatuses.has(log.status)) {
       uniqueStatuses.set(log.status, log);
     } else {
@@ -1398,14 +1454,13 @@ const sortBy = (column) => {
 const filteredRequests = computed(() => {
   let filtered = [...requests.value];
 
-
-// Filter by logged-in user's email (only show their own tickets)
-const userEmail = userStore.userEmail || userStore.user.email;
-if (userEmail) {
-  filtered = filtered.filter((r) => {
-    return r.requestor_lsu_email === userEmail;
-  });
-}
+  // Filter by logged-in user's email (only show their own tickets)
+  const userEmail = userStore.userEmail || userStore.user.email;
+  if (userEmail) {
+    filtered = filtered.filter((r) => {
+      return r.requestor_lsu_email === userEmail;
+    });
+  }
   // Status filter
   if (statusFilter.value) {
     filtered = filtered.filter((r) => {
@@ -1541,9 +1596,7 @@ const getSpecificTypeOptions = (categoryType) => {
 const getMoodIcon = (item) => {
   const status = latestStatus(item)?.status?.toLowerCase();
   const isDone =
-    status === "completed" ||
-    status === "closed" ||
-    status === "reviewed";
+    status === "completed" || status === "closed" || status === "reviewed";
 
   // If ticket is completed/closed/reviewed - white/gray checkmark
   if (isDone) {
@@ -1662,13 +1715,16 @@ watch(
   (newCategory) => {
     // Only auto-assign when creating new tickets
     if (isCreate.value) {
-      autoAssignTechnicians(newCategory, info.value.issue_concern_request_item_type);
+      autoAssignTechnicians(
+        newCategory,
+        info.value.issue_concern_request_item_type,
+      );
       // Clear location when category changes
       info.value.issue_concern_request_center_office_room = "";
       // Clear specific concern when category changes
       info.value.issue_concern_request_item_type = "";
     }
-  }
+  },
 );
 
 // Watch for specific concern changes to refine technician assignment
@@ -1680,10 +1736,10 @@ watch(
       // Re-assign based on specific concern
       autoAssignTechnicians(
         info.value.issue_concern_request_category_type,
-        newSpecificConcern
+        newSpecificConcern,
       );
     }
-  }
+  },
 );
 
 // Watch for Computer Lab location changes to refine technician assignment
@@ -1694,7 +1750,7 @@ watch(
     if (isCreate.value) {
       refineComputerLabAssignment(newLocation);
     }
-  }
+  },
 );
 
 // Modal controls
@@ -1757,24 +1813,24 @@ const normalizeOffice = () => {
 // Check if user has unrated tickets (ANY status - pending, in progress, completed, etc.)
 const checkForUnratedTickets = async (email) => {
   try {
-    const res = await $fetch(
-      endpoint.value + "/api/cits/request-ticket/list/"
-    );
+    const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
 
     if (res && Array.isArray(res)) {
       // Filter tickets for this user
       const userTickets = res.filter(
-        (ticket) => ticket.requestor_lsu_email === email
+        (ticket) => ticket.requestor_lsu_email === email,
       );
 
       // Check if ANY ticket (regardless of status) is missing rating or feedback
       const unratedTickets = userTickets.filter((ticket) => {
-        const hasNoRating = !ticket.evaluation_feedback_client_star_rating ||
-                           ticket.evaluation_feedback_client_star_rating === "" ||
-                           ticket.evaluation_feedback_client_star_rating === null;
-        const hasNoFeedback = !ticket.evaluation_feedback_client_comment ||
-                             ticket.evaluation_feedback_client_comment === "" ||
-                             ticket.evaluation_feedback_client_comment === null;
+        const hasNoRating =
+          !ticket.evaluation_feedback_client_star_rating ||
+          ticket.evaluation_feedback_client_star_rating === "" ||
+          ticket.evaluation_feedback_client_star_rating === null;
+        const hasNoFeedback =
+          !ticket.evaluation_feedback_client_comment ||
+          ticket.evaluation_feedback_client_comment === "" ||
+          ticket.evaluation_feedback_client_comment === null;
 
         // Consider a ticket unrated if it's missing BOTH rating AND feedback
         return hasNoRating && hasNoFeedback;
@@ -1794,17 +1850,22 @@ const checkForUnratedTickets = async (email) => {
 const createTicket = async () => {
   // Validate required fields
   if (!info.value.requestor_fullname || !info.value.requestor_lsu_email) {
-    showToaster("❌ Please fill in all required fields (Name and Email).", "error");
+    showToaster(
+      "❌ Please fill in all required fields (Name and Email).",
+      "error",
+    );
     return;
   }
 
   // Check for unrated tickets
-  const unratedCount = await checkForUnratedTickets(info.value.requestor_lsu_email);
+  const unratedCount = await checkForUnratedTickets(
+    info.value.requestor_lsu_email,
+  );
   if (unratedCount) {
     showToaster(
-      `❌ You have ${unratedCount} unrated ticket${unratedCount > 1 ? 's' : ''}. Please rate all your previous tickets before creating a new one.`,
+      `❌ You have ${unratedCount} unrated ticket${unratedCount > 1 ? "s" : ""}. Please rate all your previous tickets before creating a new one.`,
       "error",
-      5000
+      5000,
     );
     return;
   }
@@ -2098,7 +2159,10 @@ const updateFeedbackComment = async (item) => {
     }
   } catch (err) {
     console.error("Failed to update feedback comment:", err);
-    showToaster("❌ Failed to save feedback comment. Please try again.", "error");
+    showToaster(
+      "❌ Failed to save feedback comment. Please try again.",
+      "error",
+    );
   }
 };
 
