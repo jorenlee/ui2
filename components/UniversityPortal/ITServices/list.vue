@@ -167,7 +167,7 @@
         @click="sortBy('requestor_lsu_email')"
         class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
-        <i class="fa fa-envelope mr-1"></i> LSU Email
+        <i class="fa fa-envelope mr-1"></i> Email
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
