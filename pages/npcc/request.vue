@@ -1059,85 +1059,86 @@ const showToaster = (message, type = "success", duration = 3000) => {
   }, duration);
 };
 
-// Function to auto-assign technicians based on category and specific concern
+// Function to auto-assign technicians based on category
 const autoAssignTechnicians = (category, specificConcern = null) => {
-  // Get Michael John Puertogalera (always included in all tickets)
-  const michael = TECHNICIANS_PERSONNEL.find(
-    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
-  );
-
-  // Check for specific concern first (highest priority)
-  if (specificConcern === "LSU Website") {
-    // For LSU Website: assign Jo Renlee + Michael
-    const joRenlee = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.email === "jorenlee.luna@lsu.edu.ph"
-    );
-
-    const assignedTechs = [];
-    if (michael) {
-      assignedTechs.push({
-        name: michael.name,
-        email: michael.email,
-      });
-    }
-    if (joRenlee) {
-      assignedTechs.push({
-        name: joRenlee.name,
-        email: joRenlee.email,
-      });
-    }
-
-    info.value.technicians_assigned = assignedTechs;
-    return;
-  }
-
   if (!category) {
     // Reset to default if no category (Michael only)
+    const michael = TECHNICIANS_PERSONNEL.find(
+      (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
+    );
     info.value.technicians_assigned = michael
-      ? [
-          {
-            name: michael.name,
-            email: michael.email,
-          },
-        ]
+      ? [{ name: michael.name, email: michael.email }]
       : [];
     return;
   }
 
-  // Filter technicians based on their specializations
-  const assignedTechs = TECHNICIANS_PERSONNEL.filter((tech) =>
-    tech.specializations?.includes(category)
-  );
+  // Define category-based assignments
+  const categoryAssignments = {
+    "Hardware": [
+      "michaeljohn.puertogalera@lsu.edu.ph",
+      "johny14_gonzaga@lsu.edu.ph",
+      "jason.yap@lsu.edu.ph",
+      "giovanni.morales@lsu.edu.ph",
+      "rommel.rosal@lsu.edu.ph",
+      "denzelroy.suarez@lsu.edu.ph"
+    ],
+    "Software": [
+      "michaeljohn.puertogalera@lsu.edu.ph",
+      "johny14_gonzaga@lsu.edu.ph",
+      "jason.yap@lsu.edu.ph",
+      "giovanni.morales@lsu.edu.ph",
+      "rommel.rosal@lsu.edu.ph",
+      "denzelroy.suarez@lsu.edu.ph"
+    ],
+    "Network": [
+      "michaeljohn.puertogalera@lsu.edu.ph",
+      "johny14_gonzaga@lsu.edu.ph",
+      "jason.yap@lsu.edu.ph"
+    ],
+    "Computer Lab": [
+      "michaeljohn.puertogalera@lsu.edu.ph",
+      "rommel.rosal@lsu.edu.ph",
+      "denzelroy.suarez@lsu.edu.ph"
+    ],
+    "Accounts": [
+      "michaeljohn.puertogalera@lsu.edu.ph",
+      "johny14_gonzaga@lsu.edu.ph",
+      "jason.yap@lsu.edu.ph"
+    ],
+    "LSU Webpages": [
+      "michaeljohn.puertogalera@lsu.edu.ph",
+      "jorenlee.luna@lsu.edu.ph",
+      "jason.yap@lsu.edu.ph"
+    ],
+    "Student Portal": [
+      "michaeljohn.puertogalera@lsu.edu.ph"
+    ],
+    "Others": [
+      "michaeljohn.puertogalera@lsu.edu.ph",
+      "johny14_gonzaga@lsu.edu.ph",
+      "jason.yap@lsu.edu.ph",
+      "giovanni.morales@lsu.edu.ph",
+      "rommel.rosal@lsu.edu.ph",
+      "denzelroy.suarez@lsu.edu.ph"
+    ]
+  };
 
-  // Always include Michael in all assignments
-  const finalAssignedTechs = assignedTechs.map((tech) => ({
-    name: tech.name,
-    email: tech.email,
-  }));
+  // Get the email list for the category
+  const emailList = categoryAssignments[category] || ["michaeljohn.puertogalera@lsu.edu.ph"];
 
-  // Make sure Michael is included (avoid duplicates)
-  const hasMichael = finalAssignedTechs.some(
-    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
-  );
+  // Find and assign technicians based on email list
+  const assignedTechs = [];
+  emailList.forEach(email => {
+    const tech = TECHNICIANS_PERSONNEL.find(t => t.email === email);
+    if (tech) {
+      assignedTechs.push({
+        name: tech.name,
+        email: tech.email
+      });
+    }
+  });
 
-  if (!hasMichael && michael) {
-    finalAssignedTechs.unshift({
-      name: michael.name,
-      email: michael.email,
-    });
-  }
-
-  // If no match found, assign only Michael
-  if (finalAssignedTechs.length === 0 && michael) {
-    info.value.technicians_assigned = [
-      {
-        name: michael.name,
-        email: michael.email,
-      },
-    ];
-  } else {
-    info.value.technicians_assigned = finalAssignedTechs;
-  }
+  info.value.technicians_assigned = assignedTechs;
 };
 
 // Function to refine technician assignment based on Computer Lab location
