@@ -1142,7 +1142,7 @@ const fetchRequests = async (silent = false) => {
     const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
     requests.value = res.data || res;
 
-    console.log(requests.value);
+    // console.log(requests.value);
   } catch (err) {
     console.error("Failed to fetch tech support list", err);
   } finally {

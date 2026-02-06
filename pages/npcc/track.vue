@@ -67,7 +67,7 @@ const menuList = [
         <div class="bg-white p-6 shadow rounded-lg">
           <!-- ADMISSION TITLE -->
           <h2 class="lasalle-green-text font-bold text-xl">Track Request</h2>
-          <UniversityLogin title="Student Login" routeURL="/portal/dashboard" />
+          <UniversityLogin title="Student Login" routeURL="/central/dashboard" />
         </div>
       </div>
     </div>

@@ -86,7 +86,7 @@
                   Please rate ALL your previous tickets before submitting a new request. Your feedback helps us improve our services!
                 </p>
                 <a
-                  href="/portal/login"
+                  href="/central/login"
                   class="inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
                 >
                   <i class="fas fa-sign-in-alt mr-2"></i>

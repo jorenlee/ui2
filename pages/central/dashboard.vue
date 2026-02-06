@@ -7,19 +7,19 @@ const router = useRouter();
 /* ---- AUTH GUARD ---- */
 onMounted(() => {
   if (!userStore.isLoggedIn) {
-    router.replace("/portal/login");
+    router.replace("/central/login");
   }
 });
 
 const currentView = ref("Menu");
 
 definePageMeta({
-  middleware: "portal-auth",
+  middleware: "central-auth",
 });
 
 const logOut = () => {
   userStore.removeToken();
-  router.push("/portal/login");
+  router.push("/central/login");
 };
 
 const menuList = [
@@ -93,7 +93,7 @@ const filteredMenuList = computed(() => {
     </div>
 
     <!-- Menu -->
-    <div v-else-if="currentView === 'Menu'" class="p-4 text-green-900">
+    <div v-else-if="currentView === 'Menu'" class="px-4 pt-4 pb-32 text-green-900">
       <div>
         <UniversityPortalITServicesList />
       </div>
