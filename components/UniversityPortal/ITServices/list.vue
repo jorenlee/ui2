@@ -213,7 +213,7 @@
 
           <div class="w-1/4 px-3 flex items-center justify-center">
             <div class="flex items-center gap-2">
-              <i class="fa fa-tag text-blue-600 text-xs"></i>
+             
               <span class="text-xs font-medium text-gray-700">
                 {{ item.issue_concern_request_category_type || "-" }}
               </span>
