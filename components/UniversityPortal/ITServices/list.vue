@@ -36,7 +36,7 @@
 
     <!-- ACTION BAR -->
     <div class="bg-white border rounded-lg py-1 px-2 mb-4 shadow-sm">
-      <div class="lg:flex grid grid-cols-2 gap-3 mb-3 w-full">
+      <div class="lg:flex gap-3 mb-3 w-full">
 
 
 
@@ -318,38 +318,6 @@
               </div>
             </div>
 
-            <!-- Requestor Info -->
-            <div class="flex items-start gap-3 pb-3 border-b border-gray-100">
-              <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <i class="fa fa-user text-green-600 text-sm"></i>
-              </div>
-              <div class="flex-1">
-                <p class="text-xs font-semibold text-gray-500 mb-0.5">Requestor</p>
-                <p class="text-sm font-bold text-gray-800">
-                  {{ item.requestor_fullname }}
-                </p>
-                <p class="text-xs text-gray-600 mt-0.5">
-                  {{ item.requestor_lsu_email }}
-                </p>
-              </div>
-            </div>
-
-            <!-- Technicians -->
-            <div class="flex items-start gap-3 pb-3 border-b border-gray-100">
-              <div class="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                <i class="fa fa-users text-purple-600 text-sm"></i>
-              </div>
-              <div class="flex-1">
-                <p class="text-xs font-semibold text-gray-500 mb-0.5">Assigned Personnel</p>
-                <p class="text-sm font-medium text-gray-800">
-                  {{
-                    item.technicians_assigned
-                      .map((tech) => tech.name)
-                      ?.join(", ") || "-"
-                  }}
-                </p>
-              </div>
-            </div>
 
             <!-- Rating Section (only show if completed) -->
             <div
@@ -387,14 +355,7 @@
                       {{ item.evaluation_feedback_client_star_rating }}/5
                     </span>
                   </div>
-                  <textarea
-                    v-model="item.evaluation_feedback_client_comment"
-                    @blur="updateFeedbackComment(item)"
-                    @click.stop
-                    class="input rounded-lg border border-gray-300 text-sm px-3 py-2 w-full bg-white focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
-                    placeholder="Share your feedback or comments..."
-                    rows="3"
-                  />
+                
                 </div>
               </div>
             </div>
