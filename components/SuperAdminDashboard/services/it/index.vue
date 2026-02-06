@@ -677,8 +677,8 @@
                   </select>
                 </div>
 
-                <!-- 2. SPECIFIC CONCERN -->
-                <div class="w-full mb-1">
+                <!-- 2. SPECIFIC CONCERN (Hidden for LSU Webpages) -->
+                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages'" class="w-full mb-1">
                   <label class="block mb-0.5 text-xs"
                     >Specific Concern           <span v-if="isCreate" class="text-red-600">*</span> </label
                   >
@@ -741,7 +741,10 @@
                 </div>
 
                 <!-- 5. CENTER/OFFICE/ROOM -->
-                <div class="w-full mb-1">
+                <div
+                  v-if="info.issue_concern_request_category_type !== 'Software' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Others'"
+                  class="w-full mb-1"
+                >
                   <label class="block text-xs mb-0.5">
                     {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Center/Office/Room' }}
                      <span v-if="isCreate" class="text-red-600">*</span>
@@ -1027,7 +1030,8 @@ const CATEGORY_OPTIONS = [
   "Network",
   "Computer Lab",
   "Accounts",
-  "Other",
+  "LSU Webpages",
+  "Others",
 ];
 
 // Computer Lab location options
@@ -1087,12 +1091,9 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Others",
   ],
   Software: [
-    "Gmail",
-    "Google Workspace",
-    "Automate",
-    "Canvas LMS",
-    "Microsoft Office",
-    "LSU Website",
+    "Installation",
+    "Repair",
+    "Uninstall",
   ],
   Network: ["WiFi Access", "Network Configuration"],
   "Computer Lab": [
@@ -1104,14 +1105,20 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Others",
   ],
   Accounts: [
-    "Email Account",
-    "Google Workspace",
-    "Canvas LMS",
-    "System Access",
-    "Password Reset",
+    "LSU Gmail",
+    "Canvas",
+    "Microsoft",
+    "Student Portal",
     "Others",
   ],
-  Other: [
+  "LSU Webpages": [
+    "Update Content",
+    "Fix Errors",
+    "Add New Page",
+    "Remove Page",
+    "Others",
+  ],
+  Others: [
     "Screwdriver Set",
     "Cable Ties",
     "Thermal Paste",

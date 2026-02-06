@@ -311,8 +311,8 @@
                           </select>
                         </div>
 
-                        <!-- 2. SPECIFIC CONCERN -->
-                        <div class="w-full">
+                        <!-- 2. SPECIFIC CONCERN (Hidden for LSU Webpages) -->
+                        <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages'" class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
                             ><i class="fas fa-laptop text-green-600 mr-1"></i
                             >Specific Concern
@@ -382,8 +382,8 @@
                           </select>
                         </div>
 
-                        <!-- 5. CENTER/OFFICE/ROOM (Hidden for Public and Alumni) -->
-                        <div v-if="info.client_role !== 'Public' && info.client_role !== 'Alumni'" class="w-full">
+                        <!-- 5. CENTER/OFFICE/ROOM (Hidden for Public, Alumni, Software, Accounts, LSU Webpages, and Others) -->
+                        <div v-if="info.client_role !== 'Public' && info.client_role !== 'Alumni' && info.issue_concern_request_category_type !== 'Software' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Others'" class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
                             ><i class="fas fa-building text-green-600 mr-1"></i>
                             {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Center/Office/Room' }}
@@ -535,7 +535,8 @@ const CATEGORY_OPTIONS = [
   "Network",
   "Computer Lab",
   "Accounts",
-  "Other",
+  "LSU Webpages",
+  "Others",
 ];
 
 // Dynamic item type options based on category
@@ -564,12 +565,9 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Others",
   ],
   Software: [
-    "Gmail",
-    "Google Workspace",
-    "Automate",
-    "Canvas LMS",
-    "Microsoft Office",
-    "LSU Website",
+    "Installation",
+    "Repair",
+    "Uninstall",
   ],
   Network: ["WiFi Access", "Network Configuration"],
   "Computer Lab": [
@@ -581,14 +579,20 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Others",
   ],
   Accounts: [
-    "Email Account",
-    "Google Workspace",
-    "Canvas LMS",
-    "System Access",
-    "Password Reset",
+    "LSU Gmail",
+    "Canvas",
+    "Microsoft",
+    "Student Portal",
     "Others",
   ],
-  Other: [
+  "LSU Webpages": [
+    "Update Content",
+    "Fix Errors",
+    "Add New Page",
+    "Remove Page",
+    "Others",
+  ],
+  Others: [
     "Screwdriver Set",
     "Cable Ties",
     "Thermal Paste",
@@ -748,8 +752,15 @@ const removeReceipt = () => {
 
 // Normalize office before submit
 const normalizeOffice = () => {
-  // Set N/A for Public and Alumni users
-  if (info.value.client_role === 'Public' || info.value.client_role === 'Alumni') {
+  // Set N/A for Public, Alumni, Software, Accounts, LSU Webpages, and Others
+  if (
+    info.value.client_role === 'Public' ||
+    info.value.client_role === 'Alumni' ||
+    info.value.issue_concern_request_category_type === 'Software' ||
+    info.value.issue_concern_request_category_type === 'Accounts' ||
+    info.value.issue_concern_request_category_type === 'LSU Webpages' ||
+    info.value.issue_concern_request_category_type === 'Others'
+  ) {
     info.value.issue_concern_request_center_office_room = "N/A";
   } else if (info.value.issue_concern_request_center_office_room === "OTHER") {
     info.value.issue_concern_request_center_office_room =
@@ -816,13 +827,22 @@ const handleSubmitClick = async () => {
     return;
   }
 
-  // Check Center/Office/Room only if not Public or Alumni
-  const requiresOffice = info.value.client_role !== 'Public' && info.value.client_role !== 'Alumni';
+  // Check Center/Office/Room only if not Public, Alumni, Software, Accounts, LSU Webpages, or Others
+  const requiresOffice =
+    info.value.client_role !== 'Public' &&
+    info.value.client_role !== 'Alumni' &&
+    info.value.issue_concern_request_category_type !== 'Software' &&
+    info.value.issue_concern_request_category_type !== 'Accounts' &&
+    info.value.issue_concern_request_category_type !== 'LSU Webpages' &&
+    info.value.issue_concern_request_category_type !== 'Others';
+
+  // Check Specific Concern only if not LSU Webpages
+  const requiresSpecificConcern = info.value.issue_concern_request_category_type !== 'LSU Webpages';
 
   if (
     (requiresOffice && !info.value.issue_concern_request_center_office_room) ||
     !info.value.issue_concern_request_category_type ||
-    !info.value.issue_concern_request_item_type ||
+    (requiresSpecificConcern && !info.value.issue_concern_request_item_type) ||
     !info.value.issue_concern_request_details
   ) {
     showToaster("Please fill in all request details.", "warning");
