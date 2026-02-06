@@ -1304,6 +1304,12 @@ function addStatusLog() {
 
   if (!info.value.logs) info.value.logs = [];
 
+  // Get logged-in user information
+  const loggedInUser = userStore.user?.email || userStore.userEmail;
+  const loggedInTech = TECHNICIANS_PERSONNEL.find(tech => tech.email === loggedInUser);
+  const updaterName = loggedInTech?.name || userStore.user?.name || "Unknown";
+  const updaterEmail = loggedInUser || "";
+
   // Special handling for "In Progress" status - create log entry for each assigned technician
   if (newLog.status === "In Progress" && info.value.technicians_assigned && info.value.technicians_assigned.length > 0) {
     // Create a log entry for each assigned technician
@@ -1322,13 +1328,13 @@ function addStatusLog() {
       info.value.ticket_locked_by_email = info.value.technicians_assigned[0].email;
     }
   } else {
-    // For other statuses, add a single log entry with empty technician fields
+    // For other statuses, add a single log entry with logged-in user's information
     info.value.logs.push({
       status: newLog.status,
       remarks: newLog.remarks || "N/A",
       timestamp: new Date().toISOString(),
-      assigned_technician_name: "",
-      assigned_technician_lsu_email: "",
+      assigned_technician_name: updaterName,
+      assigned_technician_lsu_email: updaterEmail,
     });
   }
 
