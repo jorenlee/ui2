@@ -878,10 +878,10 @@
               Status History
             </h4>
 
-            <!-- Existing logs display (read-only) -->
+            <!-- Existing logs display (read-only) - Deduplicated for client view -->
             <div class="max-h-48 overflow-y-auto mb-3 space-y-2">
               <div
-                v-for="(log, i) in info.logs"
+                v-for="(log, i) in deduplicatedLogs"
                 :key="i"
                 class="text-xs p-2 rounded"
                 :class="itemStatusClass(log.status)"
@@ -1339,6 +1339,32 @@ const isTicketCompletedForRating = (item) => {
 const isModalTicketCompleted = computed(() => {
   const currentStatus = info.value.current_status || latestStatus(info.value)?.status;
   return currentStatus === "Completed";
+});
+
+// Deduplicated logs for client view - show only one log per unique status
+const deduplicatedLogs = computed(() => {
+  if (!info.value.logs || info.value.logs.length === 0) return [];
+
+  const uniqueStatuses = new Map();
+
+  // Iterate through logs and keep only the latest entry for each unique status
+  info.value.logs.forEach(log => {
+    if (!uniqueStatuses.has(log.status)) {
+      uniqueStatuses.set(log.status, log);
+    } else {
+      // If status already exists, keep the one with the latest timestamp
+      const existingLog = uniqueStatuses.get(log.status);
+      const existingTime = new Date(existingLog.timestamp).getTime();
+      const currentTime = new Date(log.timestamp).getTime();
+
+      if (currentTime > existingTime) {
+        uniqueStatuses.set(log.status, log);
+      }
+    }
+  });
+
+  // Convert Map values back to array
+  return Array.from(uniqueStatuses.values());
 });
 
 // Backend-aligned filter mapping
