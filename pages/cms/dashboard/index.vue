@@ -100,7 +100,7 @@ const contentWritersEmails = [
   "edm@lsu.edu.ph",
   "israelgallogo@lsu.edu.ph",
 ];
-const hrMenuEmails = ["hr@lsu.edu.ph", "npc@lsu.edu.ph"];
+const hrMenuEmails = ["hr@lsu.edu.ph"];
 const libraryMenuEmails = [
   "monaliza.mugot@lsu.edu.ph",
   "marilyn.bejec@lsu.edu.ph",

@@ -979,31 +979,46 @@ const showToaster = (message, type = "success", duration = 3000) => {
 
 // Function to auto-assign technicians based on category and specific concern
 const autoAssignTechnicians = (category, specificConcern = null) => {
+  // Get Michael John Puertogalera (always included in all tickets)
+  const michael = TECHNICIANS_PERSONNEL.find(
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
+  );
+
   // Check for specific concern first (highest priority)
   if (specificConcern === "LSU Website") {
-    // Only assign Jo Renlee for LSU Website
+    // For LSU Website: assign Jo Renlee + Michael
     const joRenlee = TECHNICIANS_PERSONNEL.find(
       (tech) => tech.email === "jorenlee.luna@lsu.edu.ph"
     );
-    if (joRenlee) {
-      info.value.technicians_assigned = [
-        {
-          name: joRenlee.name,
-          email: joRenlee.email,
-        },
-      ];
-      return;
+
+    const assignedTechs = [];
+    if (michael) {
+      assignedTechs.push({
+        name: michael.name,
+        email: michael.email,
+      });
     }
+    if (joRenlee) {
+      assignedTechs.push({
+        name: joRenlee.name,
+        email: joRenlee.email,
+      });
+    }
+
+    info.value.technicians_assigned = assignedTechs;
+    return;
   }
 
   if (!category) {
-    // Reset to default if no category
-    info.value.technicians_assigned = [
-      {
-        name: "Michael John Puertogalera",
-        email: "michaeljohn.puertogalera@lsu.edu.ph",
-      },
-    ];
+    // Reset to default if no category (Michael only)
+    info.value.technicians_assigned = michael
+      ? [
+          {
+            name: michael.name,
+            email: michael.email,
+          },
+        ]
+      : [];
     return;
   }
 
@@ -1012,20 +1027,34 @@ const autoAssignTechnicians = (category, specificConcern = null) => {
     tech.specializations?.includes(category)
   );
 
-  // If no match found, assign default (Michael)
-  if (assignedTechs.length === 0) {
+  // Always include Michael in all assignments
+  const finalAssignedTechs = assignedTechs.map((tech) => ({
+    name: tech.name,
+    email: tech.email,
+  }));
+
+  // Make sure Michael is included (avoid duplicates)
+  const hasMichael = finalAssignedTechs.some(
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
+  );
+
+  if (!hasMichael && michael) {
+    finalAssignedTechs.unshift({
+      name: michael.name,
+      email: michael.email,
+    });
+  }
+
+  // If no match found, assign only Michael
+  if (finalAssignedTechs.length === 0 && michael) {
     info.value.technicians_assigned = [
       {
-        name: "Michael John Puertogalera",
-        email: "michaeljohn.puertogalera@lsu.edu.ph",
+        name: michael.name,
+        email: michael.email,
       },
     ];
   } else {
-    // Assign matched technicians
-    info.value.technicians_assigned = assignedTechs.map((tech) => ({
-      name: tech.name,
-      email: tech.email,
-    }));
+    info.value.technicians_assigned = finalAssignedTechs;
   }
 };
 
@@ -1034,6 +1063,11 @@ const refineComputerLabAssignment = (location) => {
   if (!location || info.value.issue_concern_request_category_type !== "Computer Lab") {
     return;
   }
+
+  // Get Michael John Puertogalera (always included)
+  const michael = TECHNICIANS_PERSONNEL.find(
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
+  );
 
   // Determine which technician based on location
   let assignedTech = null;
@@ -1051,12 +1085,23 @@ const refineComputerLabAssignment = (location) => {
   }
 
   if (assignedTech) {
-    info.value.technicians_assigned = [
-      {
-        name: assignedTech.name,
-        email: assignedTech.email,
-      },
-    ];
+    const assignedTechs = [];
+
+    // Always add Michael first
+    if (michael) {
+      assignedTechs.push({
+        name: michael.name,
+        email: michael.email,
+      });
+    }
+
+    // Add the lab-specific technician
+    assignedTechs.push({
+      name: assignedTech.name,
+      email: assignedTech.email,
+    });
+
+    info.value.technicians_assigned = assignedTechs;
   }
 };
 

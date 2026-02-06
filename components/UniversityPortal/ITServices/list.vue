@@ -352,7 +352,7 @@
                   'hover:scale-125 cursor-pointer': isTicketCompletedForRating(item),
                   'cursor-not-allowed opacity-50': !isTicketCompletedForRating(item)
                 }"
-                :title="isTicketCompletedForRating(item) ? `Rate ${star} star${star > 1 ? 's' : ''}` : 'Rating available when ticket is Done/Completed'"
+                :title="isTicketCompletedForRating(item) ? `Rate ${star} star${star > 1 ? 's' : ''}` : 'Rating available when ticket is Completed'"
               >
                 <i
                   class="fa fa-star"
@@ -373,7 +373,7 @@
                 v-if="!isTicketCompletedForRating(item)"
                 class="text-[10px] text-orange-600 ml-2"
               >
-                <i class="fas fa-lock"></i> Available when Done/Completed
+                <i class="fas fa-lock"></i> Available when Completed
               </span>
             </div>
           </div>
@@ -1162,31 +1162,46 @@ onUnmounted(() => {
 
 // Function to auto-assign technicians based on category and specific concern
 const autoAssignTechnicians = (category, specificConcern = null) => {
+  // Get Michael John Puertogalera (always included in all tickets)
+  const michael = TECHNICIANS_PERSONNEL.find(
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
+  );
+
   // Check for specific concern first (highest priority)
   if (specificConcern === "LSU Website") {
-    // Only assign Jo Renlee for LSU Website
+    // For LSU Website: assign Jo Renlee + Michael
     const joRenlee = TECHNICIANS_PERSONNEL.find(
       (tech) => tech.email === "jorenlee.luna@lsu.edu.ph"
     );
-    if (joRenlee) {
-      info.value.technicians_assigned = [
-        {
-          name: joRenlee.name,
-          email: joRenlee.email,
-        },
-      ];
-      return;
+
+    const assignedTechs = [];
+    if (michael) {
+      assignedTechs.push({
+        name: michael.name,
+        email: michael.email,
+      });
     }
+    if (joRenlee) {
+      assignedTechs.push({
+        name: joRenlee.name,
+        email: joRenlee.email,
+      });
+    }
+
+    info.value.technicians_assigned = assignedTechs;
+    return;
   }
 
   if (!category) {
-    // Reset to default if no category
-    info.value.technicians_assigned = [
-      {
-        name: "Michael John Puertogalera",
-        email: "michaeljohn.puertogalera@lsu.edu.ph",
-      },
-    ];
+    // Reset to default if no category (Michael only)
+    info.value.technicians_assigned = michael
+      ? [
+          {
+            name: michael.name,
+            email: michael.email,
+          },
+        ]
+      : [];
     return;
   }
 
@@ -1195,20 +1210,34 @@ const autoAssignTechnicians = (category, specificConcern = null) => {
     tech.specializations?.includes(category)
   );
 
-  // If no match found, assign default (Michael)
-  if (assignedTechs.length === 0) {
+  // Always include Michael in all assignments
+  const finalAssignedTechs = assignedTechs.map((tech) => ({
+    name: tech.name,
+    email: tech.email,
+  }));
+
+  // Make sure Michael is included (avoid duplicates)
+  const hasMichael = finalAssignedTechs.some(
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
+  );
+
+  if (!hasMichael && michael) {
+    finalAssignedTechs.unshift({
+      name: michael.name,
+      email: michael.email,
+    });
+  }
+
+  // If no match found, assign only Michael
+  if (finalAssignedTechs.length === 0 && michael) {
     info.value.technicians_assigned = [
       {
-        name: "Michael John Puertogalera",
-        email: "michaeljohn.puertogalera@lsu.edu.ph",
+        name: michael.name,
+        email: michael.email,
       },
     ];
   } else {
-    // Assign matched technicians
-    info.value.technicians_assigned = assignedTechs.map((tech) => ({
-      name: tech.name,
-      email: tech.email,
-    }));
+    info.value.technicians_assigned = finalAssignedTechs;
   }
 };
 
@@ -1217,6 +1246,11 @@ const refineComputerLabAssignment = (location) => {
   if (!location || info.value.issue_concern_request_category_type !== "Computer Lab") {
     return;
   }
+
+  // Get Michael John Puertogalera (always included)
+  const michael = TECHNICIANS_PERSONNEL.find(
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
+  );
 
   // Determine which technician based on location
   let assignedTech = null;
@@ -1234,12 +1268,23 @@ const refineComputerLabAssignment = (location) => {
   }
 
   if (assignedTech) {
-    info.value.technicians_assigned = [
-      {
-        name: assignedTech.name,
-        email: assignedTech.email,
-      },
-    ];
+    const assignedTechs = [];
+
+    // Always add Michael first
+    if (michael) {
+      assignedTechs.push({
+        name: michael.name,
+        email: michael.email,
+      });
+    }
+
+    // Add the lab-specific technician
+    assignedTechs.push({
+      name: assignedTech.name,
+      email: assignedTech.email,
+    });
+
+    info.value.technicians_assigned = assignedTechs;
   }
 };
 
@@ -1271,23 +1316,23 @@ function addStatusLog() {
 const latestStatus = (item) =>
   item.logs?.length ? item.logs[item.logs.length - 1] : null;
 
-// Check if ticket is completed/done for rating
+// Check if ticket is completed for rating
 const isTicketCompletedForRating = (item) => {
   const currentStatus = item.current_status || latestStatus(item)?.status;
-  return currentStatus === "Done" || currentStatus === "Completed";
+  return currentStatus === "Completed";
 };
 
 // Check if modal ticket is completed (for showing rating/feedback fields)
 const isModalTicketCompleted = computed(() => {
   const currentStatus = info.value.current_status || latestStatus(info.value)?.status;
-  return currentStatus === "Done" || currentStatus === "Completed";
+  return currentStatus === "Completed";
 });
 
 // Backend-aligned filter mapping
 const TICKET_STATUS_FILTER_MAP = {
   pending: ["Pending"],
   "in progress": ["In Progress", "Reviewed"],
-  completed: ["Completed", "Done", "Closed"],
+  completed: ["Completed", "Closed"],
 };
 
 // Clear filters function
@@ -1457,12 +1502,11 @@ const getSpecificTypeOptions = (categoryType) => {
 const getMoodIcon = (item) => {
   const status = latestStatus(item)?.status?.toLowerCase();
   const isDone =
-    status === "done" ||
     status === "completed" ||
     status === "closed" ||
     status === "reviewed";
 
-  // If ticket is done/completed/closed/reviewed - white/gray checkmark
+  // If ticket is completed/closed/reviewed - white/gray checkmark
   if (isDone) {
     return {
       emoji: "🏆",
@@ -2028,7 +2072,6 @@ const ticketStatusClass = (status) => {
     case "Reviewed":
       return "bg-purple-100 text-purple-800";
     case "Completed":
-    case "Done":
       return "bg-green-100 text-green-800";
     case "Closed":
       return "bg-gray-200 text-gray-800";
