@@ -677,8 +677,8 @@
                   </select>
                 </div>
 
-                <!-- 2. SPECIFIC CONCERN (Hidden for LSU Webpages) -->
-                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages'" class="w-full mb-1">
+                <!-- 2. SPECIFIC CONCERN (Hidden for LSU Webpages and Student Portal) -->
+                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1">
                   <label class="block mb-0.5 text-xs"
                     >Specific Concern           <span v-if="isCreate" class="text-red-600">*</span> </label
                   >
@@ -707,8 +707,8 @@
                   </select>
                 </div>
 
-                <!-- 3. DESCRIPTION -->
-                <div class="w-full mb-1 lg:col-span-2">
+                <!-- 3. DESCRIPTION (Hidden for Student Portal) -->
+                <div v-if="info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1 lg:col-span-2">
                   <label class="block mb-0.5 text-xs"
                     >Details / Description
                               <span v-if="isCreate" class="text-red-600">*</span> </label
@@ -722,8 +722,8 @@
                   />
                 </div>
 
-                <!-- 4. REQUESTOR ROLE (formerly Client Role) -->
-                <div class="w-full mb-1">
+                <!-- 4. REQUESTOR ROLE (formerly Client Role) (Hidden for LSU Webpages and Student Portal) -->
+                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1">
                   <label class="block text-xs mb-0.5">Requestor Role</label>
                   <select
                     v-model="info.client_role"
@@ -734,15 +734,16 @@
                     <option value="Student">Student</option>
                     <option value="Faculty">Faculty</option>
                     <option value="Staff">Staff</option>
-                    <option value="Alumni">Alumni</option>
-                    <option value="Public">Public</option>
+                    <!-- Hide Public and Alumni for Others category -->
+                    <option v-if="info.issue_concern_request_category_type !== 'Others'" value="Alumni">Alumni</option>
+                    <option v-if="info.issue_concern_request_category_type !== 'Others'" value="Public">Public</option>
                         <option value="Admin">Admin</option>
                   </select>
                 </div>
 
-                <!-- 5. CENTER/OFFICE/ROOM -->
+                <!-- 5. CENTER/OFFICE/ROOM (Hidden for Software, Accounts, Student Portal, and Others) -->
                 <div
-                  v-if="info.issue_concern_request_category_type !== 'Software' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Others'"
+                  v-if="info.issue_concern_request_category_type !== 'Software' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'"
                   class="w-full mb-1"
                 >
                   <label class="block text-xs mb-0.5">
@@ -777,8 +778,8 @@
                   </div>
                 </div>
 
-                <!-- 6. OWNER TYPE -->
-                <div class="w-full mb-1">
+                <!-- 6. OWNER TYPE (Hidden for Hardware, Network, Computer Lab, Accounts, LSU Webpages, Student Portal) -->
+                <div v-if="info.issue_concern_request_category_type !== 'Hardware' && info.issue_concern_request_category_type !== 'Network' && info.issue_concern_request_category_type !== 'Computer Lab' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1">
                   <label class="block text-xs mb-0.5">Owner Type           <span v-if="isCreate" class="text-red-600">*</span></label>
                   <select
                     v-model="info.owner_type"
@@ -1031,6 +1032,7 @@ const CATEGORY_OPTIONS = [
   "Computer Lab",
   "Accounts",
   "LSU Webpages",
+  "Student Portal",
   "Others",
 ];
 
@@ -1116,6 +1118,10 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Fix Errors",
     "Add New Page",
     "Remove Page",
+    "Others",
+  ],
+  "Student Portal": [
+    "Forgot Password",
     "Others",
   ],
   Others: [
