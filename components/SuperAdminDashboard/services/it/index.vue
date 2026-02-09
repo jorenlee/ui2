@@ -723,8 +723,8 @@
                   </select>
                 </div>
 
-                <!-- 2. SPECIFIC CONCERN (Hidden for LSU Webpages and Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                <!-- 2. SPECIFIC CONCERN (Hidden for Student Portal) -->
+                <div v-if="info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
                   <label class="block font-semibold mb-2 text-gray-700">
                     <i class="fas fa-laptop text-green-600 mr-1"></i>Specific Concern
                     <span v-if="isCreate" class="text-red-600">*</span>
@@ -1274,11 +1274,14 @@ const listCenterOfficeRoom = [
   "Office of the President",
   "Registrar's Office",
   "Research Office",
+  "Corporate and Executive Management Center",
+  "Vice Chancellor for Academics Affairs",
   "Vice President for Planning and Strategic Services",
   "Vice President for Finance and Accounting Services",
   "Vice President for Administrative Services",
   "Vice President for Lasallian Mission Services",
   "Vice President for Advancement and Linkages Services",
+  "Lasallian Mission Center",
   "Learning Resource Center",
   "College of Arts and Sciences",
   "College of Business and Accountancy",
