@@ -75,11 +75,11 @@
           <input
             v-model="searchFilter"
             type="text"
-            placeholder="Search anything: Name, Email, Category, Concern, Location, Status, Technician, Details..."
+            placeholder="Search anything: Name, Email, Category, Concern, Location, Status, Technician, Details... (Use multiple words to narrow results)"
             class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
           />
           <p v-if="searchFilter" class="text-[10px] text-gray-500 mt-1 italic">
-            <i class="fa fa-info-circle mr-1"></i>Searching across all fields...
+            <i class="fa fa-info-circle mr-1"></i>Searching across all fields{{ searchFilter.trim().split(/\s+/).length > 1 ? ' (matching ALL words)' : '' }}...
           </p>
         </div>
 
@@ -584,26 +584,7 @@
       <div
         class="bg-white lg:w-11/12 rounded-lg lg:p-6 py-2 h-5/6 overflow-y-auto relative px-2"
       >
-        <!-- Loading Overlay -->
-        <div
-          v-if="modalLoading"
-          class="absolute inset-0 bg-white/95 h-full flex items-center justify-center z-10 rounded-lg backdrop-blur-sm"
-        >
-          <div
-            class="text-center bg-white p-8 rounded-lg shadow-2xl border-2 border-green-600"
-          >
-            <div
-              class="inline-block h-16 w-16 animate-spin rounded-full border-4 border-solid border-green-600 border-r-transparent"
-            ></div>
-            <p class="mt-4 lg:text-sm text-xs font-bold text-gray-800">
-              {{ isCreate ? "Creating ticket..." : "Saving changes..." }}
-            </p>
-            <p class="mt-1 text-xs text-gray-600">
-              Please wait, processing your request...
-            </p>
-          </div>
-        </div>
-        <div v-if="!modalLoading">
+        <div>
           <div class="flex lg:text-sm text-xs items-center lg:pb-5 pb-2">
             <h3 class="font-bold lg:text-center text-left w-full">
               {{ isCreate ? "Create Ticket (Job Request)" : "Ticket Details" }}
@@ -637,8 +618,8 @@
                     v-model="info.requestor_fullname"
                     placeholder="Enter full name"
                     class="input w-full lg:p-3 p-2 rounded-lg border-2 border-gray-200 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
                   />
                 </div>
                 <div class="w-full">
@@ -650,8 +631,8 @@
                     v-model="info.requestor_lsu_email"
                     placeholder="e.g johndoe@lsu.edu.ph"
                     class="input w-full lg:p-3 p-2 rounded-lg border-2 border-gray-200 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
                   />
                 </div>
               </div>
@@ -728,8 +709,8 @@
                     v-model="info.issue_concern_request_category_type"
                     class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                     @change="info.issue_concern_request_item_type = ''"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
                   >
                     <option disabled value="">Select Category</option>
                     <option
@@ -751,7 +732,7 @@
                   <select
                     v-model="info.issue_concern_request_item_type"
                     class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    :disabled="!info.issue_concern_request_category_type || !isCreate"
+                    :disabled="!info.issue_concern_request_category_type || (!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email))"
                   >
                     <option disabled value="">
                       {{
@@ -783,8 +764,8 @@
                     class="input rounded-lg border-2 border-gray-200 lg:px-3 lg:py-3 px-2 py-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none resize-none"
                     placeholder="Describe the issue, concern, or request in detail..."
                     rows="3"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
                   />
                 </div>
 
@@ -797,8 +778,8 @@
                   <select
                     v-model="info.client_role"
                     class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
                   >
                     <option value="">Select Role</option>
                     <option value="Student">Student</option>
@@ -823,8 +804,8 @@
                     <select
                       v-model="info.issue_concern_request_center_office_room"
                       class="input border-2 border-gray-200 w-full lg:p-3 p-2 rounded-lg text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                      :disabled="!isCreate"
-                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                      :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
+                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
                     >
                       <option disabled value="">
                         {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Select Computer Lab' : 'Select Location' }}
@@ -842,8 +823,8 @@
                       v-model="customOffice"
                       class="input rounded-lg border-2 border-gray-200 flex-1 lg:p-3 p-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                       placeholder="Specify location"
-                      :disabled="!isCreate"
-                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                      :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
+                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
                     />
                   </div>
                 </div>
@@ -857,8 +838,8 @@
                   <select
                     v-model="info.owner_type"
                     class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                    :disabled="!isCreate"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
                   >
                     <option value="LSU">LSU</option>
                     <option value="Personal">Personal</option>
@@ -1255,6 +1236,10 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Fix Errors",
     "Add New Page",
     "Remove Page",
+    "Delete Article or Content",
+    "Add Article or Content",
+    "Update Article or Content",
+    "Quality Assurance Testing",
     "Others",
   ],
   "Student Portal": [
@@ -1560,51 +1545,68 @@ const filteredRequests = computed(() => {
 
   // Universal Search filter - searches across ALL fields (using debounced value)
   if (debouncedSearchFilter.value) {
-    const search = debouncedSearchFilter.value.toLowerCase().trim();
+    const searchInput = debouncedSearchFilter.value.toLowerCase().trim();
+
+    // Split search into individual words for multi-word matching
+    const searchWords = searchInput.split(/\s+/).filter(word => word.length > 0);
+
     filtered = filtered.filter((r) => {
       // Basic fields
-      const ticketId = r.ticket_id?.toLowerCase() || "";
-      const requestorName = r.requestor_fullname?.toLowerCase() || "";
-      const requestorEmail = r.requestor_lsu_email?.toLowerCase() || "";
+      const ticketId = (r.ticket_id || "").toString().toLowerCase();
+      const requestorName = (r.requestor_fullname || "").toString().toLowerCase();
+      const requestorEmail = (r.requestor_lsu_email || "").toString().toLowerCase();
 
       // Category and concern fields
-      const category = r.issue_concern_request_category_type?.toLowerCase() || "";
-      const specificConcern = r.issue_concern_request_item_type?.toLowerCase() || "";
-      const centerOfficeRoom = r.issue_concern_request_center_office_room?.toLowerCase() || "";
+      const category = (r.issue_concern_request_category_type || "").toString().toLowerCase();
+      const specificConcern = (r.issue_concern_request_item_type || "").toString().toLowerCase();
+      const centerOfficeRoom = (r.issue_concern_request_center_office_room || "").toString().toLowerCase();
 
       // Details and other fields
-      const details = r.issue_concern_request_details?.toLowerCase() || "";
-      const ownerType = r.owner_type?.toLowerCase() || "";
-      const clientRole = r.client_role?.toLowerCase() || "";
+      const details = (r.issue_concern_request_details || "").toString().toLowerCase();
+      const ownerType = (r.owner_type || "").toString().toLowerCase();
+      const clientRole = (r.client_role || "").toString().toLowerCase();
 
       // Assigned personnel - search through all technician names and emails
-      const assignedPersonnel = r.technicians_assigned
-        ?.map(t => `${t.name} ${t.email}`.toLowerCase())
-        .join(" ") || "";
+      let assignedPersonnel = "";
+      if (r.technicians_assigned && Array.isArray(r.technicians_assigned)) {
+        assignedPersonnel = r.technicians_assigned
+          .map(t => {
+            const name = (t.name || "").toString();
+            const email = (t.email || "").toString();
+            return `${name} ${email}`;
+          })
+          .join(" ")
+          .toLowerCase();
+      }
 
       // Current status
-      const currentStatus = latestStatus(r)?.status?.toLowerCase() || "";
+      const currentStatus = (latestStatus(r)?.status || "").toString().toLowerCase();
 
-      // Search through all logs (status and remarks)
-      const logsText = r.logs
-        ?.map(log => `${log.status || ""} ${log.remarks || ""} ${log.assigned_technician_name || ""}`.toLowerCase())
-        .join(" ") || "";
+      // Search through all logs (status, remarks, and technician names)
+      let logsText = "";
+      if (r.logs && Array.isArray(r.logs)) {
+        logsText = r.logs
+          .map(log => {
+            const status = (log.status || "").toString();
+            const remarks = (log.remarks || "").toString();
+            const techName = (log.assigned_technician_name || "").toString();
+            const techEmail = (log.assigned_technician_lsu_email || "").toString();
+            return `${status} ${remarks} ${techName} ${techEmail}`;
+          })
+          .join(" ")
+          .toLowerCase();
+      }
 
-      // Check if search term exists in any field
-      return (
-        ticketId.includes(search) ||
-        requestorName.includes(search) ||
-        requestorEmail.includes(search) ||
-        category.includes(search) ||
-        specificConcern.includes(search) ||
-        centerOfficeRoom.includes(search) ||
-        details.includes(search) ||
-        ownerType.includes(search) ||
-        clientRole.includes(search) ||
-        assignedPersonnel.includes(search) ||
-        currentStatus.includes(search) ||
-        logsText.includes(search)
-      );
+      // Date fields (formatted for search)
+      const createdDate = r.created_at ? moment(r.created_at).format("YYYY-MM-DD HH:mm:ss").toLowerCase() : "";
+      const updatedDate = r.updated_at ? moment(r.updated_at).format("YYYY-MM-DD HH:mm:ss").toLowerCase() : "";
+
+      // Combine all searchable fields into one string
+      const allFields = `${ticketId} ${requestorName} ${requestorEmail} ${category} ${specificConcern} ${centerOfficeRoom} ${details} ${ownerType} ${clientRole} ${assignedPersonnel} ${currentStatus} ${logsText} ${createdDate} ${updatedDate}`;
+
+      // For multi-word search: ALL words must be found (AND logic)
+      // Each word can be found in any field
+      return searchWords.every(word => allFields.includes(word));
     });
   }
 
@@ -1940,6 +1942,11 @@ const normalizeOffice = () => {
 
 // Check if user has unrated tickets (ANY status - pending, in progress, completed, etc.)
 const checkForUnratedTickets = async (email) => {
+  // Exception for npc@lsu.edu.ph - skip rating requirement
+  if (email && email.toLowerCase() === "npc@lsu.edu.ph") {
+    return false;
+  }
+
   try {
     const res = await $fetch(
       endpoint.value + "/api/cits/request-ticket/list/"
@@ -1992,6 +1999,9 @@ const createTicket = async () => {
     );
     return;
   }
+
+  // Close modal immediately for instant feedback
+  showModal.value = false;
 
   modalLoading.value = true;
   normalizeOffice();
@@ -2054,7 +2064,6 @@ const createTicket = async () => {
         "✅ Ticket created successfully! Confirmation email sent.",
         "success",
       );
-      showModal.value = false;
 
       // Optimized: Add new ticket to local array instead of full refresh
       if (res.data) {
@@ -2100,6 +2109,9 @@ const saveChanges = async () => {
     showToaster("⚠️ Only assigned personnel can modify locked tickets.", "warning");
     return;
   }
+
+  // Close modal immediately for instant feedback
+  showModal.value = false;
 
   modalLoading.value = true;
   normalizeOffice();
@@ -2151,7 +2163,6 @@ const saveChanges = async () => {
 
     if (res.status === "updated") {
       showToaster("✅ Changes saved successfully!", "success");
-      showModal.value = false;
 
       // Optimized: Update local array instead of full refresh
       const index = requests.value.findIndex(r => r.id === info.value.id);
@@ -2305,175 +2316,9 @@ const itemStatusClass = (status) => {
   }
 };
 
-// Function to auto-assign technicians based on category
-const autoAssignTechnicians = (category, specificConcern = null) => {
-  if (!category) {
-    // Reset to default if no category (Michael only)
-    const michael = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
-    );
-    info.value.technicians_assigned = michael
-      ? [{ name: michael.name, email: michael.email }]
-      : [];
-    return;
-  }
+// Auto-assignment functions removed - Manual checkbox selection only
 
-  // Define category-based assignments
-  const categoryAssignments = {
-    "Hardware": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "johny14_gonzaga@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph",
-      "giovanni.morales@lsu.edu.ph",
-      "rommel.rosal@lsu.edu.ph",
-      "denzelroy.suarez@lsu.edu.ph"
-    ],
-    "Software": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "johny14_gonzaga@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph",
-      "giovanni.morales@lsu.edu.ph",
-      "rommel.rosal@lsu.edu.ph",
-      "denzelroy.suarez@lsu.edu.ph"
-    ],
-    "Network": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "johny14_gonzaga@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph"
-    ],
-    "Computer Lab": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "rommel.rosal@lsu.edu.ph",
-      "denzelroy.suarez@lsu.edu.ph"
-    ],
-    "Accounts": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "johny14_gonzaga@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph"
-    ],
-    "LSU Webpages": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "jorenlee.luna@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph"
-    ],
-    "Student Portal": [
-      "michaeljohn.puertogalera@lsu.edu.ph"
-    ],
-    "Others": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "johny14_gonzaga@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph",
-      "giovanni.morales@lsu.edu.ph",
-      "rommel.rosal@lsu.edu.ph",
-      "denzelroy.suarez@lsu.edu.ph"
-    ]
-  };
-
-  // Get the email list for the category
-  const emailList = categoryAssignments[category] || ["michaeljohn.puertogalera@lsu.edu.ph"];
-
-  // Find and assign technicians based on email list
-  const assignedTechs = [];
-  emailList.forEach(email => {
-    const tech = TECHNICIANS_PERSONNEL.find(t => t.email === email);
-    if (tech) {
-      assignedTechs.push({
-        name: tech.name,
-        email: tech.email
-      });
-    }
-  });
-
-  info.value.technicians_assigned = assignedTechs;
-};
-
-// Function to refine technician assignment based on Computer Lab location
-const refineComputerLabAssignment = (location) => {
-  if (!location || info.value.issue_concern_request_category_type !== "Computer Lab") {
-    return;
-  }
-
-  // Get Michael John Puertogalera (always included)
-  const michael = TECHNICIANS_PERSONNEL.find(
-    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
-  );
-
-  // Determine which technician based on location
-  let assignedTech = null;
-
-  if (location.startsWith("BVM") || location.startsWith("SJ")) {
-    // BVM and SJ Buildings -> Denzel Roy Suarez
-    assignedTech = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.name === "Denzel Roy Suarez"
-    );
-  } else if (location.startsWith("LS")) {
-    // LS Building -> Rommel Rosal
-    assignedTech = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.name === "Rommel Rosal"
-    );
-  }
-
-  if (assignedTech) {
-    const assignedTechs = [];
-
-    // Always add Michael first
-    if (michael) {
-      assignedTechs.push({
-        name: michael.name,
-        email: michael.email,
-      });
-    }
-
-    // Add the lab-specific technician
-    assignedTechs.push({
-      name: assignedTech.name,
-      email: assignedTech.email,
-    });
-
-    info.value.technicians_assigned = assignedTechs;
-  }
-};
-
-// Watch for category changes to auto-assign technicians
-watch(
-  () => info.value.issue_concern_request_category_type,
-  (newCategory) => {
-    // Only auto-assign when creating new tickets
-    if (isCreate.value) {
-      autoAssignTechnicians(newCategory, info.value.issue_concern_request_item_type);
-      // Clear location when category changes
-      info.value.issue_concern_request_center_office_room = "";
-      // Clear specific concern when category changes
-      info.value.issue_concern_request_item_type = "";
-    }
-  }
-);
-
-// Watch for specific concern changes to refine technician assignment
-watch(
-  () => info.value.issue_concern_request_item_type,
-  (newSpecificConcern) => {
-    // Only auto-assign when creating new tickets
-    if (isCreate.value) {
-      // Re-assign based on specific concern
-      autoAssignTechnicians(
-        info.value.issue_concern_request_category_type,
-        newSpecificConcern
-      );
-    }
-  }
-);
-
-// Watch for Computer Lab location changes to refine technician assignment
-watch(
-  () => info.value.issue_concern_request_center_office_room,
-  (newLocation) => {
-    // Only auto-assign when creating new tickets
-    if (isCreate.value) {
-      refineComputerLabAssignment(newLocation);
-    }
-  }
-);
+// Auto-assignment removed - Manual checkbox selection only for assigned personnel
 </script>
 
 <style>

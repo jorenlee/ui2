@@ -619,6 +619,10 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Fix Errors",
     "Add New Page",
     "Remove Page",
+    "Delete Article or Content",
+    "Add Article or Content",
+    "Update Article or Content",
+    "Quality Assurance Testing",
     "Others",
   ],
   "Student Portal": [
