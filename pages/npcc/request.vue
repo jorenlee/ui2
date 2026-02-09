@@ -311,8 +311,8 @@
                           </select>
                         </div>
 
-                        <!-- 2. SPECIFIC CONCERN (Hidden for LSU Webpages and Student Portal) -->
-                        <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                        <!-- 2. SPECIFIC CONCERN (Hidden until category selected, and hidden for LSU Webpages and Student Portal) -->
+                        <div v-if="info.issue_concern_request_category_type && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
                             ><i class="fas fa-laptop text-green-600 mr-1"></i
                             >Specific Concern
@@ -345,8 +345,8 @@
                           </select>
                         </div>
 
-                        <!-- 3. DESCRIPTION (Hidden for Student Portal) -->
-                        <div v-if="info.issue_concern_request_category_type !== 'Student Portal'" class="w-full lg:col-span-2">
+                        <!-- 3. DESCRIPTION (Hidden until category selected, and hidden for Student Portal) -->
+                        <div v-if="info.issue_concern_request_category_type && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full lg:col-span-2">
                           <label class="block font-semibold mb-2 text-gray-700"
                             ><i
                               class="fas fa-comment-dots text-green-600 mr-1"
@@ -362,8 +362,8 @@
                           />
                         </div>
 
-                        <!-- 4. REQUESTOR ROLE (formerly Client Role) (Hidden for LSU Webpages and Student Portal) -->
-                        <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                        <!-- 4. REQUESTOR ROLE (formerly Client Role) (Hidden until category selected, and hidden for LSU Webpages and Student Portal) -->
+                        <div v-if="info.issue_concern_request_category_type && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700">
                             <i class="fas fa-id-badge text-green-600 mr-1"></i
                             >Requestor Role <span class="text-red-600">*</span>
@@ -420,8 +420,8 @@
                           </div>
                         </div>
 
-                        <!-- 6. OWNER TYPE (Hidden for Hardware, Network, Computer Lab, Accounts, LSU Webpages, Student Portal) -->
-                        <div v-if="info.issue_concern_request_category_type !== 'Hardware' && info.issue_concern_request_category_type !== 'Network' && info.issue_concern_request_category_type !== 'Computer Lab' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                        <!-- 6. OWNER TYPE (Hidden until category selected, and hidden for Hardware, Network, Computer Lab, Accounts, LSU Webpages, Student Portal) -->
+                        <div v-if="info.issue_concern_request_category_type && info.issue_concern_request_category_type !== 'Hardware' && info.issue_concern_request_category_type !== 'Network' && info.issue_concern_request_category_type !== 'Computer Lab' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700">
                             <i class="fas fa-user-tag text-green-600 mr-1"></i
                             >Owner Type <span class="text-red-600">*</span>
