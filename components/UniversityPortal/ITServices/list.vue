@@ -770,7 +770,7 @@
                   <i class="fas fa-star text-yellow-600 text-sm"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                  <label class="block text-xs font-semibold text-gray-500 mb-2">Client Evaluation Rating</label>
+                  <label class="block text-lg font-semibold text-gray-500 mb-2">How's my Service?</label>
 
                   <!-- Star Rating Display -->
                   <div class="flex items-center gap-1 mb-2">
@@ -802,6 +802,18 @@
                     >
                       Click to rate
                     </span>
+                  </div>
+
+
+                  <!-- Rating Description (shows only for selected rating) -->
+                  <div v-if="info.evaluation_feedback_client_star_rating" class="mt-2">
+                    <p class="text-sm font-semibold text-gray-700">
+                      <span v-if="info.evaluation_feedback_client_star_rating == 5" class="text-green-600">⭐ Excellent</span>
+                      <span v-else-if="info.evaluation_feedback_client_star_rating == 4" class="text-blue-600">⭐ Very Satisfactory</span>
+                      <span v-else-if="info.evaluation_feedback_client_star_rating == 3" class="text-yellow-600">⭐ Satisfactory</span>
+                      <span v-else-if="info.evaluation_feedback_client_star_rating == 2" class="text-orange-600">⭐ Fair</span>
+                      <span v-else-if="info.evaluation_feedback_client_star_rating == 1" class="text-red-600">⭐ Poor</span>
+                    </p>
                   </div>
                 </div>
               </div>

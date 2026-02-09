@@ -263,7 +263,13 @@
           ></i>
         </span>
       </div>
-  
+
+      <div
+        class="lg:w-3/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500"
+      >
+        <i class="fa fa-star mr-1"></i> Feedback
+      </div>
+
     </div>
 
     <!-- Toaster -->
@@ -382,6 +388,19 @@
                 {{ latestStatus(item)?.status || "-" }}
               </span>
             </div>
+          </div>
+
+          <div class="lg:w-3/12 w-full px-3 text-left">
+            <div v-if="item.evaluation_feedback_client_star_rating" class="flex items-center gap-1">
+              <span v-for="star in 5" :key="star" class="text-sm">
+                <i
+                  class="fa fa-star"
+                  :class="star <= parseInt(item.evaluation_feedback_client_star_rating || 0) ? 'text-yellow-500' : 'text-gray-300'"
+                ></i>
+              </span>
+              <span class="text-xs text-gray-600 ml-1">({{ item.evaluation_feedback_client_star_rating }})</span>
+            </div>
+            <span v-else class="text-xs text-gray-400 italic">No rating yet</span>
           </div>
 
         </div>
@@ -1217,6 +1236,66 @@
                     {{ latestStatus(info)?.remarks || "N/A" }}
                   </span>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CLIENT FEEDBACK & RATING SECTION -->
+          <div
+            v-if="!isCreate && (info.evaluation_feedback_client_star_rating || info.evaluation_feedback_client_comment)"
+            class="border-2 border-blue-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-blue-50 to-white shadow-sm"
+          >
+            <div class="mb-3">
+              <h3 class="lg:text-base text-sm font-bold text-blue-800 mb-1 flex items-center">
+                <i class="fa fa-star text-yellow-500 mr-2"></i>
+                Client Feedback & Rating
+              </h3>
+              <p class="text-lg text-gray-500">
+               How's my service?
+              </p>
+            </div>
+
+            <!-- Star Rating Display -->
+            <div v-if="info.evaluation_feedback_client_star_rating" class="mb-3">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fa fa-star text-yellow-500 mr-1"></i>
+                Rating:
+              </label>
+              <div class="flex items-center gap-2 bg-white p-3 rounded-lg border">
+                <div class="flex items-center gap-1">
+                  <span v-for="star in 5" :key="star" class="text-lg">
+                    <i
+                      class="fa fa-star"
+                      :class="star <= parseInt(info.evaluation_feedback_client_star_rating || 0) ? 'text-yellow-500' : 'text-gray-300'"
+                    ></i>
+                  </span>
+                </div>
+                <span class="text-sm font-semibold text-gray-700">
+                  {{ info.evaluation_feedback_client_star_rating }} / 5
+                </span>
+              </div>
+            </div>
+
+          <!-- Rating Description (shows only for selected rating) -->
+                  <div v-if="info.evaluation_feedback_client_star_rating" class="mt-2 mb-5">
+                    <p class="text-sm font-semibold text-gray-700">
+                      <span v-if="info.evaluation_feedback_client_star_rating == 5" class="text-green-600">⭐ Excellent</span>
+                      <span v-else-if="info.evaluation_feedback_client_star_rating == 4" class="text-blue-600">⭐ Very Satisfactory</span>
+                      <span v-else-if="info.evaluation_feedback_client_star_rating == 3" class="text-yellow-600">⭐ Satisfactory</span>
+                      <span v-else-if="info.evaluation_feedback_client_star_rating == 2" class="text-orange-600">⭐ Fair</span>
+                      <span v-else-if="info.evaluation_feedback_client_star_rating == 1" class="text-red-600">⭐ Poor</span>
+                    </p>
+                  </div>
+
+
+            <!-- Feedback Comment Display -->
+            <div v-if="info.evaluation_feedback_client_comment" class="mb-4">
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <i class="fa fa-comment text-blue-600 mr-1"></i>
+                Comment:
+              </label>
+              <div class="bg-white p-3 rounded-lg border">
+                <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ info.evaluation_feedback_client_comment }}</p>
               </div>
             </div>
           </div>
