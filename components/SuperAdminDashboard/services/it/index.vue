@@ -214,32 +214,7 @@
         </span>
       </div>
 
-      <div
-        @click="sortBy('issue_concern_request_center_office_room')"
-        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
-      >
-        <i class="fa fa-building mr-1"></i> Center/Office/Room
-        <span class="ml-1 inline-flex flex-col text-xs leading-none">
-          <i
-            class="fa fa-caret-up"
-            :class="
-              sortColumn === 'issue_concern_request_center_office_room' &&
-              sortDirection === 'asc'
-                ? 'text-white'
-                : 'text-green-300 opacity-50'
-            "
-          ></i>
-          <i
-            class="fa fa-caret-down -mt-1"
-            :class="
-              sortColumn === 'issue_concern_request_center_office_room' &&
-              sortDirection === 'desc'
-                ? 'text-white'
-                : 'text-green-300 opacity-50'
-            "
-          ></i>
-        </span>
-      </div>
+
       <div
         @click="sortBy('technicians_assigned')"
         class="w-full lg:w-6/12 flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
@@ -288,11 +263,7 @@
           ></i>
         </span>
       </div>
-      <div
-        class="lg:w-fit w-full py-3 pl-3 pr-8 text-white font-bold text-sm whitespace-nowrap"
-      >
-        <i class="fa fa-cog mr-1"></i> Action
-      </div>
+  
     </div>
 
     <!-- Toaster -->
@@ -371,14 +342,16 @@
           </div>
 
           <div
-            class="w-full px-3 text-left uppercase whitespace-nowrap text-xs"
+            class="w-full px-3 text-left capitalize whitespace-nowrap text-xs"
           >
-            {{ item.requestor_fullname }}
+           <span class="flex font-semibold">
+             {{ item.requestor_fullname }}
+           </span>
+              <span class="flex">
+                 {{ item.issue_concern_request_center_office_room || "-" }}
+              </span>
           </div>
 
-          <div class="w-full px-3 text-left text-xs">
-            {{ item.issue_concern_request_center_office_room || "-" }}
-          </div>
 
           <div class="lg:w-6/12 w-full px-3 text-left text-xs">
             {{
@@ -388,6 +361,11 @@
 
           <div class="lg:w-4/12 w-full px-3 text-left">
             <div class="flex items-center gap-2">
+                <span
+              class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-yellow-800 whitespace-nowrap"
+            >
+                <i class="fa fa-edit"></i>
+            </span>
               <!-- Mood Icon -->
               <div
                 class="w-6 h-6 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
@@ -406,13 +384,6 @@
             </div>
           </div>
 
-          <div class="lg:w-fit w-full px-3 text-left">
-            <span
-              class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-yellow-800 whitespace-nowrap"
-            >
-              Edit / View
-            </span>
-          </div>
         </div>
 
         <!-- ================= MOBILE CARD ================= -->
@@ -486,7 +457,7 @@
             <span
               class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold"
             >
-              Edit / View
+                <i class="fa fa-edit"></i>
             </span>
           </div>
         </div>
