@@ -573,48 +573,63 @@
             </button>
           </div>
           <!-- BASIC INFO -->
-          <div class="border rounded p-2 mb-2">
+          <div class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+            <div class="mb-4">
+              <h3 class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center">
+                <i class="fas fa-user-circle mr-2"></i>
+                Requestor Information
+              </h3>
+              <p class="text-xs text-gray-500">
+                Please provide requestor contact details
+              </p>
+            </div>
+
             <div class="gap-3">
-              <div class="lg:flex w-full gap-x-2 mb-2 lg:space-y-0 space-y-2">
+              <div class="grid lg:grid-cols-2 gap-3 mb-3">
                 <div class="w-full">
-                  <label class="text-xs mb-1 block"
-                    >Full Name / Requestor</label
+                  <label class="text-sm font-semibold mb-2 block text-gray-700"
+                    ><i class="fas fa-user text-green-600 mr-1"></i>Full Name / Requestor
+                    <span v-if="isCreate" class="text-red-600">*</span></label
                   >
                   <input
                     v-model="info.requestor_fullname"
-                    placeholder="Full Name"
-                    class="input w-full px-2 py-1 rounded border text-xs"
+                    placeholder="Enter full name"
+                    class="input w-full lg:p-3 p-2 rounded-lg border-2 border-gray-200 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                     :disabled="!isCreate"
                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   />
                 </div>
                 <div class="w-full">
-                  <label class="text-xs mb-1 block">Requestor LSU Email</label>
+                  <label class="text-sm font-semibold mb-2 block text-gray-700"
+                    ><i class="fas fa-envelope text-green-600 mr-1"></i>Requestor LSU Email
+                    <span v-if="isCreate" class="text-red-600">*</span></label
+                  >
                   <input
                     v-model="info.requestor_lsu_email"
                     placeholder="e.g johndoe@lsu.edu.ph"
-                    class="input w-full px-2 py-1 rounded border text-xs"
+                    class="input w-full lg:p-3 p-2 rounded-lg border-2 border-gray-200 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                     :disabled="!isCreate"
                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   />
                 </div>
               </div>
               <div class="md:col-span-2">
-                <label class="text-xs mb-1 block">
-                  Assigned Personnel
-                  <span v-if="info.ticket_locked_by_email" class="ml-2 text-orange-600 font-semibold">
+                <label class="text-sm font-semibold mb-2 block text-gray-700">
+                  <i class="fas fa-users text-green-600 mr-1"></i>Assigned Personnel
+                  <span v-if="info.ticket_locked_by_email" class="ml-2 text-orange-600 font-semibold text-xs">
                     <i class="fas fa-lock"></i> Ticket Locked
                   </span>
                 </label>
-                <div class="border rounded flex flex-wrap">
+                <div class="border-2 border-gray-200 rounded-lg p-2 flex flex-wrap gap-2 bg-white">
                   <label
                     v-for="tech in TECHNICIANS_PERSONNEL"
                     :key="tech.email"
-                    class="flex items-center gap-x-2 text-xs lg:w-4/12 w-full whitespace-nowrap py-1 px-2 rounded leading-0 shadow transition-all"
+                    class="flex items-center gap-x-2 lg:text-sm text-xs lg:w-[calc(33.333%-0.5rem)] w-full whitespace-nowrap py-2 px-3 rounded-lg border-2 transition-all"
                     :class="{
-                      'cursor-pointer': !info.ticket_locked_by_email || isAssignedTechnician,
+                      'cursor-pointer hover:bg-gray-50': !info.ticket_locked_by_email || isAssignedTechnician,
                       'cursor-not-allowed opacity-50': info.ticket_locked_by_email && !isAssignedTechnician,
-                      'bg-green-50 border-2 border-green-500 font-semibold': tech.email === userStore.user?.email
+                      'bg-green-50 border-green-500 font-semibold': tech.email === userStore.user?.email,
+                      'border-gray-200': tech.email !== userStore.user?.email
                     }"
                   >
                     <input
@@ -622,26 +637,26 @@
                       :value="tech"
                       v-model="info.technicians_assigned"
                       :disabled="info.ticket_locked_by_email && !isAssignedTechnician"
-                      class="accent-blue-600"
+                      class="accent-green-600 w-4 h-4"
                     />
                     <span :class="{ 'text-green-700': tech.email === userStore.user?.email }">
                       {{ tech.name }}
-                      <span v-if="tech.email === userStore.user?.email" class="text-green-600 ml-1">
+                      <span v-if="tech.email === userStore.user?.email" class="text-green-600 ml-1 font-bold">
                         (You)
                       </span>
                     </span>
                     <i v-if="info.technicians_assigned?.some(t => t.email === tech.email) && info.ticket_locked_by_email"
-                       class="fas fa-lock text-orange-500 text-xs ml-1"></i>
+                       class="fas fa-lock text-orange-500 text-xs ml-auto"></i>
                   </label>
                 </div>
 
                 <!-- Transfer Ticket Button (only for assigned technicians) -->
-                <div v-if="!isCreate && isAssignedTechnician && info.ticket_locked_by_email" class="mt-2">
+                <div v-if="!isCreate && isAssignedTechnician && info.ticket_locked_by_email" class="mt-3">
                   <button
                     @click="showTransferModal = true"
-                    class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs rounded-lg transition-colors shadow-sm"
+                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors shadow-sm font-semibold"
                   >
-                    <i class="fas fa-exchange-alt mr-1"></i>
+                    <i class="fas fa-exchange-alt mr-2"></i>
                     Transfer Ticket to Other Personnel
                   </button>
                 </div>
@@ -649,22 +664,30 @@
             </div>
           </div>
           <!-- REQUEST DETAILS -->
-          <div class="border rounded-lg p-2 mb-2 bg-gray-50">
-            <h4 class="text-center text-xs mb-1">
-              {{ isCreate ? "Add Details or Concerns" : "Details or Concerns" }}
-            </h4>
-            <div class="border rounded p-2 mb-2 bg-white">
-              <div class="grid lg:grid-cols-2 gap-x-2 text-sm">
+          <div class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+            <div class="mb-4">
+              <h3 class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center">
+                <i class="fas fa-tools mr-2"></i>
+                {{ isCreate ? "Request Details" : "Request Details" }}
+              </h3>
+              <p class="text-xs text-gray-500">
+                {{ isCreate ? "Describe the technical support needs" : "View request information" }}
+              </p>
+            </div>
+            <div class="bg-white rounded-lg lg:p-4 p-3 border-2 border-gray-100">
+              <div class="grid lg:grid-cols-2 gap-4 text-sm">
                 <!-- 1. CATEGORY -->
-                <div class="w-full mb-1">
-                  <label class="block text-xs mb-0.5"
-                    >Category           <span v-if="isCreate" class="text-red-600">*</span> </label
-                  >
+                <div class="w-full">
+                  <label class="block font-semibold mb-2 text-gray-700">
+                    <i class="fas fa-tag text-green-600 mr-1"></i>Category
+                    <span v-if="isCreate" class="text-red-600">*</span>
+                  </label>
                   <select
                     v-model="info.issue_concern_request_category_type"
-                    class="input rounded border px-2 py-1 w-full text-xs"
+                    class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                     @change="info.issue_concern_request_item_type = ''"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   >
                     <option disabled value="">Select Category</option>
                     <option
@@ -678,15 +701,15 @@
                 </div>
 
                 <!-- 2. SPECIFIC CONCERN (Hidden for LSU Webpages and Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1">
-                  <label class="block mb-0.5 text-xs"
-                    >Specific Concern           <span v-if="isCreate" class="text-red-600">*</span> </label
-                  >
+                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                  <label class="block font-semibold mb-2 text-gray-700">
+                    <i class="fas fa-laptop text-green-600 mr-1"></i>Specific Concern
+                    <span v-if="isCreate" class="text-red-600">*</span>
+                  </label>
                   <select
                     v-model="info.issue_concern_request_item_type"
-                    class="input rounded border text-xs px-2 py-1 w-full"
-                    :disabled="!info.issue_concern_request_category_type"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    :disabled="!info.issue_concern_request_category_type || !isCreate"
                   >
                     <option disabled value="">
                       {{
@@ -708,27 +731,32 @@
                 </div>
 
                 <!-- 3. DESCRIPTION (Hidden for Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1 lg:col-span-2">
-                  <label class="block mb-0.5 text-xs"
-                    >Details / Description
-                              <span v-if="isCreate" class="text-red-600">*</span> </label
-                  >
+                <div v-if="info.issue_concern_request_category_type !== 'Student Portal'" class="w-full lg:col-span-2">
+                  <label class="block font-semibold mb-2 text-gray-700">
+                    <i class="fas fa-comment-dots text-green-600 mr-1"></i>Details / Description
+                    <span v-if="isCreate" class="text-red-600">*</span>
+                  </label>
                   <textarea
                     v-model="info.issue_concern_request_details"
-                    class="input rounded border text-xs px-2 py-1 w-full"
+                    class="input rounded-lg border-2 border-gray-200 lg:px-3 lg:py-3 px-2 py-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none resize-none"
                     placeholder="Describe the issue, concern, or request in detail..."
                     rows="3"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    :disabled="!isCreate"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   />
                 </div>
 
                 <!-- 4. REQUESTOR ROLE (formerly Client Role) (Hidden for LSU Webpages and Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1">
-                  <label class="block text-xs mb-0.5">Requestor Role</label>
+                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                  <label class="block font-semibold mb-2 text-gray-700">
+                    <i class="fas fa-id-badge text-green-600 mr-1"></i>Requestor Role
+                    <span v-if="isCreate" class="text-red-600">*</span>
+                  </label>
                   <select
                     v-model="info.client_role"
-                    class="input rounded border px-2 py-1 w-full text-xs"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    :disabled="!isCreate"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   >
                     <option value="">Select Role</option>
                     <option value="Student">Student</option>
@@ -737,25 +765,23 @@
                     <!-- Hide Public and Alumni for Others category -->
                     <option v-if="info.issue_concern_request_category_type !== 'Others'" value="Alumni">Alumni</option>
                     <option v-if="info.issue_concern_request_category_type !== 'Others'" value="Public">Public</option>
-                        <option value="Admin">Admin</option>
+                    <option value="Admin">Admin</option>
                   </select>
                 </div>
 
-                <!-- 5. CENTER/OFFICE/ROOM (Hidden for Accounts, Student Portal, and Others) -->
-                <div
-                  v-if="info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'"
-                  class="w-full mb-1"
-                >
-                  <label class="block text-xs mb-0.5">
-                    {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Center/Office/Room' }}
-                     <span v-if="isCreate" class="text-red-600">*</span>
-                    </label
-                  >
-                  <div class="flex">
+                <!-- 5. CENTER/OFFICE/ROOM (Hidden for Public, Alumni, Accounts, Student Portal, and Others) -->
+                <div v-if="info.client_role !== 'Public' && info.client_role !== 'Alumni' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'" class="w-full">
+                  <label class="block font-semibold mb-2 text-gray-700">
+                    <i class="fas fa-building text-green-600 mr-1"></i>
+                    {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Requesting' }}
+                    <span v-if="isCreate" class="text-red-600">*</span>
+                  </label>
+                  <div class="flex gap-2">
                     <select
                       v-model="info.issue_concern_request_center_office_room"
-                      class="input border w-full rounded text-xs px-2 py-1"
-                       :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                      class="input border-2 border-gray-200 w-full lg:p-3 p-2 rounded-lg text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                      :disabled="!isCreate"
+                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                     >
                       <option disabled value="">
                         {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Select Computer Lab' : 'Select Location' }}
@@ -768,23 +794,28 @@
                         {{ office }}
                       </option>
                     </select>
-
                     <input
                       v-if="info.issue_concern_request_center_office_room === 'OTHER'"
                       v-model="customOffice"
-                      class="input rounded border ml-2 flex-1 px-2 py-1 text-xs"
-                      placeholder="Specific or Exact"
+                      class="input rounded-lg border-2 border-gray-200 flex-1 lg:p-3 p-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                      placeholder="Specify location"
+                      :disabled="!isCreate"
+                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                     />
                   </div>
                 </div>
 
                 <!-- 6. OWNER TYPE (Hidden for Hardware, Network, Computer Lab, Accounts, LSU Webpages, Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'Hardware' && info.issue_concern_request_category_type !== 'Network' && info.issue_concern_request_category_type !== 'Computer Lab' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full mb-1">
-                  <label class="block text-xs mb-0.5">Owner Type           <span v-if="isCreate" class="text-red-600">*</span></label>
+                <div v-if="info.issue_concern_request_category_type !== 'Hardware' && info.issue_concern_request_category_type !== 'Network' && info.issue_concern_request_category_type !== 'Computer Lab' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                  <label class="block font-semibold mb-2 text-gray-700">
+                    <i class="fas fa-user-tag text-green-600 mr-1"></i>Owner Type
+                    <span v-if="isCreate" class="text-red-600">*</span>
+                  </label>
                   <select
                     v-model="info.owner_type"
-                    class="input rounded border px-2 py-1 w-full text-xs"
-                     :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
+                    class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    :disabled="!isCreate"
+                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate }"
                   >
                     <option value="LSU">LSU</option>
                     <option value="Personal">Personal</option>
@@ -1809,6 +1840,13 @@ const createTicket = async () => {
 
   modalLoading.value = true;
   normalizeOffice();
+
+  // Update the initial log with technician information (who created the walk-in ticket)
+  if (info.value.logs && info.value.logs.length > 0) {
+    info.value.logs[0].assigned_technician_name = userStore.user?.name || "";
+    info.value.logs[0].assigned_technician_lsu_email = userStore.user?.email || "";
+    info.value.logs[0].remarks = "Ticket created by technician (Walk-in)";
+  }
 
   const formData = new FormData();
   formData.append("ticket_id", info.value.ticket_id || `TID${Date.now()}`);

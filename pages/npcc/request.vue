@@ -387,7 +387,7 @@
                         <div v-if="info.client_role !== 'Public' && info.client_role !== 'Alumni' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'" class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
                             ><i class="fas fa-building text-green-600 mr-1"></i>
-                            {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Center/Office/Room' }}
+                            {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Requesting' }}
                             <span class="text-red-600">*</span></label
                           >
                           <div class="flex gap-2">
