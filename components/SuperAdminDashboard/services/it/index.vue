@@ -233,7 +233,7 @@
         @click="sortBy('technicians_assigned')"
         class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
-        <i class="fa fa-users mr-1"></i> Personnel
+        <i class="fa fa-users mr-1"></i> Assigned Personnel
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
@@ -579,9 +579,6 @@
                 <i class="fas fa-user-circle mr-2"></i>
                 Requestor Information
               </h3>
-              <p class="text-xs text-gray-500">
-                Please provide requestor contact details
-              </p>
             </div>
 
             <div class="gap-3">
@@ -616,7 +613,7 @@
               <div class="md:col-span-2">
                 <label class="text-sm font-semibold mb-2 block text-gray-700">
                   <i class="fas fa-users text-green-600 mr-1"></i>Assigned Personnel
-                  <span v-if="info.ticket_locked_by_email" class="ml-2 text-orange-600 font-semibold text-xs">
+                  <span v-if="!isCreate && info.ticket_locked_by_email" class="ml-2 text-orange-600 font-semibold text-xs">
                     <i class="fas fa-lock"></i> Ticket Locked
                   </span>
                 </label>
@@ -626,8 +623,8 @@
                     :key="tech.email"
                     class="flex items-center gap-x-2 lg:text-sm text-xs lg:w-[calc(33.333%-0.5rem)] w-full whitespace-nowrap py-2 px-3 rounded-lg border-2 transition-all"
                     :class="{
-                      'cursor-pointer hover:bg-gray-50': !info.ticket_locked_by_email || isAssignedTechnician,
-                      'cursor-not-allowed opacity-50': info.ticket_locked_by_email && !isAssignedTechnician,
+                      'cursor-pointer hover:bg-gray-50': isCreate || !info.ticket_locked_by_email || isAssignedTechnician,
+                      'cursor-not-allowed opacity-50': !isCreate && info.ticket_locked_by_email && !isAssignedTechnician,
                       'bg-green-50 border-green-500 font-semibold': tech.email === userStore.user?.email,
                       'border-gray-200': tech.email !== userStore.user?.email
                     }"
@@ -636,7 +633,7 @@
                       type="checkbox"
                       :value="tech"
                       v-model="info.technicians_assigned"
-                      :disabled="info.ticket_locked_by_email && !isAssignedTechnician"
+                      :disabled="!isCreate && info.ticket_locked_by_email && !isAssignedTechnician"
                       class="accent-green-600 w-4 h-4"
                     />
                     <span :class="{ 'text-green-700': tech.email === userStore.user?.email }">
@@ -645,7 +642,7 @@
                         (You)
                       </span>
                     </span>
-                    <i v-if="info.technicians_assigned?.some(t => t.email === tech.email) && info.ticket_locked_by_email"
+                    <i v-if="!isCreate && info.technicians_assigned?.some(t => t.email === tech.email) && info.ticket_locked_by_email"
                        class="fas fa-lock text-orange-500 text-xs ml-auto"></i>
                   </label>
                 </div>
@@ -770,7 +767,8 @@
                 </div>
 
                 <!-- 5. CENTER/OFFICE/ROOM (Hidden for Public, Alumni, Accounts, Student Portal, and Others) -->
-                <div v-if="info.client_role !== 'Public' && info.client_role !== 'Alumni' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'" class="w-full">
+                <!-- Also hide if not creating and field is empty -->
+                <div v-if="(isCreate || info.issue_concern_request_center_office_room) && info.client_role !== 'Public' && info.client_role !== 'Alumni' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'" class="w-full">
                   <label class="block font-semibold mb-2 text-gray-700">
                     <i class="fas fa-building text-green-600 mr-1"></i>
                     {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Requesting' }}
@@ -865,14 +863,19 @@
             </div>
           </div>
           <!-- LOGS -->
-          <div v-if="!isCreate" class="border rounded p-4 mb-4">
-            <h4 class="font-semibold mb-3 flex items-center gap-2">
-              <i class="fa fa-history text-blue-600"></i>
-              Status History
-            </h4>
+          <div class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+            <div class="mb-3">
+              <h3 class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center">
+                <i class="fa fa-history text-green-600 mr-2"></i>
+                Status History
+              </h3>
+              <p class="text-xs text-gray-500">
+                {{ isCreate ? "Initial status will be set to Pending" : "Track all status changes and updates" }}
+              </p>
+            </div>
 
             <!-- Existing logs display (read-only) -->
-            <div class="max-h-48 overflow-y-auto mb-3 space-y-2">
+            <div class="max-h-48 overflow-y-auto mb-3 space-y-2 bg-white rounded-lg lg:p-3 p-2 border-2 border-gray-100">
               <div
                 v-for="(log, i) in info.logs"
                 :key="i"
@@ -891,7 +894,7 @@
                 <div v-if="log.assigned_technician_name || log.assigned_technician_lsu_email" class="text-xs mt-2 pt-2 border-t border-gray-300 text-gray-600">
                   <div class="flex items-center gap-1">
                     <i class="fas fa-user-edit text-gray-500"></i>
-                    <span class="font-semibold">Updated by:</span>
+                    <span class="font-semibold">{{ isCreate ? 'Created by:' : 'Updated by:' }}</span>
                     <span>{{ log.assigned_technician_name || 'Unknown' }}</span>
                   </div>
                   <div v-if="log.assigned_technician_lsu_email" class="flex items-center gap-1 ml-4 mt-0.5">
@@ -902,26 +905,26 @@
               </div>
             </div>
 
-            <!-- UPDATE STATUS SECTION - Only show if user is assigned technician when ticket is locked -->
-            <div v-if="!info.ticket_locked_by_email || isAssignedTechnician" class="mt-3 pt-3 border-t bg-blue-50 p-3 rounded">
+            <!-- UPDATE STATUS SECTION - Show for create mode or if user is assigned technician when ticket is locked -->
+            <div v-if="isCreate || !info.ticket_locked_by_email || isAssignedTechnician" class="mt-3 pt-3 border-t-2 border-green-200 bg-green-50 lg:p-3 p-2 rounded-lg">
               <div class="flex items-center gap-2 mb-2">
-                <i class="fa fa-edit text-blue-600"></i>
-                <label class="text-sm font-semibold"
-                  >Update Status (Optional)</label
-                >
+                <i class="fa fa-edit text-green-600"></i>
+                <label class="text-sm font-semibold text-green-800">
+                  {{ isCreate ? 'Set Initial Status (Optional)' : 'Update Status (Optional)' }}
+                </label>
               </div>
               <p class="text-xs text-gray-600 mb-3 italic">
-                💡 You can save changes without updating the status
+                {{ isCreate ? '💡 Default status is "Pending" - you can change it if needed' : '💡 You can save changes without updating the status' }}
               </p>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label class="text-xs font-semibold mb-1 block">Status</label>
+                  <label class="text-xs font-semibold mb-1 block text-gray-700">Status</label>
                   <select
                     v-model="newLog.status"
-                    class="input rounded border p-2 text-xs w-full"
+                    class="input rounded-lg border-2 border-gray-200 lg:p-2 p-2 text-sm w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                   >
-                    <option value="">No status update</option>
+                    <option value="">{{ isCreate ? 'Keep as Pending' : 'No status update' }}</option>
                     <option value="Pending">Pending</option>
                     <option value="Unsuccessful">Unsuccessful</option>
                     <option value="In Progress">In Progress</option>
@@ -933,14 +936,12 @@
                 </div>
 
                 <div>
-                  <label class="text-xs font-semibold mb-1 block"
-                    >Remarks</label
-                  >
+                  <label class="text-xs font-semibold mb-1 block text-gray-700">Remarks</label>
                   <input
                     v-model="newLog.remarks"
                     type="text"
-                    placeholder="Optional remarks"
-                    class="input rounded border p-2 text-xs w-full"
+                    :placeholder="isCreate ? 'Optional initial remarks' : 'Optional remarks'"
+                    class="input rounded-lg border-2 border-gray-200 lg:p-2 p-2 text-sm w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                   />
                 </div>
               </div>
@@ -1726,6 +1727,10 @@ const openCreateModal = () => {
   receiptFile.value = null;
   receiptPreview.value = "";
 
+  // Reset newLog for status update
+  newLog.status = "";
+  newLog.remarks = "";
+
   // Auto-assign logged-in technician if they are in the personnel list
   const defaultTechnicians = loggedInTechnician.value
     ? [{ name: loggedInTechnician.value.name, email: loggedInTechnician.value.email }]
@@ -1845,7 +1850,16 @@ const createTicket = async () => {
   if (info.value.logs && info.value.logs.length > 0) {
     info.value.logs[0].assigned_technician_name = userStore.user?.name || "";
     info.value.logs[0].assigned_technician_lsu_email = userStore.user?.email || "";
-    info.value.logs[0].remarks = "Ticket created by technician (Walk-in)";
+
+    // If user changed the initial status or added remarks, update the log
+    if (newLog.value.status && newLog.value.status !== "Pending") {
+      info.value.logs[0].status = newLog.value.status;
+    }
+    if (newLog.value.remarks) {
+      info.value.logs[0].remarks = newLog.value.remarks;
+    } else {
+      info.value.logs[0].remarks = "Ticket created by technician (Walk-in)";
+    }
   }
 
   const formData = new FormData();
