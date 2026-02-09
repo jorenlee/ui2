@@ -262,7 +262,7 @@
                     <div class="w-full">
                       <label
                         class="text-sm font-semibold mb-2 block text-gray-700"
-                        ><i class="fas fa-envelope text-green-600 mr-1"></i>LSU
+                        ><i class="fas fa-envelope text-green-600 mr-1"></i>
                         Email <span class="text-red-600">*</span></label
                       >
                       <input
@@ -665,7 +665,37 @@ const COMPUTER_LAB_LOCATIONS = {
   ],
 };
 
-const CENTER_OFFICE_ROOM_OPTIONS = ["OCH", "NPCC", "Registrar", "N/A", "OTHER"];
+const listCenterOfficeRoom = [
+  "Accounting Office",
+  "Campus Development",
+  "General Services Office",
+  "Human Resource and Development",
+  "Office of the Chancellor",
+  "Office of the President",
+  "Registrar's Office",
+  "Research Office",
+  "Vice President for Planning and Strategic Services",
+  "Vice President for Finance and Accounting Services",
+  "Vice President for Administrative Services",
+  "Vice President for Lasallian Mission Services",
+  "Vice President for Advancement and Linkages Services",
+  "Learning Resource Center",
+  "College of Arts and Sciences",
+  "College of Business and Accountancy",
+  "College of Criminal Justice Education",
+  "College of Computer Studies, Engineering, and Architecture",
+  "College of Teacher Education",
+  "College of Tourism and Hospitality Management",
+  "College of Nursing",
+  "School of Graduate Studies",
+];
+
+const CENTER_OFFICE_ROOM_OPTIONS = [
+  ...listCenterOfficeRoom,
+  "Network Programs and Computerization Center",
+  "N/A",
+  "OTHER"
+];
 
 // Computed property to get location options based on category
 const getLocationOptions = computed(() => {
