@@ -1513,9 +1513,9 @@ const getSpecificTypeOptions = (categoryType) => {
 const getMoodIcon = (item) => {
   const status = latestStatus(item)?.status?.toLowerCase();
   const isDone =
-    status === "completed" || status === "closed" || status === "reviewed";
+    status === "completed" || status === "closed" || status === "for review";
 
-  // If ticket is completed/closed/reviewed - white/gray checkmark
+  // If ticket is completed/closed/for review - trophy
   if (isDone) {
     return {
       emoji: "🏆",
@@ -1524,10 +1524,37 @@ const getMoodIcon = (item) => {
     };
   }
 
+  // If ticket is lacking content - document/clipboard emoji
+  if (status === "lacking content") {
+    return {
+      emoji: "📋",
+      bgClass: "bg-gradient-to-br from-orange-400 to-orange-500",
+      title: "Lacking Content",
+    };
+  }
+
   const createdAt = moment(item.created_at);
   const now = moment();
   const hoursPassed = now.diff(createdAt, "hours");
 
+  // Special handling for "In Progress" status based on age
+  if (status === "in progress") {
+    if (hoursPassed < 24) {
+      return {
+        emoji: "😊",
+        bgClass: "bg-gradient-to-br from-green-400 to-green-500",
+        title: "In Progress (< 24 hours)",
+      };
+    } else {
+      return {
+        emoji: "☹️",
+        bgClass: "bg-gradient-to-br from-red-400 to-red-500",
+        title: "In Progress (> 24 hours)",
+      };
+    }
+  }
+
+  // For other statuses (Pending, Unsuccessful, Cancelled, etc.)
   // New ticket (less than 24 hours) - green happy face
   if (hoursPassed < 24) {
     return {
@@ -2089,8 +2116,10 @@ const ticketStatusClass = (status) => {
       return "bg-yellow-100 text-yellow-800";
     case "In Progress":
       return "bg-blue-100 text-blue-800";
-    case "Reviewed":
+    case "For Review":
       return "bg-purple-100 text-purple-800";
+    case "Lacking Content":
+      return "bg-orange-100 text-orange-800";
     case "Completed":
       return "bg-green-100 text-green-800";
     case "Closed":
@@ -2136,13 +2165,15 @@ const getStatusIconColor = (status) => {
       return "text-yellow-500";
     case "In Progress":
       return "text-blue-500";
+    case "Lacking Content":
+      return "text-orange-500";
     case "Completed":
       return "text-green-500";
     case "Cancelled":
       return "text-red-500";
     case "Unsuccessful":
-      return "text-orange-500";
-    case "Reviewed":
+      return "text-red-600";
+    case "For Review":
       return "text-purple-500";
     case "Closed":
       return "text-gray-500";

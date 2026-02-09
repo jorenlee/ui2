@@ -1,57 +1,9 @@
 <template>
   <div class="lg:p-1 text-sm">
     <div class="lg:flex items-center justify-between">
-      <h2 class="lg:text-xl text-sm font-bold lg:mb-4">
+      <h2 class="text-sm font-bold lg:mb-4">
         NPCC Tech Support & IT Services
       </h2>
-      <!-- Mood Icon Legend -->
-      <div
-        class="lg:flex hidden mb-4 p-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 shadow-sm"
-      >
-        <div
-          class="text-[10px] flex gap-x-6 gap-y-2 items-center justify-center text-xs"
-        >
-          <div class="flex items-center gap-1">
-            <div
-              class="w-6 h-6 bg-gradient-to-br from-green-400 to-green-500 rounded-full flex items-center justify-center shadow-md"
-            >
-              <span class="text-lg">😊</span>
-            </div>
-            <span class="font-medium text-gray-700">
-              New ticket (&lt; 24 hours)
-            </span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div
-              class="w-6 h-6 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md"
-            >
-              <span class="text-lg">😐</span>
-            </div>
-            <span class="font-medium text-gray-700">
-              Aging ticket (24-48 hours)
-            </span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div
-              class="w-6 h-6 bg-gradient-to-br from-red-400 to-red-500 rounded-full flex items-center justify-center shadow-md"
-            >
-              <span class="text-lg">☹️</span>
-            </div>
-            <span class="font-medium text-gray-700">
-              Overdue ticket (48+ hours, not done)
-            </span>
-          </div>
-          <div class="flex items-center gap-1">
-            <div
-              class="w-6 h-6 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center shadow-md"
-            >
-              <span class="text-lg">🏆</span>
-            </div>
-            <span class="font-medium text-gray-700"> Completed tickets </span>
-          </div>
-        </div>
-      </div>
-
       <!-- Results Count & Real-time Indicator -->
       <div class="mb-3 flex justify-between items-center">
         <div class="text-xs text-green-800 font-semibold">
@@ -167,7 +119,7 @@
         @click="sortBy('issue_concern_request_category_type')"
         class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
-        <i class="fa fa-tools mr-1"></i> Concern Category
+        <i class="fa fa-tools mr-1"></i>  Category
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
@@ -193,7 +145,7 @@
         @click="sortBy('requestor_fullname')"
         class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
-        <i class="fa fa-user mr-1"></i> Requestor Full Name
+        <i class="fa fa-user mr-1"></i> Requestor 
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
@@ -1168,9 +1120,10 @@
                     <option value="Pending">Pending</option>
                     <option value="Unsuccessful">Unsuccessful</option>
                     <option value="In Progress">In Progress</option>
+                    <option value="Lacking Content">Lacking Content</option>
                     <option value="Completed">Completed</option>
                     <option value="Cancelled">Cancelled</option>
-                    <option value="Reviewed">Reviewed</option>
+                    <option value="For Review">For Review</option>
                     <option value="Closed">Closed</option>
                   </select>
                 </div>
@@ -2063,9 +2016,9 @@ const getSpecificTypeOptions = (categoryType) => {
 const getMoodIcon = (item) => {
   const status = latestStatus(item)?.status?.toLowerCase();
   const isDone =
-    status === "completed" || status === "closed" || status === "reviewed";
+    status === "completed" || status === "closed" || status === "for review";
 
-  // If ticket is completed/closed/reviewed - white/gray checkmark
+  // If ticket is completed/closed/for review - trophy
   if (isDone) {
     return {
       emoji: "🏆",
@@ -2074,10 +2027,37 @@ const getMoodIcon = (item) => {
     };
   }
 
+  // If ticket is lacking content - warning/document emoji
+  if (status === "lacking content") {
+    return {
+      emoji: "📋",
+      bgClass: "bg-gradient-to-br from-orange-400 to-orange-500",
+      title: "Lacking Content",
+    };
+  }
+
   const createdAt = moment(item.created_at);
   const now = moment();
   const hoursPassed = now.diff(createdAt, "hours");
 
+  // Special handling for "In Progress" status based on age
+  if (status === "in progress") {
+    if (hoursPassed < 24) {
+      return {
+        emoji: "😊",
+        bgClass: "bg-gradient-to-br from-green-400 to-green-500",
+        title: "In Progress (< 24 hours)",
+      };
+    } else {
+      return {
+        emoji: "☹️",
+        bgClass: "bg-gradient-to-br from-red-400 to-red-500",
+        title: "In Progress (> 24 hours)",
+      };
+    }
+  }
+
+  // For other statuses (Pending, Unsuccessful, Cancelled, etc.)
   // New ticket (less than 24 hours) - green happy face
   if (hoursPassed < 24) {
     return {
@@ -2726,8 +2706,10 @@ const ticketStatusClass = (status) => {
       return "bg-yellow-100 text-yellow-800";
     case "In Progress":
       return "bg-blue-100 text-blue-800";
-    case "Reviewed":
+    case "For Review":
       return "bg-purple-100 text-purple-800";
+    case "Lacking Content":
+      return "bg-orange-100 text-orange-800";
     case "Completed":
       return "bg-green-100 text-green-800";
     case "Closed":
