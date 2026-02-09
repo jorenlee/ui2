@@ -1851,16 +1851,11 @@ const openCreateModal = () => {
   newLog.status = "";
   newLog.remarks = "";
 
-  // Auto-assign logged-in technician if they are in the personnel list
-  const defaultTechnicians = loggedInTechnician.value
-    ? [{ name: loggedInTechnician.value.name, email: loggedInTechnician.value.email }]
-    : [];
-
   info.value = {
     ticket_id: "TID" + Date.now(),
     requestor_fullname: "",
     requestor_lsu_email: "",
-    technicians_assigned: defaultTechnicians,
+    technicians_assigned: [], // Manual assignment only - no auto-assign
     issue_concern_request_details: "",
     issue_concern_request_category_type: "",
     issue_concern_request_item_type: "",
