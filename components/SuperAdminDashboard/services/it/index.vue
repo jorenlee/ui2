@@ -66,6 +66,24 @@
     <!-- ACTION BAR -->
     <div class="bg-white border rounded-lg py-1 px-2 mb-4 shadow-sm">
       <div class="lg:flex grid grid-cols-2 gap-3 mb-3 w-full">
+
+        <!-- Search Filter -->
+        <div class="w-full">
+          <label class="text-xs font-semibold text-gray-700 mb-1 block"
+            ><i class="fa fa-search mr-1"></i>Universal Search</label
+          >
+          <input
+            v-model="searchFilter"
+            type="text"
+            placeholder="Search anything: Name, Email, Category, Concern, Location, Status, Technician, Details..."
+            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
+          />
+          <p v-if="searchFilter" class="text-[10px] text-gray-500 mt-1 italic">
+            <i class="fa fa-info-circle mr-1"></i>Searching across all fields...
+          </p>
+        </div>
+
+
         <!-- Status Filter -->
         <div class="w-full">
           <label class="text-xs font-semibold text-gray-700 mb-1 block"
@@ -103,18 +121,6 @@
           </select>
         </div>
 
-        <!-- Search Filter -->
-        <div class="w-full">
-          <label class="text-xs font-semibold text-gray-700 mb-1 block"
-            >Search</label
-          >
-          <input
-            v-model="searchFilter"
-            type="text"
-            placeholder="Ticket ID, Name, Email..."
-            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
-          />
-        </div>
 
         <!-- Date Range Filter -->
         <div class="w-full">
@@ -158,15 +164,15 @@
       class="w-full lg:flex hidden bg-gradient-to-r from-green-700 to-green-600 rounded-t-lg shadow-md overflow-hidden"
     >
       <div
-        @click="sortBy('ticket_id')"
+        @click="sortBy('issue_concern_request_category_type')"
         class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
-        <i class="fa fa-ticket mr-1"></i> Ticket ID
+        <i class="fa fa-tools mr-1"></i> Concern Category
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
             :class="
-              sortColumn === 'ticket_id' && sortDirection === 'asc'
+              sortColumn === 'issue_concern_request_category_type' && sortDirection === 'asc'
                 ? 'text-white'
                 : 'text-green-300 opacity-50'
             "
@@ -174,7 +180,7 @@
           <i
             class="fa fa-caret-down -mt-1"
             :class="
-              sortColumn === 'ticket_id' && sortDirection === 'desc'
+              sortColumn === 'issue_concern_request_category_type' && sortDirection === 'desc'
                 ? 'text-white'
                 : 'text-green-300 opacity-50'
             "
@@ -206,15 +212,15 @@
         </span>
       </div>
       <div
-        @click="sortBy('requestor_lsu_email')"
+        @click="sortBy('issue_concern_request_item_type')"
         class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
-        <i class="fa fa-envelope mr-1"></i> Requestor Email
+        <i class="fa fa-wrench mr-1"></i> Specific Concern
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
             :class="
-              sortColumn === 'requestor_lsu_email' && sortDirection === 'asc'
+              sortColumn === 'issue_concern_request_item_type' && sortDirection === 'asc'
                 ? 'text-white'
                 : 'text-green-300 opacity-50'
             "
@@ -222,7 +228,32 @@
           <i
             class="fa fa-caret-down -mt-1"
             :class="
-              sortColumn === 'requestor_lsu_email' && sortDirection === 'desc'
+              sortColumn === 'issue_concern_request_item_type' && sortDirection === 'desc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
+          ></i>
+        </span>
+      </div>
+
+      <div
+        @click="sortBy('issue_concern_request_center_office_room')"
+        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+      >
+        <i class="fa fa-building mr-1"></i> Center/Office/Room
+        <span class="ml-1 inline-flex flex-col text-xs leading-none">
+          <i
+            class="fa fa-caret-up"
+            :class="
+              sortColumn === 'issue_concern_request_center_office_room' && sortDirection === 'asc'
+                ? 'text-white'
+                : 'text-green-300 opacity-50'
+            "
+          ></i>
+          <i
+            class="fa fa-caret-down -mt-1"
+            :class="
+              sortColumn === 'issue_concern_request_center_office_room' && sortDirection === 'desc'
                 ? 'text-white'
                 : 'text-green-300 opacity-50'
             "
@@ -350,7 +381,7 @@
           @click="openModal(item)"
         >
           <div class="lg:w-6/12 w-full px-3 text-left text-xs">
-            {{ item.ticket_id }}
+            {{ item.issue_concern_request_category_type || "-" }}
           </div>
 
           <div
@@ -360,7 +391,11 @@
           </div>
 
           <div class="w-full px-3 text-left text-xs">
-            {{ item.requestor_lsu_email }}
+            {{ item.issue_concern_request_item_type || "-" }}
+          </div>
+
+          <div class="w-full px-3 text-left text-xs">
+            {{ item.issue_concern_request_center_office_room || "-" }}
           </div>
 
           <div class="w-full px-3 text-left text-xs">
@@ -402,9 +437,12 @@
           @click="openModal(item)"
         >
           <div class="flex justify-between items-center">
-            <span class="font-bold text-sm">
-              {{ item.ticket_id }}
-            </span>
+            <div class="flex items-center gap-2">
+              <i class="fa fa-tools text-green-600"></i>
+              <span class="font-bold text-sm">
+                {{ item.issue_concern_request_category_type || "-" }}
+              </span>
+            </div>
 
             <div class="flex items-center gap-2">
               <!-- Mood Icon -->
@@ -429,13 +467,20 @@
             <p class="text-sm font-semibold">
               {{ item.requestor_fullname }}
             </p>
-            <p class="text-xs text-gray-600">
-              {{ item.requestor_lsu_email }}
-            </p>
           </div>
 
           <div class="text-xs text-gray-700">
-            <span class="font-semibold">Technician:</span>
+            <span class="font-semibold"><i class="fa fa-wrench text-green-600 mr-1"></i>Specific Concern:</span>
+            {{ item.issue_concern_request_item_type || "—" }}
+          </div>
+
+          <div class="text-xs text-gray-700">
+            <span class="font-semibold"><i class="fa fa-building text-green-600 mr-1"></i>Center/Office/Room:</span>
+            {{ item.issue_concern_request_center_office_room || "—" }}
+          </div>
+
+          <div class="text-xs text-gray-700">
+            <span class="font-semibold"><i class="fa fa-users text-green-600 mr-1"></i>Technician:</span>
             {{ item.technicians_assigned?.map(t => t.name).join(", ") || "—" }}
           </div>
 
@@ -771,7 +816,7 @@
                 <div v-if="(isCreate || info.issue_concern_request_center_office_room) && info.client_role !== 'Public' && info.client_role !== 'Alumni' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'" class="w-full">
                   <label class="block font-semibold mb-2 text-gray-700">
                     <i class="fas fa-building text-green-600 mr-1"></i>
-                    {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Requesting' }}
+                    {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Requesting Office' }}
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <div class="flex gap-2">
@@ -996,11 +1041,23 @@
             <button
               class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-900 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               @click="isCreate ? createTicket() : saveChanges()"
-              :disabled="modalLoading"
+              :disabled="modalLoading || (!isCreate && info.ticket_locked_by_email && !isAssignedTechnician)"
+              :title="!isCreate && info.ticket_locked_by_email && !isAssignedTechnician ? 'Only assigned personnel can save changes to locked tickets' : ''"
             >
               <i class="fa mr-1" :class="isCreate ? 'fa-plus' : 'fa-save'"></i>
               {{ isCreate ? "Create" : "Save" }}
             </button>
+          </div>
+
+          <!-- Warning message for non-assigned personnel -->
+          <div v-if="!isCreate && info.ticket_locked_by_email && !isAssignedTechnician" class="mt-3 p-3 bg-orange-50 border-2 border-orange-200 rounded-lg">
+            <div class="flex items-start gap-2">
+              <i class="fas fa-lock text-orange-600 mt-0.5"></i>
+              <div class="text-xs text-orange-700">
+                <p class="font-semibold mb-1">Ticket Locked</p>
+                <p>This ticket is locked and can only be modified by assigned personnel. You can view the details but cannot make changes.</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1069,7 +1126,7 @@
   </div>
 </template>
 <script setup>
-import { ref, computed, onMounted, onUnmounted, reactive } from "vue";
+import { ref, computed, onMounted, onUnmounted, reactive, watch } from "vue";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
 
@@ -1082,6 +1139,7 @@ const isCreate = ref(false);
 const statusFilter = ref("");
 const technicianFilter = ref("");
 const searchFilter = ref("");
+const debouncedSearchFilter = ref(""); // Debounced version for better performance
 const dateFilter = ref("");
 const customOffice = ref("");
 const showTransferModal = ref(false);
@@ -1097,6 +1155,9 @@ const sortDirection = ref("asc"); // oldest first by default
 
 // Real-time update
 let realtimeInterval = null;
+
+// Debounce timer for search
+let searchDebounceTimer = null;
 
 const successfullySavedData = ref(false);
 
@@ -1319,9 +1380,12 @@ const fetchRequests = async (silent = false) => {
   if (!silent) loading.value = true;
   try {
     const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
-    requests.value = res.data || res;
+    const newData = res.data || res;
 
-    // console.log(requests.value);
+    // Only update if data has actually changed (performance optimization)
+    if (JSON.stringify(requests.value) !== JSON.stringify(newData)) {
+      requests.value = newData;
+    }
 
   } catch (err) {
     console.error("Failed to fetch tech support list", err);
@@ -1351,6 +1415,22 @@ onMounted(() => {
 
 onUnmounted(() => {
   stopRealtimeUpdates();
+  // Clear debounce timer on unmount
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+});
+
+// Debounce search filter for better performance (300ms delay)
+watch(searchFilter, (newValue) => {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+
+  searchDebounceTimer = setTimeout(() => {
+    debouncedSearchFilter.value = newValue;
+    currentPage.value = 1; // Reset to first page on search
+  }, 300);
 });
 
 const newLog = reactive({
@@ -1372,12 +1452,13 @@ function addStatusLog() {
   const updaterName = loggedInTech?.name || userStore.user?.name || "Unknown";
   const updaterEmail = loggedInUser || "";
 
-  // Special handling for "In Progress" status - create log entry for each assigned technician
-  if (newLog.status === "In Progress" && info.value.technicians_assigned && info.value.technicians_assigned.length > 0) {
+  // Special handling for ALL status changes - create log entry for each assigned technician
+  // This applies to: Pending, Unsuccessful, In Progress, Completed, Cancelled, Reviewed, Closed
+  if (info.value.technicians_assigned && info.value.technicians_assigned.length > 0) {
     // Create a log entry for each assigned technician
     info.value.technicians_assigned.forEach((tech) => {
       info.value.logs.push({
-        status: "In Progress",
+        status: newLog.status,
         remarks: newLog.remarks || "N/A",
         timestamp: new Date().toISOString(),
         assigned_technician_name: tech.name || "",
@@ -1385,12 +1466,12 @@ function addStatusLog() {
       });
     });
 
-    // Lock the ticket to the first assigned technician
+    // Lock the ticket to the first assigned technician (for all status changes)
     if (info.value.technicians_assigned[0]?.email) {
       info.value.ticket_locked_by_email = info.value.technicians_assigned[0].email;
     }
   } else {
-    // For other statuses, add a single log entry with logged-in user's information
+    // Fallback: If no technicians assigned, add a single log entry with logged-in user's information
     info.value.logs.push({
       status: newLog.status,
       remarks: newLog.remarks || "N/A",
@@ -1477,15 +1558,54 @@ const filteredRequests = computed(() => {
     );
   }
 
-  // Search filter
-  if (searchFilter.value) {
-    const search = searchFilter.value.toLowerCase();
-    filtered = filtered.filter(
-      (r) =>
-        r.ticket_id?.toLowerCase().includes(search) ||
-        r.requestor_fullname?.toLowerCase().includes(search) ||
-        r.requestor_lsu_email?.toLowerCase().includes(search),
-    );
+  // Universal Search filter - searches across ALL fields (using debounced value)
+  if (debouncedSearchFilter.value) {
+    const search = debouncedSearchFilter.value.toLowerCase().trim();
+    filtered = filtered.filter((r) => {
+      // Basic fields
+      const ticketId = r.ticket_id?.toLowerCase() || "";
+      const requestorName = r.requestor_fullname?.toLowerCase() || "";
+      const requestorEmail = r.requestor_lsu_email?.toLowerCase() || "";
+
+      // Category and concern fields
+      const category = r.issue_concern_request_category_type?.toLowerCase() || "";
+      const specificConcern = r.issue_concern_request_item_type?.toLowerCase() || "";
+      const centerOfficeRoom = r.issue_concern_request_center_office_room?.toLowerCase() || "";
+
+      // Details and other fields
+      const details = r.issue_concern_request_details?.toLowerCase() || "";
+      const ownerType = r.owner_type?.toLowerCase() || "";
+      const clientRole = r.client_role?.toLowerCase() || "";
+
+      // Assigned personnel - search through all technician names and emails
+      const assignedPersonnel = r.technicians_assigned
+        ?.map(t => `${t.name} ${t.email}`.toLowerCase())
+        .join(" ") || "";
+
+      // Current status
+      const currentStatus = latestStatus(r)?.status?.toLowerCase() || "";
+
+      // Search through all logs (status and remarks)
+      const logsText = r.logs
+        ?.map(log => `${log.status || ""} ${log.remarks || ""} ${log.assigned_technician_name || ""}`.toLowerCase())
+        .join(" ") || "";
+
+      // Check if search term exists in any field
+      return (
+        ticketId.includes(search) ||
+        requestorName.includes(search) ||
+        requestorEmail.includes(search) ||
+        category.includes(search) ||
+        specificConcern.includes(search) ||
+        centerOfficeRoom.includes(search) ||
+        details.includes(search) ||
+        ownerType.includes(search) ||
+        clientRole.includes(search) ||
+        assignedPersonnel.includes(search) ||
+        currentStatus.includes(search) ||
+        logsText.includes(search)
+      );
+    });
   }
 
   // Date filter
@@ -1766,14 +1886,49 @@ const openCreateModal = () => {
 const openModal = (item) => {
   isCreate.value = false;
 
-  // Directly assign reactive ref
+  // Parse technicians_assigned (handle both string and array formats)
+  let assignedTechnicians = [];
+
+  if (item.technicians_assigned) {
+    if (typeof item.technicians_assigned === 'string') {
+      // If it's a JSON string, parse it
+      try {
+        assignedTechnicians = JSON.parse(item.technicians_assigned);
+      } catch (e) {
+        console.error("Failed to parse technicians_assigned:", e);
+        assignedTechnicians = [];
+      }
+    } else if (Array.isArray(item.technicians_assigned)) {
+      // If it's already an array, use it directly
+      assignedTechnicians = item.technicians_assigned;
+    }
+  }
+
+  // Validate and ensure assigned technicians have proper structure
+  assignedTechnicians = assignedTechnicians.filter(tech => tech && tech.email && tech.name);
+
+  // Check if ticket should be locked to assigned personnel
+  let lockedByEmail = item.ticket_locked_by_email || "";
+
+  if (assignedTechnicians.length > 0 && !lockedByEmail) {
+    // Auto-lock to first assigned technician if not already locked
+    lockedByEmail = assignedTechnicians[0].email;
+  }
+
+  // Validate that locked email belongs to one of the assigned technicians
+  if (lockedByEmail && assignedTechnicians.length > 0) {
+    const isValidLock = assignedTechnicians.some(tech => tech.email === lockedByEmail);
+    if (!isValidLock) {
+      // If locked email is not in assigned list, lock to first assigned technician
+      lockedByEmail = assignedTechnicians[0].email;
+    }
+  }
+
+  // Directly assign reactive ref with validated data
   info.value = reactive({
     ...item,
-    technicians_assigned: Array.isArray(item.technicians_assigned)
-      ? item.technicians_assigned
-      : item.technician_assigned
-        ? [item.technician_assigned]
-        : [],
+    technicians_assigned: assignedTechnicians,
+    ticket_locked_by_email: lockedByEmail,
     logs: item.logs ? [...item.logs] : [],
   });
 
@@ -1852,14 +2007,23 @@ const createTicket = async () => {
     info.value.logs[0].assigned_technician_lsu_email = userStore.user?.email || "";
 
     // If user changed the initial status or added remarks, update the log
-    if (newLog.value.status && newLog.value.status !== "Pending") {
-      info.value.logs[0].status = newLog.value.status;
+    if (newLog.status && newLog.status !== "Pending") {
+      info.value.logs[0].status = newLog.status;
     }
-    if (newLog.value.remarks) {
-      info.value.logs[0].remarks = newLog.value.remarks;
+    if (newLog.remarks) {
+      info.value.logs[0].remarks = newLog.remarks;
     } else {
       info.value.logs[0].remarks = "Ticket created by technician (Walk-in)";
     }
+  }
+
+  // Lock ticket to assigned personnel when creating
+  if (info.value.technicians_assigned && info.value.technicians_assigned.length > 0) {
+    // Lock to first assigned technician
+    info.value.ticket_locked_by_email = info.value.technicians_assigned[0].email;
+  } else {
+    // No technicians assigned, no lock
+    info.value.ticket_locked_by_email = "";
   }
 
   const formData = new FormData();
@@ -1874,6 +2038,7 @@ const createTicket = async () => {
   formData.append("owner_type", info.value.owner_type || "LSU");
   formData.append("client_role", info.value.client_role || "");
   formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
+  formData.append("ticket_locked_by_email", info.value.ticket_locked_by_email || "");
   formData.append("logs", JSON.stringify(info.value.logs || []));
 
   if (receiptFile.value) {
@@ -1895,7 +2060,14 @@ const createTicket = async () => {
         "success",
       );
       showModal.value = false;
-      await fetchRequests(); // Refresh the list
+
+      // Optimized: Add new ticket to local array instead of full refresh
+      if (res.data) {
+        requests.value.unshift(res.data); // Add to beginning of array
+      } else {
+        // Fallback to full refresh if no data returned
+        await fetchRequests(true); // Silent refresh
+      }
     } else if (res.status === "errors") {
       console.error("Form errors:", res.errors);
       showToaster(
@@ -1928,9 +2100,30 @@ const showToaster = (message, type = "success", duration = 3000) => {
 };
 
 const saveChanges = async () => {
+  // Validate that only assigned personnel can save locked tickets
+  if (info.value.ticket_locked_by_email && !isAssignedTechnician.value) {
+    showToaster("⚠️ Only assigned personnel can modify locked tickets.", "warning");
+    return;
+  }
+
   modalLoading.value = true;
   normalizeOffice();
   addStatusLog();
+
+  // Validate and ensure ticket lock is correct before saving
+  if (info.value.technicians_assigned && info.value.technicians_assigned.length > 0) {
+    // Ensure ticket is locked to one of the assigned technicians
+    const currentLock = info.value.ticket_locked_by_email;
+    const isValidLock = info.value.technicians_assigned.some(tech => tech.email === currentLock);
+
+    if (!isValidLock) {
+      // If current lock is invalid or empty, lock to first assigned technician
+      info.value.ticket_locked_by_email = info.value.technicians_assigned[0].email;
+    }
+  } else {
+    // If no technicians assigned, clear the lock
+    info.value.ticket_locked_by_email = "";
+  }
 
   const formData = new FormData();
   formData.append("ticket_id", info.value.ticket_id);
@@ -1964,7 +2157,15 @@ const saveChanges = async () => {
     if (res.status === "updated") {
       showToaster("✅ Changes saved successfully!", "success");
       showModal.value = false;
-      await fetchRequests(); // refresh list
+
+      // Optimized: Update local array instead of full refresh
+      const index = requests.value.findIndex(r => r.id === info.value.id);
+      if (index !== -1 && res.data) {
+        requests.value[index] = res.data; // Update the specific ticket
+      } else {
+        // Fallback to silent refresh if update fails
+        await fetchRequests(true); // Silent refresh
+      }
     } else {
       console.error("Update failed:", res);
       showToaster("❌ Failed to update ticket.", "error");
@@ -2041,7 +2242,15 @@ const confirmTransferTicket = async () => {
       showToaster("✅ Ticket transferred successfully! Notifications sent to client and new technicians.", "success", 5000);
       showTransferModal.value = false;
       transferTechnicians.value = [];
-      await fetchRequests(); // refresh list
+
+      // Optimized: Update local array instead of full refresh
+      const index = requests.value.findIndex(r => r.id === info.value.id);
+      if (index !== -1 && res.data) {
+        requests.value[index] = res.data; // Update the specific ticket
+      } else {
+        // Fallback to silent refresh
+        await fetchRequests(true); // Silent refresh
+      }
     } else {
       console.error("Transfer failed:", res);
       showToaster("❌ Failed to transfer ticket.", "error");
