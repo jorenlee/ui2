@@ -238,9 +238,6 @@
               <button
                 v-for="star in 5"
                 :key="star"
-                @click.stop="
-                  isTicketCompletedForRating(item) && updateRating(item, star)
-                "
                 :disabled="!isTicketCompletedForRating(item)"
                 class="text-lg transition-transform"
                 :class="{

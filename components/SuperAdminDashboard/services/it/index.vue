@@ -169,7 +169,7 @@
 
       <div
         @click="sortBy('technicians_assigned')"
-        class="w-full lg:w-6/12 flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-users mr-1"></i> Assigned Personnel
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -193,7 +193,7 @@
       </div>
       <div
         @click="sortBy('status')"
-        class="lg:w-4/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-info-circle mr-1"></i> Status
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -317,7 +317,7 @@
             }}
           </div>
 
-          <div class="lg:w-4/12 w-full px-3 text-left">
+          <div class="lg:w-6/12 w-full px-3 text-left">
             <div class="flex items-center gap-2">
                 <span
               class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-yellow-800 whitespace-nowrap"
