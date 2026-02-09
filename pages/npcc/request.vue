@@ -383,8 +383,8 @@
                           </select>
                         </div>
 
-                        <!-- 5. CENTER/OFFICE/ROOM (Hidden for Public, Alumni, Accounts, Student Portal, and Others) -->
-                        <div v-if="info.client_role !== 'Public' && info.client_role !== 'Alumni' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'" class="w-full">
+                        <!-- 5. CENTER/OFFICE/ROOM (Show ONLY for Admin, Faculty, and Staff) -->
+                        <div v-if="info.client_role === 'Admin' || info.client_role === 'Faculty' || info.client_role === 'Staff'" class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700"
                             ><i class="fas fa-building text-green-600 mr-1"></i>
                             {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Requesting' }}
@@ -815,13 +815,11 @@ const removeReceipt = () => {
 
 // Normalize office before submit
 const normalizeOffice = () => {
-  // Set N/A for Public, Alumni, Accounts, Student Portal, and Others (LSU Webpages and Software REQUIRE it)
+  // Set N/A for Student, Alumni, and Public (only Admin, Faculty, Staff require it)
   if (
-    info.value.client_role === 'Public' ||
+    info.value.client_role === 'Student' ||
     info.value.client_role === 'Alumni' ||
-    info.value.issue_concern_request_category_type === 'Accounts' ||
-    info.value.issue_concern_request_category_type === 'Student Portal' ||
-    info.value.issue_concern_request_category_type === 'Others'
+    info.value.client_role === 'Public'
   ) {
     info.value.issue_concern_request_center_office_room = "N/A";
   } else if (info.value.issue_concern_request_center_office_room === "OTHER") {
@@ -850,12 +848,12 @@ const normalizeOffice = () => {
   }
 };
 
-// Watch for client role changes to auto-set office for Public/Alumni
+// Watch for client role changes to auto-set office for Student/Alumni/Public
 watch(() => info.value.client_role, (newRole) => {
-  if (newRole === 'Public' || newRole === 'Alumni') {
+  if (newRole === 'Student' || newRole === 'Alumni' || newRole === 'Public') {
     info.value.issue_concern_request_center_office_room = "N/A";
   } else if (info.value.issue_concern_request_center_office_room === "N/A") {
-    // Clear the field if switching from Public/Alumni to another role
+    // Clear the field if switching from Student/Alumni/Public to Admin/Faculty/Staff
     info.value.issue_concern_request_center_office_room = "";
   }
 });
@@ -909,13 +907,11 @@ const handleSubmitClick = async () => {
     return;
   }
 
-  // Check Center/Office/Room only if not Public, Alumni, Accounts, Student Portal, or Others
+  // Check Center/Office/Room only for Admin, Faculty, and Staff
   const requiresOffice =
-    info.value.client_role !== 'Public' &&
-    info.value.client_role !== 'Alumni' &&
-    info.value.issue_concern_request_category_type !== 'Accounts' &&
-    info.value.issue_concern_request_category_type !== 'Student Portal' &&
-    info.value.issue_concern_request_category_type !== 'Others';
+    info.value.client_role === 'Admin' ||
+    info.value.client_role === 'Faculty' ||
+    info.value.client_role === 'Staff';
 
   // Check Specific Concern only if not LSU Webpages or Student Portal
   const requiresSpecificConcern =

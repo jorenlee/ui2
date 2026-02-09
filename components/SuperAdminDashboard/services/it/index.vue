@@ -811,9 +811,9 @@
                   </select>
                 </div>
 
-                <!-- 5. CENTER/OFFICE/ROOM (Hidden for Public, Alumni, Accounts, Student Portal, and Others) -->
-                <!-- Also hide if not creating and field is empty -->
-                <div v-if="(isCreate || info.issue_concern_request_center_office_room) && info.client_role !== 'Public' && info.client_role !== 'Alumni' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'Student Portal' && info.issue_concern_request_category_type !== 'Others'" class="w-full">
+                <!-- 5. CENTER/OFFICE/ROOM (Show ONLY for Admin, Faculty, and Staff) -->
+                <!-- Hide for Student, Alumni, and Public -->
+                <div v-if="(isCreate || info.issue_concern_request_center_office_room) && (info.client_role === 'Admin' || info.client_role === 'Faculty' || info.client_role === 'Staff')" class="w-full">
                   <label class="block font-semibold mb-2 text-gray-700">
                     <i class="fas fa-building text-green-600 mr-1"></i>
                     {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Requesting Office' }}
