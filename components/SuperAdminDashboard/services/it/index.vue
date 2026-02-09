@@ -1,4 +1,3 @@
-
 <template>
   <div class="lg:p-1 text-sm">
     <div class="lg:flex items-center justify-between">
@@ -66,7 +65,6 @@
     <!-- ACTION BAR -->
     <div class="bg-white border rounded-lg py-1 px-2 mb-4 shadow-sm">
       <div class="lg:flex grid grid-cols-2 gap-3 mb-3 w-full">
-
         <!-- Search Filter -->
         <div class="w-full">
           <label class="text-xs font-semibold text-gray-700 mb-1 block"
@@ -79,10 +77,13 @@
             class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
           />
           <p v-if="searchFilter" class="text-[10px] text-gray-500 mt-1 italic">
-            <i class="fa fa-info-circle mr-1"></i>Searching across all fields{{ searchFilter.trim().split(/\s+/).length > 1 ? ' (matching ALL words)' : '' }}...
+            <i class="fa fa-info-circle mr-1"></i>Searching across all fields{{
+              searchFilter.trim().split(/\s+/).length > 1
+                ? " (matching ALL words)"
+                : ""
+            }}...
           </p>
         </div>
-
 
         <!-- Status Filter -->
         <div class="w-full">
@@ -120,7 +121,6 @@
             </option>
           </select>
         </div>
-
 
         <!-- Date Range Filter -->
         <div class="w-full">
@@ -172,7 +172,8 @@
           <i
             class="fa fa-caret-up"
             :class="
-              sortColumn === 'issue_concern_request_category_type' && sortDirection === 'asc'
+              sortColumn === 'issue_concern_request_category_type' &&
+              sortDirection === 'asc'
                 ? 'text-white'
                 : 'text-green-300 opacity-50'
             "
@@ -180,7 +181,8 @@
           <i
             class="fa fa-caret-down -mt-1"
             :class="
-              sortColumn === 'issue_concern_request_category_type' && sortDirection === 'desc'
+              sortColumn === 'issue_concern_request_category_type' &&
+              sortDirection === 'desc'
                 ? 'text-white'
                 : 'text-green-300 opacity-50'
             "
@@ -211,30 +213,6 @@
           ></i>
         </span>
       </div>
-      <div
-        @click="sortBy('issue_concern_request_item_type')"
-        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
-      >
-        <i class="fa fa-wrench mr-1"></i> Specific Concern
-        <span class="ml-1 inline-flex flex-col text-xs leading-none">
-          <i
-            class="fa fa-caret-up"
-            :class="
-              sortColumn === 'issue_concern_request_item_type' && sortDirection === 'asc'
-                ? 'text-white'
-                : 'text-green-300 opacity-50'
-            "
-          ></i>
-          <i
-            class="fa fa-caret-down -mt-1"
-            :class="
-              sortColumn === 'issue_concern_request_item_type' && sortDirection === 'desc'
-                ? 'text-white'
-                : 'text-green-300 opacity-50'
-            "
-          ></i>
-        </span>
-      </div>
 
       <div
         @click="sortBy('issue_concern_request_center_office_room')"
@@ -245,7 +223,8 @@
           <i
             class="fa fa-caret-up"
             :class="
-              sortColumn === 'issue_concern_request_center_office_room' && sortDirection === 'asc'
+              sortColumn === 'issue_concern_request_center_office_room' &&
+              sortDirection === 'asc'
                 ? 'text-white'
                 : 'text-green-300 opacity-50'
             "
@@ -253,7 +232,8 @@
           <i
             class="fa fa-caret-down -mt-1"
             :class="
-              sortColumn === 'issue_concern_request_center_office_room' && sortDirection === 'desc'
+              sortColumn === 'issue_concern_request_center_office_room' &&
+              sortDirection === 'desc'
                 ? 'text-white'
                 : 'text-green-300 opacity-50'
             "
@@ -262,7 +242,7 @@
       </div>
       <div
         @click="sortBy('technicians_assigned')"
-        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="w-full lg:w-6/12 flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-users mr-1"></i> Assigned Personnel
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -286,7 +266,7 @@
       </div>
       <div
         @click="sortBy('status')"
-        class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-4/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-info-circle mr-1"></i> Status
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -381,7 +361,13 @@
           @click="openModal(item)"
         >
           <div class="lg:w-6/12 w-full px-3 text-left text-xs">
-            {{ item.issue_concern_request_category_type || "-" }}
+            <span class="flex">
+              {{ item.issue_concern_request_category_type || "-" }}</span
+            >
+
+            <span class="flex">
+              {{ item.issue_concern_request_item_type || "-" }}</span
+            >
           </div>
 
           <div
@@ -391,18 +377,16 @@
           </div>
 
           <div class="w-full px-3 text-left text-xs">
-            {{ item.issue_concern_request_item_type || "-" }}
-          </div>
-
-          <div class="w-full px-3 text-left text-xs">
             {{ item.issue_concern_request_center_office_room || "-" }}
           </div>
 
-          <div class="w-full px-3 text-left text-xs">
-            {{ item.technicians_assigned?.map(t => t.name).join(", ") || "-" }}
+          <div class="lg:w-6/12 w-full px-3 text-left text-xs">
+            {{
+              item.technicians_assigned?.map((t) => t.name).join(", ") || "-"
+            }}
           </div>
 
-          <div class="lg:w-6/12 w-full px-3 text-left">
+          <div class="lg:w-4/12 w-full px-3 text-left">
             <div class="flex items-center gap-2">
               <!-- Mood Icon -->
               <div
@@ -470,18 +454,28 @@
           </div>
 
           <div class="text-xs text-gray-700">
-            <span class="font-semibold"><i class="fa fa-wrench text-green-600 mr-1"></i>Specific Concern:</span>
+            <span class="font-semibold"
+              ><i class="fa fa-wrench text-green-600 mr-1"></i>Specific
+              Concern:</span
+            >
             {{ item.issue_concern_request_item_type || "—" }}
           </div>
 
           <div class="text-xs text-gray-700">
-            <span class="font-semibold"><i class="fa fa-building text-green-600 mr-1"></i>Center/Office/Room:</span>
+            <span class="font-semibold"
+              ><i class="fa fa-building text-green-600 mr-1"></i
+              >Center/Office/Room:</span
+            >
             {{ item.issue_concern_request_center_office_room || "—" }}
           </div>
 
           <div class="text-xs text-gray-700">
-            <span class="font-semibold"><i class="fa fa-users text-green-600 mr-1"></i>Technician:</span>
-            {{ item.technicians_assigned?.map(t => t.name).join(", ") || "—" }}
+            <span class="font-semibold"
+              ><i class="fa fa-users text-green-600 mr-1"></i>Technician:</span
+            >
+            {{
+              item.technicians_assigned?.map((t) => t.name).join(", ") || "—"
+            }}
           </div>
 
           <div class="flex justify-between items-center pt-2">
@@ -599,9 +593,13 @@
             </button>
           </div>
           <!-- BASIC INFO -->
-          <div class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+          <div
+            class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm"
+          >
             <div class="mb-4">
-              <h3 class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center">
+              <h3
+                class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center"
+              >
                 <i class="fas fa-user-circle mr-2"></i>
                 Requestor Information
               </h3>
@@ -611,70 +609,125 @@
               <div class="grid lg:grid-cols-2 gap-3 mb-3">
                 <div class="w-full">
                   <label class="text-sm font-semibold mb-2 block text-gray-700"
-                    ><i class="fas fa-user text-green-600 mr-1"></i>Full Name / Requestor
+                    ><i class="fas fa-user text-green-600 mr-1"></i>Full Name /
+                    Requestor
                     <span v-if="isCreate" class="text-red-600">*</span></label
                   >
                   <input
                     v-model="info.requestor_fullname"
                     placeholder="Enter full name"
                     class="input w-full lg:p-3 p-2 rounded-lg border-2 border-gray-200 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
+                    :disabled="
+                      !isCreate &&
+                      (!isAssignedTechnician || !info.ticket_locked_by_email)
+                    "
+                    :class="{
+                      'bg-gray-100 cursor-not-allowed':
+                        !isCreate &&
+                        (!isAssignedTechnician || !info.ticket_locked_by_email),
+                    }"
                   />
                 </div>
                 <div class="w-full">
                   <label class="text-sm font-semibold mb-2 block text-gray-700"
-                    ><i class="fas fa-envelope text-green-600 mr-1"></i>Requestor LSU Email
+                    ><i class="fas fa-envelope text-green-600 mr-1"></i
+                    >Requestor LSU Email
                     <span v-if="isCreate" class="text-red-600">*</span></label
                   >
                   <input
                     v-model="info.requestor_lsu_email"
                     placeholder="e.g johndoe@lsu.edu.ph"
                     class="input w-full lg:p-3 p-2 rounded-lg border-2 border-gray-200 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
+                    :disabled="
+                      !isCreate &&
+                      (!isAssignedTechnician || !info.ticket_locked_by_email)
+                    "
+                    :class="{
+                      'bg-gray-100 cursor-not-allowed':
+                        !isCreate &&
+                        (!isAssignedTechnician || !info.ticket_locked_by_email),
+                    }"
                   />
                 </div>
               </div>
               <div class="md:col-span-2">
                 <label class="text-sm font-semibold mb-2 block text-gray-700">
-                  <i class="fas fa-users text-green-600 mr-1"></i>Assigned Personnel
-                  <span v-if="!isCreate && info.ticket_locked_by_email" class="ml-2 text-orange-600 font-semibold text-xs">
+                  <i class="fas fa-users text-green-600 mr-1"></i>Assigned
+                  Personnel
+                  <span
+                    v-if="!isCreate && info.ticket_locked_by_email"
+                    class="ml-2 text-orange-600 font-semibold text-xs"
+                  >
                     <i class="fas fa-lock"></i> Ticket Locked
                   </span>
                 </label>
-                <div class="border-2 border-gray-200 rounded-lg p-2 flex flex-wrap gap-2 bg-white">
+                <div
+                  class="border-2 border-gray-200 rounded-lg p-2 flex flex-wrap gap-2 bg-white"
+                >
                   <label
                     v-for="tech in TECHNICIANS_PERSONNEL"
                     :key="tech.email"
                     class="flex items-center gap-x-2 lg:text-sm text-xs lg:w-[calc(33.333%-0.5rem)] w-full whitespace-nowrap py-2 px-3 rounded-lg border-2 transition-all"
                     :class="{
-                      'cursor-pointer hover:bg-gray-50': isCreate || !info.ticket_locked_by_email || isAssignedTechnician,
-                      'cursor-not-allowed opacity-50': !isCreate && info.ticket_locked_by_email && !isAssignedTechnician,
-                      'bg-green-50 border-green-500 font-semibold': tech.email === userStore.user?.email,
-                      'border-gray-200': tech.email !== userStore.user?.email
+                      'cursor-pointer hover:bg-gray-50':
+                        isCreate ||
+                        !info.ticket_locked_by_email ||
+                        isAssignedTechnician,
+                      'cursor-not-allowed opacity-50':
+                        !isCreate &&
+                        info.ticket_locked_by_email &&
+                        !isAssignedTechnician,
+                      'bg-green-50 border-green-500 font-semibold':
+                        tech.email === userStore.user?.email,
+                      'border-gray-200': tech.email !== userStore.user?.email,
                     }"
                   >
                     <input
                       type="checkbox"
                       :value="tech"
                       v-model="info.technicians_assigned"
-                      :disabled="!isCreate && info.ticket_locked_by_email && !isAssignedTechnician"
+                      :disabled="
+                        !isCreate &&
+                        info.ticket_locked_by_email &&
+                        !isAssignedTechnician
+                      "
                       class="accent-green-600 w-4 h-4"
                     />
-                    <span :class="{ 'text-green-700': tech.email === userStore.user?.email }">
+                    <span
+                      :class="{
+                        'text-green-700': tech.email === userStore.user?.email,
+                      }"
+                    >
                       {{ tech.name }}
-                      <span v-if="tech.email === userStore.user?.email" class="text-green-600 ml-1 font-bold">
+                      <span
+                        v-if="tech.email === userStore.user?.email"
+                        class="text-green-600 ml-1 font-bold"
+                      >
                         (You)
                       </span>
                     </span>
-                    <i v-if="!isCreate && info.technicians_assigned?.some(t => t.email === tech.email) && info.ticket_locked_by_email"
-                       class="fas fa-lock text-orange-500 text-xs ml-auto"></i>
+                    <i
+                      v-if="
+                        !isCreate &&
+                        info.technicians_assigned?.some(
+                          (t) => t.email === tech.email,
+                        ) &&
+                        info.ticket_locked_by_email
+                      "
+                      class="fas fa-lock text-orange-500 text-xs ml-auto"
+                    ></i>
                   </label>
                 </div>
 
                 <!-- Transfer Ticket Button (only for assigned technicians) -->
-                <div v-if="!isCreate && isAssignedTechnician && info.ticket_locked_by_email" class="mt-3">
+                <div
+                  v-if="
+                    !isCreate &&
+                    isAssignedTechnician &&
+                    info.ticket_locked_by_email
+                  "
+                  class="mt-3"
+                >
                   <button
                     @click="showTransferModal = true"
                     class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors shadow-sm font-semibold"
@@ -687,17 +740,27 @@
             </div>
           </div>
           <!-- REQUEST DETAILS -->
-          <div class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+          <div
+            class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm"
+          >
             <div class="mb-4">
-              <h3 class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center">
+              <h3
+                class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center"
+              >
                 <i class="fas fa-tools mr-2"></i>
                 {{ isCreate ? "Request Details" : "Request Details" }}
               </h3>
               <p class="text-xs text-gray-500">
-                {{ isCreate ? "Describe the technical support needs" : "View request information" }}
+                {{
+                  isCreate
+                    ? "Describe the technical support needs"
+                    : "View request information"
+                }}
               </p>
             </div>
-            <div class="bg-white rounded-lg lg:p-4 p-3 border-2 border-gray-100">
+            <div
+              class="bg-white rounded-lg lg:p-4 p-3 border-2 border-gray-100"
+            >
               <div class="grid lg:grid-cols-2 gap-4 text-sm">
                 <!-- 1. CATEGORY -->
                 <div class="w-full">
@@ -709,8 +772,15 @@
                     v-model="info.issue_concern_request_category_type"
                     class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                     @change="info.issue_concern_request_item_type = ''"
-                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
+                    :disabled="
+                      !isCreate &&
+                      (!isAssignedTechnician || !info.ticket_locked_by_email)
+                    "
+                    :class="{
+                      'bg-gray-100 cursor-not-allowed':
+                        !isCreate &&
+                        (!isAssignedTechnician || !info.ticket_locked_by_email),
+                    }"
                   >
                     <option disabled value="">Select Category</option>
                     <option
@@ -724,15 +794,26 @@
                 </div>
 
                 <!-- 2. SPECIFIC CONCERN (Hidden for Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                <div
+                  v-if="
+                    info.issue_concern_request_category_type !==
+                    'Student Portal'
+                  "
+                  class="w-full"
+                >
                   <label class="block font-semibold mb-2 text-gray-700">
-                    <i class="fas fa-laptop text-green-600 mr-1"></i>Specific Concern
+                    <i class="fas fa-laptop text-green-600 mr-1"></i>Specific
+                    Concern
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <select
                     v-model="info.issue_concern_request_item_type"
                     class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    :disabled="!info.issue_concern_request_category_type || (!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email))"
+                    :disabled="
+                      !info.issue_concern_request_category_type ||
+                      (!isCreate &&
+                        (!isAssignedTechnician || !info.ticket_locked_by_email))
+                    "
                   >
                     <option disabled value="">
                       {{
@@ -754,9 +835,16 @@
                 </div>
 
                 <!-- 3. DESCRIPTION (Hidden for Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'Student Portal'" class="w-full lg:col-span-2">
+                <div
+                  v-if="
+                    info.issue_concern_request_category_type !==
+                    'Student Portal'
+                  "
+                  class="w-full lg:col-span-2"
+                >
                   <label class="block font-semibold mb-2 text-gray-700">
-                    <i class="fas fa-comment-dots text-green-600 mr-1"></i>Details / Description
+                    <i class="fas fa-comment-dots text-green-600 mr-1"></i
+                    >Details / Description
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <textarea
@@ -764,51 +852,115 @@
                     class="input rounded-lg border-2 border-gray-200 lg:px-3 lg:py-3 px-2 py-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none resize-none"
                     placeholder="Describe the issue, concern, or request in detail..."
                     rows="3"
-                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
+                    :disabled="
+                      !isCreate &&
+                      (!isAssignedTechnician || !info.ticket_locked_by_email)
+                    "
+                    :class="{
+                      'bg-gray-100 cursor-not-allowed':
+                        !isCreate &&
+                        (!isAssignedTechnician || !info.ticket_locked_by_email),
+                    }"
                   />
                 </div>
 
                 <!-- 4. REQUESTOR ROLE (formerly Client Role) (Hidden for LSU Webpages and Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                <div
+                  v-if="
+                    info.issue_concern_request_category_type !==
+                      'LSU Webpages' &&
+                    info.issue_concern_request_category_type !==
+                      'Student Portal'
+                  "
+                  class="w-full"
+                >
                   <label class="block font-semibold mb-2 text-gray-700">
-                    <i class="fas fa-id-badge text-green-600 mr-1"></i>Requestor Role
+                    <i class="fas fa-id-badge text-green-600 mr-1"></i>Requestor
+                    Role
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <select
                     v-model="info.client_role"
                     class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
+                    :disabled="
+                      !isCreate &&
+                      (!isAssignedTechnician || !info.ticket_locked_by_email)
+                    "
+                    :class="{
+                      'bg-gray-100 cursor-not-allowed':
+                        !isCreate &&
+                        (!isAssignedTechnician || !info.ticket_locked_by_email),
+                    }"
                   >
                     <option value="">Select Role</option>
                     <option value="Student">Student</option>
                     <option value="Faculty">Faculty</option>
                     <option value="Staff">Staff</option>
                     <!-- Hide Public and Alumni for Others category -->
-                    <option v-if="info.issue_concern_request_category_type !== 'Others'" value="Alumni">Alumni</option>
-                    <option v-if="info.issue_concern_request_category_type !== 'Others'" value="Public">Public</option>
+                    <option
+                      v-if="
+                        info.issue_concern_request_category_type !== 'Others'
+                      "
+                      value="Alumni"
+                    >
+                      Alumni
+                    </option>
+                    <option
+                      v-if="
+                        info.issue_concern_request_category_type !== 'Others'
+                      "
+                      value="Public"
+                    >
+                      Public
+                    </option>
                     <option value="Admin">Admin</option>
                   </select>
                 </div>
 
                 <!-- 5. CENTER/OFFICE/ROOM (Show ONLY for Admin, Faculty, and Staff) -->
                 <!-- Hide for Student, Alumni, and Public -->
-                <div v-if="(isCreate || info.issue_concern_request_center_office_room) && (info.client_role === 'Admin' || info.client_role === 'Faculty' || info.client_role === 'Staff')" class="w-full">
+                <div
+                  v-if="
+                    (isCreate ||
+                      info.issue_concern_request_center_office_room) &&
+                    (info.client_role === 'Admin' ||
+                      info.client_role === 'Faculty' ||
+                      info.client_role === 'Staff')
+                  "
+                  class="w-full"
+                >
                   <label class="block font-semibold mb-2 text-gray-700">
                     <i class="fas fa-building text-green-600 mr-1"></i>
-                    {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Requesting Office' }}
+                    {{
+                      info.issue_concern_request_category_type ===
+                      "Computer Lab"
+                        ? "Computer Lab Location"
+                        : "Requesting Office"
+                    }}
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <div class="flex gap-2">
                     <select
                       v-model="info.issue_concern_request_center_office_room"
                       class="input border-2 border-gray-200 w-full lg:p-3 p-2 rounded-lg text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                      :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
-                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
+                      :disabled="
+                        !isCreate &&
+                        (!isAssignedTechnician || !info.ticket_locked_by_email)
+                      "
+                      :class="{
+                        'bg-gray-100 cursor-not-allowed':
+                          !isCreate &&
+                          (!isAssignedTechnician ||
+                            !info.ticket_locked_by_email),
+                      }"
                     >
                       <option disabled value="">
-                        {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Select Computer Lab' : 'Select Location' }}
+                        {{
+                          info.issue_concern_request_category_type ===
+                          "Computer Lab"
+                            ? "Select Computer Lab"
+                            : "Select Location"
+                        }}
                       </option>
                       <option
                         v-for="office in getLocationOptions"
@@ -819,27 +971,59 @@
                       </option>
                     </select>
                     <input
-                      v-if="info.issue_concern_request_center_office_room === 'OTHER'"
+                      v-if="
+                        info.issue_concern_request_center_office_room ===
+                        'OTHER'
+                      "
                       v-model="customOffice"
                       class="input rounded-lg border-2 border-gray-200 flex-1 lg:p-3 p-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                       placeholder="Specify location"
-                      :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
-                      :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
+                      :disabled="
+                        !isCreate &&
+                        (!isAssignedTechnician || !info.ticket_locked_by_email)
+                      "
+                      :class="{
+                        'bg-gray-100 cursor-not-allowed':
+                          !isCreate &&
+                          (!isAssignedTechnician ||
+                            !info.ticket_locked_by_email),
+                      }"
                     />
                   </div>
                 </div>
 
                 <!-- 6. OWNER TYPE (Hidden for Hardware, Network, Computer Lab, Accounts, LSU Webpages, Student Portal) -->
-                <div v-if="info.issue_concern_request_category_type !== 'Hardware' && info.issue_concern_request_category_type !== 'Network' && info.issue_concern_request_category_type !== 'Computer Lab' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                <div
+                  v-if="
+                    info.issue_concern_request_category_type !== 'Hardware' &&
+                    info.issue_concern_request_category_type !== 'Network' &&
+                    info.issue_concern_request_category_type !==
+                      'Computer Lab' &&
+                    info.issue_concern_request_category_type !== 'Accounts' &&
+                    info.issue_concern_request_category_type !==
+                      'LSU Webpages' &&
+                    info.issue_concern_request_category_type !==
+                      'Student Portal'
+                  "
+                  class="w-full"
+                >
                   <label class="block font-semibold mb-2 text-gray-700">
-                    <i class="fas fa-user-tag text-green-600 mr-1"></i>Owner Type
+                    <i class="fas fa-user-tag text-green-600 mr-1"></i>Owner
+                    Type
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <select
                     v-model="info.owner_type"
                     class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
-                    :disabled="!isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email)"
-                    :class="{ 'bg-gray-100 cursor-not-allowed': !isCreate && (!isAssignedTechnician || !info.ticket_locked_by_email) }"
+                    :disabled="
+                      !isCreate &&
+                      (!isAssignedTechnician || !info.ticket_locked_by_email)
+                    "
+                    :class="{
+                      'bg-gray-100 cursor-not-allowed':
+                        !isCreate &&
+                        (!isAssignedTechnician || !info.ticket_locked_by_email),
+                    }"
                   >
                     <option value="LSU">LSU</option>
                     <option value="Personal">Personal</option>
@@ -889,19 +1073,29 @@
             </div>
           </div>
           <!-- LOGS -->
-          <div class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm">
+          <div
+            class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm"
+          >
             <div class="mb-3">
-              <h3 class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center">
+              <h3
+                class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center"
+              >
                 <i class="fa fa-history text-green-600 mr-2"></i>
                 Status History
               </h3>
               <p class="text-xs text-gray-500">
-                {{ isCreate ? "Initial status will be set to Pending" : "Track all status changes and updates" }}
+                {{
+                  isCreate
+                    ? "Initial status will be set to Pending"
+                    : "Track all status changes and updates"
+                }}
               </p>
             </div>
 
             <!-- Existing logs display (read-only) -->
-            <div class="max-h-48 overflow-y-auto mb-3 space-y-2 bg-white rounded-lg lg:p-3 p-2 border-2 border-gray-100">
+            <div
+              class="max-h-48 overflow-y-auto mb-3 space-y-2 bg-white rounded-lg lg:p-3 p-2 border-2 border-gray-100"
+            >
               <div
                 v-for="(log, i) in info.logs"
                 :key="i"
@@ -917,40 +1111,70 @@
                 <div class="italic text-xs mt-1">{{ log.remarks }}</div>
 
                 <!-- Technician Information (Admin/Technician View Only) -->
-                <div v-if="log.assigned_technician_name || log.assigned_technician_lsu_email" class="text-xs mt-2 pt-2 border-t border-gray-300 text-gray-600">
+                <div
+                  v-if="
+                    log.assigned_technician_name ||
+                    log.assigned_technician_lsu_email
+                  "
+                  class="text-xs mt-2 pt-2 border-t border-gray-300 text-gray-600"
+                >
                   <div class="flex items-center gap-1">
                     <i class="fas fa-user-edit text-gray-500"></i>
-                    <span class="font-semibold">{{ isCreate ? 'Created by:' : 'Updated by:' }}</span>
-                    <span>{{ log.assigned_technician_name || 'Unknown' }}</span>
+                    <span class="font-semibold">{{
+                      isCreate ? "Created by:" : "Updated by:"
+                    }}</span>
+                    <span>{{ log.assigned_technician_name || "Unknown" }}</span>
                   </div>
-                  <div v-if="log.assigned_technician_lsu_email" class="flex items-center gap-1 ml-4 mt-0.5">
+                  <div
+                    v-if="log.assigned_technician_lsu_email"
+                    class="flex items-center gap-1 ml-4 mt-0.5"
+                  >
                     <i class="fas fa-envelope text-gray-500 text-[10px]"></i>
-                    <span class="text-[10px]">{{ log.assigned_technician_lsu_email }}</span>
+                    <span class="text-[10px]">{{
+                      log.assigned_technician_lsu_email
+                    }}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- UPDATE STATUS SECTION - Show for create mode or if user is assigned technician when ticket is locked -->
-            <div v-if="isCreate || !info.ticket_locked_by_email || isAssignedTechnician" class="mt-3 pt-3 border-t-2 border-green-200 bg-green-50 lg:p-3 p-2 rounded-lg">
+            <div
+              v-if="
+                isCreate || !info.ticket_locked_by_email || isAssignedTechnician
+              "
+              class="mt-3 pt-3 border-t-2 border-green-200 bg-green-50 lg:p-3 p-2 rounded-lg"
+            >
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa fa-edit text-green-600"></i>
                 <label class="text-sm font-semibold text-green-800">
-                  {{ isCreate ? 'Set Initial Status (Optional)' : 'Update Status (Optional)' }}
+                  {{
+                    isCreate
+                      ? "Set Initial Status (Optional)"
+                      : "Update Status (Optional)"
+                  }}
                 </label>
               </div>
               <p class="text-xs text-gray-600 mb-3 italic">
-                {{ isCreate ? '💡 Default status is "Pending" - you can change it if needed' : '💡 You can save changes without updating the status' }}
+                {{
+                  isCreate
+                    ? '💡 Default status is "Pending" - you can change it if needed'
+                    : "💡 You can save changes without updating the status"
+                }}
               </p>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label class="text-xs font-semibold mb-1 block text-gray-700">Status</label>
+                  <label class="text-xs font-semibold mb-1 block text-gray-700"
+                    >Status</label
+                  >
                   <select
                     v-model="newLog.status"
                     class="input rounded-lg border-2 border-gray-200 lg:p-2 p-2 text-sm w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                   >
-                    <option value="">{{ isCreate ? 'Keep as Pending' : 'No status update' }}</option>
+                    <option value="">
+                      {{ isCreate ? "Keep as Pending" : "No status update" }}
+                    </option>
                     <option value="Pending">Pending</option>
                     <option value="Unsuccessful">Unsuccessful</option>
                     <option value="In Progress">In Progress</option>
@@ -962,25 +1186,38 @@
                 </div>
 
                 <div>
-                  <label class="text-xs font-semibold mb-1 block text-gray-700">Remarks</label>
+                  <label class="text-xs font-semibold mb-1 block text-gray-700"
+                    >Remarks</label
+                  >
                   <input
                     v-model="newLog.remarks"
                     type="text"
-                    :placeholder="isCreate ? 'Optional initial remarks' : 'Optional remarks'"
+                    :placeholder="
+                      isCreate ? 'Optional initial remarks' : 'Optional remarks'
+                    "
                     class="input rounded-lg border-2 border-gray-200 lg:p-2 p-2 text-sm w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                   />
                 </div>
               </div>
 
               <!-- Info message for In Progress status -->
-              <div v-if="newLog.status === 'In Progress'" class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+              <div
+                v-if="newLog.status === 'In Progress'"
+                class="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700"
+              >
                 <i class="fas fa-info-circle mr-1"></i>
-                <span>When you set status to "In Progress", a log entry will be created for each assigned technician above.</span>
+                <span
+                  >When you set status to "In Progress", a log entry will be
+                  created for each assigned technician above.</span
+                >
               </div>
             </div>
 
             <!-- READ-ONLY STATUS VIEW - Show when ticket is locked and user is NOT assigned -->
-            <div v-else-if="info.ticket_locked_by_email && !isAssignedTechnician" class="mt-3 pt-3 border-t bg-gray-50 p-3 rounded">
+            <div
+              v-else-if="info.ticket_locked_by_email && !isAssignedTechnician"
+              class="mt-3 pt-3 border-t bg-gray-50 p-3 rounded"
+            >
               <div class="flex items-center gap-2 mb-2">
                 <i class="fas fa-lock text-orange-600"></i>
                 <label class="text-sm font-semibold text-gray-700"
@@ -989,12 +1226,15 @@
               </div>
               <p class="text-xs text-orange-600 mb-3 italic">
                 <i class="fas fa-info-circle mr-1"></i>
-                This ticket is locked. Only assigned personnel can update the status.
+                This ticket is locked. Only assigned personnel can update the
+                status.
               </p>
 
               <!-- Current Status Display -->
               <div class="bg-white border rounded p-3">
-                <div class="text-xs font-semibold text-gray-600 mb-2">Current Status:</div>
+                <div class="text-xs font-semibold text-gray-600 mb-2">
+                  Current Status:
+                </div>
                 <div class="flex items-center gap-2">
                   <span
                     class="px-3 py-1.5 rounded text-xs font-semibold"
@@ -1022,8 +1262,19 @@
             <button
               class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-900 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               @click="isCreate ? createTicket() : saveChanges()"
-              :disabled="modalLoading || (!isCreate && info.ticket_locked_by_email && !isAssignedTechnician)"
-              :title="!isCreate && info.ticket_locked_by_email && !isAssignedTechnician ? 'Only assigned personnel can save changes to locked tickets' : ''"
+              :disabled="
+                modalLoading ||
+                (!isCreate &&
+                  info.ticket_locked_by_email &&
+                  !isAssignedTechnician)
+              "
+              :title="
+                !isCreate &&
+                info.ticket_locked_by_email &&
+                !isAssignedTechnician
+                  ? 'Only assigned personnel can save changes to locked tickets'
+                  : ''
+              "
             >
               <i class="fa mr-1" :class="isCreate ? 'fa-plus' : 'fa-save'"></i>
               {{ isCreate ? "Create" : "Save" }}
@@ -1031,12 +1282,20 @@
           </div>
 
           <!-- Warning message for non-assigned personnel -->
-          <div v-if="!isCreate && info.ticket_locked_by_email && !isAssignedTechnician" class="mt-3 p-3 bg-orange-50 border-2 border-orange-200 rounded-lg">
+          <div
+            v-if="
+              !isCreate && info.ticket_locked_by_email && !isAssignedTechnician
+            "
+            class="mt-3 p-3 bg-orange-50 border-2 border-orange-200 rounded-lg"
+          >
             <div class="flex items-start gap-2">
               <i class="fas fa-lock text-orange-600 mt-0.5"></i>
               <div class="text-xs text-orange-700">
                 <p class="font-semibold mb-1">Ticket Locked</p>
-                <p>This ticket is locked and can only be modified by assigned personnel. You can view the details but cannot make changes.</p>
+                <p>
+                  This ticket is locked and can only be modified by assigned
+                  personnel. You can view the details but cannot make changes.
+                </p>
               </div>
             </div>
           </div>
@@ -1050,10 +1309,16 @@
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm"
       @click.self="showTransferModal = false"
     >
-      <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden animate-fade-in">
-        <div class="flex items-center bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 gap-x-3">
+      <div
+        class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden animate-fade-in"
+      >
+        <div
+          class="flex items-center bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 gap-x-3"
+        >
           <i class="fas fa-exchange-alt text-white text-2xl"></i>
-          <h3 class="text-white text-xl font-bold">Transfer Ticket to Other Personnel</h3>
+          <h3 class="text-white text-xl font-bold">
+            Transfer Ticket to Other Personnel
+          </h3>
         </div>
 
         <div class="p-6">
@@ -1061,14 +1326,20 @@
             <p class="text-xs text-blue-800">
               <i class="fas fa-info-circle mr-1"></i>
               <strong>Current Assignment:</strong>
-              {{ info.technicians_assigned?.map(t => t.name).join(', ') || 'None' }}
+              {{
+                info.technicians_assigned?.map((t) => t.name).join(", ") ||
+                "None"
+              }}
             </p>
             <p class="text-xs text-blue-700 mt-1">
-              Select new technician(s) to transfer this ticket. The client and new technicians will be notified via email.
+              Select new technician(s) to transfer this ticket. The client and
+              new technicians will be notified via email.
             </p>
           </div>
 
-          <label class="text-sm font-semibold mb-2 block">Select New Technician(s):</label>
+          <label class="text-sm font-semibold mb-2 block"
+            >Select New Technician(s):</label
+          >
           <div class="border rounded-lg p-3 max-h-64 overflow-y-auto">
             <label
               v-for="tech in TECHNICIANS_PERSONNEL"
@@ -1210,11 +1481,7 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Cooling Fan",
     "Others",
   ],
-  Software: [
-    "Installation",
-    "Repair",
-    "Uninstall",
-  ],
+  Software: ["Installation", "Repair", "Uninstall"],
   Network: ["WiFi Access", "Network Configuration"],
   "Computer Lab": [
     "Computer Setup",
@@ -1224,13 +1491,7 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Maintenance",
     "Others",
   ],
-  Accounts: [
-    "LSU Gmail",
-    "Canvas",
-    "Microsoft",
-    "Student Portal",
-    "Others",
-  ],
+  Accounts: ["LSU Gmail", "Canvas", "Microsoft", "Student Portal", "Others"],
   "LSU Webpages": [
     "Update Content",
     "Fix Errors",
@@ -1242,10 +1503,7 @@ const ITEM_TYPE_OPTIONS_MAP = {
     "Quality Assurance Testing",
     "Others",
   ],
-  "Student Portal": [
-    "Forgot Password",
-    "Others",
-  ],
+  "Student Portal": ["Forgot Password", "Others"],
   Others: [
     "Screwdriver Set",
     "Cable Ties",
@@ -1297,7 +1555,7 @@ const CENTER_OFFICE_ROOM_OPTIONS = [
   ...listCenterOfficeRoom,
   "Network Programs and Computerization Center",
   "N/A",
-  "OTHER"
+  "OTHER",
 ];
 
 const SEMESTER_OPTIONS = ["First Semester", "Second Semester", "Summer"];
@@ -1374,13 +1632,12 @@ const fetchRequests = async (silent = false) => {
     if (JSON.stringify(requests.value) !== JSON.stringify(newData)) {
       requests.value = newData;
     }
-
   } catch (err) {
     console.error("Failed to fetch tech support list", err);
   } finally {
     if (!silent) loading.value = false;
   }
-}
+};
 
 // Real-time updates every second
 const startRealtimeUpdates = () => {
@@ -1436,13 +1693,18 @@ function addStatusLog() {
 
   // Get logged-in user information
   const loggedInUser = userStore.user?.email || userStore.userEmail;
-  const loggedInTech = TECHNICIANS_PERSONNEL.find(tech => tech.email === loggedInUser);
+  const loggedInTech = TECHNICIANS_PERSONNEL.find(
+    (tech) => tech.email === loggedInUser,
+  );
   const updaterName = loggedInTech?.name || userStore.user?.name || "Unknown";
   const updaterEmail = loggedInUser || "";
 
   // Special handling for ALL status changes - create log entry for each assigned technician
   // This applies to: Pending, Unsuccessful, In Progress, Completed, Cancelled, Reviewed, Closed
-  if (info.value.technicians_assigned && info.value.technicians_assigned.length > 0) {
+  if (
+    info.value.technicians_assigned &&
+    info.value.technicians_assigned.length > 0
+  ) {
     // Create a log entry for each assigned technician
     info.value.technicians_assigned.forEach((tech) => {
       info.value.logs.push({
@@ -1456,7 +1718,8 @@ function addStatusLog() {
 
     // Lock the ticket to the first assigned technician (for all status changes)
     if (info.value.technicians_assigned[0]?.email) {
-      info.value.ticket_locked_by_email = info.value.technicians_assigned[0].email;
+      info.value.ticket_locked_by_email =
+        info.value.technicians_assigned[0].email;
     }
   } else {
     // Fallback: If no technicians assigned, add a single log entry with logged-in user's information
@@ -1514,7 +1777,8 @@ const isAssignedTechnician = computed(() => {
   if (!info.value.technicians_assigned || !userStore.user?.email) return false;
 
   return info.value.technicians_assigned.some(
-    (tech) => tech.email === userStore.user.email || tech.email === userStore.userEmail
+    (tech) =>
+      tech.email === userStore.user.email || tech.email === userStore.userEmail,
   );
 });
 
@@ -1522,10 +1786,11 @@ const isAssignedTechnician = computed(() => {
 const isTicketCompleted = computed(() => {
   if (!info.value.current_status) return false;
 
-  return info.value.current_status === "Completed" ||
-         (info.value.logs && info.value.logs.some(log =>
-           log.status === "Completed"
-         ));
+  return (
+    info.value.current_status === "Completed" ||
+    (info.value.logs &&
+      info.value.logs.some((log) => log.status === "Completed"))
+  );
 });
 
 const filteredRequests = computed(() => {
@@ -1542,7 +1807,9 @@ const filteredRequests = computed(() => {
   // Technician filter
   if (technicianFilter.value) {
     filtered = filtered.filter((r) =>
-      r.technicians_assigned?.some((tech) => tech.name === technicianFilter.value),
+      r.technicians_assigned?.some(
+        (tech) => tech.name === technicianFilter.value,
+      ),
     );
   }
 
@@ -1551,21 +1818,37 @@ const filteredRequests = computed(() => {
     const searchInput = debouncedSearchFilter.value.toLowerCase().trim();
 
     // Split search into individual words for multi-word matching
-    const searchWords = searchInput.split(/\s+/).filter(word => word.length > 0);
+    const searchWords = searchInput
+      .split(/\s+/)
+      .filter((word) => word.length > 0);
 
     filtered = filtered.filter((r) => {
       // Basic fields
       const ticketId = (r.ticket_id || "").toString().toLowerCase();
-      const requestorName = (r.requestor_fullname || "").toString().toLowerCase();
-      const requestorEmail = (r.requestor_lsu_email || "").toString().toLowerCase();
+      const requestorName = (r.requestor_fullname || "")
+        .toString()
+        .toLowerCase();
+      const requestorEmail = (r.requestor_lsu_email || "")
+        .toString()
+        .toLowerCase();
 
       // Category and concern fields
-      const category = (r.issue_concern_request_category_type || "").toString().toLowerCase();
-      const specificConcern = (r.issue_concern_request_item_type || "").toString().toLowerCase();
-      const centerOfficeRoom = (r.issue_concern_request_center_office_room || "").toString().toLowerCase();
+      const category = (r.issue_concern_request_category_type || "")
+        .toString()
+        .toLowerCase();
+      const specificConcern = (r.issue_concern_request_item_type || "")
+        .toString()
+        .toLowerCase();
+      const centerOfficeRoom = (
+        r.issue_concern_request_center_office_room || ""
+      )
+        .toString()
+        .toLowerCase();
 
       // Details and other fields
-      const details = (r.issue_concern_request_details || "").toString().toLowerCase();
+      const details = (r.issue_concern_request_details || "")
+        .toString()
+        .toLowerCase();
       const ownerType = (r.owner_type || "").toString().toLowerCase();
       const clientRole = (r.client_role || "").toString().toLowerCase();
 
@@ -1573,7 +1856,7 @@ const filteredRequests = computed(() => {
       let assignedPersonnel = "";
       if (r.technicians_assigned && Array.isArray(r.technicians_assigned)) {
         assignedPersonnel = r.technicians_assigned
-          .map(t => {
+          .map((t) => {
             const name = (t.name || "").toString();
             const email = (t.email || "").toString();
             return `${name} ${email}`;
@@ -1583,17 +1866,21 @@ const filteredRequests = computed(() => {
       }
 
       // Current status
-      const currentStatus = (latestStatus(r)?.status || "").toString().toLowerCase();
+      const currentStatus = (latestStatus(r)?.status || "")
+        .toString()
+        .toLowerCase();
 
       // Search through all logs (status, remarks, and technician names)
       let logsText = "";
       if (r.logs && Array.isArray(r.logs)) {
         logsText = r.logs
-          .map(log => {
+          .map((log) => {
             const status = (log.status || "").toString();
             const remarks = (log.remarks || "").toString();
             const techName = (log.assigned_technician_name || "").toString();
-            const techEmail = (log.assigned_technician_lsu_email || "").toString();
+            const techEmail = (
+              log.assigned_technician_lsu_email || ""
+            ).toString();
             return `${status} ${remarks} ${techName} ${techEmail}`;
           })
           .join(" ")
@@ -1601,15 +1888,19 @@ const filteredRequests = computed(() => {
       }
 
       // Date fields (formatted for search)
-      const createdDate = r.created_at ? moment(r.created_at).format("YYYY-MM-DD HH:mm:ss").toLowerCase() : "";
-      const updatedDate = r.updated_at ? moment(r.updated_at).format("YYYY-MM-DD HH:mm:ss").toLowerCase() : "";
+      const createdDate = r.created_at
+        ? moment(r.created_at).format("YYYY-MM-DD HH:mm:ss").toLowerCase()
+        : "";
+      const updatedDate = r.updated_at
+        ? moment(r.updated_at).format("YYYY-MM-DD HH:mm:ss").toLowerCase()
+        : "";
 
       // Combine all searchable fields into one string
       const allFields = `${ticketId} ${requestorName} ${requestorEmail} ${category} ${specificConcern} ${centerOfficeRoom} ${details} ${ownerType} ${clientRole} ${assignedPersonnel} ${currentStatus} ${logsText} ${createdDate} ${updatedDate}`;
 
       // For multi-word search: ALL words must be found (AND logic)
       // Each word can be found in any field
-      return searchWords.every(word => allFields.includes(word));
+      return searchWords.every((word) => allFields.includes(word));
     });
   }
 
@@ -1722,9 +2013,7 @@ const getSpecificTypeOptions = (categoryType) => {
 const getMoodIcon = (item) => {
   const status = latestStatus(item)?.status?.toLowerCase();
   const isDone =
-    status === "completed" ||
-    status === "closed" ||
-    status === "reviewed";
+    status === "completed" || status === "closed" || status === "reviewed";
 
   // If ticket is completed/closed/reviewed - white/gray checkmark
   if (isDone) {
@@ -1843,7 +2132,7 @@ const loggedInTechnician = computed(() => {
   const userEmail = userStore.user?.email;
   if (!userEmail) return null;
 
-  return TECHNICIANS_PERSONNEL.find(tech => tech.email === userEmail);
+  return TECHNICIANS_PERSONNEL.find((tech) => tech.email === userEmail);
 });
 
 // Modal controls
@@ -1890,7 +2179,7 @@ const openModal = (item) => {
   let assignedTechnicians = [];
 
   if (item.technicians_assigned) {
-    if (typeof item.technicians_assigned === 'string') {
+    if (typeof item.technicians_assigned === "string") {
       // If it's a JSON string, parse it
       try {
         assignedTechnicians = JSON.parse(item.technicians_assigned);
@@ -1905,7 +2194,9 @@ const openModal = (item) => {
   }
 
   // Validate and ensure assigned technicians have proper structure
-  assignedTechnicians = assignedTechnicians.filter(tech => tech && tech.email && tech.name);
+  assignedTechnicians = assignedTechnicians.filter(
+    (tech) => tech && tech.email && tech.name,
+  );
 
   // Check if ticket should be locked to assigned personnel
   let lockedByEmail = item.ticket_locked_by_email || "";
@@ -1917,7 +2208,9 @@ const openModal = (item) => {
 
   // Validate that locked email belongs to one of the assigned technicians
   if (lockedByEmail && assignedTechnicians.length > 0) {
-    const isValidLock = assignedTechnicians.some(tech => tech.email === lockedByEmail);
+    const isValidLock = assignedTechnicians.some(
+      (tech) => tech.email === lockedByEmail,
+    );
     if (!isValidLock) {
       // If locked email is not in assigned list, lock to first assigned technician
       lockedByEmail = assignedTechnicians[0].email;
@@ -1940,7 +2233,8 @@ const closeModal = () => (showModal.value = false);
 // Normalize office before submit
 const normalizeOffice = () => {
   if (info.value.issue_concern_request_center_office_room === "OTHER")
-    info.value.issue_concern_request_center_office_room = customOffice.value || "Other";
+    info.value.issue_concern_request_center_office_room =
+      customOffice.value || "Other";
 };
 
 // Check if user has unrated tickets (ANY status - pending, in progress, completed, etc.)
@@ -1951,24 +2245,24 @@ const checkForUnratedTickets = async (email) => {
   }
 
   try {
-    const res = await $fetch(
-      endpoint.value + "/api/cits/request-ticket/list/"
-    );
+    const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
 
     if (res && Array.isArray(res)) {
       // Filter tickets for this user
       const userTickets = res.filter(
-        (ticket) => ticket.requestor_lsu_email === email
+        (ticket) => ticket.requestor_lsu_email === email,
       );
 
       // Check if ANY ticket (regardless of status) is missing rating or feedback
       const unratedTickets = userTickets.filter((ticket) => {
-        const hasNoRating = !ticket.evaluation_feedback_client_star_rating ||
-                           ticket.evaluation_feedback_client_star_rating === "" ||
-                           ticket.evaluation_feedback_client_star_rating === null;
-        const hasNoFeedback = !ticket.evaluation_feedback_client_comment ||
-                             ticket.evaluation_feedback_client_comment === "" ||
-                             ticket.evaluation_feedback_client_comment === null;
+        const hasNoRating =
+          !ticket.evaluation_feedback_client_star_rating ||
+          ticket.evaluation_feedback_client_star_rating === "" ||
+          ticket.evaluation_feedback_client_star_rating === null;
+        const hasNoFeedback =
+          !ticket.evaluation_feedback_client_comment ||
+          ticket.evaluation_feedback_client_comment === "" ||
+          ticket.evaluation_feedback_client_comment === null;
 
         // Consider a ticket unrated if it's missing BOTH rating AND feedback
         return hasNoRating && hasNoFeedback;
@@ -1988,17 +2282,22 @@ const checkForUnratedTickets = async (email) => {
 const createTicket = async () => {
   // Validate required fields
   if (!info.value.requestor_fullname || !info.value.requestor_lsu_email) {
-    showToaster("❌ Please fill in all required fields (Name and Email).", "error");
+    showToaster(
+      "❌ Please fill in all required fields (Name and Email).",
+      "error",
+    );
     return;
   }
 
   // Check for unrated tickets
-  const unratedCount = await checkForUnratedTickets(info.value.requestor_lsu_email);
+  const unratedCount = await checkForUnratedTickets(
+    info.value.requestor_lsu_email,
+  );
   if (unratedCount) {
     showToaster(
-      `❌ This user has ${unratedCount} unrated ticket${unratedCount > 1 ? 's' : ''}. Please ask them to rate all previous tickets before creating a new one.`,
+      `❌ This user has ${unratedCount} unrated ticket${unratedCount > 1 ? "s" : ""}. Please ask them to rate all previous tickets before creating a new one.`,
       "error",
-      5000
+      5000,
     );
     return;
   }
@@ -2012,7 +2311,8 @@ const createTicket = async () => {
   // Update the initial log with technician information (who created the walk-in ticket)
   if (info.value.logs && info.value.logs.length > 0) {
     info.value.logs[0].assigned_technician_name = userStore.user?.name || "";
-    info.value.logs[0].assigned_technician_lsu_email = userStore.user?.email || "";
+    info.value.logs[0].assigned_technician_lsu_email =
+      userStore.user?.email || "";
 
     // If user changed the initial status or added remarks, update the log
     if (newLog.status && newLog.status !== "Pending") {
@@ -2026,9 +2326,13 @@ const createTicket = async () => {
   }
 
   // Lock ticket to assigned personnel when creating
-  if (info.value.technicians_assigned && info.value.technicians_assigned.length > 0) {
+  if (
+    info.value.technicians_assigned &&
+    info.value.technicians_assigned.length > 0
+  ) {
     // Lock to first assigned technician
-    info.value.ticket_locked_by_email = info.value.technicians_assigned[0].email;
+    info.value.ticket_locked_by_email =
+      info.value.technicians_assigned[0].email;
   } else {
     // No technicians assigned, no lock
     info.value.ticket_locked_by_email = "";
@@ -2036,17 +2340,41 @@ const createTicket = async () => {
 
   const formData = new FormData();
   formData.append("ticket_id", info.value.ticket_id || `TID${Date.now()}`);
-  formData.append("requestor_fullname", info.value.requestor_fullname?.trim() || "");
-  formData.append("requestor_lsu_email", info.value.requestor_lsu_email?.trim() || "");
-  formData.append("technicians_assigned", JSON.stringify(info.value.technicians_assigned || []));
-  formData.append("issue_concern_request_details", info.value.issue_concern_request_details?.trim() || "");
-  formData.append("issue_concern_request_category_type", info.value.issue_concern_request_category_type?.trim() || "");
-  formData.append("issue_concern_request_item_type", info.value.issue_concern_request_item_type?.trim() || "");
-  formData.append("issue_concern_request_center_office_room", info.value.issue_concern_request_center_office_room?.trim() || "");
+  formData.append(
+    "requestor_fullname",
+    info.value.requestor_fullname?.trim() || "",
+  );
+  formData.append(
+    "requestor_lsu_email",
+    info.value.requestor_lsu_email?.trim() || "",
+  );
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(info.value.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    info.value.issue_concern_request_details?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    info.value.issue_concern_request_category_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    info.value.issue_concern_request_item_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    info.value.issue_concern_request_center_office_room?.trim() || "",
+  );
   formData.append("owner_type", info.value.owner_type || "LSU");
   formData.append("client_role", info.value.client_role || "");
   formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
-  formData.append("ticket_locked_by_email", info.value.ticket_locked_by_email || "");
+  formData.append(
+    "ticket_locked_by_email",
+    info.value.ticket_locked_by_email || "",
+  );
   formData.append("logs", JSON.stringify(info.value.logs || []));
 
   if (receiptFile.value) {
@@ -2109,7 +2437,10 @@ const showToaster = (message, type = "success", duration = 3000) => {
 const saveChanges = async () => {
   // Validate that only assigned personnel can save locked tickets
   if (info.value.ticket_locked_by_email && !isAssignedTechnician.value) {
-    showToaster("⚠️ Only assigned personnel can modify locked tickets.", "warning");
+    showToaster(
+      "⚠️ Only assigned personnel can modify locked tickets.",
+      "warning",
+    );
     return;
   }
 
@@ -2121,14 +2452,20 @@ const saveChanges = async () => {
   addStatusLog();
 
   // Validate and ensure ticket lock is correct before saving
-  if (info.value.technicians_assigned && info.value.technicians_assigned.length > 0) {
+  if (
+    info.value.technicians_assigned &&
+    info.value.technicians_assigned.length > 0
+  ) {
     // Ensure ticket is locked to one of the assigned technicians
     const currentLock = info.value.ticket_locked_by_email;
-    const isValidLock = info.value.technicians_assigned.some(tech => tech.email === currentLock);
+    const isValidLock = info.value.technicians_assigned.some(
+      (tech) => tech.email === currentLock,
+    );
 
     if (!isValidLock) {
       // If current lock is invalid or empty, lock to first assigned technician
-      info.value.ticket_locked_by_email = info.value.technicians_assigned[0].email;
+      info.value.ticket_locked_by_email =
+        info.value.technicians_assigned[0].email;
     }
   } else {
     // If no technicians assigned, clear the lock
@@ -2137,18 +2474,45 @@ const saveChanges = async () => {
 
   const formData = new FormData();
   formData.append("ticket_id", info.value.ticket_id);
-  formData.append("requestor_fullname", info.value.requestor_fullname?.trim() || "");
-  formData.append("requestor_lsu_email", info.value.requestor_lsu_email?.trim() || "");
-  formData.append("technicians_assigned", JSON.stringify(info.value.technicians_assigned || []));
-  formData.append("issue_concern_request_details", info.value.issue_concern_request_details?.trim() || "");
-  formData.append("issue_concern_request_category_type", info.value.issue_concern_request_category_type?.trim() || "");
-  formData.append("issue_concern_request_item_type", info.value.issue_concern_request_item_type?.trim() || "");
-  formData.append("issue_concern_request_center_office_room", info.value.issue_concern_request_center_office_room?.trim() || "");
+  formData.append(
+    "requestor_fullname",
+    info.value.requestor_fullname?.trim() || "",
+  );
+  formData.append(
+    "requestor_lsu_email",
+    info.value.requestor_lsu_email?.trim() || "",
+  );
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(info.value.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    info.value.issue_concern_request_details?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    info.value.issue_concern_request_category_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    info.value.issue_concern_request_item_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    info.value.issue_concern_request_center_office_room?.trim() || "",
+  );
   formData.append("owner_type", info.value.owner_type || "LSU");
   formData.append("client_role", info.value.client_role || "");
   formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
-  formData.append("evaluation_feedback_client_star_rating", info.value.evaluation_feedback_client_star_rating || "");
-  formData.append("ticket_locked_by_email", info.value.ticket_locked_by_email || "");
+  formData.append(
+    "evaluation_feedback_client_star_rating",
+    info.value.evaluation_feedback_client_star_rating || "",
+  );
+  formData.append(
+    "ticket_locked_by_email",
+    info.value.ticket_locked_by_email || "",
+  );
   formData.append("logs", JSON.stringify(info.value.logs || []));
 
   if (receiptFile.value) {
@@ -2168,7 +2532,7 @@ const saveChanges = async () => {
       showToaster("✅ Changes saved successfully!", "success");
 
       // Optimized: Update local array instead of full refresh
-      const index = requests.value.findIndex(r => r.id === info.value.id);
+      const index = requests.value.findIndex((r) => r.id === info.value.id);
       if (index !== -1 && res.data) {
         requests.value[index] = res.data; // Update the specific ticket
       } else {
@@ -2190,7 +2554,10 @@ const saveChanges = async () => {
 // Transfer ticket to other personnel
 const confirmTransferTicket = async () => {
   if (transferTechnicians.value.length === 0) {
-    showToaster("⚠️ Please select at least one technician to transfer to.", "warning");
+    showToaster(
+      "⚠️ Please select at least one technician to transfer to.",
+      "warning",
+    );
     return;
   }
 
@@ -2211,7 +2578,7 @@ const confirmTransferTicket = async () => {
   if (!info.value.logs) info.value.logs = [];
   info.value.logs.push({
     status: "Transferred",
-    remarks: `Ticket transferred from ${oldTechnicians.map(t => t.name).join(', ')} to ${transferTechnicians.value.map(t => t.name).join(', ')}`,
+    remarks: `Ticket transferred from ${oldTechnicians.map((t) => t.name).join(", ")} to ${transferTechnicians.value.map((t) => t.name).join(", ")}`,
     timestamp: new Date().toISOString(),
     assigned_technician_name: transferTechnicians.value[0]?.name || "",
     assigned_technician_lsu_email: transferTechnicians.value[0]?.email || "",
@@ -2220,18 +2587,45 @@ const confirmTransferTicket = async () => {
   // Save changes
   const formData = new FormData();
   formData.append("ticket_id", info.value.ticket_id);
-  formData.append("requestor_fullname", info.value.requestor_fullname?.trim() || "");
-  formData.append("requestor_lsu_email", info.value.requestor_lsu_email?.trim() || "");
-  formData.append("technicians_assigned", JSON.stringify(info.value.technicians_assigned || []));
-  formData.append("issue_concern_request_details", info.value.issue_concern_request_details?.trim() || "");
-  formData.append("issue_concern_request_category_type", info.value.issue_concern_request_category_type?.trim() || "");
-  formData.append("issue_concern_request_item_type", info.value.issue_concern_request_item_type?.trim() || "");
-  formData.append("issue_concern_request_center_office_room", info.value.issue_concern_request_center_office_room?.trim() || "");
+  formData.append(
+    "requestor_fullname",
+    info.value.requestor_fullname?.trim() || "",
+  );
+  formData.append(
+    "requestor_lsu_email",
+    info.value.requestor_lsu_email?.trim() || "",
+  );
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(info.value.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    info.value.issue_concern_request_details?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    info.value.issue_concern_request_category_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    info.value.issue_concern_request_item_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    info.value.issue_concern_request_center_office_room?.trim() || "",
+  );
   formData.append("owner_type", info.value.owner_type || "LSU");
   formData.append("client_role", info.value.client_role || "");
   formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
-  formData.append("evaluation_feedback_client_star_rating", info.value.evaluation_feedback_client_star_rating || "");
-  formData.append("ticket_locked_by_email", info.value.ticket_locked_by_email || "");
+  formData.append(
+    "evaluation_feedback_client_star_rating",
+    info.value.evaluation_feedback_client_star_rating || "",
+  );
+  formData.append(
+    "ticket_locked_by_email",
+    info.value.ticket_locked_by_email || "",
+  );
   formData.append("logs", JSON.stringify(info.value.logs || []));
 
   if (receiptFile.value) {
@@ -2248,12 +2642,16 @@ const confirmTransferTicket = async () => {
     );
 
     if (res.status === "updated") {
-      showToaster("✅ Ticket transferred successfully! Notifications sent to client and new technicians.", "success", 5000);
+      showToaster(
+        "✅ Ticket transferred successfully! Notifications sent to client and new technicians.",
+        "success",
+        5000,
+      );
       showTransferModal.value = false;
       transferTechnicians.value = [];
 
       // Optimized: Update local array instead of full refresh
-      const index = requests.value.findIndex(r => r.id === info.value.id);
+      const index = requests.value.findIndex((r) => r.id === info.value.id);
       if (index !== -1 && res.data) {
         requests.value[index] = res.data; // Update the specific ticket
       } else {
