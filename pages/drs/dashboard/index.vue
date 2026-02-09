@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, onUnmounted, ref, computed } from "vue";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
 import VueDatePicker from "@vuepic/vue-datepicker";
@@ -22,6 +22,9 @@ const effectivityDate = ref(null);
 
 // Dynamic year range for date picker (current year)
 const currentYear = computed(() => new Date().getFullYear());
+
+// Universal search
+const searchQuery = ref("");
 
 const documentTypeList = ref([
   "All",
@@ -48,6 +51,9 @@ const displayUpdateForm = ref(false);
 
 const statusNotificationAlertModal = ref(false);
 
+// Auto-refresh interval
+let refreshInterval = null;
+
 onMounted(async () => {
   setTimeout(async () => {
     if (
@@ -61,6 +67,18 @@ onMounted(async () => {
     }
   }, 1500);
   await fetchListItems(); // Ensure fetchListItems completes before navigation
+
+  // Start auto-refresh every second (silently in background)
+  refreshInterval = setInterval(async () => {
+    await fetchListItemsSilently();
+  }, 1000);
+});
+
+// Cleanup on unmount
+onUnmounted(() => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
 });
 
 let filteredItems;
@@ -75,6 +93,7 @@ const selectedApproved = ref(false);
 
 const fetchListItems = async () => {
   try {
+    isLoading.value = true;
     listItems.value =
       (await $fetch(endpoint.value + "/api/drs/list").catch(
         (error) => error.data
@@ -93,6 +112,7 @@ const fetchListItems = async () => {
     ).length;
 
     filteredItems = Array.isArray(listItems.value) ? [...listItems.value] : [];
+    isLoading.value = false;
 
     if (
       userStore.user.email === superAdminEmail.value ||
@@ -220,6 +240,34 @@ const fetchListItems = async () => {
   }
 };
 
+// Silent fetch for background updates (no loading indicator)
+const fetchListItemsSilently = async () => {
+  try {
+    const newData = await $fetch(endpoint.value + "/api/drs/list").catch(
+      (error) => error.data
+    ) || [];
+
+    // Only update if data has changed
+    if (JSON.stringify(newData) !== JSON.stringify(listItems.value)) {
+      listItems.value = newData;
+
+      reviewedLength.value = listItems.value.filter(
+        (item) => item.reviewed_by_action === "Approved"
+      ).length;
+
+      verifiedLength.value = listItems.value.filter(
+        (item) => item.verified_by_action === "Approved"
+      ).length;
+
+      approvedLength.value = listItems.value.filter(
+        (item) => item.approved_by_action === "Approved"
+      ).length;
+    }
+  } catch (error) {
+    console.error("Silent fetch error:", error);
+  }
+};
+
 let reviewedLength = ref(0);
 let verifiedLength = ref(0);
 let approvedLength = ref(0);
@@ -233,128 +281,56 @@ const isLoading = ref(true); // Add loading state
 const filteredListItems = computed(() => {
   filteredItems = Array.isArray(listItems.value) ? [...listItems.value] : [];
 
-  if (
-    selectedDocumentType.value &&
-    selectedOriginatingOffice.value &&
-    selectedStatus.value &&
-    selectedDocumentType.value !== "All" &&
-    selectedOriginatingOffice.value !== "All" &&
-    selectedStatus.value !== "All" &&
-    selectedDocumentType.value !== "Document Type" &&
-    selectedOriginatingOffice.value !== "Originating Office" &&
-    selectedStatus.value !== "Status" &&
-    selectedReviewed.value !== "" &&
-    selectedVerified.value !== "" &&
-    selectedApproved.value !== ""
-  ) {
-    filteredItems = filteredItems.filter(
-      (item) =>
-        item.document_type === selectedDocumentType.value &&
-        item.originating_office === selectedOriginatingOffice.value &&
-        item.status === selectedStatus.value
-    );
-  } 
-  else {
-    if (
-      selectedDocumentType.value &&
-      selectedDocumentType.value !== "All" &&
-      selectedDocumentType.value !== "Document Type"
-    ) {
-      filteredItems = filteredItems.filter(
-        (item) => item.document_type === selectedDocumentType.value
-      );
-
-      documentTypeSelectedTotalLength.value = filteredItems.length;
-
-      unitOfficeSelectedTotalLength.value = 0;
-      statusSelectedTotalLength.value = 0;
-
-      if (filteredItems.length <= 10) {
-        currentPage.value = 1;
-      }
-    }
-
-    if (
-      selectedOriginatingOffice.value &&
-      selectedOriginatingOffice.value !== "All" &&
-      selectedOriginatingOffice.value !== "Originating Office"
-    ) {
-      filteredItems = filteredItems.filter(
-        (item) => item.originating_office === selectedOriginatingOffice.value
-      );
-
-      unitOfficeSelectedTotalLength.value = filteredItems.length;
-
-      documentTypeSelectedTotalLength.value = 0;
-
-      statusSelectedTotalLength.value = 0;
-      if (filteredItems.length <= 10) {
-        currentPage.value = 1;
-      }
-    }
-
-    if (
-      selectedStatus.value &&
-      selectedStatus.value !== "All" &&
-      selectedStatus.value !== "Status"
-    ) {
-      filteredItems = filteredItems.filter(
-        (item) => item.status === selectedStatus.value
-      );
-
-      statusSelectedTotalLength.value = filteredItems.length;
-
-      unitOfficeSelectedTotalLength.value = 0;
-
-      documentTypeSelectedTotalLength.value = 0;
-      if (filteredItems.length <= 10) {
-        currentPage.value = 1;
-      }
-    }
-
-    if (selectedAll.value) {
-      selectedDocumentType.value = "Document Type";
-      selectedOriginatingOffice.value = "Originating Office";
-      selectedStatus.value = "Status";
-
-      selectedReviewed.value = "";
-      selectedVerified.value = "";
-      selectedApproved.value = "";
-
-      unitOfficeSelectedTotalLength.value = "";
-      documentTypeSelectedTotalLength.value = "";
-      statusSelectedTotalLength.value = "";
-    }
-
+  // Apply checkbox filters first
+  if (selectedAll.value) {
+    // Show all items
+    selectedReviewed.value = false;
+    selectedVerified.value = false;
+    selectedApproved.value = false;
+  } else {
     if (selectedReviewed.value) {
       filteredItems = filteredItems.filter(
         (item) => item.reviewed_by_action === "Approved"
       );
-      if (filteredItems.length <= 10) {
-        currentPage.value = 1;
-      }
     }
 
     if (selectedVerified.value) {
       filteredItems = filteredItems.filter(
         (item) => item.verified_by_action === "Approved"
       );
-      if (filteredItems.length <= 10) {
-        currentPage.value = 1;
-      }
     }
 
     if (selectedApproved.value) {
       filteredItems = filteredItems.filter(
         (item) => item.approved_by_action === "Approved"
       );
-      if (filteredItems.length <= 10) {
-        currentPage.value = 1;
-      }
     }
   }
 
-  return _.orderBy(filteredItems, "id", "asc");
+  // Apply universal search filter
+  if (searchQuery.value && searchQuery.value.trim() !== "") {
+    const query = searchQuery.value.toLowerCase().trim();
+    filteredItems = filteredItems.filter((item) => {
+      return (
+        item.document_title?.toLowerCase().includes(query) ||
+        item.document_code?.toLowerCase().includes(query) ||
+        item.document_type?.toLowerCase().includes(query) ||
+        item.originating_office?.toLowerCase().includes(query) ||
+        item.status?.toLowerCase().includes(query) ||
+        item.originating_firstname?.toLowerCase().includes(query) ||
+        item.originating_lastname?.toLowerCase().includes(query) ||
+        item.revision_number?.toLowerCase().includes(query) ||
+        String(item.id)?.includes(query)
+      );
+    });
+  }
+
+  // Reset page to 1 if filtered results change
+  if (filteredItems.length <= 10) {
+    currentPage.value = 1;
+  }
+
+  return _.orderBy(filteredItems, "id", "desc");
 });
 let displayRevision = ref(null);
 const statusChange = () => {
@@ -804,7 +780,7 @@ const submitDRSFormToGmailApproved = async () => {
                         v-model="selectedApproved"
                       />
                       <label
-                        class="lg:text-sm text-[10px]"
+                        class="lg:text-sm text-[10px]"  
                         for="checkboxApproved"
                       >
                         Approved ({{ approvedLength }})</label
@@ -812,78 +788,15 @@ const submitDRSFormToGmailApproved = async () => {
                     </div>
                   </div>
                 </div>
-                <div class="lg:flex gap-x-3">
-                  <div class="lg:w-10/12">
-                    <label class="text-xs"
-                      >By Unit or Office
-                      <span v-if="unitOfficeSelectedTotalLength"
-                        >({{ unitOfficeSelectedTotalLength }})</span
-                      ></label
-                    >
-                    <select
-                      v-model="selectedOriginatingOffice"
-                      class="px-1 w-full border-b-2 font-bold border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                      :disabled="
-                        !(
-                          userStore.user.email?.trim().toLowerCase() ===
-                            superAdminEmail ||
-                          userStore.user.email?.trim().toLowerCase() ===
-                            superAdminTwo ||
-                          userStore.user.email?.trim().toLowerCase() ===
-                            'jorenlee.luna@lsu.edu.ph'
-                        )
-                      "
-                    >
-                      <option value="Originating Office" disabled selected>
-                        Originating Office
-                      </option>
-                      <option :value="j" v-for="(j, i) in designation" :key="i">
-                        {{ j }}
-                      </option>
-                    </select>
-                  </div>
-
-                  <div class="lg:w-7/12">
-                    <label class="text-xs"
-                      >By Document Type
-                      <span v-if="documentTypeSelectedTotalLength"
-                        >({{ documentTypeSelectedTotalLength }})</span
-                      ></label
-                    >
-                    <select
-                      v-model="selectedDocumentType"
-                      class="px-1 w-full border-b-2 font-bold border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                    >
-                      <option value="Document Type" disabled selected>
-                        Document Type
-                      </option>
-                      <option
-                        :value="j"
-                        v-for="(j, i) in documentTypeList"
-                        :key="i"
-                      >
-                        {{ j }}
-                      </option>
-                    </select>
-                  </div>
-
-                  <div class="lg:w-4/12">
-                    <label class="text-xs"
-                      >By Status
-                      <span v-if="statusSelectedTotalLength"
-                        >({{ statusSelectedTotalLength }})</span
-                      ></label
-                    >
-                    <select
-                      v-model="selectedStatus"
-                      class="px-1 w-full border-b-2 font-bold border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                    >
-                      <option value="Status" disabled selected>Status</option>
-                      <option :value="j" v-for="(j, i) in statusList" :key="i">
-                        {{ j }}
-                      </option>
-                    </select>
-                  </div>
+                <!-- Universal Search Input -->
+                <div class="mt-4 mb-2">
+                  <label class="text-xs font-bold text-gray-700">🔍 Search</label>
+                  <input
+                    v-model="searchQuery"
+                    type="text"
+                    placeholder="Search by title, code, type, office, status, name, ID..."
+                    class="px-3 w-full border-2 border-green-700 shadow-lg rounded-lg h-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
                 </div>
               </div>
 
