@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
 import VueDatePicker from "@vuepic/vue-datepicker";
@@ -20,6 +20,9 @@ const listItems = ref(null);
 
 const effectivityDate = ref(null);
 
+// Dynamic year range for date picker (current year)
+const currentYear = computed(() => new Date().getFullYear());
+
 const documentTypeList = ref([
   "All",
   "Manual",
@@ -28,6 +31,7 @@ const documentTypeList = ref([
   "Form or Template",
   "Work Instructions",
   "MOA or MOU",
+  "Portfolio",
 ]);
 
 const statusList = ref(["All", "New", "For Revision"]);
@@ -1441,7 +1445,7 @@ const submitDRSFormToGmailApproved = async () => {
                                         :enable-time-picker="false"
                                         name="date"
                                         auto-apply
-                                        :year-range="[2025, 2025]"
+                                        :year-range="[currentYear - 5, currentYear + 5]"
                                         week-start="0"
                                         @update:model-value="setDate(date)"
                                         disabled
@@ -2297,7 +2301,7 @@ const submitDRSFormToGmailApproved = async () => {
                                   :enable-time-picker="false"
                                   name="date"
                                   auto-apply
-                                  :year-range="[2025, 2025]"
+                                  :year-range="[currentYear - 5, currentYear + 5]"
                                   week-start="0"
                                 />
                               </div>

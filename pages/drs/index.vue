@@ -24,6 +24,7 @@ const documentTypeList = ref([
   "Form or Template",
   "Work Instructions",
   "MOA or MOU",
+  "Portfolio",
 ]);
 
 const requireAllFields = ref(false);
