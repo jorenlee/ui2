@@ -64,7 +64,7 @@
 
         <!-- Step 1: Experience Rating -->
         <div v-if="currentStep === 1" class="px-6 py-2">
-          <h4 class="text-gray-800 font-semibold text-center mb-2 text-lg">
+          <h4 class="text-green-900 font-semibold text-center text-lg">
             How's your experience?
           </h4>
 
@@ -78,7 +78,7 @@
                   : 'hover:bg-gray-100'
               "
             >
-              <div class="text-5xl scale-x-[-1]">
+              <div class="text-4xl scale-x-[-1]">
                 <i class="fa fa-thumbs-down" aria-hidden="true"></i>
               </div>
             </button>
@@ -92,7 +92,7 @@
                   : 'hover:bg-gray-100'
               "
             >
-              <div class="text-5xl">
+              <div class="text-4xl">
                 <i class="fa fa-thumbs-up" aria-hidden="true"></i>
               </div>
             </button>
@@ -104,8 +104,8 @@
             class="w-full py-1 px-4 rounded-lg border-2 transition-all duration-300 hover:scale-105 active:scale-95 text-base"
             :class="
               feedback.feedback_experience === 'Suggestion'
-                ? 'bg-blue-100 border-blue-600 text-blue-800'
-                : 'border-gray-300 text-gray-700 hover:border-blue-400'
+                ? 'bg-yellow-100 border-yellow-600 text-yellow-800'
+                : 'border-gray-300 text-gray-700 hover:border-yellow-400'
             "
           >
             <i class="fa fa-lightbulb mr-2"></i>
@@ -114,7 +114,7 @@
         </div>
 
         <!-- Step 2: Feedback Message -->
-        <div v-if="currentStep === 2" class="p-6">
+        <div v-if="currentStep === 2" class="px-6 pb-4 pt-3">
           <button
             @click="currentStep = 1"
             class="text-green-600 hover:text-green-700 mb-4 flex items-center gap-1 text-base"
@@ -123,46 +123,46 @@
             <span class="text-sm">Back</span>
           </button>
 
-          <h4 class="text-gray-800 font-semibold mb-5 text-lg">Tell us more</h4>
+          <h4 class="text-gray-800 font-semibold text-sm">Tell us more</h4>
 
           <!-- Name Input -->
-          <div class="mb-4">
-            <label class="text-left block text-xs text-gray-700 mb-2">
+          <div class="mb-1">
+            <label class="text-left block text-[10px] text-gray-700">
               Name <span class="text-red-500">*</span>
             </label>
             <input
               v-model="feedback.name"
               type="text"
               placeholder="Your name"
-              class="w-full px-4 py-1 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent"
+              class="w-full px-2 py-1 text-xs border border-gray-300 focus:ring-2 focus:ring-green-600 focus:border-transparent"
               required
             />
           </div>
 
           <!-- Email Input -->
-          <div class="mb-4">
-            <label class="text-left block text-xs text-gray-700 mb-2">
+          <div class="mb-1">
+            <label class="text-left block text-[10px] text-gray-700">
               Email <span class="text-red-500">*</span>
             </label>
             <input
               v-model="feedback.email"
               type="email"
               placeholder="your.email@example.com"
-              class="w-full px-4 py-1 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent"
+              class="w-full px-2 py-1 text-xs border border-gray-300 focus:ring-2 focus:ring-green-600 focus:border-transparent"
               required
             />
           </div>
 
           <!-- Message Textarea -->
-          <div class="mb-5">
-            <label class="text-left block text-xs text-gray-700 mb-2">
+          <div class="mb-2">
+            <label class="text-left block text-[10px] text-gray-700">
               Message <span class="text-red-500">*</span>
             </label>
             <textarea
               v-model="feedback.feedback_message"
               rows="4"
               placeholder="Share your feedback or suggestion..."
-              class="w-full px-4 py-1 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none"
+              class="w-full px-2 py-1 text-xs border border-gray-300 focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none"
               required
             ></textarea>
           </div>
