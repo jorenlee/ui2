@@ -330,10 +330,10 @@ onMounted(async () => {
                 <!-- Category/Type Badge -->
                 <div class="flex items-center justify-between lg:mb-1">
                   <div
-                    class="inline-block py-1 lg:text-xs text-[10px] rounded-full uppercase tracking-wide font-light text-[#1d1d1d]"
+                    class="inline-block py-1 lg:text-xs text-[10px] rounded-full uppercase tracking-wide text-[#1d1d1d]"
                   >
                     <div
-                      class="whitespace-nowrap tracking-tighter"
+                      class="whitespace-nowrap tracking-tighter font-semibold"
                       v-for="(item, i) in j.filters
                         .split(',')
                         .map((v) => v.trim())
