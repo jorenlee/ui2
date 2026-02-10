@@ -143,7 +143,7 @@
       </div>
       <div
         @click="sortBy('requestor_fullname')"
-        class="w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-11/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-user mr-1"></i> Requestor 
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -300,7 +300,7 @@
           </div>
 
           <div
-            class="w-full px-3 text-left capitalize whitespace-nowrap text-xs"
+            class="lg:w-11/12 w-full px-3 text-left capitalize whitespace-nowrap text-xs"
           >
            <span class="flex font-semibold">
              {{ item.requestor_fullname }}
@@ -343,7 +343,7 @@
           </div>
 
           <div class="lg:w-3/12 w-full px-3 text-left">
-            <div v-if="item.evaluation_feedback_client_star_rating" class="flex items-center gap-1">
+            <div v-if="item.evaluation_feedback_client_star_rating" class="flex items-center">
               <span v-for="star in 5" :key="star" class="text-sm">
                 <i
                   class="fa fa-star"
