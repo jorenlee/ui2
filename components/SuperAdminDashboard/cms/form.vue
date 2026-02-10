@@ -776,10 +776,10 @@ const displayToast = (message, type = "success", duration = 3000) => {
     </Transition>
 
     <!-- MAIN CONTENT AREA -->
-    <div class="flex-1 bg-gray-50 overflow-y-auto">
-      <div class="p-3 lg:p-8">
-        <div class="bg-white shadow-lg rounded-lg p-6 lg:p-8">
-          <h1 class="text-2xl lg:text-3xl font-bold mb-8 text-gray-800">
+    <div class="flex-1 overflow-y-auto">
+      <div class="">
+        <div class="bg-white shadow-lg rounded-lg p-2">
+          <h1 class="text-xl font-bold mb-8 text-gray-800">
             Create New Content
           </h1>
 
@@ -846,7 +846,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
               </label>
               <textarea
                 v-model="content.descriptions"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 h-20 focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 h-80 focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y"
                 placeholder="Provide a detailed description of the content"
               ></textarea>
             </div>

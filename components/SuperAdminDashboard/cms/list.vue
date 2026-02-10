@@ -1200,7 +1200,7 @@ const toPublish = () => {
                                     class="inline-flex items-center"
                                   >
                                     <span
-                                      class="inline-flex items-center px-1.5 py-0.5 rounded font-bold text-white shadow-sm text-[8px]"
+                                      class="inline-flex items-center w-5 h-5 justify-center rounded font-bold text-white shadow-sm text-[10px]"
                                       :style="{ backgroundColor: badge.color }"
                                     >
                                       {{ badge.number }}
@@ -1213,10 +1213,9 @@ const toPublish = () => {
                           <span class="flex justify-end">
                             <button
                               @click.stop="openEditModal(j)"
-                              class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded transition-colors flex items-center gap-1"
+                              class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded transition-colors flex items-center gap-1"
                             >
-                              <i class="fa fa-edit text-xs"></i>
-                              <span class="hidden sm:inline text-xs">Edit</span>
+                              <i class="fa fa-edit text-xl"></i>
                             </button>
                           </span>
                         </div>
@@ -1256,10 +1255,10 @@ const toPublish = () => {
                                 class="inline-flex items-center"
                               >
                                 <span
-                                  class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-bold text-white shadow-sm"
+                                  class="inline-flex items-center w-5 h-5 justify-center rounded text-xs font-bold text-white shadow-sm"
                                   :style="{ backgroundColor: badge.color }"
                                 >
-                                  SDG {{ badge.number }}
+                                 {{ badge.number }}
                                 </span>
                               </div>
                             </div>
