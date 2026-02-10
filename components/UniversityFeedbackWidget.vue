@@ -30,11 +30,11 @@
       <button
         v-if="!showWidget"
         @click="openWidget"
-        class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 relative"
+        class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 relative"
       >
         <i class="fa fa-comment-dots text-2xl" aria-hidden="true"></i>
         <i
-          class="fa fa-thumbs-up absolute top-2 right-2 text-xs text-white rounded-full w-5 h-5 flex items-center justify-center"
+          class="fa fa-thumbs-up absolute top-1 right-3 text-xs text-white rounded-full w-5 h-5 flex items-center justify-center"
           aria-hidden="true"
         ></i>
       </button>

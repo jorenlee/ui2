@@ -50,7 +50,6 @@ const highlightedNews = computed(() => {
     });
 });
 
-
 // SDG Colors mapping
 const sdgColors = {
   1: "#e5243b",
@@ -264,13 +263,13 @@ onMounted(async () => {
       <!-- Carousel Container -->
       <div
         v-else-if="highlightedNews.length"
-        class="relative lg:w-11/12 mx-auto lg:px-0 px-2"
+        class="relative lg:w-11/12 w-9/12 mx-auto lg:px-0 px-2"
       >
         <!-- Left Arrow -->
         <button
           v-if="canGoPrev"
           @click="prevSlide"
-          class="absolute top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 lg:-left-6 -left-2"
+          class="absolute top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 -left-10"
           aria-label="Previous slide"
         >
           <i class="fas fa-chevron-left text-xl"></i>
@@ -280,7 +279,7 @@ onMounted(async () => {
         <button
           v-if="canGoNext"
           @click="nextSlide"
-          class="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 lg:-right-6"
+          class="absolute top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 -right-10"
           aria-label="Next slide"
         >
           <i class="fas fa-chevron-right text-xl"></i>
@@ -327,14 +326,54 @@ onMounted(async () => {
               </div>
 
               <!-- Content Section -->
-              <div class="lg:p-4 p-1">
+              <div class="lg:p-3 p-1">
                 <!-- Category/Type Badge -->
                 <div class="flex items-center justify-between lg:mb-1">
-                  <span
+                  <div
                     class="inline-block py-1 lg:text-xs text-[10px] rounded-full uppercase tracking-wide font-light text-[#1d1d1d]"
                   >
-                    {{ getCategoryLabel(j) }}
-                  </span>
+                    <div
+                      class="whitespace-nowrap tracking-tighter"
+                      v-for="(item, i) in j.filters
+                        .split(',')
+                        .map((v) => v.trim())
+                        .filter((v) =>
+                          [
+                            'announcements',
+                            'news highlight',
+                            'news',
+                            'events',
+                            'announcement',
+                            'news highlights',
+                            'news',
+                            'event',
+                          ].includes(v.toLowerCase()),
+                        )"
+                      :key="i"
+                      :class="[
+                        'capitalize text-[10px] inline-block px-2 py-1 rounded-full mr-2 mb-2',
+                        item.toLowerCase() === 'announcements' &&
+                          'bg-yellow-100 text-yellow-800',
+                        item.toLowerCase() === 'news' &&
+                          'bg-pink-100 text-pink-800',
+                        item.toLowerCase() === 'news highlight' &&
+                          'bg-red-100 text-red-800',
+                        item.toLowerCase() === 'events' &&
+                          'bg-green-100 text-green-800',
+                        item.toLowerCase() === 'announcement' &&
+                          'bg-yellow-100 text-yellow-800',
+                        item.toLowerCase() === 'new' &&
+                          'bg-pink-100 text-pink-800',
+                        item.toLowerCase() === 'news highlights' &&
+                          'bg-red-100 text-red-800',
+                        item.toLowerCase() === 'event' &&
+                          'bg-green-100 text-green-800',
+                      ]"
+                    >
+                      {{ item }}
+                    </div>
+                  </div>
+
                   <div class="flex items-center]">
                     <!-- SDG Badges -->
                     <span v-if="getSdgBadges(j).length" class="">
@@ -345,11 +384,10 @@ onMounted(async () => {
                           class="inline-flex items-center"
                         >
                           <span
-                            class="inline-flex items-center lg:px-2 px-1 py-0.5 min-w-4 justify-center rounded font-bold text-[#ffffff] shadow-sm text-[10px]"
+                            class="inline-flex items-center px-1 py-0.5 min-w-4 justify-center rounded font-bold text-[#ffffff] shadow-sm text-[10px]"
                             :style="{ backgroundColor: badge.color }"
                           >
-                            <span class="lg:flex hidden text-[10px] pr-1"> SDG </span
-                            >{{ badge.number }}
+                            {{ badge.number }}
                           </span>
                         </span>
                         <span
@@ -364,12 +402,14 @@ onMounted(async () => {
                 </div>
 
                 <!-- Title -->
-                <h3
-                  class="lg:text-sm text-xs font-bold text-[#1d1d1d] lg:mb-2 line-clamp-2 leading-0"
+              <div class="flex items-center  lg:mb-2">
+                  <h3
+                  class="lg:text-sm text-xs font-bold text-[#1d1d1d] line-clamp-1 leading-0"
                 >
                   {{ j.title }}
                 </h3>
 
+              </div>
                 <!-- Description Preview -->
                 <p
                   v-if="j.descriptions"
@@ -428,7 +468,7 @@ onMounted(async () => {
               <!-- Animated icon -->
             </div>
 
-            <div class=" animate-bounce">
+            <div class="animate-bounce">
               <i
                 class="fa fa-angle-double-down text-2xl mt-2"
                 aria-hidden="true"
