@@ -44,15 +44,15 @@
     <transition name="slide-up">
       <div
         v-if="showWidget"
-        class="fixed bottom-0 left-0 right-0 md:left-auto md:right-6 md:bottom-6 z-[9999] bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:w-[500px] max-h-[90vh] overflow-y-auto border-t-2 md:border-2 border-green-600"
+        class="fixed bottom-0 left-0 right-0 md:left-auto md:right-6 md:bottom-6 z-[9999] bg-white rounded-t-2xl md:rounded-2xl shadow-2xl lg:w-3/12 max-h-[90vh] overflow-y-auto border-t-2 md:border-2 border-green-600"
       >
         <!-- Header -->
         <div
-          class="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-3 flex justify-between items-center"
+          class="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-1 flex justify-between items-center"
         >
           <div class="flex items-center gap-2">
             <i class="fa fa-comment-dots text-lg"></i>
-            <h3 class="font-bold text-base">Website Feedback</h3>
+            <h3 class="font-bold text-xs">Website Feedback</h3>
           </div>
           <button
             @click="closeWidget"
@@ -63,15 +63,15 @@
         </div>
 
         <!-- Step 1: Experience Rating -->
-        <div v-if="currentStep === 1" class="px-6 py-6">
-          <h4 class="text-gray-800 font-semibold text-center mb-8 text-lg">
+        <div v-if="currentStep === 1" class="px-6 py-2">
+          <h4 class="text-gray-800 font-semibold text-center mb-2 text-lg">
             How's your experience?
           </h4>
 
-          <div class="flex justify-center gap-8 mb-8">
+          <div class="flex justify-center gap-8 mb-2">
             <button
               @click="selectExperience('ThumbsDown')"
-              class="flex flex-col items-center gap-2 px-12 py-6 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
+              class="flex flex-col items-center gap-2 px-12 py-2 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
               :class="
                 feedback.feedback_experience === 'ThumbsDown'
                   ? 'bg-red-100 ring-2 ring-red-600'
@@ -85,7 +85,7 @@
 
             <button
               @click="selectExperience('ThumbsUp')"
-              class="flex flex-col items-center gap-2 px-12 py-6 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
+              class="flex flex-col items-center gap-2 px-12 py-2 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
               :class="
                 feedback.feedback_experience === 'ThumbsUp'
                   ? 'bg-green-100 ring-2 ring-green-600'
@@ -101,7 +101,7 @@
           <!-- Suggestion Option -->
           <button
             @click="selectExperience('Suggestion')"
-            class="w-full py-3 px-4 rounded-lg border-2 transition-all duration-300 hover:scale-105 active:scale-95 text-base"
+            class="w-full py-1 px-4 rounded-lg border-2 transition-all duration-300 hover:scale-105 active:scale-95 text-base"
             :class="
               feedback.feedback_experience === 'Suggestion'
                 ? 'bg-blue-100 border-blue-600 text-blue-800'
@@ -127,42 +127,42 @@
 
           <!-- Name Input -->
           <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="text-left block text-xs text-gray-700 mb-2">
               Name <span class="text-red-500">*</span>
             </label>
             <input
               v-model="feedback.name"
               type="text"
               placeholder="Your name"
-              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent"
+              class="w-full px-4 py-1 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent"
               required
             />
           </div>
 
           <!-- Email Input -->
           <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="text-left block text-xs text-gray-700 mb-2">
               Email <span class="text-red-500">*</span>
             </label>
             <input
               v-model="feedback.email"
               type="email"
               placeholder="your.email@example.com"
-              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent"
+              class="w-full px-4 py-1 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent"
               required
             />
           </div>
 
           <!-- Message Textarea -->
           <div class="mb-5">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
+            <label class="text-left block text-xs text-gray-700 mb-2">
               Message <span class="text-red-500">*</span>
             </label>
             <textarea
               v-model="feedback.feedback_message"
               rows="4"
               placeholder="Share your feedback or suggestion..."
-              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none"
+              class="w-full px-4 py-1 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none"
               required
             ></textarea>
           </div>
@@ -171,7 +171,7 @@
           <button
             @click="submitFeedback"
             :disabled="isSubmitting || !isFormValid"
-            class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-4 rounded-lg font-semibold text-base transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95"
+            class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-2 px-4 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 text-xs"
           >
             <i v-if="isSubmitting" class="fa fa-spinner fa-spin"></i>
             <span>{{
@@ -201,7 +201,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useUserStore } from "@/stores/user";
 
 const userStore = useUserStore();
@@ -211,6 +211,11 @@ const endpoint = ref(userStore.mainDevServer);
 const showWidget = ref(false);
 const currentStep = ref(1);
 const isSubmitting = ref(false);
+
+// Cooldown state (5 minutes = 300000 milliseconds)
+const COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes
+const lastSubmissionTime = ref(null);
+const remainingCooldown = ref(0);
 
 // Feedback data
 const feedback = ref({
@@ -246,6 +251,32 @@ const isFormValid = computed(() => {
   );
 });
 
+const isOnCooldown = computed(() => {
+  if (!lastSubmissionTime.value) return false;
+  const now = Date.now();
+  const timeSinceLastSubmission = now - lastSubmissionTime.value;
+  return timeSinceLastSubmission < COOLDOWN_DURATION;
+});
+
+const cooldownTimeRemaining = computed(() => {
+  if (!isOnCooldown.value) return 0;
+  const now = Date.now();
+  const timeSinceLastSubmission = now - lastSubmissionTime.value;
+  const remaining = COOLDOWN_DURATION - timeSinceLastSubmission;
+  return Math.ceil(remaining / 1000); // Return seconds
+});
+
+const cooldownMessage = computed(() => {
+  const seconds = cooldownTimeRemaining.value;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (minutes > 0) {
+    return `Please wait ${minutes} minute${minutes > 1 ? 's' : ''} ${remainingSeconds} second${remainingSeconds !== 1 ? 's' : ''} before submitting again.`;
+  }
+  return `Please wait ${seconds} second${seconds !== 1 ? 's' : ''} before submitting again.`;
+});
+
 // Methods
 const openWidget = () => {
   showWidget.value = true;
@@ -273,8 +304,15 @@ const resetForm = () => {
 };
 
 const submitFeedback = async () => {
+  // Check if form is valid
   if (!isFormValid.value) {
     showToaster("Please fill in all required fields.", "error");
+    return;
+  }
+
+  // Check cooldown
+  if (isOnCooldown.value) {
+    showToaster(`⏱️ ${cooldownMessage.value}`, "warning", 5000);
     return;
   }
 
@@ -288,6 +326,12 @@ const submitFeedback = async () => {
     });
 
     if (res.status === "created") {
+      // Store the submission time
+      lastSubmissionTime.value = Date.now();
+
+      // Save to localStorage for persistence across page reloads
+      localStorage.setItem('feedbackLastSubmission', lastSubmissionTime.value.toString());
+
       currentStep.value = 3;
       showToaster("✅ Feedback submitted successfully!", "success");
     } else if (res.status === "errors") {
@@ -301,6 +345,14 @@ const submitFeedback = async () => {
     isSubmitting.value = false;
   }
 };
+
+// Initialize last submission time from localStorage on component mount
+onMounted(() => {
+  const savedTime = localStorage.getItem('feedbackLastSubmission');
+  if (savedTime) {
+    lastSubmissionTime.value = parseInt(savedTime, 10);
+  }
+});
 </script>
 
 <style scoped>
