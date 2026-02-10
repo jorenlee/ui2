@@ -4,7 +4,7 @@
     <transition name="fade">
       <div
         v-if="toaster.show"
-        class="fixed top-1/2 right-4 z-[99999] px-6 py-4 rounded-lg shadow-2xl text-white font-medium flex items-center gap-3 max-w-md animate-slide-in"
+        class="fixed top-1/2 right-4 z-[99999] px-6 py-4 rounded-lg shadow-2xl text-white font-medium flex items-center gap-3 max-w-md animate-slide-in text-xs"
         :class="{
           'bg-green-600': toaster.type === 'success',
           'bg-red-600': toaster.type === 'error',
@@ -34,7 +34,7 @@
       >
         <i class="fa fa-comment-dots text-2xl" aria-hidden="true"></i>
         <i
-          class="fa fa-thumbs-up absolute top-2 right-2 text-xs bg-white text-green-600 rounded-full w-5 h-5 flex items-center justify-center"
+          class="fa fa-thumbs-up absolute top-2 right-2 text-xs text-white rounded-full w-5 h-5 flex items-center justify-center"
           aria-hidden="true"
         ></i>
       </button>
@@ -173,7 +173,7 @@
             :disabled="isSubmitting || !isFormValid"
             class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-2 px-4 rounded-lg font-semibold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95 text-xs"
           >
-            <i v-if="isSubmitting" class="fa fa-spinner fa-spin"></i>
+            <i class="fa" :class="isSubmitting ? 'fa-spinner fa-spin' : 'fa-paper-plane'"></i>
             <span>{{
               isSubmitting ? "Submitting..." : "Submit Feedback"
             }}</span>
@@ -340,7 +340,7 @@ const submitFeedback = async () => {
     }
   } catch (err) {
     console.error("Failed to submit feedback:", err);
-    showToaster("❌ Failed to submit feedback. Please try again.", "error");
+    showToaster("❌ Please input the correct fields.", "error");
   } finally {
     isSubmitting.value = false;
   }
