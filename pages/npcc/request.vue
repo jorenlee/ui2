@@ -52,7 +52,7 @@
     <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
       <!-- Side Menu -->
       <div class="shadow lg:w-3/12 my-5 bg-white rounded-lg overflow-hidden">
-        <DynamicSideMenu :items="menuList" title="Sub Pages" />
+        <DynamicSideMenu :items="menuList" title="NPCC" />
       </div>
 
       <!-- Main Content -->
@@ -231,9 +231,10 @@
 
                 <!-- ITEM REQUEST -->
                 <div
+               
                   class="border-2 border-green-100 rounded-xl lg:p-6 p-2 mb-6 bg-gradient-to-br from-gray-50 to-white shadow-sm"
                 >
-                  <div class="mb-6">
+                  <div class="mb-6"  v-if="info.issue_concern_request_category_type">
                     <h3
                       class="text-lg font-bold text-green-800 mb-1 flex items-center"
                     >
@@ -245,7 +246,7 @@
                     </p>
                   </div>
 
-                  <div class="grid lg:grid-cols-2 gap-4 mb-6">
+                  <div class="grid lg:grid-cols-2 gap-4 mb-6 border-b-2 pb-6"  v-if="info.issue_concern_request_category_type">
                     <div class="w-full">
                       <label
                         class="text-sm font-semibold mb-2 block text-gray-700"
@@ -273,7 +274,7 @@
                     </div>
                   </div>
 
-                  <div class="border-t-2 border-gray-200 pt-6">
+                  <div class=" border-gray-200 ">
                     <h3
                       class="text-lg font-bold text-green-800 mb-1 flex items-center"
                     >
@@ -488,7 +489,7 @@
               </div>
 
               <!-- ACTIONS -->
-              <div class="flex justify-center gap-3 mb-10">
+              <div class="flex justify-center gap-3 mb-10" v-if="info.issue_concern_request_category_type">
                 <button
                   class="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                   @click="handleSubmitClick"
@@ -540,7 +541,7 @@ import { useUserStore } from "@/stores/user";
 import moment from "moment";
 
 const menuList = [
-  { label: "About NPCC", link: "/npcc" },
+  { label: "About", link: "/npcc" },
   { label: "Request For Tech Support ", link: "/npcc/request" },
   { label: "Track Request", link: "/npcc/track" },
 ];
