@@ -1,0 +1,349 @@
+<template>
+  <div>
+    <!-- Toaster Notification -->
+    <transition name="fade">
+      <div
+        v-if="toaster.show"
+        class="fixed top-1/2 right-4 z-[99999] px-6 py-4 rounded-lg shadow-2xl text-white font-medium flex items-center gap-3 max-w-md animate-slide-in"
+        :class="{
+          'bg-green-600': toaster.type === 'success',
+          'bg-red-600': toaster.type === 'error',
+          'bg-blue-600': toaster.type === 'info',
+          'bg-yellow-600': toaster.type === 'warning',
+        }"
+      >
+        <i
+          class="fa text-xl"
+          :class="{
+            'fa-check-circle': toaster.type === 'success',
+            'fa-exclamation-circle': toaster.type === 'error',
+            'fa-info-circle': toaster.type === 'info',
+            'fa-exclamation-triangle': toaster.type === 'warning',
+          }"
+        ></i>
+        <span>{{ toaster.message }}</span>
+      </div>
+    </transition>
+
+    <!-- Feedback Widget Button -->
+    <div class="fixed bottom-20 right-4 z-[9999]">
+      <button
+        v-if="!showWidget"
+        @click="openWidget"
+        class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 relative"
+      >
+        <i class="fa fa-comment-dots text-2xl" aria-hidden="true"></i>
+        <i
+          class="fa fa-thumbs-up absolute top-2 right-2 text-xs bg-white text-green-600 rounded-full w-5 h-5 flex items-center justify-center"
+          aria-hidden="true"
+        ></i>
+      </button>
+    </div>
+
+    <!-- Feedback Widget Modal -->
+    <transition name="slide-up">
+      <div
+        v-if="showWidget"
+        class="fixed bottom-0 left-0 right-0 md:left-auto md:right-6 md:bottom-6 z-[9999] bg-white rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:w-[500px] max-h-[90vh] overflow-y-auto border-t-2 md:border-2 border-green-600"
+      >
+        <!-- Header -->
+        <div
+          class="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-3 flex justify-between items-center"
+        >
+          <div class="flex items-center gap-2">
+            <i class="fa fa-comment-dots text-lg"></i>
+            <h3 class="font-bold text-base">Website Feedback</h3>
+          </div>
+          <button
+            @click="closeWidget"
+            class="text-white hover:text-gray-200 transition-colors p-1"
+          >
+            <i class="fa fa-times text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Step 1: Experience Rating -->
+        <div v-if="currentStep === 1" class="px-6 py-6">
+          <h4 class="text-gray-800 font-semibold text-center mb-8 text-lg">
+            How's your experience?
+          </h4>
+
+          <div class="flex justify-center gap-8 mb-8">
+            <button
+              @click="selectExperience('ThumbsDown')"
+              class="flex flex-col items-center gap-2 px-12 py-6 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
+              :class="
+                feedback.feedback_experience === 'ThumbsDown'
+                  ? 'bg-red-100 ring-2 ring-red-600'
+                  : 'hover:bg-gray-100'
+              "
+            >
+              <div class="text-5xl scale-x-[-1]">
+                <i class="fa fa-thumbs-down" aria-hidden="true"></i>
+              </div>
+            </button>
+
+            <button
+              @click="selectExperience('ThumbsUp')"
+              class="flex flex-col items-center gap-2 px-12 py-6 rounded-xl transition-all duration-300 hover:scale-110 active:scale-95"
+              :class="
+                feedback.feedback_experience === 'ThumbsUp'
+                  ? 'bg-green-100 ring-2 ring-green-600'
+                  : 'hover:bg-gray-100'
+              "
+            >
+              <div class="text-5xl">
+                <i class="fa fa-thumbs-up" aria-hidden="true"></i>
+              </div>
+            </button>
+          </div>
+
+          <!-- Suggestion Option -->
+          <button
+            @click="selectExperience('Suggestion')"
+            class="w-full py-3 px-4 rounded-lg border-2 transition-all duration-300 hover:scale-105 active:scale-95 text-base"
+            :class="
+              feedback.feedback_experience === 'Suggestion'
+                ? 'bg-blue-100 border-blue-600 text-blue-800'
+                : 'border-gray-300 text-gray-700 hover:border-blue-400'
+            "
+          >
+            <i class="fa fa-lightbulb mr-2"></i>
+            I have a suggestion
+          </button>
+        </div>
+
+        <!-- Step 2: Feedback Message -->
+        <div v-if="currentStep === 2" class="p-6">
+          <button
+            @click="currentStep = 1"
+            class="text-green-600 hover:text-green-700 mb-4 flex items-center gap-1 text-base"
+          >
+            <i class="fa fa-arrow-left"></i>
+            <span class="text-sm">Back</span>
+          </button>
+
+          <h4 class="text-gray-800 font-semibold mb-5 text-lg">Tell us more</h4>
+
+          <!-- Name Input -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Name <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="feedback.name"
+              type="text"
+              placeholder="Your name"
+              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <!-- Email Input -->
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Email <span class="text-red-500">*</span>
+            </label>
+            <input
+              v-model="feedback.email"
+              type="email"
+              placeholder="your.email@example.com"
+              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <!-- Message Textarea -->
+          <div class="mb-5">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Message <span class="text-red-500">*</span>
+            </label>
+            <textarea
+              v-model="feedback.feedback_message"
+              rows="4"
+              placeholder="Share your feedback or suggestion..."
+              class="w-full px-4 py-2.5 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-transparent resize-none"
+              required
+            ></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <button
+            @click="submitFeedback"
+            :disabled="isSubmitting || !isFormValid"
+            class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-4 rounded-lg font-semibold text-base transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 active:scale-95"
+          >
+            <i v-if="isSubmitting" class="fa fa-spinner fa-spin"></i>
+            <span>{{
+              isSubmitting ? "Submitting..." : "Submit Feedback"
+            }}</span>
+          </button>
+        </div>
+
+        <!-- Step 3: Thank You -->
+        <div v-if="currentStep === 3" class="p-6 text-center">
+          <div class="text-6xl mb-5">🏆</div>
+          <h4 class="text-gray-800 font-bold text-xl mb-3">Thank You!</h4>
+          <p class="text-gray-600 mb-6 text-base">
+            Your feedback has been submitted successfully. We appreciate your
+            input!
+          </p>
+          <button
+            @click="closeWidget"
+            class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white py-3 px-6 rounded-lg font-semibold text-base transition-all duration-300 active:scale-95"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </transition>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from "vue";
+import { useUserStore } from "@/stores/user";
+
+const userStore = useUserStore();
+const endpoint = ref(userStore.mainDevServer);
+
+// Widget state
+const showWidget = ref(false);
+const currentStep = ref(1);
+const isSubmitting = ref(false);
+
+// Feedback data
+const feedback = ref({
+  name: "",
+  email: "",
+  feedback_experience: "",
+  feedback_message: "",
+});
+
+// Toaster
+const toaster = ref({
+  show: false,
+  message: "",
+  type: "success",
+});
+
+const showToaster = (message, type = "success", duration = 4000) => {
+  toaster.value.message = message;
+  toaster.value.type = type;
+  toaster.value.show = true;
+
+  setTimeout(() => {
+    toaster.value.show = false;
+  }, duration);
+};
+
+// Computed
+const isFormValid = computed(() => {
+  return (
+    feedback.value.name.trim() !== "" &&
+    feedback.value.email.trim() !== "" &&
+    feedback.value.feedback_message.trim() !== ""
+  );
+});
+
+// Methods
+const openWidget = () => {
+  showWidget.value = true;
+  currentStep.value = 1;
+};
+
+const closeWidget = () => {
+  showWidget.value = false;
+  resetForm();
+};
+
+const selectExperience = (experience) => {
+  feedback.value.feedback_experience = experience;
+  currentStep.value = 2;
+};
+
+const resetForm = () => {
+  feedback.value = {
+    name: "",
+    email: "",
+    feedback_experience: "",
+    feedback_message: "",
+  };
+  currentStep.value = 1;
+};
+
+const submitFeedback = async () => {
+  if (!isFormValid.value) {
+    showToaster("Please fill in all required fields.", "error");
+    return;
+  }
+
+  isSubmitting.value = true;
+
+  try {
+    const res = await $fetch(endpoint.value + "/api/cits/feedback/create/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: feedback.value,
+    });
+
+    if (res.status === "created") {
+      currentStep.value = 3;
+      showToaster("✅ Feedback submitted successfully!", "success");
+    } else if (res.status === "errors") {
+      console.error("Form errors:", res.errors);
+      showToaster("❌ Failed to submit feedback. Please try again.", "error");
+    }
+  } catch (err) {
+    console.error("Failed to submit feedback:", err);
+    showToaster("❌ Failed to submit feedback. Please try again.", "error");
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+</script>
+
+<style scoped>
+/* Fade transition for toaster */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Slide up transition for widget */
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-enter-from {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+.slide-up-leave-to {
+  transform: translateY(100%);
+  opacity: 0;
+}
+
+/* Animation for slide in */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+</style>

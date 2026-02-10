@@ -17,6 +17,13 @@ const timeSelection = ref(scheduleJSON.timeSelection);
 const isLoading = ref(true);
 const isSubmitting = ref(false);
 
+let errors = ref([]);
+let currentObjectSelectedFromSearch = ref(null);
+let selectIDBooksList = ref(null);
+const unFilteredTime = ref();
+let displayTableListsOfBooks = ref(false);
+
+
 // ✅ Data States
 const schedulesListsData = ref([]);
 const books = ref([]);
@@ -27,14 +34,11 @@ let currentHour = ref(moment().format("hh:mm A"));
 let id = ref();
 let limitCounter = ref(0);
 let allFieldsAreRequired = ref(false);
-let errors = ref([]);
+
 let timeList = ref([]);
 const pickedTime = ref();
-const unFilteredTime = ref();
-let displayTableListsOfBooks = ref(false);
 let displayForm = ref(false);
-let currentObjectSelectedFromSearch = ref(null);
-let selectIDBooksList = ref(null);
+
 let filterSearchBooks = ref([]);
 let searchIconBtnClicked = ref(false);
 const submissionForm = ref(true);
@@ -75,6 +79,13 @@ const info = ref({
   created_by_email: "",
   updated_at: new Date(),
 });
+
+// ✅ Ensure schedule.time is always an array
+watch(() => schedule.value.time, (newVal) => {
+  if (!Array.isArray(newVal)) {
+    schedule.value.time = [];
+  }
+}, { immediate: true });
 
 const menuList = [
   { label: "Learning Resource Center", link: "/library" },
@@ -129,16 +140,15 @@ const menuList = [
 const fetchInitialData = async () => {
   try {
     isLoading.value = true;
-
     const [scheds, bookList] = await Promise.all([
       $fetch(endpoint.value + "/api/library/schedule/booking/list/"),
       $fetch(endpoint.value + "/api/library/reports/book/list/"),
     ]);
-
     schedulesListsData.value = scheds || [];
     books.value = bookList || [];
-
     highlightedDates.value = schedulesListsData.value.map((s) => s.date);
+
+    console.log(schedulesListsData.value)
   } catch (e) {
     console.error("Initial data fetch error:", e);
     showToaster("Failed to load data. Please refresh the page.", "error");
@@ -199,18 +209,27 @@ const updateAvailableTimeSlots = () => {
     (s) => s.date === schedule.value.date,
   );
 
-  if (!match || !Array.isArray(match.time)) {
+  if (!match) {
+    schedule.value.time = [];
+    return;
+  }
+
+  // Ensure match.time is an array
+  if (!Array.isArray(match.time)) {
+    console.warn("match.time is not an array:", match.time);
     schedule.value.time = [];
     return;
   }
 
   id.value = match.id;
 
+  // Filter time slots for today (only future times) or show all for future dates
   schedule.value.time =
     match.date === today
-      ? match.time.filter((t) =>
-          moment(t.range_from_time, "hh:mm A").isAfter(now),
-        )
+      ? match.time.filter((t) => {
+          if (!t || !t.range_from_time) return false;
+          return moment(t.range_from_time, "hh:mm A").isAfter(now);
+        })
       : [...match.time];
 };
 
@@ -384,48 +403,71 @@ const defaultIDNumber = () => {
 const borrowerCategoryLimit = () => {
   if (["Faculty", "Staff"].includes(info.value.borrower_category)) {
     limitCounter.value = 20;
-  }
-  if (info.value.borrower_category === "Student") {
+  } else if (info.value.borrower_category === "Student") {
     limitCounter.value = 15;
+  } else {
+    limitCounter.value = 0;
   }
+
   defaultIDNumber();
+
+  // Initialize with one empty book entry
   info.value.books = [
-    { book_title: null, book_author: null, book_call_number: null },
+    { book_title: "", book_author: "", book_call_number: "" },
   ];
+
+  // Decrease limit counter since we added one book entry
+  if (limitCounter.value > 0) {
+    limitCounter.value--;
+  }
 };
 
 const updateSchedule = async () => {
-  timeList.value =
-    schedule.value.time.length === 1
-      ? [
-          {
-            range_from_time: "",
-            range_to_time: "",
-            _12_hour_format_from: "",
-            _12_hour_format_to: "",
-          },
-        ]
-      : _.filter(
-          schedule.value.time,
-          (params) =>
-            params.range_from_time !== pickedTime.value.range_from_time &&
-            params.range_to_time !== pickedTime.value.range_to_time,
-        );
+  try {
+    // Ensure schedule.time is an array
+    if (!Array.isArray(schedule.value.time)) {
+      console.error("schedule.time is not an array:", schedule.value.time);
+      schedule.value.time = [];
+    }
 
-  await $fetch(
-    endpoint.value + "/api/library/schedule/booking/" + id.value + "/edit/",
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: {
-        date: schedule.value.date,
-        time: timeList.value,
-        updated_at: schedule.value.updated_at,
+    // Calculate remaining time slots after removing the picked time
+    timeList.value =
+      schedule.value.time.length === 1
+        ? [
+            {
+              range_from_time: "",
+              range_to_time: "",
+              _12_hour_format_from: "",
+              _12_hour_format_to: "",
+            },
+          ]
+        : _.filter(
+            schedule.value.time,
+            (params) =>
+              params.range_from_time !== pickedTime.value.range_from_time &&
+              params.range_to_time !== pickedTime.value.range_to_time,
+          );
+
+    // Update the schedule in the database
+    await $fetch(
+      endpoint.value + "/api/library/schedule/booking/" + id.value + "/edit/",
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: {
+          date: schedule.value.date,
+          time: timeList.value,
+          updated_at: schedule.value.updated_at,
+        },
       },
-    },
-  ).then(() => {
-    submitAppointmentToGmail();
-  });
+    );
+
+    // Send email notification
+    await submitAppointmentToGmail();
+  } catch (error) {
+    console.error("Error updating schedule:", error);
+    throw error; // Re-throw to be caught by submitForm
+  }
 };
 
 const isTimeAvailable = (t) => {
@@ -574,20 +616,17 @@ const submitForm = async () => {
 };
 
 const submitAppointmentToGmail = async () => {
-  await $fetch(endpoint.value + "/api/library/submit-appointment-to-gmail/", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: info.value,
-  });
+  try {
+    await $fetch(endpoint.value + "/api/library/submit-appointment-to-gmail/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: info.value,
+    });
+  } catch (error) {
+    console.error("Failed to send email notification:", error);
+    // Don't show error to user since booking was successful
+  }
 };
-
-watchEffect(() => {
-  console.log(
-    "schedule.time type:",
-    typeof schedule.value.time,
-    schedule.value.time,
-  );
-});
 </script>
 
 <template>
@@ -898,9 +937,7 @@ watchEffect(() => {
                         />
                       </div>
                     </div>
-                    <!-- <div class="lg:flex gap-2 lg:mb-3">
-
-              </div> -->
+                    <!-- <div class="lg:flex gap-2 lg:mb-3"></div> -->
                     <div
                       class="lg:shadow lg:rounded-lg lg:px-2 lg:py-3 lg:mt-0 mt-5"
                     >
