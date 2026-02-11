@@ -27,17 +27,28 @@
 
     <!-- Feedback Widget Button -->
     <div class="fixed bottom-20 right-4 z-[9999]">
-      <button
-        v-if="!showWidget"
-        @click="openWidget"
-        class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 relative"
-      >
-        <i class="fa fa-comment-dots text-2xl" aria-hidden="true"></i>
-        <i
-          class="fa fa-thumbs-up absolute top-1 right-3 text-xs text-white rounded-full w-5 h-5 flex items-center justify-center"
-          aria-hidden="true"
-        ></i>
-      </button>
+      <div class="relative">
+        <!-- Pulsing Ring Animations (only show when attention animation is active) -->
+        <div v-if="showAttentionAnimation && !showWidget" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div class="absolute w-14 h-14 rounded-full bg-green-500 opacity-75 animate-pulse-ring"></div>
+          <div class="absolute w-14 h-14 rounded-full bg-green-500 opacity-50 animate-pulse-ring animation-delay-700"></div>
+          <div class="absolute w-14 h-14 rounded-full bg-green-400 opacity-30 animate-pulse-ring animation-delay-1400"></div>
+        </div>
+
+        <!-- Main Button -->
+        <button
+          v-if="!showWidget"
+          @click="openWidget"
+          class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-105 relative"
+          :class="{ 'animate-attention-zoom': showAttentionAnimation }"
+        >
+          <i class="fa fa-comment-dots text-2xl" aria-hidden="true"></i>
+          <i
+            class="fa fa-thumbs-up absolute top-1 right-3 text-xs text-white rounded-full w-5 h-5 flex items-center justify-center"
+            aria-hidden="true"
+          ></i>
+        </button>
+      </div>
     </div>
 
     <!-- Feedback Widget Modal -->
@@ -201,7 +212,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { useUserStore } from "@/stores/user";
 
 const userStore = useUserStore();
@@ -211,6 +222,10 @@ const endpoint = ref(userStore.mainDevServer);
 const showWidget = ref(false);
 const currentStep = ref(1);
 const isSubmitting = ref(false);
+
+// Attention animation state
+const showAttentionAnimation = ref(false);
+let animationInterval = null;
 
 // Cooldown state (5 minutes = 300000 milliseconds)
 const COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -352,6 +367,26 @@ onMounted(() => {
   if (savedTime) {
     lastSubmissionTime.value = parseInt(savedTime, 10);
   }
+
+  // Trigger attention animation every 5 minutes (300000ms)
+  animationInterval = setInterval(() => {
+    if (!showWidget.value) {
+      // Activate animation
+      showAttentionAnimation.value = true;
+
+      // Deactivate animation after 4 seconds
+      setTimeout(() => {
+        showAttentionAnimation.value = false;
+      }, 4000);
+    }
+  }, 3000); // 3 seconds = 3000ms
+});
+
+// Cleanup interval on component unmount
+onBeforeUnmount(() => {
+  if (animationInterval) {
+    clearInterval(animationInterval);
+  }
 });
 </script>
 
@@ -397,5 +432,48 @@ onMounted(() => {
 
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
+}
+
+/* Attention-grabbing animations */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+@keyframes attention-zoom {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.15);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  75% {
+    transform: scale(1.15);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animation-delay-700 {
+  animation-delay: 0.7s;
+}
+
+.animation-delay-1400 {
+  animation-delay: 1.4s;
+}
+
+.animate-attention-zoom {
+  animation: attention-zoom 2s ease-in-out infinite;
 }
 </style>

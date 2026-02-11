@@ -136,11 +136,11 @@ const recentActivities = [
 <div class="">
   <div class="">
     <!-- ================= WELCOME HEADER ================= -->
-    <div class="w-full bg-gradient-to-r from-green-600 to-green-800 rounded-lg shadow-lg lg:p-8 p-4 text-white mb-8">
+    <div class="w-full bg-gradient-to-r from-green-600 to-green-800 rounded-lg shadow-lg lg:p-5 p-4 text-white mb-2">
       <div class="lg:flex w-full items-stretch lg:items-center justify-between gap-8">
         <!-- GREETING -->
         <div class="w-fit lg:mb-0 mb-3">
-          <h1 class="lg:text-4xl text-xl font-bold mb-2 white">{{ currentHour }}! 👋</h1>
+          <h1 class="lg:text-3xl text-xl font-bold mb-2 white">{{ currentHour }}! 👋</h1>
           <p class="text-green-100 lg:text-lg text-sm whitespace-nowrap">
             Welcome back!
             <!-- ,<span class="font-semibold">{{ userEmail.split("@")[0] }}</span> -->
@@ -157,14 +157,14 @@ const recentActivities = [
         <!-- CLOCK CARD -->
         <div class="lg:w-fit w-full">
           <div
-            class="bg-white bg-opacity-20 backdrop-blur rounded-lg p-6 border border-white border-opacity-20 whitespace-nowrap">
+            class="bg-white bg-opacity-20 backdrop-blur rounded-lg px-4 pt-3 border border-white border-opacity-20 whitespace-nowrap">
             <div class="flex flex-col items-center justify-center gap-3">
               <i class="fa fa-clock text-xl text-white"></i>
               <div class="text-center">
                 <p class="text-green-100 text-xs font-medium uppercase tracking-wide mb-1">
                   Current Time
                 </p>
-                <p class="text-white text-3xl font-bold font-mono leading-none">
+                <p class="text-white text-xl font-bold font-mono leading-none">
                   {{ currentTime }}
                 </p>
               </div>

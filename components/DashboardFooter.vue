@@ -8,12 +8,12 @@
         <UniversityFeedbackWidget />
     <div class="flex justify-between bg-green-900 px-3 py-1.5">
       <div class="flex gap-x-3 lg:w-fit mx-auto">
-        <div class="w-full mx-auto">
-          <img :src="profileImageUrl" class="lg:w-7 w-5 mx-auto" />
+        <div class="flex items-center">
+          <img :src="profileImageUrl" class="lg:w-7 w-5 h-5 mx-auto" />
         </div>
         <div class="w-full flex items-center">
           <div>
-            <h2 class="text-left text-white text-[10px] leading-0">
+            <h2 class="text-left text-white text-[10px] leading-0 whitespace-nowrap">
               <span class="mr-1"><span class="font-bold">LSU Central</span> | 
             
             <span class="font-bold">Copyright © {{ presentYear }}</span>
