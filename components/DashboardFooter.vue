@@ -5,6 +5,7 @@
 </script>
 <template>
   <div class="">
+        <UniversityFeedbackWidget />
     <div class="flex justify-between bg-green-900 px-3 py-1.5">
       <div class="flex gap-x-3 lg:w-fit mx-auto">
         <div class="w-full mx-auto">
