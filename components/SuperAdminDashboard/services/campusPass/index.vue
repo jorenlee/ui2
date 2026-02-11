@@ -192,25 +192,23 @@ const stopAutoRefresh = () => {
 };
 
 onMounted(async () => {
-    if (
-      userStore.user.isAuthenticated &&
-      (
-        userStore.user.email === "esmael.larubis@lsu.edu.ph" ||
-        userStore.user.email === "ssec@lsu.edu.ph",
-        userStore.user.email === "jorenlee.luna@lsu.edu.ph" ||
-        userStore.user.email === "jason.yap@lsu.edu.ph"
-      )
-    )
-    await fetchListItems();
-    await checkAndRemoveDuplicates(); // Initial duplicate check
-    startAutoRefresh();
-    const q = route.query || {};
-    if (q.status) statusFilter.value = String(q.status);
-    if (q.type) typeFilter.value = String(q.type);
-    if (q.sort) sortDirection.value = String(q.sort) === "desc" ? "desc" : "asc";
-    if (q.from) dateFrom.value = String(q.from);
-    if (q.to) dateTo.value = String(q.to);
-    if (q.q) searchQuery.value = String(q.q);
+  // Initialize query parameters first (synchronous, no await needed)
+  const q = route.query || {};
+  if (q.status) statusFilter.value = String(q.status);
+  if (q.type) typeFilter.value = String(q.type);
+  if (q.sort) sortDirection.value = String(q.sort) === "desc" ? "desc" : "asc";
+  if (q.from) dateFrom.value = String(q.from);
+  if (q.to) dateTo.value = String(q.to);
+  if (q.q) searchQuery.value = String(q.q);
+
+  // Run data fetching and duplicate check in parallel for better performance
+  await Promise.all([
+    fetchListItems(),
+    checkAndRemoveDuplicates()
+  ]);
+
+  // Start auto-refresh after initial data load
+  startAutoRefresh();
 });
 
 onBeforeUnmount(() => {
