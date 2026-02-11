@@ -1,5 +1,5 @@
 <template>
   <div>
-    <UniversityLogin title="Login" routeURL="/campus-pass/dashboard" />
+    <UniversityLogin title="Login" routeURL="/cms/dashboard" />
   </div>
 </template>
