@@ -225,7 +225,7 @@ const isSubmitting = ref(false);
 
 // Attention animation state
 const showAttentionAnimation = ref(false);
-let animationInterval = null;
+
 
 // Cooldown state (5 minutes = 300000 milliseconds)
 const COOLDOWN_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -361,32 +361,31 @@ const submitFeedback = async () => {
   }
 };
 
-// Initialize last submission time from localStorage on component mount
+let animationInterval = null;
+let animationTimeout = null;
+
 onMounted(() => {
   const savedTime = localStorage.getItem('feedbackLastSubmission');
   if (savedTime) {
     lastSubmissionTime.value = parseInt(savedTime, 10);
   }
 
-  // Trigger attention animation every 5 minutes (300000ms)
   animationInterval = setInterval(() => {
-    if (!showWidget.value) {
-      // Activate animation
+    if (!showWidget.value && !showAttentionAnimation.value) {
+      // Start pulse
       showAttentionAnimation.value = true;
 
-      // Deactivate animation after 4 seconds
-      setTimeout(() => {
+      // Stop pulse after 10 seconds
+      animationTimeout = setTimeout(() => {
         showAttentionAnimation.value = false;
-      }, 4000);
+      }, 10000); // 10 seconds
     }
-  }, 3000); // 3 seconds = 3000ms
+  }, 5000); // Trigger check every 5 seconds
 });
 
-// Cleanup interval on component unmount
 onBeforeUnmount(() => {
-  if (animationInterval) {
-    clearInterval(animationInterval);
-  }
+  clearInterval(animationInterval);
+  clearTimeout(animationTimeout);
 });
 </script>
 
