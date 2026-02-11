@@ -542,6 +542,46 @@ const handleFileUploadCredential = (event) => {
   });
 };
 
+// Remove file from selected files (Credential)
+const removeFileCredential = (index) => {
+  selectedFilesCredential.value.splice(index, 1);
+  console.log(`File at index ${index} removed. Remaining files:`, selectedFilesCredential.value);
+
+  // Clear the file input if no files remain
+  if (selectedFilesCredential.value.length === 0) {
+    const fileInput = document.getElementById('file-upload-credential');
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+};
+
+// View file (opens in new tab or creates object URL for preview)
+const viewFile = (file) => {
+  // Create a temporary URL for the file
+  const fileURL = URL.createObjectURL(file);
+
+  // Open in new tab
+  window.open(fileURL, '_blank');
+
+  // Clean up the URL after a delay to prevent memory leaks
+  setTimeout(() => {
+    URL.revokeObjectURL(fileURL);
+  }, 100);
+};
+
+// Remove uploaded file from the list (Credential)
+const removeUploadedFileCredential = (index) => {
+  uploadedFilesCredential.value.splice(index, 1);
+
+  // Also update the info.additional_documents array
+  if (info.value.additional_documents && Array.isArray(info.value.additional_documents)) {
+    info.value.additional_documents.splice(index, 1);
+  }
+
+  console.log(`Uploaded file at index ${index} removed. Remaining files:`, uploadedFilesCredential.value);
+};
+
 // Upload Government ID (Front) files
 const uploadFilesFront = async () => {
   if (!selectedFilesFront.value.length) {
@@ -1139,7 +1179,7 @@ const uploadFilesCredential = async () => {
                                 <div
                                   class="w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm p-2"
                                 >
-                                  <div class="space-y-2">
+                                  <div class="lg:space-y-3.5">
                                     <div
                                       v-for="(
                                         document, index
@@ -1363,8 +1403,17 @@ const uploadFilesCredential = async () => {
                                 </div> -->
 
                                 <div class="w-full mb-2">
-                                
-                                  <p class="text-xs mb-1 tracking-tight"> Select multiple files for any additional documents.</p>
+
+                                  <p class="text-xs mb-1 tracking-tight font-semibold text-gray-700">
+                                    Select multiple files for any additional documents.
+                                  </p>
+                                  <p class="text-[10px] mb-2 text-gray-600 flex items-start gap-1">
+                                    <i class="fa fa-info-circle text-blue-600 mt-0.5"></i>
+                                    <span>
+                                      <span class="font-semibold">Allowed formats:</span> JPG, JPEG, PNG, PDF only.
+                                      <span class="font-semibold">Maximum size:</span> 5MB per file.
+                                    </span>
+                                  </p>
                                   <div class="w-full">
                                     <input
                                       type="file"
@@ -1372,7 +1421,7 @@ const uploadFilesCredential = async () => {
                                       @change="handleFileUploadCredential"
                                       id="file-upload-credential"
                                       multiple
-                                      accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                                      accept=".jpg,.jpeg,.png,.pdf"
                                     />
 
                                     <!-- Upload Status -->
@@ -1394,34 +1443,51 @@ const uploadFilesCredential = async () => {
                                       class="mt-3 space-y-2"
                                     >
                                       <div class="text-xs font-semibold text-green-700 mb-2">
-                                        <i class="fa fa-check-circle mr-1"></i>Uploaded Files:
+                                        <i class="fa fa-check-circle mr-1"></i>Uploaded Files ({{ uploadedFilesCredential.length }}):
                                       </div>
                                       <div
-                                        v-for="file in uploadedFilesCredential"
+                                        v-for="(file, index) in uploadedFilesCredential"
                                         :key="file.url"
-                                        class="bg-green-50 border border-green-200 rounded px-2 py-2"
+                                        class="bg-green-50 border border-green-200 rounded px-3 py-2"
                                       >
-                                        <div class="flex items-center gap-2">
-                                          <img
-                                            v-if="file.url && (file.url.includes('jpg') || file.url.includes('jpeg') || file.url.includes('png'))"
-                                            :src="file.url"
-                                            alt="Uploaded Credential"
-                                            class="w-12 h-12 object-cover rounded border border-gray-300"
-                                          />
-                                          <i v-else class="fa fa-file-o text-green-600 text-lg"></i>
-                                          <div class="flex-1 min-w-0">
-                                            <div class="text-xs font-semibold text-gray-800 truncate">
-                                              {{ file.name || 'Document' }}
+                                        <div class="flex items-center justify-between gap-3">
+                                          <div class="flex items-center gap-2 flex-1 min-w-0">
+                                            <img
+                                              v-if="file.url && (file.url.includes('jpg') || file.url.includes('jpeg') || file.url.includes('png'))"
+                                              :src="file.url"
+                                              alt="Uploaded Credential"
+                                              class="w-12 h-12 object-cover rounded border border-gray-300"
+                                            />
+                                            <i v-else class="fa fa-file-pdf-o text-green-600 text-2xl"></i>
+                                            <div class="flex-1 min-w-0">
+                                              <div class="text-xs font-semibold text-gray-800 truncate">
+                                                {{ file.name || 'Document' }}
+                                              </div>
+                                              <div class="text-xs text-gray-600">
+                                                {{ file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : 'Size unknown' }}
+                                              </div>
                                             </div>
+                                          </div>
+                                          <div class="flex items-center gap-2">
                                             <a
                                               v-if="file.url"
                                               :href="file.url"
                                               target="_blank"
                                               rel="noopener noreferrer"
-                                              class="text-xs text-green-600 hover:text-green-800 hover:underline"
+                                              class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors flex items-center gap-1"
+                                              title="View file"
                                             >
-                                              <i class="fa fa-external-link"></i> View
+                                              <i class="fa fa-eye"></i>
+                                              <span class="hidden sm:inline">View</span>
                                             </a>
+                                            <button
+                                              @click="removeUploadedFileCredential(index)"
+                                              class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors flex items-center gap-1"
+                                              title="Remove file"
+                                            >
+                                              <i class="fa fa-trash"></i>
+                                              <span class="hidden sm:inline">Remove</span>
+                                            </button>
                                           </div>
                                         </div>
                                       </div>
@@ -1438,15 +1504,39 @@ const uploadFilesCredential = async () => {
                                       <div
                                         v-for="(file, index) in selectedFilesCredential"
                                         :key="file.name + index"
-                                        class="bg-blue-50 border border-blue-200 rounded px-2 py-2 flex items-center justify-between"
+                                        class="bg-blue-50 border border-blue-200 rounded px-3 py-2"
                                       >
-                                        <div class="flex items-center gap-2 flex-1 min-w-0">
-                                          <i class="fa fa-file-o text-blue-600"></i>
-                                          <span class="text-xs truncate">{{ file.name }}</span>
+                                        <div class="flex items-center justify-between gap-3">
+                                          <div class="flex items-center gap-2 flex-1 min-w-0">
+                                            <i class="fa fa-file-o text-blue-600 text-lg"></i>
+                                            <div class="flex-1 min-w-0">
+                                              <div class="text-xs font-semibold text-gray-800 truncate">
+                                                {{ file.name }}
+                                              </div>
+                                              <div class="text-xs text-gray-600">
+                                                {{ (file.size / 1024 / 1024).toFixed(2) }} MB
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div class="flex items-center gap-2">
+                                            <button
+                                              @click="viewFile(file)"
+                                              class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors flex items-center gap-1"
+                                              title="View file"
+                                            >
+                                              <i class="fa fa-eye"></i>
+                                              <span class="hidden sm:inline">View</span>
+                                            </button>
+                                            <button
+                                              @click="removeFileCredential(index)"
+                                              class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors flex items-center gap-1"
+                                              title="Remove file"
+                                            >
+                                              <i class="fa fa-trash"></i>
+                                              <span class="hidden sm:inline">Remove</span>
+                                            </button>
+                                          </div>
                                         </div>
-                                        <span class="text-xs font-semibold text-gray-600 ml-2">
-                                          {{ (file.size / 1024 / 1024).toFixed(2) }} MB
-                                        </span>
                                       </div>
                                     </div>
                                   </div>
