@@ -9,7 +9,8 @@ import collegeOrSchoolJSON from "../college_school.json";
 import courseOrProgramJSON from "../course_program.json";
 import courseMajorJSON from "../course_major.json";
 
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const enrollment = await $fetch(endpoint.value + "/api/enrollment/" + route.params.id + "/").catch((error) => error.data)
 
 const emailRegistrar = ref(userStore.user.registrarEmail);

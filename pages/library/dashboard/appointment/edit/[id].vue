@@ -5,7 +5,8 @@ import _ from "lodash";
 const router = useRouter();
 const userStore = useUserStore();
 const route = useRoute();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const developerEmail = ref(userStore.user.developerEmail);
 const library = await $fetch(endpoint.value + "/api/library/booking/" + route.params.id + "/").catch((error) => error.data)
 

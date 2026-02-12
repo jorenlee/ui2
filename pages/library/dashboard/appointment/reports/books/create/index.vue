@@ -4,7 +4,8 @@ import { useUserStore } from "~/stores/user";
 const router = useRouter();
 const userStore = useUserStore();
 import _ from "lodash";
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 
 const developerEmail = ref(userStore.user.developerEmail);

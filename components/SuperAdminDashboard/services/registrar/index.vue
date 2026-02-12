@@ -11,7 +11,8 @@ let tableDisplay = ref(true);
 let toggleSideBarMenu = ref(false);
 let toggleConfirmDelete = ref(false);
 
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 let selectedID = ref(null);
 const statusFilter = ref("all");
 

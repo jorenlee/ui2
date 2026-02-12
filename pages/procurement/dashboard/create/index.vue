@@ -7,7 +7,8 @@ import _ from "lodash";
 import axios from "axios";
 import { MdEditor } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 onMounted(() => {
   if (

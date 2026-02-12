@@ -14,7 +14,8 @@ const userStore = useUserStore();
 const providerLists = ref(providerListJSON.providerLists);
 const timeSelection = ref(scheduleJSON.timeSelection);
 
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const { data: appointment } = await useFetch(
   endpoint.value + "/api/appointments/" + route.params.id + "/"

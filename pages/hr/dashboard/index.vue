@@ -6,7 +6,8 @@ const router = useRouter();
 const userStore = useUserStore();
 const route = useRoute();
 import _ from "lodash";
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 
 

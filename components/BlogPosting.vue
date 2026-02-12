@@ -1,6 +1,5 @@
 <script setup>
 import { ref, onMounted, nextTick, computed } from "vue";
-import { useUserStore } from "@/stores/user";
 import _ from "lodash";
 import moment from "moment";
 
@@ -9,8 +8,8 @@ const info = ref([]);
 const loading = ref(true);
 const errorMsg = ref("");
 
-const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 // Carousel state
 const currentSlide = ref(0);

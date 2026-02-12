@@ -547,7 +547,8 @@ const menuList = [
 ];
 
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const customOffice = ref("");
 const showConfirmation = ref(false);

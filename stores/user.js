@@ -20,8 +20,6 @@ export const useUserStore = defineStore({
     developerEmail: "jorenleeluna24@gmail.com",
     testEmail: "npc@lsu.edu.ph",
     registrarEmail: "registrar@lsu.edu.ph",
-    mainDevServer: "https://apipdp.lsu.edu.ph/buang_ka_eyy",
-    // mainDevServer: "http://127.0.0.1:8000",
   }),
 
   getters: {

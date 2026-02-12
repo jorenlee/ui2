@@ -1,7 +1,8 @@
 <script setup>
 import { useUserStore } from "@/stores/user";
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const route = useRoute();
 const enrollee = await $fetch(endpoint.value + "/api/admissions/" + route.params.id + "/").catch((error) => error.data)

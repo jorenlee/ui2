@@ -6,7 +6,8 @@ import scheduleJSON from "../../schedule.json";
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 import _ from "lodash";
 import moment from "moment";
 

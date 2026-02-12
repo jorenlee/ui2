@@ -1,6 +1,5 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
-import { useUserStore } from "@/stores/user";
 import moment from "moment";
 
 const menuDetails = ref(false);
@@ -12,8 +11,8 @@ const searchLoading = ref(false);
 const allContent = ref([]);
 const openMobile = ref(true);
 
-const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const closeMenu = () => {
   menuDetails.value = false;

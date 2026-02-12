@@ -9,7 +9,8 @@ import moment from "moment";
 const router = useRouter();
 const userStore = useUserStore();
 const currentPage = ref(1);
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 import _ from "lodash";
 
 let bookingAppointmentListFilter = ref(0);

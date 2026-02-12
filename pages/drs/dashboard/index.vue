@@ -39,7 +39,8 @@ const documentTypeList = ref([
 
 const statusList = ref(["All", "New", "For Revision"]);
 
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 let deleteIDItem = ref();
 let tableDisplay = ref(true);

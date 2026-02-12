@@ -51,12 +51,11 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import { useUserStore } from "@/stores/user";
 
 const route = useRoute();
-const userStore = useUserStore();
+const config = useRuntimeConfig();
 const pageId = route.params.id;
-const endpoint = userStore.mainDevServer;
+const endpoint = config.public.apiUrl;
 
 const boxes = ref([]);
 

@@ -90,13 +90,11 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import moment from "moment";
-import { useUserStore } from "@/stores/user";
-const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
 
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const router = useRouter();
-// const endpoint = ref("http://127.0.0.1:8000");
 
 const editMode = ref(false);
 const currentPage = ref("page1"); // <-- no leading slash

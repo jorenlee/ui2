@@ -1492,7 +1492,8 @@ import { useUserStore } from "@/stores/user";
 import moment from "moment";
 
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const requests = ref([]);
 const showModal = ref(false);

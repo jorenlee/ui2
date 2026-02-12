@@ -1,9 +1,8 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed, watch } from "vue";
-import { useUserStore } from "@/stores/user";
 
-const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const slides = ref([]);
 const currentIndex = ref(0);

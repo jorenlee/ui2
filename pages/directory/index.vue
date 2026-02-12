@@ -1,9 +1,8 @@
 <script setup>
 
   import jsonData from "./data.json";
-  import { useUserStore } from "@/stores/user";
-  const userStore = useUserStore();
-  const endpoint = ref(userStore.mainDevServer);
+  const config = useRuntimeConfig();
+  const endpoint = ref(config.public.apiUrl);
 
   const directory_campus1 = ref(jsonData.directory_campus1);
   const directory_campus2 = ref(jsonData.directory_campus2);

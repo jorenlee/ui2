@@ -8,7 +8,8 @@ import _ from "lodash";
 import collegeOrSchoolJSON from "../college_school.json";
 import courseOrProgramJSON from "../course_program.json";
 import courseMajorJSON from "../course_major.json";
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const emailRegistrar = ref(userStore.user.registrarEmail);
 const developerEmail = ref(userStore.user.developerEmail);

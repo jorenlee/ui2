@@ -9,7 +9,8 @@ import moment from "moment";
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 import _ from "lodash";
 import addDays from "date-fns/addDays";

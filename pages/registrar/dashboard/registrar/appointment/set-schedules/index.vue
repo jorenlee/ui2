@@ -13,7 +13,8 @@ const router = useRouter();
 const userStore = useUserStore();
 import _ from "lodash";
 
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const timeSelection = ref(scheduleJSON.timeSelection);
 const providerListsDepartment = ref(providerListDepartmentJSON.providerListsDepartment);

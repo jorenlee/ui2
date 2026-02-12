@@ -46,10 +46,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import { useUserStore } from "@/stores/user";
 
-const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const route = useRoute();
 const pageId = route.params.id;     // "page1", "page2", etc

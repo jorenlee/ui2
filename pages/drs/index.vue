@@ -1,5 +1,4 @@
 <script setup>
-import { useUserStore } from "@/stores/user";
 import _ from "lodash";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "./css/main.css";
@@ -9,8 +8,8 @@ import axios from "axios"; // For making HTTP requests
 import headOfficeJSON from "./head_office.json";
 const headOffice = ref(headOfficeJSON);
 
-const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const formDisplay = ref(true);
 const thankYouDisplay = ref(false);
 const submitCounter = ref(1);

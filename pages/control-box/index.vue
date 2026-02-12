@@ -238,10 +238,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import moment from "moment";
-import { useUserStore } from "@/stores/user";
 
-const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const editMode = ref(false);
 const currentPage = ref("page1");

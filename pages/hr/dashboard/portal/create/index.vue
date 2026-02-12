@@ -7,7 +7,8 @@ const userStore = useUserStore();
 const route = useRoute();
 import _ from "lodash";
 import axios from "axios"; // For making HTTP requests
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const presentYear = ref(moment(new Date()).format("YYYY"));
 

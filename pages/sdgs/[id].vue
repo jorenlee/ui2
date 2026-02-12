@@ -83,8 +83,8 @@ const info = ref([]);
 const loading = ref(true);
 const errorMsg = ref("");
 
-const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 // Get current SDG number for filtering
 const currentSdgNumber = computed(() => {

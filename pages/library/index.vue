@@ -22,7 +22,8 @@ const VMGO = [
 const library = ref(null);
 const loading = ref(false);
 
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 // SDG Colors mapping
 const sdgColors = {

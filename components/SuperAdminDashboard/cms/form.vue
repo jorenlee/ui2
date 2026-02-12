@@ -6,7 +6,8 @@ import moment from "moment";
 
 const router = useRouter();
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 // Define emit for parent
 const emit = defineEmits(["contentSubmitted"]);

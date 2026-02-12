@@ -3,8 +3,9 @@ import moment from "moment";
 import axios from "axios";
 import { useUserStore } from "@/stores/user";
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
-const imageUploaderEndpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
+const imageUploaderEndpoint = ref(config.public.apiUrl);
 const donationInfo = ref({
   payment_method: "",
   donate_to: "",

@@ -11,7 +11,8 @@ import _ from "lodash";
    STORE / ENDPOINT
 ========================= */
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 /* =========================
    STATE

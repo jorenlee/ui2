@@ -12,7 +12,8 @@
   } from 'vue';
   const pleaseFillUpAllRequiredFields = ref(false);
   const userStore = useUserStore();
-  const endpoint = ref(userStore.mainDevServer);
+  const config = useRuntimeConfig();
+  const endpoint = ref(config.public.apiUrl);
   const formDisplay = ref(true);
   const thankYouDisplay = ref(false);
   const submitCounter = ref(1)

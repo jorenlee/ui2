@@ -185,7 +185,8 @@ import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useUserStore } from "@/stores/user";
 
 const userStore = useUserStore();
-const endpoint = userStore.mainDevServer;
+const config = useRuntimeConfig();
+const endpoint = config.public.apiUrl;
 
 // ================= STATE =================
 const loading = ref(true);

@@ -13,7 +13,8 @@ const togglePrivacyPolicy = () => {
 const thankYouDisplay = ref(false);
 
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const formDisplay = ref(true);
 
 const dateToday = moment().format("MMMM DD, YYYY h:mm:ss A");

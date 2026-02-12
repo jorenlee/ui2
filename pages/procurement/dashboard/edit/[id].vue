@@ -20,7 +20,8 @@ onMounted(() => {
   }
 })
 
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const procurements = await $fetch(endpoint.value + "/api/procurements/" + route.params.id + "/").catch((error) => error.data)
 let toggleSideBarMenu = ref(true);
 

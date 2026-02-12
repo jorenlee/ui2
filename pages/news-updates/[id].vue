@@ -7,7 +7,8 @@ import moment from "moment";
 const route = useRoute();
 const itemId = route.params.id;
 const userStore = useUserStore();
-const endpoint = userStore.mainDevServer;
+const config = useRuntimeConfig();
+const endpoint = config.public.apiUrl;
 
 // Fetch data server-side for proper SSR
 const { data: item } = await useFetch(`${endpoint}/api/cms/content/${itemId}/`);

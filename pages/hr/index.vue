@@ -5,7 +5,8 @@ import _ from "lodash";
 
 const router = useRouter();
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const careers = ref([]);
 const isFetching = ref(false);
 const selectedImage = ref(null);

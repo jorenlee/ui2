@@ -1,8 +1,7 @@
 <script setup>
   import volumesJSON from "../research/volumes.json";
-  import { useUserStore } from "~/stores/user";
-  const userStore = useUserStore();
-  const endpoint = ref(userStore.mainDevServer);
+  const config = useRuntimeConfig();
+  const endpoint = ref(config.public.apiUrl);
   const volumes = ref(volumesJSON.volumes);
 
   const downloadFile = ref(0);

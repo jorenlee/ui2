@@ -9,7 +9,8 @@ import _ from "lodash";
 
 const router = useRouter();
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const title = ["LRC Book Thru", "(lrc)", "Book Thru"];
 const timeSelection = ref(scheduleJSON.timeSelection);
 

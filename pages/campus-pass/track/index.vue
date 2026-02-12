@@ -3,7 +3,8 @@ import { useUserStore } from "@/stores/user";
 import moment from "moment";
 const userStore = useUserStore();
 import _ from "lodash";
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const listItems =
   (await $fetch(endpoint.value + "/api/campus-pass/list").catch(
     (error) => error.data

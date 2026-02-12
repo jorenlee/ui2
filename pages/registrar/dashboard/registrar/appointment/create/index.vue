@@ -14,7 +14,8 @@ const userStore = useUserStore();
 const providerLists = ref(providerListJSON.providerLists);
 const timeSelection = ref(scheduleJSON.timeSelection);
 
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const schedulesListsData = await $fetch(endpoint.value + "/api/schedules/list/").catch((error) => error.data)
 

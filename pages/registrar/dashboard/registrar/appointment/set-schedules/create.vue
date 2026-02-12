@@ -9,7 +9,8 @@ import "@vuepic/vue-datepicker/dist/main.css";
 import moment from "moment";
 const router = useRouter();
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 import _ from "lodash";
 import addDays from "date-fns/addDays";
 

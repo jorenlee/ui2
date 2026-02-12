@@ -4,7 +4,8 @@ import { useUserStore } from "@/stores/user";
 
 const userStore = useUserStore();
 import _ from "lodash";
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const allData = ref([]);
 
 const listItems = ref(0);

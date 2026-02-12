@@ -4,7 +4,8 @@ import { useUserStore } from "@/stores/user";
 
 const info = ref([]);
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 let intervalId = null;
 

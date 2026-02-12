@@ -9,7 +9,8 @@ import moment from "moment";
 
 const presentYear = ref(moment(new Date()).format("YYYY"));
 
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const careers =
   (await $fetch(endpoint.value + "/api/humanResource/list").catch(
     (error) => error.data

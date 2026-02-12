@@ -373,7 +373,8 @@ const formToPayload = (f) => {
 
 /* ----------------------- Main state ----------------------- */
 const userStore = useUserStore();
-const endpoint = computed(() => userStore?.mainDevServer || "");
+const config = useRuntimeConfig();
+const endpoint = computed(() => config.public.apiUrl || "");
 
 const schedules = ref([]);
 const events = ref([]);

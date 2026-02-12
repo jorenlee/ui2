@@ -90,7 +90,8 @@ import moment from "moment";
 const router = useRouter();
 import { useUserStore } from "@/stores/user";
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const editMode = ref(false);
 const currentPage = ref("page1"); // <-- no leading slash

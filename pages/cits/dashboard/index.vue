@@ -10,7 +10,8 @@
   const router = useRouter();
   const userStore = useUserStore();
   import _ from "lodash";
-  const endpoint = ref(userStore.mainDevServer);
+  const config = useRuntimeConfig();
+  const endpoint = ref(config.public.apiUrl);
   const listItems = ref(0);
   let deleteIDItem = ref();
   let updateIDItem = ref();

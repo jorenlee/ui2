@@ -1,7 +1,8 @@
 <script setup>
 import { useUserStore } from "@/stores/user";
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 import axios from "axios";
 import { onMounted } from "vue";
 

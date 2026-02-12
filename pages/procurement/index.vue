@@ -7,7 +7,8 @@ const userStore = useUserStore();
 
 import { MdPreview } from 'md-editor-v3';
 import './lib/preview.css';
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const procurements = ref(0);
 procurements.value = await $fetch(endpoint.value + "/api/procurements/list").catch((error) => error.data) || 0;
 const displayID = ref();

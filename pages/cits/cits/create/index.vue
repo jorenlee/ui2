@@ -5,7 +5,8 @@ const router = useRouter();
 const userStore = useUserStore();
 import _ from "lodash";
 
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 onMounted(() => {
   if (userStore.user.isAuthenticated &&

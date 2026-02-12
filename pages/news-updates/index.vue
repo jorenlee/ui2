@@ -25,7 +25,8 @@ const selectedMonth = ref("");
 const showScrollButton = ref(false);
 
 const userStore = useUserStore();
-const endpoint = ref(userStore.mainDevServer);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const handleScroll = () => {
   showScrollButton.value = window.scrollY > 300;
