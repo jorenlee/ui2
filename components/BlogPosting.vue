@@ -23,6 +23,7 @@ const highlightedNews = computed(() => {
     "organizational chart",
     "college",
     "oer",
+    "human resource center",
   ];
 
   return info.value
