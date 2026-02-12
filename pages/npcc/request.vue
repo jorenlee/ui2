@@ -725,65 +725,12 @@ const modalLoading = ref(false);
 const receiptFile = ref(null);
 const receiptPreview = ref("");
 
-// Technicians list with name, email, and specializations
-const TECHNICIANS_PERSONNEL = [
-  {
-    name: "Michael John Puertogalera",
-    email: "michaeljohn.puertogalera@lsu.edu.ph",
-    specializations: ["Accounts", "Software"],
-    role: "Accounts / Software",
-  },
-  {
-    name: "Jason Yap",
-    email: "jason.yap@lsu.edu.ph",
-    specializations: ["Network", "Accounts", "Software"],
-    role: "Network / Accounts / Software",
-  },
-  {
-    name: "Flourence John Gonzaga",
-    email: "johny14_gonzaga@lsu.edu.ph",
-    specializations: ["Network", "Accounts", "Software"],
-    role: "Network / Accounts / Software",
-  },
-  {
-    name: "Denzel Roy Suarez",
-    email: "denzelroy.suarez@lsu.edu.ph",
-    specializations: ["Computer Lab"],
-    location: "BVM and SJ Buildings",
-    role: "Computer Laboratory: BVM and SJ Buildings Rooms",
-  },
-  {
-    name: "Rommel Rosal",
-    email: "rommel.rosal@lsu.edu.ph",
-    specializations: ["Computer Lab"],
-    location: "LS Building",
-    role: "Computer Laboratory: LS Building Rooms",
-  },
-  {
-    name: "Giovanni Jose Morales",
-    email: "giovanni.morales@lsu.edu.ph",
-    specializations: ["Hardware"],
-    role: "PC and Printers and Other Hardwares - Whole LSU Campus Admins and Staffs",
-  },
-  {
-    name: "Jo Renlee Luna",
-    email: "jorenlee.luna@lsu.edu.ph",
-    specializations: ["Software"],
-    role: "LSU Website",
-  },
-];
-
 // Form info - Updated for ITServicesModelV2
 const info = ref({
   ticket_id: "TID" + Date.now(),
   requestor_fullname: "",
   requestor_lsu_email: "",
-  technicians_assigned: [
-    {
-      name: "Michael John Puertogalera",
-      email: "michaeljohn.puertogalera@lsu.edu.ph",
-    },
-  ],
+  technicians_assigned: [], // No auto-assign - will be "To Be Assign"
   issue_concern_request_details: "",
   issue_concern_request_category_type: "",
   issue_concern_request_item_type: "",
@@ -1052,12 +999,7 @@ const resetForm = () => {
     ticket_id: "TID" + Date.now(),
     requestor_fullname: "",
     requestor_lsu_email: "",
-    technicians_assigned: [
-      {
-        name: "Michael John Puertogalera",
-        email: "michaeljohn.puertogalera@lsu.edu.ph",
-      },
-    ],
+    technicians_assigned: [], // No auto-assign - will be "To Be Assign"
     issue_concern_request_details: "",
     issue_concern_request_category_type: "",
     issue_concern_request_item_type: "",
@@ -1093,140 +1035,10 @@ const showToaster = (message, type = "success", duration = 3000) => {
   }, duration);
 };
 
-// Function to auto-assign technicians based on category
-const autoAssignTechnicians = (category, specificConcern = null) => {
-  if (!category) {
-    // Reset to default if no category (Michael only)
-    const michael = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
-    );
-    info.value.technicians_assigned = michael
-      ? [{ name: michael.name, email: michael.email }]
-      : [];
-    return;
-  }
-
-  // Define category-based assignments
-  const categoryAssignments = {
-    "Hardware": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "johny14_gonzaga@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph",
-      "giovanni.morales@lsu.edu.ph",
-      "rommel.rosal@lsu.edu.ph",
-      "denzelroy.suarez@lsu.edu.ph"
-    ],
-    "Software": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "johny14_gonzaga@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph",
-      "giovanni.morales@lsu.edu.ph",
-      "rommel.rosal@lsu.edu.ph",
-      "denzelroy.suarez@lsu.edu.ph"
-    ],
-    "Network": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "johny14_gonzaga@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph"
-    ],
-    "Computer Lab": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "rommel.rosal@lsu.edu.ph",
-      "denzelroy.suarez@lsu.edu.ph"
-    ],
-    "Accounts": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "johny14_gonzaga@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph"
-    ],
-    "LSU Webpages": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "jorenlee.luna@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph"
-    ],
-    "Student Portal": [
-      "michaeljohn.puertogalera@lsu.edu.ph"
-    ],
-    "Others": [
-      "michaeljohn.puertogalera@lsu.edu.ph",
-      "johny14_gonzaga@lsu.edu.ph",
-      "jason.yap@lsu.edu.ph",
-      "giovanni.morales@lsu.edu.ph",
-      "rommel.rosal@lsu.edu.ph",
-      "denzelroy.suarez@lsu.edu.ph"
-    ]
-  };
-
-  // Get the email list for the category
-  const emailList = categoryAssignments[category] || ["michaeljohn.puertogalera@lsu.edu.ph"];
-
-  // Find and assign technicians based on email list
-  const assignedTechs = [];
-  emailList.forEach(email => {
-    const tech = TECHNICIANS_PERSONNEL.find(t => t.email === email);
-    if (tech) {
-      assignedTechs.push({
-        name: tech.name,
-        email: tech.email
-      });
-    }
-  });
-
-  info.value.technicians_assigned = assignedTechs;
-};
-
-// Function to refine technician assignment based on Computer Lab location
-const refineComputerLabAssignment = (location) => {
-  if (!location || info.value.issue_concern_request_category_type !== "Computer Lab") {
-    return;
-  }
-
-  // Get Michael John Puertogalera (always included)
-  const michael = TECHNICIANS_PERSONNEL.find(
-    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph"
-  );
-
-  // Determine which technician based on location
-  let assignedTech = null;
-
-  if (location.startsWith("BVM") || location.startsWith("SJ")) {
-    // BVM and SJ Buildings -> Denzel Roy Suarez
-    assignedTech = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.name === "Denzel Roy Suarez"
-    );
-  } else if (location.startsWith("LS")) {
-    // LS Building -> Rommel Rosal
-    assignedTech = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.name === "Rommel Rosal"
-    );
-  }
-
-  if (assignedTech) {
-    const assignedTechs = [];
-
-    // Always add Michael first
-    if (michael) {
-      assignedTechs.push({
-        name: michael.name,
-        email: michael.email,
-      });
-    }
-
-    // Add the lab-specific technician
-    assignedTechs.push({
-      name: assignedTech.name,
-      email: assignedTech.email,
-    });
-
-    info.value.technicians_assigned = assignedTechs;
-  }
-};
-
-// Watch for category changes to auto-assign technicians
+// Watch for category changes to clear fields
 watch(
   () => info.value.issue_concern_request_category_type,
   (newCategory) => {
-    autoAssignTechnicians(newCategory, info.value.issue_concern_request_item_type);
     // Clear location when category changes
     info.value.issue_concern_request_center_office_room = "";
     // Clear specific concern when category changes
@@ -1236,26 +1048,6 @@ watch(
     if (newCategory === 'Student Portal') {
       showStudentPortalModal.value = true;
     }
-  }
-);
-
-// Watch for specific concern changes to refine technician assignment
-watch(
-  () => info.value.issue_concern_request_item_type,
-  (newSpecificConcern) => {
-    // Re-assign based on specific concern
-    autoAssignTechnicians(
-      info.value.issue_concern_request_category_type,
-      newSpecificConcern
-    );
-  }
-);
-
-// Watch for Computer Lab location changes to refine technician assignment
-watch(
-  () => info.value.issue_concern_request_center_office_room,
-  (newLocation) => {
-    refineComputerLabAssignment(newLocation);
   }
 );
 

@@ -594,8 +594,8 @@
               </div>
               <div class="md:col-span-2">
                 <label class="text-sm font-semibold mb-2 block text-gray-700">
-                  <i class="fas fa-users text-green-600 mr-1"></i>Assigned
-                  Personnel
+                  <i class="fas fa-users text-green-600 mr-1"></i>
+                  {{ isCreate ? 'Assign Personnel' : 'Assigned Personnel' }}
                   <span
                     v-if="!isCreate && info.ticket_locked_by_email"
                     class="ml-2 text-orange-600 font-semibold text-xs"
@@ -603,22 +603,17 @@
                     <i class="fas fa-lock"></i> Ticket Locked
                   </span>
                 </label>
+
+                <!-- CREATE MODE: Show checkboxes for all personnel -->
                 <div
+                  v-if="isCreate"
                   class="border-2 border-gray-200 rounded-lg p-2 flex flex-wrap gap-2 bg-white"
                 >
                   <label
                     v-for="tech in TECHNICIANS_PERSONNEL"
                     :key="tech.email"
-                    class="flex items-center gap-x-2 lg:text-sm text-xs lg:w-[calc(33.333%-0.5rem)] w-full whitespace-nowrap py-2 px-3 rounded-lg border-2 transition-all"
+                    class="flex items-center gap-x-2 lg:text-sm text-xs lg:w-[calc(33.333%-0.5rem)] w-full whitespace-nowrap py-2 px-3 rounded-lg border-2 transition-all cursor-pointer hover:bg-gray-50"
                     :class="{
-                      'cursor-pointer hover:bg-gray-50':
-                        isCreate ||
-                        !info.ticket_locked_by_email ||
-                        isAssignedTechnician,
-                      'cursor-not-allowed opacity-50':
-                        !isCreate &&
-                        info.ticket_locked_by_email &&
-                        !isAssignedTechnician,
                       'bg-green-50 border-green-500 font-semibold':
                         tech.email === userStore.user?.email,
                       'border-gray-200': tech.email !== userStore.user?.email,
@@ -628,11 +623,6 @@
                       type="checkbox"
                       :value="tech"
                       v-model="info.technicians_assigned"
-                      :disabled="
-                        !isCreate &&
-                        info.ticket_locked_by_email &&
-                        !isAssignedTechnician
-                      "
                       class="accent-green-600 w-4 h-4"
                     />
                     <span
@@ -648,36 +638,86 @@
                         (You)
                       </span>
                     </span>
-                    <i
-                      v-if="
-                        !isCreate &&
-                        info.technicians_assigned?.some(
-                          (t) => t.email === tech.email,
-                        ) &&
-                        info.ticket_locked_by_email
-                      "
-                      class="fas fa-lock text-orange-500 text-xs ml-auto"
-                    ></i>
                   </label>
                 </div>
 
-                <!-- Transfer Ticket Button (only for assigned technicians) -->
+                <!-- EDIT MODE: Show only assigned personnel (no checkboxes) -->
+                <div
+                  v-else
+                  class="border-2 border-gray-200 rounded-lg p-3 bg-white"
+                >
+                  <div
+                    v-if="info.technicians_assigned && info.technicians_assigned.length > 0"
+                    class="flex flex-wrap gap-2"
+                  >
+                    <div
+                      v-for="tech in info.technicians_assigned"
+                      :key="tech.email"
+                      class="flex items-center gap-x-2 lg:text-sm text-xs py-2 px-3 rounded-lg border-2 bg-green-50 border-green-500 font-semibold"
+                    >
+                      <i class="fas fa-user-check text-green-600"></i>
+                      <span class="text-green-700">
+                        {{ tech.name }}
+                        <span
+                          v-if="tech.email === userStore.user?.email"
+                          class="text-green-600 ml-1 font-bold"
+                        >
+                          (You)
+                        </span>
+                      </span>
+                      <i
+                        v-if="info.ticket_locked_by_email === tech.email"
+                        class="fas fa-lock text-orange-500 text-xs ml-1"
+                        title="Ticket locked to this technician"
+                      ></i>
+                    </div>
+                  </div>
+                  <div
+                    v-else
+                    class="text-xs text-gray-500 italic"
+                  >
+                    <i class="fas fa-info-circle mr-1"></i>
+                    No personnel assigned to this ticket
+                  </div>
+                </div>
+
+                <!-- Assign Personnel Button (yellow - only when NO personnel assigned) -->
                 <div
                   v-if="
                     !isCreate &&
+                    (!info.technicians_assigned || info.technicians_assigned.length === 0)
+                  "
+                  class="mt-3"
+                >
+                  <button
+                    @click="() => { isAssignMode = true; showTransferModal = true; }"
+                    class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded-lg transition-colors shadow-sm font-semibold"
+                  >
+                    <i class="fas fa-user-plus mr-2"></i>
+                    Assign Personnel
+                  </button>
+                </div>
+
+                <!-- Transfer Ticket Button (purple - only for assigned technicians in Edit mode) -->
+                <div
+                  v-if="
+                    !isCreate &&
+                    info.technicians_assigned &&
+                    info.technicians_assigned.length > 0 &&
                     isAssignedTechnician &&
                     info.ticket_locked_by_email
                   "
                   class="mt-3"
                 >
                   <button
-                    @click="showTransferModal = true"
+                    @click="() => { isAssignMode = false; showTransferModal = true; }"
                     class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors shadow-sm font-semibold"
                   >
                     <i class="fas fa-exchange-alt mr-2"></i>
                     Transfer Ticket to Other Personnel
                   </button>
                 </div>
+
               </div>
             </div>
           </div>
@@ -1306,16 +1346,44 @@
       </div>
     </div>
 
-    <!-- Transfer Ticket Modal -->
+    <!-- Transfer/Assign Personnel Modal -->
     <div
       v-if="showTransferModal"
-      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm"
-      @click.self="showTransferModal = false"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] backdrop-blur-sm"
+      @click.self="!modalLoading && (showTransferModal = false)"
     >
       <div
-        class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden animate-fade-in"
+        class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden animate-fade-in relative"
+        @click.stop
       >
+        <!-- Loading Overlay -->
         <div
+          v-if="modalLoading"
+          class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center"
+        >
+          <div class="text-center">
+            <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-3"></i>
+            <p class="text-sm font-semibold text-gray-700">
+              {{ isAssignMode ? 'Assigning personnel...' : 'Transferring ticket...' }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">Please wait</p>
+          </div>
+        </div>
+
+        <!-- Yellow Header for Assign Mode -->
+        <div
+          v-if="isAssignMode"
+          class="flex items-center bg-gradient-to-r from-yellow-600 to-yellow-700 px-6 py-4 gap-x-3"
+        >
+          <i class="fas fa-user-plus mr-2 text-white"></i>
+          <h3 class="text-white text-xl font-bold">
+            Assign Personnel to This Ticket
+          </h3>
+        </div>
+
+        <!-- Purple Header for Transfer Mode -->
+        <div
+          v-else
           class="flex items-center bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 gap-x-3"
         >
           <i class="fas fa-exchange-alt text-white text-2xl"></i>
@@ -1345,7 +1413,7 @@
           >
           <div class="border rounded-lg p-3 max-h-64 overflow-y-auto">
             <label
-              v-for="tech in TECHNICIANS_PERSONNEL"
+              v-for="tech in availableTransferTechnicians"
               :key="tech.email"
               class="flex items-center gap-x-2 text-sm cursor-pointer py-2 px-3 rounded hover:bg-gray-50"
             >
@@ -1358,23 +1426,61 @@
               <span>{{ tech.name }}</span>
               <span class="text-xs text-gray-500">({{ tech.email }})</span>
             </label>
+            <div
+              v-if="availableTransferTechnicians.length === 0"
+              class="text-xs text-gray-500 italic text-center py-4"
+            >
+              <i class="fas fa-info-circle mr-1"></i>
+              All personnel are already assigned to this ticket
+            </div>
           </div>
 
           <div class="flex gap-3 mt-6">
             <button
               @click="showTransferModal = false"
-              class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition-colors"
+              :disabled="modalLoading"
+              class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <i class="fas fa-times mr-2"></i>Cancel
             </button>
+
+
+
+
+
+            <!-- Yellow Confirm Button for Assign Mode -->
             <button
+              v-if="isAssignMode"
               @click="confirmTransferTicket"
-              :disabled="transferTechnicians.length === 0"
+              :disabled="transferTechnicians.length === 0 || modalLoading"
+              class="flex-1 px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <i
+                :class="modalLoading ? 'fas fa-spinner fa-spin mr-2' : 'fas fa-check mr-2'"
+              ></i>
+              {{ modalLoading ? 'Assigning...' : 'Confirm Assignment' }}
+            </button>
+
+            <!-- Purple Confirm Button for Transfer Mode -->
+            <button
+              v-else
+              @click="confirmTransferTicket"
+              :disabled="transferTechnicians.length === 0 || modalLoading"
               class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <i class="fas fa-check mr-2"></i>Confirm Transfer
+              <i
+                :class="modalLoading ? 'fas fa-spinner fa-spin mr-2' : 'fas fa-check mr-2'"
+              ></i>
+              {{ modalLoading ? 'Transferring...' : 'Confirm Transfer' }}
             </button>
           </div>
+
+
+
+
+
+
+
         </div>
       </div>
     </div>
@@ -1399,6 +1505,7 @@ const dateFilter = ref("");
 const customOffice = ref("");
 const showTransferModal = ref(false);
 const transferTechnicians = ref([]);
+const isAssignMode = ref(false); // Track if modal is in "Assign" mode vs "Transfer" mode
 
 // Pagination
 const currentPage = ref(1);
@@ -1785,6 +1892,17 @@ const isAssignedTechnician = computed(() => {
   );
 });
 
+// Get available technicians for transfer (exclude currently assigned)
+const availableTransferTechnicians = computed(() => {
+  if (!info.value.technicians_assigned) return TECHNICIANS_PERSONNEL;
+
+  // Get emails of currently assigned technicians
+  const assignedEmails = info.value.technicians_assigned.map(tech => tech.email);
+
+  // Filter out currently assigned technicians to prevent duplicates
+  return TECHNICIANS_PERSONNEL.filter(tech => !assignedEmails.includes(tech.email));
+});
+
 // Check if ticket is completed (for enabling rating)
 const isTicketCompleted = computed(() => {
   if (!info.value.current_status) return false;
@@ -2156,6 +2274,48 @@ const info = ref({
     },
   ],
 });
+
+// Watch for ticket transfers on completed tickets
+// Automatically add "Completed" status log for new technicians
+watch(
+  () => info.value.logs,
+  (newLogs, oldLogs) => {
+    if (!newLogs || !oldLogs) return;
+
+    // Check if a "Transferred" log was just added
+    const lastLog = newLogs[newLogs.length - 1];
+    if (lastLog?.status === "Transferred") {
+      // Check if there's a "Completed" status before the transfer
+      const logsBeforeTransfer = newLogs.slice(0, -1);
+      const hasCompletedStatus = logsBeforeTransfer.some(
+        log => log.status === "Completed"
+      );
+
+      if (hasCompletedStatus) {
+        // Find the original completion log
+        const completedLog = [...logsBeforeTransfer]
+          .reverse()
+          .find(log => log.status === "Completed");
+
+        if (completedLog && info.value.technicians_assigned) {
+          // Check if "Completed" logs were already added for new technicians
+          const newTechnicianEmails = info.value.technicians_assigned.map(t => t.email);
+          const completedLogsAfterTransfer = newLogs.filter(
+            (log, index) =>
+              index > newLogs.indexOf(lastLog) &&
+              log.status === "Completed"
+          );
+
+          // Only add if not already added (prevent duplicates)
+          if (completedLogsAfterTransfer.length === 0) {
+            console.log("✅ Auto-adding Completed status for transferred ticket");
+          }
+        }
+      }
+    }
+  },
+  { deep: true }
+);
 
 // Computed property to get logged-in technician
 const loggedInTechnician = computed(() => {
@@ -2585,7 +2745,7 @@ const saveChanges = async () => {
 const confirmTransferTicket = async () => {
   if (transferTechnicians.value.length === 0) {
     showToaster(
-      "⚠️ Please select at least one technician to transfer to.",
+      "⚠️ Please select at least one technician to assign.",
       "warning",
     );
     return;
@@ -2595,6 +2755,27 @@ const confirmTransferTicket = async () => {
 
   // Store old technicians for notification
   const oldTechnicians = [...(info.value.technicians_assigned || [])];
+
+  // Check if ticket has "Completed" status
+  const currentStatus = latestStatus(info.value);
+  const isCompleted = currentStatus?.status === "Completed";
+
+  // Find who completed the ticket (get the last "Completed" log entry)
+  let completedByTechnician = null;
+  if (isCompleted && info.value.logs) {
+    const completedLog = [...info.value.logs]
+      .reverse()
+      .find(log => log.status === "Completed");
+
+    if (completedLog) {
+      completedByTechnician = {
+        name: completedLog.assigned_technician_name || "",
+        email: completedLog.assigned_technician_lsu_email || "",
+        remarks: completedLog.remarks || "",
+        timestamp: completedLog.timestamp || new Date().toISOString(),
+      };
+    }
+  }
 
   // Update technicians_assigned with new selection
   info.value.technicians_assigned = [...transferTechnicians.value];
@@ -2613,6 +2794,19 @@ const confirmTransferTicket = async () => {
     assigned_technician_name: transferTechnicians.value[0]?.name || "",
     assigned_technician_lsu_email: transferTechnicians.value[0]?.email || "",
   });
+
+  // If ticket was completed, add "Completed" log for each new technician
+  if (isCompleted && completedByTechnician) {
+    transferTechnicians.value.forEach((tech) => {
+      info.value.logs.push({
+        status: "Completed",
+        remarks: completedByTechnician.remarks || `Completed by ${completedByTechnician.name} (Auto-added after transfer)`,
+        timestamp: new Date().toISOString(),
+        assigned_technician_name: completedByTechnician.name,
+        assigned_technician_lsu_email: completedByTechnician.email,
+      });
+    });
+  }
 
   // Save changes
   const formData = new FormData();
@@ -2672,11 +2866,15 @@ const confirmTransferTicket = async () => {
     );
 
     if (res.status === "updated") {
-      showToaster(
-        "✅ Ticket transferred successfully! Notifications sent to client and new technicians.",
-        "success",
-        5000,
-      );
+      // Determine if this was an assignment or transfer
+      const isAssignment = !oldTechnicians || oldTechnicians.length === 0;
+      const successMessage = isAssignment
+        ? "✅ Personnel assigned successfully! Notifications sent to client and technicians."
+        : "✅ Ticket transferred successfully! Notifications sent to client and new technicians.";
+
+      showToaster(successMessage, "success", 5000);
+
+      // Close modal and clear selection
       showTransferModal.value = false;
       transferTechnicians.value = [];
 
@@ -2690,11 +2888,11 @@ const confirmTransferTicket = async () => {
       }
     } else {
       console.error("Transfer failed:", res);
-      showToaster("❌ Failed to transfer ticket.", "error");
+      showToaster("❌ Failed to assign/transfer ticket.", "error");
     }
   } catch (err) {
     console.error("Failed to transfer ticket:", err);
-    showToaster("❌ Failed to transfer ticket. Please try again.", "error");
+    showToaster("❌ Failed to assign/transfer ticket. Please try again.", "error");
   } finally {
     modalLoading.value = false;
   }
