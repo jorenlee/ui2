@@ -1,115 +1,138 @@
 <template>
   <div class="lg:p-1 text-sm">
-    <div class="lg:flex items-center justify-between mb-2">
-      <h2 class="text-sm font-bold">NPCC Tech Support & IT Services</h2>
-      <!-- Results Count & Real-time Indicator -->
-      <div class="flex justify-between items-center">
-        <div class="text-xs text-green-800 font-semibold">
-          Showing {{ paginatedRequests.length }} of
-          {{ filteredRequests.length }}
-          <span v-if="activeTab === 'pending'" class="text-yellow-700">in progress</span>
-          <span v-else-if="activeTab === 'completed'" class="text-green-700">completed</span>
-          <span v-else>total</span>
-          ticket(s)
-          <span class="font-bold uppercase">| {{ requests.length }} total</span>
-        </div>
+    <!-- Header with Title and Count -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-3 gap-x-2">
+      <h2 class="text-sm lg:text-base font-bold text-gray-800">NPCC Tech Support & IT Services</h2>
+      <div class="text-xs text-gray-600 font-semibold uppercase">
+        Showing <span class="text-green-700 font-bold">{{ paginatedRequests.length }}</span> of
+        <span class="text-green-700 font-bold">{{ filteredRequests.length }}</span>
+        <span v-if="activeTab === 'pending'" class="text-orange-600 ml-1">in progress</span>
+        <span v-else-if="activeTab === 'completed'" class="text-green-700 ml-1">completed</span>
+        <span v-else class="ml-1">total</span>
+        | <span class="text-gray-800 font-bold">{{ requests.length }} TOTAL</span>
       </div>
     </div>
 
-    <!-- ACTION BAR -->
-    <div class="bg-white border rounded-lg py-1 px-2 mb-4 shadow-sm">
-      <div class="lg:flex grid grid-cols-2 gap-3 w-full">
+    <!-- ACTION BAR WITH TABS -->
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm mb-4 p-2 lg:p-3">
+      <div class="flex items-center gap-2 lg:gap-3 flex-wrap lg:flex-nowrap">
         <!-- Search Filter -->
-        <div class="w-full">
-          <label class="text-xs font-semibold text-gray-700 mb-1 block"
-            ><i class="fa fa-search mr-1"></i>Search</label
-          >
-          <input
-            v-model="searchFilter"
-            type="text"
-            placeholder="Search by assigned personnel, category, status, requestor, center/office/room"
-            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
-          />
-          <p v-if="searchFilter" class="text-[10px] text-gray-500 mt-1 italic">
-            <i class="fa fa-info-circle mr-1"></i>Searching with exact word matching{{
-              searchFilter.trim().split(/\s+/).length > 1
-                ? " (ALL words must match)"
-                : ""
-            }}...
-          </p>
+        <div class="lg:w-64 w-full flex-shrink-0 order-1">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              <i class="fa fa-search text-gray-400 text-sm"></i>
+            </div>
+            <input
+              v-model="searchFilter"
+              type="text"
+              placeholder="Search personnel..."
+              class="w-full pl-9 pr-3 py-2 text-xs lg:text-sm border border-gray-300 rounded-md focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none bg-white"
+            />
+          </div>
         </div>
 
-        <div class="lg:w-fit w-full flex justify-between items-center">
+        <!-- Walk-in Ticket Button -->
+        <div class="w-full lg:w-auto flex-shrink-0 order-2 lg:order-2">
           <button
-            class="lg:mt-5 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 whitespace-nowrap lg:text-sm text-xs font-semibold shadow-sm"
+            class="w-full lg:w-auto bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 whitespace-nowrap text-xs lg:text-sm font-medium shadow-sm hover:shadow transition-all flex items-center justify-center gap-2"
             @click="openCreateModal"
           >
-            <i class="fa fa-plus mr-1"></i> Walk-in Ticket
+            <i class="fa fa-plus text-xs"></i>
+            <span>Walk-in Ticket</span>
+          </button>
+        </div>
+
+        <!-- Spacer -->
+        <div class="flex-grow hidden lg:block order-3"></div>
+
+        <!-- TABS -->
+        <div class="flex items-center gap-1.5 lg:gap-2 w-full lg:w-auto order-3 lg:order-4">
+          <button
+            @click="activeTab = 'pending'"
+            :class="[
+              'flex-1 lg:flex-none flex items-center justify-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-md text-xs lg:text-sm font-medium transition-all',
+              activeTab === 'pending'
+                ? 'bg-orange-500 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            ]"
+            :title="'Includes: Pending, Unsuccessful, In Progress, Lacking Content, Cancelled'"
+          >
+            <i class="fas fa-exclamation-circle text-xs"></i>
+            <span class="hidden sm:inline">In Progress</span>
+            <span class="sm:hidden">Progress</span>
+            <span
+              :class="[
+                'px-1.5 lg:px-2 py-0.5 text-[10px] lg:text-xs rounded-full font-bold',
+                activeTab === 'pending'
+                  ? 'bg-white text-orange-600'
+                  : 'bg-orange-500 text-white'
+              ]"
+            >
+              {{ pendingCount }}
+            </span>
+          </button>
+
+          <button
+            @click="activeTab = 'completed'"
+            :class="[
+              'flex-1 lg:flex-none flex items-center justify-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-md text-xs lg:text-sm font-medium transition-all',
+              activeTab === 'completed'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            ]"
+            :title="'Includes: Completed, For Review, Closed'"
+          >
+            <i class="fas fa-check-circle text-xs"></i>
+            <span class="hidden sm:inline">Completed</span>
+            <span class="sm:hidden">Done</span>
+            <span
+              :class="[
+                'px-1.5 lg:px-2 py-0.5 text-[10px] lg:text-xs rounded-full font-bold',
+                activeTab === 'completed'
+                  ? 'bg-white text-green-600'
+                  : 'bg-green-600 text-white'
+              ]"
+            >
+              {{ completedCount }}
+            </span>
+          </button>
+
+          <button
+            @click="activeTab = 'all'"
+            :class="[
+              'flex-1 lg:flex-none flex items-center justify-center gap-1 lg:gap-2 px-2 lg:px-4 py-2 rounded-md text-xs lg:text-sm font-medium transition-all',
+              activeTab === 'all'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            ]"
+            :title="'Shows all tickets regardless of status'"
+          >
+            <i class="fas fa-list text-xs"></i>
+            <span>All</span>
+            <span
+              :class="[
+                'px-1.5 lg:px-2 py-0.5 text-[10px] lg:text-xs rounded-full font-bold',
+                activeTab === 'all'
+                  ? 'bg-white text-blue-600'
+                  : 'bg-blue-600 text-white'
+              ]"
+            >
+              {{ requests.length }}
+            </span>
           </button>
         </div>
       </div>
-    </div>
 
-        <!-- ================= TABS ================= -->
-    <div>
-      <div class="flex gap-2 border-b border-gray-200">
-        <button
-          @click="activeTab = 'pending'"
-          :class="[
-            'px-6 py-3 font-semibold text-sm transition-all relative',
-            activeTab === 'pending'
-              ? 'text-yellow-700 border-b-2 border-yellow-600 bg-yellow-50'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-          ]"
-          :title="'Includes: Pending, Unsuccessful, In Progress, Lacking Content, Cancelled'"
-        >
-          <i class="fas fa-clock mr-2"></i>In Progress
-          <span
-            v-if="pendingCount > 0"
-            class="ml-2 px-2 py-0.5 text-xs rounded-full bg-yellow-600 text-white font-bold"
-          >
-            {{ pendingCount }}
-          </span>
-        </button>
-        <button
-          @click="activeTab = 'completed'"
-          :class="[
-            'px-6 py-3 font-semibold text-sm transition-all relative',
-            activeTab === 'completed'
-              ? 'text-green-700 border-b-2 border-green-600 bg-green-50'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-          ]"
-          :title="'Includes: Completed, For Review, Closed'"
-        >
-          <i class="fas fa-check-circle mr-2"></i>Completed
-          <span
-            v-if="completedCount > 0"
-            class="ml-2 px-2 py-0.5 text-xs rounded-full bg-green-600 text-white font-bold"
-          >
-            {{ completedCount }}
-          </span>
-        </button>
-        <button
-          @click="activeTab = 'all'"
-          :class="[
-            'px-6 py-3 font-semibold text-sm transition-all relative',
-            activeTab === 'all'
-              ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-          ]"
-          :title="'Shows all tickets regardless of status'"
-        >
-          <i class="fas fa-list mr-2"></i>All
-          <span
-            v-if="requests.length > 0"
-            class="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue-600 text-white font-bold"
-          >
-            {{ requests.length }}
-          </span>
-        </button>
-      </div>
+      <!-- Search Info Text -->
+      <p v-if="searchFilter" class="text-[10px] text-gray-500 mt-2 ml-1 italic flex items-center">
+        <i class="fa fa-info-circle mr-1.5 text-blue-500"></i>
+        <span>Searching with exact word matching{{
+          searchFilter.trim().split(/\s+/).length > 1
+            ? " (ALL words must match)"
+            : ""
+        }}</span>
+      </p>
     </div>
-
     <!-- ================= DATE LIST TABLE HEADER ================= -->
     <div
       class="w-full lg:flex hidden bg-gradient-to-r from-green-700 to-green-600 shadow-md overflow-hidden"
@@ -368,77 +391,65 @@
 
         <!-- ================= MOBILE CARD ================= -->
         <div
-          class="lg:hidden border p-4 space-y-2 cursor-pointer transition-colors hover:bg-gray-50"
+          class="lg:hidden border border-gray-200 rounded-lg p-3 space-y-1 cursor-pointer transition-all hover:shadow-md hover:border-green-300 bg-white active:bg-gray-50"
           @click="openModal(item)"
         >
-          <div class="flex justify-between items-center">
-            <div class="flex items-center gap-2">
-              <i class="fa fa-tools text-green-600"></i>
-              <span class="font-bold text-sm">
-                {{ item.issue_concern_request_category_type || "-" }}
-              </span>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <!-- Mood Icon -->
-              <div
-                class="w-6 h-6 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
-                :class="getMoodIcon(item).bgClass"
-                :title="getMoodIcon(item).title"
-              >
-                <span class="text-sm">{{ getMoodIcon(item).emoji }}</span>
-              </div>
-              <!-- Status Badge -->
-              <span
-                class="px-2 py-1 rounded text-xs font-semibold"
-                :class="ticketStatusClass(latestStatus(item)?.status)"
-              >
-                {{ latestStatus(item)?.status || "-" }}
-              </span>
+          <!-- Status Badge with Mood Icon -->
+          <div class="flex items-center justify-between">
+            <span
+              class="inline-flex px-2.5 py-1 rounded text-xs font-semibold"
+              :class="ticketStatusClass(latestStatus(item)?.status)"
+            >
+              {{ latestStatus(item)?.status || "-" }}
+            </span>
+            <div
+              class="w-8 h-8 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
+              :class="getMoodIcon(item).bgClass"
+              :title="getMoodIcon(item).title"
+            >
+              <span class="text-base">{{ getMoodIcon(item).emoji }}</span>
             </div>
           </div>
 
-          <div>
-            <p class="text-sm font-semibold">
-              {{ item.requestor_fullname }}
-            </p>
+
+
+
+          <!-- Category (Specific Concern) -->
+          <div class="flex items-center gap-x-2">
+            <i class="fa fa-tools text-green-600 text-xs flex-shrink-0"></i>
+            <div class="flex min-w-0 items-center">
+              <span class="flex text-xs text-gray-800 leading-tight font-medium mr-1">
+                {{ item.issue_concern_request_category_type || "-" }}:  {{ item.issue_concern_request_item_type || "—" }}
+              </span>
+        
+            </div>
           </div>
 
-          <div class="text-xs text-gray-700">
-            <span class="font-semibold"
-              ><i class="fa fa-wrench text-green-600 mr-1"></i>Specific
-              Concern:</span
-            >
-            {{ item.issue_concern_request_item_type || "—" }}
+          
+          <!-- Assigned To -->
+          <div class="flex items-center gap-x-2">
+            <i class="fa fa-users text-green-600 text-xs flex-shrink-0"></i>
+            <div class="flex items-center min-w-0">
+              <span class="text-xs text-gray-800 block leading-tight">
+                {{ item.technicians_assigned?.map((t) => t.name).join(", ") || "—" }}
+              </span>
+            </div>
           </div>
 
-          <div class="text-xs text-gray-700">
-            <span class="font-semibold"
-              ><i class="fa fa-building text-green-600 mr-1"></i
-              >Center/Office/Room:</span
-            >
-            {{ item.issue_concern_request_center_office_room || "—" }}
-          </div>
-
-          <div class="text-xs text-gray-700">
-            <span class="font-semibold"
-              ><i class="fa fa-users text-green-600 mr-1"></i>Technician:</span
-            >
-            {{
-              item.technicians_assigned?.map((t) => t.name).join(", ") || "—"
-            }}
-          </div>
-
-          <div class="flex justify-between items-center pt-2">
-            <span class="text-xs text-gray-500">
+          <!-- Footer: Date and View Button -->
+          <div class="flex justify-between items-center pt-2 border-t border-gray-100">
+            <span class="text-[10px] text-gray-500 flex items-center gap-1">
+              <i class="fa fa-clock"></i>
               {{ moment(item.created_at).format("MMM DD, YYYY hh:mm A") }}
             </span>
 
-            <span
-              class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold"
+            <button
+              class="bg-green-600 text-white px-3 py-1.5 rounded text-xs font-semibold flex items-center gap-1.5 shadow-sm hover:bg-green-700 transition-colors"
+              @click.stop="openModal(item)"
             >
-              <i class="fa fa-edit"></i>
-            </span>
+              <i class="fa fa-eye text-xs"></i>
+              <span>View</span>
+            </button>
           </div>
         </div>
       </div>
