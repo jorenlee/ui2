@@ -70,7 +70,9 @@
           >
             <div class="flex items-start gap-3">
               <div class="flex-shrink-0">
-                <i class="fas fa-exclamation-triangle text-orange-600 text-2xl"></i>
+                <i
+                  class="fas fa-exclamation-triangle text-orange-600 text-2xl"
+                ></i>
               </div>
               <div class="flex-1">
                 <h3 class="text-orange-800 font-bold text-sm mb-1">
@@ -78,12 +80,16 @@
                   Pending Feedback Required
                 </h3>
                 <p class="text-orange-700 text-xs mb-2">
-                  You have <strong>{{ unratedTicketsCount }}</strong> ticket{{ unratedTicketsCount > 1 ? 's' : '' }}
-                  that {{ unratedTicketsCount > 1 ? 'need' : 'needs' }} your rating and feedback.
+                  You have <strong>{{ unratedTicketsCount }}</strong> ticket{{
+                    unratedTicketsCount > 1 ? "s" : ""
+                  }}
+                  that {{ unratedTicketsCount > 1 ? "need" : "needs" }} your
+                  rating and feedback.
                 </p>
                 <p class="text-orange-600 text-xs mb-3">
                   <i class="fas fa-info-circle mr-1"></i>
-                  Please rate ALL your previous tickets before submitting a new request. Your feedback helps us improve our services!
+                  Please rate ALL your previous tickets before submitting a new
+                  request. Your feedback helps us improve our services!
                 </p>
                 <a
                   href="/central/login"
@@ -231,10 +237,12 @@
 
                 <!-- ITEM REQUEST -->
                 <div
-               
                   class="border-2 border-green-100 rounded-xl lg:p-6 p-2 mb-6 bg-gradient-to-br from-gray-50 to-white shadow-sm"
                 >
-                  <div class="mb-6"  v-if="info.issue_concern_request_category_type">
+                  <div
+                    class="mb-6"
+                    v-if="info.issue_concern_request_category_type"
+                  >
                     <h3
                       class="text-lg font-bold text-green-800 mb-1 flex items-center"
                     >
@@ -246,7 +254,10 @@
                     </p>
                   </div>
 
-                  <div class="grid lg:grid-cols-2 gap-4 mb-6 border-b-2 pb-6"  v-if="info.issue_concern_request_category_type">
+                  <div
+                    class="grid lg:grid-cols-2 gap-4 mb-6 border-b-2 pb-6"
+                    v-if="info.issue_concern_request_category_type"
+                  >
                     <div class="w-full">
                       <label
                         class="text-sm font-semibold mb-2 block text-gray-700"
@@ -274,7 +285,7 @@
                     </div>
                   </div>
 
-                  <div class=" border-gray-200 ">
+                  <div class="border-gray-200">
                     <h3
                       class="text-lg font-bold text-green-800 mb-1 flex items-center"
                     >
@@ -289,11 +300,11 @@
                       class="bg-white rounded-lg lg:p-5 p-2 mb-4 border-2 border-gray-100"
                     >
                       <div class="grid lg:grid-cols-2 gap-4 text-sm">
-
                         <!-- 1. CATEGORY -->
                         <div class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700">
-                            <i class="fas fa-tag text-green-600 mr-1"></i>Category
+                            <i class="fas fa-tag text-green-600 mr-1"></i
+                            >Category
                             <span class="text-red-600">*</span>
                           </label>
                           <select
@@ -313,7 +324,16 @@
                         </div>
 
                         <!-- 2. SPECIFIC CONCERN (Hidden until category selected, and hidden for LSU Webpages and Student Portal) -->
-                        <div v-if="info.issue_concern_request_category_type && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                        <div
+                          v-if="
+                            info.issue_concern_request_category_type &&
+                            info.issue_concern_request_category_type !==
+                              'LSU Webpages' &&
+                            info.issue_concern_request_category_type !==
+                              'Student Portal'
+                          "
+                          class="w-full"
+                        >
                           <label class="block font-semibold mb-2 text-gray-700"
                             ><i class="fas fa-laptop text-green-600 mr-1"></i
                             >Specific Concern
@@ -347,7 +367,14 @@
                         </div>
 
                         <!-- 3. DESCRIPTION (Hidden until category selected, and hidden for Student Portal) -->
-                        <div v-if="info.issue_concern_request_category_type && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full lg:col-span-2">
+                        <div
+                          v-if="
+                            info.issue_concern_request_category_type &&
+                            info.issue_concern_request_category_type !==
+                              'Student Portal'
+                          "
+                          class="w-full lg:col-span-2"
+                        >
                           <label class="block font-semibold mb-2 text-gray-700"
                             ><i
                               class="fas fa-comment-dots text-green-600 mr-1"
@@ -364,7 +391,16 @@
                         </div>
 
                         <!-- 4. REQUESTOR ROLE (formerly Client Role) (Hidden until category selected, and hidden for LSU Webpages and Student Portal) -->
-                        <div v-if="info.issue_concern_request_category_type && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                        <div
+                          v-if="
+                            info.issue_concern_request_category_type &&
+                            info.issue_concern_request_category_type !==
+                              'LSU Webpages' &&
+                            info.issue_concern_request_category_type !==
+                              'Student Portal'
+                          "
+                          class="w-full"
+                        >
                           <label class="block font-semibold mb-2 text-gray-700">
                             <i class="fas fa-id-badge text-green-600 mr-1"></i
                             >Requestor Role <span class="text-red-600">*</span>
@@ -378,17 +414,45 @@
                             <option value="Faculty">Faculty</option>
                             <option value="Staff">Staff</option>
                             <!-- Hide Public and Alumni for Others category -->
-                            <option v-if="info.issue_concern_request_category_type !== 'Others'" value="Alumni">Alumni</option>
-                            <option v-if="info.issue_concern_request_category_type !== 'Others'" value="Public">Public</option>
-                             <option value="Admin">Admin</option>
+                            <option
+                              v-if="
+                                info.issue_concern_request_category_type !==
+                                'Others'
+                              "
+                              value="Alumni"
+                            >
+                              Alumni
+                            </option>
+                            <option
+                              v-if="
+                                info.issue_concern_request_category_type !==
+                                'Others'
+                              "
+                              value="Public"
+                            >
+                              Public
+                            </option>
+                            <option value="Admin">Admin</option>
                           </select>
                         </div>
 
                         <!-- 5. CENTER/OFFICE/ROOM (Show ONLY for Admin, Faculty, and Staff) -->
-                        <div v-if="info.client_role === 'Admin' || info.client_role === 'Faculty' || info.client_role === 'Staff'" class="w-full">
+                        <div
+                          v-if="
+                            info.client_role === 'Admin' ||
+                            info.client_role === 'Faculty' ||
+                            info.client_role === 'Staff'
+                          "
+                          class="w-full"
+                        >
                           <label class="block font-semibold mb-2 text-gray-700"
                             ><i class="fas fa-building text-green-600 mr-1"></i>
-                            {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Computer Lab Location' : 'Requesting' }}
+                            {{
+                              info.issue_concern_request_category_type ===
+                              "Computer Lab"
+                                ? "Computer Lab Location"
+                                : "Requesting"
+                            }}
                             <span class="text-red-600">*</span></label
                           >
                           <div class="flex gap-2">
@@ -399,7 +463,12 @@
                               class="input border-2 border-gray-200 w-full p-3 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                             >
                               <option disabled value="">
-                                {{ info.issue_concern_request_category_type === 'Computer Lab' ? 'Select Computer Lab' : 'Select Location' }}
+                                {{
+                                  info.issue_concern_request_category_type ===
+                                  "Computer Lab"
+                                    ? "Select Computer Lab"
+                                    : "Select Location"
+                                }}
                               </option>
                               <option
                                 v-for="office in getLocationOptions"
@@ -422,7 +491,24 @@
                         </div>
 
                         <!-- 6. OWNER TYPE (Hidden until category selected, and hidden for Hardware, Network, Computer Lab, Accounts, LSU Webpages, Student Portal) -->
-                        <div v-if="info.issue_concern_request_category_type && info.issue_concern_request_category_type !== 'Hardware' && info.issue_concern_request_category_type !== 'Network' && info.issue_concern_request_category_type !== 'Computer Lab' && info.issue_concern_request_category_type !== 'Accounts' && info.issue_concern_request_category_type !== 'LSU Webpages' && info.issue_concern_request_category_type !== 'Student Portal'" class="w-full">
+                        <div
+                          v-if="
+                            info.issue_concern_request_category_type &&
+                            info.issue_concern_request_category_type !==
+                              'Hardware' &&
+                            info.issue_concern_request_category_type !==
+                              'Network' &&
+                            info.issue_concern_request_category_type !==
+                              'Computer Lab' &&
+                            info.issue_concern_request_category_type !==
+                              'Accounts' &&
+                            info.issue_concern_request_category_type !==
+                              'LSU Webpages' &&
+                            info.issue_concern_request_category_type !==
+                              'Student Portal'
+                          "
+                          class="w-full"
+                        >
                           <label class="block font-semibold mb-2 text-gray-700">
                             <i class="fas fa-user-tag text-green-600 mr-1"></i
                             >Owner Type <span class="text-red-600">*</span>
@@ -437,7 +523,7 @@
                         </div>
 
                         <!-- BUY ME COFFEE -->
-                         <!-- hide for now -->
+                        <!-- hide for now -->
                         <!-- <div class="w-full">
                           <label class="block font-semibold mb-2 text-gray-700">
                             <i class="fas fa-coffee text-green-600 mr-1"></i>Buy
@@ -489,11 +575,18 @@
               </div>
 
               <!-- ACTIONS -->
-              <div class="flex justify-center gap-3 mb-10" v-if="info.issue_concern_request_category_type">
+              <div
+                class="flex justify-center gap-3 mb-10"
+                v-if="info.issue_concern_request_category_type"
+              >
                 <button
                   class="px-8 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
                   @click="handleSubmitClick"
-                  :disabled="modalLoading || info.issue_concern_request_category_type === 'Student Portal'"
+                  :disabled="
+                    modalLoading ||
+                    info.issue_concern_request_category_type ===
+                      'Student Portal'
+                  "
                 >
                   <i class="fas fa-paper-plane mr-2"></i>
                   Submit Request
@@ -506,14 +599,21 @@
                 class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
                 @click.self="showStudentPortalModal = false"
               >
-                <div class="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 transform transition-all">
+                <div
+                  class="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 transform transition-all"
+                >
                   <div class="text-center">
-                    <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
+                    <div
+                      class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4"
+                    >
                       <i class="fas fa-info-circle text-blue-600 text-3xl"></i>
                     </div>
-                    <h3 class="text-xl font-bold text-gray-900 mb-4">Student Portal Information</h3>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">
+                      Student Portal Information
+                    </h3>
                     <p class="text-gray-600 mb-6">
-                      For Student Portal concerns (forgot your password), please proceed to the Registrar's Office.
+                      For Student Portal concerns (forgot your password), please
+                      proceed to the Registrar's Office.
                     </p>
                     <button
                       @click="showStudentPortalModal = false"
@@ -538,7 +638,7 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import { useUserStore } from "@/stores/user";
-import moment from "moment";
+import itServiceConfig from "@/it-service-config.json";
 
 const menuList = [
   { label: "About", link: "/npcc" },
@@ -558,153 +658,22 @@ const hasUnratedCompletedTickets = ref(false);
 const unratedTicketsCount = ref(0);
 const showStudentPortalModal = ref(false);
 
-// Dropdown options
-const CATEGORY_OPTIONS = [
-  "Hardware",
-  "Software",
-  "Network",
-  "Computer Lab",
-  "Accounts",
-  "LSU Webpages",
-  "Student Portal",
-  "Others",
-];
+// Dropdown options - imported from JSON config
+const CATEGORY_OPTIONS = itServiceConfig.categoryOptions;
 
-// Dynamic item type options based on category
-const ITEM_TYPE_OPTIONS_MAP = {
-  Hardware: [
-    "Laptop",
-    "Desktop",
-    "Printer",
-    "Scanner",
-    "Monitor",
-    "Keyboard",
-    "Mouse",
-    "Projector",
-    "Webcam",
-    "Headset",
-    "Speaker",
-    "Microphone",
-    "External Hard Drive",
-    "USB Flash Drive",
-    "Power Supply",
-    "Motherboard",
-    "RAM",
-    "Graphics Card",
-    "CPU",
-    "Cooling Fan",
-    "Others",
-  ],
-  Software: [
-    "Installation",
-    "Repair",
-    "Uninstall",
-  ],
-  Network: ["WiFi Access", "Network Configuration"],
-  "Computer Lab": [
-    "Computer Setup",
-    "Software Installation",
-    "Hardware Issue",
-    "Network Connectivity",
-    "Maintenance",
-    "Others",
-  ],
-  Accounts: [
-    "LSU Gmail",
-    "Canvas",
-    "Microsoft",
-    "Student Portal",
-    "Others",
-  ],
-  "LSU Webpages": [
-    "Update Content",
-    "Fix Errors",
-    "Add New Page",
-    "Remove Page",
-    "Delete Article or Content",
-    "Add Article or Content",
-    "Update Article or Content",
-    "Quality Assurance Testing",
-    "Others",
-  ],
-  "Student Portal": [
-    "Forgot Password",
-    "Others",
-  ],
-  Others: [
-    "Screwdriver Set",
-    "Cable Ties",
-    "Thermal Paste",
-    "Cleaning Kit",
-    "Cable Tester",
-    "Crimping Tool",
-    "Anti-static Wrist Strap",
-    "Compressed Air",
-    "HDMI Cable",
-    "VGA Cable",
-    "Ethernet Cable",
-    "USB Cable",
-    "Power Cable",
-    "Extension Cord",
-    "Others",
-  ],
-};
+// Dynamic item type options based on category - imported from JSON config
+const ITEM_TYPE_OPTIONS_MAP = itServiceConfig.itemTypeOptionsMap;
 
 // Function to get item options based on category
 const getItemOptions = (category) => {
   return ITEM_TYPE_OPTIONS_MAP[category] || [];
 };
 
-// Computer Lab location options
-const COMPUTER_LAB_LOCATIONS = {
-  "BVM and SJ Buildings": [
-    "BVM 4F Computer Lab",
-    "BVM 2F Computer Lab",
-    "SJ Computer Lab",
-  ],
-  "LS Building": [
-    "LS209 - Maclab",
-    "LS211 - Networking",
-    "LS212 - Programming",
-    "LS213 - Multimedia",
-    "LS215 - Openlab",
-  ],
-};
+// Computer Lab location options - imported from JSON config
+const COMPUTER_LAB_LOCATIONS = itServiceConfig.computerLabLocations;
 
-const listCenterOfficeRoom = [
-  "Accounting Office",
-  "Campus Development",
-  "General Services Office",
-  "Human Resource and Development",
-  "Office of the Chancellor",
-  "Office of the President",
-  "Registrar's Office",
-  "Research Office",
-  "Corporate and Executive Management Center",
-  "Vice Chancellor for Academics Affairs",
-  "Vice President for Planning and Strategic Services",
-  "Vice President for Finance and Accounting Services",
-  "Vice President for Administrative Services",
-  "Vice President for Lasallian Mission Services",
-  "Vice President for Advancement and Linkages Services",
-  "Lasallian Mission Center",
-  "Learning Resource Center",
-  "College of Arts and Sciences",
-  "College of Business and Accountancy",
-  "College of Criminal Justice Education",
-  "College of Computer Studies, Engineering, and Architecture",
-  "College of Teacher Education",
-  "College of Tourism and Hospitality Management",
-  "College of Nursing",
-  "School of Graduate Studies",
-];
-
-const CENTER_OFFICE_ROOM_OPTIONS = [
-  ...listCenterOfficeRoom,
-  "Network Programs and Computerization Center",
-  "N/A",
-  "OTHER"
-];
+// Office/Room options - imported from JSON config
+const CENTER_OFFICE_ROOM_OPTIONS = itServiceConfig.centerOfficeRoomOptions;
 
 // Computed property to get location options based on category
 const getLocationOptions = computed(() => {
@@ -773,9 +742,9 @@ const removeReceipt = () => {
 const normalizeOffice = () => {
   // Set N/A for Student, Alumni, and Public (only Admin, Faculty, Staff require it)
   if (
-    info.value.client_role === 'Student' ||
-    info.value.client_role === 'Alumni' ||
-    info.value.client_role === 'Public'
+    info.value.client_role === "Student" ||
+    info.value.client_role === "Alumni" ||
+    info.value.client_role === "Public"
   ) {
     info.value.issue_concern_request_center_office_room = "N/A";
   } else if (info.value.issue_concern_request_center_office_room === "OTHER") {
@@ -785,56 +754,59 @@ const normalizeOffice = () => {
 
   // Auto-set owner_type to LSU when field is hidden
   if (
-    info.value.issue_concern_request_category_type === 'Hardware' ||
-    info.value.issue_concern_request_category_type === 'Network' ||
-    info.value.issue_concern_request_category_type === 'Computer Lab' ||
-    info.value.issue_concern_request_category_type === 'Accounts' ||
-    info.value.issue_concern_request_category_type === 'LSU Webpages' ||
-    info.value.issue_concern_request_category_type === 'Student Portal'
+    info.value.issue_concern_request_category_type === "Hardware" ||
+    info.value.issue_concern_request_category_type === "Network" ||
+    info.value.issue_concern_request_category_type === "Computer Lab" ||
+    info.value.issue_concern_request_category_type === "Accounts" ||
+    info.value.issue_concern_request_category_type === "LSU Webpages" ||
+    info.value.issue_concern_request_category_type === "Student Portal"
   ) {
     info.value.owner_type = "LSU";
   }
 
   // Auto-set client_role when field is hidden
   if (
-    info.value.issue_concern_request_category_type === 'LSU Webpages' ||
-    info.value.issue_concern_request_category_type === 'Student Portal'
+    info.value.issue_concern_request_category_type === "LSU Webpages" ||
+    info.value.issue_concern_request_category_type === "Student Portal"
   ) {
     info.value.client_role = "Staff"; // Default to Staff for these categories
   }
 };
 
 // Watch for client role changes to auto-set office for Student/Alumni/Public
-watch(() => info.value.client_role, (newRole) => {
-  if (newRole === 'Student' || newRole === 'Alumni' || newRole === 'Public') {
-    info.value.issue_concern_request_center_office_room = "N/A";
-  } else if (info.value.issue_concern_request_center_office_room === "N/A") {
-    // Clear the field if switching from Student/Alumni/Public to Admin/Faculty/Staff
-    info.value.issue_concern_request_center_office_room = "";
-  }
-});
+watch(
+  () => info.value.client_role,
+  (newRole) => {
+    if (newRole === "Student" || newRole === "Alumni" || newRole === "Public") {
+      info.value.issue_concern_request_center_office_room = "N/A";
+    } else if (info.value.issue_concern_request_center_office_room === "N/A") {
+      // Clear the field if switching from Student/Alumni/Public to Admin/Faculty/Staff
+      info.value.issue_concern_request_center_office_room = "";
+    }
+  },
+);
 
 // Check if user has unrated tickets (ANY status - pending, in progress, completed, etc.)
 const checkForUnratedTickets = async (email) => {
   try {
-    const res = await $fetch(
-      endpoint.value + "/api/cits/request-ticket/list/"
-    );
+    const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
 
     if (res && Array.isArray(res)) {
       // Filter tickets for this user
       const userTickets = res.filter(
-        (ticket) => ticket.requestor_lsu_email === email
+        (ticket) => ticket.requestor_lsu_email === email,
       );
 
       // Check if ANY ticket (regardless of status) is missing rating or feedback
       const unratedTickets = userTickets.filter((ticket) => {
-        const hasNoRating = !ticket.evaluation_feedback_client_star_rating ||
-                           ticket.evaluation_feedback_client_star_rating === "" ||
-                           ticket.evaluation_feedback_client_star_rating === null;
-        const hasNoFeedback = !ticket.evaluation_feedback_client_comment ||
-                             ticket.evaluation_feedback_client_comment === "" ||
-                             ticket.evaluation_feedback_client_comment === null;
+        const hasNoRating =
+          !ticket.evaluation_feedback_client_star_rating ||
+          ticket.evaluation_feedback_client_star_rating === "" ||
+          ticket.evaluation_feedback_client_star_rating === null;
+        const hasNoFeedback =
+          !ticket.evaluation_feedback_client_comment ||
+          ticket.evaluation_feedback_client_comment === "" ||
+          ticket.evaluation_feedback_client_comment === null;
 
         // Consider a ticket unrated if it's missing BOTH rating AND feedback
         // (User must provide at least rating or feedback for each ticket)
@@ -865,22 +837,23 @@ const handleSubmitClick = async () => {
 
   // Check Center/Office/Room only for Admin, Faculty, and Staff
   const requiresOffice =
-    info.value.client_role === 'Admin' ||
-    info.value.client_role === 'Faculty' ||
-    info.value.client_role === 'Staff';
+    info.value.client_role === "Admin" ||
+    info.value.client_role === "Faculty" ||
+    info.value.client_role === "Staff";
 
   // Check Specific Concern only if not LSU Webpages or Student Portal
   const requiresSpecificConcern =
-    info.value.issue_concern_request_category_type !== 'LSU Webpages' &&
-    info.value.issue_concern_request_category_type !== 'Student Portal';
+    info.value.issue_concern_request_category_type !== "LSU Webpages" &&
+    info.value.issue_concern_request_category_type !== "Student Portal";
 
   // Check Requestor Role only if not LSU Webpages or Student Portal
   const requiresRequestorRole =
-    info.value.issue_concern_request_category_type !== 'LSU Webpages' &&
-    info.value.issue_concern_request_category_type !== 'Student Portal';
+    info.value.issue_concern_request_category_type !== "LSU Webpages" &&
+    info.value.issue_concern_request_category_type !== "Student Portal";
 
   // Check Description only if not Student Portal
-  const requiresDescription = info.value.issue_concern_request_category_type !== 'Student Portal';
+  const requiresDescription =
+    info.value.issue_concern_request_category_type !== "Student Portal";
 
   if (
     (requiresOffice && !info.value.issue_concern_request_center_office_room) ||
@@ -894,12 +867,14 @@ const handleSubmitClick = async () => {
   }
 
   // Check for unrated completed tickets before allowing new submission
-  const hasUnratedTickets = await checkForUnratedTickets(info.value.requestor_lsu_email);
+  const hasUnratedTickets = await checkForUnratedTickets(
+    info.value.requestor_lsu_email,
+  );
   if (hasUnratedTickets) {
     showToaster(
-      `⚠️ You have ${unratedTicketsCount.value} completed ticket${unratedTicketsCount.value > 1 ? 's' : ''} without rating/feedback. Please visit the portal to complete your feedback before submitting a new request.`,
+      `⚠️ You have ${unratedTicketsCount.value} completed ticket${unratedTicketsCount.value > 1 ? "s" : ""} without rating/feedback. Please visit the portal to complete your feedback before submitting a new request.`,
       "warning",
-      8000
+      8000,
     );
     return;
   }
@@ -1046,24 +1021,27 @@ watch(
     info.value.issue_concern_request_item_type = "";
 
     // Show modal when Student Portal is selected
-    if (newCategory === 'Student Portal') {
+    if (newCategory === "Student Portal") {
       showStudentPortalModal.value = true;
     }
-  }
+  },
 );
 
 // Watch for email changes to check for unrated tickets
-watch(() => info.value.requestor_lsu_email, async (newEmail) => {
-  // Reset notification if email is empty
-  if (!newEmail || newEmail.trim() === "") {
-    hasUnratedCompletedTickets.value = false;
-    unratedTicketsCount.value = 0;
-    return;
-  }
+watch(
+  () => info.value.requestor_lsu_email,
+  async (newEmail) => {
+    // Reset notification if email is empty
+    if (!newEmail || newEmail.trim() === "") {
+      hasUnratedCompletedTickets.value = false;
+      unratedTicketsCount.value = 0;
+      return;
+    }
 
-  // Check for unrated tickets when email is entered
-  await checkForUnratedTickets(newEmail);
-});
+    // Check for unrated tickets when email is entered
+    await checkForUnratedTickets(newEmail);
+  },
+);
 </script>
 
 <style scoped>

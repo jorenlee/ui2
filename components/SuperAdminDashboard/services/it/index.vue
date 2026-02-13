@@ -1,9 +1,7 @@
 <template>
   <div class="lg:p-1 text-sm">
     <div class="lg:flex items-center justify-between">
-      <h2 class="text-sm font-bold lg:mb-4">
-        NPCC Tech Support & IT Services
-      </h2>
+      <h2 class="text-sm font-bold lg:mb-4">NPCC Tech Support & IT Services</h2>
       <!-- Results Count & Real-time Indicator -->
       <div class="mb-3 flex justify-between items-center">
         <div class="text-xs text-green-800 font-semibold">
@@ -119,7 +117,7 @@
         @click="sortBy('issue_concern_request_category_type')"
         class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
-        <i class="fa fa-tools mr-1"></i>  Category
+        <i class="fa fa-tools mr-1"></i> Category
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
@@ -145,7 +143,7 @@
         @click="sortBy('requestor_fullname')"
         class="lg:w-11/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
-        <i class="fa fa-user mr-1"></i> Requestor 
+        <i class="fa fa-user mr-1"></i> Requestor
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
           <i
             class="fa fa-caret-up"
@@ -165,7 +163,6 @@
           ></i>
         </span>
       </div>
-
 
       <div
         @click="sortBy('technicians_assigned')"
@@ -221,7 +218,6 @@
       >
         <i class="fa fa-star mr-1"></i> Feedback
       </div>
-
     </div>
 
     <!-- Toaster -->
@@ -302,14 +298,13 @@
           <div
             class="lg:w-11/12 w-full px-3 text-left capitalize whitespace-nowrap text-xs"
           >
-           <span class="flex font-semibold">
-             {{ item.requestor_fullname }}
-           </span>
-              <span class="flex">
-                 {{ item.issue_concern_request_center_office_room || "-" }}
-              </span>
+            <span class="flex font-semibold">
+              {{ item.requestor_fullname }}
+            </span>
+            <span class="flex">
+              {{ item.issue_concern_request_center_office_room || "-" }}
+            </span>
           </div>
-
 
           <div class="lg:w-6/12 w-full px-3 text-left text-xs">
             {{
@@ -319,11 +314,11 @@
 
           <div class="lg:w-6/12 w-full px-3 text-left">
             <div class="flex items-center gap-2">
-                <span
-              class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-yellow-800 whitespace-nowrap"
-            >
+              <span
+                class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-yellow-800 whitespace-nowrap"
+              >
                 <i class="fa fa-edit"></i>
-            </span>
+              </span>
               <!-- Mood Icon -->
               <div
                 class="w-6 h-6 rounded-full flex items-center justify-center shadow-md flex-shrink-0"
@@ -343,18 +338,29 @@
           </div>
 
           <div class="lg:w-3/12 w-full px-3 text-left">
-            <div v-if="item.evaluation_feedback_client_star_rating" class="flex items-center">
+            <div
+              v-if="item.evaluation_feedback_client_star_rating"
+              class="flex items-center"
+            >
               <span v-for="star in 5" :key="star" class="text-sm">
                 <i
                   class="fa fa-star"
-                  :class="star <= parseInt(item.evaluation_feedback_client_star_rating || 0) ? 'text-yellow-500' : 'text-gray-300'"
+                  :class="
+                    star <=
+                    parseInt(item.evaluation_feedback_client_star_rating || 0)
+                      ? 'text-yellow-500'
+                      : 'text-gray-300'
+                  "
                 ></i>
               </span>
-              <span class="text-xs text-gray-600 ml-1">({{ item.evaluation_feedback_client_star_rating }})</span>
+              <span class="text-xs text-gray-600 ml-1"
+                >({{ item.evaluation_feedback_client_star_rating }})</span
+              >
             </div>
-            <span v-else class="text-xs text-gray-400 italic">No rating yet</span>
+            <span v-else class="text-xs text-gray-400 italic"
+              >No rating yet</span
+            >
           </div>
-
         </div>
 
         <!-- ================= MOBILE CARD ================= -->
@@ -428,7 +434,7 @@
             <span
               class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold"
             >
-                <i class="fa fa-edit"></i>
+              <i class="fa fa-edit"></i>
             </span>
           </div>
         </div>
@@ -595,7 +601,7 @@
               <div class="md:col-span-2">
                 <label class="text-sm font-semibold mb-2 block text-gray-700">
                   <i class="fas fa-users text-green-600 mr-1"></i>
-                  {{ isCreate ? 'Assign Personnel' : 'Assigned Personnel' }}
+                  {{ isCreate ? "Assign Personnel" : "Assigned Personnel" }}
                   <span
                     v-if="!isCreate && info.ticket_locked_by_email"
                     class="ml-2 text-orange-600 font-semibold text-xs"
@@ -647,7 +653,10 @@
                   class="border-2 border-gray-200 rounded-lg p-3 bg-white"
                 >
                   <div
-                    v-if="info.technicians_assigned && info.technicians_assigned.length > 0"
+                    v-if="
+                      info.technicians_assigned &&
+                      info.technicians_assigned.length > 0
+                    "
                     class="flex flex-wrap gap-2"
                   >
                     <div
@@ -672,10 +681,7 @@
                       ></i>
                     </div>
                   </div>
-                  <div
-                    v-else
-                    class="text-xs text-gray-500 italic"
-                  >
+                  <div v-else class="text-xs text-gray-500 italic">
                     <i class="fas fa-info-circle mr-1"></i>
                     No personnel assigned to this ticket
                   </div>
@@ -685,12 +691,18 @@
                 <div
                   v-if="
                     !isCreate &&
-                    (!info.technicians_assigned || info.technicians_assigned.length === 0)
+                    (!info.technicians_assigned ||
+                      info.technicians_assigned.length === 0)
                   "
                   class="mt-3"
                 >
                   <button
-                    @click="() => { isAssignMode = true; showTransferModal = true; }"
+                    @click="
+                      () => {
+                        isAssignMode = true;
+                        showTransferModal = true;
+                      }
+                    "
                     class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white text-sm rounded-lg transition-colors shadow-sm font-semibold"
                   >
                     <i class="fas fa-user-plus mr-2"></i>
@@ -710,14 +722,18 @@
                   class="mt-3"
                 >
                   <button
-                    @click="() => { isAssignMode = false; showTransferModal = true; }"
+                    @click="
+                      () => {
+                        isAssignMode = false;
+                        showTransferModal = true;
+                      }
+                    "
                     class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm rounded-lg transition-colors shadow-sm font-semibold"
                   >
                     <i class="fas fa-exchange-alt mr-2"></i>
                     Transfer Ticket to Other Personnel
                   </button>
                 </div>
-
               </div>
             </div>
           </div>
@@ -1235,31 +1251,47 @@
 
           <!-- CLIENT FEEDBACK & RATING SECTION -->
           <div
-            v-if="!isCreate && (info.evaluation_feedback_client_star_rating || info.evaluation_feedback_client_comment)"
+            v-if="
+              !isCreate &&
+              (info.evaluation_feedback_client_star_rating ||
+                info.evaluation_feedback_client_comment)
+            "
             class="border-2 border-blue-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-blue-50 to-white shadow-sm"
           >
             <div class="mb-3">
-              <h3 class="lg:text-base text-sm font-bold text-blue-800 mb-1 flex items-center">
+              <h3
+                class="lg:text-base text-sm font-bold text-blue-800 mb-1 flex items-center"
+              >
                 <i class="fa fa-star text-yellow-500 mr-2"></i>
                 Client Feedback & Rating
               </h3>
-              <p class="text-lg text-gray-500">
-               How's my service?
-              </p>
+              <p class="text-lg text-gray-500">How's my service?</p>
             </div>
 
             <!-- Star Rating Display -->
-            <div v-if="info.evaluation_feedback_client_star_rating" class="mb-3">
+            <div
+              v-if="info.evaluation_feedback_client_star_rating"
+              class="mb-3"
+            >
               <label class="block text-sm font-semibold text-gray-700 mb-2">
                 <i class="fa fa-star text-yellow-500 mr-1"></i>
                 Rating:
               </label>
-              <div class="flex items-center gap-2 bg-white p-3 rounded-lg border">
+              <div
+                class="flex items-center gap-2 bg-white p-3 rounded-lg border"
+              >
                 <div class="flex items-center gap-1">
                   <span v-for="star in 5" :key="star" class="text-lg">
                     <i
                       class="fa fa-star"
-                      :class="star <= parseInt(info.evaluation_feedback_client_star_rating || 0) ? 'text-yellow-500' : 'text-gray-300'"
+                      :class="
+                        star <=
+                        parseInt(
+                          info.evaluation_feedback_client_star_rating || 0,
+                        )
+                          ? 'text-yellow-500'
+                          : 'text-gray-300'
+                      "
                     ></i>
                   </span>
                 </div>
@@ -1269,17 +1301,39 @@
               </div>
             </div>
 
-          <!-- Rating Description (shows only for selected rating) -->
-                  <div v-if="info.evaluation_feedback_client_star_rating" class="mt-2 mb-5">
-                    <p class="text-sm font-semibold text-gray-700">
-                      <span v-if="info.evaluation_feedback_client_star_rating == 5" class="text-green-600">⭐ Excellent</span>
-                      <span v-else-if="info.evaluation_feedback_client_star_rating == 4" class="text-blue-600">⭐ Very Satisfactory</span>
-                      <span v-else-if="info.evaluation_feedback_client_star_rating == 3" class="text-yellow-600">⭐ Satisfactory</span>
-                      <span v-else-if="info.evaluation_feedback_client_star_rating == 2" class="text-orange-600">⭐ Fair</span>
-                      <span v-else-if="info.evaluation_feedback_client_star_rating == 1" class="text-red-600">⭐ Poor</span>
-                    </p>
-                  </div>
-
+            <!-- Rating Description (shows only for selected rating) -->
+            <div
+              v-if="info.evaluation_feedback_client_star_rating"
+              class="mt-2 mb-5"
+            >
+              <p class="text-sm font-semibold text-gray-700">
+                <span
+                  v-if="info.evaluation_feedback_client_star_rating == 5"
+                  class="text-green-600"
+                  >⭐ Excellent</span
+                >
+                <span
+                  v-else-if="info.evaluation_feedback_client_star_rating == 4"
+                  class="text-blue-600"
+                  >⭐ Very Satisfactory</span
+                >
+                <span
+                  v-else-if="info.evaluation_feedback_client_star_rating == 3"
+                  class="text-yellow-600"
+                  >⭐ Satisfactory</span
+                >
+                <span
+                  v-else-if="info.evaluation_feedback_client_star_rating == 2"
+                  class="text-orange-600"
+                  >⭐ Fair</span
+                >
+                <span
+                  v-else-if="info.evaluation_feedback_client_star_rating == 1"
+                  class="text-red-600"
+                  >⭐ Poor</span
+                >
+              </p>
+            </div>
 
             <!-- Feedback Comment Display -->
             <div v-if="info.evaluation_feedback_client_comment" class="mb-4">
@@ -1288,7 +1342,9 @@
                 Comment:
               </label>
               <div class="bg-white p-3 rounded-lg border">
-                <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ info.evaluation_feedback_client_comment }}</p>
+                <p class="text-sm text-gray-700 whitespace-pre-wrap">
+                  {{ info.evaluation_feedback_client_comment }}
+                </p>
               </div>
             </div>
           </div>
@@ -1364,7 +1420,11 @@
           <div class="text-center">
             <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-3"></i>
             <p class="text-sm font-semibold text-gray-700">
-              {{ isAssignMode ? 'Assigning personnel...' : 'Transferring ticket...' }}
+              {{
+                isAssignMode
+                  ? "Assigning personnel..."
+                  : "Transferring ticket..."
+              }}
             </p>
             <p class="text-xs text-gray-500 mt-1">Please wait</p>
           </div>
@@ -1444,10 +1504,6 @@
               <i class="fas fa-times mr-2"></i>Cancel
             </button>
 
-
-
-
-
             <!-- Yellow Confirm Button for Assign Mode -->
             <button
               v-if="isAssignMode"
@@ -1456,9 +1512,13 @@
               class="flex-1 px-4 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <i
-                :class="modalLoading ? 'fas fa-spinner fa-spin mr-2' : 'fas fa-check mr-2'"
+                :class="
+                  modalLoading
+                    ? 'fas fa-spinner fa-spin mr-2'
+                    : 'fas fa-check mr-2'
+                "
               ></i>
-              {{ modalLoading ? 'Assigning...' : 'Confirm Assignment' }}
+              {{ modalLoading ? "Assigning..." : "Confirm Assignment" }}
             </button>
 
             <!-- Purple Confirm Button for Transfer Mode -->
@@ -1469,18 +1529,15 @@
               class="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <i
-                :class="modalLoading ? 'fas fa-spinner fa-spin mr-2' : 'fas fa-check mr-2'"
+                :class="
+                  modalLoading
+                    ? 'fas fa-spinner fa-spin mr-2'
+                    : 'fas fa-check mr-2'
+                "
               ></i>
-              {{ modalLoading ? 'Transferring...' : 'Confirm Transfer' }}
+              {{ modalLoading ? "Transferring..." : "Confirm Transfer" }}
             </button>
           </div>
-
-
-
-
-
-
-
         </div>
       </div>
     </div>
@@ -1490,6 +1547,7 @@
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from "vue";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
+import itServiceConfig from "@/it-service-config.json";
 
 const userStore = useUserStore();
 const config = useRuntimeConfig();
@@ -1522,35 +1580,12 @@ let realtimeInterval = null;
 // Debounce timer for search
 let searchDebounceTimer = null;
 
-const successfullySavedData = ref(false);
 
-// Dropdown options
-const CATEGORY_OPTIONS = [
-  "Hardware",
-  "Software",
-  "Network",
-  "Computer Lab",
-  "Accounts",
-  "LSU Webpages",
-  "Student Portal",
-  "Others",
-];
+// Dropdown options - imported from JSON config
+const CATEGORY_OPTIONS = itServiceConfig.categoryOptions;
 
-// Computer Lab location options
-const COMPUTER_LAB_LOCATIONS = {
-  "BVM and SJ Buildings": [
-    "BVM 4F Computer Lab",
-    "BVM 2F Computer Lab",
-    "SJ Computer Lab",
-  ],
-  "LS Building": [
-    "LS209 - Maclab",
-    "LS211 - Networking",
-    "LS212 - Programming",
-    "LS213 - Multimedia",
-    "LS215 - Openlab",
-  ],
-};
+// Computer Lab location options - imported from JSON config
+const COMPUTER_LAB_LOCATIONS = itServiceConfig.computerLabLocations;
 
 // Computed property to get location options based on category
 const getLocationOptions = computed(() => {
@@ -1568,167 +1603,13 @@ const getLocationOptions = computed(() => {
   return CENTER_OFFICE_ROOM_OPTIONS;
 });
 
-const ITEM_TYPE_OPTIONS_MAP = {
-  Hardware: [
-    "Laptop",
-    "Desktop",
-    "Printer",
-    "Scanner",
-    "Monitor",
-    "Keyboard",
-    "Mouse",
-    "Projector",
-    "Webcam",
-    "Headset",
-    "Speaker",
-    "Microphone",
-    "External Hard Drive",
-    "USB Flash Drive",
-    "Power Supply",
-    "Motherboard",
-    "RAM",
-    "Graphics Card",
-    "CPU",
-    "Cooling Fan",
-    "Others",
-  ],
-  Software: ["Installation", "Repair", "Uninstall"],
-  Network: ["WiFi Access", "Network Configuration"],
-  "Computer Lab": [
-    "Computer Setup",
-    "Software Installation",
-    "Hardware Issue",
-    "Network Connectivity",
-    "Maintenance",
-    "Others",
-  ],
-  Accounts: ["LSU Gmail", "Canvas", "Microsoft", "Student Portal", "Others"],
-  "LSU Webpages": [
-    "Update Content",
-    "Fix Errors",
-    "Add New Page",
-    "Remove Page",
-    "Delete Article or Content",
-    "Add Article or Content",
-    "Update Article or Content",
-    "Quality Assurance Testing",
-    "Others",
-  ],
-  "Student Portal": ["Forgot Password", "Others"],
-  Others: [
-    "Screwdriver Set",
-    "Cable Ties",
-    "Thermal Paste",
-    "Cleaning Kit",
-    "Cable Tester",
-    "Crimping Tool",
-    "Anti-static Wrist Strap",
-    "Compressed Air",
-    "HDMI Cable",
-    "VGA Cable",
-    "Ethernet Cable",
-    "USB Cable",
-    "Power Cable",
-    "Extension Cord",
-    "Others",
-  ],
-};
+const ITEM_TYPE_OPTIONS_MAP = itServiceConfig.itemTypeOptionsMap;
 
-const listCenterOfficeRoom = [
-  "Accounting Office",
-  "Campus Development",
-  "General Services Office",
-  "Human Resource and Development",
-  "Office of the Chancellor",
-  "Office of the President",
-  "Registrar's Office",
-  "Research Office",
-  "Corporate and Executive Management Center",
-  "Vice Chancellor for Academics Affairs",
-  "Vice President for Planning and Strategic Services",
-  "Vice President for Finance and Accounting Services",
-  "Vice President for Administrative Services",
-  "Vice President for Lasallian Mission Services",
-  "Vice President for Advancement and Linkages Services",
-  "Lasallian Mission Center",
-  "Learning Resource Center",
-  "College of Arts and Sciences",
-  "College of Business and Accountancy",
-  "College of Criminal Justice Education",
-  "College of Computer Studies, Engineering, and Architecture",
-  "College of Teacher Education",
-  "College of Tourism and Hospitality Management",
-  "College of Nursing",
-  "School of Graduate Studies",
-];
+// Office/Room options - imported from JSON config
+const CENTER_OFFICE_ROOM_OPTIONS = itServiceConfig.centerOfficeRoomOptions;
 
-const CENTER_OFFICE_ROOM_OPTIONS = [
-  ...listCenterOfficeRoom,
-  "Network Programs and Computerization Center",
-  "N/A",
-  "OTHER",
-];
-
-const SEMESTER_OPTIONS = ["First Semester", "Second Semester", "Summer"];
-const STATUS_OPTIONS = [
-  "New",
-  "Used",
-  "For Repair",
-  "For Disposal",
-  "Returned",
-  "Issued",
-  "Replaced",
-  "Condemned",
-  "Serviceable",
-  "Unserviceable",
-  "Running",
-];
-const TECHNICIANS_PERSONNEL = [
-  {
-    name: "Michael John Puertogalera",
-    email: "michaeljohn.puertogalera@lsu.edu.ph",
-    specializations: ["Accounts", "Software"],
-    role: "Accounts / Software",
-  },
-  {
-    name: "Jason Yap",
-    email: "jason.yap@lsu.edu.ph",
-    specializations: ["Network", "Accounts", "Software"],
-    role: "Network / Accounts / Software",
-  },
-  {
-    name: "Flourence John Gonzaga",
-    email: "johny14_gonzaga@lsu.edu.ph",
-    specializations: ["Network", "Accounts", "Software"],
-    role: "Network / Accounts / Software",
-  },
-  {
-    name: "Denzel Roy Suarez",
-    email: "denzelroy.suarez@lsu.edu.ph",
-    specializations: ["Computer Lab"],
-    location: "BVM and SJ Buildings",
-    role: "Computer Laboratory: BVM and SJ Buildings Rooms",
-  },
-  {
-    name: "Rommel Rosal",
-    email: "rommel.rosal@lsu.edu.ph",
-    specializations: ["Computer Lab"],
-    location: "LS Building",
-    role: "Computer Laboratory: LS Building Rooms",
-  },
-  {
-    name: "Giovanni Jose Morales",
-    email: "giovanni.morales@lsu.edu.ph",
-    specializations: ["Hardware"],
-    role: "PC and Printers and Other Hardwares - Whole LSU Campus Admins and Staffs",
-  },
-  {
-    name: "Jo Renlee Luna",
-    email: "jorenlee.luna@lsu.edu.ph",
-    specializations: ["Software"],
-    role: "LSU Website",
-  },
-];
+// Technicians personnel - imported from JSON config
+const TECHNICIANS_PERSONNEL = itServiceConfig.techniciansPersonnel;
 
 const loading = ref(false);
 const modalLoading = ref(false);
@@ -1898,20 +1779,13 @@ const availableTransferTechnicians = computed(() => {
   if (!info.value.technicians_assigned) return TECHNICIANS_PERSONNEL;
 
   // Get emails of currently assigned technicians
-  const assignedEmails = info.value.technicians_assigned.map(tech => tech.email);
+  const assignedEmails = info.value.technicians_assigned.map(
+    (tech) => tech.email,
+  );
 
   // Filter out currently assigned technicians to prevent duplicates
-  return TECHNICIANS_PERSONNEL.filter(tech => !assignedEmails.includes(tech.email));
-});
-
-// Check if ticket is completed (for enabling rating)
-const isTicketCompleted = computed(() => {
-  if (!info.value.current_status) return false;
-
-  return (
-    info.value.current_status === "Completed" ||
-    (info.value.logs &&
-      info.value.logs.some((log) => log.status === "Completed"))
+  return TECHNICIANS_PERSONNEL.filter(
+    (tech) => !assignedEmails.includes(tech.email),
   );
 });
 
@@ -2203,32 +2077,6 @@ const getMoodIcon = (item) => {
   }
 };
 
-// Date helpers
-const getCurrentSemester = () => {
-  const month = moment().month() + 1;
-  if (month >= 1 && month <= 5) return "Second Semester";
-  if (month >= 6 && month <= 7) return "Summer";
-  return "First Semester";
-};
-
-const getAcademicYear = () => {
-  const year = moment().year();
-  const month = moment().month() + 1;
-  return month >= 6 ? `A.Y ${year} - ${year + 1}` : `A.Y ${year - 1} - ${year}`;
-};
-
-const getTodayDateChecked = () => moment().format("DD/MM/YYYY hh:mm A");
-
-const ACADEMIC_YEAR_OPTIONS = (() => {
-  const currentYear = moment().year();
-  const years = [];
-  for (let i = -5; i <= 1; i++) {
-    const start = currentYear + i;
-    years.push(`A.Y ${start} - ${start + 1}`);
-  }
-  return years;
-})();
-
 // Receipt handling
 const receiptFile = ref(null);
 const receiptPreview = ref("");
@@ -2289,42 +2137,39 @@ watch(
       // Check if there's a "Completed" status before the transfer
       const logsBeforeTransfer = newLogs.slice(0, -1);
       const hasCompletedStatus = logsBeforeTransfer.some(
-        log => log.status === "Completed"
+        (log) => log.status === "Completed",
       );
 
       if (hasCompletedStatus) {
         // Find the original completion log
         const completedLog = [...logsBeforeTransfer]
           .reverse()
-          .find(log => log.status === "Completed");
+          .find((log) => log.status === "Completed");
 
         if (completedLog && info.value.technicians_assigned) {
           // Check if "Completed" logs were already added for new technicians
-          const newTechnicianEmails = info.value.technicians_assigned.map(t => t.email);
+          const newTechnicianEmails = info.value.technicians_assigned.map(
+            (t) => t.email,
+          );
           const completedLogsAfterTransfer = newLogs.filter(
             (log, index) =>
-              index > newLogs.indexOf(lastLog) &&
-              log.status === "Completed"
+              index > newLogs.indexOf(lastLog) && log.status === "Completed",
           );
 
           // Only add if not already added (prevent duplicates)
           if (completedLogsAfterTransfer.length === 0) {
-            console.log("✅ Auto-adding Completed status for transferred ticket");
+            console.log(
+              "✅ Auto-adding Completed status for transferred ticket",
+            );
           }
         }
       }
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
-// Computed property to get logged-in technician
-const loggedInTechnician = computed(() => {
-  const userEmail = userStore.user?.email;
-  if (!userEmail) return null;
 
-  return TECHNICIANS_PERSONNEL.find((tech) => tech.email === userEmail);
-});
 
 // Modal controls
 const openCreateModal = () => {
@@ -2766,7 +2611,7 @@ const confirmTransferTicket = async () => {
   if (isCompleted && info.value.logs) {
     const completedLog = [...info.value.logs]
       .reverse()
-      .find(log => log.status === "Completed");
+      .find((log) => log.status === "Completed");
 
     if (completedLog) {
       completedByTechnician = {
@@ -2801,7 +2646,9 @@ const confirmTransferTicket = async () => {
     transferTechnicians.value.forEach((tech) => {
       info.value.logs.push({
         status: "Completed",
-        remarks: completedByTechnician.remarks || `Completed by ${completedByTechnician.name} (Auto-added after transfer)`,
+        remarks:
+          completedByTechnician.remarks ||
+          `Completed by ${completedByTechnician.name} (Auto-added after transfer)`,
         timestamp: new Date().toISOString(),
         assigned_technician_name: completedByTechnician.name,
         assigned_technician_lsu_email: completedByTechnician.email,
@@ -2893,7 +2740,10 @@ const confirmTransferTicket = async () => {
     }
   } catch (err) {
     console.error("Failed to transfer ticket:", err);
-    showToaster("❌ Failed to assign/transfer ticket. Please try again.", "error");
+    showToaster(
+      "❌ Failed to assign/transfer ticket. Please try again.",
+      "error",
+    );
   } finally {
     modalLoading.value = false;
   }
