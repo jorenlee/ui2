@@ -6,7 +6,11 @@
       <div class="flex justify-between items-center">
         <div class="text-xs text-green-800 font-semibold">
           Showing {{ paginatedRequests.length }} of
-          {{ filteredRequests.length }} ticket(s)
+          {{ filteredRequests.length }}
+          <span v-if="activeTab === 'pending'" class="text-yellow-700">in progress</span>
+          <span v-else-if="activeTab === 'completed'" class="text-green-700">completed</span>
+          <span v-else>total</span>
+          ticket(s)
           <span class="font-bold uppercase">| {{ requests.length }} total</span>
         </div>
       </div>
@@ -46,9 +50,69 @@
       </div>
     </div>
 
+        <!-- ================= TABS ================= -->
+    <div>
+      <div class="flex gap-2 border-b border-gray-200">
+        <button
+          @click="activeTab = 'pending'"
+          :class="[
+            'px-6 py-3 font-semibold text-sm transition-all relative',
+            activeTab === 'pending'
+              ? 'text-yellow-700 border-b-2 border-yellow-600 bg-yellow-50'
+              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+          ]"
+          :title="'Includes: Pending, Unsuccessful, In Progress, Lacking Content, Cancelled'"
+        >
+          <i class="fas fa-clock mr-2"></i>In Progress
+          <span
+            v-if="pendingCount > 0"
+            class="ml-2 px-2 py-0.5 text-xs rounded-full bg-yellow-600 text-white font-bold"
+          >
+            {{ pendingCount }}
+          </span>
+        </button>
+        <button
+          @click="activeTab = 'completed'"
+          :class="[
+            'px-6 py-3 font-semibold text-sm transition-all relative',
+            activeTab === 'completed'
+              ? 'text-green-700 border-b-2 border-green-600 bg-green-50'
+              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+          ]"
+          :title="'Includes: Completed, For Review, Closed'"
+        >
+          <i class="fas fa-check-circle mr-2"></i>Completed
+          <span
+            v-if="completedCount > 0"
+            class="ml-2 px-2 py-0.5 text-xs rounded-full bg-green-600 text-white font-bold"
+          >
+            {{ completedCount }}
+          </span>
+        </button>
+        <button
+          @click="activeTab = 'all'"
+          :class="[
+            'px-6 py-3 font-semibold text-sm transition-all relative',
+            activeTab === 'all'
+              ? 'text-blue-700 border-b-2 border-blue-600 bg-blue-50'
+              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+          ]"
+          :title="'Shows all tickets regardless of status'"
+        >
+          <i class="fas fa-list mr-2"></i>All
+          <span
+            v-if="requests.length > 0"
+            class="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue-600 text-white font-bold"
+          >
+            {{ requests.length }}
+          </span>
+        </button>
+      </div>
+    </div>
+
     <!-- ================= DATE LIST TABLE HEADER ================= -->
     <div
-      class="w-full lg:flex hidden bg-gradient-to-r from-green-700 to-green-600 rounded-t-lg shadow-md overflow-hidden"
+      class="w-full lg:flex hidden bg-gradient-to-r from-green-700 to-green-600 shadow-md overflow-hidden"
     >
       <div
         @click="sortBy('issue_concern_request_category_type')"
@@ -181,6 +245,8 @@
         <span>{{ toaster.message }}</span>
       </div>
     </transition>
+
+
 
     <!-- ================= LOADING STATE ================= -->
     <div v-if="loading" class="space-y-2 mt-2">
@@ -1503,6 +1569,9 @@ const showTransferModal = ref(false);
 const transferTechnicians = ref([]);
 const isAssignMode = ref(false); // Track if modal is in "Assign" mode vs "Transfer" mode
 
+// Tab state
+const activeTab = ref("pending"); // 'pending', 'completed', 'all' - default to 'pending' (In Progress)
+
 // Pagination
 const currentPage = ref(1);
 const itemsPerPage = ref(100);
@@ -1593,6 +1662,11 @@ onUnmounted(() => {
   if (searchDebounceTimer) {
     clearTimeout(searchDebounceTimer);
   }
+});
+
+// Reset to page 1 when switching tabs
+watch(activeTab, () => {
+  currentPage.value = 1;
 });
 
 // Debounce search filter for better performance (300ms delay)
@@ -1726,8 +1800,37 @@ const availableTransferTechnicians = computed(() => {
   );
 });
 
+// Computed properties for tab counts
+const pendingCount = computed(() => {
+  return requests.value.filter((r) => {
+    const status = latestStatus(r)?.status;
+    return ["Pending", "Unsuccessful", "In Progress", "Lacking Content", "Cancelled"].includes(status);
+  }).length;
+});
+
+const completedCount = computed(() => {
+  return requests.value.filter((r) => {
+    const status = latestStatus(r)?.status;
+    return ["Completed", "For Review", "Closed"].includes(status);
+  }).length;
+});
+
 const filteredRequests = computed(() => {
   let filtered = [...requests.value];
+
+  // Tab filter (applied first)
+  if (activeTab.value === "pending") {
+    filtered = filtered.filter((r) => {
+      const status = latestStatus(r)?.status;
+      return ["Pending", "Unsuccessful", "In Progress", "Lacking Content", "Cancelled"].includes(status);
+    });
+  } else if (activeTab.value === "completed") {
+    filtered = filtered.filter((r) => {
+      const status = latestStatus(r)?.status;
+      return ["Completed", "For Review", "Closed"].includes(status);
+    });
+  }
+  // If activeTab is 'all', no filtering by status
 
   // Status filter
   if (statusFilter.value) {
@@ -2225,6 +2328,11 @@ const checkForUnratedTickets = async (email) => {
 };
 
 const createTicket = async () => {
+  // Prevent duplicate submissions
+  if (modalLoading.value) {
+    return;
+  }
+
   // Validate required fields
   if (!info.value.requestor_fullname || !info.value.requestor_lsu_email) {
     showToaster(
@@ -2234,23 +2342,31 @@ const createTicket = async () => {
     return;
   }
 
-  // Check for unrated tickets
-  const unratedCount = await checkForUnratedTickets(
-    info.value.requestor_lsu_email,
-  );
-  if (unratedCount) {
-    showToaster(
-      `❌ This user has ${unratedCount} unrated ticket${unratedCount > 1 ? "s" : ""}. Please ask them to rate all previous tickets before creating a new one.`,
-      "error",
-      5000,
+  // Set loading state before async validation
+  modalLoading.value = true;
+
+  try {
+    // Check for unrated tickets
+    const unratedCount = await checkForUnratedTickets(
+      info.value.requestor_lsu_email,
     );
+    if (unratedCount) {
+      showToaster(
+        `❌ This user has ${unratedCount} unrated ticket${unratedCount > 1 ? "s" : ""}. Please ask them to rate all previous tickets before creating a new one.`,
+        "error",
+        5000,
+      );
+      modalLoading.value = false;
+      return;
+    }
+  } catch (err) {
+    console.error("Error checking unrated tickets:", err);
+    modalLoading.value = false;
     return;
   }
 
   // Close modal immediately for instant feedback
   showModal.value = false;
-
-  modalLoading.value = true;
   normalizeOffice();
 
   // Update the initial log with technician information (who created the walk-in ticket)
@@ -2380,6 +2496,11 @@ const showToaster = (message, type = "success", duration = 3000) => {
 };
 
 const saveChanges = async () => {
+  // Prevent duplicate submissions
+  if (modalLoading.value) {
+    return;
+  }
+
   // Validate that only assigned personnel can save locked tickets
   if (info.value.ticket_locked_by_email && !isAssignedTechnician.value) {
     showToaster(
@@ -2498,6 +2619,11 @@ const saveChanges = async () => {
 
 // Transfer ticket to other personnel
 const confirmTransferTicket = async () => {
+  // Prevent duplicate submissions
+  if (modalLoading.value) {
+    return;
+  }
+
   if (transferTechnicians.value.length === 0) {
     showToaster(
       "⚠️ Please select at least one technician to assign.",
