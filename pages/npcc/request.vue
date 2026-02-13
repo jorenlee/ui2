@@ -162,15 +162,18 @@
                       <div class="flex gap-3">
                         <button
                           @click="showConfirmation = false"
-                          class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition-colors"
+                          :disabled="modalLoading"
+                          class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <i class="fas fa-times mr-2"></i>Cancel
                         </button>
                         <button
                           @click="confirmSubmit"
-                          class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors"
+                          :disabled="modalLoading"
+                          class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          <i class="fas fa-check mr-2"></i>Confirm
+                          <i class="fas fa-check mr-2"></i
+                          >{{ modalLoading ? "Submitting..." : "Confirm" }}
                         </button>
                       </div>
                     </div>
@@ -829,6 +832,11 @@ const checkForUnratedTickets = async (email) => {
 };
 
 const handleSubmitClick = async () => {
+  // Prevent duplicate submissions
+  if (modalLoading.value) {
+    return;
+  }
+
   // Validate required fields
   if (!info.value.requestor_fullname || !info.value.requestor_lsu_email) {
     showToaster("Please fill in all required fields.", "warning");
@@ -866,24 +874,37 @@ const handleSubmitClick = async () => {
     return;
   }
 
-  // Check for unrated completed tickets before allowing new submission
-  const hasUnratedTickets = await checkForUnratedTickets(
-    info.value.requestor_lsu_email,
-  );
-  if (hasUnratedTickets) {
-    showToaster(
-      `⚠️ You have ${unratedTicketsCount.value} completed ticket${unratedTicketsCount.value > 1 ? "s" : ""} without rating/feedback. Please visit the portal to complete your feedback before submitting a new request.`,
-      "warning",
-      8000,
-    );
-    return;
-  }
+  // Set loading state to prevent duplicate checks
+  modalLoading.value = true;
 
-  // Show confirmation dialog
-  showConfirmation.value = true;
+  try {
+    // Check for unrated completed tickets before allowing new submission
+    const hasUnratedTickets = await checkForUnratedTickets(
+      info.value.requestor_lsu_email,
+    );
+    if (hasUnratedTickets) {
+      showToaster(
+        `⚠️ You have ${unratedTicketsCount.value} completed ticket${unratedTicketsCount.value > 1 ? "s" : ""} without rating/feedback. Please visit the portal to complete your feedback before submitting a new request.`,
+        "warning",
+        8000,
+      );
+      return;
+    }
+
+    // Show confirmation dialog
+    showConfirmation.value = true;
+  } finally {
+    // Reset loading state after validation
+    modalLoading.value = false;
+  }
 };
 
 const confirmSubmit = () => {
+  // Prevent duplicate submissions
+  if (modalLoading.value) {
+    return;
+  }
+
   showConfirmation.value = false;
   if (isCreate.value) {
     createTicket();
@@ -893,6 +914,11 @@ const confirmSubmit = () => {
 };
 
 const createTicket = async () => {
+  // Prevent duplicate API calls
+  if (modalLoading.value) {
+    return;
+  }
+
   modalLoading.value = true;
   normalizeOffice();
 
