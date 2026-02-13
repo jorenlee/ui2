@@ -5,11 +5,11 @@
 </script>
 <template>
   <div class="">
-        <UniversityFeedbackWidget />
+    <UniversityFeedbackWidget />
     <div class="flex justify-between bg-green-900 px-3 py-1.5">
       <div class="flex gap-x-3 lg:w-fit mx-auto">
         <div class="flex items-center">
-          <img :src="profileImageUrl" class="lg:w-7 w-5 h-5 mx-auto" />
+          <img :src="profileImageUrl" class="w-6 h-6 mx-auto" />
         </div>
         <div class="w-full flex items-center">
           <div>

@@ -1,9 +1,9 @@
 <template>
   <div class="lg:p-1 text-sm">
-    <div class="lg:flex items-center justify-between">
-      <h2 class="text-sm font-bold lg:mb-4">NPCC Tech Support & IT Services</h2>
+    <div class="lg:flex items-center justify-between mb-2">
+      <h2 class="text-sm font-bold">NPCC Tech Support & IT Services</h2>
       <!-- Results Count & Real-time Indicator -->
-      <div class="mb-3 flex justify-between items-center">
+      <div class="flex justify-between items-center">
         <div class="text-xs text-green-800 font-semibold">
           Showing {{ paginatedRequests.length }} of
           {{ filteredRequests.length }} ticket(s)
@@ -14,91 +14,28 @@
 
     <!-- ACTION BAR -->
     <div class="bg-white border rounded-lg py-1 px-2 mb-4 shadow-sm">
-      <div class="lg:flex grid grid-cols-2 gap-3 mb-3 w-full">
+      <div class="lg:flex grid grid-cols-2 gap-3 w-full">
         <!-- Search Filter -->
         <div class="w-full">
           <label class="text-xs font-semibold text-gray-700 mb-1 block"
-            ><i class="fa fa-search mr-1"></i>Universal Search</label
+            ><i class="fa fa-search mr-1"></i>Search</label
           >
           <input
             v-model="searchFilter"
             type="text"
-            placeholder="Search anything: Name, Email, Category, Concern, Location, Status, Technician, Details... (Use multiple words to narrow results)"
+            placeholder="Search by assigned personnel, category, status, requestor, center/office/room"
             class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
           />
           <p v-if="searchFilter" class="text-[10px] text-gray-500 mt-1 italic">
-            <i class="fa fa-info-circle mr-1"></i>Searching across all fields{{
+            <i class="fa fa-info-circle mr-1"></i>Searching with exact word matching{{
               searchFilter.trim().split(/\s+/).length > 1
-                ? " (matching ALL words)"
+                ? " (ALL words must match)"
                 : ""
             }}...
           </p>
         </div>
 
-        <!-- Status Filter -->
-        <div class="w-full">
-          <label class="text-xs font-semibold text-gray-700 mb-1 block"
-            >Status
-          </label>
-
-          <select
-            v-model="statusFilter"
-            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="in progress">In Progress</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
-
-        <!-- Technician Filter -->
-        <div class="w-full">
-          <label class="text-xs font-semibold text-gray-700 mb-1 block"
-            >Technician</label
-          >
-          <select
-            v-model="technicianFilter"
-            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">All Technicians</option>
-            <option
-              v-for="tech in TECHNICIANS_PERSONNEL"
-              :key="tech.email"
-              :value="tech.name"
-            >
-              {{ tech.name }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Date Range Filter -->
-        <div class="w-full">
-          <label class="text-xs font-semibold text-gray-700 mb-1 block"
-            >Date Range</label
-          >
-          <select
-            v-model="dateFilter"
-            class="input w-full rounded p-2 text-xs border shadow-sm focus:ring-2 focus:ring-green-500"
-          >
-            <option value="">All Time</option>
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-            <option value="year">This Year</option>
-          </select>
-        </div>
-
         <div class="lg:w-fit w-full flex justify-between items-center">
-          <button
-            @click="clearFilters"
-            class="lg:mt-5 w-full bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 whitespace-nowrap lg:text-sm text-xs font-semibold shadow-sm"
-          >
-            Clear Filters
-          </button>
-        </div>
-
-        <div class="w-full flex justify-between items-center">
           <button
             class="lg:mt-5 w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 whitespace-nowrap lg:text-sm text-xs font-semibold shadow-sm"
             @click="openCreateModal"
@@ -115,7 +52,7 @@
     >
       <div
         @click="sortBy('issue_concern_request_category_type')"
-        class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-6/12 w-full flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-tools mr-1"></i> Category
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -141,7 +78,7 @@
       </div>
       <div
         @click="sortBy('requestor_fullname')"
-        class="lg:w-11/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-11/12 w-full flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-user mr-1"></i> Requestor
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -166,7 +103,7 @@
 
       <div
         @click="sortBy('technicians_assigned')"
-        class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-6/12 w-full flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-users mr-1"></i> Assigned Personnel
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -190,7 +127,7 @@
       </div>
       <div
         @click="sortBy('status')"
-        class="lg:w-6/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-6/12 w-full flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-info-circle mr-1"></i> Status
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -214,7 +151,7 @@
       </div>
 
       <div
-        class="lg:w-3/12 w-full flex items-center p-3 text-white font-bold text-sm border-r border-green-500"
+        class="lg:w-3/12 w-full flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500"
       >
         <i class="fa fa-star mr-1"></i> Feedback
       </div>
@@ -277,7 +214,7 @@
       <div v-for="(item, index) in paginatedRequests" :key="item.id">
         <!-- ================= DESKTOP ROW ================= -->
         <div
-          class="hidden lg:flex items-center text-sm cursor-pointer border py-1 transition-colors"
+          class="hidden lg:flex items-center text-sm cursor-pointer border py-0.5 transition-colors"
           :class="
             index % 2 === 0
               ? 'bg-white hover:bg-gray-100'
@@ -1568,7 +1505,7 @@ const isAssignMode = ref(false); // Track if modal is in "Assign" mode vs "Trans
 
 // Pagination
 const currentPage = ref(1);
-const itemsPerPage = ref(20);
+const itemsPerPage = ref(100);
 
 // Sorting
 const sortColumn = ref("created_at");
@@ -1819,34 +1756,15 @@ const filteredRequests = computed(() => {
       .filter((word) => word.length > 0);
 
     filtered = filtered.filter((r) => {
-      // Basic fields
-      const ticketId = (r.ticket_id || "").toString().toLowerCase();
-      const requestorName = (r.requestor_fullname || "")
-        .toString()
-        .toLowerCase();
-      const requestorEmail = (r.requestor_lsu_email || "")
-        .toString()
-        .toLowerCase();
+      // Requestor info
+      const requestorName = (r.requestor_fullname || "").toString().toLowerCase();
+      const requestorEmail = (r.requestor_lsu_email || "").toString().toLowerCase();
 
-      // Category and concern fields
-      const category = (r.issue_concern_request_category_type || "")
-        .toString()
-        .toLowerCase();
-      const specificConcern = (r.issue_concern_request_item_type || "")
-        .toString()
-        .toLowerCase();
-      const centerOfficeRoom = (
-        r.issue_concern_request_center_office_room || ""
-      )
-        .toString()
-        .toLowerCase();
+      // Category
+      const category = (r.issue_concern_request_category_type || "").toString().toLowerCase();
 
-      // Details and other fields
-      const details = (r.issue_concern_request_details || "")
-        .toString()
-        .toLowerCase();
-      const ownerType = (r.owner_type || "").toString().toLowerCase();
-      const clientRole = (r.client_role || "").toString().toLowerCase();
+      // Center/Office/Room
+      const centerOfficeRoom = (r.issue_concern_request_center_office_room || "").toString().toLowerCase();
 
       // Assigned personnel - search through all technician names and emails
       let assignedPersonnel = "";
@@ -1866,37 +1784,28 @@ const filteredRequests = computed(() => {
         .toString()
         .toLowerCase();
 
-      // Search through all logs (status, remarks, and technician names)
-      let logsText = "";
-      if (r.logs && Array.isArray(r.logs)) {
-        logsText = r.logs
-          .map((log) => {
-            const status = (log.status || "").toString();
-            const remarks = (log.remarks || "").toString();
-            const techName = (log.assigned_technician_name || "").toString();
-            const techEmail = (
-              log.assigned_technician_lsu_email || ""
-            ).toString();
-            return `${status} ${remarks} ${techName} ${techEmail}`;
-          })
-          .join(" ")
-          .toLowerCase();
-      }
-
-      // Date fields (formatted for search)
-      const createdDate = r.created_at
-        ? moment(r.created_at).format("YYYY-MM-DD HH:mm:ss").toLowerCase()
-        : "";
-      const updatedDate = r.updated_at
-        ? moment(r.updated_at).format("YYYY-MM-DD HH:mm:ss").toLowerCase()
-        : "";
-
-      // Combine all searchable fields into one string
-      const allFields = `${ticketId} ${requestorName} ${requestorEmail} ${category} ${specificConcern} ${centerOfficeRoom} ${details} ${ownerType} ${clientRole} ${assignedPersonnel} ${currentStatus} ${logsText} ${createdDate} ${updatedDate}`;
+      // Collect searchable fields
+      const searchableFields = [
+        assignedPersonnel,
+        category,
+        currentStatus,
+        requestorName,
+        requestorEmail,
+        centerOfficeRoom
+      ];
 
       // For multi-word search: ALL words must be found (AND logic)
-      // Each word can be found in any field
-      return searchWords.every((word) => allFields.includes(word));
+      // Each word must match as a complete word (word boundary matching)
+      return searchWords.every((word) => {
+        // Escape special regex characters in the search word
+        const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Create regex with word boundaries (\b) for exact word matching
+        // This ensures "jason" matches "jason" but not "jasonsmith"
+        const wordRegex = new RegExp(`\\b${escapedWord}\\b`, 'i');
+
+        // Check if the word matches in ANY of the searchable fields
+        return searchableFields.some(field => wordRegex.test(field));
+      });
     });
   }
 
