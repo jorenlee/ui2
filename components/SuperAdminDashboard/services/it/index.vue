@@ -1765,15 +1765,6 @@ const TICKET_STATUS_FILTER_MAP = {
   completed: ["Completed", "Done", "Closed"],
 };
 
-// Clear filters function
-const clearFilters = () => {
-  statusFilter.value = "";
-  technicianFilter.value = "";
-  searchFilter.value = "";
-  dateFilter.value = "";
-  currentPage.value = 1;
-};
-
 // Sort function
 const sortBy = (column) => {
   if (sortColumn.value === column) {
@@ -1833,7 +1824,7 @@ const filteredRequests = computed(() => {
   if (activeTab.value === "pending") {
     filtered = filtered.filter((r) => {
       const status = latestStatus(r)?.status;
-      return ["Pending", "Unsuccessful", "In Progress", "Lacking Content", "Cancelled"].includes(status);
+      return ["Transferred", "Pending", "Unsuccessful", "In Progress", "Lacking Content", "Cancelled"].includes(status);
     });
   } else if (activeTab.value === "completed") {
     filtered = filtered.filter((r) => {
