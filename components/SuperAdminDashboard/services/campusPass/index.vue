@@ -20,7 +20,7 @@ const displayListName = ref([]);
 
 const isQuietFetching = ref(false);
 let refreshTimer = null;
-const refreshIntervalMs = 1000;
+const refreshIntervalMs = 5000; // Optimized: Changed from 1s to 5s for better performance
 
 // Add multiple selection state
 const selectedItems = ref([]);
@@ -195,8 +195,6 @@ const stopAutoRefresh = () => {
 onMounted(async () => {
   // Initialize query parameters first (synchronous, no await needed)
   const q = route.query || {};
-  if (q.status) statusFilter.value = String(q.status);
-  if (q.type) typeFilter.value = String(q.type);
   if (q.sort) sortDirection.value = String(q.sort) === "desc" ? "desc" : "asc";
   if (q.from) dateFrom.value = String(q.from);
   if (q.to) dateTo.value = String(q.to);
@@ -222,6 +220,11 @@ const fetchListItems = async () => {
       (await $fetch(endpoint.value + "/api/campus-pass/list").catch(
         (error) => error.data
       )) || [];
+
+    // Initialize selectedAccessTypes with all types if empty
+    if (selectedAccessTypes.value.length === 0) {
+      selectedAccessTypes.value = [...uniqueAccessTypes.value];
+    }
   } catch (error) {
     console.error("Error fetching list items:", error);
   } finally {
@@ -263,8 +266,8 @@ const normalizeTypeOfAccess = (val) => {
 };
 
 // Filters and sorting state
-const statusFilter = ref("all"); // approved | pending | declined | for revision | all
-const typeFilter = ref("all");
+const selectedStatuses = ref(["approved", "pending", "declined", "for revision"]); // Multiple status selection
+const selectedAccessTypes = ref([]); // Multiple access type selection
 const sortDirection = ref("asc"); // asc | desc
 const dateFrom = ref(""); // YYYY-MM-DD
 const dateTo = ref(""); // YYYY-MM-DD
@@ -295,15 +298,9 @@ const statusCounts = computed(() => {
 
 // Persist filters to query params
 watch(
-  [statusFilter, typeFilter, sortDirection, dateFrom, dateTo, searchQuery],
+  [selectedStatuses, selectedAccessTypes, sortDirection, dateFrom, dateTo, searchQuery],
   () => {
     const q = {
-      ...(statusFilter.value && statusFilter.value !== "all"
-        ? { status: statusFilter.value }
-        : {}),
-      ...(typeFilter.value && typeFilter.value !== "all"
-        ? { type: typeFilter.value }
-        : {}),
       ...(sortDirection.value && sortDirection.value !== "asc"
         ? { sort: sortDirection.value }
         : {}),
@@ -455,19 +452,19 @@ const filteredListItems = computed(() => {
     });
   }
 
-  // Status filter
-  if (statusFilter.value !== "all") {
-    const wanted = statusFilter.value.toLowerCase();
+  // Status filter - use selectedStatuses array
+  if (selectedStatuses.value.length > 0 && selectedStatuses.value.length < 4) {
     filteredItems = filteredItems.filter((it) =>
-      (it.approval_status || "").toLowerCase().includes(wanted)
+      selectedStatuses.value.includes((it.approval_status || "").toLowerCase())
     );
   }
 
-  // Type of access filter
-  if (typeFilter.value !== "all") {
-    filteredItems = filteredItems.filter((it) =>
-      normalizeTypeOfAccess(it.type_of_access).includes(typeFilter.value)
-    );
+  // Type of access filter - use selectedAccessTypes array
+  if (selectedAccessTypes.value.length > 0) {
+    filteredItems = filteredItems.filter((it) => {
+      const itemTypes = normalizeTypeOfAccess(it.type_of_access);
+      return selectedAccessTypes.value.some(type => itemTypes.includes(type));
+    });
   }
 
   // Date range filter (created_at preferred, fallback to schedule)
@@ -508,7 +505,7 @@ const paginatedListItems = computed(() => {
   return filteredListItems.value.slice(startIndex, endIndex);
 });
 
-watch([statusFilter, typeFilter, sortDirection, dateFrom, dateTo], () => {
+watch([selectedStatuses, selectedAccessTypes, sortDirection, dateFrom, dateTo], () => {
   currentPage.value = 1; // reset to first page when filters change
 });
 
@@ -539,7 +536,7 @@ const visiblePages = computed(() => {
 
         <div class="bg-white border rounded-md p-2 text-xs gap-2 mt-2 mx-5">
           <div
-            class="flex justify-between bg-white border-b mb-4 py-3"
+            class="flex justify-between bg-white border-b mb-2"
           >
             <div class="flex items-center justify-between gap-x-3">
               <div class="flex items-center space-x-3">
@@ -593,378 +590,362 @@ const visiblePages = computed(() => {
               </button>
             </div>
 
-            <!-- Status pills -->
-            <div class="flex gap-2 items-center mb-1 whitespace-nowrap">
-              <span class="px-2 py-0.5 rounded-full text-white bg-green-700"
-                >Approved: {{ statusCounts.approved }}</span
-              >
-              <span class="px-2 py-0.5 rounded-full text-white bg-gray-600"
-                >Pending: {{ statusCounts.pending }}</span
-              >
-              <span class="px-2 py-0.5 rounded-full text-white bg-red-700"
-                >Declined: {{ statusCounts.declined }}</span
-              >
-              <span class="px-2 py-0.5 rounded-full text-white bg-yellow-600"
-                >For revision: {{ statusCounts["for revision"] }}</span
-              >
+            <!-- Status & Type of Access Filter Badges - Mobile Optimized -->
+            <div class="lg:flex lg:gap-x-8 mb-3">
+              <!-- Status Filters -->
+              <div>
+                <label class="font-semibold mb-2 text-sm text-gray-700 block">Status:</label>
+                <div class="flex flex-wrap gap-2 items-center">
+                  <label
+                    class="inline-flex items-center lg:px-3 px-2 lg:py-1.5 py-1 rounded-full text-white cursor-pointer transition-all transform hover:scale-105 active:scale-95"
+                    :class="selectedStatuses.includes('approved') ? 'bg-green-700 shadow-lg ring-2 ring-green-300' : 'bg-green-700 opacity-50'"
+                  >
+                    <input
+                      type="checkbox"
+                      value="approved"
+                      v-model="selectedStatuses"
+                      class="mr-1.5 lg:mr-2 w-3.5 h-3.5 lg:w-4 lg:h-4"
+                      style="accent-color: #15803d;"
+                    />
+                    <span class="font-medium text-xs lg:text-sm">Approved: {{ statusCounts.approved }}</span>
+                  </label>
+
+                  <label
+                    class="inline-flex items-center lg:px-3 px-2 lg:py-1.5 py-1 rounded-full text-white cursor-pointer transition-all transform hover:scale-105 active:scale-95"
+                    :class="selectedStatuses.includes('pending') ? 'bg-gray-600 shadow-lg ring-2 ring-gray-300' : 'bg-gray-600 opacity-50'"
+                  >
+                    <input
+                      type="checkbox"
+                      value="pending"
+                      v-model="selectedStatuses"
+                      class="mr-1.5 lg:mr-2 w-3.5 h-3.5 lg:w-4 lg:h-4"
+                      style="accent-color: #4b5563;"
+                    />
+                    <span class="font-medium text-xs lg:text-sm">Pending: {{ statusCounts.pending }}</span>
+                  </label>
+
+                  <label
+                    class="inline-flex items-center lg:px-3 px-2 lg:py-1.5 py-1 rounded-full text-white cursor-pointer transition-all transform hover:scale-105 active:scale-95"
+                    :class="selectedStatuses.includes('declined') ? 'bg-red-700 shadow-lg ring-2 ring-red-300' : 'bg-red-700 opacity-50'"
+                  >
+                    <input
+                      type="checkbox"
+                      value="declined"
+                      v-model="selectedStatuses"
+                      class="mr-1.5 lg:mr-2 w-3.5 h-3.5 lg:w-4 lg:h-4"
+                      style="accent-color: #b91c1c;"
+                    />
+                    <span class="font-medium text-xs lg:text-sm">Declined: {{ statusCounts.declined }}</span>
+                  </label>
+
+                  <label
+                    class="inline-flex items-center lg:px-3 px-2 lg:py-1.5 py-1 rounded-full text-white cursor-pointer transition-all transform hover:scale-105 active:scale-95"
+                    :class="selectedStatuses.includes('for revision') ? 'bg-yellow-600 shadow-lg ring-2 ring-yellow-300' : 'bg-yellow-600 opacity-50'"
+                  >
+                    <input
+                      type="checkbox"
+                      value="for revision"
+                      v-model="selectedStatuses"
+                      class="mr-1.5 lg:mr-2 w-3.5 h-3.5 lg:w-4 lg:h-4"
+                      style="accent-color: #ca8a04;"
+                    />
+                    <span class="font-medium text-xs lg:text-sm">For revision: {{ statusCounts["for revision"] }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Type of Access Filters -->
+              <div>
+                <label class="font-semibold mb-2 text-sm text-gray-700 block">Type of Access:</label>
+                <div class="flex flex-wrap gap-2 items-center">
+                  <label
+                    v-for="accessType in uniqueAccessTypes"
+                    :key="accessType"
+                    class="inline-flex items-center lg:px-3 px-2 lg:py-1.5 py-1 rounded-full text-white cursor-pointer transition-all transform hover:scale-105 active:scale-95"
+                    :class="selectedAccessTypes.includes(accessType) ? 'bg-blue-600 shadow-lg ring-2 ring-blue-300' : 'bg-blue-600 opacity-50'"
+                  >
+                    <input
+                      type="checkbox"
+                      :value="accessType"
+                      v-model="selectedAccessTypes"
+                      class="mr-1.5 lg:mr-2 w-3.5 h-3.5 lg:w-4 lg:h-4"
+                      style="accent-color: #2563eb;"
+                    />
+                    <span class="font-medium text-xs lg:text-sm">{{ accessType }}</span>
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="flex items-center gap-x-3">
-            <div class="flex flex-col">
-              <label class="font-semibold mb-0.5">Status</label>
-              <select v-model="statusFilter" class="border px-2 py-1 rounded">
-                <option value="all">All</option>
-                <option value="approved">Approved</option>
-                <option value="pending">Pending</option>
-                <option value="declined">Declined</option>
-                <option value="for revision">For Revision</option>
+
+          <!-- Filters Section - Mobile Responsive Grid -->
+          <div class="lg:flex w-full gap-3">
+            <div class="flex flex-col lg:w-4/12">
+              <label class="font-semibold text-sm text-gray-700">Sort By</label>
+              <select v-model="sortDirection" class="border-2 border-gray-300 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                <option value="asc">Oldest First</option>
+                <option value="desc">Newest First</option>
               </select>
             </div>
-            <div class="flex flex-col whitespace-nowrap">
-              <label class="font-semibold mb-0.5">Type of Access</label>
-              <select v-model="typeFilter" class="border px-2 py-1 rounded">
-                <option value="all">All</option>
-                <option
-                  v-for="opt in uniqueAccessTypes"
-                  :key="opt"
-                  :value="opt"
-                >
-                  {{ opt }}
-                </option>
-              </select>
-            </div>
-            <div class="flex flex-col">
-              <label class="font-semibold mb-0.5">Sort</label>
-              <select v-model="sortDirection" class="border px-2 py-1 rounded">
-                <option value="asc">Oldest first (ASC)</option>
-                <option value="desc">Newest first (DESC)</option>
-              </select>
-            </div>
-            <div class="flex flex-col">
-              <label class="font-semibold mb-0.5">From</label>
+            <div class="flex flex-col lg:w-4/12">
+              <label class="font-semibold text-sm text-gray-700">From Date</label>
               <input
                 type="date"
                 v-model="dateFrom"
-                class="border px-2 py-1 rounded"
+                class="border-2 border-gray-300 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
               />
             </div>
-            <div class="flex flex-col">
-              <label class="font-semibold mb-0.5">To</label>
+            <div class="flex flex-col lg:w-4/12">
+              <label class="font-semibold text-sm text-gray-700">To Date</label>
               <input
                 type="date"
                 v-model="dateTo"
-                class="border px-2 py-1 rounded"
+                class="border-2 border-gray-300 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
               />
             </div>
 
-            <div class="flex flex-col w-full">
-              <label class="font-semibold mb-0.5">Search</label>
-              <div class="relative">
-                <i
-                  class="fa fa-search absolute left-2 top-1/2 -translate-y-1/2 text-gray-500"
-                ></i>
-                <input
-                  type="search"
-                  v-model.trim="searchQuery"
-                  placeholder="Name, email, TID, remarks, type..."
-                  class="border px-2 py-1 rounded pl-7 pr-7 w-full"
-                  aria-label="Search Campus Pass requests"
-                />
-                <button
-                  v-if="searchQuery"
-                  @click="searchQuery = ''"
-                  type="button"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-800"
-                  aria-label="Clear search"
-                  title="Clear search"
-                >
-                  <i class="fa fa-times-circle"></i>
-                </button>
+            <!-- Search Bar - Full Width Mobile Optimized -->
+            <div class="flex flex-col w-full sm:flex-row gap-3 items-end">
+              <div class="flex-1 w-full">
+                <label class="font-semibold text-sm text-gray-700 block">Search</label>
+                <div class="relative">
+                  <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                  <input
+                    type="search"
+                    v-model.trim="searchQuery"
+                    placeholder="Search by name, email, tracking ID, remarks..."
+                    class="border-2 border-gray-300 px-3 py-1.5 rounded-lg pl-10 pr-10 w-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    aria-label="Search Campus Pass requests"
+                  />
+                  <button
+                    v-if="searchQuery"
+                    @click="searchQuery = ''"
+                    type="button"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+                    aria-label="Clear search"
+                    title="Clear search"
+                  >
+                    <i class="fa fa-times-circle text-lg"></i>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div class="flex gap-2">
               <button
                 @click="
                   () => {
-                    statusFilter = 'all';
-                    typeFilter = 'all';
+                    selectedStatuses = ['approved', 'pending', 'declined', 'for revision'];
+                    selectedAccessTypes = [...uniqueAccessTypes];
                     sortDirection = 'asc';
                     dateFrom = '';
                     dateTo = '';
+                    searchQuery = '';
                   }
                 "
-                class="mt-4 border px-2 py-1 rounded hover:bg-gray-100"
+                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-lg font-medium transition-all whitespace-nowrap"
               >
-                Reset
+                <i class="fa fa-refresh mr-2"></i>Reset Filters
               </button>
             </div>
           </div>
         </div>
 
         <div class="">
-          <div class="w-full lg:p-5 px-2 py-2">
+          <div class="w-full lg:px-5 px-2 py-2">
             <div v-show="tableDisplay">
-              <div
-                class="w-full shadow bg-gray-100 text-green-900 font-bold px-2 text-center mb-3 py-2 text-xs uppercase"
-              >
-                All Request Lists
+              <!-- Header with Count -->
+              <div class="bg-gradient-to-r from-green-700 to-green-800 shadow-lg rounded-lg text-white font-bold px-4 py-1 mb-1 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i class="fa fa-list-alt text-lg"></i>
+                  <span class="text-sm lg:text-base">Campus Pass Requests</span>
+                </div>
+                <div class="bg-white text-green-800 px-3 rounded-full text-xs lg:text-sm font-semibold">
+                  {{ filteredListItems.length }} Total
+                </div>
               </div>
+
               <div class="">
                 <div
                   class="appointment-lists mx-auto text-xs"
                   :class="toggleListsName ? 'hidden' : ''"
                 >
-                  <div v-if="isLoading" class="text-center">
-                    <!-- Filters toolbar -->
-
-                    <div class="">
-                      <div class="flex animate-pulse space-x-4">
-                        <div class="flex-1">
-                          <div class="h-10 bg-gray-300"></div>
-                          <div class="h-0.5 bg-gray-100"></div>
-                          <div class="h-10 bg-gray-200"></div>
-                          <div class="h-0.5 bg-gray-100"></div>
-                          <div class="h-10 bg-gray-300"></div>
-                          <div class="h-0.5 bg-gray-100"></div>
-                          <div class="h-10 bg-gray-200"></div>
-                          <div class="h-0.5 bg-gray-100"></div>
-                          <div class="h-10 bg-gray-300"></div>
-                          <div class="h-0.5 bg-gray-100"></div>
-                          <div class="h-10 bg-gray-100"></div>
-                          <div class="h-0.5 bg-gray-100"></div>
+                  <!-- Improved Loading Skeleton -->
+                  <div v-if="isLoading" class="space-y-3">
+                    <div v-for="n in 5" :key="n" class="bg-white rounded-lg shadow-md p-4 animate-pulse">
+                      <div class="flex items-center gap-4">
+                        <div class="w-4 h-4 bg-gray-300 rounded"></div>
+                        <div class="flex-1 space-y-3">
+                          <div class="h-4 bg-gray-300 rounded w-3/4"></div>
+                          <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+                          <div class="flex gap-2">
+                            <div class="h-3 bg-gray-200 rounded w-20"></div>
+                            <div class="h-3 bg-gray-200 rounded w-20"></div>
+                          </div>
                         </div>
+                        <div class="w-24 h-8 bg-gray-300 rounded"></div>
                       </div>
                     </div>
                   </div>
 
                   <div v-else>
-                    <div class="gap-4" v-if="paginatedListItems.length > 0">
+                    <!-- Empty State -->
+                    <div v-if="paginatedListItems.length === 0" class="text-center py-12 bg-white rounded-lg shadow-md">
+                      <i class="fa fa-inbox text-6xl text-gray-300 mb-4"></i>
+                      <p class="text-gray-500 text-lg font-medium">No requests found</p>
+                      <p class="text-gray-400 text-sm mt-2">Try adjusting your filters</p>
+                    </div>
+
+                    <!-- Table Rows - Mobile Optimized -->
+                    <div class="space-y-1" v-else>
                       <div
-                        class="bg-gray-300 flex justify-evenly items-center h-auto shadow lg:mb-0 mb-5 border-gray-200 border"
+                        class="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-200 border-l-4 overflow-hidden"
+                        :class="{
+                          'border-green-500': b.approval_status === 'approved',
+                          'border-gray-500': b.approval_status === 'pending',
+                          'border-red-500': b.approval_status === 'declined',
+                          'border-yellow-500': b.approval_status === 'for revision'
+                        }"
                         v-for="(b, i) in paginatedListItems"
                         :key="i"
                       >
-                        <div class="px-2">
-                          <input   
-                            type="checkbox"   
-                            :checked="selectedItems.includes(b.id)"
-                            @change="toggleItemSelection(b.id)"
-                            class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer accent-green-600"
-                          />
-                        </div>
-                        <div class="w-full bg-white">
-                          <div class="lg:flex items-center w-full">
-                            <div
-                              class="lg:w-5/12 w-full block text-left text-[11px] leading-tight lg:px-2 px-2 lg:py-1 py-2"
-                            >
-                              <div class="w-full capitalize text-xs flex">
-                                <span class="max-w-[150px] truncate flex mr-1">
-                                  <i class="fa fa-user mr-2.5"></i>
-                                  {{ b.incharge_lastname }},
-                                </span>
+                        <div class="flex items-start gap-3 px-1 pb-1">
+                          <!-- Checkbox -->
+                          <div class="pt-1">
+                            <input
+                              type="checkbox"
+                              :checked="selectedItems.includes(b.id)"
+                              @change="toggleItemSelection(b.id)"
+                              class="h-4 w-4 lg:h-5 lg:w-5 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer accent-green-600"
+                            />
+                          </div>
 
-                                <span class="">
-                                  {{ b.incharge_firstname }}
-                                </span>
-
-                                <span
-                                  :class="
-                                    b.incharge_middlename === '-'
-                                      ? 'hidden'
-                                      : ''
-                                  "
-                                  class="mx-1"
-                                >
-                                  {{ b.incharge_middlename }}
-                                </span>
-                              </div>
-                              <div class="w-full text-xs">
-                                <i class="fa fa-envelope mr-1.5"></i>
-                                {{ b.incharge_contact_email }}
-                              </div>
-                              <div class="w-full">
-                                <i class="fa fa-phone lg:mr-2 mr-1"></i>
-                                {{ b.incharge_contact_number }}
+                          <!-- Content -->
+                          <div class="flex-1 min-w-0">
+                            <div class="lg:flex lg:items-center">
+                            <!-- User Info Section -->
+                            <div class="lg:w-5/12 w-full mb-3 lg:mb-0">
+                              <div class="space-y-0">
+                                <div class="flex items-center text-sm font-semibold text-gray-800">
+                                  <i class="fa fa-user mr-2 text-green-700"></i>
+                                  <span class="truncate">
+                                    {{ b.incharge_lastname }}, {{ b.incharge_firstname }}
+                                    <span v-if="b.incharge_middlename !== '-'">{{ b.incharge_middlename }}</span>
+                                  </span>
+                                </div>
+                                <div class="flex items-center text-xs text-gray-600">
+                                  <i class="fa fa-envelope mr-2 text-gray-400"></i>
+                                  <span class="truncate">{{ b.incharge_contact_email }}</span>
+                                </div>
+                                <div class="flex items-center text-xs text-gray-600">
+                                  <i class="fa fa-phone mr-2 text-gray-400"></i>
+                                  <span>{{ b.incharge_contact_number }}</span>
+                                </div>
                               </div>
                             </div>
-                            <div class="lg:w-6/12 w-full">
-                              <div
-                                class="w-full font-bold pb-1 flex items-center lg:justify-start justify-center"
-                              >
-                                <i class="fa fa-calendar mr-2"></i>
-                                {{ b.schedule }}
-                              </div>
-                              <div
-                                class="w-full flex items-center justify-center uppercase"
-                              >
-                                <ul class="gap-x-0.5 flex w-full">
-                                  <li
-                                    v-for="(j, i) in normalizeTypeOfAccess(
-                                      b.type_of_access
-                                    )"
+                            <!-- Schedule & Type Section -->
+                            <div class="lg:w-6/12 w-full mb-3 lg:mb-0">
+                              <div class="space-y-0">
+                                <div class="flex items-center text-sm font-semibold text-gray-800">
+                                  <i class="fa fa-calendar mr-2 text-green-700"></i>
+                                  <span>{{ b.schedule }}</span>
+                                </div>
+                                <div class="flex flex-wrap gap-1">
+                                  <span
+                                    v-for="(j, i) in normalizeTypeOfAccess(b.type_of_access)"
                                     :key="i"
-                                    class="border px-2 lg:py-0 py-1 text-[10px] tracking-tighter w-full whitespace-nowrap lg:text-left text-center"
+                                    class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium uppercase"
                                   >
                                     {{ j }}
-                                  </li>
-                                </ul>
+                                  </span>
+                                </div>
                               </div>
                             </div>
-                            <div
-                              class="lg:w-6/12 w-full flex items-center lg:py-0 py-4 border-r"
-                            >
-                              <div class="w-full">
+                            <!-- Remarks & Details Section -->
+                            <div class="lg:w-6/12 w-full mb-3 lg:mb-0">
+                              <div class="space-y-0">
+                                <div class="flex flex-col">
+                                  <label class="text-[10px] font-semibold text-gray-700">Remarks:</label>
+                                  <input
+                                    type="text"
+                                    v-model="b.remarks"
+                                    class="border-2 border-gray-300 rounded px-2 text-[10px] focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                  />
+                                </div>
+                                <div class="flex flex-col">
+                                  <label class="text-[10px] font-semibold text-gray-700">Details:</label>
+                                  <input
+                                    type="text"
+                                    v-model="b.purpose"
+                                    placeholder="Details"
+                                    class="border-2 border-gray-300 rounded px-2 text-[10px] focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <!-- Attendees & Documents Section -->
+                            <div class="lg:w-5/12 w-full mb-3 lg:mb-0 lg:pl-2">
+                              <div class="space-y-0">
                                 <div
-                                  class="flex items-center w-11/12 mx-auto mb-1"
+                                  class="flex items-center justify-between p-2 rounded transition-colors"
+                                  :class="b.attendees === 'Group' ? 'bg-gray-100 hover:bg-gray-200 cursor-pointer' : ''"
+                                  @click="b.attendees === 'Group' ? btnToggleListsName(b.id) : null"
                                 >
-                                  <label
-                                    for="remarks"
-                                    class="font-bold text-gray-800 mr-2.5"
-                                    >Remarks:</label
-                                  >
-                                  <div class="flex w-full">
-                                    <input
-                                      type="text"
-                                      class="border-b w-full mx-auto text-xs px-1 shadow-sm"
-                                      v-model="b.remarks"
-                                    />
+                                  <div class="flex items-center gap-2">
+                                    <i class="fa fa-users text-green-700"></i>
+                                    <span class="font-semibold text-sm uppercase">{{ b.attendees }}</span>
+                                    <i
+                                      v-if="b.attendees === 'Group'"
+                                      class="fa fa-caret-down text-green-700"
+                                    ></i>
                                   </div>
-                                </div>
-
-                                <div class="flex items-center w-11/12 mx-auto">
-                                  <label
-                                    for="details"
-                                    class="font-bold text-gray-800 mr-5"
-                                    >Details:</label
-                                  >
-                                  <div class="flex w-full">
-                                    <input
-                                      type="text"
-                                      class="border-b w-full mx-auto text-xs px-1 shadow-sm"
-                                      placeholder="Details"
-                                      v-model="b.purpose"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                            <div
-                              class="lg:w-5/12 w-full flex items-center text-left"
-                              :class="
-                                b.attendees === 'Group'
-                                  ? 'cursor-pointer hover:bg-gray-300 hover:text-black bg-gray-200 py-1'
-                                  : 'flex items-center py-1'
-                              "
-                            >
-                              <div
-                                class="w-full px-3 lg:block flex items-center lg:py-0 py-2"
-                              >
-                                <div
-                                  class="font-bold uppercase lg:w-full lg:mr-0 mr-6"
-                                  @click="btnToggleListsName(b.id)"
-                                >
-                                  {{ b.attendees }}
-
-                                  <i
-                                    class="fa fa-caret-down text-lg ml-2"
-                                    :class="
-                                      b.attendees === 'Group'
-                                        ? 'text-green-800'
-                                        : 'hidden'
-                                    "
-                                  ></i>
-                                </div>
-
-                                <div
-                                  class="text-[10px] font-light whitespace-nowrap"
-                                >
-                                  TID:
-                                  <span class=""> {{ b.tracking_id }}</span>
-                                </div>
-                              </div>
-
-                              <div class="gap-x-5 flex w-fit mx-5 pt-1">
-                                <a
-                                  :href="b.approved_activities_link"
-                                  target="_blank"
-                                  class="font-bold w-full block text-green-800"
-                                  :class="
-                                    b.approved_activities_link === '-'
-                                      ? 'hidden'
-                                      : ''
-                                  "
-                                >
-                                  <i class="fa fa-file-pdf text-lg"></i>
-
-                                  <!-- Approved Activities -->
-                                </a>
-                                <a
-                                  :href="b.approved_gso_docs_link"
-                                  target="_blank"
-                                  class="font-bold w-full block text-green-800"
-                                  :class="
-                                    b.approved_gso_docs_link === '-'
-                                      ? 'hidden'
-                                      : ''
-                                  "
-                                >
-                                  <i class="fa fa-file-pdf text-lg"></i>
-                                  <!-- Approved Booking GSO -->
-                                </a>
-                              </div>
-                            </div>
-                            <div
-                              class="lg:w-3/12 w-full flex items-center justify-center py-1 border-b"
-                              :class="{
-                                'bg-red-700': b.approval_status === 'declined',
-                                'bg-gray-700': b.approval_status === 'pending',
-                                'bg-yellow-500':
-                                  b.approval_status === 'for revision',
-                                'bg-green-900':
-                                  b.approval_status === 'approved',
-                              }"
-                            >
-                              <div class="flex w-full">
-                                <div
-                                  class="w-fit mx-auto lg:py-1 py-3 flex items-center"
-                                >
-                                  <div
-                                    class="lg:block flex items-center w-full"
-                                  >
-                                    <label
-                                      class="font-bold block text-white lg:mr-0 mr-2"
-                                      >Status</label
+                                  <div class="flex gap-2">
+                                    <a
+                                      v-if="b.approved_activities_link !== '-'"
+                                      :href="b.approved_activities_link"
+                                      target="_blank"
+                                      class="text-green-700 hover:text-green-900 transition-colors"
+                                      title="Approved Activities"
                                     >
-                                    <select
-                                      v-model="b.approval_status"
-                                      name="borrower_category"
-                                      class="shadow block font-bold rounded-md w-fit border pb-0.5 border-[#e5e7eb] capitalize"
-                                      required
-                                      @change="
-                                        requestChangeStatus(
-                                          b.id,
-                                          b.approval_status,
-                                          b.purpose,
-                                          b.remarks
-                                        )
-                                      "
+                                      <i class="fa fa-file-pdf text-lg"></i>
+                                    </a>
+                                    <a
+                                      v-if="b.approved_gso_docs_link !== '-'"
+                                      :href="b.approved_gso_docs_link"
+                                      target="_blank"
+                                      class="text-green-700 hover:text-green-900 transition-colors"
+                                      title="Approved GSO Docs"
                                     >
-                                      <option value="pending">
-                                        Update Data
-                                      </option>
-                                      <option value="approved">Approved</option>
-                                      <option value="declined">declined</option>
-                                      <option value="for revision">
-                                        revision
-                                      </option>
-                                    </select>
+                                      <i class="fa fa-file-pdf text-lg"></i>
+                                    </a>
                                   </div>
+                                </div>
+                                <div class="text-xs text-gray-600">
+                                  <span class="font-semibold">TID:</span> {{ b.tracking_id }}
                                 </div>
                               </div>
                             </div>
-
-                          
+                            <!-- Status Section -->
+                            <div class="lg:w-3/12 w-full lg:pl-3">
+                              <div class="flex flex-col gap-1">
+                                <label class="text-xs font-semibold text-gray-700">Status</label>
+                                <select
+                                  v-model="b.approval_status"
+                                  class="border-2 rounded-lg px-3 py-2 text-sm font-semibold capitalize focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
+                                  :class="{
+                                    'border-red-500 bg-red-50 text-red-700': b.approval_status === 'declined',
+                                    'border-gray-500 bg-gray-50 text-gray-700': b.approval_status === 'pending',
+                                    'border-yellow-500 bg-yellow-50 text-yellow-700': b.approval_status === 'for revision',
+                                    'border-green-500 bg-green-50 text-green-700': b.approval_status === 'approved',
+                                  }"
+                                  @change="requestChangeStatus(b.id, b.approval_status, b.purpose, b.remarks)"
+                                >
+                                  <option value="pending">Update Data</option>
+                                  <option value="approved">Approved</option>
+                                  <option value="declined">Declined</option>
+                                  <option value="for revision">For Revision</option>
+                                </select>
+                              </div>
+                            </div>
+                            </div>
                           </div>
                         </div>
                       </div>
