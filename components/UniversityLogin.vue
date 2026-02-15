@@ -4,46 +4,43 @@ import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import { useTokenClient } from "vue3-google-signin";
 
-/* =========================
-   PROPS
-========================= */
 const props = defineProps({
-  title: {
-    type: String,
-    required: true,
-  },
-  routeURL: {
-    type: String,
-    required: true,
-  },
+  title: { type: String, required: true },
+  routeURL: { type: String, required: true },
 });
 
 const userStore = useUserStore();
 const router = useRouter();
 
-/* ---- AUTO REDIRECT IF LOGGED IN ---- */
+/* AUTO REDIRECT IF LOGGED IN */
 onMounted(() => {
   if (userStore.isLoggedIn) {
     router.replace(props.routeURL);
   }
 });
 
-/* ---- GOOGLE LOGIN HANDLERS ---- */
+/* GOOGLE LOGIN HANDLERS */
 const handleOnError = (errorResponse) => {
   console.error("Google Login Error:", errorResponse);
 };
 
 const handleOnSuccess = async (response) => {
   try {
+    // Fetch Google profile
     const userInfo = await $fetch(
       `https://www.googleapis.com/oauth2/v1/userinfo?access_token=${response.access_token}`
     );
 
     if (!userInfo?.email) return;
 
-    userStore.setToken(response.access_token, userInfo.email);
+    // ✅ SAVE FULL PROFILE
+    userStore.setUser({
+      token: response.access_token,
+      email: userInfo.email,
+      name: userInfo.name,
+      picture: userInfo.picture,
+    });
 
-    // 🔥 DYNAMIC ROUTE HERE
     router.replace(props.routeURL);
   } catch (error) {
     console.error("Login error:", error);

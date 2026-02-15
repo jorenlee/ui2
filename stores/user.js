@@ -1,10 +1,7 @@
+// stores/user.js
 import { defineStore } from "pinia";
 
-const TOKEN_LIFETIME = 1000 * 60 * 60 * 24;
-
-// 1000 * 60 * 5; // 5 minutes
-
-// 1000 * 60 * 60 * 24; // 24 hours
+const TOKEN_LIFETIME = 1000 * 60 * 60 * 24; // 24 hours
 
 export const useUserStore = defineStore({
   id: "user",
@@ -13,9 +10,12 @@ export const useUserStore = defineStore({
     user: {
       isAuthenticated: false,
       email: null,
+      name: null,
+      picture: null,
       token: null,
       expiresAt: null,
     },
+
     // CONFIG
     developerEmail: "jorenleeluna24@gmail.com",
     testEmail: "npc@lsu.edu.ph",
@@ -28,6 +28,8 @@ export const useUserStore = defineStore({
       return Date.now() < state.user.expiresAt;
     },
     userEmail: (state) => state.user.email,
+    userName: (state) => state.user.name,
+    userPicture: (state) => state.user.picture,
   },
 
   actions: {
@@ -37,6 +39,8 @@ export const useUserStore = defineStore({
 
       const token = localStorage.getItem("user.token");
       const email = localStorage.getItem("user.email");
+      const name = localStorage.getItem("user.name");
+      const picture = localStorage.getItem("user.picture");
       const expiresAt = localStorage.getItem("user.expiresAt");
 
       if (!token || !email || !expiresAt) {
@@ -44,29 +48,38 @@ export const useUserStore = defineStore({
         return;
       }
 
-      // Auto logout if expired
       if (Date.now() > Number(expiresAt)) {
         this.removeToken();
         return;
       }
 
-      this.user.token = token;
-      this.user.email = email;
-      this.user.expiresAt = Number(expiresAt);
-      this.user.isAuthenticated = true;
+      this.user = {
+        isAuthenticated: true,
+        token,
+        email,
+        name,
+        picture,
+        expiresAt: Number(expiresAt),
+      };
     },
 
     /* ---------------- LOGIN ---------------- */
-    setToken(token, email) {
+    setUser({ token, email, name = null, picture = null }) {
       const expiresAt = Date.now() + TOKEN_LIFETIME;
 
-      this.user.token = token;
-      this.user.email = email;
-      this.user.expiresAt = expiresAt;
-      this.user.isAuthenticated = true;
+      this.user = {
+        isAuthenticated: true,
+        token,
+        email,
+        name,
+        picture,
+        expiresAt,
+      };
 
       localStorage.setItem("user.token", token);
       localStorage.setItem("user.email", email);
+      localStorage.setItem("user.name", name || "");
+      localStorage.setItem("user.picture", picture || "");
       localStorage.setItem("user.expiresAt", expiresAt);
     },
 
@@ -75,14 +88,20 @@ export const useUserStore = defineStore({
       this.clearUser();
       localStorage.removeItem("user.token");
       localStorage.removeItem("user.email");
+      localStorage.removeItem("user.name");
+      localStorage.removeItem("user.picture");
       localStorage.removeItem("user.expiresAt");
     },
 
     clearUser() {
-      this.user.token = null;
-      this.user.email = null;
-      this.user.expiresAt = null;
-      this.user.isAuthenticated = false;
+      this.user = {
+        isAuthenticated: false,
+        email: null,
+        name: null,
+        picture: null,
+        token: null,
+        expiresAt: null,
+      };
     },
   },
 });

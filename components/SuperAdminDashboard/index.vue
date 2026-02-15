@@ -1,0 +1,481 @@
+<script setup>
+import { ref, computed, watch, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useUserStore } from "@/stores/user";
+
+// ---------------- PROPS ----------------
+const props = defineProps({
+  superAdminEmails: { type: Array, required: true },
+  npccMenuEmails: { type: Array, required: true },
+  ochAdminEmails: { type: Array, required: true },
+  contentWritersEmails: { type: Array, required: true },
+  hrMenuEmails: { type: Array, required: true },
+  libraryMenuEmails: { type: Array, required: true },
+  registrarMenuEmails: { type: Array, required: true },
+  campusPassAdminEmails: { type: Array, required: true },
+  drsAdminEmails: { type: Array, required: true },
+});
+
+// ---------------- STATE ----------------
+definePageMeta({ middleware: "cms-auth" });
+const router = useRouter();
+const userStore = useUserStore();
+const currentView = ref("Menu");
+const openGroups = ref([
+  "Content Management",
+  "Human Resource",
+  "Library Management",
+  "Office of The Chancellor",
+  "NPCC IT Services",
+  "University Registrar",
+  "Campus Pass",
+  "Document Reviewer",
+  "External Links",
+]);
+
+// ---------------- AUTH & COMPUTED ----------------
+const isUserAuthenticated = computed(() => userStore.isLoggedIn);
+
+const rolesByEmail = computed(() => ({
+  superAdmin: props.superAdminEmails,
+  hr: props.hrMenuEmails,
+  library: props.libraryMenuEmails,
+  contentWriter: props.contentWritersEmails,
+  och: props.ochAdminEmails,
+  npcc: props.npccMenuEmails,
+  registrar: props.registrarMenuEmails,
+  campusPass: props.campusPassAdminEmails,
+  drs: props.drsAdminEmails,
+}));
+
+const userRole = computed(() => {
+  const email = userStore.user?.email;
+  if (!email) return null;
+
+  for (const [role, emails] of Object.entries(rolesByEmail.value)) {
+    if (emails.includes(email)) return role;
+  }
+  return null;
+});
+
+// ---------------- METHODS ----------------
+const toggleGroup = (groupName) => {
+  const index = openGroups.value.indexOf(groupName);
+  index > -1
+    ? openGroups.value.splice(index, 1)
+    : openGroups.value.push(groupName);
+};
+
+const logOut = () => {
+  userStore.removeToken();
+  router.push("/cms/login");
+};
+
+const handleContentSubmitted = () => {
+  currentView.value = "list";
+};
+
+// ---------------- LIFECYCLE ----------------
+onMounted(() => {
+  if (!userStore.isLoggedIn) router.replace("/cms/login");
+});
+
+// Only run watcher on client-side to avoid SSR issues with localStorage
+if (process.client) {
+  watch(
+    () => userStore.user?.email,
+    (newEmail) => {
+      if (!newEmail || !userRole.value) logOut();
+    },
+    { immediate: true }
+  );
+}
+// ---------------- MENU ----------------
+const subMenuList = [
+  {
+    group: "Content Management",
+    allowedEmails: props.contentWritersEmails,
+    items: [
+      { label: "Content Form", icon: "fa-list", type: "button", view: "form" },
+      {
+        label: "All Contents Lists",
+        icon: "fa-list-alt",
+        type: "button",
+        view: "list",
+      },
+    ],
+  },
+  {
+    group: "NPCC IT Services",
+    allowedEmails: props.npccMenuEmails,
+    items: [
+      {
+        label: "NPCC Management",
+        icon: "fa-cogs",
+        type: "button",
+        view: "npcc",
+      },
+    ],
+  },
+  {
+    group: "Human Resource",
+    allowedEmails: props.hrMenuEmails,
+    items: [
+      {
+        label: "Job Vacancies",
+        icon: "fa-list-alt",
+        type: "button",
+        view: "hr-job-vacancy-list",
+      },
+      {
+        label: "Raffle Draw",
+        icon: "fa-list-alt",
+        type: "button",
+        view: "hr-raffle",
+      },
+    ],
+  },
+  {
+    group: "Library Management",
+    allowedEmails: props.libraryMenuEmails,
+    items: [
+      {
+        label: "Appointment Lists",
+        icon: "fa-list-alt",
+        type: "button",
+        view: "appointments",
+      },
+      {
+        label: "Available Books",
+        icon: "fa-book",
+        type: "button",
+        view: "books",
+      },
+      {
+        label: "Set Schedules",
+        icon: "fa-calendar",
+        type: "button",
+        view: "schedules",
+      },
+    ],
+  },
+  {
+    group: "Office of The Chancellor",
+    allowedEmails: props.ochAdminEmails,
+    items: [
+      {
+        label: "University Calendar",
+        icon: "fa-calendar",
+        type: "button",
+        view: "university-calendar",
+      },
+    ],
+  },
+  {
+    group: "University Registrar",
+    allowedEmails: props.registrarMenuEmails,
+    items: [
+      {
+        label: "University Registrar",
+        icon: "fa-university",
+        type: "button",
+        view: "registrar",
+      },
+    ],
+  },
+  {
+    group: "Campus Pass",
+    allowedEmails: props.campusPassAdminEmails,
+    items: [
+      {
+        label: "Campus Pass Management",
+        icon: "fa-id-card",
+        type: "button",
+        view: "campusPass",
+      },
+    ],
+  },
+  {
+    group: "Document Reviewer",
+    allowedEmails: props.drsAdminEmails,
+    items: [
+      {
+        label: "Document Reviewer System",
+        icon: "fa-file-alt",
+        type: "button",
+        view: "drs",
+      },
+    ],
+  },
+  {
+    group: "External Links",
+    items: [
+      { label: "LSU Home Page", icon: "fa-globe", type: "link", to: "/" },
+    ],
+  },
+];
+const menuList = [
+  { label: "Menu", icon: "fa-bars", type: "button", view: "Menu" },
+  { label: "Search", icon: "fa-search", type: "button", view: "Search" },
+  { label: "Profile", icon: "fa-user", type: "button", view: "Profile" },
+  { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
+];
+
+const filteredMenuList = computed(() => {
+  const role = userRole.value;
+  const email = userStore.user?.email;
+  if (!role) return [];
+  return subMenuList.filter((menu) =>
+    role === "superAdmin" || !menu.allowedEmails || menu.allowedEmails.includes(email)
+  );
+});
+
+const navigateTo = (url) => router.push(url);
+const handleMenuClick = (menu) => {
+  menu.type === 'button' ? (currentView.value = menu.view) : navigateTo(menu.to);
+};
+</script>
+
+
+
+<template>
+  <div class="h-screen flex flex-col">
+    <!-- LOGOUT CONFIRMATION -->
+    <div v-if="currentView === 'Logout'" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div class="w-full max-w-md bg-white rounded-3xl p-8 text-center shadow-2xl transform transition-all">
+        <!-- Icon with Animation -->
+        <div class="mx-auto mb-6 w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-rose-600 shadow-lg shadow-red-500/30">
+          <i class="fa fa-sign-out text-3xl text-white"></i>
+        </div>
+
+        <!-- Title -->
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">Logout Confirmation</h3>
+
+        <!-- Description -->
+        <p class="text-gray-600 mb-8">Are you sure you want to log out of your account?</p>
+
+        <!-- Actions -->
+        <div class="flex gap-3 justify-center">
+          <button
+            @click="currentView = 'Profile'"
+            class="flex-1 px-6 py-3 text-sm font-semibold rounded-xl border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-700 transition-all duration-300"
+          >
+            Cancel
+          </button>
+          <button
+            @click="logOut"
+            class="flex-1 px-6 py-3 text-sm font-semibold rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 transition-all duration-300 flex items-center justify-center gap-2"
+          >
+            <i class="fa fa-sign-out"></i>
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+    <div v-if="isUserAuthenticated">
+      <!-- MAIN CONTENT -->
+      <div class="w-full flex flex-col mb-32">
+        <!-- CONTENT AREA -->
+        <div class="overflow-y-auto">
+          <div v-if="currentView === 'Profile'" class="w-full p-4">
+            <SuperAdminDashboardWelcome />
+          </div>
+          <div v-if="currentView === 'Menu'" class="p-4 lg:p-6">
+            <SuperAdminDashboardWelcome />
+
+            <!-- Modern Grid Layout with Better Spacing -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 lg:gap-6">
+              <div
+                v-for="menu in filteredMenuList"
+                :key="menu.label || menu.group"
+                class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group border border-gray-100 overflow-hidden"
+              >
+                <template v-if="menu.group">
+                  <!-- Group Header with Gradient Background -->
+                  <button
+                    class="w-full flex flex-col items-center justify-center p-6 text-center font-semibold text-gray-800 hover:text-green-700 transition-all relative overflow-hidden"
+                    @click="toggleGroup(menu.group)"
+                  >
+                    <!-- Gradient Background on Hover -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                    <!-- Icon with Modern Design -->
+                    <div class="relative w-16 h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-3 shadow-lg">
+                      <i class="fa fa-folder-open text-2xl text-white"></i>
+                    </div>
+
+                    <!-- Group Name -->
+                    <span class="relative text-sm font-bold truncate w-full px-2">{{ menu.group }}</span>
+
+                    <!-- Chevron Indicator -->
+                    <i
+                      class="relative fa fa-chevron-down mt-2 text-xs text-gray-400 transition-transform duration-300"
+                      :class="{ 'rotate-180': openGroups.includes(menu.group) }"
+                    ></i>
+                  </button>
+
+                  <!-- Expandable Menu Items -->
+                  <transition name="slide-fade">
+                    <div v-if="openGroups.includes(menu.group)" class="border-t border-gray-100 bg-gray-50">
+                      <ul class="space-y-1 p-3">
+                        <li
+                          v-for="item in menu.items"
+                          :key="item.label"
+                          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white text-gray-700 text-sm transition-all cursor-pointer group/item"
+                          :class="currentView === item.view ? 'bg-green-500 text-white shadow-md' : 'hover:shadow-sm'"
+                          @click="handleMenuClick(item)"
+                        >
+                          <div
+                            class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                            :class="currentView === item.view ? 'bg-white/20' : 'bg-green-100 group-hover/item:bg-green-200'"
+                          >
+                            <i
+                              :class="[
+                                'fa',
+                                item.icon,
+                                'text-sm',
+                                currentView === item.view ? 'text-white' : 'text-green-600'
+                              ]"
+                            ></i>
+                          </div>
+                          <span class="truncate font-medium">{{ item.label }}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </transition>
+                </template>
+
+                <!-- Non-Group Menu Items -->
+                <template v-else>
+                  <div
+                    class="flex flex-col items-center justify-center p-6 text-center font-semibold text-gray-800 hover:text-green-700 transition-all cursor-pointer relative overflow-hidden"
+                    @click="handleMenuClick(menu)"
+                  >
+                    <!-- Gradient Background on Hover -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                    <!-- Icon with Modern Design -->
+                    <div class="relative w-16 h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-3 shadow-lg">
+                      <i :class="['fa', menu.icon, 'text-2xl text-white']"></i>
+                    </div>
+
+                    <!-- Label -->
+                    <span class="relative text-sm font-bold truncate w-full px-2">{{ menu.label }}</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+          <div v-else-if="currentView === 'form'" class="p-4">
+            <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted" />
+          </div>
+          <div v-else-if="currentView === 'list'" class="p-4">
+            <SuperAdminDashboardCmsList />
+          </div>
+          <div v-else-if="currentView === 'appointments'" class="p-4">
+            <SuperAdminDashboardServicesLibraryReserved />
+          </div>
+          <div v-else-if="currentView === 'books'" class="p-4">
+            <SuperAdminDashboardServicesLibraryBooks />
+          </div>
+          <div v-else-if="currentView === 'schedules'" class="p-4">
+            <SuperAdminDashboardServicesLibrarySchedules />
+          </div>
+          <div v-else-if="currentView === 'hr-job-vacancy-list'" class="p-4">
+            <SuperAdminDashboardServicesHr />
+          </div>
+          <div v-else-if="currentView === 'hr-raffle'" class="p-4">
+            <SuperAdminDashboardServicesHrRaffle />
+          </div>
+          <div v-else-if="currentView === 'university-calendar'" class="p-4">
+            <SuperAdminDashboardChancellorOffice />
+          </div>
+          <div v-else-if="currentView === 'npcc'" class="p-4">
+            <SuperAdminDashboardServicesIt />
+          </div>
+          <div v-else-if="currentView === 'registrar'">
+            <SuperAdminDashboardServicesRegistrar />
+          </div>
+          <div v-else-if="currentView === 'campusPass'">
+            <SuperAdminDashboardServicesCampusPass />
+          </div>
+          <div v-else-if="currentView === 'drs'">
+            <SuperAdminDashboardServicesDrs />
+          </div>
+        </div>
+        <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-2xl">
+          <div class="flex justify-evenly items-center  px-4 max-w-screen-xl mx-auto">
+            <button
+              v-for="(menu, index) in menuList"
+              :key="index"
+              @click="handleMenuClick(menu)"
+              class="flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 relative group"
+              :class="currentView === menu.view ? 'text-green-600' : 'text-gray-600 hover:text-green-600'"
+            >
+              <!-- Active Indicator -->
+              <div
+                v-if="currentView === menu.view"
+                class="absolute -top-1 left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
+              ></div>
+
+              <!-- Icon Container -->
+              <div
+                class="relative lg:w-8 lg:h-8 w-7 h-7 flex items-center justify-center rounded-2xl transition-all duration-300"
+                :class="currentView === menu.view
+                  ? 'bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 scale-110'
+                  : 'bg-gray-100 group-hover:bg-green-50 group-hover:scale-105'"
+              >
+                <i
+                  :class="[
+                    'fa',
+                    menu.icon,
+                    'lg:text-xl text-base transition-colors',
+                    currentView === menu.view ? 'text-white' : 'text-gray-600 group-hover:text-green-600'
+                  ]"
+                ></i>
+              </div>
+
+              <!-- Label -->
+              <span
+                class="text-[10px] transition-colors"
+                :class="currentView === menu.view ? 'text-green-600' : 'text-gray-600 group-hover:text-green-600'"
+              >
+                {{ menu.label }}
+              </span>
+            </button>
+          </div>
+          <DashboardFooter />
+        </nav>
+      </div>
+    </div>
+    <!-- UNAUTHORIZED VIEW -->
+    <div v-else class="flex items-center justify-center h-screen bg-gray-50">
+      <div class="text-center">
+        <i class="fa fa-lock text-4xl text-gray-400 mb-4"></i>
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">
+          Unauthorized Access
+        </h1>
+        <p class="text-gray-600 mb-6">Please log in to access the dashboard.</p>
+        <NuxtLink
+          to="/cms/login"
+          class="inline-block bg-green-800 hover:bg-green-900 text-white px-6 py-2 rounded-lg font-bold transition-colors"
+        >
+          <i class="fa fa-sign-in mr-2"></i>Go to Login
+        </NuxtLink>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.25s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+</style>

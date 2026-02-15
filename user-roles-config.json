@@ -1,0 +1,221 @@
+{
+  "userRoles": [
+    {
+      "email": "jorenlee.luna@lsu.edu.ph",
+      "roles": ["superAdmin", "npccMenu"]
+    },
+    {
+      "email": "michaeljohn.puertogalera@lsu.edu.ph",
+      "roles": ["superAdmin", "npccMenu"]
+    },
+    {
+      "email": "jason.yap@lsu.edu.ph",
+      "roles": ["superAdmin", "npccMenu"]
+    },
+    {
+      "email": "johny14_gonzaga@lsu.edu.ph",
+      "roles": ["npccMenu"]
+    },
+    {
+      "email": "rommel.rosal@lsu.edu.ph",
+      "roles": ["npccMenu"]
+    },
+    {
+      "email": "denzelroy.suarez@lsu.edu.ph",
+      "roles": ["npccMenu"]
+    },
+    {
+      "email": "giovanni.morales@lsu.edu.ph",
+      "roles": ["npccMenu"]
+    },
+    {
+      "email": "och@lsu.edu.ph",
+      "roles": ["ochAdmin"]
+    },
+    {
+      "email": "monaliza.mugot@lsu.edu.ph",
+      "roles": ["contentWriter", "libraryMenu"]
+    },
+    {
+      "email": "jackjun.caupayan@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "mariaalexandra.benitez@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "alexander.diaz@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "carmelona.jumalon@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "carmelona2.jumalon@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "carousel.tagaylo@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "carlvincent.codera@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "cherrylyn.sanipa@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "dean.lopez@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "esmael.larubis@lsu.edu.ph",
+      "roles": ["contentWriter", "campusPassAdmin"]
+    },
+    {
+      "email": "israelgallogo@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "jeanelyn.potestas@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "jenel.cruz@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "jerusalem.andrada@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "joed.layna@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "jumelah.padilla@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "carmela.buenbrazo2@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "macristina.llauder@lsu.edu.ph",
+      "roles": ["contentWriter", "drsAdmin"]
+    },
+    {
+      "email": "markjohn.dalagan@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "menchie.grana@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "meredith.embuscado@lsu.edu.ph",
+      "roles": ["contentWriter", "drsAdmin"]
+    },
+    {
+      "email": "naiza.amba@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "roselyn.tuastomban@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "tednudgent.tacan@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "xie.medrano@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "jenny.licanda@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "edm@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "hr@lsu.edu.ph",
+      "roles": ["hrMenu"]
+    },
+    {
+      "email": "marilyn.bejec@lsu.edu.ph",
+      "roles": ["libraryMenu"]
+    },
+    {
+      "email": "applejane.ebarle@lsu.edu.ph",
+      "roles": ["libraryMenu"]
+    },
+    {
+      "email": "janekaren.gudmalin@lsu.edu.ph",
+      "roles": ["libraryMenu"]
+    },
+    {
+      "email": "macy.beniola@lsu.edu.ph",
+      "roles": ["libraryMenu"]
+    },
+    {
+      "email": "lynn.lumacad@lsu.edu.ph",
+      "roles": ["libraryMenu"]
+    },
+    {
+      "email": "zosette.salas@lsu.edu.ph",
+      "roles": ["libraryMenu"]
+    },
+    {
+      "email": "registrar@lsu.edu.ph",
+      "roles": ["registrarMenu"]
+    },
+    {
+      "email": "ccsea.registrar@lsu.edu.ph",
+      "roles": ["registrarMenu"]
+    },
+    {
+      "email": "cba.registrar@lsu.edu.ph",
+      "roles": ["registrarMenu"]
+    },
+    {
+      "email": "cte.registrar@lsu.edu.ph",
+      "roles": ["registrarMenu"]
+    },
+    {
+      "email": "onlinerequest@lsu.edu.ph",
+      "roles": ["registrarMenu"]
+    },
+    {
+      "email": "ccje.registrar@lsu.edu.ph",
+      "roles": ["registrarMenu"]
+    },
+    {
+      "email": "ssec@lsu.edu.ph",
+      "roles": ["campusPassAdmin"]
+    },
+    {
+      "email": "president@lsu.edu.ph",
+      "roles": ["drsAdmin"]
+    },
+    {
+      "email": "rey.mejias@lsu.edu.ph",
+      "roles": ["drsAdmin"]
+    },
+    {
+      "email": "recordsmanagement@lsu.edu.ph",
+      "roles": ["drsAdmin"]
+    },
+    {
+      "email": "wenny.caseros@lsu.edu.ph",
+      "roles": ["drsAdmin"]
+    }
+  ]
+}
+
