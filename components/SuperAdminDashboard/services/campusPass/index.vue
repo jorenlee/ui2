@@ -852,7 +852,7 @@ const visiblePages = computed(() => {
                                   <span
                                     v-for="(j, i) in normalizeTypeOfAccess(b.type_of_access)"
                                     :key="i"
-                                    class="inline-block px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-medium uppercase"
+                                    class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium uppercase"
                                   >
                                     {{ j }}
                                   </span>
