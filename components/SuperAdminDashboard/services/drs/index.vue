@@ -1,17 +1,16 @@
 <script setup>
 import { onMounted, onUnmounted, ref, computed } from "vue";
 import { useUserStore } from "@/stores/user";
-import moment from "moment";
 import VueDatePicker from "@vuepic/vue-datepicker";
-import "../css/main.css";
+import "./css/main.css";
 const router = useRouter();
 const userStore = useUserStore();
 import _ from "lodash";
 
-const superAdminEmail = ref("jorenleeluna24@gmail.com");
+const superAdminEmail = ref("jorenlee.luna@lsu.edu.ph");
 const superAdminTwo = ref("macristina.llauder@lsu.edu.ph");
-import designationJSON from "../designation.json";
-import authorizedEmailsJSON from "../authorized_emails.json";
+import designationJSON from "./designation.json";
+import authorizedEmailsJSON from "./authorized_emails.json";
 
 const designation = ref(designationJSON);
 const authorizedEmails = ref(authorizedEmailsJSON);
@@ -56,17 +55,6 @@ const statusNotificationAlertModal = ref(false);
 let refreshInterval = null;
 
 onMounted(async () => {
-  setTimeout(async () => {
-    if (
-      userStore.user.isAuthenticated &&
-      authorizedEmails.value.includes(userStore.user.email)
-    ) {
-      await fetchListItems(); // Ensure fetchListItems completes before navigation
-      router.push("/drs/dashboard");
-    } else {
-      router.push("/unauthorized");
-    }
-  }, 1500);
   await fetchListItems(); // Ensure fetchListItems completes before navigation
 
   // Start auto-refresh every second (silently in background)
@@ -92,176 +80,101 @@ const selectedReviewed = ref(false);
 const selectedVerified = ref(false);
 const selectedApproved = ref(false);
 
+// Helper function to set pagination
+const setPagination = (itemCount) => {
+  currentPage.value = 1;
+  itemsPerPage = 100;
+  maxVisiblePages = itemCount <= 100 ? 1 : 5;
+};
+
+// Admin emails list
+const adminEmails = [
+  superAdminEmail.value,
+  "president@lsu.edu.ph",
+  "rey.mejias@lsu.edu.ph",
+  "meredith.embuscado@lsu.edu.ph",
+  "macristina.llauder@lsu.edu.ph",
+  "recordsmanagement@lsu.edu.ph",
+  "wenny.caseros@lsu.edu.ph",
+];
+
 const fetchListItems = async () => {
   try {
     isLoading.value = true;
     listItems.value =
       (await $fetch(endpoint.value + "/api/drs/list").catch(
-        (error) => error.data
-      )) || []; // Ensure it's an array or empty array
+        (error) => error.data,
+      )) || [];
 
+    // Calculate filter counts
     reviewedLength.value = listItems.value.filter(
-      (item) => item.reviewed_by_action === "Approved"
+      (item) => item.reviewed_by_action === "Approved",
     ).length;
 
     verifiedLength.value = listItems.value.filter(
-      (item) => item.verified_by_action === "Approved"
+      (item) => item.verified_by_action === "Approved",
     ).length;
 
     approvedLength.value = listItems.value.filter(
-      (item) => item.approved_by_action === "Approved"
+      (item) => item.approved_by_action === "Approved",
     ).length;
 
     filteredItems = Array.isArray(listItems.value) ? [...listItems.value] : [];
-    isLoading.value = false;
 
-    if (
-      userStore.user.email === superAdminEmail.value ||
-      userStore.user.email === "president@lsu.edu.ph" ||
-      userStore.user.email === "rey.mejias@lsu.edu.ph" ||
-      userStore.user.email === "meredith.embuscado@lsu.edu.ph" ||
-      userStore.user.email === "macristina.llauder@lsu.edu.ph" ||
-      userStore.user.email === "recordsmanagement@lsu.edu.ph" ||
-      userStore.user.email === "wenny.caseros@lsu.edu.ph"
-    ) {
-      selectedDocumentType.value = "Document Type";
-      selectedOriginatingOffice.value = "Originating Office";
-      selectedStatus.value = "Status";
+    // Set default filter values
+    selectedDocumentType.value = "Document Type";
+    selectedOriginatingOffice.value = "Originating Office";
+    selectedStatus.value = "Status";
 
+    // User-specific configurations
+    const userEmail = userStore.user.email;
+
+    if (adminEmails.includes(userEmail)) {
       selectedAll.value = true;
-
-      if (filteredItems.length <= 10) {
-        currentPage.value = 1;
-
-        itemsPerPage = 10;
-        maxVisiblePages = 1;
-      } else {
-        currentPage.value = 1;
-        itemsPerPage = 10;
-
-        maxVisiblePages = 5;
-      }
-    }
-
-    // else if(
-    //   userStore.user.email === filteredItems.reviewed_by_email
-    // ) {
-
-    //   selectedReviewed.value = true
-    //   selectedDocumentType.value = "Document Type"
-    //   selectedOriginatingOffice.value = "Originating Office"
-    //   selectedStatus.value = "Status"
-
-    //   if(filteredItems.length <= 10) {
-    //     currentPage.value = 1
-
-    //     itemsPerPage = 10;
-    //     maxVisiblePages = 1;
-
-    //   }
-
-    //   else {
-    //     currentPage.value = 1;
-    //     itemsPerPage = 10;
-
-    //     maxVisiblePages = 5;
-    //   }
-    // }
-    // filteredItems.verified_by_email
-    else if (userStore.user.email === "jorenlee.luna@lsu.edu.ph") {
+      setPagination(filteredItems.length);
+    } else if (userEmail === "jorenlee.luna@lsu.edu.ph") {
       selectedReviewed.value = true;
-      selectedDocumentType.value = "Document Type";
-      selectedOriginatingOffice.value = "Originating Office";
-      selectedStatus.value = "Status";
-
-      if (filteredItems.length <= 10) {
-        currentPage.value = 1;
-
-        itemsPerPage = 10;
-        maxVisiblePages = 1;
-      } else {
-        currentPage.value = 1;
-        itemsPerPage = 10;
-
-        maxVisiblePages = 5;
-      }
-    } 
-    
-    // jason.yap@lsu.edu.ph
-    // filteredItems.approved_by_email
-    else if (userStore.user.email === "jason.yap@lsu.edu.ph") {
+      setPagination(filteredItems.length);
+    } else if (userEmail === "jason.yap@lsu.edu.ph") {
       selectedVerified.value = true;
-      selectedDocumentType.value = "Document Type";
-      selectedOriginatingOffice.value = "Originating Office";
-      selectedStatus.value = "Status";
-
-      if (filteredItems.length <= 10) {
-        currentPage.value = 1;
-
-        itemsPerPage = 10;
-        maxVisiblePages = 1;
-      } else {
-        currentPage.value = 1;
-        itemsPerPage = 10;
-
-        maxVisiblePages = 5;
-      }
+      setPagination(filteredItems.length);
     } else {
       selectedAll.value = false;
-
-      console.log("filteredItems", filteredItems);
-
       selectedOriginatingOffice.value = filteredItems[0]?.originating_office;
-      selectedDocumentType.value = "Document Type";
-      selectedStatus.value = "Status";
-
       unitOfficeSelectedTotalLength.value = filteredItems.length;
-
       documentTypeSelectedTotalLength.value = 0;
-
       statusSelectedTotalLength.value = 0;
-
-      if (filteredItems.length <= 10) {
-        currentPage.value = 1;
-
-        itemsPerPage = 10;
-        maxVisiblePages = 1;
-      } else {
-        currentPage.value = 1;
-        itemsPerPage = 10;
-
-        maxVisiblePages = 5;
-      }
+      setPagination(filteredItems.length);
     }
   } catch (error) {
     console.error("Error fetching list items:", error);
-    // Handle error appropriately
   } finally {
-    isLoading.value = false; // Set loading to false when fetch is complete
+    isLoading.value = false;
   }
 };
 
 // Silent fetch for background updates (no loading indicator)
 const fetchListItemsSilently = async () => {
   try {
-    const newData = await $fetch(endpoint.value + "/api/drs/list").catch(
-      (error) => error.data
-    ) || [];
+    const newData =
+      (await $fetch(endpoint.value + "/api/drs/list").catch(
+        (error) => error.data,
+      )) || [];
 
     // Only update if data has changed
     if (JSON.stringify(newData) !== JSON.stringify(listItems.value)) {
       listItems.value = newData;
 
       reviewedLength.value = listItems.value.filter(
-        (item) => item.reviewed_by_action === "Approved"
+        (item) => item.reviewed_by_action === "Approved",
       ).length;
 
       verifiedLength.value = listItems.value.filter(
-        (item) => item.verified_by_action === "Approved"
+        (item) => item.verified_by_action === "Approved",
       ).length;
 
       approvedLength.value = listItems.value.filter(
-        (item) => item.approved_by_action === "Approved"
+        (item) => item.approved_by_action === "Approved",
       ).length;
     }
   } catch (error) {
@@ -291,19 +204,19 @@ const filteredListItems = computed(() => {
   } else {
     if (selectedReviewed.value) {
       filteredItems = filteredItems.filter(
-        (item) => item.reviewed_by_action === "Approved"
+        (item) => item.reviewed_by_action === "Approved",
       );
     }
 
     if (selectedVerified.value) {
       filteredItems = filteredItems.filter(
-        (item) => item.verified_by_action === "Approved"
+        (item) => item.verified_by_action === "Approved",
       );
     }
 
     if (selectedApproved.value) {
       filteredItems = filteredItems.filter(
-        (item) => item.approved_by_action === "Approved"
+        (item) => item.approved_by_action === "Approved",
       );
     }
   }
@@ -331,7 +244,8 @@ const filteredListItems = computed(() => {
     currentPage.value = 1;
   }
 
-  return _.orderBy(filteredItems, "id", "desc");
+  // Apply sorting
+  return _.orderBy(filteredItems, [sortColumn.value], [sortDirection.value]);
 });
 let displayRevision = ref(null);
 const statusChange = () => {
@@ -343,6 +257,21 @@ const statusChange = () => {
   if (filteredItems.status === "For Revision") {
     filteredItems.status = "For Revision";
     displayRevision.value = true;
+  }
+};
+
+// Sorting functionality
+const sortColumn = ref("id");
+const sortDirection = ref("desc");
+
+const sortBy = (column) => {
+  if (sortColumn.value === column) {
+    // Toggle direction if same column
+    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+  } else {
+    // Set new column and default to ascending
+    sortColumn.value = column;
+    sortDirection.value = "asc";
   }
 };
 
@@ -364,10 +293,10 @@ const actionChecked = () => {
   for (const actionKey in actions) {
     const approvedElement = document.getElementById(actionKey + "Approved");
     const disapprovedElement = document.getElementById(
-      actionKey + "Disapproved"
+      actionKey + "Disapproved",
     );
     const conditionalElement = document.getElementById(
-      actionKey + "Conditional"
+      actionKey + "Conditional",
     );
 
     if (approvedElement?.checked) {
@@ -406,7 +335,7 @@ const logOut = () => {
 
 const goToEdit = async (id) => {
   filteredItems = await $fetch(endpoint.value + "/api/drs/" + id + "/").catch(
-    (error) => error.data
+    (error) => error.data,
   );
 
   console.log(filteredItems);
@@ -494,12 +423,12 @@ const updateApproved = async (id) => {
   });
 };
 
-let currentPage = ref(0);
-let itemsPerPage = 0;
+// Pagination configuration
+let currentPage = ref(1);
+let itemsPerPage = 100;
+let maxVisiblePages = 5;
 
-let maxVisiblePages = 0;
-
-let totalPages = computed(() => {
+const totalPages = computed(() => {
   return Math.ceil(filteredListItems.value.length / itemsPerPage);
 });
 
@@ -511,17 +440,14 @@ const paginatedListItems = computed(() => {
 
 const visiblePages = computed(() => {
   const pages = [];
-  let startPage = Math.max(
+  const startPage = Math.max(
     1,
-    currentPage.value - Math.floor(maxVisiblePages / 2)
+    currentPage.value - Math.floor(maxVisiblePages / 2),
   );
-  let endPage = Math.min(totalPages.value, startPage + maxVisiblePages - 1);
+  const endPage = Math.min(totalPages.value, startPage + maxVisiblePages - 1);
+  const adjustedStartPage = Math.max(1, endPage - maxVisiblePages + 1);
 
-  if (endPage - startPage + 1 < maxVisiblePages) {
-    startPage = Math.max(1, endPage - maxVisiblePages + 1);
-  }
-
-  for (let i = startPage; i <= endPage; i++) {
+  for (let i = adjustedStartPage; i <= endPage; i++) {
     pages.push(i);
   }
   return pages;
@@ -582,97 +508,18 @@ const submitDRSFormToGmailApproved = async () => {
 <template>
   <div>
     <div class="lg:flex min-h-screen">
-      <div
-        class="pb-3 lg:w-3/12 bg-gray-100 z-10 w-full lg:block lg:static absolute lg:min-h-auto min-h-[700px] lg:h-auto h-screen"
-        v-show="toggleSideBarMenu"
-      >
-        <div
-          class="flex items-center justify-center text-white bg-green-900 lg:py-[16px] py-[8px]"
-        >
-          <div class="flex items-center w-full px-2">
-            <i class="fa fa-user mx-2" aria-hidden="true"></i>
-            <h1 class="text-sm">
-              {{ userStore.user.email }}
-            </h1>
-          </div>
-          <div
-            @click="toggleSideBarMenu = !toggleSideBarMenu"
-            class="w-10 px-1.5 lg:hidden flex"
-          >
-            <i
-              class="fa text-3xl text-white"
-              :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'"
-              aria-hidden="true"
-            ></i>
-          </div>
-        </div>
-        <div class="">
-          <div class="w-fit mx-auto mt-5 mb-3">
-            <img
-              src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/LSU_Seal.PNG"
-              class="lg:w-24 w-20 mx-auto"
-            />
-          </div>
-          <div class="text-center">
-            <h1 class="font-bold text-green-800 text-2xl">Dashboard</h1>
-          </div>
-          <div
-            class="mx-auto mt-10 mb-5 grid grid-cols-1 lg:tracking-tight font-bold"
-          >
-            <a
-              href="/drs/dashboard"
-              class="text-xs mx-auto mb-2 w-full uppercase whitespace-nowrap px-5 py-1 text-left text-black hover:bg-black hover:text-white"
-            >
-              <i class="fa fa-list mr-3" aria-hidden="true"></i> All Request
-              Lists
-            </a>
-            <a
-              href="/"
-              class="text-xs mx-auto mb-2 w-full uppercase whitespace-nowrap px-5 py-1 text-left hover:bg-black hover:text-white"
-            >
-              <i class="fa fa-globe mr-3" aria-hidden="true"></i> LSU HOME PAGE
-            </a>
-          </div>
-        </div>
-      </div>
       <div class="w-full">
-        <div class="bg-green-800">
-          <div class="flex mx-auto justify-between py-2 px-3.5">
-            <div
-              @click="toggleSideBarMenu = !toggleSideBarMenu"
-              class="px-1.5 flex items-center whitespace-nowrap"
-            >
-              <i
-                class="fa text-3xl text-white"
-                :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'"
-                aria-hidden="true"
-              ></i>
-              <h1 class="text-white font-bold ml-3 flex">
-                <span class="lg:hidden ml-1"> ODR </span>
-
-                <span class="lg:flex hidden ml-1">
-                  Online Document Review
-                </span>
-              </h1>
-            </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
-          </div>
-        </div>
-
         <div v-if="!displayUpdateForm">
-          <div class="w-full lg:p-5 px-2 py-2">
+          <div class="p-2">
             <div v-show="tableDisplay">
-              <div class="shadow-lg lg:pb-3 lg:px-3 p-1.5 mb-3">
-                <div
-                  class="flex items-center font-bold text-sm border-b-2 pb-2"
-                >
-                  <div class="lg:mr-3 mr-1 lg:text-sm text-xs">Filters:</div>
-                  <div class="flex items-center lg:gap-x-1">
-                    <div
-                      class="w-fit bg-white px-1.5 flex items-center text-green-900 hover:text-white hover:bg-green-900 text-center cursor-pointer rounded-lg text-xs"
+              <div class="lg:flex items-center gap-x-3 py-5">
+                <div class="flex items-center gap-x-2">
+                  <div class="flex items-center font-bold text-sm lg:text-base text-green-800">
+                    <i class="fa fa-filter mr-2"></i>
+                    <span>Filters</span>
+                  </div>
+                  <div class="flex gap-2">
+                    <label
                       v-if="
                         userStore.user.email?.trim().toLowerCase() ===
                           superAdminEmail ||
@@ -685,22 +532,22 @@ const submitDRSFormToGmailApproved = async () => {
                         userStore.user.email?.trim().toLowerCase() ===
                           'recordsmanagement@lsu.edu.ph'
                       "
+                      class="inline-flex items-center px-3 py-2 bg-white shadow-lg text-green-900 hover:bg-green-700 hover:text-white text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all"
+                      :class="selectedAll ? 'bg-green-700 text-white' : ''"
+                      for="checkboxAll"
                     >
                       <input
                         type="checkbox"
                         id="checkboxAll"
-                        class="lg:mr-1 mr-0.5"
+                        class="mr-2 w-4 h-4"
                         value="all"
                         v-model="selectedAll"
                       />
-                      <label class="lg:text-sm text-[10px]" for="checkboxAll">
-                        All
-                        <span v-if="listItems"
-                          >({{ listItems.length }})</span
-                        ></label
-                      >
-                    </div>
-                    <div
+                      All
+                      <span v-if="listItems" class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">{{ listItems.length }}</span>
+                    </label>
+
+                    <label
                       v-if="
                         userStore.user.email?.trim().toLowerCase() ===
                           superAdminEmail ||
@@ -713,52 +560,22 @@ const submitDRSFormToGmailApproved = async () => {
                         userStore.user.email?.trim().toLowerCase() ===
                           'recordsmanagement@lsu.edu.ph'
                       "
-                      class="w-fit bg-white px-1.5 flex items-center text-green-900 hover:text-white hover:bg-green-900 text-center cursor-pointer rounded-lg text-xs"
+                      class="inline-flex items-center px-3 py-2 bg-white shadow-lg text-green-900 hover:bg-green-700 hover:text-white text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all"
+                      :class="selectedReviewed ? 'bg-green-700 text-white' : ''"
+                      for="checkboxReviewed"
                     >
                       <input
                         type="checkbox"
                         id="checkboxReviewed"
-                        class="lg:mr-1 mr-0.5"
+                        class="mr-2 w-4 h-4"
                         value="Approved"
                         v-model="selectedReviewed"
                       />
-                      <label
-                        class="lg:text-sm text-[10px]"
-                        for="checkboxReviewed"
-                      >
-                        Reviewed ({{ reviewedLength }})</label
-                      >
-                    </div>
-                    <div
-                      class="w-fit bg-white px-1.5 flex items-center text-green-900 hover:text-white hover:bg-green-900 text-center cursor-pointer rounded-lg text-xs"
-                    >
-                      <input
-                        v-if="
-                          userStore.user.email?.trim().toLowerCase() ===
-                            superAdminEmail ||
-                          userStore.user.email?.trim().toLowerCase() ===
-                            superAdminTwo ||
-                          userStore.user.email?.trim().toLowerCase() ===
-                            'meredith.embuscado@lsu.edu.ph' ||
-                          userStore.user.email?.trim().toLowerCase() ===
-                            'macristina.llauder@lsu.edu.ph' ||
-                          userStore.user.email?.trim().toLowerCase() ===
-                            'recordsmanagement@lsu.edu.ph'
-                        "
-                        type="checkbox"
-                        id="checkboxVerified"
-                        class="lg:mr-1 mr-0.5"
-                        value="Approved"
-                        v-model="selectedVerified"
-                      />
-                      <label
-                        class="lg:text-sm text-[10px]"
-                        for="checkboxVerified"
-                      >
-                        Verified ({{ verifiedLength }})</label
-                      >
-                    </div>
-                    <div
+                      Reviewed
+                      <span class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">{{ reviewedLength }}</span>
+                    </label>
+
+                    <label
                       v-if="
                         userStore.user.email?.trim().toLowerCase() ===
                           superAdminEmail ||
@@ -771,40 +588,64 @@ const submitDRSFormToGmailApproved = async () => {
                         userStore.user.email?.trim().toLowerCase() ===
                           'recordsmanagement@lsu.edu.ph'
                       "
-                      class="w-fit bg-white px-1.5 flex items-center text-green-900 hover:text-white hover:bg-green-900 text-center cursor-pointer rounded-lg text-xs"
+                      class="inline-flex items-center px-3 py-2 bg-white shadow-lg text-green-900 hover:bg-green-700 hover:text-white text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all"
+                      :class="selectedVerified ? 'bg-green-700 text-white' : ''"
+                      for="checkboxVerified"
+                    >
+                      <input
+                        type="checkbox"
+                        id="checkboxVerified"
+                        class="mr-2 w-4 h-4"
+                        value="Approved"
+                        v-model="selectedVerified"
+                      />
+                      Verified
+                      <span class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">{{ verifiedLength }}</span>
+                    </label>
+
+                    <label
+                      v-if="
+                        userStore.user.email?.trim().toLowerCase() ===
+                          superAdminEmail ||
+                        userStore.user.email?.trim().toLowerCase() ===
+                          superAdminTwo ||
+                        userStore.user.email?.trim().toLowerCase() ===
+                          'meredith.embuscado@lsu.edu.ph' ||
+                        userStore.user.email?.trim().toLowerCase() ===
+                          'macristina.llauder@lsu.edu.ph' ||
+                        userStore.user.email?.trim().toLowerCase() ===
+                          'recordsmanagement@lsu.edu.ph'
+                      "
+                      class="inline-flex items-center px-3 py-2 bg-white shadow-lg text-green-900 hover:bg-green-700 hover:text-white text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all"
+                      :class="selectedApproved ? 'bg-green-700 text-white' : ''"
+                      for="checkboxApproved"
                     >
                       <input
                         type="checkbox"
                         id="checkboxApproved"
-                        class="lg:mr-1 mr-0.5"
+                        class="mr-2 w-4 h-4"
                         value="Approved"
                         v-model="selectedApproved"
                       />
-                      <label
-                        class="lg:text-sm text-[10px]"  
-                        for="checkboxApproved"
-                      >
-                        Approved ({{ approvedLength }})</label
-                      >
-                    </div>
+                      Approved
+                      <span class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">{{ approvedLength }}</span>
+                    </label>
                   </div>
                 </div>
                 <!-- Universal Search Input -->
-                <div class="mt-4 mb-2">
-                  <label class="text-xs font-bold text-gray-700">🔍 Search</label>
-                  <input
-                    v-model="searchQuery"
-                    type="text"
-                    placeholder="Search by title, code, type, office, status, name, ID..."
-                    class="px-3 w-full border-2 border-green-700 shadow-lg rounded-lg h-10 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                  />
+                <div class="w-full">
+                  <div class="relative">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <i class="fa fa-search text-green-700"></i>
+                    </div>
+                    <input
+                      v-model="searchQuery"
+                      type="text"
+                      placeholder="Search by title, code, type, office, status, name, ID..."
+                      class="pl-10 pr-4 w-full border-2 border-green-700 shadow-lg rounded-full h-10 lg:h-12 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all"
+                    />
+                  </div>
                 </div>
-              </div>
-
-              <div
-                class="lg:mt-3 mt-5 w-full shadow bg-gray-100 text-green-900 font-bold px-2 text-center mb-3 py-2 text-xs uppercase"
-              >
-                All Request Lists
               </div>
 
               <div class="relative">
@@ -813,13 +654,57 @@ const submitDRSFormToGmailApproved = async () => {
                     <div
                       class="lg:flex hidden bg-green-800 text-white pb-2 pt-2.5 px-3 gap-x-6"
                     >
-                      <div class="w-[100px] mx-auto">No.</div>
-                      <div class="w-full mx-auto">Office</div>
-                      <div class="w-6/12 mx-auto">Status</div>
-                      <div class="w-full mx-auto">Document Title</div>
-                      <div class="w-4/12 mx-auto">Document Type</div>
-                      <div class="w-full mx-auto">Document Code</div>
-                      <div class="w-4/12 mx-auto text-center">Action</div>
+                      <div
+                        class="w-full mx-auto cursor-pointer hover:bg-green-700 px-2 py-1 rounded"
+                        @click="sortBy('originating_office')"
+                      >
+                        Office
+                        <i
+                          v-if="sortColumn === 'originating_office'"
+                          :class="
+                            sortDirection === 'asc'
+                              ? 'fa fa-arrow-up'
+                              : 'fa fa-arrow-down'
+                          "
+                          class="ml-1"
+                        ></i>
+                        <i v-else class="fa fa-sort ml-1"></i>
+                      </div>
+
+                      <div
+                        class="w-full mx-auto cursor-pointer hover:bg-green-700 px-2 py-1 rounded"
+                        @click="sortBy('document_title')"
+                      >
+                        Document Title
+                        <i
+                          v-if="sortColumn === 'document_title'"
+                          :class="
+                            sortDirection === 'asc'
+                              ? 'fa fa-arrow-up'
+                              : 'fa fa-arrow-down'
+                          "
+                          class="ml-1"
+                        ></i>
+                        <i v-else class="fa fa-sort ml-1"></i>
+                      </div>
+                      <div
+                        class="w-full mx-auto cursor-pointer hover:bg-green-700 px-2 py-1 rounded"
+                        @click="sortBy('document_type')"
+                      >
+                        Document Type
+                        <i
+                          v-if="sortColumn === 'document_type'"
+                          :class="
+                            sortDirection === 'asc'
+                              ? 'fa fa-arrow-up'
+                              : 'fa fa-arrow-down'
+                          "
+                          class="ml-1"
+                        ></i>
+                        <i v-else class="fa fa-sort ml-1"></i>
+                      </div>
+
+                      <div class="w-3/12 mx-auto text-center">Action</div>
                     </div>
 
                     <div v-if="isLoading" class="text-center">
@@ -846,86 +731,119 @@ const submitDRSFormToGmailApproved = async () => {
                     <div v-else>
                       <div
                         v-if="paginatedListItems.length > 0"
-                        class="lg:border lg:rounded-none rounded-lg lg:shadow"
+                        class="lg:border-0 border-0"
                       >
                         <div
-                          class="lg:flex justify-evenly text-left items-center h-auto px-1 gap-x-7 border-gray-200 lg:py-1 py-3 lg:mb-0 mb-5 lg:border-y border lg:shadow-none shadow-md lg:bg-gray-50 bg-gray-100"
+                          class="lg:flex text-left items-stretch h-auto lg:px-3 px-2 lg:gap-x-6 gap-y-2 border-gray-200 py-1 lg:mb-0 mb-3 lg:border-b border rounded-lg lg:rounded-none cursor-pointer transition-all duration-200 group"
+                          :class="[
+                            i % 2 === 0 ? 'bg-white' : 'bg-gray-100',
+                            'hover:bg-green-50 hover:shadow-lg hover:scale-[1.01] lg:hover:scale-100'
+                          ]"
                           v-for="(b, i) in paginatedListItems"
                           :key="i"
+                          @click="goToEdit(b.id)"
                         >
-                          <div class="w-[100px] mx-auto text-center font-bold">
-                            {{ (currentPage - 1) * itemsPerPage + i + 1 }}
-                          </div>
-                          <div
-                            class="w-full mx-auto lg:text-left text-center lg:font-bold"
-                          >
-                            {{ b.originating_office }}
-                          </div>
-                          <div
-                            class="lg:w-6/12 mx-auto lg:text-left text-center lg:font-bold"
-                          >
-                            {{ b.status }}
-
-                            <span v-if="b.revision_number" class="ml-1"
-                              >No. {{ b.revision_number }}</span
-                            >
-                          </div>
-                          <div
-                            class="w-full mx-auto lg:text-left text-center lg:font-bold"
-                          >
-                            {{ b.document_title }}
-                          </div>
-
-                          <div
-                            class="lg:w-4/12 mx-auto lg:text-left text-center lg:font-bold"
-                          >
-                            {{ b.document_type }}
-                          </div>
-
-                          <div
-                            class="w-full mx-auto lg:text-left text-center lg:font-bold"
-                          >
-                            <span
-                              :class="
-                                b.document_code === 'To Be Assigned By RMO'
-                                  ? 'hidden'
-                                  : ''
-                              "
-                              >{{ b.document_code }}</span
-                            >
-                            {{ b.tracking_id }}
-                          </div>
-
-                          <div class="lg:w-4/12 w-fit mx-auto lg:mt-0 mt-4">
-                            <div
-                              class="text-left flex items-center gap-x-2 font-bold mx-auto"
-                            >
-                              <div class="lg:w-fit lg:mx-auto">
-                                <div
-                                  class="text-gray-800 hover:bg-white bg-yellow-500 border border-yellow-500 px-3 py-1 rounded-md w-fit mx-auto cursor-pointer"
+                          <!-- Mobile: Card Layout -->
+                          <div class="lg:hidden space-y-2">
+                            <div class="flex justify-between items-start">
+                              <div class="flex-1">
+                                <div class="text-xs text-gray-500 uppercase font-semibold mb-1">Office</div>
+                                <div class="font-medium text-sm">{{ b.originating_office }}</div>
+                              </div>
+                              <div class="flex gap-x-2" @click.stop>
+                                <button
+                                  class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-colors"
                                   @click="goToEdit(b.id)"
                                 >
-                                  Details
+                                  <i class="fa fa-pencil" aria-hidden="true"></i>
+                                </button>
+                                <button
+                                  v-if="userStore.user.email?.trim().toLowerCase() === superAdminEmail || userStore.user.email?.trim().toLowerCase() === superAdminTwo"
+                                  class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-colors"
+                                  @click="toggleDeleteBtn(b.id)"
+                                >
+                                  <i class="fa fa-trash" aria-hidden="true"></i>
+                                </button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <div class="text-xs text-gray-500 uppercase font-semibold mb-1">Document Title</div>
+                              <div class="font-medium text-sm">{{ b.document_title }}</div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                              <div>
+                                <div class="text-xs text-gray-500 uppercase font-semibold mb-1">Status</div>
+                                <div class="text-sm">
+                                  <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="b.status === 'New' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'">
+                                    {{ b.status }}
+                                  </span>
+                                  <span v-if="b.revision_number" class="ml-1 text-xs">No. {{ b.revision_number }}</span>
                                 </div>
                               </div>
+                              <div>
+                                <div class="text-xs text-gray-500 uppercase font-semibold mb-1">Type</div>
+                                <div class="text-sm">{{ b.document_type }}</div>
+                              </div>
+                            </div>
 
-                              <div
-                                class="w-fit mx-4"
-                                :class="
-                                  userStore.user.email?.trim().toLowerCase() ===
-                                    superAdminEmail ||
-                                  userStore.user.email?.trim().toLowerCase() ===
-                                    superAdminTwo
-                                    ? ' lg:flex justify-center'
-                                    : 'hidden'
-                                "
-                              >
-                                <div @click="toggleDeleteBtn(b.id)">
-                                  <i
-                                    class="fa fa-trash text-red-500 rounded-lg uppercase text-xl hover:text-2xl"
-                                    aria-hidden="true"
-                                  ></i>
+                            <div>
+                              <div class="text-xs text-gray-500 uppercase font-semibold mb-1">Document Code</div>
+                              <div class="text-sm font-mono">
+                                <span v-if="b.document_code !== 'To Be Assigned By RMO'">{{ b.document_code }}</span>
+                                {{ b.tracking_id }}
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Desktop: Table Row Layout -->
+                          <div class="hidden lg:contents">
+                            <div class="w-full flex items-center px-2">
+                              <div class="text-sm">{{ b.originating_office }}</div>
+                            </div>
+
+                            <div class="w-full flex items-center px-2">
+                              <div class="text-sm">
+                                <div class="font-medium">{{ b.document_title }}</div>
+                                <div class="text-xs text-gray-600 mt-1">
+                                  <span v-if="b.document_code !== 'To Be Assigned By RMO'" class="font-mono">{{ b.document_code }}</span>
+                                  <span class="font-mono">{{ b.tracking_id }}</span>
                                 </div>
+                              </div>
+                            </div>
+
+                            <div class="w-full flex items-center px-2">
+                              <div class="text-sm">
+                                <div>
+                                  <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="b.status === 'New' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'">
+                                    {{ b.status }}
+                                  </span>
+                                  <span v-if="b.revision_number" class="ml-1 text-xs text-gray-600">No. {{ b.revision_number }}</span>
+                                </div>
+                                <div class="mt-1 text-gray-700">{{ b.document_type }}</div>
+                              </div>
+                            </div>
+
+                            <div class="w-3/12 flex items-center justify-center" @click.stop>
+                              <div class="flex gap-x-2">
+                                <button
+                                  class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                  @click="goToEdit(b.id)"
+                                  title="Edit"
+                                >
+                                  <i class="fa fa-pencil" aria-hidden="true"></i>
+                                </button>
+                                <button
+                                  v-if="userStore.user.email?.trim().toLowerCase() === superAdminEmail || userStore.user.email?.trim().toLowerCase() === superAdminTwo"
+                                  class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                  @click="toggleDeleteBtn(b.id)"
+                                  title="Delete"
+                                >
+                                  <i class="fa fa-trash" aria-hidden="true"></i>
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -956,36 +874,79 @@ const submitDRSFormToGmailApproved = async () => {
                             </div>
                           </div>
                         </div>
+                        <!-- Delete Confirmation Modal -->
                         <div
-                          class="px-5 rounded-lg bg-white shadow-2xl absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
                           v-show="toggleConfirmDelete"
+                          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"
+                          @click.self="toggleDeleteBtn"
                         >
-                          <div class="my-6">
-                            Are you sure you want to Delete?
-                          </div>
-                          <div class="flex gap-5 mx-auto w-fit my-5">
-                            <span
-                              class="bg-green-900 text-white px-3 py-1 rounded-lg cursor-pointer"
-                              @click="deleteItem"
-                              >Yes</span
-                            >
-                            <span
-                              class="bg-red-900 text-white px-3 py-1 rounded-lg cursor-pointer"
-                              @click="toggleDeleteBtn"
-                              >Cancel</span
-                            >
+                          <div
+                            class="bg-white rounded-xl shadow-2xl max-w-md w-full transform transition-all"
+                            @click.stop
+                          >
+                            <!-- Modal Header -->
+                            <div class="flex items-center gap-3 p-6 border-b border-gray-200">
+                              <div class="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                <i class="fa fa-exclamation-triangle text-red-600 text-xl"></i>
+                              </div>
+                              <div>
+                                <h3 class="text-lg font-semibold text-gray-900">Confirm Delete</h3>
+                                <p class="text-sm text-gray-500">This action cannot be undone</p>
+                              </div>
+                            </div>
+
+                            <!-- Modal Body -->
+                            <div class="p-6">
+                              <p class="text-gray-700">
+                                Are you sure you want to delete this document? This will permanently remove the document from the system.
+                              </p>
+                            </div>
+
+                            <!-- Modal Footer -->
+                            <div class="flex gap-3 p-6 bg-gray-50 rounded-b-xl">
+                              <button
+                                class="flex-1 px-4 py-2.5 bg-white border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all"
+                                @click="toggleDeleteBtn"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                class="flex-1 px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-all transform hover:scale-105"
+                                @click="deleteItem"
+                              >
+                                <i class="fa fa-trash mr-2"></i>
+                                Delete
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
+                      <!-- Pagination -->
                       <div
-                        class="flex justify-center my-4"
+                        class="flex flex-col items-center my-4 gap-y-2"
                         v-if="filteredListItems.length > 0"
                       >
-                        <div v-if="filteredItems.length > 10">
+                        <!-- Page info -->
+                        <div class="text-xs text-gray-600">
+                          Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to
+                          {{
+                            Math.min(
+                              currentPage * itemsPerPage,
+                              filteredListItems.length,
+                            )
+                          }}
+                          of {{ filteredListItems.length }} entries
+                        </div>
+
+                        <!-- Pagination buttons -->
+                        <div
+                          v-if="totalPages > 1"
+                          class="flex items-center gap-x-1"
+                        >
                           <button
                             :disabled="currentPage === 1"
                             @click="currentPage--"
-                            class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-500 hover:text-white"
+                            class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Previous
                           </button>
@@ -994,9 +955,8 @@ const submitDRSFormToGmailApproved = async () => {
                             v-for="page in visiblePages"
                             :key="page"
                             @click="currentPage = page"
-                            class="hover:bg-green-500 hover:text-white"
+                            class="px-4 py-2 rounded hover:bg-green-500 hover:text-white transition-colors"
                             :class="{
-                              'px-4 py-2 mx-1 rounded': true,
                               'bg-green-800 text-white': currentPage === page,
                               'bg-gray-200': currentPage !== page,
                             }"
@@ -1007,7 +967,7 @@ const submitDRSFormToGmailApproved = async () => {
                           <button
                             :disabled="currentPage === totalPages"
                             @click="currentPage++"
-                            class="px-4 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-500 hover:text-white"
+                            class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Next
                           </button>
@@ -1089,10 +1049,12 @@ const submitDRSFormToGmailApproved = async () => {
                                             filteredItems.originating_email ||
                                           userStore.user.email
                                             ?.trim()
-                                            .toLowerCase() === superAdminEmail ||
-                                            userStore.user.email?.trim().toLowerCase() ===
-                                              superAdminTwo
-                                          )
+                                            .toLowerCase() ===
+                                            superAdminEmail ||
+                                          userStore.user.email
+                                            ?.trim()
+                                            .toLowerCase() === superAdminTwo
+                                        )
                                       "
                                     />
                                     <a
@@ -1410,8 +1372,8 @@ const submitDRSFormToGmailApproved = async () => {
                               filteredItems.reviewed_by_email ||
                             userStore.user.email?.trim().toLowerCase() ===
                               superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                            userStore.user.email?.trim().toLowerCase() ===
+                              superAdminTwo
                           "
                         >
                           <div class="w-full mb-2 block">
@@ -1436,9 +1398,9 @@ const submitDRSFormToGmailApproved = async () => {
                                       userStore.user.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail ||
-                                      
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                      userStore.user.email
+                                        ?.trim()
+                                        .toLowerCase() === superAdminTwo
                                     )
                                   "
                                 />
@@ -1460,8 +1422,9 @@ const submitDRSFormToGmailApproved = async () => {
                                       userStore.user.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                      userStore.user.email
+                                        ?.trim()
+                                        .toLowerCase() === superAdminTwo
                                     )
                                   "
                                 />
@@ -1473,8 +1436,9 @@ const submitDRSFormToGmailApproved = async () => {
                                       ?.trim()
                                       .toLowerCase() ===
                                       filteredItems.reviewed_by_email ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo ||
+                                    userStore.user.email
+                                      ?.trim()
+                                      .toLowerCase() === superAdminTwo ||
                                     userStore.user.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail
@@ -1517,8 +1481,9 @@ const submitDRSFormToGmailApproved = async () => {
                                         userStore.user.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                       )
                                     "
                                   />
@@ -1553,8 +1518,9 @@ const submitDRSFormToGmailApproved = async () => {
                                         userStore.user.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                       )
                                     "
                                   />
@@ -1589,8 +1555,9 @@ const submitDRSFormToGmailApproved = async () => {
                                         userStore.user.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                       )
                                     "
                                   />
@@ -1623,8 +1590,8 @@ const submitDRSFormToGmailApproved = async () => {
                                     filteredItems.reviewed_by_email ||
                                   userStore.user.email?.trim().toLowerCase() ===
                                     superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                  userStore.user.email?.trim().toLowerCase() ===
+                                    superAdminTwo
                                 )
                               "
                             >
@@ -1638,8 +1605,8 @@ const submitDRSFormToGmailApproved = async () => {
                               filteredItems.verified_by_email ||
                             userStore.user.email?.trim().toLowerCase() ===
                               superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                            userStore.user.email?.trim().toLowerCase() ===
+                              superAdminTwo
                           "
                           class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
                         >
@@ -1665,8 +1632,9 @@ const submitDRSFormToGmailApproved = async () => {
                                       userStore.user.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                      userStore.user.email
+                                        ?.trim()
+                                        .toLowerCase() === superAdminTwo
                                     )
                                   "
                                 />
@@ -1688,8 +1656,9 @@ const submitDRSFormToGmailApproved = async () => {
                                       userStore.user.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                      userStore.user.email
+                                        ?.trim()
+                                        .toLowerCase() === superAdminTwo
                                     )
                                   "
                                 />
@@ -1706,8 +1675,9 @@ const submitDRSFormToGmailApproved = async () => {
                                       .toLowerCase() === superAdminEmail
                                       ? ''
                                       : 'hidden' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                   "
                                   class="text-center text-xs w-full h-fit -mt-0.5 block"
                                   type="email"
@@ -1745,8 +1715,9 @@ const submitDRSFormToGmailApproved = async () => {
                                         userStore.user.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                       )
                                     "
                                   />
@@ -1781,8 +1752,9 @@ const submitDRSFormToGmailApproved = async () => {
                                         userStore.user.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                       )
                                     "
                                   />
@@ -1817,8 +1789,9 @@ const submitDRSFormToGmailApproved = async () => {
                                         userStore.user.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                       )
                                     "
                                   />
@@ -1851,8 +1824,8 @@ const submitDRSFormToGmailApproved = async () => {
                                     filteredItems.verified_by_email ||
                                   userStore.user.email?.trim().toLowerCase() ===
                                     superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                  userStore.user.email?.trim().toLowerCase() ===
+                                    superAdminTwo
                                 )
                               "
                             >
@@ -1866,8 +1839,8 @@ const submitDRSFormToGmailApproved = async () => {
                               filteredItems.approved_by_email ||
                             userStore.user.email?.trim().toLowerCase() ===
                               superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                            userStore.user.email?.trim().toLowerCase() ===
+                              superAdminTwo
                           "
                           class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
                         >
@@ -1914,8 +1887,9 @@ const submitDRSFormToGmailApproved = async () => {
                                       userStore.user.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                      userStore.user.email
+                                        ?.trim()
+                                        .toLowerCase() === superAdminTwo
                                     )
                                   "
                                 />
@@ -1932,8 +1906,9 @@ const submitDRSFormToGmailApproved = async () => {
                                       .toLowerCase() === superAdminEmail
                                       ? ''
                                       : 'hidden' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                   "
                                   class="text-center text-xs w-full h-fit -mt-0.5 block"
                                   type="email"
@@ -1975,8 +1950,9 @@ const submitDRSFormToGmailApproved = async () => {
                                         userStore.user.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                       )
                                     "
                                   />
@@ -2015,8 +1991,9 @@ const submitDRSFormToGmailApproved = async () => {
                                         userStore.user.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                       )
                                     "
                                   />
@@ -2056,8 +2033,9 @@ const submitDRSFormToGmailApproved = async () => {
                                         userStore.user.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                        userStore.user.email
+                                          ?.trim()
+                                          .toLowerCase() === superAdminTwo
                                       )
                                     "
                                   />
@@ -2093,8 +2071,8 @@ const submitDRSFormToGmailApproved = async () => {
                                     'president@lsu.edu.ph' ||
                                   userStore.user.email?.trim().toLowerCase() ===
                                     superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                  userStore.user.email?.trim().toLowerCase() ===
+                                    superAdminTwo
                                 )
                               "
                             ></textarea>
@@ -2106,8 +2084,8 @@ const submitDRSFormToGmailApproved = async () => {
                         v-if="
                           userStore.user.email?.trim().toLowerCase() ===
                             'meredith.embuscado@lsu.edu.ph' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo ||
+                          userStore.user.email?.trim().toLowerCase() ===
+                            superAdminTwo ||
                           userStore.user.email?.trim().toLowerCase() ===
                             filteredItems.rmo_email ||
                           userStore.user.email?.trim().toLowerCase() ===
@@ -2147,8 +2125,9 @@ const submitDRSFormToGmailApproved = async () => {
                                     userStore.user.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                    userStore.user.email
+                                      ?.trim()
+                                      .toLowerCase() === superAdminTwo
                                   )
                                 "
                               />
@@ -2182,8 +2161,9 @@ const submitDRSFormToGmailApproved = async () => {
                                     userStore.user.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                                    userStore.user.email
+                                      ?.trim()
+                                      .toLowerCase() === superAdminTwo
                                   )
                                 "
                               />
@@ -2215,7 +2195,10 @@ const submitDRSFormToGmailApproved = async () => {
                                   :enable-time-picker="false"
                                   name="date"
                                   auto-apply
-                                  :year-range="[currentYear - 5, currentYear + 5]"
+                                  :year-range="[
+                                    currentYear - 5,
+                                    currentYear + 5,
+                                  ]"
                                   week-start="0"
                                 />
                               </div>
@@ -2238,9 +2221,9 @@ const submitDRSFormToGmailApproved = async () => {
                                       ?.trim()
                                       .toLowerCase() ===
                                       'meredith.embuscado@lsu.edu.ph' ||
-                                  
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo ||
+                                    userStore.user.email
+                                      ?.trim()
+                                      .toLowerCase() === superAdminTwo ||
                                     userStore.user.email
                                       ?.trim()
                                       .toLowerCase() ===
@@ -2269,8 +2252,8 @@ const submitDRSFormToGmailApproved = async () => {
                             filteredItems.rmo_email ||
                           userStore.user.email?.trim().toLowerCase() ===
                             superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo
+                          userStore.user.email?.trim().toLowerCase() ===
+                            superAdminTwo
                         "
                         class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
                         @click="updateData(filteredItems.id)"
@@ -2287,7 +2270,7 @@ const submitDRSFormToGmailApproved = async () => {
                           userStore.user.email?.trim().toLowerCase() ===
                             filteredItems.reviewed_by_email ||
                           userStore.user.email?.trim().toLowerCase() ===
-                            superAdminEmail 
+                            superAdminEmail
                         "
                         class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
                         @click="updateReviewed(filteredItems.id)"
@@ -2304,7 +2287,7 @@ const submitDRSFormToGmailApproved = async () => {
                           userStore.user.email?.trim().toLowerCase() ===
                             filteredItems.verified_by_email ||
                           userStore.user.email?.trim().toLowerCase() ===
-                            superAdminEmail 
+                            superAdminEmail
                         "
                         class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
                         @click="updateVerified(filteredItems.id)"
@@ -2321,7 +2304,7 @@ const submitDRSFormToGmailApproved = async () => {
                           userStore.user.email?.trim().toLowerCase() ===
                             filteredItems.approved_by_email ||
                           userStore.user.email?.trim().toLowerCase() ===
-                            superAdminEmail 
+                            superAdminEmail
                         "
                         class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
                         @click="updateApproved(filteredItems.id)"
@@ -2340,9 +2323,6 @@ const submitDRSFormToGmailApproved = async () => {
           </div>
         </div>
       </div>
-    </div>
-    <div class="static bottom-0 w-full">
-      <DashboardFooter />
     </div>
   </div>
 </template>

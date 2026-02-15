@@ -16,7 +16,6 @@ definePageMeta({
 // ---------------- STATE ----------------
 const router = useRouter();
 const userStore = useUserStore();
-const toggleSideBarMenu = ref(false);
 const currentView = ref("Menu");
 const openGroups = ref([
   "Content Management",
@@ -26,6 +25,7 @@ const openGroups = ref([
   "NPCC IT Services",
   "University Registrar",
   "Campus Pass",
+  "Document Reviewer",
   "External Links",
 ]);
 const toggleGroup = (groupName) => {
@@ -110,9 +110,16 @@ const registrarMenuEmails = [
 
 const campusPassAdminEmails = [
   "esmael.larubis@lsu.edu.ph",
-  "jorenlee.luna@lsu.edu.ph",
   "ssec@lsu.edu.ph",
-  "jason.yap@lsu.edu.ph",
+];
+
+const drsAdminEmails = [
+  "macristina.llauder@lsu.edu.ph",
+  "president@lsu.edu.ph",
+  "rey.mejias@lsu.edu.ph",
+  "meredith.embuscado@lsu.edu.ph",
+  "recordsmanagement@lsu.edu.ph",
+  "wenny.caseros@lsu.edu.ph",
 ];
 
 const rolesByEmail = {
@@ -124,6 +131,7 @@ const rolesByEmail = {
   npcc: npccMenuEmails,
   registrar: registrarMenuEmails,
   campusPass: campusPassAdminEmails,
+  drs: drsAdminEmails,
 };
 // ---------------- DETERMINE ROLE ----------------
 const userRole = computed(() => {
@@ -137,6 +145,7 @@ const userRole = computed(() => {
   if (rolesByEmail.npcc.includes(email)) return "npcc";
   if (rolesByEmail.registrar.includes(email)) return "registrar";
   if (rolesByEmail.campusPass.includes(email)) return "campusPass";
+  if (rolesByEmail.drs.includes(email)) return "drs";
   return null;
 });
 // ---------------- WATCH EMAIL ----------------
@@ -258,6 +267,18 @@ const subMenuList = [
     ],
   },
   {
+    group: "Document Reviewer",
+    allowedEmails: drsAdminEmails,
+    items: [
+      {
+        label: "Document Reviewer System",
+        icon: "fa-file-alt",
+        type: "button",
+        view: "drs",
+      },
+    ],
+  },
+  {
     group: "External Links",
     items: [
       { label: "LSU Home Page", icon: "fa-globe", type: "link", to: "/" },
@@ -285,18 +306,7 @@ const filteredMenuList = computed(() => {
 const navigateTo = (url) => router.push(url);
 </script>
 
-<style scoped>
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.25s ease;
-}
 
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-5px);
-}
-</style>
 
 <template>
   <div class="h-screen flex flex-col">
@@ -458,6 +468,9 @@ const navigateTo = (url) => router.push(url);
           <div class="" v-else-if="currentView === 'campusPass'">
             <SuperAdminDashboardServicesCampusPass />
           </div>
+          <div class="" v-else-if="currentView === 'drs'">
+            <SuperAdminDashboardServicesDrs />
+          </div>
         </div>
         <div>
           <nav
@@ -520,3 +533,16 @@ const navigateTo = (url) => router.push(url);
     </div>
   </div>
 </template>
+
+<style scoped>
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.25s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-5px);
+}
+</style>
