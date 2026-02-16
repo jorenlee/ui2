@@ -748,7 +748,7 @@ onMounted(async () => {
     "ccje.registrar@lsu.edu.ph": "Criminology / BS Psychology",
   };
 
-  const fullAccessEmails = ["registrar@lsu.edu.ph", "jorenlee.luna@lsu.edu.ph"];
+  const fullAccessEmails = ["registrar@lsu.edu.ph", "jorenlee.luna@lsu.edu.ph", "jason.yap@lsu.edu.ph"];
 
   const authorizedEmails = [
     ...fullAccessEmails,
