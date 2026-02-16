@@ -98,7 +98,7 @@ const quickLinks = [
 
               <!-- Quick Links -->
               <div
-                class="border-t border-green-900 pt-6 w-full sm:w-10/12 mx-auto lg:mx-0"
+                class="border-t border-green-900 pt-6 lg:w-full w-11/12 mx-auto lg:mx-0"
               >
                 <h3 class="text-sm font-bold uppercase mb-3 text-green-200">
                   Quick Links
