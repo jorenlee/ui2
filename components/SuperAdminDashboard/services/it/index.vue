@@ -1306,13 +1306,14 @@ const itemStatusClass = (status) => {
   }
 };
 
-// Auto-assignment functions removed - Manual checkbox selection only
 
-// Auto-assignment removed - Manual checkbox selection only for assigned personnel
 </script>
 
 <template>
-  <div>
+  <div class="min-h-screen"  
+  :class="
+          darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'
+        ">
     <!-- Header with Title and Count -->
     <div
       class="flex flex-col lg:flex-row lg:items-center justify-between my-2 gap-x-2"

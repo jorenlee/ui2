@@ -22,7 +22,7 @@ const darkMode = ref(false);
 onMounted(() => {
   const storedTheme = localStorage.getItem("theme");
 
-  if (storedTheme === "dark") {
+  if (storedTheme === "light") {
     darkMode.value = true;
     document.documentElement.classList.add("dark");
   } else {
