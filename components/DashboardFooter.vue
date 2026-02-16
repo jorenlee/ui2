@@ -1,12 +1,18 @@
 <script setup>
   import moment from "moment";
+  const props = defineProps({
+  darkMode: Boolean,
+});
+
   const presentYear = ref(moment(new Date()).format("YYYY"));
   const profileImageUrl = "https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/LSU%20Seal.PNG";
 </script>
 <template>
   <div class="">
     <UniversityFeedbackWidget />
-    <div class="flex justify-between bg-green-900 px-3 py-1.5">
+    <div class="flex justify-between px-3 py-1.5 text-white"
+     :class="[darkMode ? 'bg-green-950' : 'bg-green-900']"
+    >
       <div class="flex gap-x-3 lg:w-fit mx-auto">
         <div class="flex items-center">
           <img :src="profileImageUrl" class="w-6 h-6 mx-auto" />

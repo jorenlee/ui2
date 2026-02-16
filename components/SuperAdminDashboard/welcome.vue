@@ -4,6 +4,10 @@ import { useUserStore } from "@/stores/user";
 
 const userStore = useUserStore();
 
+const props = defineProps({
+  darkMode: Boolean,
+});
+
 /* ================= CLOCK ================= */
 const currentTime = ref("");
 const currentDate = ref("");
@@ -77,7 +81,8 @@ const currentHour = computed(() => {
   <div class="mb-6">
     <!-- HEADER -->
     <div
-      class="relative overflow-hidden bg-green-600 rounded-3xl shadow-2xl lg:py-3 lg:px-10 px-5 p-6 text-white mb-4"
+      class="relative overflow-hidden rounded-3xl shadow-2xl lg:py-3 lg:px-10 px-5 p-6 mb-4"
+      :class="[darkMode ? 'bg-green-950 text-white' : 'bg-green-600 text-white']"
     >
       <div class="relative z-10 lg:flex items-center justify-between gap-8">
         <!-- LEFT -->
@@ -130,11 +135,11 @@ const currentHour = computed(() => {
         <!-- CLOCK -->
         <div class="lg:w-auto w-full">
           <div
-            class="bg-white/15 backdrop-blur-xl rounded-2xl p-6 border border-white/20"
+            class="bg-white/15 backdrop-blur-xl rounded-2xl lg:p-6 px-3 border border-white/20"
           >
             <div class="flex items-center gap-4">
               <i class="fa fa-clock text-2xl"></i>
-              <p class="text-3xl lg:text-4xl font-bold font-mono">
+              <p class="text-2xl lg:text-4xl font-bold font-mono">
                 {{ currentTime }}
               </p>
             </div>
