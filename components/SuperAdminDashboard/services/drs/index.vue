@@ -192,6 +192,128 @@ let statusSelectedTotalLength = ref(0);
 
 const isLoading = ref(true); // Add loading state
 
+// CSV Download Function
+const downloadCSV = () => {
+  try {
+    // Get the current filtered items
+    const dataToExport = filteredListItems.value;
+
+    if (!dataToExport || dataToExport.length === 0) {
+      alert("No data to export");
+      return;
+    }
+
+    // Define CSV headers based on the info structure
+    const headers = [
+      "Tracking ID",
+      "Document Title",
+      "Document Code",
+      "Document Type",
+      "Status",
+      "Revision Number",
+      "Schedule",
+      "Effectivity Date",
+      "Purpose",
+      "Originating First Name",
+      "Originating Middle Name",
+      "Originating Last Name",
+      "Originating Office",
+      "Originating Email",
+      "Reviewed By Name",
+      "Reviewed By Designation",
+      "Reviewed By Date Checked",
+      "Reviewed By Action",
+      "Reviewed By Remarks",
+      "Reviewed By Email",
+      "Verified By Name",
+      "Verified By Designation",
+      "Verified By Date Checked",
+      "Verified By Action",
+      "Verified By Remarks",
+      "Verified By Email",
+      "Approved By Name",
+      "Approved By Designation",
+      "Approved By Date Checked",
+      "Approved By Action",
+      "Approved By Remarks",
+      "Approved By Email",
+      "Other Comments/Remarks",
+      "RMO Name",
+      "RMO Email",
+      "Document Attachment"
+    ];
+
+    // Convert data to CSV rows
+    const csvRows = [headers.join(",")];
+
+    dataToExport.forEach(item => {
+      const row = [
+        item.tracking_id || "",
+        `"${(item.document_title || "").replace(/"/g, '""')}"`,
+        item.document_code || "",
+        item.document_type || "",
+        item.status || "",
+        item.revision_number || "",
+        item.schedule || "",
+        item.effectivity_date || "",
+        `"${(item.purpose || "").replace(/"/g, '""')}"`,
+        item.originating_firstname || "",
+        item.originating_middlename || "",
+        item.originating_lastname || "",
+        item.originating_office || "",
+        item.originating_email || "",
+        item.reviewed_by_name || "",
+        item.reviewed_by_designation || "",
+        item.reviewed_by_date_checked || "",
+        item.reviewed_by_action || "",
+        `"${(item.reviewed_by_remarks || "").replace(/"/g, '""')}"`,
+        item.reviewed_by_email || "",
+        item.verified_by_name || "",
+        item.verified_by_designation || "",
+        item.verified_by_date_checked || "",
+        item.verified_by_action || "",
+        `"${(item.verified_by_remarks || "").replace(/"/g, '""')}"`,
+        item.verified_by_email || "",
+        item.approved_by_name || "",
+        item.approved_by_designation || "",
+        item.approved_by_date_checked || "",
+        item.approved_by_action || "",
+        `"${(item.approved_by_remarks || "").replace(/"/g, '""')}"`,
+        item.approved_by_email || "",
+        `"${(item.other_comments_remarks || "").replace(/"/g, '""')}"`,
+        item.rmo_name || "",
+        item.rmo_email || "",
+        item.document_attachment || ""
+      ];
+      csvRows.push(row.join(","));
+    });
+
+    // Create CSV content
+    const csvContent = csvRows.join("\n");
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+
+    // Generate filename with current date
+    const date = new Date().toISOString().split("T")[0];
+    const filename = `DRS_Export_${date}.csv`;
+
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    console.log(`✅ CSV exported successfully: ${dataToExport.length} records`);
+  } catch (error) {
+    console.error("Error downloading CSV:", error);
+    alert("Error downloading CSV. Please try again.");
+  }
+};
+
 const filteredListItems = computed(() => {
   filteredItems = Array.isArray(listItems.value) ? [...listItems.value] : [];
 
@@ -646,6 +768,15 @@ const submitDRSFormToGmailApproved = async () => {
                     />
                   </div>
                 </div>
+
+                <button
+                  @click="downloadCSV"
+                  class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
+                  title="Download filtered data as CSV"
+                >
+                  <i class="fa fa-download"></i>
+                  <span class="">CSV</span>
+                </button>
               </div>
 
               <div class="relative">
