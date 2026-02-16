@@ -108,7 +108,7 @@ const quickLinks = [
                   <li v-for="(link, index) in quickLinks" :key="index">
                     <a
                       :href="link.href"
-                      class="group relative flex items-center justify-center lg:justify-start text-green-100 transition-all duration-300 hover:scale-[1.02]"
+                      class="group relative flex items-center justify-start text-green-100 transition-all duration-300 hover:scale-[1.02]"
                     >
                       <i :class="`fa ${link.icon} mr-2`"></i>
                       {{ link.label }}
