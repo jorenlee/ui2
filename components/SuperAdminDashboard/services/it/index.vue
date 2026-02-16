@@ -1,7 +1,7 @@
 <template>
-  <div class="lg:p-1 text-sm">
+  <div>
     <!-- Header with Title and Count -->
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-3 gap-x-2">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between my-2 gap-x-2">
       <h2 class="text-sm lg:text-base font-bold text-gray-800">NPCC Tech Support & IT Services</h2>
       <div class="text-xs text-gray-600 font-semibold uppercase">
         Showing <span class="text-green-700 font-bold">{{ paginatedRequests.length }}</span> of
@@ -14,10 +14,10 @@
     </div>
 
     <!-- ACTION BAR WITH TABS -->
-    <div class="bg-white border border-gray-200 rounded-lg shadow-sm mb-4 p-2 lg:p-3">
+    <div class="bg-white border border-gray-200 rounded-lg shadow-sm mb-1 p-2 lg:p-1">
       <div class="flex items-center gap-2 lg:gap-3 flex-wrap lg:flex-nowrap">
         <!-- Search Filter -->
-        <div class="lg:w-64 w-full flex-shrink-0 order-1">
+        <div class="lg:w-5/12 w-full flex-shrink-0 order-1">
           <div class="relative">
             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <i class="fa fa-search text-gray-400 text-sm"></i>

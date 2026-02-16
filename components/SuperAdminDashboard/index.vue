@@ -239,10 +239,10 @@ const handleMenuClick = (menu) => {
 
 
 <template>
-  <div class="h-screen flex flex-col">
+  <div>
     <!-- LOGOUT CONFIRMATION -->
     <div v-if="currentView === 'Logout'" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div class="w-full max-w-md bg-white rounded-3xl p-8 text-center shadow-2xl transform transition-all">
+      <div class="w-full bg-white rounded-3xl p-8 text-center shadow-2xl transform transition-all">
         <!-- Icon with Animation -->
         <div class="mx-auto mb-6 w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-rose-600 shadow-lg shadow-red-500/30">
           <i class="fa fa-sign-out text-3xl text-white"></i>
@@ -274,7 +274,7 @@ const handleMenuClick = (menu) => {
     </div>
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->
-      <div class="w-full flex flex-col mb-32">
+      <div class="w-full mb-32">
         <!-- CONTENT AREA -->
         <div class="overflow-y-auto">
           <div v-if="currentView === 'Profile'" class="w-full p-4">
@@ -390,7 +390,7 @@ const handleMenuClick = (menu) => {
           <div v-else-if="currentView === 'university-calendar'" class="p-4">
             <SuperAdminDashboardChancellorOffice />
           </div>
-          <div v-else-if="currentView === 'npcc'" class="p-4">
+          <div v-else-if="currentView === 'npcc'" class="px-2 pb-2">
             <SuperAdminDashboardServicesIt />
           </div>
           <div v-else-if="currentView === 'registrar'">
@@ -404,7 +404,7 @@ const handleMenuClick = (menu) => {
           </div>
         </div>
         <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-2xl">
-          <div class="flex justify-evenly items-center  px-4 max-w-screen-xl mx-auto">
+          <div class="flex justify-evenly items-center px-4 mx-auto">
             <button
               v-for="(menu, index) in menuList"
               :key="index"
