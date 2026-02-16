@@ -28,6 +28,11 @@ const socials = [
 
 const quickLinks = [
   {
+    label: "CMS",
+    href: "/cms/login",
+    icon: "fa-cogs",
+  },
+  {
     label: "Data Privacy",
     href: "/data-privacy",
     icon: "fa-shield",
@@ -47,14 +52,17 @@ const quickLinks = [
     href: "/social-media",
     icon: "fa-share-alt",
   },
+  {
+    label: "User Login",
+    href: "/login",
+    icon: "fa-users-gear",
+  },
 ];
 </script>
 <template>
   <div class="text-center justify-center">
     <GoogleAdsense />
-
     <UniversityFeedbackWidget />
-
     <footer
       class="lg:mt-5 w-full text-white relative border-t-8 border-green-800 bg-[url('https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/footer.jpg')] bg-cover bg-center"
     >
@@ -96,7 +104,7 @@ const quickLinks = [
                   Quick Links
                 </h3>
 
-                <ul class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <ul class="grid grid-cols-2 sm:grid-cols-6 gap-3 text-xs">
                   <li v-for="(link, index) in quickLinks" :key="index">
                     <a
                       :href="link.href"
