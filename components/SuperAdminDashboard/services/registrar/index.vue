@@ -6,6 +6,16 @@ const userStore = useUserStore();
 import _ from "lodash";
 import moment from "moment";
 
+const props = defineProps({
+  darkMode: Boolean,
+});
+
+// const cardClass = computed(() =>
+//   props.darkMode
+//     ? "bg-gray-800 border border-gray-700"
+//     : "bg-white text-green-900 "
+// );
+
 const listItems = ref([]);
 let tableDisplay = ref(true);
 let toggleSideBarMenu = ref(false);
@@ -291,7 +301,7 @@ const confirmPrepDoc = async (item) => {
     item.logs = updatedLogs;
 
     const itemIndex = listItems.value.findIndex(
-      (listItem) => listItem.id === item.id
+      (listItem) => listItem.id === item.id,
     );
     if (itemIndex !== -1) {
       listItems.value[itemIndex].logs = updatedLogs;
@@ -355,7 +365,7 @@ const confirmReleasingDoc = async (item) => {
     item.logs = updatedLogs;
 
     const itemIndex = listItems.value.findIndex(
-      (listItem) => listItem.id === item.id
+      (listItem) => listItem.id === item.id,
     );
     if (itemIndex !== -1) {
       listItems.value[itemIndex].logs = updatedLogs;
@@ -420,7 +430,7 @@ const confirmTransactionClosed = async (item) => {
     item.logs = updatedLogs;
 
     const itemIndex = listItems.value.findIndex(
-      (listItem) => listItem.id === item.id
+      (listItem) => listItem.id === item.id,
     );
     if (itemIndex !== -1) {
       listItems.value[itemIndex].logs = updatedLogs;
@@ -465,7 +475,7 @@ const sendEmailDetailFee = async (item) => {
   const payload = {
     ...currentItemInfo.value,
     date_graduated_last_attended: moment(
-      currentItemInfo.value.date_graduated_last_attended
+      currentItemInfo.value.date_graduated_last_attended,
     ).format("LL"),
   };
 
@@ -518,7 +528,7 @@ const assessmentConfirm = async (item) => {
     item.logs = updatedLogs;
 
     const itemIndex = listItems.value.findIndex(
-      (listItem) => listItem.id === item.id
+      (listItem) => listItem.id === item.id,
     );
     if (itemIndex !== -1) {
       listItems.value[itemIndex].logs = updatedLogs;
@@ -590,7 +600,7 @@ const openPaymentModal = (item) => {
   currentItemInfo.value.tracking_id = item.tracking_id;
   currentItemInfo.value.college = item.college;
   currentItemInfo.value.date_graduated_last_attended = moment(
-    item.date_graduated_last_attended
+    item.date_graduated_last_attended,
   ).format("YYYY-MM-DD");
 
   // Load existing detail_fees_type_document_requests from the item
@@ -601,7 +611,7 @@ const openPaymentModal = (item) => {
     item.detail_fees_type_document_requests.length > 0
   ) {
     currentItemInfo.value.detail_fees_type_document_requests = JSON.parse(
-      JSON.stringify(item.detail_fees_type_document_requests)
+      JSON.stringify(item.detail_fees_type_document_requests),
     );
   } else {
     // Initialize with empty array if no existing fees
@@ -730,17 +740,15 @@ onMounted(async () => {
   const email = userStore.user.email;
 
   const emailToCollegeMap = {
-    "ccsea.registrar@lsu.edu.ph": "Arts and Sciences, Engineering, Architecture, Computer Studies",
+    "ccsea.registrar@lsu.edu.ph":
+      "Arts and Sciences, Engineering, Architecture, Computer Studies",
     "cba.registrar@lsu.edu.ph": "Business, Commerce, Accountancy",
     "cte.registrar@lsu.edu.ph": "Education / Graduate Studies",
     "onlinerequest@lsu.edu.ph": "Nursing / Tourism and Hospitality Management",
     "ccje.registrar@lsu.edu.ph": "Criminology / BS Psychology",
   };
 
-  const fullAccessEmails = [
-    "registrar@lsu.edu.ph",
-    "jorenlee.luna@lsu.edu.ph",
-  ];
+  const fullAccessEmails = ["registrar@lsu.edu.ph", "jorenlee.luna@lsu.edu.ph"];
 
   const authorizedEmails = [
     ...fullAccessEmails,
@@ -802,7 +810,7 @@ watch(
         cls.remove("overflow-hidden");
       }
     }
-  }
+  },
 );
 
 const stopAutoRefresh = () => {
@@ -955,7 +963,8 @@ const hasReviewedAndVerifiedStatus = (item) => {
 
   return item.logs.some(
     (log) =>
-      log.status_remarks && log.status_remarks.includes("Reviewed and Verified")
+      log.status_remarks &&
+      log.status_remarks.includes("Reviewed and Verified"),
   );
 };
 
@@ -970,7 +979,7 @@ const hasPaidStatus = (item) => {
   }
 
   return item.logs.some(
-    (log) => log.status_remarks && log.status_remarks.includes("Assessment")
+    (log) => log.status_remarks && log.status_remarks.includes("Assessment"),
   );
 };
 
@@ -986,7 +995,7 @@ const hasPrepDocStatus = (item) => {
 
   return item.logs.some(
     (log) =>
-      log.status_remarks && log.status_remarks.includes("Preparing Documents")
+      log.status_remarks && log.status_remarks.includes("Preparing Documents"),
   );
 };
 
@@ -1002,7 +1011,7 @@ const hasReleasingDocStatus = (item) => {
 
   return item.logs.some(
     (log) =>
-      log.status_remarks && log.status_remarks.includes("Releasing Documents")
+      log.status_remarks && log.status_remarks.includes("Releasing Documents"),
   );
 };
 
@@ -1018,7 +1027,7 @@ const hasTransactionClosedStatus = (item) => {
 
   return item.logs.some(
     (log) =>
-      log.status_remarks && log.status_remarks.includes("Transaction Closed")
+      log.status_remarks && log.status_remarks.includes("Transaction Closed"),
   );
 };
 
@@ -1031,7 +1040,7 @@ watch(
     updateReleasingDocStatuses();
     updateTransactionClosedStatuses();
   },
-  { deep: true }
+  { deep: true },
 );
 
 const fetchListItemsQuietly = async () => {
@@ -1063,7 +1072,7 @@ const fetchListItemsQuietly = async () => {
       if (originalListItems.value.length > 0) {
         originalListItems.value = mergeById(
           originalListItems.value,
-          updatedItems
+          updatedItems,
         );
         // Re-run search without resetting pagination beyond page 1
         performSearch();
@@ -1102,7 +1111,7 @@ const fetchListItems = async () => {
       (error) => {
         console.error("Fetch error:", error);
         return [];
-      }
+      },
     );
 
     listItems.value = Array.isArray(response) ? response : [];
@@ -1203,14 +1212,14 @@ const filteredListItems = computed(() => {
       item.logs?.some((log) => {
         const statusRemarks = log?.status_remarks?.toLowerCase() || "";
         return statusRemarks.includes("transaction closed");
-      })
+      }),
     );
   } else if (statusFilter.value === "pending") {
     items = items.filter((item) =>
       item.logs?.every((log) => {
         const statusRemarks = log?.status_remarks?.toLowerCase() || "";
         return !statusRemarks.includes("transaction closed");
-      })
+      }),
     );
   }
 
@@ -1224,7 +1233,7 @@ const doneCount = (college) => {
       item.logs?.some((log) => {
         const statusRemarks = log?.status_remarks?.toLowerCase() || "";
         return statusRemarks.includes("transaction closed");
-      })
+      }),
   ).length;
 };
 
@@ -1235,7 +1244,7 @@ const pendingCount = (college) => {
       item.logs?.every((log) => {
         const statusRemarks = log?.status_remarks?.toLowerCase() || "";
         return !statusRemarks.includes("transaction closed");
-      })
+      }),
   ).length;
 };
 
@@ -1291,7 +1300,7 @@ const getEmailsForCollege = (college) => {
   };
 
   return Object.keys(emailToCollegeMap).filter(
-    (email) => emailToCollegeMap[email] === college
+    (email) => emailToCollegeMap[email] === college,
   );
 };
 
@@ -1327,7 +1336,7 @@ const filteredByCollege = computed(() => {
     return paginatedListItems.value;
   }
   const filtered = paginatedListItems.value.filter(
-    (item) => item.college === selectedCollege.value
+    (item) => item.college === selectedCollege.value,
   );
   // console.log("filtered:", filtered);
   return filtered;
@@ -1337,7 +1346,7 @@ const visiblePages = computed(() => {
   const pages = [];
   let startPage = Math.max(
     1,
-    currentPage.value - Math.floor(maxVisiblePages / 2)
+    currentPage.value - Math.floor(maxVisiblePages / 2),
   );
   let endPage = Math.min(totalPages.value, startPage + maxVisiblePages - 1);
 
@@ -1476,12 +1485,12 @@ const extractImageUrl = (rec) => {
 watch(
   () => currentItemInfo.value.detail_fees_type_document_requests,
   () => updateTotal(),
-  { deep: true }
+  { deep: true },
 );
 
 const hasEmptyFeeName = computed(() => {
   return currentItemInfo.value?.detail_fees_type_document_requests?.some(
-    (fee) => !fee.fee_name || fee.fee_name.trim() === ""
+    (fee) => !fee.fee_name || fee.fee_name.trim() === "",
   );
 });
 </script>
@@ -1489,44 +1498,78 @@ const hasEmptyFeeName = computed(() => {
 <template>
   <div>
     <div class="min-h-screen flex">
-
-
       <div class="w-full">
-  
-        <div v-if="isFullAccess" class="lg:mx-2 mx-2 shadow-lg rounded-lg p-1">
+        <div
+          v-if="isFullAccess"
+          :class="
+            darkMode
+              ? 'lg:mx-2 mx-2 shadow-lg rounded-lg p-1 bg-gray-800 border border-gray-700'
+              : 'lg:mx-2 mx-2 shadow-lg rounded-lg p-1 bg-white border border-gray-200'
+          "
+        >
           <div class="lg:flex gap-2">
             <div
               v-for="college in colleges"
               :key="college.value"
-              class="border border-gray-300 rounded-lg px-2 py-1 shadow-sm w-full lg:mb-0 mb-2"
+              :class="
+                darkMode
+                  ? 'border border-gray-700 bg-gray-800 rounded-lg px-2 py-1 shadow-sm w-full lg:mb-0 mb-2'
+                  : 'border border-gray-300 bg-white rounded-lg px-2 py-1 shadow-sm w-full lg:mb-0 mb-2'
+              "
             >
+              <!-- College Name -->
               <div
-                class="font-semibold text-[10px] text-gray-800 whitespace-nowrap text-center lg:tracking-normal tracking-tighter"
+                :class="
+                  darkMode
+                    ? 'font-semibold text-[10px] text-gray-100 text-center'
+                    : 'font-semibold text-[10px] text-gray-800 text-center'
+                "
               >
                 {{ college.label }}
               </div>
-              <div class="text-[10px] text-gray-500 text-center">
+
+              <!-- Emails -->
+              <div
+                :class="
+                  darkMode
+                    ? 'text-[10px] text-gray-400 text-center'
+                    : 'text-[10px] text-gray-500 text-center'
+                "
+              >
                 {{ getEmailsForCollege(college.value).join(", ") }}
               </div>
 
+              <!-- Stats Pills -->
               <div class="flex flex-wrap mx-auto w-fit gap-1 mt-1 text-[11px]">
                 <!-- Pending -->
                 <span
-                  class="border border-500 text-red-800 px-2 py-0.5 rounded-full font-semibold"
+                  :class="
+                    darkMode
+                      ? 'border border-red-400 text-red-300 bg-red-900/20 px-2 py-0.5 rounded-full font-semibold'
+                      : 'border border-red-300 text-red-800 bg-red-50 px-2 py-0.5 rounded-full font-semibold'
+                  "
                 >
                   Pending: {{ pendingCount(college.value) }}
                 </span>
 
                 <!-- Done -->
                 <span
-                  class="border border-700 text-green-800 px-2 py-0.5 rounded-full font-semibold"
+                  :class="
+                    darkMode
+                      ? 'border border-green-400 text-green-300 bg-green-900/20 px-2 py-0.5 rounded-full font-semibold'
+                      : 'border border-green-300 text-green-800 bg-green-50 px-2 py-0.5 rounded-full font-semibold'
+                  "
                 >
                   Done: {{ doneCount(college.value) }}
                 </span>
 
                 <!-- Total -->
                 <span
-                  class="border border-600 text-blue-800 px-2 py-0.5 rounded-full font-semibold"
+                  :class="
+                    darkMode
+                      ? 'border border-emerald-400 text-emerald-300 bg-emerald-900/20 px-2 py-0.5 rounded-full font-semibold'
+                      : 'border border-emerald-300 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full font-semibold'
+                  "
                 >
                   Total: {{ totalCount(college.value) }}
                 </span>
@@ -1539,7 +1582,12 @@ const hasEmptyFeeName = computed(() => {
           <div class="w-full px-2">
             <div v-show="tableDisplay" class="relative">
               <div
-                class="w-full shadow bg-gray-100 text-green-900 font-bold px-2 text-center mb-1 py-1 text-xs uppercase"
+                class="w-full shadow font-bold px-2 text-center mb-1 py-1 text-xs uppercase"
+                :class="
+                  props.darkMode
+                    ? 'bg-gray-800 text-white'
+                    : 'bg-gray-100 text-green-900'
+                "
               >
                 All Request Lists
               </div>
@@ -1547,7 +1595,8 @@ const hasEmptyFeeName = computed(() => {
               <!-- Fullscreen Success Toast -->
               <div
                 v-if="verifySuccessMessage"
-                class="fixed inset-0 z-[1000] bg-gray-800 bg-opacity-90 flex items-center justify-center"
+                class="fixed inset-0 z-[1000] bg-opacity-90 flex items-center justify-center"
+                :class="props.darkMode ? 'bg-gray-800' : 'bg-gray-100'"
               >
                 <p class="text-white text-lg font-semibold text-center px-6">
                   {{ verifySuccessMessage }}
@@ -1556,7 +1605,12 @@ const hasEmptyFeeName = computed(() => {
 
               <div
                 v-if="verifyErrorMessage"
-                class="fixed inset-0 z-[1000] bg-red-900 bg-opacity-90 flex items-center justify-center"
+                class="fixed inset-0 z-[1000] bg-opacity-90 flex items-center justify-center"
+                :class="
+                  props.darkMode
+                    ? 'bg-gray-800 text-white'
+                    : 'bg-white text-red-900'
+                "
               >
                 <p class="text-white text-lg font-semibold text-center px-6">
                   {{ verifyErrorMessage }}
@@ -1564,7 +1618,12 @@ const hasEmptyFeeName = computed(() => {
               </div>
 
               <div
-                class="w-full lg:flex flex-wrap items-center gap-3 mb-1 px-3 py-1 bg-white border rounded-md shadow-sm"
+                class="w-full lg:flex flex-wrap items-center gap-3 mb-1 px-3 py-1 border rounded-md shadow-sm"
+                :class="
+                  props.darkMode
+                    ? 'bg-gray-800 text-white'
+                    : 'bg-white text-red-900'
+                "
               >
                 <div class="w-full lg:flex items-center gap-3">
                   <!-- Left Actions -->
@@ -1575,7 +1634,10 @@ const hasEmptyFeeName = computed(() => {
                     <!-- Select/Deselect All -->
                     <button
                       @click="selectAllItems"
-                      class="flex items-center text-xs px-2 py-1 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 transition whitespace-nowrap"
+                      class="flex items-center text-xs px-2 py-1 rounded-md transition whitespace-nowrap"
+                      :class="darkMode
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                        : 'bg-gray-100 hover:bg-gray-200 text-gray-700'"
                     >
                       {{ allSelected ? "Deselect All" : "Select All" }}
                     </button>
@@ -1586,7 +1648,7 @@ const hasEmptyFeeName = computed(() => {
                       :disabled="selectedItems.length === 0"
                       :class="
                         selectedItems.length === 0
-                          ? 'bg-pink-100 text-red-300 cursor-not-allowed'
+                          ? (darkMode ? 'bg-red-900/30 text-red-400 cursor-not-allowed' : 'bg-pink-100 text-red-300 cursor-not-allowed')
                           : 'bg-red-600 text-white hover:bg-red-700'
                       "
                       class="flex items-center text-xs px-2 py-1 rounded-md transition whitespace-nowrap"
@@ -1600,7 +1662,10 @@ const hasEmptyFeeName = computed(() => {
                   <div v-if="collegeFilterList" class="lg:mb-0 mb-3 w-full">
                     <select
                       v-model="selectedCollege"
-                      class="w-full text-xs px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                      class="w-full text-xs px-2 py-1 border rounded-md focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                      :class="darkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-200'
+                        : 'bg-white border-gray-300 text-gray-900'"
                     >
                       <option value="">All Colleges</option>
                       <option
@@ -1619,12 +1684,16 @@ const hasEmptyFeeName = computed(() => {
                       v-model="searchQuery"
                       type="search"
                       placeholder="Search"
-                      class="text-xs w-full border border-gray-300 rounded-md px-2 py-1 pr-8 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                      class="text-xs w-full border rounded-md px-2 py-1 pr-8 focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                      :class="darkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
                       @keyup.enter="performSearch"
                     />
                     <button
                       @click="performSearch"
-                      class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-green-600"
+                      class="absolute right-2 top-1/2 -translate-y-1/2 hover:text-green-600"
+                      :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
                     >
                       <i class="fa fa-search"></i>
                     </button>
@@ -1634,23 +1703,28 @@ const hasEmptyFeeName = computed(() => {
                   <div class="w-fit mx-auto flex items-center gap-1">
                     <button
                       @click="statusFilter = 'all'"
-                      :class="
+                      :class="[
                         statusFilter === 'all'
                           ? 'bg-gray-900 text-white'
-                          : 'bg-white text-gray-900 border hover:bg-gray-900 hover:text-white'
-                      "
-                      class="text-xs border border-gray-900 px-2 py-1 rounded-full transition"
+                          : darkMode
+                            ? 'bg-gray-700 text-gray-200 border-gray-600 hover:bg-gray-900 hover:text-white'
+                            : 'bg-white text-gray-900 border hover:bg-gray-900 hover:text-white',
+                        darkMode ? 'border-gray-600' : 'border-gray-900'
+                      ]"
+                      class="text-xs border px-2 py-1 rounded-full transition"
                     >
                       All
                     </button>
 
                     <button
                       @click="statusFilter = 'pending'"
-                      :class="
+                      :class="[
                         statusFilter === 'pending'
                           ? 'bg-red-500 text-white'
-                          : 'bg-white text-red-600 border hover:bg-red-500 hover:text-white'
-                      "
+                          : darkMode
+                            ? 'bg-gray-700 text-red-400 border-red-500 hover:bg-red-500 hover:text-white'
+                            : 'bg-white text-red-600 border hover:bg-red-500 hover:text-white'
+                      ]"
                       class="text-xs border border-red-600 px-2 py-1 rounded-full transition"
                     >
                       Pending
@@ -1658,11 +1732,13 @@ const hasEmptyFeeName = computed(() => {
 
                     <button
                       @click="statusFilter = 'done'"
-                      :class="
+                      :class="[
                         statusFilter === 'done'
                           ? 'bg-green-600 text-white'
-                          : 'bg-white text-green-600 border hover:bg-green-600 hover:text-white'
-                      "
+                          : darkMode
+                            ? 'bg-gray-700 text-green-400 border-green-500 hover:bg-green-600 hover:text-white'
+                            : 'bg-white text-green-600 border hover:bg-green-600 hover:text-white'
+                      ]"
                       class="text-xs border border-green-600 px-2 py-1 rounded-full transition"
                     >
                       Done
@@ -1714,19 +1790,26 @@ const hasEmptyFeeName = computed(() => {
 
                         <div
                           class="w-full border-l lg:flex items-center"
-                          :class="i % 2 ? 'bg-gray-100' : ''"
+                          :class="[
+                            i % 2
+                              ? (darkMode ? 'bg-gray-800/50' : 'bg-gray-100')
+                              : (darkMode ? 'bg-gray-900/30' : 'bg-white'),
+                            darkMode ? 'border-gray-700' : 'border-gray-200'
+                          ]"
                         >
                           <div class="lg:w-8/12 w-full">
                             <div class="w-full">
                               <div
-                                class="w-full text-xs uppercase text-black px-1 flex items-center font-montserrat mt-1"
+                                class="w-full text-xs uppercase px-1 flex items-center font-montserrat mt-1"
+                                :class="darkMode ? 'text-gray-200' : 'text-black'"
                               >
                                 <i class="fa fa-user mr-2.5 ml-1"></i>
                                 {{ b.lastname }}, {{ b.firstname }}
                                 {{ b.middlename }}
                               </div>
-                              <div class="text-[10px] pl-[29px] -mt-1">
-                                {{b.tracking_id}}
+                              <div class="text-[10px] pl-[29px] -mt-1"
+                                :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
+                                {{ b.tracking_id }}
                               </div>
                             </div>
                           </div>
@@ -1737,7 +1820,10 @@ const hasEmptyFeeName = computed(() => {
                                 class="lg:w-fit mx-auto w-full py-1 lg:flex lg:whitespace-nowrap text-left"
                               >
                                 <button
-                                  class="lg:w-fit w-full px-2 py-1 font-bold text-[#ffffff] cursor-pointer lg:px-5 border-b shadow-lg border-green-500 bg-green-800 hover:bg-[#fff] hover:text-green-800"
+                                  class="lg:w-fit w-full px-2 py-1 font-bold cursor-pointer lg:px-5 border-b shadow-lg border-green-500 transition-colors duration-200"
+                                  :class="darkMode
+                                    ? 'text-white bg-green-700 hover:bg-gray-700 hover:text-green-400'
+                                    : 'text-white bg-green-800 hover:bg-white hover:text-green-800'"
                                   @click="openChatCommunication(b)"
                                 >
                                   <i class="fa fa-comments mr-3"></i>
@@ -1745,62 +1831,75 @@ const hasEmptyFeeName = computed(() => {
                                 </button>
                                 <button
                                   @click="openPersonalInfoModal(b)"
-                                  class="w-full lg:text-center text-left px-1.5 py-1 cursor-pointer lg:px-5 border-b shadow-lg border-green-500 hover:bg-green-800 hover:text-white"
-                                  :class="
+                                  class="w-full lg:text-center text-left px-1.5 py-1 cursor-pointer lg:px-5 border-b shadow-lg border-green-500 transition-colors duration-200"
+                                  :class="[
                                     verificationStatuses[b.id]
                                       ? 'bg-green-800 text-white'
-                                      : 'bg-white text-green-800'
-                                  "
+                                      : darkMode
+                                        ? 'bg-gray-700 text-gray-200 hover:bg-green-800 hover:text-white'
+                                        : 'bg-white text-green-800 hover:bg-green-800 hover:text-white'
+                                  ]"
                                 >
                                   Verify
                                 </button>
                                 <button
-                                  class="w-full lg:text-center text-left px-1.5 py-1 cursor-pointer lg:px-5 border-b shadow-lg border-green-500 hover:bg-green-800 hover:text-white"
+                                  class="w-full lg:text-center text-left px-1.5 py-1 cursor-pointer lg:px-5 border-b shadow-lg border-green-500 transition-colors duration-200"
                                   @click="openPaymentModal(b)"
-                                  :class="
+                                  :class="[
                                     paymentStatuses[b.id]
                                       ? 'bg-green-800 text-white'
-                                      : 'bg-white text-green-800'
-                                  "
+                                      : darkMode
+                                        ? 'bg-gray-700 text-gray-200 hover:bg-green-800 hover:text-white'
+                                        : 'bg-white text-green-800 hover:bg-green-800 hover:text-white'
+                                  ]"
                                 >
                                   Assessment
                                 </button>
                                 <button
                                   @click="openPrepDocModal(b)"
-                                  :class="
+                                  class="w-full lg:text-center text-left px-1.5 py-1 cursor-pointer lg:px-5 border-b shadow-lg border-green-500 transition-colors duration-200"
+                                  :class="[
                                     prepDocStatuses[b.id]
                                       ? 'bg-green-800 text-white'
-                                      : 'bg-white text-green-800'
-                                  "
-                                  class="w-full lg:text-center text-left px-1.5 py-1 cursor-pointer lg:px-5 border-b shadow-lg border-green-500 hover:bg-green-800 hover:text-white"
+                                      : darkMode
+                                        ? 'bg-gray-700 text-gray-200 hover:bg-green-800 hover:text-white'
+                                        : 'bg-white text-green-800 hover:bg-green-800 hover:text-white'
+                                  ]"
                                 >
                                   Preparing
                                 </button>
                                 <button
                                   @click="openReleasingDocModal(b)"
-                                  :class="
+                                  class="w-full lg:text-center text-left px-1.5 py-1 cursor-pointer lg:px-5 border-b shadow-lg border-green-500 transition-colors duration-200"
+                                  :class="[
                                     releasingDocStatuses[b.id]
                                       ? 'bg-green-800 text-white'
-                                      : 'bg-white text-green-800'
-                                  "
-                                  class="w-full lg:text-center text-left px-1.5 py-1 cursor-pointer lg:px-5 border-b shadow-lg border-green-500 hover:bg-green-800 hover:text-white"
+                                      : darkMode
+                                        ? 'bg-gray-700 text-gray-200 hover:bg-green-800 hover:text-white'
+                                        : 'bg-white text-green-800 hover:bg-green-800 hover:text-white'
+                                  ]"
                                 >
                                   Releasing
                                 </button>
                                 <button
                                   @click="openTransactionClosedModal(b)"
-                                  :class="
+                                  class="w-full lg:text-center text-left px-1.5 py-1 cursor-pointer lg:px-5 border-b shadow-lg border-green-500 transition-colors duration-200"
+                                  :class="[
                                     transactionClosedStatuses[b.id]
                                       ? 'bg-green-800 text-white'
-                                      : 'bg-white text-green-800'
-                                  "
-                                  class="w-full lg:text-center text-left px-1.5 py-1 cursor-pointer lg:px-5 border-b shadow-lg border-green-500 hover:bg-green-800 hover:text-white"
+                                      : darkMode
+                                        ? 'bg-gray-700 text-gray-200 hover:bg-green-800 hover:text-white'
+                                        : 'bg-white text-green-800 hover:bg-green-800 hover:text-white'
+                                  ]"
                                 >
                                   Closed
                                 </button>
 
                                 <button
-                                  class="lg:w-fit w-full px-2 py-1 text-green-700 cursor-pointer bg-white border-b shadow-lg border-green-500 hover:bg-green-800 hover:text-white"
+                                  class="lg:w-fit w-full px-2 py-1 cursor-pointer border-b shadow-lg border-green-500 transition-colors duration-200"
+                                  :class="darkMode
+                                    ? 'text-green-400 bg-gray-700 hover:bg-green-800 hover:text-white'
+                                    : 'text-green-700 bg-white hover:bg-green-800 hover:text-white'"
                                   @click="openLogsModal(b)"
                                 >
                                   <i class="fa fa-ellipsis-h"></i>
@@ -1825,29 +1924,38 @@ const hasEmptyFeeName = computed(() => {
                             @click="closePaymentModal"
                           >
                             <div
-                              class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-3xl mx-4 transform transition-transform duration-300 max-h-[90vh] overflow-auto"
-                              :class="{
-                                'scale-100 opacity-100': showPaymentModal,
-                                'scale-95 opacity-0': !showPaymentModal,
-                              }"
+                              class="rounded-xl shadow-2xl p-6 w-full max-w-3xl mx-4 transform transition-transform duration-300 max-h-[90vh] overflow-auto"
+                              :class="[
+                                {
+                                  'scale-100 opacity-100': showPaymentModal,
+                                  'scale-95 opacity-0': !showPaymentModal,
+                                },
+                                darkMode ? 'bg-gray-800' : 'bg-white'
+                              ]"
                               @click.stop
                             >
                               <div
                                 class="flex justify-between items-center mb-4 border-b pb-3"
+                                :class="darkMode ? 'border-gray-700' : 'border-gray-200'"
                               >
-                                <h3 class="text-lg font-medium text-gray-900">
+                                <h3 class="text-lg font-medium"
+                                  :class="darkMode ? 'text-gray-200' : 'text-gray-900'">
                                   Payment Information
                                 </h3>
                                 <button
                                   @click="closePaymentModal"
-                                  class="text-gray-400 hover:text-gray-500"
+                                  class="hover:text-gray-500"
+                                  :class="darkMode ? 'text-gray-400' : 'text-gray-400'"
                                 >
                                   <i class="fa fa-times"></i>
                                 </button>
                               </div>
 
                               <div
-                                class="border border-gray-200 bg-gray-50/50 px-5 py-4 my-4 rounded-xl shadow-sm"
+                                class="border px-5 py-4 my-4 rounded-xl shadow-sm"
+                                :class="darkMode
+                                  ? 'border-gray-700 bg-gray-900/50'
+                                  : 'border-gray-200 bg-gray-50/50'"
                               >
                                 <!-- Header Fields -->
                                 <div
@@ -1855,7 +1963,8 @@ const hasEmptyFeeName = computed(() => {
                                 >
                                   <div>
                                     <label
-                                      class="block text-xs font-medium text-gray-700 mb-1"
+                                      class="block text-xs font-medium mb-1"
+                                      :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                                       >Total :
                                       {{ currentItemInfo.total }}</label
                                     >
@@ -1872,15 +1981,21 @@ const hasEmptyFeeName = computed(() => {
                                         .detail_fees_type_document_requests
                                         .length === 0
                                     "
-                                    class="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 mb-4"
+                                    class="text-center py-6 rounded-lg border-2 border-dashed mb-4"
+                                    :class="darkMode
+                                      ? 'bg-gray-800/50 border-gray-700'
+                                      : 'bg-gray-50 border-gray-300'"
                                   >
                                     <i
-                                      class="fa fa-file-invoice-dollar text-3xl text-gray-400 mb-2"
+                                      class="fa fa-file-invoice-dollar text-3xl mb-2"
+                                      :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
                                     ></i>
-                                    <p class="text-sm text-gray-500">
+                                    <p class="text-sm"
+                                      :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                                       No document request fees added yet
                                     </p>
-                                    <p class="text-xs text-gray-400 mt-1">
+                                    <p class="text-xs mt-1"
+                                      :class="darkMode ? 'text-gray-500' : 'text-gray-400'">
                                       Click "Add Fee" below to add document
                                       request fees
                                     </p>
@@ -1892,12 +2007,16 @@ const hasEmptyFeeName = computed(() => {
                                       fee, index
                                     ) in currentItemInfo?.detail_fees_type_document_requests"
                                     :key="index"
-                                    class="flex items-end gap-3 mb-3 bg-white p-3 rounded-lg shadow-sm border border-gray-200"
+                                    class="flex items-end gap-3 mb-3 p-3 rounded-lg shadow-sm border"
+                                    :class="darkMode
+                                      ? 'bg-gray-800 border-gray-700'
+                                      : 'bg-white border-gray-200'"
                                   >
                                     <div class="w-full">
                                       <label
                                         :for="'fee_name_' + index"
-                                        class="block text-xs font-medium text-gray-700 mb-1"
+                                        class="block text-xs font-medium mb-1"
+                                        :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                                       >
                                         Fee Name
                                       </label>
@@ -1905,14 +2024,18 @@ const hasEmptyFeeName = computed(() => {
                                         type="text"
                                         :id="'fee_name_' + index"
                                         v-model="fee.fee_name"
-                                        class="w-full text-sm py-2 px-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none shadow-sm"
+                                        class="w-full text-sm py-2 px-3 rounded-md border focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none shadow-sm"
+                                        :class="darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                          : 'bg-white border-gray-300 text-gray-900'"
                                       />
                                     </div>
 
                                     <div class="lg:w-3/12 w-full">
                                       <label
                                         :for="'fee_amount_' + index"
-                                        class="block text-xs font-medium text-gray-700 mb-1"
+                                        class="block text-xs font-medium mb-1"
+                                        :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                                       >
                                         Amount
                                       </label>
@@ -1920,7 +2043,10 @@ const hasEmptyFeeName = computed(() => {
                                         type="number"
                                         :id="'fee_amount_' + index"
                                         v-model="fee.amount"
-                                        class="w-full text-sm py-2 px-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none shadow-sm"
+                                        class="w-full text-sm py-2 px-3 rounded-md border focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none shadow-sm"
+                                        :class="darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                          : 'bg-white border-gray-300 text-gray-900'"
                                       />
                                     </div>
 
@@ -1995,7 +2121,10 @@ const hasEmptyFeeName = computed(() => {
                                 <!-- Success Message -->
                                 <div
                                   v-if="showSuccessMessage"
-                                  class="mt-4 text-center text-sm bg-green-100 text-green-800 border border-green-400 px-4 py-2 rounded-md animate-pulse"
+                                  class="mt-4 text-center text-sm border px-4 py-2 rounded-md animate-pulse"
+                                  :class="darkMode
+                                    ? 'bg-green-900/50 text-green-300 border-green-700'
+                                    : 'bg-green-100 text-green-800 border-green-400'"
                                 >
                                   ✅ Payment details sent successfully!
                                 </div>
@@ -2010,24 +2139,32 @@ const hasEmptyFeeName = computed(() => {
                           @click="closePrepDocModal"
                         >
                           <div
-                            class="bg-white dark:bg-gray-800 rounded-xl shadow-3xl p-6 w-full max-w-sm mx-4 transform transition-all duration-300 ease-out"
-                            :class="{
-                              'scale-100 opacity-100': showPrepDocModal,
-                              'scale-95 opacity-0': !showPrepDocModal,
-                            }"
+                            class="rounded-xl shadow-3xl p-6 w-full max-w-sm mx-4 transform transition-all duration-300 ease-out"
+                            :class="[
+                              {
+                                'scale-100 opacity-100': showPrepDocModal,
+                                'scale-95 opacity-0': !showPrepDocModal,
+                              },
+                              darkMode ? 'bg-gray-800' : 'bg-white'
+                            ]"
                             @click.stop
                           >
                             <div
                               class="flex items-center justify-between pb-4 mb-4 border-b"
+                              :class="darkMode ? 'border-gray-700' : 'border-gray-200'"
                             >
                               <h2
-                                class="text-xl font-bold text-gray-800 dark:text-gray-100"
+                                class="text-xl font-bold"
+                                :class="darkMode ? 'text-gray-100' : 'text-gray-800'"
                               >
                                 Verify & Prepare Documents
                               </h2>
                               <button
                                 @click="closePrepDocModal"
-                                class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                                class="transition-colors duration-200 p-1 rounded-full"
+                                :class="darkMode
+                                  ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700'
+                                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'"
                               >
                                 <svg
                                   xmlns="http://www.w3.org/2000/svg"
@@ -2044,9 +2181,7 @@ const hasEmptyFeeName = computed(() => {
                               </button>
                             </div>
 
-                            <div
-                              class="pt-4 border-gray-200 dark:border-gray-700"
-                            >
+                            <div class="pt-4">
                               <button
                                 @click="confirmPrepDoc(b)"
                                 class="w-full flex items-center justify-center gap-2 px-4 py-0.5 text-base font-semibold rounded-lg transition-all duration-250 ease-in-out"
@@ -2091,97 +2226,104 @@ const hasEmptyFeeName = computed(() => {
                         </div>
 
                         <!-- Status Logs Modal -->
-                        <div
-                          v-if="showLogsModal && currentItem === b"
-                          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs transition-opacity duration-300"
-                          @click="closeLogsModal"
-                        >
-                          <div
-                            class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 transform transition-transform duration-300 max-h-[90vh] overflow-auto"
-                            :class="{
-                              'scale-100 opacity-100': showLogsModal,
-                              'scale-95 opacity-0': !showLogsModal,
-                            }"
-                            @click.stop
-                          >
-                            <div
-                              class="flex justify-between items-center mb-4 border-b pb-3"
-                            >
-                              <h3 class="text-lg font-medium text-gray-900">
-                                Status Logs -
-                                {{ currentItem?.tracking_id || "N/A" }}
-                              </h3>
-                              <button
-                                @click="closeLogsModal"
-                                class="text-gray-400 hover:text-gray-500"
-                              >
-                                <i class="fa fa-times"></i>
-                              </button>
-                            </div>
+<div
+  v-if="showLogsModal && currentItem === b"
+  class="fixed inset-0 z-50 flex items-center justify-center transition-opacity duration-300"
+  :class="darkMode ? 'bg-black/70 backdrop-blur-sm' : 'bg-black/50 backdrop-blur-xs'"
+  @click="closeLogsModal"
+>
+  <div
+    class="rounded-lg p-6 max-w-2xl w-full mx-4 transform transition-transform duration-300 max-h-[90vh] overflow-auto"
+    :class="[
+      darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-900',
+      showLogsModal ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+    ]"
+    @click.stop
+  >
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4 border-b pb-3"
+         :class="darkMode ? 'border-gray-700' : 'border-gray-300'">
+      <h3 class="text-lg font-medium">
+        Status Logs - {{ currentItem?.tracking_id || 'N/A' }}
+      </h3>
+      <button
+        @click="closeLogsModal"
+        :class="darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-500'"
+      >
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
 
-                            <!-- Logs List - Update to sort by timestamp -->
-                            <div class="mb-6 max-h-[40vh] overflow-y-auto">
-                              <div
-                                v-if="
-                                  !currentItem?.logs ||
-                                  currentItem.logs.length === 0
-                                "
-                                class="text-center text-gray-500 py-4"
-                              >
-                                No logs available
-                              </div>
+    <!-- Logs List -->
+    <div class="mb-6 max-h-[40vh] overflow-y-auto">
+      <div
+        v-if="!currentItem?.logs || currentItem.logs.length === 0"
+        :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
+        class="text-center py-4"
+      >
+        No logs available
+      </div>
 
-                              <div v-else class="space-y-3">
-                                <div
-                                  v-for="(log, index) in sortedLogs"
-                                  :key="index"
-                                  class="border-l-4 rounded-r text-[10px]"
-                                  :class="
-                                    index === sortedLogs.length - 1
-                                      ? 'border-green-500 bg-green-50 py-3 '
-                                      : 'border-gray-300 bg-gray-50'
-                                  "
-                                >
-                                  <div
-                                    class="flex items-center justify-between capitalize gap-x-3"
-                                  >
-                                    <div
-                                      class="font-medium w-9/12"
-                                      :class="
-                                        index === sortedLogs.length - 1
-                                          ? 'text-green-800 text-sm'
-                                          : 'text-gray-500'
-                                      "
-                                    >
-                                      <div
-                                        class="w-full bg-transparent focus:outline-none px-1"
-                                        :class="
-                                          index === sortedLogs.length - 1
-                                            ? 'border-green-300 focus:border-green-500'
-                                            : 'border-gray-300 focus:border-gray-500'
-                                        "
-                                      >
-                                        {{ log.status_remarks }}
-                                      </div>
-                                    </div>
-                                    <div class="text-gray-500 w-3/12">
-                                      <div
-                                        class="whitespace-nowrap bg-transparent text-center -mb-0.5 focus:outline-none px-1 pb-0.5"
-                                        :class="
-                                          index === sortedLogs.length - 1
-                                            ? 'border-green-300 focus:border-green-500'
-                                            : 'border-gray-300 focus:border-gray-500'
-                                        "
-                                      >
-                                        {{ log.timestamp }}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+      <div v-else class="space-y-3">
+        <div
+          v-for="(log, index) in sortedLogs"
+          :key="index"
+          class="border-l-4 rounded-r text-[10px]"
+          :class="[
+            index === sortedLogs.length - 1
+              ? darkMode
+                ? 'border-green-500 bg-green-800/20 py-3'
+                : 'border-green-500 bg-green-50 py-3'
+              : darkMode
+                ? 'border-gray-600 bg-gray-800/30'
+                : 'border-gray-300 bg-gray-50'
+          ]"
+        >
+          <div class="flex items-center justify-between capitalize gap-x-3">
+            <div
+              class="font-medium w-9/12"
+              :class="index === sortedLogs.length - 1
+                ? darkMode
+                  ? 'text-green-400 text-sm'
+                  : 'text-green-800 text-sm'
+                : darkMode
+                  ? 'text-gray-300'
+                  : 'text-gray-500'"
+            >
+              <div
+                class="w-full bg-transparent focus:outline-none px-1"
+                :class="index === sortedLogs.length - 1
+                  ? darkMode
+                    ? 'border-green-600 focus:border-green-400'
+                    : 'border-green-300 focus:border-green-500'
+                  : darkMode
+                    ? 'border-gray-600 focus:border-gray-400'
+                    : 'border-gray-300 focus:border-gray-500'"
+              >
+                {{ log.status_remarks }}
+              </div>
+            </div>
+            <div class="w-3/12 text-center">
+              <div
+                class="whitespace-nowrap bg-transparent -mb-0.5 focus:outline-none px-1 pb-0.5"
+                :class="index === sortedLogs.length - 1
+                  ? darkMode
+                    ? 'border-green-600 focus:border-green-400'
+                    : 'border-green-300 focus:border-green-500'
+                  : darkMode
+                    ? 'border-gray-600 focus:border-gray-400'
+                    : 'border-gray-300 focus:border-gray-500'"
+              >
+                {{ log.timestamp }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
                         <!-- Personal Info Modal -->
                         <div
@@ -2192,16 +2334,22 @@ const hasEmptyFeeName = computed(() => {
                           @click="closePersonalInfoModal"
                         >
                           <div
-                            class="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-2xl px-5 py-2 lg:w-7/12 w-11/12 mx-auto transform transition-transform duration-300 max-h-[95vh] overflow-y-auto"
-                            :class="{
-                              'scale-100 opacity-100': showPersonalInfoModal,
-                              'scale-95 opacity-0': !showPersonalInfoModal,
-                            }"
+                            class="rounded-2xl shadow-2xl px-5 py-2 lg:w-7/12 w-11/12 mx-auto transform transition-transform duration-300 max-h-[95vh] overflow-y-auto"
+                            :class="[
+                              {
+                                'scale-100 opacity-100': showPersonalInfoModal,
+                                'scale-95 opacity-0': !showPersonalInfoModal,
+                              },
+                              darkMode
+                                ? 'bg-gradient-to-br from-gray-800 to-gray-900'
+                                : 'bg-gradient-to-br from-white to-gray-50'
+                            ]"
                             @click.stop
                           >
                             <!-- Header -->
                             <div
-                              class="flex justify-between items-center mb-2 pb-2 border-b-2 border-green-200"
+                              class="flex justify-between items-center mb-2 pb-2 border-b-2"
+                              :class="darkMode ? 'border-green-700' : 'border-green-200'"
                             >
                               <div class="flex items-center gap-3">
                                 <div
@@ -2210,10 +2358,11 @@ const hasEmptyFeeName = computed(() => {
                                   <i class="fa fa-user text-white text-xl"></i>
                                 </div>
                                 <div>
-                                  <h3 class="text-lg font-bold text-gray-900">
+                                  <h3 class="text-lg font-bold"
+                                    :class="darkMode ? 'text-gray-200' : 'text-gray-900'">
                                     Personal Information
                                   </h3>
-                                  <p>{{ b.tracking_id }}</p>
+                                  <p :class="darkMode ? 'text-gray-400' : 'text-gray-600'">{{ b.tracking_id }}</p>
                                 </div>
                               </div>
                               <button
@@ -2225,249 +2374,330 @@ const hasEmptyFeeName = computed(() => {
                             </div>
 
                             <!-- Content Grid -->
-<div class="lg:flex lg:gap-6 w-full space-y-4 lg:space-y-0">
+                            <div
+                              class="lg:flex lg:gap-6 w-full space-y-4 lg:space-y-0"
+                            >
+                              <!-- LEFT COLUMN -->
+                              <div
+                                class="lg:w-9/12 w-full rounded-xl p-4 shadow-md border"
+                                :class="darkMode
+                                  ? 'bg-gray-800 border-gray-700'
+                                  : 'bg-white border-gray-200'"
+                              >
+                                <h4
+                                  class="text-lg font-bold mb-4 flex items-center gap-2"
+                                  :class="darkMode ? 'text-gray-200' : 'text-gray-800'"
+                                >
+                                  <i class="fa fa-id-card text-green-600"></i>
+                                  Personal Details
+                                </h4>
 
-  <!-- LEFT COLUMN -->
-  <div class="lg:w-9/12 w-full bg-white rounded-xl p-4 shadow-md border border-gray-200">
+                                <!-- Fullname -->
+                                <div class="mb-4">
+                                  <label
+                                    class="flex items-center text-sm font-semibold mb-1"
+                                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+                                  >
+                                    <i
+                                      class="fa fa-user text-green-600 mr-2"
+                                    ></i>
+                                    Fullname
+                                  </label>
+                                  <div
+                                    class="border rounded-lg px-3 py-2 text-sm"
+                                    :class="darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-gray-50 border-gray-300 text-gray-900'"
+                                  >
+                                    {{ b.firstname }} {{ b.middlename }}
+                                    {{ b.lastname }}
+                                  </div>
+                                </div>
 
-    <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-      <i class="fa fa-id-card text-green-600"></i>
-      Personal Details
+                                <!-- Date of Birth -->
+                                <div class="mb-4">
+                                  <label
+                                    class="flex items-center text-sm font-semibold mb-1"
+                                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+                                  >
+                                    <i
+                                      class="fa fa-birthday-cake text-green-500 mr-2"
+                                    ></i>
+                                    Date of Birth
+                                  </label>
+                                  <input
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
+                                    :class="darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-white border-gray-300 text-gray-900'"
+                                    v-model="b.birthdate"
+                                  />
+                                </div>
+
+                                <!-- Mother's Maiden Name -->
+                                <div class="mb-4">
+                                  <label
+                                    class="flex items-center text-sm font-semibold mb-1"
+                                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+                                  >
+                                    <i
+                                      class="fa fa-female text-green-500 mr-2"
+                                    ></i>
+                                    Mother's Maiden Name
+                                  </label>
+                                  <input
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
+                                    v-model="b.mother_maiden_name"
+                                    :class="darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-white border-gray-300 text-gray-900'"
+                                  />
+                                </div>
+
+                                <!-- Email -->
+                                <div class="mb-4">
+                                  <label
+                                    class="flex items-center text-sm font-semibold text-gray-700 mb-1"
+                                  >
+                                    <i
+                                      class="fa fa-envelope text-green-600 mr-2"
+                                    ></i>
+                                    Email
+                                  </label>
+                                  <input
+                                    type="text"
+                                    class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
+                                      :class="darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-white border-gray-300 text-gray-900'"
+                                    v-model="b.email"
+                                  />
+                                </div>
+
+                                <!-- Contact Number -->
+                                <div class="mb-2">
+                                  <label
+                                    class="flex items-center text-sm font-semibold text-gray-700 mb-1"
+                                  >
+                                    <i
+                                      class="fa fa-phone text-green-600 mr-2"
+                                    ></i>
+                                    Contact Number
+                                  </label>
+                                  <input
+                                    type="text"
+                                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
+                                      :class="darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-white border-gray-300 text-gray-900'"
+                                    v-model="b.contact_number"
+                                  />
+                                </div>
+                              </div>
+
+                              <!-- RIGHT COLUMN -->
+<div class="w-full space-y-4">
+  <div
+    class="rounded-xl p-4 shadow-md border"
+    :class="darkMode
+      ? 'bg-gray-800 border-gray-700'
+      : 'bg-white border-gray-200'"
+  >
+    <h4
+      class="text-lg font-bold mb-4 flex items-center gap-2"
+      :class="darkMode ? 'text-gray-200' : 'text-gray-800'"
+    >
+      <i class="fa fa-graduation-cap text-green-600"></i>
+      Academic Information
     </h4>
 
-    <!-- Fullname -->
-    <div class="mb-4">
-      <label class="flex items-center text-sm font-semibold text-gray-700 mb-1">
-        <i class="fa fa-user text-green-600 mr-2"></i>
-        Fullname
-      </label>
-      <div class="bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900">
-        {{ b.firstname }} {{ b.middlename }} {{ b.lastname }}
-      </div>
-    </div>
-
-    <!-- Date of Birth -->
-    <div class="mb-4">
-      <label class="flex items-center text-sm font-semibold text-gray-700 mb-1">
-        <i class="fa fa-birthday-cake text-green-500 mr-2"></i>
-        Date of Birth
-      </label>
-      <input
-        type="text"
-        class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
-        v-model="b.birthdate"
-      />
-    </div>
-
-    <!-- Mother's Maiden Name -->
-    <div class="mb-4">
-      <label class="flex items-center text-sm font-semibold text-gray-700 mb-1">
-        <i class="fa fa-female text-green-500 mr-2"></i>
-        Mother's Maiden Name
-      </label>
-      <input
-        type="text"
-        class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
-        v-model="b.mother_maiden_name"
-      />
-    </div>
-
-    <!-- Email -->
-    <div class="mb-4">
-      <label class="flex items-center text-sm font-semibold text-gray-700 mb-1">
-        <i class="fa fa-envelope text-green-600 mr-2"></i>
-        Email
-      </label>
-      <input
-        type="text"
-        class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
-        v-model="b.email"
-      />
-    </div>
-
-    <!-- Contact Number -->
-    <div class="mb-2">
-      <label class="flex items-center text-sm font-semibold text-gray-700 mb-1">
-        <i class="fa fa-phone text-green-600 mr-2"></i>
-        Contact Number
-      </label>
-      <input
-        type="text"
-        class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
-        v-model="b.contact_number"
-      />
-    </div>
-
-  </div>
-
-  <!-- RIGHT COLUMN -->
-  <div class="w-full space-y-4">
-
-    <div class="bg-white rounded-xl p-4 shadow-md border border-gray-200">
-      <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-        <i class="fa fa-graduation-cap text-green-600"></i>
-        Academic Information
-      </h4>
-
-      <!-- 2-Column layout only on large screens -->
-      <div class="lg:flex lg:gap-4">
-        
-        <!-- Alumni -->
-        <div class="mb-4 w-full">
-          <label class="flex items-center text-sm font-semibold text-gray-700 mb-1">
-            <i class="fa fa-graduation-cap text-green-500 mr-2"></i>
-            ICC / LSU Graduate?
-          </label>
-          <select
-            class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
-            v-model="b.alumni"
-          >
-            <option value="yes">Alumnus</option>
-            <option value="no">Non-Alumnus</option>
-          </select>
-        </div>
-
-        <!-- AY -->
-        <div class="mb-4 w-full">
-          <label class="flex items-center text-sm font-semibold text-gray-700 mb-1 whitespace-nowrap">
-            <i class="fa fa-calendar text-green-500 mr-2"></i>
-            A.Y Graduated or Attended
-          </label>
-          <input
-            type="text"
-            class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
-            v-model="b.year_graduated_last_attended"
-          />
-        </div>
-      </div>
-
-      <!-- College -->
-      <div class="mb-4">
-        <label class="flex items-center text-sm font-semibold text-gray-700 mb-1">
-          <i class="fa fa-university text-green-500 mr-2"></i>
-          College
+    <!-- 2-Column layout only on large screens -->
+    <div class="lg:flex lg:gap-4">
+      <!-- Alumni -->
+      <div class="mb-4 w-full">
+        <label
+          class="flex items-center text-sm font-semibold mb-1"
+          :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+        >
+          <i class="fa fa-graduation-cap text-green-500 mr-2"></i>
+          ICC / LSU Graduate?
         </label>
         <select
-          class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
-          v-model="b.college"
+          v-model="b.alumni"
+          class="w-full rounded-lg px-3 py-2 text-sm transition focus:ring-2"
+          :class="darkMode
+            ? 'bg-gray-700 border border-gray-600 text-gray-100 focus:ring-green-400'
+            : 'bg-white border border-gray-300 text-gray-900 focus:ring-green-500'"
         >
-          <option value="">Choose</option>
-          <option value="Arts and Sciences, Engineering, Architecture, Computer Studies">
-            Arts and Sciences, Engineering, Architecture, Computer Studies
-          </option>
-          <option value="Business, Commerce, Accountancy">
-            Business, Commerce, Accountancy
-          </option>
-          <option value="Education / Graduate Studies">
-            Education / Graduate Studies
-          </option>
-          <option value="Nursing / Tourism and Hospitality Management">
-            Nursing / Tourism and Hospitality Management
-          </option>
-          <option value="Criminology / BS Psychology">
-            Criminology / BS Psychology
-          </option>
+          <option value="yes">Alumnus</option>
+          <option value="no">Non-Alumnus</option>
         </select>
       </div>
 
-      <!-- Course -->
-      <div class="mb-4">
-        <label class="flex items-center text-sm font-semibold text-gray-700 mb-1">
-          <i class="fa fa-book text-green-500 mr-2"></i>
-          Course
+      <!-- AY -->
+      <div class="mb-4 w-full">
+        <label
+          class="flex items-center text-sm font-semibold mb-1 whitespace-nowrap"
+          :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+        >
+          <i class="fa fa-calendar text-green-500 mr-2"></i>
+          A.Y Graduated or Attended
         </label>
         <input
           type="text"
-          class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 transition"
-          v-model="b.course"
+          v-model="b.year_graduated_last_attended"
+          class="w-full rounded-lg px-3 py-2 text-sm transition focus:ring-2"
+          :class="darkMode
+            ? 'bg-gray-700 border border-gray-600 text-gray-100 focus:ring-green-400'
+            : 'bg-white border border-gray-300 text-gray-900 focus:ring-green-500'"
         />
       </div>
+    </div>
 
-      <!-- Purpose -->
-      <div v-if="b.details" class="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-r-lg">
-        <p class="flex items-center text-sm font-semibold text-gray-700 mb-1">
-          <i class="fa fa-info-circle text-green-600 mr-2"></i>
-          Purpose and Details:
-        </p>
-        <p class="text-sm text-gray-700">{{ b.details }}</p>
-      </div>
+    <!-- College -->
+    <div class="mb-4">
+      <label
+        class="flex items-center text-sm font-semibold mb-1"
+        :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+      >
+        <i class="fa fa-university text-green-500 mr-2"></i>
+        College
+      </label>
+      <select
+        v-model="b.college"
+        class="w-full rounded-lg px-3 py-2 text-sm transition focus:ring-2"
+        :class="darkMode
+          ? 'bg-gray-700 border border-gray-600 text-gray-100 focus:ring-green-400'
+          : 'bg-white border border-gray-300 text-gray-900 focus:ring-green-500'"
+      >
+        <option value="">Choose</option>
+        <option value="Arts and Sciences, Engineering, Architecture, Computer Studies">
+          Arts and Sciences, Engineering, Architecture, Computer Studies
+        </option>
+        <option value="Business, Commerce, Accountancy">
+          Business, Commerce, Accountancy
+        </option>
+        <option value="Education / Graduate Studies">
+          Education / Graduate Studies
+        </option>
+        <option value="Nursing / Tourism and Hospitality Management">
+          Nursing / Tourism and Hospitality Management
+        </option>
+        <option value="Criminology / BS Psychology">
+          Criminology / BS Psychology
+        </option>
+      </select>
+    </div>
 
-      <!-- Requested Documents -->
-      <div class="bg-blue-50 p-3 border-2 border-blue-200 mt-4 rounded-lg">
-        <h4 class="text-xs font-bold text-blue-800 mb-2 flex items-center uppercase">
-          <i class="fa fa-file-text mr-2"></i> Requested Document/s
-        </h4>
-        <div class="space-y-1">
-          <div
-            v-for="(doc, idx) in b.detail_fees_type_document_requests"
-            :key="idx"
-            class="flex items-center gap-2 text-xs"
-          >
-            <i class="fa fa-check-circle text-blue-600 text-[10px]"></i>
-            <span class="text-gray-900">{{ doc.fee_name }}</span>
-          </div>
+    <!-- Course -->
+    <div class="mb-4">
+      <label
+        class="flex items-center text-sm font-semibold mb-1"
+        :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+      >
+        <i class="fa fa-book text-green-500 mr-2"></i>
+        Course
+      </label>
+      <input
+        type="text"
+        v-model="b.course"
+        class="w-full rounded-lg px-3 py-2 text-sm transition focus:ring-2"
+        :class="darkMode
+          ? 'bg-gray-700 border border-gray-600 text-gray-100 focus:ring-green-400'
+          : 'bg-white border border-gray-300 text-gray-900 focus:ring-green-500'"
+      />
+    </div>
+
+    <!-- Purpose -->
+    <div
+      v-if="b.details"
+      class="mt-4 p-4 border-l-4 rounded-r-lg"
+      :class="darkMode
+        ? 'bg-blue-900 border-blue-600 text-gray-200'
+        : 'bg-blue-50 border-blue-500 text-gray-700'"
+    >
+      <p class="flex items-center text-sm font-semibold mb-1">
+        <i class="fa fa-info-circle text-green-600 mr-2"></i>
+        Purpose and Details:
+      </p>
+      <p class="text-sm" :class="darkMode ? 'text-gray-200' : 'text-gray-700'">
+        {{ b.details }}
+      </p>
+    </div>
+
+    <!-- Requested Documents -->
+    <div
+      class="p-3 border-2 mt-4 rounded-lg"
+      :class="darkMode
+        ? 'bg-blue-900 border-blue-600 text-gray-200'
+        : 'bg-blue-50 border-blue-200 text-blue-800'"
+    >
+      <h4 class="text-xs font-bold mb-2 flex items-center uppercase">
+        <i class="fa fa-file-text mr-2"></i>
+        Requested Document/s
+      </h4>
+      <div class="space-y-1">
+        <div
+          v-for="(doc, idx) in b.detail_fees_type_document_requests"
+          :key="idx"
+          class="flex items-center gap-2 text-xs"
+          :class="darkMode ? 'text-gray-200' : 'text-gray-900'"
+        >
+          <i class="fa fa-check-circle text-blue-500 text-[10px]"></i>
+          <span>{{ doc.fee_name }}</span>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Action Buttons -->
-<div class="mt-4 pt-4 border-t-2 border-gray-200">
-  <button
-    @click="verifiedConfirm(b)"
-    :disabled="isVerifying"
-    class="w-full flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-gradient-to-r from-green-600 to-green-700 rounded-xl shadow-lg hover:shadow-xl hover:from-green-700 hover:to-green-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
-  >
-    <i v-if="isVerifying" class="fa fa-spinner fa-spin"></i>
-    <i v-else class="fa fa-paper-plane"></i>
-    <span v-if="isVerifying">Verifying...</span>
-    <span v-else>Verify Information</span>
-  </button>
-</div>
 
 
-                      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="mt-4 pt-4 border-t-2"
+                              :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
+                              <button
+                                @click="verifiedConfirm(b)"
+                                :disabled="isVerifying"
+                                class="w-full flex items-center justify-center gap-2 px-6 py-3 font-bold text-white bg-gradient-to-r from-green-600 to-green-700 rounded-xl shadow-lg hover:shadow-xl hover:from-green-700 hover:to-green-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <i
+                                  v-if="isVerifying"
+                                  class="fa fa-spinner fa-spin"
+                                ></i>
+                                <i v-else class="fa fa-paper-plane"></i>
+                                <span v-if="isVerifying">Verifying...</span>
+                                <span v-else>Verify Information</span>
+                              </button>
+                            </div>
                           </div>
                         </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
                         <!-- Releasing Documents Modal -->
                         <div
@@ -2476,22 +2706,28 @@ const hasEmptyFeeName = computed(() => {
                           @click="closeReleasingDocModal"
                         >
                           <div
-                            class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 transform transition-transform duration-300"
-                            :class="{
-                              'scale-100 opacity-100': showReleasingDocModal,
-                              'scale-95 opacity-0': !showReleasingDocModal,
-                            }"
+                            class="rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 transform transition-transform duration-300"
+                            :class="[
+                              {
+                                'scale-100 opacity-100': showReleasingDocModal,
+                                'scale-95 opacity-0': !showReleasingDocModal,
+                              },
+                              darkMode ? 'bg-gray-800' : 'bg-white'
+                            ]"
                             @click.stop
                           >
                             <div
                               class="flex justify-between items-center mb-4 border-b pb-3"
+                              :class="darkMode ? 'border-gray-700' : 'border-gray-200'"
                             >
-                              <h3 class="text-lg font-medium text-gray-900">
+                              <h3 class="text-lg font-medium"
+                                :class="darkMode ? 'text-gray-200' : 'text-gray-900'">
                                 Releasing Documents
                               </h3>
                               <button
                                 @click="closeReleasingDocModal"
-                                class="text-gray-400 hover:text-gray-500"
+                                class="hover:text-gray-500"
+                                :class="darkMode ? 'text-gray-400' : 'text-gray-400'"
                               >
                                 <i class="fa fa-times"></i>
                               </button>
@@ -2500,10 +2736,13 @@ const hasEmptyFeeName = computed(() => {
                             <!-- Verified Button -->
                             <div
                               @click="confirmReleasingDoc(b)"
-                              class="w-full text-center px-2 py-1 font-bold bg-green-600 text-white rounded-md mt-2 cursor-pointer hover:bg-white hover:text-green-600 border hover:border-green-600"
-                              :class="{
-                                'opacity-75 cursor-not-allowed': isConfirming,
-                              }"
+                              class="w-full text-center px-2 py-1 font-bold bg-green-600 text-white rounded-md mt-2 cursor-pointer hover:bg-white border hover:border-green-600 transition-colors"
+                              :class="[
+                                {
+                                  'opacity-75 cursor-not-allowed': isConfirming,
+                                },
+                                darkMode ? 'hover:text-green-400' : 'hover:text-green-600'
+                              ]"
                             >
                               <span v-if="isConfirming">
                                 <i class="fa fa-spinner fa-spin mr-1"></i>
@@ -2521,23 +2760,29 @@ const hasEmptyFeeName = computed(() => {
                           @click="closeTransactionClosedModal"
                         >
                           <div
-                            class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 transform transition-transform duration-300"
-                            :class="{
-                              'scale-100 opacity-100':
-                                showTransactionClosedModal,
-                              'scale-95 opacity-0': !showTransactionClosedModal,
-                            }"
+                            class="rounded-xl shadow-2xl p-6 w-full max-w-md mx-4 transform transition-transform duration-300"
+                            :class="[
+                              {
+                                'scale-100 opacity-100':
+                                  showTransactionClosedModal,
+                                'scale-95 opacity-0': !showTransactionClosedModal,
+                              },
+                              darkMode ? 'bg-gray-800' : 'bg-white'
+                            ]"
                             @click.stop
                           >
                             <div
                               class="flex justify-between items-center mb-4 border-b pb-3"
+                              :class="darkMode ? 'border-gray-700' : 'border-gray-200'"
                             >
-                              <h3 class="text-lg font-medium text-gray-900">
+                              <h3 class="text-lg font-medium"
+                                :class="darkMode ? 'text-gray-200' : 'text-gray-900'">
                                 Transaction Closed
                               </h3>
                               <button
                                 @click="closeTransactionClosedModal"
-                                class="text-gray-400 hover:text-gray-500"
+                                class="hover:text-gray-500"
+                                :class="darkMode ? 'text-gray-400' : 'text-gray-400'"
                               >
                                 <i class="fa fa-times"></i>
                               </button>
@@ -2546,10 +2791,13 @@ const hasEmptyFeeName = computed(() => {
                             <!-- Verified Button -->
                             <div
                               @click="confirmTransactionClosed(b)"
-                              class="w-full text-center px-2 py-1 font-bold bg-green-600 text-white rounded-md mt-2 cursor-pointer hover:bg-white hover:text-green-600 border hover:border-green-600"
-                              :class="{
-                                'opacity-75 cursor-not-allowed': isConfirming,
-                              }"
+                              class="w-full text-center px-2 py-1 font-bold bg-green-600 text-white rounded-md mt-2 cursor-pointer hover:bg-white border hover:border-green-600 transition-colors"
+                              :class="[
+                                {
+                                  'opacity-75 cursor-not-allowed': isConfirming,
+                                },
+                                darkMode ? 'hover:text-green-400' : 'hover:text-green-600'
+                              ]"
                             >
                               <span v-if="isConfirming">
                                 <i class="fa fa-spinner fa-spin mr-1"></i>
@@ -2567,11 +2815,14 @@ const hasEmptyFeeName = computed(() => {
                           @click="closeChatModal"
                         >
                           <div
-                            class="bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 transform transition-transform duration-300 max-h-[90vh] overflow-hidden flex flex-col"
-                            :class="{
-                              'scale-100 opacity-100': showChatModal,
-                              'scale-95 opacity-0': !showChatModal,
-                            }"
+                            class="rounded-xl shadow-2xl w-full max-w-3xl mx-4 transform transition-transform duration-300 max-h-[90vh] overflow-hidden flex flex-col"
+                            :class="[
+                              {
+                                'scale-100 opacity-100': showChatModal,
+                                'scale-95 opacity-0': !showChatModal,
+                              },
+                              darkMode ? 'bg-gray-800' : 'bg-white'
+                            ]"
                             @click.stop
                           >
                             <!-- Modal Header -->
@@ -2594,99 +2845,105 @@ const hasEmptyFeeName = computed(() => {
                             </div>
 
                             <!-- Pinned Documents Section -->
-                            <div
-                              v-if="
-                                (currentItem.additional_documents &&
-                                  currentItem.additional_documents.length > 0 &&
-                                  currentItem.additional_documents[0].name !==
-                                    'N/A') ||
-                                (currentItem.valid_id_front &&
-                                  currentItem.valid_id_front.length > 0) ||
-                                (currentItem.valid_id_back &&
-                                  currentItem.valid_id_back.length > 0)
-                              "
-                              class="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200"
-                            >
-                              <div
-                                class="text-xs font-bold text-gray-700 uppercase mb-3 flex items-center gap-2"
-                              >
-                                <i class="fa fa-thumb-tack text-green-600"></i>
-                                <i class="fa fa-paperclip text-green-600"></i>
-                                <span>Attached Documents</span>
-                              </div>
+<div
+  v-if="
+    (currentItem.additional_documents &&
+      currentItem.additional_documents.length > 0 &&
+      currentItem.additional_documents[0].name !== 'N/A') ||
+    (currentItem.valid_id_front &&
+      currentItem.valid_id_front.length > 0) ||
+    (currentItem.valid_id_back &&
+      currentItem.valid_id_back.length > 0)
+  "
+  class="p-4 border-b-2"
+  :class="darkMode
+    ? 'bg-gray-900 border-gray-700'
+    : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'"
+>
+  <div
+    class="text-xs font-bold uppercase mb-3 flex items-center gap-2"
+    :class="darkMode ? 'text-gray-200' : 'text-gray-700'"
+  >
+    <i class="fa fa-thumb-tack text-green-500"></i>
+    <i class="fa fa-paperclip text-green-500"></i>
+    <span>Attached Documents</span>
+  </div>
 
-                              <!-- Horizontal Scrollable Documents -->
-                              <div class="flex gap-3 overflow-x-auto pb-2">
-                                <!-- Additional Documents -->
-                                <div
-                                  v-if="
-                                    currentItem.additional_documents &&
-                                    currentItem.additional_documents.length >
-                                      0 &&
-                                    currentItem.additional_documents[0].name !==
-                                      'N/A'
-                                  "
-                                  v-for="(
-                                    file, index
-                                  ) in currentItem.additional_documents"
-                                  :key="'doc-' + index"
-                                  class="flex-shrink-0"
-                                >
-                                  <div
-                                    class="bg-white border-2 border-blue-300 rounded-xl w-20 hover:shadow-lg transition-all hover:scale-105"
-                                    v-if="file.url !== 'N/A'"
-                                  >
-                                    <img
-                                      v-if="
-                                        file.url &&
-                                        (file.url.includes('jpg') ||
-                                          file.url.includes('jpeg') ||
-                                          file.url.includes('png'))
-                                      "
-                                      :src="getCleanUrl(file.url)"
-                                      alt="Document"
-                                      class="w-full h-5 object-cover rounded-lg border border-gray-300 cursor-pointer"
-                                      @click="openImageModal(file.url)"
-                                    />
-                                    <div
-                                      v-else
-                                      class="w-full h-5 bg-blue-100 rounded-lg flex items-center justify-center mb-2"
-                                    >
-                                      <i
-                                        class="fa fa-file-pdf-o text-3xl text-red-600"
-                                        v-if="
-                                          file.name &&
-                                          file.name.includes('.pdf')
-                                        "
-                                      ></i>
-                                      <i
-                                        class="fa fa-file-word-o text-3xl text-blue-600"
-                                        v-else-if="
-                                          file.name &&
-                                          (file.name.includes('.doc') ||
-                                            file.name.includes('.docx'))
-                                        "
-                                      ></i>
-                                      <i
-                                        class="fa fa-file-o text-3xl text-gray-600"
-                                        v-else
-                                      ></i>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+  <!-- Horizontal Scrollable Documents -->
+  <div class="flex gap-3 overflow-x-auto pb-2">
+    <!-- Additional Documents -->
+    <div
+      v-if="
+        currentItem.additional_documents &&
+        currentItem.additional_documents.length > 0 &&
+        currentItem.additional_documents[0].name !== 'N/A'
+      "
+      v-for="(file, index) in currentItem.additional_documents"
+      :key="'doc-' + index"
+      class="flex-shrink-0"
+    >
+      <div
+        :class="[
+          'rounded-xl w-20 hover:shadow-lg transition-all hover:scale-105',
+          file.url !== 'N/A'
+            ? darkMode
+              ? 'bg-gray-800 border-2 border-gray-600'
+              : 'bg-white border-2 border-blue-300'
+            : ''
+        ]"
+      >
+        <!-- Image Files -->
+        <img
+          v-if="
+            file.url &&
+            (file.url.includes('jpg') ||
+              file.url.includes('jpeg') ||
+              file.url.includes('png'))
+          "
+          :src="getCleanUrl(file.url)"
+          alt="Document"
+          class="w-full h-20 object-cover rounded-lg border cursor-pointer"
+          :class="darkMode ? 'border-gray-600' : 'border-gray-300'"
+          @click="openImageModal(file.url)"
+        />
+
+        <!-- Non-image Files -->
+        <div
+          v-else
+          class="w-full h-20 rounded-lg flex items-center justify-center mb-2"
+          :class="darkMode ? 'bg-gray-800' : 'bg-blue-100'"
+        >
+          <i
+            class="fa fa-file-pdf-o text-3xl"
+            :class="darkMode ? 'text-red-500' : 'text-red-600'"
+            v-if="file.name && file.name.includes('.pdf')"
+          ></i>
+          <i
+            class="fa fa-file-word-o text-3xl"
+            :class="darkMode ? 'text-blue-400' : 'text-blue-600'"
+            v-else-if="file.name && (file.name.includes('.doc') || file.name.includes('.docx'))"
+          ></i>
+          <i
+            class="fa fa-file-o text-3xl"
+            :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
+          ></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
                             <!-- Chat Messages -->
                             <div
-                              class="flex-1 p-5 space-y-4 overflow-y-auto bg-gray-50"
+                              class="flex-1 p-5 space-y-4 overflow-y-auto"
+                              :class="darkMode ? 'bg-gray-900/50' : 'bg-gray-50'"
                               style="max-height: 400px"
                             >
                               <!-- Display all messages from additional_response_details array -->
                               <template
                                 v-if="
                                   Array.isArray(
-                                    currentItem.additional_response_details
+                                    currentItem.additional_response_details,
                                   ) &&
                                   currentItem.additional_response_details
                                     .length > 0 &&
@@ -2740,11 +2997,13 @@ const hasEmptyFeeName = computed(() => {
                                     >
                                       <span
                                         v-if="msg.sender === 'Registrar'"
-                                        class="text-xs text-gray-500"
+                                        class="text-xs"
+                                        :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
                                         >Registrar</span
                                       >
                                       <span
-                                        class="text-sm font-bold text-gray-900"
+                                        class="text-sm font-bold"
+                                        :class="darkMode ? 'text-gray-200' : 'text-gray-900'"
                                         >{{
                                           msg.sender === "Registrar"
                                             ? "You"
@@ -2755,7 +3014,8 @@ const hasEmptyFeeName = computed(() => {
                                       >
                                       <span
                                         v-if="msg.sender !== 'Registrar'"
-                                        class="text-xs text-gray-500"
+                                        class="text-xs"
+                                        :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
                                         >Applicant</span
                                       >
                                     </div>
@@ -2765,14 +3025,18 @@ const hasEmptyFeeName = computed(() => {
                                       :class="
                                         msg.sender === 'Registrar'
                                           ? 'bg-gradient-to-r from-green-500 to-green-600 rounded-2xl rounded-tr-none px-4 py-3 shadow-md inline-block text-left'
-                                          : 'bg-white border border-blue-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm'
+                                          : darkMode
+                                            ? 'bg-gray-700 border border-gray-600 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm'
+                                            : 'bg-white border border-blue-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm'
                                       "
                                     >
                                       <p
                                         :class="
                                           msg.sender === 'Registrar'
                                             ? 'text-sm text-white'
-                                            : 'text-sm text-gray-800'
+                                            : darkMode
+                                              ? 'text-sm text-gray-200'
+                                              : 'text-sm text-gray-800'
                                         "
                                       >
                                         {{ msg.message }}
@@ -2782,7 +3046,9 @@ const hasEmptyFeeName = computed(() => {
                                         :class="
                                           msg.sender === 'Registrar'
                                             ? 'text-xs text-white/70 mt-1'
-                                            : 'text-xs text-gray-500 mt-1'
+                                            : darkMode
+                                              ? 'text-xs text-gray-400 mt-1'
+                                              : 'text-xs text-gray-500 mt-1'
                                         "
                                       >
                                         {{ msg.timestamp }}
@@ -2796,7 +3062,7 @@ const hasEmptyFeeName = computed(() => {
                               <div
                                 v-if="
                                   !Array.isArray(
-                                    currentItem.additional_response_details
+                                    currentItem.additional_response_details,
                                   ) ||
                                   currentItem.additional_response_details
                                     .length === 0 ||
@@ -2815,16 +3081,23 @@ const hasEmptyFeeName = computed(() => {
                             </div>
 
                             <!-- Chat Input -->
-                            <div class="p-4 bg-white border-t border-gray-200">
+                            <div class="p-4 border-t"
+                              :class="darkMode
+                                ? 'bg-gray-800 border-gray-700'
+                                : 'bg-white border-gray-200'">
                               <label
-                                class="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-2"
+                                class="text-xs font-semibold mb-2 flex items-center gap-2"
+                                :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                               >
                                 <i class="fa fa-pencil text-green-600"></i>
                                 Send Follow-up Message
                               </label>
                               <div class="relative">
                                 <textarea
-                                  class="w-full bg-gray-50 border-2 border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                                  class="w-full border-2 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                                  :class="darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                    : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'"
                                   placeholder="Type your follow-up remarks here..."
                                   v-model="newFollowUpMessage"
                                   rows="3"
@@ -2833,7 +3106,8 @@ const hasEmptyFeeName = computed(() => {
                                   "
                                 ></textarea>
                                 <div
-                                  class="absolute bottom-3 right-3 text-xs text-gray-400"
+                                  class="absolute bottom-3 right-3 text-xs"
+                                  :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
                                 >
                                   <i class="fa fa-keyboard-o mr-1"></i>
                                   Press Enter to send
@@ -2850,9 +3124,6 @@ const hasEmptyFeeName = computed(() => {
                             </div>
                           </div>
                         </div>
-
-
-                        
                       </div>
                     </div>
 
@@ -2934,40 +3205,66 @@ const hasEmptyFeeName = computed(() => {
                     </div>
                   </div>
 
-                  <div
-                    class="flex justify-center my-4"
-                    v-if="filteredListItems.length > 0"
-                  >
-                    <button
-                      :disabled="currentPage === 1"
-                      @click="currentPage--"
-                      class="px-2 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-500 hover:text-white"
-                    >
-                      Prev
-                    </button>
+<div
+  class="flex justify-center my-4"
+  v-if="filteredListItems.length > 0"
+>
+  <!-- Prev Button -->
+  <button
+    :disabled="currentPage === 1"
+    @click="currentPage--"
+    :class="[
+      'px-2 py-2 mx-1 rounded transition-colors duration-200',
+      darkMode
+        ? currentPage === 1
+          ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+          : 'bg-gray-800 text-gray-200 hover:bg-gray-600 hover:text-white'
+        : currentPage === 1
+        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+        : 'bg-gray-200 text-gray-900 hover:bg-gray-500 hover:text-white'
+    ]"
+  >
+    Prev
+  </button>
 
-                    <button
-                      v-for="page in visiblePages"
-                      :key="page"
-                      @click="currentPage = page"
-                      class="hover:bg-green-500 hover:text-white"
-                      :class="{
-                        'px-4 py-2 mx-1 rounded': true,
-                        'bg-green-800 text-white': currentPage === page,
-                        'bg-gray-200': currentPage !== page,
-                      }"
-                    >
-                      {{ page }}
-                    </button>
+  <!-- Page Numbers -->
+  <button
+    v-for="page in visiblePages"
+    :key="page"
+    @click="currentPage = page"
+    :class="[
+      'px-4 py-2 mx-1 rounded transition-colors duration-200',
+      currentPage === page
+        ? darkMode
+          ? 'bg-green-700 text-white'
+          : 'bg-green-800 text-white'
+        : darkMode
+        ? 'bg-gray-800 text-gray-200 hover:bg-gray-600 hover:text-white'
+        : 'bg-gray-200 text-gray-900 hover:bg-green-500 hover:text-white'
+    ]"
+  >
+    {{ page }}
+  </button>
 
-                    <button
-                      :disabled="currentPage === totalPages"
-                      @click="currentPage++"
-                      class="px-2 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-500 hover:text-white"
-                    >
-                      Next
-                    </button>
-                  </div>
+  <!-- Next Button -->
+  <button
+    :disabled="currentPage === totalPages"
+    @click="currentPage++"
+    :class="[
+      'px-2 py-2 mx-1 rounded transition-colors duration-200',
+      darkMode
+        ? currentPage === totalPages
+          ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+          : 'bg-gray-800 text-gray-200 hover:bg-gray-600 hover:text-white'
+        : currentPage === totalPages
+        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+        : 'bg-gray-200 text-gray-900 hover:bg-gray-500 hover:text-white'
+    ]"
+  >
+    Next
+  </button>
+</div>
+
 
                   <div v-else-if="!isLoading" class="text-center my-5">
                     No items found!

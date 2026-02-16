@@ -3,6 +3,30 @@ import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 
+// ---------------- DARK MODE ----------------
+const darkMode = ref(false);
+
+const toggleDarkMode = () => {
+  darkMode.value = !darkMode.value;
+  if (process.client) {
+    localStorage.setItem("theme", darkMode.value ? "dark" : "light");
+    // Add smooth transition class to body
+    document.documentElement.classList.add('theme-transition');
+    setTimeout(() => {
+      document.documentElement.classList.remove('theme-transition');
+    }, 300);
+  }
+};
+
+onMounted(() => {
+  if (process.client) {
+    const storedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    darkMode.value = storedTheme === "dark" || (!storedTheme && prefersDark);
+  }
+});
+
+
 // ---------------- PROPS ----------------
 const props = defineProps({
   superAdminEmails: { type: Array, required: true },
@@ -239,26 +263,84 @@ const handleMenuClick = (menu) => {
 
 
 <template>
-  <div>
+  <div :class="[darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900', 'min-h-screen transition-colors duration-300']">
+
+    <!-- DARK MODE TOGGLE - Fixed Position -->
+    <div class="fixed top-4 right-4 z-50">
+      <button
+        @click="toggleDarkMode"
+        class="group relative flex items-center gap-3 px-4 py-2.5 rounded-full shadow-lg transition-all duration-300 hover:scale-105"
+        :class="darkMode
+          ? 'bg-gradient-to-r from-gray-800 to-gray-700 text-white hover:shadow-gray-700/50'
+          : 'bg-gradient-to-r from-white to-gray-50 text-gray-900 hover:shadow-xl border border-gray-200'"
+      >
+        <!-- Icon Container with Rotation Animation -->
+        <div class="relative w-6 h-6 flex items-center justify-center">
+          <!-- Sun Icon -->
+          <transition
+            enter-active-class="transition-all duration-300"
+            enter-from-class="opacity-0 rotate-180 scale-0"
+            enter-to-class="opacity-100 rotate-0 scale-100"
+            leave-active-class="transition-all duration-300"
+            leave-from-class="opacity-100 rotate-0 scale-100"
+            leave-to-class="opacity-0 -rotate-180 scale-0"
+          >
+            <i v-if="!darkMode" class="fa fa-sun absolute text-yellow-500 text-xl"></i>
+          </transition>
+
+          <!-- Moon Icon -->
+          <transition
+            enter-active-class="transition-all duration-300"
+            enter-from-class="opacity-0 -rotate-180 scale-0"
+            enter-to-class="opacity-100 rotate-0 scale-100"
+            leave-active-class="transition-all duration-300"
+            leave-from-class="opacity-100 rotate-0 scale-100"
+            leave-to-class="opacity-0 rotate-180 scale-0"
+          >
+            <i v-if="darkMode" class="fa fa-moon absolute text-blue-300 text-xl"></i>
+          </transition>
+        </div>
+
+        <!-- Label Text -->
+        <span class="font-semibold text-sm whitespace-nowrap">
+          {{ darkMode ? 'Dark Mode' : 'Light Mode' }}
+        </span>
+
+        <!-- Glow Effect on Hover -->
+        <div class="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          :class="darkMode ? 'bg-blue-500/10' : 'bg-yellow-500/10'">
+        </div>
+      </button>
+    </div>
     <!-- LOGOUT CONFIRMATION -->
     <div v-if="currentView === 'Logout'" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div class="w-full bg-white rounded-3xl p-8 text-center shadow-2xl transform transition-all">
+      <div class="w-full rounded-3xl p-8 text-center shadow-2xl transform transition-all max-w-md"
+        :class="darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'">
         <!-- Icon with Animation -->
         <div class="mx-auto mb-6 w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-rose-600 shadow-lg shadow-red-500/30">
           <i class="fa fa-sign-out text-3xl text-white"></i>
         </div>
 
         <!-- Title -->
-        <h3 class="text-2xl font-bold text-gray-900 mb-2">Logout Confirmation</h3>
+        <h3 class="text-2xl font-bold mb-2"
+          :class="darkMode ? 'text-gray-100' : 'text-gray-900'">
+          Logout Confirmation
+        </h3>
 
         <!-- Description -->
-        <p class="text-gray-600 mb-8">Are you sure you want to log out of your account?</p>
+        <p class="mb-8"
+          :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
+          Are you sure you want to log out of your account?
+        </p>
 
         <!-- Actions -->
         <div class="flex gap-3 justify-center">
           <button
             @click="currentView = 'Profile'"
-            class="flex-1 px-6 py-3 text-sm font-semibold rounded-xl border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-700 transition-all duration-300"
+            class="flex-1 px-6 py-3 text-sm font-semibold rounded-xl border-2 transition-all duration-300"
+            :class="darkMode
+              ? 'border-gray-600 hover:border-gray-500 hover:bg-gray-700 text-gray-300'
+              : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-700'"
           >
             Cancel
           </button>
@@ -274,7 +356,9 @@ const handleMenuClick = (menu) => {
     </div>
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->
-      <div class="w-full mb-32">
+      <div class="w-full pb-32"
+      :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-100 text-gray-600'"
+      >
         <!-- CONTENT AREA -->
         <div class="overflow-y-auto">
           <div v-if="currentView === 'Profile'" class="w-full p-4">
@@ -288,16 +372,26 @@ const handleMenuClick = (menu) => {
               <div
                 v-for="menu in filteredMenuList"
                 :key="menu.label || menu.group"
-                class="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group border border-gray-100 overflow-hidden"
+                class="rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group border overflow-hidden"
+                :class="darkMode
+                  ? 'bg-gray-800 border-gray-700 hover:border-green-500'
+                  : 'bg-white border-gray-100'"
               >
                 <template v-if="menu.group">
                   <!-- Group Header with Gradient Background -->
                   <button
-                    class="w-full flex flex-col items-center justify-center p-6 text-center font-semibold text-gray-800 hover:text-green-700 transition-all relative overflow-hidden"
+                    class="w-full flex flex-col items-center justify-center p-6 text-center font-semibold transition-all relative overflow-hidden"
+                    :class="darkMode
+                      ? 'text-gray-200 hover:text-green-400'
+                      : 'text-gray-800 hover:text-green-700'"
                     @click="toggleGroup(menu.group)"
                   >
                     <!-- Gradient Background on Hover -->
-                    <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      :class="darkMode
+                        ? 'bg-gradient-to-br from-green-900/30 to-emerald-900/30'
+                        : 'bg-gradient-to-br from-green-50 to-emerald-50'">
+                    </div>
 
                     <!-- Icon with Modern Design -->
                     <div class="relative w-16 h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-3 shadow-lg">
@@ -309,20 +403,33 @@ const handleMenuClick = (menu) => {
 
                     <!-- Chevron Indicator -->
                     <i
-                      class="relative fa fa-chevron-down mt-2 text-xs text-gray-400 transition-transform duration-300"
-                      :class="{ 'rotate-180': openGroups.includes(menu.group) }"
+                      class="relative fa fa-chevron-down mt-2 text-xs transition-transform duration-300"
+                      :class="[
+                        { 'rotate-180': openGroups.includes(menu.group) },
+                        darkMode ? 'text-gray-500' : 'text-gray-400'
+                      ]"
                     ></i>
                   </button>
 
                   <!-- Expandable Menu Items -->
                   <transition name="slide-fade">
-                    <div v-if="openGroups.includes(menu.group)" class="border-t border-gray-100 bg-gray-50">
+                    <div v-if="openGroups.includes(menu.group)"
+                      class="border-t"
+                      :class="darkMode
+                        ? 'border-gray-700 bg-gray-900/50'
+                        : 'border-gray-100 bg-gray-50'">
                       <ul class="space-y-1 p-3">
                         <li
                           v-for="item in menu.items"
                           :key="item.label"
-                          class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-white text-gray-700 text-sm transition-all cursor-pointer group/item"
-                          :class="currentView === item.view ? 'bg-green-500 text-white shadow-md' : 'hover:shadow-sm'"
+                          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer group/item"
+                          :class="[
+                            currentView === item.view
+                              ? 'bg-green-500 text-white shadow-md'
+                              : darkMode
+                                ? 'text-gray-300 hover:bg-gray-800 hover:shadow-sm'
+                                : 'text-gray-700 hover:bg-white hover:shadow-sm'
+                          ]"
                           @click="handleMenuClick(item)"
                         >
                           <div
@@ -348,11 +455,18 @@ const handleMenuClick = (menu) => {
                 <!-- Non-Group Menu Items -->
                 <template v-else>
                   <div
-                    class="flex flex-col items-center justify-center p-6 text-center font-semibold text-gray-800 hover:text-green-700 transition-all cursor-pointer relative overflow-hidden"
+                    class="flex flex-col items-center justify-center p-6 text-center font-semibold transition-all cursor-pointer relative overflow-hidden"
+                    :class="darkMode
+                      ? 'text-gray-200 hover:text-green-400'
+                      : 'text-gray-800 hover:text-green-700'"
                     @click="handleMenuClick(menu)"
                   >
                     <!-- Gradient Background on Hover -->
-                    <div class="absolute inset-0 bg-gradient-to-br from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      :class="darkMode
+                        ? 'bg-gradient-to-br from-green-900/30 to-emerald-900/30'
+                        : 'bg-gradient-to-br from-green-50 to-emerald-50'">
+                    </div>
 
                     <!-- Icon with Modern Design -->
                     <div class="relative w-16 h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-3 shadow-lg">
@@ -367,43 +481,47 @@ const handleMenuClick = (menu) => {
             </div>
           </div>
           <div v-else-if="currentView === 'form'" class="p-4">
-            <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted" />
+            <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted" :darkMode="darkMode"/>
           </div>
           <div v-else-if="currentView === 'list'" class="p-4">
-            <SuperAdminDashboardCmsList />
+            <SuperAdminDashboardCmsList :darkMode="darkMode" />
           </div>
           <div v-else-if="currentView === 'appointments'" class="p-4">
-            <SuperAdminDashboardServicesLibraryReserved />
+            <SuperAdminDashboardServicesLibraryReserved :darkMode="darkMode"/>
           </div>
           <div v-else-if="currentView === 'books'" class="p-4">
-            <SuperAdminDashboardServicesLibraryBooks />
+            <SuperAdminDashboardServicesLibraryBooks :darkMode="darkMode"/>
           </div>
           <div v-else-if="currentView === 'schedules'" class="p-4">
-            <SuperAdminDashboardServicesLibrarySchedules />
+            <SuperAdminDashboardServicesLibrarySchedules :darkMode="darkMode"/>
           </div>
           <div v-else-if="currentView === 'hr-job-vacancy-list'" class="p-4">
-            <SuperAdminDashboardServicesHr />
+            <SuperAdminDashboardServicesHr :darkMode="darkMode"/>
           </div>
           <div v-else-if="currentView === 'hr-raffle'" class="p-4">
-            <SuperAdminDashboardServicesHrRaffle />
+            <SuperAdminDashboardServicesHrRaffle :darkMode="darkMode"/>
           </div>
           <div v-else-if="currentView === 'university-calendar'" class="p-4">
-            <SuperAdminDashboardChancellorOffice />
+            <SuperAdminDashboardChancellorOffice :darkMode="darkMode"/>
           </div>
           <div v-else-if="currentView === 'npcc'" class="px-2 pb-2">
-            <SuperAdminDashboardServicesIt />
+            <SuperAdminDashboardServicesIt :darkMode="darkMode"/>
           </div>
           <div v-else-if="currentView === 'registrar'">
-            <SuperAdminDashboardServicesRegistrar />
+            <SuperAdminDashboardServicesRegistrar :darkMode="darkMode"/>
           </div>
           <div v-else-if="currentView === 'campusPass'">
-            <SuperAdminDashboardServicesCampusPass />
+            <SuperAdminDashboardServicesCampusPass :darkMode="darkMode"/>
           </div>
           <div v-else-if="currentView === 'drs'">
-            <SuperAdminDashboardServicesDrs />
+            <SuperAdminDashboardServicesDrs :darkMode="darkMode"/>
           </div>
         </div>
-        <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 shadow-2xl">
+        <nav class="fixed bottom-0 left-0 right-0  backdrop-blur-lg border-t border-gray-200 shadow-2xl"
+        
+        
+         :class="[darkMode ? 'bg-gray-900 text-white' : 'bg-white/95 text-gray-900']"
+        >
           <div class="flex justify-evenly items-center px-4 mx-auto">
             <button
               v-for="(menu, index) in menuList"
@@ -468,6 +586,7 @@ const handleMenuClick = (menu) => {
 </template>
 
 <style scoped>
+/* Slide Fade Animation for Menu Groups */
 .slide-fade-enter-active,
 .slide-fade-leave-active {
   transition: all 0.25s ease;
@@ -477,5 +596,13 @@ const handleMenuClick = (menu) => {
 .slide-fade-leave-to {
   opacity: 0;
   transform: translateY(-5px);
+}
+
+/* Smooth Theme Transition */
+:global(.theme-transition),
+:global(.theme-transition *) {
+  transition: background-color 0.3s ease,
+              border-color 0.3s ease,
+              color 0.3s ease !important;
 }
 </style>

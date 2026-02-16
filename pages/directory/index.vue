@@ -14,6 +14,8 @@
     hotlineNumbers.value = await $fetch(
       endpoint.value + "/api/cits/lsu-hotline-numbers/list/"
     ).catch((error) => error.data);
+
+    console.log(hotlineNumbers.value)
   })
 
 </script>
