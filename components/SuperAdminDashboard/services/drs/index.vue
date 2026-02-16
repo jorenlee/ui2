@@ -95,7 +95,7 @@ const adminEmails = [
   "meredith.embuscado@lsu.edu.ph",
   "macristina.llauder@lsu.edu.ph",
   "recordsmanagement@lsu.edu.ph",
-  "wenny.caseros@lsu.edu.ph",
+  "wenny.caseros@lsu.edu.ph"
 ];
 
 const fetchListItems = async () => {
@@ -206,84 +206,24 @@ const downloadCSV = () => {
     // Define CSV headers based on the info structure
     const headers = [
       "Tracking ID",
+      "Document Attachment",
       "Document Title",
-      "Document Code",
       "Document Type",
       "Status",
-      "Revision Number",
-      "Schedule",
-      "Effectivity Date",
-      "Purpose",
-      "Originating First Name",
-      "Originating Middle Name",
-      "Originating Last Name",
-      "Originating Office",
-      "Originating Email",
-      "Reviewed By Name",
-      "Reviewed By Designation",
-      "Reviewed By Date Checked",
-      "Reviewed By Action",
-      "Reviewed By Remarks",
-      "Reviewed By Email",
-      "Verified By Name",
-      "Verified By Designation",
-      "Verified By Date Checked",
-      "Verified By Action",
-      "Verified By Remarks",
-      "Verified By Email",
-      "Approved By Name",
-      "Approved By Designation",
-      "Approved By Date Checked",
-      "Approved By Action",
-      "Approved By Remarks",
-      "Approved By Email",
-      "Other Comments/Remarks",
-      "RMO Name",
-      "RMO Email",
-      "Document Attachment"
+      "Document Code"
     ];
 
     // Convert data to CSV rows
     const csvRows = [headers.join(",")];
 
-    dataToExport.forEach(item => {
+    dataToExport.forEach((item) => {
       const row = [
         item.tracking_id || "",
+        item.document_attachment || "",
         `"${(item.document_title || "").replace(/"/g, '""')}"`,
-        item.document_code || "",
         item.document_type || "",
         item.status || "",
-        item.revision_number || "",
-        item.schedule || "",
-        item.effectivity_date || "",
-        `"${(item.purpose || "").replace(/"/g, '""')}"`,
-        item.originating_firstname || "",
-        item.originating_middlename || "",
-        item.originating_lastname || "",
-        item.originating_office || "",
-        item.originating_email || "",
-        item.reviewed_by_name || "",
-        item.reviewed_by_designation || "",
-        item.reviewed_by_date_checked || "",
-        item.reviewed_by_action || "",
-        `"${(item.reviewed_by_remarks || "").replace(/"/g, '""')}"`,
-        item.reviewed_by_email || "",
-        item.verified_by_name || "",
-        item.verified_by_designation || "",
-        item.verified_by_date_checked || "",
-        item.verified_by_action || "",
-        `"${(item.verified_by_remarks || "").replace(/"/g, '""')}"`,
-        item.verified_by_email || "",
-        item.approved_by_name || "",
-        item.approved_by_designation || "",
-        item.approved_by_date_checked || "",
-        item.approved_by_action || "",
-        `"${(item.approved_by_remarks || "").replace(/"/g, '""')}"`,
-        item.approved_by_email || "",
-        `"${(item.other_comments_remarks || "").replace(/"/g, '""')}"`,
-        item.rmo_name || "",
-        item.rmo_email || "",
-        item.document_attachment || ""
+        item.document_code || "",
       ];
       csvRows.push(row.join(","));
     });
@@ -636,7 +576,9 @@ const submitDRSFormToGmailApproved = async () => {
             <div v-show="tableDisplay">
               <div class="lg:flex items-center gap-x-3 py-5">
                 <div class="flex items-center gap-x-2">
-                  <div class="flex items-center font-bold text-sm lg:text-base text-green-800">
+                  <div
+                    class="flex items-center font-bold text-sm lg:text-base text-green-800"
+                  >
                     <i class="fa fa-filter mr-2"></i>
                     <span>Filters</span>
                   </div>
@@ -666,7 +608,11 @@ const submitDRSFormToGmailApproved = async () => {
                         v-model="selectedAll"
                       />
                       All
-                      <span v-if="listItems" class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">{{ listItems.length }}</span>
+                      <span
+                        v-if="listItems"
+                        class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs"
+                        >{{ listItems.length }}</span
+                      >
                     </label>
 
                     <label
@@ -694,7 +640,10 @@ const submitDRSFormToGmailApproved = async () => {
                         v-model="selectedReviewed"
                       />
                       Reviewed
-                      <span class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">{{ reviewedLength }}</span>
+                      <span
+                        class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs"
+                        >{{ reviewedLength }}</span
+                      >
                     </label>
 
                     <label
@@ -722,7 +671,10 @@ const submitDRSFormToGmailApproved = async () => {
                         v-model="selectedVerified"
                       />
                       Verified
-                      <span class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">{{ verifiedLength }}</span>
+                      <span
+                        class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs"
+                        >{{ verifiedLength }}</span
+                      >
                     </label>
 
                     <label
@@ -750,14 +702,19 @@ const submitDRSFormToGmailApproved = async () => {
                         v-model="selectedApproved"
                       />
                       Approved
-                      <span class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">{{ approvedLength }}</span>
+                      <span
+                        class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs"
+                        >{{ approvedLength }}</span
+                      >
                     </label>
                   </div>
                 </div>
                 <!-- Universal Search Input -->
                 <div class="w-full">
                   <div class="relative">
-                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <div
+                      class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
+                    >
                       <i class="fa fa-search text-green-700"></i>
                     </div>
                     <input
@@ -770,6 +727,15 @@ const submitDRSFormToGmailApproved = async () => {
                 </div>
 
                 <button
+                  :class="
+                    [
+                      'meredith.embuscado@lsu.edu.ph',
+                      'macristina.llauder@lsu.edu.ph',
+                      superAdminEmail,
+                    ].includes(userStore.user.email)
+                      ? ''
+                      : 'hidden'
+                  "
                   @click="downloadCSV"
                   class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
                   title="Download filtered data as CSV"
@@ -835,7 +801,7 @@ const submitDRSFormToGmailApproved = async () => {
                         <i v-else class="fa fa-sort ml-1"></i>
                       </div>
 
-                      <div class="w-3/12 mx-auto text-center">Action</div>
+                      <div class="w-4/12 mx-auto text-center">Action</div>
                     </div>
 
                     <div v-if="isLoading" class="text-center">
@@ -868,7 +834,7 @@ const submitDRSFormToGmailApproved = async () => {
                           class="lg:flex text-left items-stretch h-auto lg:px-3 px-2 lg:gap-x-6 gap-y-2 border-gray-200 py-1 lg:mb-0 mb-3 lg:border-b border rounded-lg lg:rounded-none cursor-pointer transition-all duration-200 group"
                           :class="[
                             i % 2 === 0 ? 'bg-white' : 'bg-gray-100',
-                            'hover:bg-green-50 hover:shadow-lg hover:scale-[1.01] lg:hover:scale-100'
+                            'hover:bg-green-50 hover:shadow-lg hover:scale-[1.01] lg:hover:scale-100',
                           ]"
                           v-for="(b, i) in paginatedListItems"
                           :key="i"
@@ -878,18 +844,34 @@ const submitDRSFormToGmailApproved = async () => {
                           <div class="lg:hidden space-y-2">
                             <div class="flex justify-between items-start">
                               <div class="flex-1">
-                                <div class="text-xs text-gray-500 uppercase font-semibold mb-1">Office</div>
-                                <div class="font-medium text-sm">{{ b.originating_office }}</div>
+                                <div
+                                  class="text-xs text-gray-500 uppercase font-semibold mb-1"
+                                >
+                                  Office
+                                </div>
+                                <div class="font-medium text-sm">
+                                  {{ b.originating_office }}
+                                </div>
                               </div>
                               <div class="flex gap-x-2" @click.stop>
                                 <button
                                   class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-colors"
                                   @click="goToEdit(b.id)"
                                 >
-                                  <i class="fa fa-pencil" aria-hidden="true"></i>
+                                  <i
+                                    class="fa fa-pencil"
+                                    aria-hidden="true"
+                                  ></i>
                                 </button>
                                 <button
-                                  v-if="userStore.user.email?.trim().toLowerCase() === superAdminEmail || userStore.user.email?.trim().toLowerCase() === superAdminTwo"
+                                  v-if="
+                                    userStore.user.email
+                                      ?.trim()
+                                      .toLowerCase() === superAdminEmail ||
+                                    userStore.user.email
+                                      ?.trim()
+                                      .toLowerCase() === superAdminTwo
+                                  "
                                   class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-colors"
                                   @click="toggleDeleteBtn(b.id)"
                                 >
@@ -899,31 +881,64 @@ const submitDRSFormToGmailApproved = async () => {
                             </div>
 
                             <div>
-                              <div class="text-xs text-gray-500 uppercase font-semibold mb-1">Document Title</div>
-                              <div class="font-medium text-sm">{{ b.document_title }}</div>
+                              <div
+                                class="text-xs text-gray-500 uppercase font-semibold mb-1"
+                              >
+                                Document Title
+                              </div>
+                              <div class="font-medium text-sm">
+                                {{ b.document_title }}
+                              </div>
                             </div>
 
                             <div class="grid grid-cols-2 gap-2">
                               <div>
-                                <div class="text-xs text-gray-500 uppercase font-semibold mb-1">Status</div>
+                                <div
+                                  class="text-xs text-gray-500 uppercase font-semibold mb-1"
+                                >
+                                  Status
+                                </div>
                                 <div class="text-sm">
-                                  <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                                    :class="b.status === 'New' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'">
+                                  <span
+                                    class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="
+                                      b.status === 'New'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-orange-100 text-orange-800'
+                                    "
+                                  >
                                     {{ b.status }}
                                   </span>
-                                  <span v-if="b.revision_number" class="ml-1 text-xs">No. {{ b.revision_number }}</span>
+                                  <span
+                                    v-if="b.revision_number"
+                                    class="ml-1 text-xs"
+                                    >No. {{ b.revision_number }}</span
+                                  >
                                 </div>
                               </div>
                               <div>
-                                <div class="text-xs text-gray-500 uppercase font-semibold mb-1">Type</div>
+                                <div
+                                  class="text-xs text-gray-500 uppercase font-semibold mb-1"
+                                >
+                                  Type
+                                </div>
                                 <div class="text-sm">{{ b.document_type }}</div>
                               </div>
                             </div>
 
                             <div>
-                              <div class="text-xs text-gray-500 uppercase font-semibold mb-1">Document Code</div>
+                              <div
+                                class="text-xs text-gray-500 uppercase font-semibold mb-1"
+                              >
+                                Document Code
+                              </div>
                               <div class="text-sm font-mono">
-                                <span v-if="b.document_code !== 'To Be Assigned By RMO'">{{ b.document_code }}</span>
+                                <span
+                                  v-if="
+                                    b.document_code !== 'To Be Assigned By RMO'
+                                  "
+                                  >{{ b.document_code }}</span
+                                >
                                 {{ b.tracking_id }}
                               </div>
                             </div>
@@ -932,15 +947,28 @@ const submitDRSFormToGmailApproved = async () => {
                           <!-- Desktop: Table Row Layout -->
                           <div class="hidden lg:contents">
                             <div class="w-full flex items-center px-2">
-                              <div class="text-sm">{{ b.originating_office }}</div>
+                              <div class="text-sm">
+                                {{ b.originating_office }}
+                              </div>
                             </div>
 
                             <div class="w-full flex items-center px-2">
                               <div class="text-sm">
-                                <div class="font-medium">{{ b.document_title }}</div>
+                                <div class="font-medium">
+                                  {{ b.document_title }}
+                                </div>
                                 <div class="text-xs text-gray-600 mt-1">
-                                  <span v-if="b.document_code !== 'To Be Assigned By RMO'" class="font-mono">{{ b.document_code }}</span>
-                                  <span class="font-mono">{{ b.tracking_id }}</span>
+                                  <span
+                                    v-if="
+                                      b.document_code !==
+                                      'To Be Assigned By RMO'
+                                    "
+                                    class="font-mono"
+                                    >{{ b.document_code }}</span
+                                  >
+                                  <span class="font-mono">{{
+                                    b.tracking_id
+                                  }}</span>
                                 </div>
                               </div>
                             </div>
@@ -948,27 +976,70 @@ const submitDRSFormToGmailApproved = async () => {
                             <div class="w-full flex items-center px-2">
                               <div class="text-sm">
                                 <div>
-                                  <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                                    :class="b.status === 'New' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'">
+                                  <span
+                                    class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
+                                    :class="
+                                      b.status === 'New'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-orange-100 text-orange-800'
+                                    "
+                                  >
                                     {{ b.status }}
                                   </span>
-                                  <span v-if="b.revision_number" class="ml-1 text-xs text-gray-600">No. {{ b.revision_number }}</span>
+                                  <span
+                                    v-if="b.revision_number"
+                                    class="ml-1 text-xs text-gray-600"
+                                    >No. {{ b.revision_number }}</span
+                                  >
                                 </div>
-                                <div class="mt-1 text-gray-700">{{ b.document_type }}</div>
+                                <div class="mt-1 text-gray-700">
+                                  {{ b.document_type }}
+                                </div>
                               </div>
                             </div>
 
-                            <div class="w-3/12 flex items-center justify-center" @click.stop>
+                            <div
+                              class="w-4/12 flex items-center justify-center"
+                              @click.stop
+                            >
                               <div class="flex gap-x-2">
+                                <a
+                                  v-if="b.document_attachment"
+                                  :href="b.document_attachment"
+                                  target="_blank"
+                                  class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105 inline-flex items-center gap-1.5"
+                                  title="Open in Google Drive"
+                                >
+                                  <i class="fab fa-google-drive"></i>
+                                  <i class="fa fa-external-link text-xs"></i>
+                                </a>
+                                <button
+                                  v-else
+                                  class="bg-gray-400 text-white px-3 py-1.5 rounded-md cursor-not-allowed opacity-50"
+                                  disabled
+                                  title="No document attached"
+                                >
+                                  <i class="fab fa-google-drive"></i>
+                                </button>
                                 <button
                                   class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
                                   @click="goToEdit(b.id)"
                                   title="Edit"
                                 >
-                                  <i class="fa fa-pencil" aria-hidden="true"></i>
+                                  <i
+                                    class="fa fa-pencil"
+                                    aria-hidden="true"
+                                  ></i>
                                 </button>
                                 <button
-                                  v-if="userStore.user.email?.trim().toLowerCase() === superAdminEmail || userStore.user.email?.trim().toLowerCase() === superAdminTwo"
+                                  v-if="
+                                    userStore.user.email
+                                      ?.trim()
+                                      .toLowerCase() === superAdminEmail ||
+                                    userStore.user.email
+                                      ?.trim()
+                                      .toLowerCase() === superAdminTwo
+                                  "
                                   class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
                                   @click="toggleDeleteBtn(b.id)"
                                   title="Delete"
@@ -1016,20 +1087,32 @@ const submitDRSFormToGmailApproved = async () => {
                             @click.stop
                           >
                             <!-- Modal Header -->
-                            <div class="flex items-center gap-3 p-6 border-b border-gray-200">
-                              <div class="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                                <i class="fa fa-exclamation-triangle text-red-600 text-xl"></i>
+                            <div
+                              class="flex items-center gap-3 p-6 border-b border-gray-200"
+                            >
+                              <div
+                                class="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center"
+                              >
+                                <i
+                                  class="fa fa-exclamation-triangle text-red-600 text-xl"
+                                ></i>
                               </div>
                               <div>
-                                <h3 class="text-lg font-semibold text-gray-900">Confirm Delete</h3>
-                                <p class="text-sm text-gray-500">This action cannot be undone</p>
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                  Confirm Delete
+                                </h3>
+                                <p class="text-sm text-gray-500">
+                                  This action cannot be undone
+                                </p>
                               </div>
                             </div>
 
                             <!-- Modal Body -->
                             <div class="p-6">
                               <p class="text-gray-700">
-                                Are you sure you want to delete this document? This will permanently remove the document from the system.
+                                Are you sure you want to delete this document?
+                                This will permanently remove the document from
+                                the system.
                               </p>
                             </div>
 
