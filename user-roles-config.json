@@ -1,6 +1,10 @@
 {
   "userRoles": [
     {
+      "email": "npc@lsu.edu.ph",
+      "roles": ["superAdmin", "npccMenu"]
+    },
+    {
       "email": "jorenlee.luna@lsu.edu.ph",
       "roles": ["superAdmin", "npccMenu"]
     },

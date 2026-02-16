@@ -1562,6 +1562,7 @@ import { ref, computed, onMounted, onUnmounted, reactive, watch } from "vue";
 import { useUserStore } from "@/stores/user";
 import moment from "moment";
 import itServiceConfig from "@/it-service-config.json";
+import userRolesConfig from "@/user-roles-config.json";
 
 const userStore = useUserStore();
 const config = useRuntimeConfig();
@@ -2289,8 +2290,13 @@ const normalizeOffice = () => {
 
 // Check if user has unrated tickets (ANY status - pending, in progress, completed, etc.)
 const checkForUnratedTickets = async (email) => {
-  // Exception for npc@lsu.edu.ph - skip rating requirement
-  if (email && email.toLowerCase() === "npc@lsu.edu.ph") {
+  // Exception for npccMenu users - skip rating requirement
+  // Get all emails with npccMenu role from user-roles-config.json
+  const npccMenuEmails = userRolesConfig.userRoles
+    .filter(user => user.roles.includes("npccMenu"))
+    .map(user => user.email.toLowerCase());
+
+  if (email && npccMenuEmails.includes(email.toLowerCase())) {
     return false;
   }
 
