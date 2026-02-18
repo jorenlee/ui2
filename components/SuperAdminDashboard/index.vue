@@ -277,16 +277,16 @@ const handleMenuClick = (menu) => {
     <div class="fixed bottom-4 right-4 z-50">
       <button
         @click="toggleDarkMode"
-        class="group relative flex items-center gap-3 px-4 py-2.5 rounded-full shadow-lg transition-all duration-300 hover:scale-105"
+        class="group relative flex items-center gap-3 px-5 py-3 rounded-full shadow-lg transition-all duration-300 hover:scale-105"
         :class="
           darkMode
-            ? 'bg-gradient-to-r from-gray-800 to-gray-700 text-white hover:shadow-gray-700/50'
+            ? 'bg-gradient-to-r from-gray-800 to-gray-700 text-white hover:shadow-gray-700/50 border border-gray-600'
             : 'bg-gradient-to-r from-white to-gray-50 text-gray-900 hover:shadow-xl border border-gray-200'
         "
       >
         <!-- Icon Container with Rotation Animation -->
         <div class="relative w-6 h-6 flex items-center justify-center">
-          <!-- Sun Icon -->
+          <!-- Sun Icon (shown in light mode) -->
           <transition
             enter-active-class="transition-all duration-300"
             enter-from-class="opacity-0 rotate-180 scale-0"
@@ -301,7 +301,7 @@ const handleMenuClick = (menu) => {
             ></i>
           </transition>
 
-          <!-- Moon Icon -->
+          <!-- Moon Icon (shown in dark mode) -->
           <transition
             enter-active-class="transition-all duration-300"
             enter-from-class="opacity-0 -rotate-180 scale-0"
@@ -317,10 +317,15 @@ const handleMenuClick = (menu) => {
           </transition>
         </div>
 
-        <!-- Label Text -->
-        <span class="font-semibold text-sm whitespace-nowrap">
-          {{ darkMode ? "Dark Mode" : "Light Mode" }}
-        </span>
+        <!-- Informative Label Text -->
+        <div class="flex flex-col items-start">
+          <span class="font-semibold text-sm whitespace-nowrap">
+            {{ darkMode ? "Dark Mode" : "Light Mode" }}
+          </span>
+          <span class="text-xs opacity-75 whitespace-nowrap">
+            {{ darkMode ? "Toggle Light" : "Toggle Dark" }}
+          </span>
+        </div>
 
         <!-- Glow Effect on Hover -->
         <div
