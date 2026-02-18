@@ -952,7 +952,7 @@ const toPublish = () => {
 };
 </script>
 <template>
-  <div class="w-full min-h-screen flex flex-col">
+  <div>
     <div class="flex flex-1 w-full">
       <div class="w-full">
         <!-- Main Content with Footer -->

@@ -738,7 +738,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
 </script>
 
 <template>
-  <div class="w-full">
+  <div>
     <!-- Toast Notification -->
     <Transition name="slide-fade">
       <div
