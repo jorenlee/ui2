@@ -8,6 +8,11 @@ const route = useRoute();
 const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
+
+const props = defineProps({
+  darkMode: Boolean,
+});
+
 const listItems = ref([]);
 let deleteIDItem = ref();
 let tableDisplay = ref(true);
@@ -534,16 +539,21 @@ const visiblePages = computed(() => {
       <div class="w-full">
 
 
-        <div class="bg-white border rounded-md p-2 text-xs gap-2 mt-2 mx-5">
+        <div class="border rounded-md p-2 text-xs gap-2 mt-2 mx-5"
+          :class="darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'">
           <div
-            class="flex justify-between bg-white border-b mb-2"
+            class="flex justify-between border-b mb-2"
+            :class="darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'"
           >
             <div class="flex items-center justify-between gap-x-3">
               <div class="flex items-center space-x-3">
                 <!-- Select All Button -->
                 <button
                   @click="handleSelectAll"
-                  class="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  class="flex items-center space-x-2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                  :class="darkMode
+                    ? 'border-gray-600 hover:bg-gray-700 bg-gray-800'
+                    : 'border-gray-300 hover:bg-gray-50 bg-white'"
                 >
                   <input
                     type="checkbox"
@@ -558,7 +568,8 @@ const visiblePages = computed(() => {
                     class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                     readonly
                   />
-                  <span class="font-medium text-gray-700"> Select All </span>
+                  <span class="font-medium"
+                    :class="darkMode ? 'text-gray-200' : 'text-gray-700'"> Select All </span>
                 </button>
 
                 <!-- Selected Count Badge -->
@@ -594,7 +605,8 @@ const visiblePages = computed(() => {
             <div class="lg:flex lg:gap-x-8 mb-3">
               <!-- Status Filters -->
               <div>
-                <label class="font-semibold mb-2 text-sm text-gray-700 block">Status:</label>
+                <label class="font-semibold mb-2 text-sm block"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-700'">Status:</label>
                 <div class="flex flex-wrap gap-2 items-center">
                   <label
                     class="inline-flex items-center lg:px-3 px-2 lg:py-1.5 py-1 rounded-full text-white cursor-pointer transition-all transform hover:scale-105 active:scale-95"
@@ -656,7 +668,8 @@ const visiblePages = computed(() => {
 
               <!-- Type of Access Filters -->
               <div>
-                <label class="font-semibold mb-2 text-sm text-gray-700 block">Type of Access:</label>
+                <label class="font-semibold mb-2 text-sm block"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-700'">Type of Access:</label>
                 <div class="flex flex-wrap gap-2 items-center">
                   <label
                     v-for="accessType in uniqueAccessTypes"
@@ -681,47 +694,64 @@ const visiblePages = computed(() => {
           <!-- Filters Section - Mobile Responsive Grid -->
           <div class="lg:flex w-full gap-3">
             <div class="flex flex-col lg:w-4/12">
-              <label class="font-semibold text-sm text-gray-700">Sort By</label>
-              <select v-model="sortDirection" class="border-2 border-gray-300 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+              <label class="font-semibold text-sm"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'">Sort By</label>
+              <select v-model="sortDirection" class="border-2 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                :class="darkMode
+                  ? 'border-gray-600 bg-gray-700 text-gray-200'
+                  : 'border-gray-300 bg-white text-gray-900'">
                 <option value="asc">Oldest First</option>
                 <option value="desc">Newest First</option>
               </select>
             </div>
             <div class="flex flex-col lg:w-4/12">
-              <label class="font-semibold text-sm text-gray-700">From Date</label>
+              <label class="font-semibold text-sm"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'">From Date</label>
               <input
                 type="date"
                 v-model="dateFrom"
-                class="border-2 border-gray-300 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                class="border-2 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                :class="darkMode
+                  ? 'border-gray-600 bg-gray-700 text-gray-200'
+                  : 'border-gray-300 bg-white text-gray-900'"
               />
             </div>
             <div class="flex flex-col lg:w-4/12">
-              <label class="font-semibold text-sm text-gray-700">To Date</label>
+              <label class="font-semibold text-sm"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'">To Date</label>
               <input
                 type="date"
                 v-model="dateTo"
-                class="border-2 border-gray-300 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                class="border-2 px-3 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                :class="darkMode
+                  ? 'border-gray-600 bg-gray-700 text-gray-200'
+                  : 'border-gray-300 bg-white text-gray-900'"
               />
             </div>
 
             <!-- Search Bar - Full Width Mobile Optimized -->
             <div class="flex flex-col w-full sm:flex-row gap-3 items-end">
               <div class="flex-1 w-full">
-                <label class="font-semibold text-sm text-gray-700 block">Search</label>
+                <label class="font-semibold text-sm block"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-700'">Search</label>
                 <div class="relative">
                   <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
                   <input
                     type="search"
                     v-model.trim="searchQuery"
                     placeholder="Search by name, email, tracking ID, remarks..."
-                    class="border-2 border-gray-300 px-3 py-1.5 rounded-lg pl-10 pr-10 w-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    class="border-2 py-1.5 rounded-lg pl-8 pr-5 w-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    :class="darkMode
+                      ? 'border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-400'
+                      : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'"
                     aria-label="Search Campus Pass requests"
                   />
                   <button
                     v-if="searchQuery"
                     @click="searchQuery = ''"
                     type="button"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                    :class="darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-400 hover:text-gray-700'"
                     aria-label="Clear search"
                     title="Clear search"
                   >
@@ -741,7 +771,10 @@ const visiblePages = computed(() => {
                     searchQuery = '';
                   }
                 "
-                class="px-4 py-2 bg-gray-100 hover:bg-gray-200 border-2 border-gray-300 rounded-lg font-medium transition-all whitespace-nowrap"
+                class="px-4 py-2 border-2 rounded-lg font-medium transition-all whitespace-nowrap"
+                :class="darkMode
+                  ? 'bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-200'
+                  : 'bg-gray-100 hover:bg-gray-200 border-gray-300 text-gray-900'"
               >
                 <i class="fa fa-refresh mr-2"></i>Reset Filters
               </button>
@@ -770,7 +803,8 @@ const visiblePages = computed(() => {
                 >
                   <!-- Improved Loading Skeleton -->
                   <div v-if="isLoading" class="space-y-3">
-                    <div v-for="n in 5" :key="n" class="bg-white rounded-lg shadow-md p-4 animate-pulse">
+                    <div v-for="n in 5" :key="n" class="rounded-lg shadow-md p-4 animate-pulse"
+                      :class="darkMode ? 'bg-gray-800' : 'bg-white'">
                       <div class="flex items-center gap-4">
                         <div class="w-4 h-4 bg-gray-300 rounded"></div>
                         <div class="flex-1 space-y-3">
@@ -788,22 +822,29 @@ const visiblePages = computed(() => {
 
                   <div v-else>
                     <!-- Empty State -->
-                    <div v-if="paginatedListItems.length === 0" class="text-center py-12 bg-white rounded-lg shadow-md">
-                      <i class="fa fa-inbox text-6xl text-gray-300 mb-4"></i>
-                      <p class="text-gray-500 text-lg font-medium">No requests found</p>
-                      <p class="text-gray-400 text-sm mt-2">Try adjusting your filters</p>
+                    <div v-if="paginatedListItems.length === 0" class="text-center py-12 rounded-lg shadow-md"
+                      :class="darkMode ? 'bg-gray-800' : 'bg-white'">
+                      <i class="fa fa-inbox text-6xl mb-4"
+                        :class="darkMode ? 'text-gray-600' : 'text-gray-300'"></i>
+                      <p class="text-lg font-medium"
+                        :class="darkMode ? 'text-gray-400' : 'text-gray-500'">No requests found</p>
+                      <p class="text-sm mt-2"
+                        :class="darkMode ? 'text-gray-500' : 'text-gray-400'">Try adjusting your filters</p>
                     </div>
 
                     <!-- Table Rows - Mobile Optimized -->
                     <div class="space-y-1" v-else>
                       <div
-                        class="bg-white rounded-lg shadow-md hover:shadow-xl transition-all duration-200 border-l-4 overflow-hidden"
-                        :class="{
-                          'border-green-500': b.approval_status === 'approved',
-                          'border-gray-500': b.approval_status === 'pending',
-                          'border-red-500': b.approval_status === 'declined',
-                          'border-yellow-500': b.approval_status === 'for revision'
-                        }"
+                        class="rounded-lg shadow-md hover:shadow-xl transition-all duration-200 border-l-4 overflow-hidden"
+                        :class="[
+                          darkMode ? 'bg-gray-800' : 'bg-white',
+                          {
+                            'border-green-500': b.approval_status === 'approved',
+                            'border-gray-500': b.approval_status === 'pending',
+                            'border-red-500': b.approval_status === 'declined',
+                            'border-yellow-500': b.approval_status === 'for revision'
+                          }
+                        ]"
                         v-for="(b, i) in paginatedListItems"
                         :key="i"
                       >
@@ -824,18 +865,21 @@ const visiblePages = computed(() => {
                             <!-- User Info Section -->
                             <div class="lg:w-5/12 w-full mb-3 lg:mb-0">
                               <div class="space-y-0">
-                                <div class="flex items-center text-sm font-semibold text-gray-800">
+                                <div class="flex items-center text-xs font-semibold"
+                                  :class="darkMode ? 'text-gray-200' : 'text-gray-800'">
                                   <i class="fa fa-user mr-2 text-green-700"></i>
-                                  <span class="truncate">
+                                  <span class="truncate uppercase">
                                     {{ b.incharge_lastname }}, {{ b.incharge_firstname }}
                                     <span v-if="b.incharge_middlename !== '-'">{{ b.incharge_middlename }}</span>
                                   </span>
                                 </div>
-                                <div class="flex items-center text-xs text-gray-600">
+                                <div class="flex items-center text-xs"
+                                  :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
                                   <i class="fa fa-envelope mr-2 text-gray-400"></i>
                                   <span class="truncate">{{ b.incharge_contact_email }}</span>
                                 </div>
-                                <div class="flex items-center text-xs text-gray-600">
+                                <div class="flex items-center text-xs"
+                                  :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
                                   <i class="fa fa-phone mr-2 text-gray-400"></i>
                                   <span>{{ b.incharge_contact_number }}</span>
                                 </div>
@@ -843,16 +887,17 @@ const visiblePages = computed(() => {
                             </div>
                             <!-- Schedule & Type Section -->
                             <div class="lg:w-6/12 w-full mb-3 lg:mb-0">
-                              <div class="space-y-0">
-                                <div class="flex items-center text-sm font-semibold text-gray-800">
+                              <div class="space-y-2">
+                                <div class="flex items-center text-xs"
+                                  :class="darkMode ? 'text-gray-200' : 'text-gray-800'">
                                   <i class="fa fa-calendar mr-2 text-green-700"></i>
-                                  <span>{{ b.schedule }}</span>
+                                  <span> Access Date: {{ b.schedule }}</span>
                                 </div>
-                                <div class="flex flex-wrap gap-1">
+                                <div>
                                   <span
                                     v-for="(j, i) in normalizeTypeOfAccess(b.type_of_access)"
                                     :key="i"
-                                    class="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium uppercase"
+                                    class="inline-block px-2 bg-blue-100 text-blue-800 rounded text-xs font-medium uppercase"
                                   >
                                     {{ j }}
                                   </span>
@@ -862,21 +907,29 @@ const visiblePages = computed(() => {
                             <!-- Remarks & Details Section -->
                             <div class="lg:w-6/12 w-full mb-3 lg:mb-0">
                               <div class="space-y-0">
-                                <div class="flex flex-col">
-                                  <label class="text-[10px] font-semibold text-gray-700">Remarks:</label>
+                                <div class="flex">
+                                  <label class="text-[10px] font-semibold w-14 flex"
+                                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'">Remarks:</label>
                                   <input
                                     type="text"
                                     v-model="b.remarks"
-                                    class="border-2 border-gray-300 rounded px-2 text-[10px] focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    class="border-2 rounded px-2 text-[10px] focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-full"
+                                    :class="darkMode
+                                      ? 'border-gray-600 bg-gray-700 text-gray-200'
+                                      : 'border-gray-300 bg-white text-gray-900'"
                                   />
                                 </div>
-                                <div class="flex flex-col">
-                                  <label class="text-[10px] font-semibold text-gray-700">Details:</label>
+                                <div class="flex">
+                                  <label class="text-[10px] font-semibold w-14 flex"
+                                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'">Details:</label>
                                   <input
                                     type="text"
                                     v-model="b.purpose"
                                     placeholder="Details"
-                                    class="border-2 border-gray-300 rounded px-2 text-[10px] focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                    class="border-2 rounded px-2 text-[10px] focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent w-full"
+                                    :class="darkMode
+                                      ? 'border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-400'
+                                      : 'border-gray-300 bg-white text-gray-900 placeholder-gray-500'"
                                   />
                                 </div>
                               </div>
@@ -885,16 +938,20 @@ const visiblePages = computed(() => {
                             <div class="lg:w-5/12 w-full mb-3 lg:mb-0 lg:pl-2">
                               <div class="space-y-0">
                                 <div
-                                  class="flex items-center justify-between p-2 rounded transition-colors"
-                                  :class="b.attendees === 'Group' ? 'bg-gray-100 hover:bg-gray-200 cursor-pointer' : ''"
+                                  class="flex items-center justify-between px-2 rounded transition-colors"
+                                  :class="darkMode
+                                    ? (b.attendees === 'Group' ? 'bg-gray-700 hover:bg-gray-600 cursor-pointer' : 'hidden')
+                                    : (b.attendees === 'Group' ? 'bg-gray-100 hover:bg-gray-200 cursor-pointer' : 'hidden')"
                                   @click="b.attendees === 'Group' ? btnToggleListsName(b.id) : null"
                                 >
                                   <div class="flex items-center gap-2">
-                                    <i class="fa fa-users text-green-700"></i>
-                                    <span class="font-semibold text-sm uppercase">{{ b.attendees }}</span>
+                                    <i class="fa fa-users"  :class="darkMode ? 'text-white' : 'text-green-700'"></i>
+                                    <span class="font-semibold text-sm uppercase"
+                                      :class="darkMode ? 'text-gray-200' : 'text-gray-900'">{{ b.attendees }}</span>
                                     <i
                                       v-if="b.attendees === 'Group'"
-                                      class="fa fa-caret-down text-green-700"
+                                      class="fa fa-caret-down "
+                                      :class="darkMode ? 'text-white' : 'text-green-700'"
                                     ></i>
                                   </div>
                                   <div class="flex gap-2">
@@ -905,7 +962,7 @@ const visiblePages = computed(() => {
                                       class="text-green-700 hover:text-green-900 transition-colors"
                                       title="Approved Activities"
                                     >
-                                      <i class="fa fa-file-pdf text-lg"></i>
+                                      <i class="fa fa-file-pdf text-lg" :class="darkMode ? 'text-white' : 'text-green-700'"></i>
                                     </a>
                                     <a
                                       v-if="b.approved_gso_docs_link !== '-'"
@@ -914,19 +971,21 @@ const visiblePages = computed(() => {
                                       class="text-green-700 hover:text-green-900 transition-colors"
                                       title="Approved GSO Docs"
                                     >
-                                      <i class="fa fa-file-pdf text-lg"></i>
+                                      <i class="fa fa-file-pdf text-lg" :class="darkMode ? 'text-white' : 'text-green-700'"></i>
                                     </a>
                                   </div>
                                 </div>
-                                <div class="text-xs text-gray-600">
+                                <div class="text-xs"
+                                  :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
                                   <span class="font-semibold">TID:</span> {{ b.tracking_id }}
                                 </div>
                               </div>
                             </div>
                             <!-- Status Section -->
-                            <div class="lg:w-3/12 w-full lg:pl-3">
-                              <div class="flex flex-col gap-1">
-                                <label class="text-xs font-semibold text-gray-700">Status</label>
+                            <div class="lg:w-auto w-full lg:pl-3">
+                              <div class="flex gap-1">
+                                <!-- <label class="text-xs font-semibold"
+                                  :class="darkMode ? 'text-gray-300' : 'text-gray-700'">Status</label> -->
                                 <select
                                   v-model="b.approval_status"
                                   class="border-2 rounded-lg px-3 py-2 text-sm font-semibold capitalize focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
@@ -952,10 +1011,12 @@ const visiblePages = computed(() => {
 
                       <div
                         v-show="toggleConfirmDelete"
-                        class="h-screen w-full px-5 bg-[#ffffffa3] shadow-2xl absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center"
+                        class="h-screen w-full px-5 shadow-2xl absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center"
+                        :class="darkMode ? 'bg-[#000000a3]' : 'bg-[#ffffffa3]'"
                       >
                         <div
-                          class="my-[10%] bg-white w-fit mx-auto px-10 py-3 rounded-lg shadow-2xl"
+                          class="my-[10%] w-fit mx-auto px-10 py-3 rounded-lg shadow-2xl"
+                          :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-900'"
                         >
                           <div class="my-6">
                             Are you sure you want to Delete?
@@ -983,7 +1044,10 @@ const visiblePages = computed(() => {
                       <button
                         :disabled="currentPage === 1"
                         @click="currentPage--"
-                        class="px-2 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-500 hover:text-white"
+                        class="px-2 py-2 mx-1 rounded"
+                        :class="darkMode
+                          ? 'bg-gray-700 hover:bg-gray-600 hover:text-white text-gray-200'
+                          : 'bg-gray-200 hover:bg-gray-500 hover:text-white text-gray-900'"
                       >
                         Prev
                       </button>
@@ -996,7 +1060,7 @@ const visiblePages = computed(() => {
                         :class="{
                           'px-4 py-2 mx-1 rounded': true,
                           'bg-green-800 text-white': currentPage === page,
-                          'bg-gray-200': currentPage !== page,
+                          [darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-200 text-gray-900']: currentPage !== page,
                         }"
                       >
                         {{ page }}
@@ -1005,31 +1069,38 @@ const visiblePages = computed(() => {
                       <button
                         :disabled="currentPage === totalPages"
                         @click="currentPage++"
-                        class="px-2 py-2 mx-1 bg-gray-200 rounded hover:bg-gray-500 hover:text-white"
+                        class="px-2 py-2 mx-1 rounded"
+                        :class="darkMode
+                          ? 'bg-gray-700 hover:bg-gray-600 hover:text-white text-gray-200'
+                          : 'bg-gray-200 hover:bg-gray-500 hover:text-white text-gray-900'"
                       >
                         Next
                       </button>
                     </div>
 
-                    <div v-else-if="!isLoading" class="text-center my-5">
-                      No items found!
-                    </div>
+                    
                   </div>
                 </div>
 
                 <div
                   v-if="toggleListsName"
-                  class="w-full z-10 bg-white h-full mb-16"
+                  class="w-full z-10 h-full mb-16"
+                  :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                 >
-                  <div class="border-4 border-gray-100 shadow-lg">
+                  <div class="border-4 shadow-lg"
+                    :class="darkMode ? 'border-gray-700' : 'border-gray-100'">
                     <div class="flex items-center">
-                      <div class="text-center border-b py-2 font-bold w-full">
+                      <div class="text-center border-b py-2 font-bold w-full"
+                        :class="darkMode ? 'border-gray-700 text-gray-200' : 'border-gray-200 text-gray-900'">
                         List of Names
                       </div>
 
                       <div
                         @click="toggleListsName = !toggleListsName"
-                        class="bg-gray-600 hover:bg-white hover:text-gray-600 border-b border-l text-white px-2 py-[8px]"
+                        class="border-b border-l px-2 py-[8px]"
+                        :class="darkMode
+                          ? 'bg-gray-700 hover:bg-gray-600 hover:text-gray-200 border-gray-700 text-white'
+                          : 'bg-gray-600 hover:bg-white hover:text-gray-600 border-gray-200 text-white'"
                       >
                         <i class="fa fa-close" aria-hidden="true"></i>
                       </div>
@@ -1040,12 +1111,13 @@ const visiblePages = computed(() => {
                       <div
                         v-for="(j, i) in displayListName"
                         :key="i"
-                        class="text-left lg:px-10 px-2 py-1 bg-gray-100 mb-0.5"
+                        class="text-left lg:px-10 px-2 py-1 mb-0.5"
+                        :class="darkMode ? 'bg-gray-700 text-gray-200' : 'bg-gray-100 text-gray-900'"
                       >
                         <div>
                           {{ j.lastname }}, {{ j.firstname }} {{ j.middlename }}
                         </div>
-                        <div>
+                        <div :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
                           {{ j.email }}
                         </div>
                       </div>

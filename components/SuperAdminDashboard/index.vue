@@ -389,7 +389,7 @@ const handleMenuClick = (menu) => {
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->
       <div
-        class="w-full pb-32"
+        class="w-full"
         :class="
           darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'
         "
@@ -399,7 +399,7 @@ const handleMenuClick = (menu) => {
           <div v-if="currentView === 'Profile'" class="w-full p-4">
             <SuperAdminDashboardWelcome :darkMode="darkMode" />
           </div>
-          <div v-if="currentView === 'Menu'" class="p-4 lg:p-6">
+          <div v-if="currentView === 'Menu'" class="lg:px-6 pt-6 pb-80">
             <SuperAdminDashboardWelcome :darkMode="darkMode" />
 
             <!-- Modern Grid Layout with Better Spacing -->
@@ -486,7 +486,7 @@ const handleMenuClick = (menu) => {
                           @click="handleMenuClick(item)"
                         >
                           <div
-                            class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                            class="w-10 h-10 flex items-center justify-center rounded-lg transition-colors"
                             :class="
                               currentView === item.view
                                 ? 'bg-white/20'
@@ -497,7 +497,7 @@ const handleMenuClick = (menu) => {
                               :class="[
                                 'fa',
                                 item.icon,
-                                'text-sm',
+                                'text-lg',
                                 currentView === item.view
                                   ? 'text-white'
                                   : 'text-green-600',
@@ -551,43 +551,40 @@ const handleMenuClick = (menu) => {
               </div>
             </div>
           </div>
-          <div v-else-if="currentView === 'form'" class="p-4">
-            <SuperAdminDashboardCmsForm
-              @contentSubmitted="handleContentSubmitted"
-              :darkMode="darkMode"
-            />
+          <div v-else-if="currentView === 'form'" class="p-4 pb-52">
+            <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted" :darkMode="darkMode"/>
           </div>
-          <div v-else-if="currentView === 'list'" class="p-4">
+          <div v-else-if="currentView === 'list'" class="p-4 pb-32">
             <SuperAdminDashboardCmsList :darkMode="darkMode" />
           </div>
-          <div v-else-if="currentView === 'appointments'" class="p-4">
+          <div v-else-if="currentView === 'appointments'" class="pb-32">
             <SuperAdminDashboardServicesLibraryReserved :darkMode="darkMode" />
           </div>
-          <div v-else-if="currentView === 'books'" class="p-4">
+          <div v-else-if="currentView === 'books'" class="pb-32">
             <SuperAdminDashboardServicesLibraryBooks :darkMode="darkMode" />
           </div>
-          <div v-else-if="currentView === 'schedules'" class="p-4">
+          <div v-else-if="currentView === 'schedules'" class="pb-24">
             <SuperAdminDashboardServicesLibrarySchedules :darkMode="darkMode" />
           </div>
-          <div v-else-if="currentView === 'hr-job-vacancy-list'" class="p-4">
+          <div v-else-if="currentView === 'hr-job-vacancy-list'" class="p-4 pb-32">
             <SuperAdminDashboardServicesHr :darkMode="darkMode" />
           </div>
-          <div v-else-if="currentView === 'hr-raffle'" class="p-4">
+          <div v-else-if="currentView === 'hr-raffle'" class="p-4 pb-32">
             <SuperAdminDashboardServicesHrRaffle :darkMode="darkMode" />
           </div>
-          <div v-else-if="currentView === 'university-calendar'" class="p-4">
+          <div v-else-if="currentView === 'university-calendar'" class="p-4 pb-32">
             <SuperAdminDashboardChancellorOffice :darkMode="darkMode" />
           </div>
-          <div v-else-if="currentView === 'npcc'" class="px-2 pb-2">
+          <div v-else-if="currentView === 'npcc'" class="px-2 pb-32">
             <SuperAdminDashboardServicesIt :darkMode="darkMode" />
           </div>
-          <div v-else-if="currentView === 'registrar'">
+          <div v-else-if="currentView === 'registrar'" class="pb-32">
             <SuperAdminDashboardServicesRegistrar :darkMode="darkMode" />
           </div>
-          <div v-else-if="currentView === 'campusPass'">
+          <div v-else-if="currentView === 'campusPass'" class="pb-32">
             <SuperAdminDashboardServicesCampusPass :darkMode="darkMode" />
           </div>
-          <div v-else-if="currentView === 'drs'">
+          <div v-else-if="currentView === 'drs'" class="pb-32">
             <SuperAdminDashboardServicesDrs :darkMode="darkMode" />
           </div>
         </div>

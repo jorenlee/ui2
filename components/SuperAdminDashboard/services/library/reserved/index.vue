@@ -7,6 +7,11 @@ import VueDatePicker from "@vuepic/vue-datepicker";
 import "../css/main.css";
 import _ from "lodash";
 
+// Define props
+const props = defineProps({
+  darkMode: { type: Boolean, default: false }
+});
+
 /* =========================
    STORE / ENDPOINT
 ========================= */
@@ -201,7 +206,8 @@ onBeforeUnmount(() => {
     <!-- ========================= APPOINTMENTS ========================= -->
     <div class="flex min-h-screen" v-if="!editForm">
       <div class="w-full">
-        <div class="border pb-5 m-5">
+        <div class="border pb-5 m-5"
+          :class="darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'">
           <div
             class="py-2 mb-5 text-center bg-green-900 text-white uppercase text-xs tracking-widest"
           >
@@ -226,12 +232,14 @@ onBeforeUnmount(() => {
 
             <!-- TIME SLOTS -->
             <div class="w-full relative">
-              <div class="w-full border rounded-md">
+              <div class="w-full border rounded-md"
+                :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-white'">
                 <ul class="grid lg:grid-cols-3 justify-center lg:gap-2 p-2">
                   <li
                     v-for="(t, i) in timeSelection[0].time"
                     :key="i"
                     class="font-bold border p-1 min-h-[30px]"
+                    :class="darkMode ? 'border-gray-700 text-gray-200' : 'border-gray-200 text-gray-900'"
                   >
                     <div class="text-xs">{{ t }}</div>
 
@@ -241,7 +249,7 @@ onBeforeUnmount(() => {
                       v-show="d.booking_time === t"
                       class="mt-1 text-xs"
                     >
-                   <p>
+                   <p :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                      {{ d.firstname }} {{ d.lastname }}
                    </p>
                       <button
@@ -276,7 +284,10 @@ onBeforeUnmount(() => {
       <div class="w-full p-5">
         <button
           @click="goToBack"
-          class="cursor-pointer tracking-tight flex bg-white hover:bg-green-900 text-green-800 hover:text-white px-3 py-1 rounded-lg font-bold mb-5"
+          class="cursor-pointer tracking-tight flex px-3 py-1 rounded-lg font-bold mb-5"
+          :class="darkMode
+            ? 'bg-gray-700 hover:bg-green-900 text-gray-200 hover:text-white border border-gray-600'
+            : 'bg-white hover:bg-green-900 text-green-800 hover:text-white border border-gray-300'"
         >
           <i class="fa fa-caret-left mt-0.5 mr-1"></i>
           Back
@@ -287,17 +298,25 @@ onBeforeUnmount(() => {
             <!-- BORROWER INFO -->
             <div class="lg:flex gap-2 mb-3">
               <div class="w-full">
-                <label class="font-semibold">Borrower Category</label>
+                <label class="font-semibold"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-800'">Borrower Category</label>
                 <input
-                  class="shadow-md p-2 w-full border"
+                  class="shadow-md p-2 w-full border rounded"
+                  :class="darkMode
+                    ? 'bg-gray-700 border-gray-600 text-gray-200'
+                    : 'bg-white border-gray-300 text-gray-900'"
                   v-model="library.borrower_category"
                   disabled
                 />
               </div>
               <div class="w-full">
-                <label class="font-semibold">ID Number</label>
+                <label class="font-semibold"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-800'">ID Number</label>
                 <input
-                  class="shadow-md p-2 w-full border"
+                  class="shadow-md p-2 w-full border rounded"
+                  :class="darkMode
+                    ? 'bg-gray-700 border-gray-600 text-gray-200'
+                    : 'bg-white border-gray-300 text-gray-900'"
                   v-model="library.id_number"
                   disabled
                 />
@@ -306,17 +325,25 @@ onBeforeUnmount(() => {
 
             <div class="lg:flex gap-2 mb-3">
               <div class="w-full">
-                <label class="font-semibold">Firstname</label>
+                <label class="font-semibold"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-800'">Firstname</label>
                 <input
-                  class="shadow-md p-2 w-full border"
+                  class="shadow-md p-2 w-full border rounded"
+                  :class="darkMode
+                    ? 'bg-gray-700 border-gray-600 text-gray-200'
+                    : 'bg-white border-gray-300 text-gray-900'"
                   v-model="library.firstname"
                   disabled
                 />
               </div>
               <div class="w-full">
-                <label class="font-semibold">Lastname</label>
+                <label class="font-semibold"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-800'">Lastname</label>
                 <input
-                  class="shadow-md p-2 w-full border"
+                  class="shadow-md p-2 w-full border rounded"
+                  :class="darkMode
+                    ? 'bg-gray-700 border-gray-600 text-gray-200'
+                    : 'bg-white border-gray-300 text-gray-900'"
                   v-model="library.lastname"
                   disabled
                 />
@@ -325,17 +352,25 @@ onBeforeUnmount(() => {
 
             <div class="lg:flex gap-2 mb-3">
               <div class="w-full">
-                <label class="font-semibold">Booking Date</label>
+                <label class="font-semibold"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-800'">Booking Date</label>
                 <input
-                  class="shadow-md p-2 w-full border"
+                  class="shadow-md p-2 w-full border rounded"
+                  :class="darkMode
+                    ? 'bg-gray-700 border-gray-600 text-gray-200'
+                    : 'bg-white border-gray-300 text-gray-900'"
                   v-model="library.booking_date"
                   disabled
                 />
               </div>
               <div class="w-full">
-                <label class="font-semibold">Booking Time</label>
+                <label class="font-semibold"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-800'">Booking Time</label>
                 <input
-                  class="shadow-md p-2 w-full border"
+                  class="shadow-md p-2 w-full border rounded"
+                  :class="darkMode
+                    ? 'bg-gray-700 border-gray-600 text-gray-200'
+                    : 'bg-white border-gray-300 text-gray-900'"
                   v-model="library.booking_time"
                   disabled
                 />
@@ -343,16 +378,21 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="mb-5">
-              <label class="font-semibold">Email</label>
+              <label class="font-semibold"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-800'">Email</label>
               <input
-                class="shadow-md p-2 w-full border"
+                class="shadow-md p-2 w-full border rounded"
+                :class="darkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-200'
+                  : 'bg-white border-gray-300 text-gray-900'"
                 v-model="library.email"
                 disabled
               />
             </div>
 
             <!-- BOOKS -->
-            <div class="shadow-lg p-3 mb-5">
+            <div class="shadow-lg p-3 mb-5"
+              :class="darkMode ? 'bg-gray-900/50 border border-gray-700' : 'bg-white'">
               <label
                 class="block text-white text-center py-1 mb-3 rounded"
                 :class="{
@@ -372,17 +412,26 @@ onBeforeUnmount(() => {
                   class="lg:flex gap-3 mb-3"
                 >
                   <input
-                    class="shadow-md p-2 w-full border"
+                    class="shadow-md p-2 w-full border rounded"
+                    :class="darkMode
+                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                      : 'bg-white border-gray-300 text-gray-900'"
                     v-model="b.book_title"
                     disabled
                   />
                   <input
-                    class="shadow-md p-2 w-full border"
+                    class="shadow-md p-2 w-full border rounded"
+                    :class="darkMode
+                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                      : 'bg-white border-gray-300 text-gray-900'"
                     v-model="b.book_author"
                     disabled
                   />
                   <input
-                    class="shadow-md p-2 w-full border uppercase"
+                    class="shadow-md p-2 w-full border rounded uppercase"
+                    :class="darkMode
+                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                      : 'bg-white border-gray-300 text-gray-900'"
                     v-model="b.book_call_number"
                     disabled
                   />

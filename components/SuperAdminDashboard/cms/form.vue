@@ -9,6 +9,11 @@ const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
+// Define props
+const props = defineProps({
+  darkMode: { type: Boolean, default: false }
+});
+
 // Define emit for parent
 const emit = defineEmits(["contentSubmitted"]);
 
@@ -779,51 +784,66 @@ const displayToast = (message, type = "success", duration = 3000) => {
     <!-- MAIN CONTENT AREA -->
     <div class="flex-1 overflow-y-auto">
       <div class="">
-        <div class="bg-white shadow-lg rounded-lg p-2">
-          <h1 class="text-xl font-bold mb-8 text-gray-800">
+        <div class="shadow-lg rounded-lg p-2"
+          :class="darkMode ? 'bg-gray-800' : 'bg-white'">
+          <h1 class="text-xl font-bold mb-8"
+            :class="darkMode ? 'text-gray-200' : 'text-gray-800'">
             Create New Content
           </h1>
 
           <div class="w-full space-y-6">
             <!-- TITLE -->
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <label class="block text-sm font-semibold mb-2"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                 Title
                 <span class="text-red-500">*</span>
               </label>
               <input
                 v-model="content.title"
                 type="text"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                :class="darkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
                 placeholder="Enter content title"
               />
             </div>
 
             <!-- AUTHORS -->
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2"
+              <label class="block text-sm font-semibold mb-2"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                 >Author/Authors</label
               >
               <input
                 v-model="content.authors"
                 type="text"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                :class="darkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
                 placeholder="e.g., John Doe, Jane Smith"
               />
             </div>
 
             <!-- Authors Selection -->
             <div>
-              <label class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+              <label class="block text-xs font-semibold mb-3 uppercase"
+                :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
                 >Default Authors</label
               >
               <div
-                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50"
+                class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border rounded-lg p-4"
+                :class="darkMode
+                  ? 'bg-gray-900/50 border-gray-700'
+                  : 'bg-gray-50 border-gray-200'"
               >
                 <div v-for="author in authorsList" :key="author">
                   <label
                     :for="author"
-                    class="cursor-pointer text-xs text-gray-700 flex items-center"
+                    class="cursor-pointer text-xs flex items-center"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                   >
                     <input
                       :id="author"
@@ -841,42 +861,56 @@ const displayToast = (message, type = "success", duration = 3000) => {
 
             <!-- DESCRIPTION -->
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <label class="block text-sm font-semibold mb-2"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                 Description
                 <span class="text-red-500">*</span>
               </label>
               <textarea
                 v-model="content.descriptions"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 h-80 focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y"
+                class="w-full border rounded-lg px-4 py-2 h-80 focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y"
+                :class="darkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
                 placeholder="Provide a detailed description of the content"
               ></textarea>
             </div>
 
             <!-- FILTERS & SDGs -->
-            <div class="border-t pt-6">
-              <label class="block text-sm font-semibold text-gray-700 mb-3"
+            <div class="border-t pt-6"
+              :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
+              <label class="block text-sm font-semibold mb-3"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                 >Filters</label
               >
               <input
                 v-model="content.filters"
                 type="text"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition mb-4"
+                class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition mb-4"
+                :class="darkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
                 placeholder="Enter filters manually or select SDGs below"
               />
 
               <!-- SDGs Selection -->
               <div>
                 <label
-                  class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                  class="block text-xs font-semibold mb-3 uppercase"
+                  :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
                   >Sustainable Development Goals (SDGs)</label
                 >
                 <div
-                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50"
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-64 overflow-y-auto border rounded-lg p-4"
+                  :class="darkMode
+                    ? 'bg-gray-900/50 border-gray-700'
+                    : 'bg-gray-50 border-gray-200'"
                 >
                   <div
                     v-for="sdg in sdgOptions"
                     :key="sdg.value"
-                    class="flex items-center hover:bg-white px-2 rounded transition"
+                    class="flex items-center px-2 rounded transition"
+                    :class="darkMode ? 'hover:bg-gray-800' : 'hover:bg-white'"
                   >
                     <input
                       type="checkbox"
@@ -893,7 +927,8 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     />
                     <label
                       :for="sdg.value"
-                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                      class="text-sm cursor-pointer flex items-center flex-1"
+                      :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                     >
                       <span
                         class="inline-block w-3 h-3 rounded-full mr-2 flex-shrink-0"
@@ -912,16 +947,21 @@ const displayToast = (message, type = "success", duration = 3000) => {
               <!-- Other Filters Group (By Page Filter) -->
               <div class="mt-6">
                 <label
-                  class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                  class="block text-xs font-semibold mb-3 uppercase"
+                  :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
                   >Other Filters Group</label
                 >
                 <div
-                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50"
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 border rounded-lg p-4"
+                  :class="darkMode
+                    ? 'bg-gray-900/50 border-gray-700'
+                    : 'bg-gray-50 border-gray-200'"
                 >
                   <div
                     v-for="pageFilter in pageFiltersList"
                     :key="pageFilter"
-                    class="flex items-center hover:bg-white px-2 rounded transition"
+                    class="flex items-center px-2 rounded transition"
+                    :class="darkMode ? 'hover:bg-gray-800' : 'hover:bg-white'"
                   >
                     <input
                       type="checkbox"
@@ -933,7 +973,8 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     />
                     <label
                       :for="`page-${pageFilter}`"
-                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                      class="text-sm cursor-pointer flex items-center flex-1"
+                      :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                     >
                       <span class="text-xs">{{ pageFilter }}</span>
                     </label>
@@ -944,16 +985,21 @@ const displayToast = (message, type = "success", duration = 3000) => {
               <!-- News and Updates Content Type -->
               <div class="mt-6">
                 <label
-                  class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                  class="block text-xs font-semibold mb-3 uppercase"
+                  :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
                   >News and Updates Content Type</label
                 >
                 <div
-                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50"
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 border rounded-lg p-4"
+                  :class="darkMode
+                    ? 'bg-gray-900/50 border-gray-700'
+                    : 'bg-gray-50 border-gray-200'"
                 >
                   <div
                     v-for="contentType in contentTypeList"
                     :key="contentType"
-                    class="flex items-center hover:bg-white px-2 rounded transition"
+                    class="flex items-center px-2 rounded transition"
+                    :class="darkMode ? 'hover:bg-gray-800' : 'hover:bg-white'"
                   >
                     <input
                       type="checkbox"
@@ -965,7 +1011,8 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     />
                     <label
                       :for="`content-${contentType}`"
-                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                      class="text-sm cursor-pointer flex items-center flex-1"
+                      :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                     >
                       <span class="text-xs">{{ contentType }}</span>
                     </label>
@@ -976,15 +1023,20 @@ const displayToast = (message, type = "success", duration = 3000) => {
               <!-- Approval Level Status Filter -->
               <div class="mt-6">
                 <label
-                  class="block text-xs font-semibold text-gray-600 mb-3 uppercase"
+                  class="block text-xs font-semibold mb-3 uppercase"
+                  :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
                   >Approval Level Status Filter</label
                 >
                 <div
-                  class="grid grid-cols-1 md:grid-cols-3 gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50"
+                  class="grid grid-cols-1 md:grid-cols-3 gap-3 border rounded-lg p-4"
+                  :class="darkMode
+                    ? 'bg-gray-900/50 border-gray-700'
+                    : 'bg-gray-50 border-gray-200'"
                 >
                   <!-- Verified -->
                   <div
-                    class="flex items-center hover:bg-white px-2 rounded transition"
+                    class="flex items-center px-2 rounded transition"
+                    :class="darkMode ? 'hover:bg-gray-800' : 'hover:bg-white'"
                   >
                     <input
                       type="checkbox"
@@ -994,7 +1046,8 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     />
                     <label
                       for="approval-verified"
-                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
+                      class="text-sm cursor-pointer flex items-center flex-1"
+                      :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                     >
                       <span class="text-xs font-medium">Verified</span>
                     </label>
@@ -1002,8 +1055,11 @@ const displayToast = (message, type = "success", duration = 3000) => {
 
                   <!-- Approved -->
                   <div
-                    class="flex items-center hover:bg-white px-2 rounded transition"
-                    :class="{ 'opacity-50': !approvalVerified }"
+                    class="flex items-center px-2 rounded transition"
+                    :class="[
+                      darkMode ? 'hover:bg-gray-800' : 'hover:bg-white',
+                      { 'opacity-50': !approvalVerified }
+                    ]"
                   >
                     <input
                       type="checkbox"
@@ -1014,8 +1070,11 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     />
                     <label
                       for="approval-approved"
-                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
-                      :class="{ 'cursor-not-allowed': !approvalVerified }"
+                      class="text-sm cursor-pointer flex items-center flex-1"
+                      :class="[
+                        darkMode ? 'text-gray-300' : 'text-gray-700',
+                        { 'cursor-not-allowed': !approvalVerified }
+                      ]"
                     >
                       <span class="text-xs font-medium">Approved</span>
                     </label>
@@ -1023,8 +1082,11 @@ const displayToast = (message, type = "success", duration = 3000) => {
 
                   <!-- Published -->
                   <div
-                    class="flex items-center hover:bg-white px-2 rounded transition"
-                    :class="{ 'opacity-50': !approvalApproved || !approvalVerified }"
+                    class="flex items-center px-2 rounded transition"
+                    :class="[
+                      darkMode ? 'hover:bg-gray-800' : 'hover:bg-white',
+                      { 'opacity-50': !approvalApproved || !approvalVerified }
+                    ]"
                   >
                     <input
                       type="checkbox"
@@ -1035,14 +1097,18 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     />
                     <label
                       for="approval-published"
-                      class="text-sm cursor-pointer text-gray-700 flex items-center flex-1"
-                      :class="{ 'cursor-not-allowed': !approvalApproved || !approvalVerified }"
+                      class="text-sm cursor-pointer flex items-center flex-1"
+                      :class="[
+                        darkMode ? 'text-gray-300' : 'text-gray-700',
+                        { 'cursor-not-allowed': !approvalApproved || !approvalVerified }
+                      ]"
                     >
                       <span class="text-xs font-medium">Published</span>
                     </label>
                   </div>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">
+                <p class="text-xs mt-2"
+                  :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                   <i class="fa fa-info-circle mr-1"></i>
                   Must be verified before approved, and approved before published
                 </p>
@@ -1051,20 +1117,26 @@ const displayToast = (message, type = "success", duration = 3000) => {
 
             <!-- DATE -->
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-2"
+              <label class="block text-sm font-semibold mb-2"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                 >Date</label
               >
               <input
                 v-model="content.date"
                 type="date"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                :class="darkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-200'
+                  : 'bg-white border-gray-300 text-gray-900'"
               />
             </div>
 
             <!-- LINKS -->
-            <div class="border-t pt-6">
+            <div class="border-t pt-6"
+              :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
               <div class="flex justify-between items-center mb-4">
-                <label class="text-sm font-semibold text-gray-700"
+                <label class="text-sm font-semibold"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                   >Attachments (Links)</label
                 >
                 <button
@@ -1083,7 +1155,10 @@ const displayToast = (message, type = "success", duration = 3000) => {
                 >
                   <input
                     v-model="content.links[i]"
-                    class="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    class="flex-1 border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                    :class="darkMode
+                      ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                      : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
                     placeholder="https://example.com"
                   />
                   <button
@@ -1097,22 +1172,31 @@ const displayToast = (message, type = "success", duration = 3000) => {
             </div>
 
             <!-- FILE INPUT -->
-            <div class="border-t pt-6">
-              <label class="block text-sm font-semibold text-gray-700 mb-2"
+            <div class="border-t pt-6"
+              :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
+              <label class="block text-sm font-semibold mb-2"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                 >Upload Files</label
               >
-              <p class="text-xs text-gray-500 mb-3">
+              <p class="text-xs mb-3"
+                :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                 Supported: Images (JPG, PNG), Videos (MP4), PDFs, Audio (MP3)
               </p>
 
               <label
-                class="block border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-green-500 hover:bg-green-50 transition"
+                class="block border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition"
+                :class="darkMode
+                  ? 'border-gray-600 hover:border-green-500 hover:bg-gray-700'
+                  : 'border-gray-300 hover:border-green-500 hover:bg-green-50'"
               >
-                <i class="fa fa-cloud-upload text-3xl text-gray-400 mb-2"></i>
-                <p class="text-sm font-medium text-gray-700">
+                <i class="fa fa-cloud-upload text-3xl mb-2"
+                  :class="darkMode ? 'text-gray-500' : 'text-gray-400'"></i>
+                <p class="text-sm font-medium"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                   Click to upload or drag and drop
                 </p>
-                <p class="text-xs text-gray-500 mt-1">
+                <p class="text-xs mt-1"
+                  :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                   Images: Max 1MB | PDFs & Other files: Max 10MB
                 </p>
                 <input
@@ -1127,10 +1211,12 @@ const displayToast = (message, type = "success", duration = 3000) => {
               <!-- File Previews -->
               <div v-if="selectedFiles.length > 0" class="mt-6">
                 <div class="flex items-center justify-between mb-4">
-                  <h3 class="text-sm font-semibold text-gray-700">
+                  <h3 class="text-sm font-semibold"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                     Uploaded Files ({{ selectedFiles.length }})
                   </h3>
-                  <p class="text-xs text-gray-500 flex items-center gap-2">
+                  <p class="text-xs flex items-center gap-2"
+                    :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                     <i class="fa fa-arrows-alt text-green-600"></i>
                     Drag to reorder
                   </p>
@@ -1148,9 +1234,13 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     @drop="handleDrop($event, index)"
                     @dragend="handleDragEnd"
                     :class="[
-                      'relative border-2 rounded-lg overflow-hidden bg-white hover:shadow-xl transition-all duration-300 group cursor-grab active:cursor-grabbing',
+                      darkMode
+                        ? 'relative border-2 rounded-lg overflow-hidden bg-gray-700 hover:shadow-xl transition-all duration-300 group cursor-grab active:cursor-grabbing'
+                        : 'relative border-2 rounded-lg overflow-hidden bg-white hover:shadow-xl transition-all duration-300 group cursor-grab active:cursor-grabbing',
                       draggedIndex === index ? 'opacity-40 scale-90 rotate-2 shadow-2xl ring-4 ring-blue-300' : '',
-                      dragOverIndex === index && draggedIndex !== index ? 'border-green-500 bg-green-50 scale-110 shadow-2xl ring-4 ring-green-300 animate-pulse' : 'border-gray-300 hover:border-blue-400',
+                      dragOverIndex === index && draggedIndex !== index
+                        ? (darkMode ? 'border-green-500 bg-gray-600 scale-110 shadow-2xl ring-4 ring-green-300 animate-pulse' : 'border-green-500 bg-green-50 scale-110 shadow-2xl ring-4 ring-green-300 animate-pulse')
+                        : (darkMode ? 'border-gray-600 hover:border-blue-400' : 'border-gray-300 hover:border-blue-400'),
                     ]"
                   >
                     <!-- Drag Handle Icon - Always Visible -->
@@ -1193,7 +1283,8 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     <!-- PDF Preview -->
                     <div
                       v-else-if="fileObj.type === 'pdf'"
-                      class="h-24 bg-red-50 flex items-center justify-center"
+                      class="h-24 flex items-center justify-center"
+                      :class="darkMode ? 'bg-red-900/30' : 'bg-red-50'"
                     >
                       <i class="fa fa-file-pdf text-red-600 text-2xl"></i>
                     </div>
@@ -1201,20 +1292,25 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     <!-- Other Files -->
                     <div
                       v-else
-                      class="h-24 bg-gray-100 flex items-center justify-center"
+                      class="h-24 flex items-center justify-center"
+                      :class="darkMode ? 'bg-gray-700' : 'bg-gray-100'"
                     >
-                      <i class="fa fa-file text-gray-600 text-2xl"></i>
+                      <i class="fa fa-file text-2xl"
+                        :class="darkMode ? 'text-gray-400' : 'text-gray-600'"></i>
                     </div>
 
                     <!-- File Info -->
-                    <div class="p-2 border-t border-gray-200">
+                    <div class="p-2 border-t"
+                      :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
                       <p
-                        class="text-xs font-medium text-gray-800 truncate"
+                        class="text-xs font-medium truncate"
+                        :class="darkMode ? 'text-gray-200' : 'text-gray-800'"
                         :title="fileObj.name"
                       >
                         {{ fileObj.name }}
                       </p>
-                      <p class="text-xs text-gray-500 mt-1">
+                      <p class="text-xs mt-1"
+                        :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                         {{ formatFileSize(fileObj.file.size) }}
                       </p>
                     </div>
@@ -1222,13 +1318,15 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     <!-- Upload Status -->
                     <div
                       v-if="fileObj.uploading"
-                      class="absolute inset-0 bg-white bg-opacity-95 flex items-center justify-center"
+                      class="absolute inset-0 bg-opacity-95 flex items-center justify-center"
+                      :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                     >
                       <div class="text-center">
                         <i
                           class="fa fa-spinner fa-spin text-green-600 text-xl"
                         ></i>
-                        <p class="text-xs text-gray-600 mt-2">Uploading...</p>
+                        <p class="text-xs mt-2"
+                          :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Uploading...</p>
                       </div>
                     </div>
 
@@ -1260,7 +1358,8 @@ const displayToast = (message, type = "success", duration = 3000) => {
             </div>
 
             <!-- SUBMIT BUTTON -->
-            <div class="border-t pt-6 flex gap-3">
+            <div class="border-t pt-6 flex gap-3"
+              :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
               <button
                 @click="submitContent"
                 :disabled="submitting"
@@ -1271,7 +1370,10 @@ const displayToast = (message, type = "success", duration = 3000) => {
               </button>
               <button
                 @click="resetForm"
-                class="px-6 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-lg font-bold transition-colors"
+                class="px-6 py-3 rounded-lg font-bold transition-colors"
+                :class="darkMode
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                  : 'bg-gray-300 hover:bg-gray-400 text-gray-800'"
               >
                 <i class="fa fa-refresh mr-2"></i>Clear
               </button>
@@ -1290,12 +1392,16 @@ const displayToast = (message, type = "success", duration = 3000) => {
       @click="closeImagePreview"
     >
       <div
-        class="relative max-w-4xl max-h-[90vh] overflow-auto bg-white p-2 rounded-lg"
+        class="relative max-w-4xl max-h-[90vh] overflow-auto p-2 rounded-lg"
+        :class="darkMode ? 'bg-gray-800' : 'bg-white'"
         @click.stop
       >
         <button
           @click="closeImagePreview"
-          class="absolute top-2 right-2 text-gray-700 hover:text-red-500 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-md z-10"
+          class="absolute top-2 right-2 hover:text-red-500 rounded-full w-8 h-8 flex items-center justify-center shadow-md z-10"
+          :class="darkMode
+            ? 'text-gray-300 bg-gray-700 hover:bg-gray-600'
+            : 'text-gray-700 bg-white hover:bg-gray-100'"
         >
           <i class="fa fa-times"></i>
         </button>

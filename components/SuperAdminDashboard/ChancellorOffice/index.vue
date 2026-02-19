@@ -1,5 +1,6 @@
 <template>
-  <div class="p-4 min-h-screen bg-gray-50">
+  <div class="p-4 min-h-screen"
+    :class="darkMode ? 'bg-gray-900' : 'bg-gray-50'">
     <div class="max-w-6xl mx-auto">
       <div class="flex">
         <h2 class="text-xl font-bold text-green-800 text-center mb-4 w-full">
@@ -17,7 +18,8 @@
         </a>
       </div>
 
-      <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="rounded-lg shadow overflow-hidden"
+        :class="darkMode ? 'bg-gray-800' : 'bg-white'">
         <iframe
           class="w-full h-[75vh] border-0"
           referrerpolicy="no-referrer"
@@ -36,6 +38,11 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
+
+// Define props
+const props = defineProps({
+  darkMode: { type: Boolean, default: false }
+});
 
 const baseCalendarUrl =
   "https://calendar.google.com/calendar/embed?height=600&wkst=1&ctz=Asia%2FManila&showPrint=0&src=Y2FsZW5kYXJAbHN1LmVkdS5waA&src=ZW4ucGhpbGlwcGluZXMjaG9saWRheUBncm91cC52LmNhbGVuZGFyLmdvb2dsZS5jb20&color=%23039be5&color=%230b8043";

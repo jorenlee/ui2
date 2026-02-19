@@ -4,7 +4,7 @@
       <div class="w-11/12 mx-auto lg:my-10 rounded-lg">
         <!-- Header -->
         <div class="flex items-center justify-between mb-5">
-          <h1 class="text-green-700 font-bold lg:text-3xl text-xl">Career Opportunities</h1>
+          <h1 class=" font-bold lg:text-3xl text-xl"  :class="darkMode ? 'text-white' : 'text-green-700'">Career Opportunities</h1>
 
           <div class="flex items-center gap-3">
             <div
@@ -17,10 +17,12 @@
         </div>
 
         <!-- CONTENT CARD -->
-        <div class="shadow lg:px-5 px-4 lg:py-5 py-3 rounded-lg bg-white">
+        <div class="shadow lg:px-5 px-4 lg:py-5 py-3 rounded-lg"
+          :class="darkMode ? 'bg-gray-800' : 'bg-white'">
           <!-- Loading skeleton -->
           <div v-if="loading" class="grid lg:grid-cols-5 gap-4">
-            <div v-for="n in 5" :key="n" class="animate-pulse bg-gray-100 rounded h-48"></div>
+            <div v-for="n in 5" :key="n" class="animate-pulse rounded h-48"
+              :class="darkMode ? 'bg-gray-700' : 'bg-gray-100'"></div>
           </div>
 
           <!-- List -->
@@ -29,7 +31,8 @@
               <li
                 v-for="c in careers"
                 :key="c.id"
-                class="border rounded-lg shadow-md bg-white relative overflow-hidden list-none mb-3"
+                class="border rounded-lg shadow-md relative overflow-hidden list-none mb-3"
+                :class="darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'"
               >
                 <div
                   v-if="c.image_link && c.image_link.length"
@@ -61,7 +64,8 @@
             </div>
 
             <!-- Empty -->
-            <div v-else class="italic text-gray-400 text-center p-10">
+            <div v-else class="italic text-center p-10"
+              :class="darkMode ? 'text-gray-500' : 'text-gray-400'">
               Please Add Entry, No Results Found!
             </div>
           </div>
@@ -73,16 +77,18 @@
     <div v-if="toggleAdd" class="fixed inset-0 z-50 flex items-center justify-center">
       <div class="absolute inset-0 bg-black opacity-40" @click="toggleAddModal"></div>
 
-      <div class="relative bg-white w-[95%] max-w-xl p-6 rounded-lg shadow-lg z-10">
-        <h2 class="text-lg font-semibold mb-4">Add Career Image</h2>
+      <div class="relative w-[95%] max-w-xl p-6 rounded-lg shadow-lg z-10"
+        :class="darkMode ? 'bg-gray-800' : 'bg-white'">
+        <h2 class="text-lg font-semibold mb-4"
+          :class="darkMode ? 'text-gray-200' : 'text-gray-800'">Add Career Image</h2>
 
         <!-- Drag & Drop -->
         <div
           class="border-2 border-dashed rounded p-4 text-center mb-3 cursor-pointer"
-          :class="{
-            'border-green-500 bg-green-50': dragging,
-            'opacity-60': isSubmitting
-          }"
+          :class="[
+            dragging ? 'border-green-500 bg-green-50' : (darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'),
+            { 'opacity-60': isSubmitting }
+          ]"
           @dragenter.prevent="dragging = true"
           @dragover.prevent="dragging = true"
           @dragleave.prevent="dragging = false"
@@ -99,27 +105,34 @@
 
           <div v-if="preview" class="flex items-center gap-3 justify-center">
             <img :src="preview" class="h-20 rounded object-cover" />
-            <div class="text-sm text-gray-700">
+            <div class="text-sm"
+              :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
               {{ fileName }}
               <br />
               <button class="text-xs text-red-600 underline" @click.stop="removeFile">Remove</button>
             </div>
           </div>
 
-          <div v-else class="text-sm text-gray-600">
+          <div v-else class="text-sm"
+            :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
             Drag & drop an image here, or click to select.<br />
-            <span class="text-xs text-gray-400">(Single image only)</span>
+            <span class="text-xs"
+              :class="darkMode ? 'text-gray-500' : 'text-gray-400'">(Single image only)</span>
           </div>
         </div>
 
         <!-- Actions -->
         <div class="flex items-center justify-end gap-3">
-          <button class="px-4 py-2 rounded border" @click="toggleAddModal" :disabled="isSubmitting">
+          <button class="px-4 py-2 rounded border"
+            :class="darkMode
+              ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600'
+              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'"
+            @click="toggleAddModal" :disabled="isSubmitting">
             Cancel
           </button>
 
           <button
-            class="px-4 py-2 rounded bg-green-700 text-white disabled:opacity-60"
+            class="px-4 py-2 rounded bg-green-700 text-white disabled:opacity-60 hover:bg-green-800"
             @click="createCareer"
             :disabled="isSubmitting"
           >
@@ -128,7 +141,8 @@
           </button>
         </div>
 
-        <div v-if="uploadStatus" class="mt-3 text-sm text-gray-600">{{ uploadStatus }}</div>
+        <div v-if="uploadStatus" class="mt-3 text-sm"
+          :class="darkMode ? 'text-gray-400' : 'text-gray-600'">{{ uploadStatus }}</div>
       </div>
     </div>
 
@@ -137,21 +151,29 @@
       <div class="absolute inset-0 bg-black opacity-80" @click="closeView"></div>
       <div class="relative z-10">
         <img :src="viewImage" class="max-w-[90vw] max-h-[85vh] rounded-lg shadow-lg" />
-        <button class="absolute top-2 right-2 bg-white rounded-full p-2 shadow" @click="closeView">✕</button>
+        <button class="absolute top-2 right-2 rounded-full p-2 shadow"
+          :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-800'"
+          @click="closeView">✕</button>
       </div>
     </div>
 
     <!-- DELETE CONFIRM -->
     <div v-if="toggleConfirmDelete" class="fixed inset-0 z-50 flex items-center justify-center">
       <div class="absolute inset-0 bg-black opacity-40" @click="toggleDeleteBtn()"></div>
-      <div class="relative bg-white p-6 rounded shadow-lg z-10 w-[90%] max-w-md text-center">
-        <p class="mb-4 font-semibold">Are you sure you want to delete this entry?</p>
+      <div class="relative p-6 rounded shadow-lg z-10 w-[90%] max-w-md text-center"
+        :class="darkMode ? 'bg-gray-800' : 'bg-white'">
+        <p class="mb-4 font-semibold"
+          :class="darkMode ? 'text-gray-200' : 'text-gray-800'">Are you sure you want to delete this entry?</p>
 
         <div class="flex items-center justify-center gap-4">
-          <button class="px-4 py-2 rounded border" @click="toggleDeleteBtn()">Cancel</button>
+          <button class="px-4 py-2 rounded border"
+            :class="darkMode
+              ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600'
+              : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'"
+            @click="toggleDeleteBtn()">Cancel</button>
 
           <button
-            class="px-4 py-2 rounded bg-red-600 text-white"
+            class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
             @click="deleteCareer"
             :disabled="isDeleting"
           >
@@ -183,6 +205,11 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useUserStore } from "@/stores/user";
+
+// Define props
+const props = defineProps({
+  darkMode: { type: Boolean, default: false }
+});
 
 const userStore = useUserStore();
 const config = useRuntimeConfig();

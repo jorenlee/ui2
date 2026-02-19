@@ -1912,7 +1912,9 @@ const itemStatusClass = (status) => {
               'px-4 py-2 rounded border transition-colors font-semibold text-sm',
               currentPage === page
                 ? 'bg-green-600 text-white border-green-600'
-                : 'bg-white hover:bg-gray-100',
+                : darkMode
+                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-200'
+                  : 'bg-white hover:bg-gray-100 border-gray-300 text-gray-900',
             ]"
           >
             {{ page }}
@@ -1923,7 +1925,12 @@ const itemStatusClass = (status) => {
         <button
           @click="goToPage(currentPage + 1)"
           :disabled="currentPage === totalPages"
-          class="px-3 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="px-3 py-2 rounded border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          :class="
+            darkMode
+              ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-200'
+              : 'bg-white border-gray-300 text-gray-900'
+          "
           title="Next Page"
         >
           <i class="fa fa-angle-right"></i>
@@ -1933,7 +1940,12 @@ const itemStatusClass = (status) => {
         <button
           @click="goToPage(totalPages)"
           :disabled="currentPage === totalPages"
-          class="px-3 py-2 rounded bg-white border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          class="px-3 py-2 rounded border hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          :class="
+            darkMode
+              ? 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-200'
+              : 'bg-white border-gray-300 text-gray-900'
+          "
           title="Last Page"
         >
           <i class="fa fa-angle-double-right"></i>
@@ -1942,7 +1954,8 @@ const itemStatusClass = (status) => {
 
       <!-- Page Info -->
       <div
-        class="ml-4 text-sm text-gray-600 font-medium w-full text-center py-2"
+        class="ml-4 text-sm font-medium w-full text-center py-2"
+        :class="darkMode ? 'text-gray-300' : 'text-gray-600'"
       >
         Page {{ currentPage }} of {{ totalPages }}
       </div>
@@ -1954,16 +1967,21 @@ const itemStatusClass = (status) => {
       class="fixed inset-0 bg-black/40 flex justify-center items-center z-50 lg:px-0 px-2"
     >
       <div
-        class="bg-white lg:w-11/12 rounded-lg lg:p-6 py-2 h-5/6 overflow-y-auto relative px-2"
+        class=" lg:w-11/12 rounded-lg lg:p-6 py-2 h-5/6 overflow-y-auto relative px-2"
+         :class="darkMode ? 'bg-gray-800' : 'bg-white'"
       >
         <div>
           <div class="flex lg:text-sm text-xs items-center lg:pb-5 pb-2">
-            <h3 class="font-bold lg:text-center text-left w-full">
+            <h3 class="font-bold lg:text-center text-left w-full"
+              :class="darkMode ? 'text-gray-200' : 'text-gray-800'">
               {{ isCreate ? "Create Ticket (Job Request)" : "Ticket Details" }}
             </h3>
 
             <button
-              class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 font-semibold"
+              class="px-4 py-2 rounded font-semibold transition-colors"
+              :class="darkMode
+                ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                : 'bg-gray-300 hover:bg-gray-400 text-gray-900'"
               @click="closeModal"
               :disabled="modalLoading"
             >
@@ -1972,11 +1990,15 @@ const itemStatusClass = (status) => {
           </div>
           <!-- BASIC INFO -->
           <div
-            class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm"
+            class="border-2 rounded-xl lg:p-4 p-3 mb-4 shadow-sm"
+            :class="darkMode
+              ? 'border-gray-700 bg-gray-800'
+              : 'border-green-100 bg-gradient-to-br from-gray-50 to-white'"
           >
             <div class="mb-4">
               <h3
-                class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center"
+                class="lg:text-base text-sm font-bold mb-1 flex items-center"
+                :class="darkMode ? 'text-green-400' : 'text-green-800'"
               >
                 <i class="fas fa-user-circle mr-2"></i>
                 Requestor Information
@@ -1986,7 +2008,8 @@ const itemStatusClass = (status) => {
             <div class="gap-3">
               <div class="grid lg:grid-cols-2 gap-3 mb-3">
                 <div class="w-full">
-                  <label class="text-sm font-semibold mb-2 block text-gray-700"
+                  <label class="text-sm font-semibold mb-2 block"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                     ><i class="fas fa-user text-green-600 mr-1"></i>Full Name /
                     Requestor
                     <span v-if="isCreate" class="text-red-600">*</span></label
@@ -1994,20 +2017,26 @@ const itemStatusClass = (status) => {
                   <input
                     v-model="info.requestor_fullname"
                     placeholder="Enter full name"
-                    class="input w-full lg:p-3 p-2 rounded-lg border-2 border-gray-200 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    class="input w-full lg:p-3 p-2 rounded-lg border-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    :class="[
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500',
+                      {
+                        'opacity-50 cursor-not-allowed':
+                          !isCreate &&
+                          (!isAssignedTechnician || !info.ticket_locked_by_email),
+                      }
+                    ]"
                     :disabled="
                       !isCreate &&
                       (!isAssignedTechnician || !info.ticket_locked_by_email)
                     "
-                    :class="{
-                      'bg-gray-100 cursor-not-allowed':
-                        !isCreate &&
-                        (!isAssignedTechnician || !info.ticket_locked_by_email),
-                    }"
                   />
                 </div>
                 <div class="w-full">
-                  <label class="text-sm font-semibold mb-2 block text-gray-700"
+                  <label class="text-sm font-semibold mb-2 block"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                     ><i class="fas fa-envelope text-green-600 mr-1"></i
                     >Requestor LSU Email
                     <span v-if="isCreate" class="text-red-600">*</span></label
@@ -2015,21 +2044,27 @@ const itemStatusClass = (status) => {
                   <input
                     v-model="info.requestor_lsu_email"
                     placeholder="e.g johndoe@lsu.edu.ph"
-                    class="input w-full lg:p-3 p-2 rounded-lg border-2 border-gray-200 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    class="input w-full lg:p-3 p-2 rounded-lg border-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    :class="[
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500',
+                      {
+                        'opacity-50 cursor-not-allowed':
+                          !isCreate &&
+                          (!isAssignedTechnician || !info.ticket_locked_by_email),
+                      }
+                    ]"
                     :disabled="
                       !isCreate &&
                       (!isAssignedTechnician || !info.ticket_locked_by_email)
                     "
-                    :class="{
-                      'bg-gray-100 cursor-not-allowed':
-                        !isCreate &&
-                        (!isAssignedTechnician || !info.ticket_locked_by_email),
-                    }"
                   />
                 </div>
               </div>
               <div class="md:col-span-2">
-                <label class="text-sm font-semibold mb-2 block text-gray-700">
+                <label class="text-sm font-semibold mb-2 block"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                   <i class="fas fa-users text-green-600 mr-1"></i>
                   {{ isCreate ? "Assign Personnel" : "Assigned Personnel" }}
                   <span
@@ -2043,17 +2078,26 @@ const itemStatusClass = (status) => {
                 <!-- CREATE MODE: Show checkboxes for all personnel -->
                 <div
                   v-if="isCreate"
-                  class="border-2 border-gray-200 rounded-lg p-2 flex flex-wrap gap-2 bg-white"
+                  class="border-2 rounded-lg p-2 flex flex-wrap gap-2"
+                  :class="darkMode
+                    ? 'border-gray-600 bg-gray-900/50'
+                    : 'border-gray-200 bg-white'"
                 >
                   <label
                     v-for="tech in TECHNICIANS_PERSONNEL"
                     :key="tech.email"
-                    class="flex items-center gap-x-2 lg:text-sm text-xs lg:w-[calc(33.333%-0.5rem)] w-full whitespace-nowrap py-2 px-3 rounded-lg border-2 transition-all cursor-pointer hover:bg-gray-50"
-                    :class="{
-                      'bg-green-50 border-green-500 font-semibold':
-                        tech.email === userStore.user?.email,
-                      'border-gray-200': tech.email !== userStore.user?.email,
-                    }"
+                    class="flex items-center gap-x-2 lg:text-sm text-xs lg:w-[calc(33.333%-0.5rem)] w-full whitespace-nowrap py-2 px-3 rounded-lg border-2 transition-all cursor-pointer"
+                    :class="[
+                      darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50',
+                      {
+                        'bg-green-50 border-green-500 font-semibold':
+                          tech.email === userStore.user?.email && !darkMode,
+                        'bg-green-900/30 border-green-500 font-semibold':
+                          tech.email === userStore.user?.email && darkMode,
+                        'border-gray-200': tech.email !== userStore.user?.email && !darkMode,
+                        'border-gray-600': tech.email !== userStore.user?.email && darkMode,
+                      }
+                    ]"
                   >
                     <input
                       type="checkbox"
@@ -2063,13 +2107,16 @@ const itemStatusClass = (status) => {
                     />
                     <span
                       :class="{
-                        'text-green-700': tech.email === userStore.user?.email,
+                        'text-green-700': tech.email === userStore.user?.email && !darkMode,
+                        'text-green-400': tech.email === userStore.user?.email && darkMode,
+                        'text-gray-200': tech.email !== userStore.user?.email && darkMode,
                       }"
                     >
                       {{ tech.name }}
                       <span
                         v-if="tech.email === userStore.user?.email"
-                        class="text-green-600 ml-1 font-bold"
+                        class="ml-1 font-bold"
+                        :class="darkMode ? 'text-green-400' : 'text-green-600'"
                       >
                         (You)
                       </span>
@@ -2080,7 +2127,10 @@ const itemStatusClass = (status) => {
                 <!-- EDIT MODE: Show only assigned personnel (no checkboxes) -->
                 <div
                   v-else
-                  class="border-2 border-gray-200 rounded-lg p-3 bg-white"
+                  class="border-2 rounded-lg p-3"
+                  :class="darkMode
+                    ? 'border-gray-600 bg-gray-900/50'
+                    : 'border-gray-200 bg-white'"
                 >
                   <div
                     v-if="
@@ -2092,14 +2142,18 @@ const itemStatusClass = (status) => {
                     <div
                       v-for="tech in info.technicians_assigned"
                       :key="tech.email"
-                      class="flex items-center gap-x-2 lg:text-sm text-xs py-2 px-3 rounded-lg border-2 bg-green-50 border-green-500 font-semibold"
+                      class="flex items-center gap-x-2 lg:text-sm text-xs py-2 px-3 rounded-lg border-2 font-semibold"
+                      :class="darkMode
+                        ? 'bg-green-900/30 border-green-500'
+                        : 'bg-green-50 border-green-500'"
                     >
                       <i class="fas fa-user-check text-green-600"></i>
-                      <span class="text-green-700">
+                      <span :class="darkMode ? 'text-green-400' : 'text-green-700'">
                         {{ tech.name }}
                         <span
                           v-if="tech.email === userStore.user?.email"
-                          class="text-green-600 ml-1 font-bold"
+                          class="ml-1 font-bold"
+                          :class="darkMode ? 'text-green-400' : 'text-green-600'"
                         >
                           (You)
                         </span>
@@ -2111,7 +2165,8 @@ const itemStatusClass = (status) => {
                       ></i>
                     </div>
                   </div>
-                  <div v-else class="text-xs text-gray-500 italic">
+                  <div v-else class="text-xs italic"
+                    :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                     <i class="fas fa-info-circle mr-1"></i>
                     No personnel assigned to this ticket
                   </div>
@@ -2169,16 +2224,21 @@ const itemStatusClass = (status) => {
           </div>
           <!-- REQUEST DETAILS -->
           <div
-            class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm"
+            class="border-2 rounded-xl lg:p-4 p-3 mb-4 shadow-sm"
+            :class="darkMode
+              ? 'border-gray-700 bg-gray-800'
+              : 'border-green-100 bg-gradient-to-br from-gray-50 to-white'"
           >
             <div class="mb-4">
               <h3
-                class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center"
+                class="lg:text-base text-sm font-bold mb-1 flex items-center"
+                :class="darkMode ? 'text-green-400' : 'text-green-800'"
               >
                 <i class="fas fa-tools mr-2"></i>
                 {{ isCreate ? "Request Details" : "Request Details" }}
               </h3>
-              <p class="text-xs text-gray-500">
+              <p class="text-xs"
+                :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                 {{
                   isCreate
                     ? "Describe the technical support needs"
@@ -2187,28 +2247,37 @@ const itemStatusClass = (status) => {
               </p>
             </div>
             <div
-              class="bg-white rounded-lg lg:p-4 p-3 border-2 border-gray-100"
+              class="rounded-lg lg:p-4 p-3 border-2"
+              :class="darkMode
+                ? 'bg-gray-900/50 border-gray-700'
+                : 'bg-white border-gray-100'"
             >
               <div class="grid lg:grid-cols-2 gap-4 text-sm">
                 <!-- 1. CATEGORY -->
                 <div class="w-full">
-                  <label class="block font-semibold mb-2 text-gray-700">
+                  <label class="block font-semibold mb-2"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                     <i class="fas fa-tag text-green-600 mr-1"></i>Category
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <select
                     v-model="info.issue_concern_request_category_type"
-                    class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    class="input rounded-lg border-2 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    :class="[
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-200'
+                        : 'bg-white border-gray-200 text-gray-900',
+                      {
+                        'opacity-50 cursor-not-allowed':
+                          !isCreate &&
+                          (!isAssignedTechnician || !info.ticket_locked_by_email),
+                      }
+                    ]"
                     @change="info.issue_concern_request_item_type = ''"
                     :disabled="
                       !isCreate &&
                       (!isAssignedTechnician || !info.ticket_locked_by_email)
                     "
-                    :class="{
-                      'bg-gray-100 cursor-not-allowed':
-                        !isCreate &&
-                        (!isAssignedTechnician || !info.ticket_locked_by_email),
-                    }"
                   >
                     <option disabled value="">Select Category</option>
                     <option
@@ -2229,14 +2298,26 @@ const itemStatusClass = (status) => {
                   "
                   class="w-full"
                 >
-                  <label class="block font-semibold mb-2 text-gray-700">
+                  <label class="block font-semibold mb-2"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                     <i class="fas fa-laptop text-green-600 mr-1"></i>Specific
                     Concern
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <select
                     v-model="info.issue_concern_request_item_type"
-                    class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    class="input rounded-lg border-2 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    :class="[
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-200'
+                        : 'bg-white border-gray-200 text-gray-900',
+                      {
+                        'opacity-50 cursor-not-allowed':
+                          !info.issue_concern_request_category_type ||
+                          (!isCreate &&
+                            (!isAssignedTechnician || !info.ticket_locked_by_email)),
+                      }
+                    ]"
                     :disabled="
                       !info.issue_concern_request_category_type ||
                       (!isCreate &&
@@ -2270,25 +2351,31 @@ const itemStatusClass = (status) => {
                   "
                   class="w-full lg:col-span-2"
                 >
-                  <label class="block font-semibold mb-2 text-gray-700">
+                  <label class="block font-semibold mb-2"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                     <i class="fas fa-comment-dots text-green-600 mr-1"></i
                     >Details / Description
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <textarea
                     v-model="info.issue_concern_request_details"
-                    class="input rounded-lg border-2 border-gray-200 lg:px-3 lg:py-3 px-2 py-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none resize-none"
+                    class="input rounded-lg border-2 lg:px-3 lg:py-3 px-2 py-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none resize-none"
+                    :class="[
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                        : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500',
+                      {
+                        'opacity-50 cursor-not-allowed':
+                          !isCreate &&
+                          (!isAssignedTechnician || !info.ticket_locked_by_email),
+                      }
+                    ]"
                     placeholder="Describe the issue, concern, or request in detail..."
                     rows="3"
                     :disabled="
                       !isCreate &&
                       (!isAssignedTechnician || !info.ticket_locked_by_email)
                     "
-                    :class="{
-                      'bg-gray-100 cursor-not-allowed':
-                        !isCreate &&
-                        (!isAssignedTechnician || !info.ticket_locked_by_email),
-                    }"
                   />
                 </div>
 
@@ -2302,23 +2389,29 @@ const itemStatusClass = (status) => {
                   "
                   class="w-full"
                 >
-                  <label class="block font-semibold mb-2 text-gray-700">
+                  <label class="block font-semibold mb-2"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                     <i class="fas fa-id-badge text-green-600 mr-1"></i>Requestor
                     Role
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <select
                     v-model="info.client_role"
-                    class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    class="input rounded-lg border-2 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    :class="[
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-200'
+                        : 'bg-white border-gray-200 text-gray-900',
+                      {
+                        'opacity-50 cursor-not-allowed':
+                          !isCreate &&
+                          (!isAssignedTechnician || !info.ticket_locked_by_email),
+                      }
+                    ]"
                     :disabled="
                       !isCreate &&
                       (!isAssignedTechnician || !info.ticket_locked_by_email)
                     "
-                    :class="{
-                      'bg-gray-100 cursor-not-allowed':
-                        !isCreate &&
-                        (!isAssignedTechnician || !info.ticket_locked_by_email),
-                    }"
                   >
                     <option value="">Select Role</option>
                     <option value="Student">Student</option>
@@ -2357,7 +2450,8 @@ const itemStatusClass = (status) => {
                   "
                   class="w-full"
                 >
-                  <label class="block font-semibold mb-2 text-gray-700">
+                  <label class="block font-semibold mb-2"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                     <i class="fas fa-building text-green-600 mr-1"></i>
                     {{
                       info.issue_concern_request_category_type ===
@@ -2370,17 +2464,22 @@ const itemStatusClass = (status) => {
                   <div class="flex gap-2">
                     <select
                       v-model="info.issue_concern_request_center_office_room"
-                      class="input border-2 border-gray-200 w-full lg:p-3 p-2 rounded-lg text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                      class="input border-2 w-full lg:p-3 p-2 rounded-lg text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                      :class="[
+                        darkMode
+                          ? 'bg-gray-700 border-gray-600 text-gray-200'
+                          : 'bg-white border-gray-200 text-gray-900',
+                        {
+                          'opacity-50 cursor-not-allowed':
+                            !isCreate &&
+                            (!isAssignedTechnician ||
+                              !info.ticket_locked_by_email),
+                        }
+                      ]"
                       :disabled="
                         !isCreate &&
                         (!isAssignedTechnician || !info.ticket_locked_by_email)
                       "
-                      :class="{
-                        'bg-gray-100 cursor-not-allowed':
-                          !isCreate &&
-                          (!isAssignedTechnician ||
-                            !info.ticket_locked_by_email),
-                      }"
                     >
                       <option disabled value="">
                         {{
@@ -2404,18 +2503,23 @@ const itemStatusClass = (status) => {
                         'OTHER'
                       "
                       v-model="customOffice"
-                      class="input rounded-lg border-2 border-gray-200 flex-1 lg:p-3 p-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                      class="input rounded-lg border-2 flex-1 lg:p-3 p-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                      :class="[
+                        darkMode
+                          ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                          : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500',
+                        {
+                          'opacity-50 cursor-not-allowed':
+                            !isCreate &&
+                            (!isAssignedTechnician ||
+                              !info.ticket_locked_by_email),
+                        }
+                      ]"
                       placeholder="Specify location"
                       :disabled="
                         !isCreate &&
                         (!isAssignedTechnician || !info.ticket_locked_by_email)
                       "
-                      :class="{
-                        'bg-gray-100 cursor-not-allowed':
-                          !isCreate &&
-                          (!isAssignedTechnician ||
-                            !info.ticket_locked_by_email),
-                      }"
                     />
                   </div>
                 </div>
@@ -2435,23 +2539,29 @@ const itemStatusClass = (status) => {
                   "
                   class="w-full"
                 >
-                  <label class="block font-semibold mb-2 text-gray-700">
+                  <label class="block font-semibold mb-2"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                     <i class="fas fa-user-tag text-green-600 mr-1"></i>Owner
                     Type
                     <span v-if="isCreate" class="text-red-600">*</span>
                   </label>
                   <select
                     v-model="info.owner_type"
-                    class="input rounded-lg border-2 border-gray-200 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    class="input rounded-lg border-2 lg:p-3 p-2 w-full text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    :class="[
+                      darkMode
+                        ? 'bg-gray-700 border-gray-600 text-gray-200'
+                        : 'bg-white border-gray-200 text-gray-900',
+                      {
+                        'opacity-50 cursor-not-allowed':
+                          !isCreate &&
+                          (!isAssignedTechnician || !info.ticket_locked_by_email),
+                      }
+                    ]"
                     :disabled="
                       !isCreate &&
                       (!isAssignedTechnician || !info.ticket_locked_by_email)
                     "
-                    :class="{
-                      'bg-gray-100 cursor-not-allowed':
-                        !isCreate &&
-                        (!isAssignedTechnician || !info.ticket_locked_by_email),
-                    }"
                   >
                     <option value="LSU">LSU</option>
                     <option value="Personal">Personal</option>
@@ -2502,16 +2612,21 @@ const itemStatusClass = (status) => {
           </div>
           <!-- LOGS -->
           <div
-            class="border-2 border-green-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-gray-50 to-white shadow-sm"
+            class="border-2 rounded-xl lg:p-4 p-3 mb-4 shadow-sm"
+            :class="darkMode
+              ? 'border-gray-700 bg-gray-800'
+              : 'border-green-100 bg-gradient-to-br from-gray-50 to-white'"
           >
             <div class="mb-3">
               <h3
-                class="lg:text-base text-sm font-bold text-green-800 mb-1 flex items-center"
+                class="lg:text-base text-sm font-bold mb-1 flex items-center"
+                :class="darkMode ? 'text-green-400' : 'text-green-800'"
               >
                 <i class="fa fa-history text-green-600 mr-2"></i>
                 Status History
               </h3>
-              <p class="text-xs text-gray-500">
+              <p class="text-xs"
+                :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                 {{
                   isCreate
                     ? "Initial status will be set to Pending"
@@ -2522,21 +2637,25 @@ const itemStatusClass = (status) => {
 
             <!-- Existing logs display (read-only) -->
             <div
-              class="max-h-48 overflow-y-auto mb-3 space-y-2 bg-white rounded-lg lg:p-3 p-2 border-2 border-gray-100"
+              class="max-h-48 overflow-y-auto mb-3 space-y-2 rounded-lg lg:p-3 p-2 border-2"
+              :class="darkMode
+                ? 'bg-gray-900/50 border-gray-700'
+                : 'bg-white border-gray-100'"
             >
               <div
                 v-for="(log, i) in info.logs"
                 :key="i"
                 class="text-xs p-2 rounded"
-                :class="itemStatusClass(log.status)"
+                :class="[
+                  itemStatusClass(log.status),
+                  darkMode ? 'bg-gray-900/50 text-white' : 'bg-white text-gray-900'
+                ]"
               >
                 <div class="flex justify-between font-semibold">
-                  <span>{{ log.status }}</span>
-                  <span>{{
-                    moment(log.timestamp).format("MMM DD, YYYY hh:mm A")
-                  }}</span>
+                  <span :class="  darkMode ? ' text-white' : ' text-gray-900'">{{ log.status }}</span>
+                  <span :class="  darkMode ? ' text-white' : ' text-gray-900'">{{moment(log.timestamp).format("MMM DD, YYYY hh:mm A")}}</span>
                 </div>
-                <div class="italic text-xs mt-1">{{ log.remarks }}</div>
+                <div class="italic text-xs mt-1" :class="  darkMode ? ' text-white' : ' text-gray-900'">{{ log.remarks }}</div>
 
                 <!-- Technician Information (Admin/Technician View Only) -->
                 <div
@@ -2547,20 +2666,15 @@ const itemStatusClass = (status) => {
                   class="text-xs mt-2 pt-2 border-t border-gray-300 text-gray-600"
                 >
                   <div class="flex items-center gap-1">
-                    <i class="fas fa-user-edit text-gray-500"></i>
-                    <span class="font-semibold">{{
-                      isCreate ? "Created by:" : "Updated by:"
-                    }}</span>
-                    <span>{{ log.assigned_technician_name || "Unknown" }}</span>
+                    <i class="fas fa-user-edit" :class="  darkMode ? ' text-white' : ' text-gray-900'"></i>
+                    <span class="font-semibold" :class="  darkMode ? ' text-white' : ' text-gray-900'">{{ isCreate ? "Created by:" : "Updated by:"}}</span>
+                    <span :class="darkMode ? ' text-white' : ' text-gray-900'">{{ log.assigned_technician_name || "Unknown" }}</span>
                   </div>
                   <div
                     v-if="log.assigned_technician_lsu_email"
-                    class="flex items-center gap-1 ml-4 mt-0.5"
-                  >
-                    <i class="fas fa-envelope text-gray-500 text-[10px]"></i>
-                    <span class="text-[10px]">{{
-                      log.assigned_technician_lsu_email
-                    }}</span>
+                    class="flex items-center gap-1 ml-4 mt-0.5">
+                    <i class="fas fa-envelope  text-[10px]" :class="  darkMode ? ' text-white' : ' text-gray-900'"></i>
+                    <span class="text-[10px]" :class="  darkMode ? ' text-white' : ' text-gray-900'">{{log.assigned_technician_lsu_email}}</span>
                   </div>
                 </div>
               </div>
@@ -2571,11 +2685,15 @@ const itemStatusClass = (status) => {
               v-if="
                 isCreate || !info.ticket_locked_by_email || isAssignedTechnician
               "
-              class="mt-3 pt-3 border-t-2 border-green-200 bg-green-50 lg:p-3 p-2 rounded-lg"
+              class="mt-3 pt-3 border-t-2 lg:p-3 p-2 rounded-lg"
+              :class="darkMode
+                ? 'border-gray-700 bg-gray-900/50'
+                : 'border-green-200 bg-green-50'"
             >
               <div class="flex items-center gap-2 mb-2">
                 <i class="fa fa-edit text-green-600"></i>
-                <label class="text-sm font-semibold text-green-800">
+                <label class="text-sm font-semibold"
+                  :class="darkMode ? 'text-green-400' : 'text-green-800'">
                   {{
                     isCreate
                       ? "Set Initial Status (Optional)"
@@ -2583,7 +2701,8 @@ const itemStatusClass = (status) => {
                   }}
                 </label>
               </div>
-              <p class="text-xs text-gray-600 mb-3 italic">
+              <p class="text-xs mb-3 italic"
+                :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
                 {{
                   isCreate
                     ? '💡 Default status is "Pending" - you can change it if needed'
@@ -2593,12 +2712,16 @@ const itemStatusClass = (status) => {
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label class="text-xs font-semibold mb-1 block text-gray-700"
+                  <label class="text-xs font-semibold mb-1 block"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                     >Status</label
                   >
                   <select
                     v-model="newLog.status"
-                    class="input rounded-lg border-2 border-gray-200 lg:p-2 p-2 text-sm w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    class="input rounded-lg border-2 lg:p-2 p-2 text-sm w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    :class="darkMode
+                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                      : 'bg-white border-gray-200 text-gray-900'"
                   >
                     <option value="">
                       {{ isCreate ? "Keep as Pending" : "No status update" }}
@@ -2615,7 +2738,8 @@ const itemStatusClass = (status) => {
                 </div>
 
                 <div>
-                  <label class="text-xs font-semibold mb-1 block text-gray-700"
+                  <label class="text-xs font-semibold mb-1 block"
+                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                     >Remarks</label
                   >
                   <input
@@ -2624,7 +2748,10 @@ const itemStatusClass = (status) => {
                     :placeholder="
                       isCreate ? 'Optional initial remarks' : 'Optional remarks'
                     "
-                    class="input rounded-lg border-2 border-gray-200 lg:p-2 p-2 text-sm w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    class="input rounded-lg border-2 lg:p-2 p-2 text-sm w-full focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                    :class="darkMode
+                      ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                      : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'"
                   />
                 </div>
               </div>
@@ -2645,11 +2772,13 @@ const itemStatusClass = (status) => {
             <!-- READ-ONLY STATUS VIEW - Show when ticket is locked and user is NOT assigned -->
             <div
               v-else-if="info.ticket_locked_by_email && !isAssignedTechnician"
-              class="mt-3 pt-3 border-t bg-gray-50 p-3 rounded"
+              class="mt-3 pt-3 border-t p-3 rounded"
+              :class="darkMode ? 'bg-gray-900/50' : 'bg-gray-50'"
             >
               <div class="flex items-center gap-2 mb-2">
                 <i class="fas fa-lock text-orange-600"></i>
-                <label class="text-sm font-semibold text-gray-700"
+                <label class="text-sm font-semibold"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                   >Status Updates (View Only)</label
                 >
               </div>
@@ -2660,18 +2789,22 @@ const itemStatusClass = (status) => {
               </p>
 
               <!-- Current Status Display -->
-              <div class="bg-white border rounded p-3">
-                <div class="text-xs font-semibold text-gray-600 mb-2">
+              <div class="border rounded p-3"
+                :class="darkMode
+                  ? 'bg-gray-700 border-gray-600'
+                  : 'bg-white border-gray-200'">
+                <div class="text-xs font-semibold mb-2"
+                  :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
                   Current Status:
                 </div>
                 <div class="flex items-center gap-2">
                   <span
                     class="px-3 py-1.5 rounded text-xs font-semibold"
-                    :class="ticketStatusClass(latestStatus(info)?.status)"
-                  >
+                    :class="[ticketStatusClass(latestStatus(info)?.status), darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-700']">
                     {{ latestStatus(info)?.status || "Pending" }}
                   </span>
-                  <span class="text-xs text-gray-500">
+                  <span class="text-xs"
+                    :class="[darkMode ? 'text-gray-400' : 'text-gray-500', darkMode ? 'text-white' : 'text-gray-700']">
                     {{ latestStatus(info)?.remarks || "N/A" }}
                   </span>
                 </div>
@@ -2686,16 +2819,21 @@ const itemStatusClass = (status) => {
               (info.evaluation_feedback_client_star_rating ||
                 info.evaluation_feedback_client_comment)
             "
-            class="border-2 border-blue-100 rounded-xl lg:p-4 p-3 mb-4 bg-gradient-to-br from-blue-50 to-white shadow-sm"
+            class="border-2 rounded-xl lg:p-4 p-3 mb-4 shadow-sm"
+            :class="darkMode
+              ? 'border-gray-700 bg-gray-800'
+              : 'border-blue-100 bg-gradient-to-br from-blue-50 to-white'"
           >
             <div class="mb-3">
               <h3
-                class="lg:text-base text-sm font-bold text-blue-800 mb-1 flex items-center"
+                class="lg:text-base text-sm font-bold mb-1 flex items-center"
+                :class="darkMode ? 'text-blue-400' : 'text-blue-800'"
               >
                 <i class="fa fa-star text-yellow-500 mr-2"></i>
                 Client Feedback & Rating
               </h3>
-              <p class="text-lg text-gray-500">How's my service?</p>
+              <p class="text-lg"
+                :class="darkMode ? 'text-gray-400' : 'text-gray-500'">How's my service?</p>
             </div>
 
             <!-- Star Rating Display -->
@@ -2703,12 +2841,16 @@ const itemStatusClass = (status) => {
               v-if="info.evaluation_feedback_client_star_rating"
               class="mb-3"
             >
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <label class="block text-sm font-semibold mb-2"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                 <i class="fa fa-star text-yellow-500 mr-1"></i>
                 Rating:
               </label>
               <div
-                class="flex items-center gap-2 bg-white p-3 rounded-lg border"
+                class="flex items-center gap-2 p-3 rounded-lg border"
+                :class="darkMode
+                  ? 'bg-gray-700 border-gray-600'
+                  : 'bg-white border-gray-200'"
               >
                 <div class="flex items-center gap-1">
                   <span v-for="star in 5" :key="star" class="text-lg">
@@ -2725,7 +2867,8 @@ const itemStatusClass = (status) => {
                     ></i>
                   </span>
                 </div>
-                <span class="text-sm font-semibold text-gray-700">
+                <span class="text-sm font-semibold"
+                  :class="darkMode ? 'text-gray-200' : 'text-gray-700'">
                   {{ info.evaluation_feedback_client_star_rating }} / 5
                 </span>
               </div>
@@ -2736,7 +2879,8 @@ const itemStatusClass = (status) => {
               v-if="info.evaluation_feedback_client_star_rating"
               class="mt-2 mb-5"
             >
-              <p class="text-sm font-semibold text-gray-700">
+              <p class="text-sm font-semibold"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                 <span
                   v-if="info.evaluation_feedback_client_star_rating == 5"
                   class="text-green-600"
@@ -2767,12 +2911,17 @@ const itemStatusClass = (status) => {
 
             <!-- Feedback Comment Display -->
             <div v-if="info.evaluation_feedback_client_comment" class="mb-4">
-              <label class="block text-sm font-semibold text-gray-700 mb-2">
+              <label class="block text-sm font-semibold mb-2"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                 <i class="fa fa-comment text-blue-600 mr-1"></i>
                 Comment:
               </label>
-              <div class="bg-white p-3 rounded-lg border">
-                <p class="text-sm text-gray-700 whitespace-pre-wrap">
+              <div class="p-3 rounded-lg border"
+                :class="darkMode
+                  ? 'bg-gray-700 border-gray-600'
+                  : 'bg-white border-gray-200'">
+                <p class="text-sm whitespace-pre-wrap"
+                  :class="darkMode ? 'text-gray-200' : 'text-gray-700'">
                   {{ info.evaluation_feedback_client_comment }}
                 </p>
               </div>
@@ -2782,7 +2931,10 @@ const itemStatusClass = (status) => {
           <!-- ACTIONS -->
           <div class="flex justify-between gap-3 mt-10">
             <button
-              class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 font-semibold"
+              class="px-4 py-2 rounded font-semibold"
+              :class="darkMode
+                ? 'bg-gray-600 hover:bg-gray-700 text-gray-200'
+                : 'bg-gray-300 hover:bg-gray-400 text-gray-900'"
               @click="closeModal"
               :disabled="modalLoading"
             >
@@ -2815,11 +2967,15 @@ const itemStatusClass = (status) => {
             v-if="
               !isCreate && info.ticket_locked_by_email && !isAssignedTechnician
             "
-            class="mt-3 p-3 bg-orange-50 border-2 border-orange-200 rounded-lg"
+            class="mt-3 p-3 border-2 rounded-lg"
+            :class="darkMode
+              ? 'bg-orange-900/20 border-orange-700'
+              : 'bg-orange-50 border-orange-200'"
           >
             <div class="flex items-start gap-2">
               <i class="fas fa-lock text-orange-600 mt-0.5"></i>
-              <div class="text-xs text-orange-700">
+              <div class="text-xs"
+                :class="darkMode ? 'text-orange-400' : 'text-orange-700'">
                 <p class="font-semibold mb-1">Ticket Locked</p>
                 <p>
                   This ticket is locked and can only be modified by assigned
@@ -2839,24 +2995,28 @@ const itemStatusClass = (status) => {
       @click.self="!modalLoading && (showTransferModal = false)"
     >
       <div
-        class="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden animate-fade-in relative"
+        class="rounded-xl shadow-2xl max-w-2xl w-full mx-4 overflow-hidden animate-fade-in relative"
+        :class="darkMode ? 'bg-gray-800' : 'bg-white'"
         @click.stop
       >
         <!-- Loading Overlay -->
         <div
           v-if="modalLoading"
-          class="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center"
+          class="absolute inset-0 backdrop-blur-sm z-10 flex items-center justify-center"
+          :class="darkMode ? 'bg-gray-800/80' : 'bg-white/80'"
         >
           <div class="text-center">
             <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-3"></i>
-            <p class="text-sm font-semibold text-gray-700">
+            <p class="text-sm font-semibold"
+              :class="darkMode ? 'text-gray-200' : 'text-gray-700'">
               {{
                 isAssignMode
                   ? "Assigning personnel..."
                   : "Transferring ticket..."
               }}
             </p>
-            <p class="text-xs text-gray-500 mt-1">Please wait</p>
+            <p class="text-xs mt-1"
+              :class="darkMode ? 'text-gray-400' : 'text-gray-500'">Please wait</p>
           </div>
         </div>
 
@@ -2883,8 +3043,12 @@ const itemStatusClass = (status) => {
         </div>
 
         <div class="p-6">
-          <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p class="text-xs text-blue-800">
+          <div class="mb-4 p-3 border rounded-lg"
+            :class="darkMode
+              ? 'bg-blue-900/20 border-blue-700'
+              : 'bg-blue-50 border-blue-200'">
+            <p class="text-xs"
+              :class="darkMode ? 'text-blue-300' : 'text-blue-800'">
               <i class="fas fa-info-circle mr-1"></i>
               <strong>Current Assignment:</strong>
               {{
@@ -2892,20 +3056,26 @@ const itemStatusClass = (status) => {
                 "None"
               }}
             </p>
-            <p class="text-xs text-blue-700 mt-1">
+            <p class="text-xs mt-1"
+              :class="darkMode ? 'text-blue-400' : 'text-blue-700'">
               Select new technician(s) to transfer this ticket. The client and
               new technicians will be notified via email.
             </p>
           </div>
 
           <label class="text-sm font-semibold mb-2 block"
+            :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
             >Select New Technician(s):</label
           >
-          <div class="border rounded-lg p-3 max-h-64 overflow-y-auto">
+          <div class="border rounded-lg p-3 max-h-64 overflow-y-auto"
+            :class="darkMode
+              ? 'border-gray-600 bg-gray-900/50'
+              : 'border-gray-200 bg-white'">
             <label
               v-for="tech in availableTransferTechnicians"
               :key="tech.email"
-              class="flex items-center gap-x-2 text-sm cursor-pointer py-2 px-3 rounded hover:bg-gray-50"
+              class="flex items-center gap-x-2 text-sm cursor-pointer py-2 px-3 rounded"
+              :class="darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'"
             >
               <input
                 type="checkbox"
@@ -2913,12 +3083,14 @@ const itemStatusClass = (status) => {
                 v-model="transferTechnicians"
                 class="accent-purple-600"
               />
-              <span>{{ tech.name }}</span>
-              <span class="text-xs text-gray-500">({{ tech.email }})</span>
+              <span :class="darkMode ? 'text-gray-200' : 'text-gray-900'">{{ tech.name }}</span>
+              <span class="text-xs"
+                :class="darkMode ? 'text-gray-400' : 'text-gray-500'">({{ tech.email }})</span>
             </label>
             <div
               v-if="availableTransferTechnicians.length === 0"
-              class="text-xs text-gray-500 italic text-center py-4"
+              class="text-xs italic text-center py-4"
+              :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
             >
               <i class="fas fa-info-circle mr-1"></i>
               All personnel are already assigned to this ticket
@@ -2929,7 +3101,10 @@ const itemStatusClass = (status) => {
             <button
               @click="showTransferModal = false"
               :disabled="modalLoading"
-              class="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="flex-1 px-4 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="darkMode
+                ? 'bg-gray-600 text-gray-200 hover:bg-gray-700'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'"
             >
               <i class="fas fa-times mr-2"></i>Cancel
             </button>
