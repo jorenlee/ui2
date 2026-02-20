@@ -1055,7 +1055,7 @@ const visiblePages = computed(() => {
                                     ></i>
                                     <span> Access Date: {{ b.schedule }}</span>
                                   </div>
-                                  <div>
+                                  <div class="justify-left">
                                     <span
                                       v-for="(j, i) in normalizeTypeOfAccess(
                                         b.type_of_access,
