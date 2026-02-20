@@ -1,86 +1,80 @@
 <template>
-  <div class="flex items-center gap-2">
-    <!-- Moon Icon -->
-    <i class="fa fa-moon text-gray-600 dark:text-gray-300"></i>
+  <div>
+    <!-- DARK MODE TOGGLE - Fixed Position -->
+    <div class="fixed bottom-3 left-4 z-[60]">
+      <button
+        @click="toggleDarkMode"
+        class="group relative flex items-center gap-3 px-5 py-3 rounded-full shadow-lg transition-all duration-300 hover:scale-105"
+        :class="
+          darkMode
+            ? 'bg-gradient-to-r from-gray-800 to-gray-700 text-white hover:shadow-gray-700/50 border border-gray-600'
+            : 'bg-gradient-to-r from-white to-gray-50 text-gray-900 hover:shadow-xl border border-gray-200'
+        "
+      >
+        <!-- Icon Container with Rotation Animation -->
+        <div class="relative w-6 h-6 flex items-center justify-center">
+          <!-- Sun Icon (shown in light mode) -->
+          <transition
+            enter-active-class="transition-all duration-300"
+            enter-from-class="opacity-0 rotate-180 scale-0"
+            enter-to-class="opacity-100 rotate-0 scale-100"
+            leave-active-class="transition-all duration-300"
+            leave-from-class="opacity-100 rotate-0 scale-100"
+            leave-to-class="opacity-0 -rotate-180 scale-0"
+          >
+            <i
+              v-if="!darkMode"
+              class="fa fa-sun absolute text-yellow-500 text-xl"
+            ></i>
+          </transition>
 
-    <!-- Switch -->
-    <label class="switch">
-      <input type="checkbox" v-model="darkMode" @change="toggleDarkMode" />
-      <span class="slider round"></span>
-    </label>
+          <!-- Moon Icon (shown in dark mode) -->
+          <transition
+            enter-active-class="transition-all duration-300"
+            enter-from-class="opacity-0 -rotate-180 scale-0"
+            enter-to-class="opacity-100 rotate-0 scale-100"
+            leave-active-class="transition-all duration-300"
+            leave-from-class="opacity-100 rotate-0 scale-100"
+            leave-to-class="opacity-0 rotate-180 scale-0"
+          >
+            <i
+              v-if="darkMode"
+              class="fa fa-moon absolute text-blue-300 text-xl"
+            ></i>
+          </transition>
+        </div>
 
-    <!-- Sun Icon -->
-    <i class="fa fa-sun text-yellow-500"></i>
+        <!-- Informative Label Text -->
+        <div class="flex flex-col items-start">
+          <span class="font-semibold text-sm whitespace-nowrap">
+            {{ darkMode ? "Dark Mode" : "Light Mode" }}
+          </span>
+          <span class="text-xs opacity-75 whitespace-nowrap">
+            {{ darkMode ? "Toggle Light" : "Toggle Dark" }}
+          </span>
+        </div>
+
+        <!-- Glow Effect on Hover -->
+        <div
+          class="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          :class="darkMode ? 'bg-blue-500/10' : 'bg-yellow-500/10'"
+        ></div>
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-
-const darkMode = ref(false);
-
-onMounted(() => {
-  const storedTheme = localStorage.getItem("theme");
-
-  if (storedTheme === "light") {
-    darkMode.value = true;
-    document.documentElement.classList.add("dark");
-  } else {
-    darkMode.value = false;
-    document.documentElement.classList.remove("dark");
-  }
+const props = defineProps({
+  darkMode: {
+    type: Boolean,
+    default: false,
+  },
 });
 
+const emit = defineEmits(["toggle-dark-mode"]);
+
 const toggleDarkMode = () => {
-  if (darkMode.value) {
-    document.documentElement.classList.add("dark");
-    localStorage.setItem("theme", "dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-    localStorage.setItem("theme", "light");
-  }
+  emit("toggle-dark-mode");
 };
 </script>
-
-<style scoped>
-/* Switch Styling */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 46px;
-  height: 24px;
-}
-
-.switch input {
-  display: none;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  inset: 0;
-  background-color: #d1d5db;
-  transition: 0.4s;
-  border-radius: 999px;
-}
-
-.slider:before {
-  content: "";
-  position: absolute;
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: #10b981;
-}
-
-input:checked + .slider:before {
-  transform: translateX(22px);
-}
-</style>

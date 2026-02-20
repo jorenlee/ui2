@@ -115,6 +115,13 @@ if (process.client) {
     { immediate: true },
   );
 }
+
+
+
+
+
+
+
 // ---------------- MENU ----------------
 const subMenuList = [
   {
@@ -239,6 +246,9 @@ const subMenuList = [
     ],
   },
 ];
+
+
+
 const menuList = [
   { label: "Menu", icon: "fa-bars", type: "button", view: "Menu" },
   { label: "Search", icon: "fa-search", type: "button", view: "Search" },
@@ -273,67 +283,7 @@ const handleMenuClick = (menu) => {
       'min-h-screen transition-colors duration-300',
     ]"
   >
-    <!-- DARK MODE TOGGLE - Fixed Position -->
-    <div class="fixed bottom-4 right-4 z-50">
-      <button
-        @click="toggleDarkMode"
-        class="group relative flex items-center gap-3 px-5 py-3 rounded-full shadow-lg transition-all duration-300 hover:scale-105"
-        :class="
-          darkMode
-            ? 'bg-gradient-to-r from-gray-800 to-gray-700 text-white hover:shadow-gray-700/50 border border-gray-600'
-            : 'bg-gradient-to-r from-white to-gray-50 text-gray-900 hover:shadow-xl border border-gray-200'
-        "
-      >
-        <!-- Icon Container with Rotation Animation -->
-        <div class="relative w-6 h-6 flex items-center justify-center">
-          <!-- Sun Icon (shown in light mode) -->
-          <transition
-            enter-active-class="transition-all duration-300"
-            enter-from-class="opacity-0 rotate-180 scale-0"
-            enter-to-class="opacity-100 rotate-0 scale-100"
-            leave-active-class="transition-all duration-300"
-            leave-from-class="opacity-100 rotate-0 scale-100"
-            leave-to-class="opacity-0 -rotate-180 scale-0"
-          >
-            <i
-              v-if="!darkMode"
-              class="fa fa-sun absolute text-yellow-500 text-xl"
-            ></i>
-          </transition>
-
-          <!-- Moon Icon (shown in dark mode) -->
-          <transition
-            enter-active-class="transition-all duration-300"
-            enter-from-class="opacity-0 -rotate-180 scale-0"
-            enter-to-class="opacity-100 rotate-0 scale-100"
-            leave-active-class="transition-all duration-300"
-            leave-from-class="opacity-100 rotate-0 scale-100"
-            leave-to-class="opacity-0 rotate-180 scale-0"
-          >
-            <i
-              v-if="darkMode"
-              class="fa fa-moon absolute text-blue-300 text-xl"
-            ></i>
-          </transition>
-        </div>
-
-        <!-- Informative Label Text -->
-        <div class="flex flex-col items-start">
-          <span class="font-semibold text-sm whitespace-nowrap">
-            {{ darkMode ? "Dark Mode" : "Light Mode" }}
-          </span>
-          <span class="text-xs opacity-75 whitespace-nowrap">
-            {{ darkMode ? "Toggle Light" : "Toggle Dark" }}
-          </span>
-        </div>
-
-        <!-- Glow Effect on Hover -->
-        <div
-          class="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          :class="darkMode ? 'bg-blue-500/10' : 'bg-yellow-500/10'"
-        ></div>
-      </button>
-    </div>
+    <ToggleDarkLightMode :darkMode="darkMode" @toggle-dark-mode="toggleDarkMode" />
     <!-- LOGOUT CONFIRMATION -->
     <div
       v-if="currentView === 'Logout'"
@@ -401,155 +351,12 @@ const handleMenuClick = (menu) => {
           </div>
           <div v-if="currentView === 'Menu'" class="lg:px-6 pt-6 pb-80">
             <SuperAdminDashboardWelcome :darkMode="darkMode" />
-
-            <!-- Modern Grid Layout with Better Spacing -->
-            <div
-              class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 lg:gap-6"
-            >
-              <div
-                v-for="menu in filteredMenuList"
-                :key="menu.label || menu.group"
-                class="rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group border overflow-hidden"
-                :class="
-                  darkMode
-                    ? 'bg-gray-800 border-gray-700 hover:border-green-500'
-                    : 'bg-white border-gray-100'
-                "
-              >
-                <template v-if="menu.group">
-                  <!-- Group Header with Gradient Background -->
-                  <button
-                    class="w-full flex flex-col items-center justify-center p-6 text-center font-semibold transition-all relative overflow-hidden"
-                    :class="
-                      darkMode
-                        ? 'text-gray-200 hover:text-green-400'
-                        : 'text-gray-800 hover:text-green-700'
-                    "
-                    @click="toggleGroup(menu.group)"
-                  >
-                    <!-- Gradient Background on Hover -->
-                    <div
-                      class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      :class="
-                        darkMode
-                          ? 'bg-gradient-to-br from-green-900/30 to-emerald-900/30'
-                          : 'bg-gradient-to-br from-green-50 to-emerald-50'
-                      "
-                    ></div>
-
-                    <!-- Icon with Modern Design -->
-                    <div
-                      class="relative w-16 h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-3 shadow-lg"
-                    >
-                      <i class="fa fa-folder-open text-2xl text-white"></i>
-                    </div>
-
-                    <!-- Group Name -->
-                    <span
-                      class="relative text-sm font-bold truncate w-full px-2"
-                      >{{ menu.group }}</span
-                    >
-
-                    <!-- Chevron Indicator -->
-                    <i
-                      class="relative fa fa-chevron-down mt-2 text-xs transition-transform duration-300"
-                      :class="[
-                        { 'rotate-180': openGroups.includes(menu.group) },
-                        darkMode ? 'text-gray-500' : 'text-gray-400',
-                      ]"
-                    ></i>
-                  </button>
-
-                  <!-- Expandable Menu Items -->
-                  <transition name="slide-fade">
-                    <div
-                      v-if="openGroups.includes(menu.group)"
-                      class="border-t"
-                      :class="
-                        darkMode
-                          ? 'border-gray-700 bg-gray-900/50'
-                          : 'border-gray-100 bg-gray-50'
-                      "
-                    >
-                      <ul class="space-y-1 p-3">
-                        <li
-                          v-for="item in menu.items"
-                          :key="item.label"
-                          class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer group/item"
-                          :class="[
-                            currentView === item.view
-                              ? 'bg-green-500 text-white shadow-md'
-                              : darkMode
-                                ? 'text-gray-300 hover:bg-gray-800 hover:shadow-sm'
-                                : 'text-gray-700 hover:bg-white hover:shadow-sm',
-                          ]"
-                          @click="handleMenuClick(item)"
-                        >
-                          <div
-                            class="w-10 h-10 flex items-center justify-center rounded-lg transition-colors"
-                            :class="
-                              currentView === item.view
-                                ? 'bg-white/20'
-                                : 'bg-green-100 group-hover/item:bg-green-200'
-                            "
-                          >
-                            <i
-                              :class="[
-                                'fa',
-                                item.icon,
-                                'text-lg',
-                                currentView === item.view
-                                  ? 'text-white'
-                                  : 'text-green-600',
-                              ]"
-                            ></i>
-                          </div>
-                          <span class="truncate font-medium">{{
-                            item.label
-                          }}</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </transition>
-                </template>
-
-                <!-- Non-Group Menu Items -->
-                <template v-else>
-                  <div
-                    class="flex flex-col items-center justify-center p-6 text-center font-semibold transition-all cursor-pointer relative overflow-hidden"
-                    :class="
-                      darkMode
-                        ? 'text-gray-200 hover:text-green-400'
-                        : 'text-gray-800 hover:text-green-700'
-                    "
-                    @click="handleMenuClick(menu)"
-                  >
-                    <!-- Gradient Background on Hover -->
-                    <div
-                      class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                      :class="
-                        darkMode
-                          ? 'bg-gradient-to-br from-green-900/30 to-emerald-900/30'
-                          : 'bg-gradient-to-br from-green-50 to-emerald-50'
-                      "
-                    ></div>
-
-                    <!-- Icon with Modern Design -->
-                    <div
-                      class="relative w-16 h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-3 shadow-lg"
-                    >
-                      <i :class="['fa', menu.icon, 'text-2xl text-white']"></i>
-                    </div>
-
-                    <!-- Label -->
-                    <span
-                      class="relative text-sm font-bold truncate w-full px-2"
-                      >{{ menu.label }}</span
-                    >
-                  </div>
-                </template>
-              </div>
-            </div>
+            <SuperAdminDashboardMenuList
+              :filteredMenuList="filteredMenuList"
+              :darkMode="darkMode"
+              :currentView="currentView"
+              @menu-click="handleMenuClick"
+            />
           </div>
           <div v-else-if="currentView === 'form'" class="p-4 pb-52">
             <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted" :darkMode="darkMode"/>
@@ -588,84 +395,15 @@ const handleMenuClick = (menu) => {
             <SuperAdminDashboardServicesDrs :darkMode="darkMode" />
           </div>
         </div>
-        <nav
-          class="fixed bottom-0 left-0 right-0 backdrop-blur-lg border-t border-gray-200 shadow-2xl"
-          :class="[
-            darkMode ? 'bg-gray-800 text-white' : 'bg-white/95 text-gray-900',
-          ]"
-        >
-          <div class="flex justify-evenly items-center px-4 mx-auto">
-            <button
-              v-for="(menu, index) in menuList"
-              :key="index"
-              @click="handleMenuClick(menu)"
-              class="flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 relative group"
-              :class="
-                currentView === menu.view
-                  ? 'text-green-600'
-                  : 'text-gray-600 hover:text-green-600'
-              "
-            >
-              <!-- Active Indicator -->
-              <div
-                v-if="currentView === menu.view"
-                class="absolute -top-1 left-1/2 -translate-x-1/2 w-12 h-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full"
-              ></div>
-
-              <!-- Icon Container -->
-              <div
-                class="relative lg:w-8 lg:h-8 w-7 h-7 flex items-center justify-center rounded-2xl transition-all duration-300"
-                :class="
-                  currentView === menu.view
-                    ? 'bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/30 scale-110'
-                    : 'bg-gray-100 group-hover:bg-green-50 group-hover:scale-105'
-                "
-              >
-                <i
-                  :class="[
-                    'fa',
-                    menu.icon,
-                    'lg:text-xl text-base transition-colors',
-                    currentView === menu.view
-                      ? 'text-white'
-                      : 'text-gray-600 group-hover:text-green-600',
-                  ]"
-                ></i>
-              </div>
-
-              <!-- Label -->
-              <span
-                class="text-[10px] transition-colors"
-                :class="
-                  currentView === menu.view
-                    ? 'text-green-600'
-                    : 'text-gray-600 group-hover:text-green-600'
-                "
-              >
-                {{ menu.label }}
-              </span>
-            </button>
-          </div>
-          <DashboardFooter :darkMode="darkMode" />
-        </nav>
+        <SuperAdminDashboardNavigation
+          :darkMode="darkMode"
+          :menuList="menuList"
+          :currentView="currentView"
+          @menu-click="handleMenuClick"
+        />
       </div>
     </div>
-    <!-- UNAUTHORIZED VIEW -->
-    <div v-else class="flex items-center justify-center h-screen bg-gray-50">
-      <div class="text-center">
-        <i class="fa fa-lock text-4xl text-gray-400 mb-4"></i>
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">
-          Unauthorized Access
-        </h1>
-        <p class="text-gray-600 mb-6">Please log in to access the dashboard.</p>
-        <NuxtLink
-          to="/cms/login"
-          class="inline-block bg-green-800 hover:bg-green-900 text-white px-6 py-2 rounded-lg font-bold transition-colors"
-        >
-          <i class="fa fa-sign-in mr-2"></i>Go to Login
-        </NuxtLink>
-      </div>
-    </div>
+    <SuperAdminDashboardUnauthorizedAccess v-else />
   </div>
 </template>
 
