@@ -1116,9 +1116,10 @@ const visiblePages = computed(() => {
                                   </div>
                                 </div>
                               </div>
-                              <div class="">
+                              <div class="flex items-center">
                                 <!-- Attendees & Documents Section -->
-                                <div
+                                <div class="space-y-1">
+                                  <div
                                   class="lg:w-5/12 w-full mb-3 lg:mb-0 lg:pl-2"
                                 >
                                   <div class="w-full">
@@ -1235,6 +1236,7 @@ const visiblePages = computed(() => {
                                       <option value="for revision">For Revision</option>
                                     </select>
                                   </div>
+                                </div>
                                 </div>
                               </div>
                             </div>

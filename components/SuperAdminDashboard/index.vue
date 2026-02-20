@@ -355,6 +355,7 @@ const handleMenuClick = (menu) => {
               :filteredMenuList="filteredMenuList"
               :darkMode="darkMode"
               :currentView="currentView"
+              :defaultOpenGroups="openGroups"
               @menu-click="handleMenuClick"
             />
           </div>
@@ -399,6 +400,7 @@ const handleMenuClick = (menu) => {
           :darkMode="darkMode"
           :menuList="menuList"
           :currentView="currentView"
+          :toggleGroup="toggleGroup"
           @menu-click="handleMenuClick"
         />
       </div>

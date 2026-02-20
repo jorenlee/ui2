@@ -161,11 +161,15 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  defaultOpenGroups: {
+    type: Array,
+    default: () => [],
+  },
 });
 
 const emit = defineEmits(["menu-click"]);
 
-const openGroups = ref([]);
+const openGroups = ref([...props.defaultOpenGroups]);
 
 const toggleGroup = (group) => {
   const index = openGroups.value.indexOf(group);
