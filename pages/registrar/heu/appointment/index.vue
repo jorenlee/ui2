@@ -145,7 +145,7 @@ const invalidEmail = ref(false);
 
 const validateEmail = () => {
   if (!info.value.email) return false;
-  const pattern = /^[a-zA-Z0-9._-]+@(gmail\.com|lsu\.edu\.ph)$/;
+  const pattern = /^[a-zA-Z0-9._-]+@(gmail\.com|yahoo\.com|bing\.com|microsoft\.com|lsu\.edu\.ph)$/;
   return pattern.test(info.value.email);
 };
 

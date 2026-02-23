@@ -148,7 +148,7 @@ const info = ref({
 });
 
 // Validation
-const pattern = /^[a-zA-Z0-9._-]+@(lsu\.edu\.ph|gmail\.com)$/;
+const pattern = /^[a-zA-Z0-9._-]+@(lsu\.edu\.ph|gmail\.com|yahoo\.com|bing\.com|microsoft\.com)$/;
 const invalidEmail = ref(false);
 
 const availablePrograms = computed(
