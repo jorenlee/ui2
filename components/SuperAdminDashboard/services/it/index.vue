@@ -1310,10 +1310,12 @@ const itemStatusClass = (status) => {
 </script>
 
 <template>
-  <div class="min-h-screen" :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'">
+  <div class="min-h-screen" :class="
+      darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'
+    ">
     <!-- Header with Title and Count -->
     <div
-      class="min-w-[900px] my-2 lg:flex items-center justify-between"
+      class="flex flex-col lg:flex-row lg:items-center justify-between my-2 gap-x-2"
     >
       <h2
         class="text-sm lg:text-base font-bold"
@@ -1506,7 +1508,7 @@ const itemStatusClass = (status) => {
     </div>
     <!-- ================= DATE LIST TABLE HEADER ================= -->
     <div
-      class="w-full lg:flex hidden shadow-md overflow-hidden"
+      class="w-full lg:flex hidden shadow-md overflow-x-auto"
       :class="
         darkMode
           ? 'bg-green-950'
@@ -1515,7 +1517,7 @@ const itemStatusClass = (status) => {
     >
       <div
         @click="sortBy('issue_concern_request_category_type')"
-        class="lg:w-6/12 w-full flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-6/12 w-full min-w-[150px] flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-tools mr-1"></i> Category
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -1541,7 +1543,7 @@ const itemStatusClass = (status) => {
       </div>
       <div
         @click="sortBy('requestor_fullname')"
-        class="lg:w-11/12 w-full flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-11/12 w-full min-w-[200px] flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-user mr-1"></i> Requestor
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -1566,7 +1568,7 @@ const itemStatusClass = (status) => {
 
       <div
         @click="sortBy('technicians_assigned')"
-        class="lg:w-6/12 w-full flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-6/12 w-full min-w-[180px] flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-users mr-1"></i> Assigned Personnel
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -1590,7 +1592,7 @@ const itemStatusClass = (status) => {
       </div>
       <div
         @click="sortBy('status')"
-        class="lg:w-6/12 w-full flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
+        class="lg:w-6/12 w-full min-w-[120px] flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
       >
         <i class="fa fa-info-circle mr-1"></i> Status
         <span class="ml-1 inline-flex flex-col text-xs leading-none">
@@ -1614,7 +1616,7 @@ const itemStatusClass = (status) => {
       </div>
 
       <div
-        class="lg:w-3/12 w-full flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500"
+        class="lg:w-3/12 w-full min-w-[120px] flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500"
       >
         <i class="fa fa-star mr-1"></i> Feedback
       </div>
@@ -1677,7 +1679,7 @@ const itemStatusClass = (status) => {
       <div v-for="(item, index) in paginatedRequests" :key="item.id">
         <!-- ================= DESKTOP ROW ================= -->
         <div
-          class="hidden lg:flex items-center text-sm cursor-pointer border py-0.5 transition-colors"
+          class="hidden lg:flex items-center text-sm cursor-pointer border py-0.5 transition-colors overflow-x-auto"
           :class="[
             index % 2 === 0
               ? darkMode
@@ -1691,7 +1693,7 @@ const itemStatusClass = (status) => {
           @click="openModal(item)"
         >
           <div
-            class="lg:w-6/12 w-full px-3 text-left text-xs"
+            class="lg:w-6/12 w-full min-w-[150px] px-3 text-left text-xs"
             :class="darkMode ? 'text-gray-200' : 'text-gray-900'"
           >
             <span class="flex">
@@ -1704,7 +1706,7 @@ const itemStatusClass = (status) => {
           </div>
 
           <div
-            class="lg:w-11/12 w-full px-3 text-left capitalize whitespace-nowrap text-xs"
+            class="lg:w-11/12 w-full min-w-[200px] px-3 text-left capitalize whitespace-nowrap text-xs"
             :class="darkMode ? 'text-gray-200' : 'text-gray-900'"
           >
             <span class="flex font-semibold">
@@ -1716,7 +1718,7 @@ const itemStatusClass = (status) => {
           </div>
 
           <div
-            class="lg:w-6/12 w-full px-3 text-left text-xs"
+            class="lg:w-6/12 w-full min-w-[180px] px-3 text-left text-xs"
             :class="darkMode ? 'text-gray-200' : 'text-gray-900'"
           >
             {{
@@ -1724,7 +1726,7 @@ const itemStatusClass = (status) => {
             }}
           </div>
 
-          <div class="lg:w-6/12 w-full px-3 text-left">
+          <div class="lg:w-6/12 w-full min-w-[120px] px-3 text-left">
             <div class="flex items-center gap-2">
               <span
                 class="bg-yellow-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-yellow-800 whitespace-nowrap"
@@ -1749,7 +1751,7 @@ const itemStatusClass = (status) => {
             </div>
           </div>
 
-          <div class="lg:w-3/12 w-full px-3 text-left">
+          <div class="lg:w-3/12 w-full min-w-[120px] px-3 text-left">
             <div
               v-if="item.evaluation_feedback_client_star_rating"
               class="flex items-center"
