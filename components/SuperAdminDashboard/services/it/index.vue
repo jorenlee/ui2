@@ -1310,13 +1310,10 @@ const itemStatusClass = (status) => {
 </script>
 
 <template>
-  <div class="min-h-screen"  
-  :class="
-          darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'
-        ">
+  <div class="min-h-screen" :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'">
     <!-- Header with Title and Count -->
     <div
-      class="flex flex-col lg:flex-row lg:items-center justify-between my-2 gap-x-2"
+      class="min-w-[900px] my-2 lg:flex items-center justify-between"
     >
       <h2
         class="text-sm lg:text-base font-bold"
