@@ -339,11 +339,10 @@ const handleMenuClick = (menu) => {
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->
       <div
-        class="w-full"
+        class="w-full min-w-[1000px]"
         :class="
           darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'
-        "
-      >
+        ">
         <!-- CONTENT AREA -->
         <div class="overflow-y-auto">
           <div v-if="currentView === 'Profile'" class="w-full p-4">

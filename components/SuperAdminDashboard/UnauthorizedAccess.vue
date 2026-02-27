@@ -1,7 +1,6 @@
 <template>
-  <div>
     <!-- UNAUTHORIZED VIEW -->
-    <div class="flex items-center justify-center h-screen bg-gray-50">
+    <div class="min-w-[1000px] flex items-center justify-center h-screen bg-gray-50">
       <div class="text-center">
         <i class="fa fa-lock text-4xl text-gray-400 mb-4"></i>
         <h1 class="text-2xl font-bold text-gray-800 mb-2">
@@ -16,5 +15,4 @@
         </NuxtLink>
       </div>
     </div>
-  </div>
 </template>
