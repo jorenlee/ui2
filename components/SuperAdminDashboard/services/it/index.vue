@@ -1310,12 +1310,12 @@ const itemStatusClass = (status) => {
 </script>
 
 <template>
-  <div class="min-w-[1000px] min-h-screen" :class="
+  <div class="min-w-[1500px] min-h-screen" :class="
       darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'
     ">
     <!-- Header with Title and Count -->
     <div
-      class="flex flex-col lg:flex-row lg:items-center justify-between my-2 gap-x-2"
+      class="lg:flex lg:items-center justify-between my-2 gap-x-2"
     >
       <h2
         class="text-sm lg:text-base font-bold"
@@ -1508,7 +1508,7 @@ const itemStatusClass = (status) => {
     </div>
     <!-- ================= DATE LIST TABLE HEADER ================= -->
     <div
-      class="w-full lg:flex hidden shadow-md overflow-x-auto"
+      class="w-full lg:flex shadow-md"
       :class="
         darkMode
           ? 'bg-green-950'
@@ -1679,7 +1679,7 @@ const itemStatusClass = (status) => {
       <div v-for="(item, index) in paginatedRequests" :key="item.id">
         <!-- ================= DESKTOP ROW ================= -->
         <div
-          class="hidden lg:flex items-center text-sm cursor-pointer border py-0.5 transition-colors overflow-x-auto"
+          class="lg:flex items-center text-sm cursor-pointer border py-0.5 transition-colors"
           :class="[
             index % 2 === 0
               ? darkMode
