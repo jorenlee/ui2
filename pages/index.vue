@@ -53,8 +53,6 @@ onBeforeUnmount(() => {
       <BlogPosting />
       <SDG />
 
-
-      
       <div class="bg-[#031d03] text-white">
         <p
           class="text-center text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg lg:py-5 py-2"

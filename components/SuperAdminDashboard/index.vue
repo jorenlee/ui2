@@ -154,17 +154,17 @@ const subMenuList = [
     allowedEmails: props.hrMenuEmails,
     items: [
       {
-        label: "Job Vacancies",
+        label: "Human Resource Analytics",
         icon: "fa-list-alt",
         type: "button",
         view: "hr-job-vacancy-list",
       },
-      {
-        label: "Raffle Draw",
-        icon: "fa-list-alt",
-        type: "button",
-        view: "hr-raffle",
-      },
+      // {
+      //   label: "Raffle Draw",
+      //   icon: "fa-list-alt",
+      //   type: "button",
+      //   view: "hr-raffle",
+      // },
     ],
   },
   {

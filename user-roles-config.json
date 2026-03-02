@@ -150,7 +150,11 @@
     },
     {
       "email": "hr@lsu.edu.ph",
-      "roles": ["hrMenu"]
+      "roles": ["hrMenu", "contentWriter"]
+    },
+    {
+      "email": "dinpaulo.deguzman15@lsu.edu.ph",
+      "roles": ["contentWriter"]
     },
     {
       "email": "marilyn.bejec@lsu.edu.ph",
