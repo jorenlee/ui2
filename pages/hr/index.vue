@@ -18,13 +18,39 @@ const fetchCareers = async () => {
   if (isFetching.value) return;
   isFetching.value = true;
   try {
-    const data =
-      (await $fetch(`${endpoint.value}/api/humanResource/list`).catch(
-        () => null
-      )) || [];
-    if (data && Array.isArray(data)) {
-      if (JSON.stringify(data) !== JSON.stringify(careers.value)) {
-        careers.value = data;
+    const res = await $fetch(endpoint.value + "/api/cms/content/list/").catch(
+      () => null
+    );
+
+    if (res && Array.isArray(res)) {
+      // Filter only "Human Resource" content
+      const hrContent = res.filter(item => {
+        const filters = item.filters || item.filter || "";
+        return filters.toLowerCase().includes("human resource");
+      });
+
+      // Map to extract only image data and convert files to image_link format
+      const imageData = hrContent.map(item => {
+        // Convert files array (strings) to image_link format (objects with url)
+        const files = item.files || [];
+        const imageFiles = files.filter(filename => {
+          const ext = filename.toLowerCase().split('.').pop();
+          return ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+        });
+
+        const image_link = imageFiles.map(filename => ({
+          url: `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${filename}`
+        }));
+
+        return {
+          title: item.title || "",
+          created_at: item.date || item.created_at || "",
+          image_link: image_link
+        };
+      });
+
+      if (JSON.stringify(imageData) !== JSON.stringify(careers.value)) {
+        careers.value = imageData;
       }
     }
   } finally {
@@ -187,3 +213,4 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 </style>
+
