@@ -98,7 +98,7 @@
           <input
             ref="fileInputRef"
             type="file"
-            accept="image/*"
+            accept="image/png,image/jpg,image/jpeg"
             class="hidden"
             @change="onFileChange"
           />
@@ -117,7 +117,7 @@
             :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
             Drag & drop an image here, or click to select.<br />
             <span class="text-xs"
-              :class="darkMode ? 'text-gray-500' : 'text-gray-400'">(Single image only)</span>
+              :class="darkMode ? 'text-gray-500' : 'text-gray-400'">(PNG, JPG, JPEG only • Max 10MB for high-resolution images)</span>
           </div>
         </div>
 
@@ -321,7 +321,20 @@ const onDrop = (e) => {
 
 const setFile = (f) => {
   if (!f) return;
-  if (!f.type.startsWith("image/")) return pushToast("Only images allowed.", "error");
+
+  // Validate file type - only PNG, JPG, JPEG
+  const allowedTypes = ["image/png", "image/jpg", "image/jpeg"];
+  const fileType = f.type.toLowerCase();
+
+  if (!allowedTypes.includes(fileType)) {
+    return pushToast("Only PNG, JPG, and JPEG images are allowed.", "error");
+  }
+
+  // Validate file size - allow up to 10MB for high-resolution images
+  const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+  if (f.size > maxSize) {
+    return pushToast("File size must be less than 10MB.", "error");
+  }
 
   selectedFile.value = f;
   preview.value = URL.createObjectURL(f);
