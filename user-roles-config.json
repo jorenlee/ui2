@@ -223,6 +223,22 @@
     {
       "email": "wenny.caseros@lsu.edu.ph",
       "roles": ["drsAdmin"]
+    },
+    {
+      "email": "charlene.fernan@lsu.edu.ph",
+      "roles": ["drsAdmin"]
+    },
+    {
+      "email": "raymundo.dolor@lsu.edu.ph",
+      "roles": ["drsAdmin"]
+    },
+    {
+      "email": "quincodf@lsu.edu.ph",
+      "roles": ["drsAdmin"]
+    },
+    {
+      "email": "development@lsu.edu.ph",
+      "roles": ["contentWriter"]
     }
   ]
 }
