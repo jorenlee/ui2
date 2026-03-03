@@ -1,28 +1,23 @@
 <script setup>
-const title = ["LRC Book Thru", "(lrc)", "Book Thru"];
-
-import { onMounted } from "vue";
-import { useUserStore } from "~/stores/user";
-const router = useRouter();
 import moment from "moment";
-const userStore = useUserStore();
 import _ from "lodash";
-const config = useRuntimeConfig();
-const endpoint = ref(config.public.apiUrl);
+import { onMounted } from "vue";
 import scheduleJSON from "./schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "./css/main.css";
+
+const router = useRouter();
+const title = ["LRC Book Thru", "(lrc)", "Book Thru"];
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const schedulesListsData = await $fetch(
   endpoint.value + "/api/library/schedule/booking/list/"
 ).catch((error) => error.data);
 
 const timeSelection = ref(scheduleJSON.timeSelection);
-
 let highlightedDates = ref([]);
 const minDate = ref(new Date());
-
-
 let id = ref();
 let date = ref();
 let time = ref(timeSelection._rawValue[0].time);

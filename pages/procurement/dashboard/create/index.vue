@@ -1,12 +1,10 @@
 <script setup>
 import { computed, onMounted } from "vue";
-import { useUserStore } from "~/stores/user";
-const router = useRouter();
-const userStore = useUserStore();
-import _ from "lodash";
-import axios from "axios";
 import { MdEditor } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
+import _ from "lodash";
+import axios from "axios";
+const router = useRouter();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 

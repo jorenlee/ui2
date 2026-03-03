@@ -1,7 +1,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
 const router = useRouter();
-const userStore = useUserStore();
 import _ from "lodash";
 
 const config = useRuntimeConfig();

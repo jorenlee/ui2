@@ -1,24 +1,15 @@
 <script setup>
-  import {
-    onMounted,
-    ref
-  } from "vue";
-  import moment from "moment";
-  const router = useRouter();
-  const userStore = useUserStore();
+  import { onMounted,ref } from "vue";
   import _ from "lodash";
+  const router = useRouter();
   const config = useRuntimeConfig();
   const endpoint = ref(config.public.apiUrl);
   const listItems = ref(0);
   let deleteIDItem = ref();
-  let updateIDItem = ref();
   let tableDisplay = ref(true);
   let toggleSideBarMenu = ref(false);
   let toggleConfirmDelete = ref(false);
   const confirmModal = ref(false);
-  const selectedItem = ref(null);
-  const toggleListsName = ref(false);
-  const displayListName = ref([])
   onMounted(() => {
     setTimeout(async () => {
       if (userStore.user.isAuthenticated && (userStore.user.email === "jorenleeluna24@gmail.com" || userStore.user.email === "jorenlee.luna@lsu.edu.ph")) {

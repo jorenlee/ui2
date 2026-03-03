@@ -1,9 +1,8 @@
 <script setup>
 import { onMounted, ref, onBeforeUnmount } from "vue";
-const router = useRouter();
-const userStore = useUserStore();
 import _ from "lodash";
 import moment from "moment";
+const router = useRouter();
 
 const listItems = ref(0);
 let tableDisplay = ref(true);

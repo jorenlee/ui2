@@ -5,19 +5,12 @@ import { ref, computed, watch } from "vue";
 import axios from "axios";
 
 const showPrivacyPolicy = ref(false);
-const togglePrivacyPolicy = () => {
-  showPrivacyPolicy.value = !showPrivacyPolicy.value;
-};
-
+const togglePrivacyPolicy = () => { showPrivacyPolicy.value = !showPrivacyPolicy.value;};
 const thankYouDisplay = ref(false);
-
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 const formDisplay = ref(true);
-
 const dateToday = moment().format("MMMM DD, YYYY h:mm:ss A");
-
 const requireAllFields = ref(false);
 
 const info = ref({

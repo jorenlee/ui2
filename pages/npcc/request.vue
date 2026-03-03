@@ -648,7 +648,6 @@ const menuList = [
   { label: "Track Request", link: "/npcc/track" },
 ];
 
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 

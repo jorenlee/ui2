@@ -1,5 +1,4 @@
 <script setup>
-  const userStore = useUserStore();
   const router = useRouter();
   const paymentMethodImage = ref(false);
   const toggleVarAdmissions = ref(false)

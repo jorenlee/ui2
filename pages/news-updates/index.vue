@@ -22,8 +22,6 @@ const selectedMonth = ref("");
 
 // Scroll to top button
 const showScrollButton = ref(false);
-
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 

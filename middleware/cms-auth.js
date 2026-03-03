@@ -1,9 +1,9 @@
 import { useAuth } from "@/composables/useAuth";
 
 export default defineNuxtRouteMiddleware(() => {
-  const userStore = useUserStore();
+  const { user, isLoggedIn } = useAuth();
 
-  if (!userStore.isLoggedIn) {
+  if (!isLoggedIn.value) {
     return navigateTo("/cms/login");
   }
 });

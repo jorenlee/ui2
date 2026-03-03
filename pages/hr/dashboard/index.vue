@@ -2,18 +2,10 @@
 import { onMounted, ref } from "vue";
 import moment from "moment";
 const router = useRouter();
-const userStore = useUserStore();
-const route = useRoute();
 import _ from "lodash";
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
-
-
-
-
 const presentYear = ref(moment(new Date()).format("YYYY"));
-
-
 const procurements = await $fetch(endpoint.value + "/api/procurements/list").catch(
   (error) => error.data
 );

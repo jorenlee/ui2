@@ -1,20 +1,10 @@
 <script setup>
 import { onMounted, ref } from "vue";
-
-const router = useRouter();
-const userStore = useUserStore();
 import _ from "lodash";
+const router = useRouter();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
-
-import moment from "moment";
-const route = useRoute();
-
 const procurements = ref(0);
-// console.log(procurements)
-
-const date = ref(new Date());
-let calendarSettings = ref(false);
 let deleteIDProcurement = ref();
 let appointmentInfo = ref(true);
 let toggleSideBarMenu = ref(true);

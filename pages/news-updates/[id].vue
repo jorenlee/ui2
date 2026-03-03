@@ -5,7 +5,6 @@ import moment from "moment";
 
 const route = useRoute();
 const itemId = route.params.id;
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = config.public.apiUrl;
 
@@ -357,7 +356,7 @@ const prevImage = () => {
     </div>
 
     <!-- MAIN CONTENT -->
-    <div class="w-11/12 mx-auto lg:py-10 py-5">
+    <div class="w-11/12 mx-auto py-5">
       <!-- Loading -->
       <div v-if="loading" class="text-center py-20">
         <div
@@ -376,19 +375,13 @@ const prevImage = () => {
             Error Loading Article
           </h3>
           <p class="text-red-600">{{ errorMsg }}</p>
-          <button
-            @click="$router.go(-1)"
-            class="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
-          >
-            Go Back
-          </button>
         </div>
       </div>
 
       <!-- CONTENT -->
       <div v-if="item && !loading">
         <!-- Article Header -->
-        <div class="bg-white rounded-lg shadow-sm p-6 lg:p-8 mb-6">
+        <div class="bg-white rounded-lg shadow-sm p-5 mb-6">
           <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
             <div class="flex-1">
               <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-4 leading-tight">
@@ -520,7 +513,7 @@ const prevImage = () => {
             Gallery
           </h2>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+          <div class="grid grid-cols-1 lg:grid-cols-8 gap-6">
             <div
               v-for="(file, index) in item.files"
               :key="index"
@@ -539,10 +532,10 @@ const prevImage = () => {
                 <img
                   :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${file}`"
                   :alt="`Image ${index + 1}`"
-                  class="w-full h-32 object-cover rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
+                  class="w-full h-44 object-cover rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
                   @error="(e) => {
                     e.target.style.display = 'none';
-                    e.target.parentElement.innerHTML = '<div class=\'w-full h-32 bg-gray-200 rounded-lg flex flex-col items-center justify-center\'><i class=\'fas fa-image text-gray-400 text-3xl mb-2\'></i><p class=\'text-xs text-gray-500 px-2 text-center break-all\'>' + file + '</p><p class=\'text-xs text-red-500\'>Failed to load</p></div>';
+                    e.target.parentElement.innerHTML = '<div class=\'w-full h-44 bg-gray-200 rounded-lg flex flex-col items-center justify-center\'><i class=\'fas fa-image text-gray-400 text-3xl mb-2\'></i><p class=\'text-xs text-gray-500 px-2 text-center break-all\'>' + file + '</p><p class=\'text-xs text-red-500\'>Failed to load</p></div>';
                   }"
                 />
                 <div

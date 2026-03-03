@@ -1,9 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, onBeforeMount } from "vue";
 import _ from "lodash";
-
-const router = useRouter();
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 const careers = ref([]);

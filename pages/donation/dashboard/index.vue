@@ -1,9 +1,5 @@
 <script setup>
-  import {
-    ref
-  } from 'vue';
-
-  const userStore = useUserStore();
+  import { ref } from 'vue';
   const config = useRuntimeConfig();
   const endpoint = ref(config.public.apiUrl);
   const donationLogs = ref(null)

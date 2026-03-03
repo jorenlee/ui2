@@ -1,19 +1,16 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUserStore } from "~/stores/user";
-const router = useRouter();
 import moment from "moment";
-const userStore = useUserStore();
 import _ from "lodash";
-const config = useRuntimeConfig();
-const endpoint = ref(config.public.apiUrl);
 import scheduleJSON from "../schedule.json";
 import collegeOrSchoolJSON from "../college_school.json";
 import courseOrProgramJSON from "../course_program.json";
 import courseMajorJSON from "../course_major.json";
-
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
+const router = useRouter();
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const schedulesListsData = await $fetch(
   endpoint.value + "/api/library/schedule/booking/list/"

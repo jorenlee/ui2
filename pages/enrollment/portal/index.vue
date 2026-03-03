@@ -1,8 +1,7 @@
 <script setup>
 import { onMounted } from "vue";
-const router = useRouter();
-const userStore = useUserStore();
 import _ from "lodash";
+const router = useRouter();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 

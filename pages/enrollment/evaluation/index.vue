@@ -1,24 +1,8 @@
 <script setup>
-
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
-import axios from "axios";
-import { onMounted } from "vue";
-
-const route = useRoute();
 const evaluationFormTab = ref(true)
 const doneEvaluationFormTab = ref(false)
-const spinner = ref(false);
-let enrolleesData = ref();
-const searchBtn = ref();
-
-onMounted(async () => {
-    // let enrollees = await axios.get(endpoint.value + "/api/admissions/list/")
-    // enrolleesData.value = enrollees.data
-    // console.log(enrollees.data)
-})
-
 const evaluationStatic = ref({
     header_title: [
         'CLIENT FEEDBACK',

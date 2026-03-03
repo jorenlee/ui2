@@ -1,14 +1,10 @@
 <script setup>
 import { onMounted, onBeforeUnmount, ref, watch, watchEffect } from "vue";
-import { useUserStore } from "~/stores/user";
 import scheduleJSON from "./schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
-import "./css/main.css";
 import moment from "moment";
+import "./css/main.css";
 import _ from "lodash";
-
-const router = useRouter();
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 const title = ["LRC Book Thru", "(lrc)", "Book Thru"];
@@ -17,13 +13,6 @@ const timeSelection = ref(scheduleJSON.timeSelection);
 // ✅ Loading State
 const isLoading = ref(true);
 const isSubmitting = ref(false);
-
-let errors = ref([]);
-let currentObjectSelectedFromSearch = ref(null);
-let selectIDBooksList = ref(null);
-const unFilteredTime = ref();
-let displayTableListsOfBooks = ref(false);
-
 
 // ✅ Data States
 const schedulesListsData = ref([]);

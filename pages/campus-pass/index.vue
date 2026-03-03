@@ -10,7 +10,6 @@ import { ref, computed } from "vue";
    BASIC STATE
 ========================= */
 const pleaseFillUpAllRequiredFields = ref(false);
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 

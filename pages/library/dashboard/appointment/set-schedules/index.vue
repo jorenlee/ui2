@@ -2,15 +2,12 @@
 import { onMounted } from "vue";
 import scheduleJSON from "../schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
-// import "@vuepic/vue-datepicker/dist/main.css";
 import moment from "moment";
-const router = useRouter();
-const userStore = useUserStore();
-const config = useRuntimeConfig();
-const endpoint = ref(config.public.apiUrl);
 import _ from "lodash";
 import "../css/main.css";
-
+const router = useRouter();
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 const timeSelection = ref(scheduleJSON.timeSelection);
 
 const schedulesListsData = await $fetch(
@@ -24,11 +21,6 @@ const info = ref({
 })
 
 let id = ref();
-// let date = ref();
-// let time = ref(timeSelection._rawValue[0].time);
-// let time = ref();
-// let updated_at = ref("Jan 1, 2024");
-
 let highlightedDates = ref([]);
 let displayAction = ref(false);
 let toggleSideBarMenu = ref(true);

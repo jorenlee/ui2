@@ -1,18 +1,13 @@
 <script setup>
-import { onMounted } from "vue";
 import axios from "axios";
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
-const route = useRoute();
 const router = useRouter();
-const oldSearchBtn = ref('');
 const searchBtn = ref('');
 const steps = ref();
 let receipt = ref('');
 const id = ref(null);
 const spinner = ref(false);
-const requiredField = ref(false);
 const pleaseAddCorrectTrackingIDNumber = ref(false);
 const trackingList = ref(false)
 const paymentMethodImage = ref(false);

@@ -2,7 +2,6 @@
 import { onMounted } from "vue";
 import courseOrProgramJSON from "./courseProgram.json";
 import _ from "lodash";
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 import moment from "moment";

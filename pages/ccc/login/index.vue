@@ -1,7 +1,4 @@
 <script setup>
-
-
-const userStore = useUserStore();
 const router = useRouter();
 
 const handleOnError = (error) => {

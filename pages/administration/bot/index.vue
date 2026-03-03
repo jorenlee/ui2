@@ -3,7 +3,6 @@ import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 
 
 const info = ref([]);
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 

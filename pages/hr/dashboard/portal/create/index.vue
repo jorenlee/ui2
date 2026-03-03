@@ -2,8 +2,6 @@
 import { onMounted, ref } from "vue";
 import moment from "moment";
 const router = useRouter();
-const userStore = useUserStore();
-const route = useRoute();
 import _ from "lodash";
 import axios from "axios"; // For making HTTP requests
 const config = useRuntimeConfig();

@@ -1,8 +1,6 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import moment from "moment";
-
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 const listItems = ref([]);

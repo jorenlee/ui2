@@ -1,7 +1,6 @@
 <script setup>
   import moment from "moment";
   import axios from "axios";
-  const userStore = useUserStore();
   const config = useRuntimeConfig();
   const endpoint = ref(config.public.apiUrl);
   const donationInfo = ref({

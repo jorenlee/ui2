@@ -1,13 +1,10 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUserStore } from "~/stores/user";
-const router = useRouter();
-const userStore = useUserStore();
-const route = useRoute();
 import _ from "lodash";
-import axios from "axios";
 import { MdEditor } from 'md-editor-v3';
 import 'md-editor-v3/lib/style.css';
+const router = useRouter();
+const route = useRoute();
 
 onMounted(() => {
   if (userStore.user.isAuthenticated &&

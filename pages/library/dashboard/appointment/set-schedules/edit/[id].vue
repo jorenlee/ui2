@@ -1,18 +1,12 @@
 <script setup>
 import { onMounted } from "vue";
-
-
 import scheduleJSON from "../../schedule.json";
+import _ from "lodash";
 const route = useRoute();
 const router = useRouter();
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
-import _ from "lodash";
-import moment from "moment";
-
 const schedule = await $fetch(endpoint.value + "/api/library/schedule/booking/" + route.params.id + "/").catch((error) => error.data);
-
 const timeSelection = ref(scheduleJSON.timeSelection);
 
 const info = ref({

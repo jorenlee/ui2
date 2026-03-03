@@ -5,12 +5,10 @@ import moment from "moment";
 import { useRouter } from "vue-router";
 import scheduleJSON from "./time.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
-// import "@vuepic/vue-datepicker/dist/main.css";
 import "./css/main.css";
 import _ from "lodash"
 
 const router = useRouter();
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 

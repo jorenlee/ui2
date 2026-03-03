@@ -4,12 +4,10 @@ import scheduleJSON from "../schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "../css/main.css";
 import moment from "moment";
+import _ from "lodash";
 const router = useRouter();
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
-import _ from "lodash";
-
 const timeSelection = ref(scheduleJSON.timeSelection);
 const selectAll = ref(false);
 

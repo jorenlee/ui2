@@ -86,12 +86,8 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import moment from "moment";
-
-const router = useRouter();
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
-
 const editMode = ref(false);
 const currentPage = ref("page1"); // <-- no leading slash
 const boxes = ref([]);

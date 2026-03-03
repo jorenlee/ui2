@@ -1,27 +1,18 @@
 <script setup>
 import { onMounted } from "vue";
-
 import scheduleJSON from "../schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
-import addDays from "date-fns/addDays";
 import moment from "moment";
 import _ from "lodash";
 const route = useRoute();
 const router = useRouter();
-const userStore = useUserStore();
-
 const timeSelection = ref(scheduleJSON.timeSelection);
-
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
-
 const { data: appointment } = await useFetch(endpoint.value + "/api/appointments/" + route.params.id + "/");
-
 const tracksLists = await $fetch(endpoint.value + "/api/appointments/tracking/list/").catch((error) => error.data)
-
 const schedulesListsData = await $fetch(endpoint.value + "/api/schedules/list/").catch((error) => error.data)
-
 let service = ref(appointment.value.service);
 
 let referencecode = ref(appointment.value.referencecode);

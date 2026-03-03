@@ -6,8 +6,6 @@ import VueDatePicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
 import moment from "moment";
 const router = useRouter();
-const userStore = useUserStore();
-const currentPage = ref(1);
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 import _ from "lodash";
