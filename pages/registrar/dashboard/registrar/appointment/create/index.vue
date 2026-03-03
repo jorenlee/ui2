@@ -1,7 +1,6 @@
 <script setup>
 import axios from "axios";
 import { onMounted, ref, computed } from "vue";
-import { useUserStore } from "@/stores/user";
 import providerListJSON from "../providerList.json";
 import scheduleJSON from "../schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
@@ -10,7 +9,6 @@ import addDays from "date-fns/addDays";
 import moment from "moment";
 import _ from "lodash";
 const router = useRouter();
-const userStore = useUserStore();
 const providerLists = ref(providerListJSON.providerLists);
 const timeSelection = ref(scheduleJSON.timeSelection);
 
@@ -74,7 +72,7 @@ onMounted(() => {
   ) {
     router.push("/");
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 });
 
@@ -617,3 +615,4 @@ input[type="radio"]:disabled {
   accent-color: #ebebeb;
 }
 </style>
+

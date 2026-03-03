@@ -1,8 +1,7 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import { useUserStore } from "@/stores/user";
 const router = useRouter();
-const userStore = useUserStore();
+
 const route = useRoute();
 import _ from "lodash";
 import collegeOrSchoolJSON from "../college_school.json";
@@ -27,7 +26,7 @@ onMounted(() => {
     // router.push("/registrar/enrollment/edit/" + route.params.id);
     // console.log(enrollment);
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 });
 

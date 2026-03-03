@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
 import providerListJSON from "../providerList.json";
 import scheduleJSON from "../schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
@@ -10,7 +9,6 @@ import moment from "moment";
 import _ from "lodash";
 const route = useRoute();
 const router = useRouter();
-const userStore = useUserStore();
 const providerLists = ref(providerListJSON.providerLists);
 const timeSelection = ref(scheduleJSON.timeSelection);
 
@@ -98,7 +96,7 @@ onMounted(() => {
       }
     });
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 });
 

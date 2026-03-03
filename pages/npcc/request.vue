@@ -640,7 +640,6 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import { useUserStore } from "@/stores/user";
 import itServiceConfig from "@/it-service-config.json";
 
 const menuList = [

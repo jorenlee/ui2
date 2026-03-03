@@ -1,4 +1,4 @@
-import { useUserStore } from "@/stores/user";
+import { useAuth } from "@/composables/useAuth";
 
 export default defineNuxtRouteMiddleware(() => {
   const userStore = useUserStore();

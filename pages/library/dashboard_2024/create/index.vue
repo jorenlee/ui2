@@ -44,7 +44,7 @@ onMounted(() => {
     });
     created_by_email.value = userStore.user.email;
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 });
 
@@ -503,3 +503,4 @@ input[type="radio"]:disabled {
   accent-color: #ff8f8f;
 }
 </style>
+

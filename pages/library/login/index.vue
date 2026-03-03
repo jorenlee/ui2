@@ -1,35 +1,30 @@
 <script setup>
-import { useUserStore } from "@/stores/user";
-import { useTokenClient } from "vue3-google-signin";
+
 const userStore = useUserStore();
 const router = useRouter();
 
-const handleOnError = (errorResponse) => {
-  // console.log("Error: ", errorResponse);
+const handleOnError = (error) => {
+  console.error("Google Login Error:", error);
 };
 
-const handleOnSuccess = async (response) => {
+const handleOnSuccess = async (event) => {
   try {
-    const userInfo = await $fetch("https://www.googleapis.com/oauth2/v1/userinfo?access_token=" + response.access_token);
-    
+    // event.claims contains the decoded user info
+    const userInfo = event.claims;
+
     if (!userInfo?.email) {
       console.error("No email found in response:", userInfo);
       return;
     }
-    
-    userStore.setToken(response.access_token, userInfo.email);
+
+    // Store the credential (JWT token) and email
+    userStore.setToken(event.credential, userInfo.email);
     console.log("User info:", userInfo);
     router.push("/library/dashboard");
   } catch (error) {
     console.error("Login error:", error);
   }
 };
-
-const { isReady, login } = useTokenClient({
-  onSuccess: handleOnSuccess,
-  onError: handleOnError,
-  // other options
-});
 </script>
 <template>
   <div class="bg-white">
@@ -43,11 +38,17 @@ const { isReady, login } = useTokenClient({
             <h1 class="font-bold text-sm text-green-900">Back to Library</h1>
           </a>
           <div class="py-7 px-4 lg:shadow-xl my-auto lg:order-1 order-2 text-center rounded-2xl">
-            <img class="lg:w-32 w-44 h-auto mx-auto block" 
+            <img class="lg:w-32 w-44 h-auto mx-auto block"
               src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/LSULRC.jpg" />
             <p class="text-2xl font-bold lasalle-green-text"> Learning Resource Center </p>
-            <button :disabled="!isReady" @click="() => login()" 
-              class="lg:w-fit w-10/12 pl-20 pr-10 py-2.5 bg-[#083408] hover:bg-white rounded-lg text-sm text-white hover:text-[#083408] text-center font-semibold login-with-google-btn block mx-auto uppercase lg:mt-7 mt-14 tracking-widest whitespace-nowrap hover:shadow-xl border-2 border-[#083408]"> Admin Login </button>
+            <ClientOnly>
+              <GoogleLoginButton
+                :options="{ theme: 'filled_blue', size: 'large', text: 'signin_with' }"
+                @success="handleOnSuccess"
+                @error="handleOnError"
+                class="mx-auto lg:mt-7 mt-14"
+              />
+            </ClientOnly>
           </div>
         </div>
       </div>

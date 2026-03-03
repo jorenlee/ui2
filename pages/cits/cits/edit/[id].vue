@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import { useUserStore } from "@/stores/user";
+
 const router = useRouter();
 const userStore = useUserStore();
 const route = useRoute();
@@ -16,7 +16,7 @@ onMounted(() => {
   ) {
     // router.push("/_/panels/cits/edit/" + route.params.id);
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 });
 

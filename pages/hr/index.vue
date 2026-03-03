@@ -1,6 +1,5 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, onBeforeMount } from "vue";
-import { useUserStore } from "@/stores/user";
 import _ from "lodash";
 
 const router = useRouter();

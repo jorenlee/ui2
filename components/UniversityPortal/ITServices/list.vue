@@ -898,10 +898,7 @@
 </template>
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive } from "vue";
-import { useUserStore } from "@/stores/user";
 import moment from "moment";
-
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 

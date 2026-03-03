@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
 import axios from "axios";
 const userStore = useUserStore();
 const config = useRuntimeConfig();

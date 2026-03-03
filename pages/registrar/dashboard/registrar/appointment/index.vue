@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import { useUserStore } from "@/stores/user";
 import providerListJSON from "./providerList.json";
 import scheduleJSON from "./schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
@@ -124,7 +123,7 @@ onMounted(async () => {
         // );
     }
   } else {
-    router.push("/unauthorized");
+    router.push("/");
     // console.log(bookingAppointmentList.value);
   }
 });
@@ -448,3 +447,4 @@ input[type="radio"] {
   background: #00c566;
 }
 </style>
+

@@ -1,11 +1,14 @@
 <script setup>
 import { onMounted, onUnmounted, ref, computed } from "vue";
-import { useUserStore } from "@/stores/user";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "./css/main.css";
 const router = useRouter();
-const userStore = useUserStore();
+const { user, token, logout, init } = useAuth();
 import _ from "lodash";
+
+onMounted(() => {
+  init();
+});
 
 const props = defineProps({
   darkMode: Boolean,
@@ -131,7 +134,7 @@ const fetchListItems = async () => {
     selectedStatus.value = "Status";
 
     // User-specific configurations
-    const userEmail = userStore.user.email;
+    const userEmail = user.value?.email;
 
     if (adminEmails.includes(userEmail)) {
       selectedAll.value = true;
@@ -385,7 +388,7 @@ const deleteItem = async () => {
   await $fetch(endpoint.value + "/api/drs/delete/" + deleteIDItem.value, {
     method: "DELETE",
     headers: {
-      Authorization: userStore.user.token,
+      Authorization: token.value,
       "Content-Type": "application/json",
     },
   }).then(async (response) => {
@@ -395,7 +398,7 @@ const deleteItem = async () => {
   });
 };
 const logOut = () => {
-  userStore.removeToken();
+  logout();
   router.push("/drs/login");
 };
 
@@ -587,148 +590,108 @@ const submitDRSFormToGmailApproved = async () => {
                     <i class="fa fa-filter mr-2"></i>
                     <span>Filters</span>
                   </div>
-                  <div class="flex gap-2">
+                  <div class="lg:flex gap-2">
                     <label
-                      v-if="
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'meredith.embuscado@lsu.edu.ph' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'macristina.llauder@lsu.edu.ph' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'recordsmanagement@lsu.edu.ph'
-                      "
-                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all"
+                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
                       :class="[
-                        selectedAll ? 'bg-green-700 text-white' : '',
-                        darkMode
-                          ? 'bg-gray-800 text-green-400 hover:bg-green-700 hover:text-white'
-                          : 'bg-white text-green-900 hover:bg-green-700 hover:text-white'
+                        selectedAll
+                          ? 'bg-green-700 text-white border-green-700'
+                          : darkMode
+                            ? 'bg-gray-800 text-green-400 border-gray-700 hover:bg-green-700 hover:text-white hover:border-green-700'
+                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300'
                       ]"
                       for="checkboxAll"
                     >
                       <input
                         type="checkbox"
                         id="checkboxAll"
-                        class="mr-2 w-4 h-4"
+                        class="mr-2 w-4 h-4 accent-green-600"
                         value="all"
                         v-model="selectedAll"
                       />
                       All
                       <span
                         v-if="listItems"
-                        class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs"
+                        class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
+                        :class="selectedAll ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'"
                         >{{ listItems.length }}</span
                       >
                     </label>
 
                     <label
-                      v-if="
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'meredith.embuscado@lsu.edu.ph' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'macristina.llauder@lsu.edu.ph' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'recordsmanagement@lsu.edu.ph'
-                      "
-                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all"
+                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
                       :class="[
-                        selectedReviewed ? 'bg-green-700 text-white' : '',
-                        darkMode
-                          ? 'bg-gray-800 text-green-400 hover:bg-green-700 hover:text-white'
-                          : 'bg-white text-green-900 hover:bg-green-700 hover:text-white'
+                        selectedReviewed
+                          ? 'bg-green-700 text-white border-green-700'
+                          : darkMode
+                            ? 'bg-gray-800 text-green-400 border-gray-700 hover:bg-green-700 hover:text-white hover:border-green-700'
+                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300'
                       ]"
                       for="checkboxReviewed"
                     >
                       <input
                         type="checkbox"
                         id="checkboxReviewed"
-                        class="mr-2 w-4 h-4"
+                        class="mr-2 w-4 h-4 accent-green-600"
                         value="Approved"
                         v-model="selectedReviewed"
                       />
                       Reviewed
                       <span
-                        class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs"
+                        class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
+                        :class="selectedReviewed ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'"
                         >{{ reviewedLength }}</span
                       >
                     </label>
 
                     <label
-                      v-if="
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'meredith.embuscado@lsu.edu.ph' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'macristina.llauder@lsu.edu.ph' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'recordsmanagement@lsu.edu.ph'
-                      "
-                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all"
+                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
                       :class="[
-                        selectedVerified ? 'bg-green-700 text-white' : '',
-                        darkMode
-                          ? 'bg-gray-800 text-green-400 hover:bg-green-700 hover:text-white'
-                          : 'bg-white text-green-900 hover:bg-green-700 hover:text-white'
+                        selectedVerified
+                          ? 'bg-green-700 text-white border-green-700'
+                          : darkMode
+                            ? 'bg-gray-800 text-green-400 border-gray-700 hover:bg-green-700 hover:text-white hover:border-green-700'
+                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300'
                       ]"
                       for="checkboxVerified"
                     >
                       <input
                         type="checkbox"
                         id="checkboxVerified"
-                        class="mr-2 w-4 h-4"
+                        class="mr-2 w-4 h-4 accent-green-600"
                         value="Approved"
                         v-model="selectedVerified"
                       />
                       Verified
                       <span
-                        class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs"
+                        class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
+                        :class="selectedVerified ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'"
                         >{{ verifiedLength }}</span
                       >
                     </label>
 
                     <label
-                      v-if="
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminEmail ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          superAdminTwo ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'meredith.embuscado@lsu.edu.ph' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'macristina.llauder@lsu.edu.ph' ||
-                        userStore.user.email?.trim().toLowerCase() ===
-                          'recordsmanagement@lsu.edu.ph'
-                      "
-                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all"
+                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
                       :class="[
-                        selectedApproved ? 'bg-green-700 text-white' : '',
-                        darkMode
-                          ? 'bg-gray-800 text-green-400 hover:bg-green-700 hover:text-white'
-                          : 'bg-white text-green-900 hover:bg-green-700 hover:text-white'
+                        selectedApproved
+                          ? 'bg-green-700 text-white border-green-700'
+                          : darkMode
+                            ? 'bg-gray-800 text-green-400 border-gray-700 hover:bg-green-700 hover:text-white hover:border-green-700'
+                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300'
                       ]"
                       for="checkboxApproved"
                     >
                       <input
                         type="checkbox"
                         id="checkboxApproved"
-                        class="mr-2 w-4 h-4"
+                        class="mr-2 w-4 h-4 accent-green-600"
                         value="Approved"
                         v-model="selectedApproved"
                       />
                       Approved
                       <span
-                        class="ml-1 px-1.5 py-0.5 bg-green-100 text-green-800 rounded-full text-xs"
+                        class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
+                        :class="selectedApproved ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'"
                         >{{ approvedLength }}</span
                       >
                     </label>
@@ -760,8 +723,8 @@ const submitDRSFormToGmailApproved = async () => {
                     [
                       'meredith.embuscado@lsu.edu.ph',
                       'macristina.llauder@lsu.edu.ph',
-                      superAdminEmail,
-                    ].includes(userStore.user.email)
+                      superAdminEmail.value,
+                    ].includes(user.value?.email)
                       ? ''
                       : 'hidden'
                   "
@@ -783,7 +746,7 @@ const submitDRSFormToGmailApproved = async () => {
                     >
                       <div
                         class="w-full mx-auto cursor-pointer px-2 py-1 rounded"
-                        :class="darkMode ? 'hover:bg-green-700' : 'hover:bg-gray-950'"
+                        :class="darkMode ? 'hover:bg-green-700' : 'hover:bg-green-950'"
                         @click="sortBy('originating_office')"
                       >
                         Office
@@ -801,7 +764,7 @@ const submitDRSFormToGmailApproved = async () => {
 
                       <div
                         class="w-full mx-auto cursor-pointer px-2 py-1 rounded"
-                         :class="darkMode ? 'hover:bg-green-700' : 'hover:bg-gray-950'"
+                         :class="darkMode ? 'hover:bg-green-700' : 'hover:bg-green-950'"
                         @click="sortBy('document_title')"
                       >
                         Document Title
@@ -818,7 +781,7 @@ const submitDRSFormToGmailApproved = async () => {
                       </div>
                       <div
                         class="w-full mx-auto cursor-pointer px-2 py-1 rounded"
-                        :class="darkMode ? 'hover:bg-green-700' : 'hover:bg-gray-950'"
+                        :class="darkMode ? 'hover:bg-green-700' : 'hover:bg-green-950'"
                         @click="sortBy('document_type')"
                       >
                         Document Type
@@ -904,10 +867,10 @@ const submitDRSFormToGmailApproved = async () => {
                                 </button>
                                 <button
                                   v-if="
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminTwo
                                   "
@@ -1083,10 +1046,10 @@ const submitDRSFormToGmailApproved = async () => {
                                 </button>
                                 <button
                                   v-if="
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminTwo
                                   "
@@ -1316,19 +1279,19 @@ const submitDRSFormToGmailApproved = async () => {
                                       "
                                       :disabled="
                                         !(
-                                          userStore.user.email
+                                          user.value?.email
                                             ?.trim()
                                             .toLowerCase() ===
                                             filteredItems.reviewed_by_email ||
-                                          userStore.user.email
+                                          user.value?.email
                                             ?.trim()
                                             .toLowerCase() ===
                                             filteredItems.originating_email ||
-                                          userStore.user.email
+                                          user.value?.email
                                             ?.trim()
                                             .toLowerCase() ===
                                             superAdminEmail ||
-                                          userStore.user.email
+                                          user.value?.email
                                             ?.trim()
                                             .toLowerCase() === superAdminTwo
                                         )
@@ -1389,15 +1352,15 @@ const submitDRSFormToGmailApproved = async () => {
                                       v-model="filteredItems.document_title"
                                       :disabled="
                                         !(
-                                          userStore.user.email
+                                          user.value?.email
                                             ?.trim()
                                             .toLowerCase() ===
                                             filteredItems.reviewed_by_email ||
-                                          userStore.user.email
+                                          user.value?.email
                                             ?.trim()
                                             .toLowerCase() ===
                                             superAdminEmail ||
-                                          userStore.user.email
+                                          user.value?.email
                                             ?.trim()
                                             .toLowerCase() === superAdminTwo
                                         )
@@ -1425,15 +1388,15 @@ const submitDRSFormToGmailApproved = async () => {
                                       v-model="filteredItems.originating_email"
                                       :disabled="
                                         !(
-                                          userStore.user.email
+                                          user.value?.email
                                             ?.trim()
                                             .toLowerCase() ===
                                             filteredItems.reviewed_by_email ||
-                                          userStore.user.email
+                                          user.value?.email
                                             ?.trim()
                                             .toLowerCase() ===
                                             superAdminEmail ||
-                                          userStore.user.email
+                                          user.value?.email
                                             ?.trim()
                                             .toLowerCase() === superAdminTwo
                                         )
@@ -1507,15 +1470,15 @@ const submitDRSFormToGmailApproved = async () => {
                                             @change="statusChange"
                                             :disabled="
                                               !(
-                                                userStore.user.email
+                                                user.value?.email
                                                   ?.trim()
                                                   .toLowerCase() ===
                                                   filteredItems.reviewed_by_email ||
-                                                userStore.user.email
+                                                user.value?.email
                                                   ?.trim()
                                                   .toLowerCase() ===
                                                   superAdminEmail ||
-                                                userStore.user.email
+                                                user.value?.email
                                                   ?.trim()
                                                   .toLowerCase() ===
                                                   superAdminTwo
@@ -1545,15 +1508,15 @@ const submitDRSFormToGmailApproved = async () => {
                                               @change="statusChange"
                                               :disabled="
                                                 !(
-                                                  userStore.user.email
+                                                  user.value?.email
                                                     ?.trim()
                                                     .toLowerCase() ===
                                                     filteredItems.reviewed_by_email ||
-                                                  userStore.user.email
+                                                  user.value?.email
                                                     ?.trim()
                                                     .toLowerCase() ===
                                                     superAdminEmail ||
-                                                  userStore.user.email
+                                                  user.value?.email
                                                     ?.trim()
                                                     .toLowerCase() ===
                                                     superAdminTwo
@@ -1648,14 +1611,14 @@ const submitDRSFormToGmailApproved = async () => {
                                   class="px-0.5 uppercase w-full rounded-sm lg:h-9 h-8 text-xs text-right" 
                                   placeholder="First Name" 
                                   v-model="filteredItems.originating_firstname" 
-                                  :disabled="!(userStore.user.email?.trim().toLowerCase() === filteredItems.reviewed_by_email)"
+                                  :disabled="!(user.value?.email?.trim().toLowerCase() === filteredItems.reviewed_by_email)"
                                 />
                                 <input 
                                   type="text" 
                                   class="px-0.5 uppercase w-full rounded-sm lg:h-9 h-8 text-xs" 
                                   placeholder="Last Name" 
                                   v-model="filteredItems.originating_lastname" 
-                                  :disabled="!(userStore.user.email?.trim().toLowerCase() === filteredItems.reviewed_by_email)"
+                                  :disabled="!(user.value?.email?.trim().toLowerCase() === filteredItems.reviewed_by_email)"
                                 /> -->
 
                                 {{ filteredItems.originating_firstname }}
@@ -1678,11 +1641,11 @@ const submitDRSFormToGmailApproved = async () => {
                           class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
                           :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                           v-if="
-                            userStore.user.email?.trim().toLowerCase() ===
+                            user.value?.email?.trim().toLowerCase() ===
                               filteredItems.reviewed_by_email ||
-                            userStore.user.email?.trim().toLowerCase() ===
+                            user.value?.email?.trim().toLowerCase() ===
                               superAdminEmail ||
-                            userStore.user.email?.trim().toLowerCase() ===
+                            user.value?.email?.trim().toLowerCase() ===
                               superAdminTwo
                           "
                         >
@@ -1705,14 +1668,14 @@ const submitDRSFormToGmailApproved = async () => {
                                   v-model="filteredItems.reviewed_by_name"
                                   :disabled="
                                     !(
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() ===
                                         filteredItems.reviewed_by_email ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminTwo
                                     )
@@ -1732,14 +1695,14 @@ const submitDRSFormToGmailApproved = async () => {
                                   "
                                   :disabled="
                                     !(
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() ===
                                         filteredItems.reviewed_by_email ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminTwo
                                     )
@@ -1749,14 +1712,14 @@ const submitDRSFormToGmailApproved = async () => {
                                 <input
                                   v-model="filteredItems.reviewed_by_email"
                                   :class="[
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       filteredItems.reviewed_by_email ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminTwo ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail
                                       ? ''
@@ -1799,14 +1762,14 @@ const submitDRSFormToGmailApproved = async () => {
                                     @change="actionChecked()"
                                     :disabled="
                                       !(
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           filteredItems.reviewed_by_email ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo
                                       )
@@ -1837,14 +1800,14 @@ const submitDRSFormToGmailApproved = async () => {
                                     @change="actionChecked()"
                                     :disabled="
                                       !(
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           filteredItems.reviewed_by_email ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo
                                       )
@@ -1875,14 +1838,14 @@ const submitDRSFormToGmailApproved = async () => {
                                     @change="actionChecked()"
                                     :disabled="
                                       !(
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           filteredItems.reviewed_by_email ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo
                                       )
@@ -1917,11 +1880,11 @@ const submitDRSFormToGmailApproved = async () => {
                               v-model="filteredItems.reviewed_by_remarks"
                               :disabled="
                                 !(
-                                  userStore.user.email?.trim().toLowerCase() ===
+                                  user.value?.email?.trim().toLowerCase() ===
                                     filteredItems.reviewed_by_email ||
-                                  userStore.user.email?.trim().toLowerCase() ===
+                                  user.value?.email?.trim().toLowerCase() ===
                                     superAdminEmail ||
-                                  userStore.user.email?.trim().toLowerCase() ===
+                                  user.value?.email?.trim().toLowerCase() ===
                                     superAdminTwo
                                 )
                               "
@@ -1932,11 +1895,11 @@ const submitDRSFormToGmailApproved = async () => {
 
                         <div
                           v-if="
-                            userStore.user.email?.trim().toLowerCase() ===
+                            user.value?.email?.trim().toLowerCase() ===
                               filteredItems.verified_by_email ||
-                            userStore.user.email?.trim().toLowerCase() ===
+                            user.value?.email?.trim().toLowerCase() ===
                               superAdminEmail ||
-                            userStore.user.email?.trim().toLowerCase() ===
+                            user.value?.email?.trim().toLowerCase() ===
                               superAdminTwo
                           "
                           class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
@@ -1961,14 +1924,14 @@ const submitDRSFormToGmailApproved = async () => {
                                   v-model="filteredItems.verified_by_name"
                                   :disabled="
                                     !(
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() ===
                                         filteredItems.verified_by_email ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminTwo
                                     )
@@ -1988,14 +1951,14 @@ const submitDRSFormToGmailApproved = async () => {
                                   "
                                   :disabled="
                                     !(
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() ===
                                         filteredItems.verified_by_email ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminTwo
                                     )
@@ -2005,16 +1968,16 @@ const submitDRSFormToGmailApproved = async () => {
                                 <input
                                   v-model="filteredItems.verified_by_email"
                                   :class="[
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       filteredItems.verified_by_email ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail
                                       ? ''
                                       : 'hidden' ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo,
                                     darkMode
@@ -2055,14 +2018,14 @@ const submitDRSFormToGmailApproved = async () => {
                                     @change="actionChecked()"
                                     :disabled="
                                       !(
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           filteredItems.verified_by_email ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo
                                       )
@@ -2093,14 +2056,14 @@ const submitDRSFormToGmailApproved = async () => {
                                     @change="actionChecked()"
                                     :disabled="
                                       !(
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           filteredItems.verified_by_email ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo
                                       )
@@ -2131,14 +2094,14 @@ const submitDRSFormToGmailApproved = async () => {
                                     @change="actionChecked()"
                                     :disabled="
                                       !(
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           filteredItems.verified_by_email ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo
                                       )
@@ -2173,11 +2136,11 @@ const submitDRSFormToGmailApproved = async () => {
                               v-model="filteredItems.verified_by_remarks"
                               :disabled="
                                 !(
-                                  userStore.user.email?.trim().toLowerCase() ===
+                                  user.value?.email?.trim().toLowerCase() ===
                                     filteredItems.verified_by_email ||
-                                  userStore.user.email?.trim().toLowerCase() ===
+                                  user.value?.email?.trim().toLowerCase() ===
                                     superAdminEmail ||
-                                  userStore.user.email?.trim().toLowerCase() ===
+                                  user.value?.email?.trim().toLowerCase() ===
                                     superAdminTwo
                                 )
                               "
@@ -2188,11 +2151,11 @@ const submitDRSFormToGmailApproved = async () => {
 
                         <div
                           v-if="
-                            userStore.user.email?.trim().toLowerCase() ===
+                            user.value?.email?.trim().toLowerCase() ===
                               filteredItems.approved_by_email ||
-                            userStore.user.email?.trim().toLowerCase() ===
+                            user.value?.email?.trim().toLowerCase() ===
                               superAdminEmail ||
-                            userStore.user.email?.trim().toLowerCase() ===
+                            user.value?.email?.trim().toLowerCase() ===
                               superAdminTwo
                           "
                           class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
@@ -2217,11 +2180,11 @@ const submitDRSFormToGmailApproved = async () => {
                                   v-model="filteredItems.approved_by_name"
                                   :disabled="
                                     !(
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() ===
                                         filteredItems.approved_by_email ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail
                                     )
@@ -2241,14 +2204,14 @@ const submitDRSFormToGmailApproved = async () => {
                                   "
                                   :disabled="
                                     !(
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() ===
                                         filteredItems.approved_by_email ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminEmail ||
-                                      userStore.user.email
+                                      user.value?.email
                                         ?.trim()
                                         .toLowerCase() === superAdminTwo
                                     )
@@ -2258,16 +2221,16 @@ const submitDRSFormToGmailApproved = async () => {
                                 <input
                                   v-model="filteredItems.approved_by_email"
                                   :class="[
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       filteredItems.approved_by_email ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail
                                       ? ''
                                       : 'hidden' ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo,
                                     darkMode
@@ -2308,18 +2271,18 @@ const submitDRSFormToGmailApproved = async () => {
                                     @change="actionChecked()"
                                     :disabled="
                                       !(
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           filteredItems.approved_by_email ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           'president@lsu.edu.ph' ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo
                                       )
@@ -2350,18 +2313,18 @@ const submitDRSFormToGmailApproved = async () => {
                                     @change="actionChecked()"
                                     :disabled="
                                       !(
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           filteredItems.approved_by_email ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           'president@lsu.edu.ph' ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo
                                       )
@@ -2393,18 +2356,18 @@ const submitDRSFormToGmailApproved = async () => {
                                     @change="actionChecked()"
                                     :disabled="
                                       !(
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           filteredItems.approved_by_email ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() ===
                                           'president@lsu.edu.ph' ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminEmail ||
-                                        userStore.user.email
+                                        user.value?.email
                                           ?.trim()
                                           .toLowerCase() === superAdminTwo
                                       )
@@ -2440,13 +2403,13 @@ const submitDRSFormToGmailApproved = async () => {
                               v-model="filteredItems.approved_by_remarks"
                               :disabled="
                                 !(
-                                  userStore.user.email?.trim().toLowerCase() ===
+                                  user.value?.email?.trim().toLowerCase() ===
                                     filteredItems.approved_by_email ||
-                                  userStore.user.email?.trim().toLowerCase() ===
+                                  user.value?.email?.trim().toLowerCase() ===
                                     'president@lsu.edu.ph' ||
-                                  userStore.user.email?.trim().toLowerCase() ===
+                                  user.value?.email?.trim().toLowerCase() ===
                                     superAdminEmail ||
-                                  userStore.user.email?.trim().toLowerCase() ===
+                                  user.value?.email?.trim().toLowerCase() ===
                                     superAdminTwo
                                 )
                               "
@@ -2457,15 +2420,15 @@ const submitDRSFormToGmailApproved = async () => {
 
                       <div
                         v-if="
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             'meredith.embuscado@lsu.edu.ph' ||
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             superAdminTwo ||
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             filteredItems.rmo_email ||
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             superAdminEmail ||
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             reviewed_by_email
                         "
                         class="lg:flex lg:gap-x-2 gap-x-1 w-full shadow px-3 py-3 my-5"
@@ -2490,22 +2453,22 @@ const submitDRSFormToGmailApproved = async () => {
                                 v-model="filteredItems.rmo_name"
                                 :disabled="
                                   !(
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       'meredith.embuscado@lsu.edu.ph' ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       'macristina.llauder@lsu.edu.ph' ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       filteredItems.rmo_email ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminTwo
                                   )
@@ -2530,22 +2493,22 @@ const submitDRSFormToGmailApproved = async () => {
                                 required
                                 :disabled="
                                   !(
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       'meredith.embuscado@lsu.edu.ph' ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       'macristina.llauder@lsu.edu.ph' ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       filteredItems.rmo_email ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminTwo
                                   )
@@ -2561,7 +2524,7 @@ const submitDRSFormToGmailApproved = async () => {
                                   'macristina.llauder@lsu.edu.ph',
                                   filteredItems.rmo_email,
                                   superAdminEmail,
-                                ].includes(userStore.user.email)
+                                ].includes(user.value?.email)
                                   ? ''
                                   : 'hidden'
                               "
@@ -2608,18 +2571,18 @@ const submitDRSFormToGmailApproved = async () => {
                                 v-model="filteredItems.other_comments_remarks"
                                 :disabled="
                                   !(
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       'meredith.embuscado@lsu.edu.ph' ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminTwo ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() ===
                                       filteredItems.rmo_email ||
-                                    userStore.user.email
+                                    user.value?.email
                                       ?.trim()
                                       .toLowerCase() === superAdminEmail
                                   )
@@ -2639,11 +2602,11 @@ const submitDRSFormToGmailApproved = async () => {
                     <div class="pb-5 lg:px-5 px-3 mb-5">
                       <div
                         v-if="
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             filteredItems.rmo_email ||
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             superAdminEmail ||
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             superAdminTwo
                         "
                         class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
@@ -2658,9 +2621,9 @@ const submitDRSFormToGmailApproved = async () => {
 
                       <div
                         v-if="
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             filteredItems.reviewed_by_email ||
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             superAdminEmail
                         "
                         class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
@@ -2675,9 +2638,9 @@ const submitDRSFormToGmailApproved = async () => {
 
                       <div
                         v-if="
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             filteredItems.verified_by_email ||
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             superAdminEmail
                         "
                         class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
@@ -2692,9 +2655,9 @@ const submitDRSFormToGmailApproved = async () => {
 
                       <div
                         v-if="
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             filteredItems.approved_by_email ||
-                          userStore.user.email?.trim().toLowerCase() ===
+                          user.value?.email?.trim().toLowerCase() ===
                             superAdminEmail
                         "
                         class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"

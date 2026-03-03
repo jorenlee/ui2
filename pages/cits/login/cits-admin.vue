@@ -1,21 +1,14 @@
 <script setup>
   const router = useRouter();
-  import {useTokenClient,} from "vue3-google-signin";
 
-  const handleOnSuccess = (response) => {
-    // console.log("Access Token: ", response.access_token);
+  const handleOnSuccess = (event) => {
+    console.log("User info:", event.claims);
     // router.push("/cits/dashboard")
   };
 
-  const handleOnError = (errorResponse) => {
-    // console.log("Error: ", errorResponse);
+  const handleOnError = (error) => {
+    console.error("Google Login Error:", error);
   };
-
-  const { isReady, login } = useTokenClient({
-    onSuccess: handleOnSuccess,
-    onError: handleOnError,
-    // other options
-  });
 </script>
 
 <template>
@@ -56,12 +49,14 @@
               LSU Center for Information Technology and Services
             </p>
             <!-- <p class="font-poppins text-green-700 mb-7">Admin Login</p> -->
-            <button
-            :disabled="!isReady" @click="() => login()"
-              class="lg:w-6/12 w-10/12 pl-12 pr-3 py-3 bg-green-10 rounded-lg text-sm text-white text-center font-semibold login-with-google-btn block mx-auto uppercase mt-7 tracking-widest"
-            >
-              Admin Login
-            </button>
+            <ClientOnly>
+              <GoogleLoginButton
+                :options="{ theme: 'filled_blue', size: 'large', text: 'signin_with' }"
+                @success="handleOnSuccess"
+                @error="handleOnError"
+                class="mx-auto mt-7"
+              />
+            </ClientOnly>
           </div>
         </div>
       </div>

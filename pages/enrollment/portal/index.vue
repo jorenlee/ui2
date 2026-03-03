@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
 const router = useRouter();
 const userStore = useUserStore();
 import _ from "lodash";

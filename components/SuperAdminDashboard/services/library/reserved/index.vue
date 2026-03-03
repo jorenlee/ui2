@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, toRaw } from "vue";
-import { useUserStore } from "@/stores/user";
 import moment from "moment";
 import scheduleJSON from "../time.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
@@ -15,7 +14,7 @@ const props = defineProps({
 /* =========================
    STORE / ENDPOINT
 ========================= */
-const userStore = useUserStore();
+
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 

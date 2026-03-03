@@ -1,13 +1,18 @@
 <script setup>
 import { onMounted, ref, computed, watch, onBeforeUnmount } from "vue";
-import { useUserStore } from "@/stores/user";
 import _ from "lodash";
 import moment from "moment";
-const router = useRouter();
+
 const route = useRoute();
-const userStore = useUserStore();
+const router = useRouter();
+const { user, token, init } = useAuth();
+
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
+
+onMounted(() => {
+  init();
+});
 
 const props = defineProps({
   darkMode: Boolean,
@@ -70,7 +75,6 @@ const deleteItems = async () => {
       await $fetch(endpoint.value + "/api/campus-pass/" + id + "/delete/", {
         method: "DELETE",
         headers: {
-          Authorization: userStore.user.token,
           "Content-Type": "application/json",
         },
       });
@@ -163,7 +167,6 @@ const checkAndRemoveDuplicates = async () => {
       await $fetch(endpoint.value + "/api/campus-pass/" + id + "/delete/", {
         method: "DELETE",
         headers: {
-          Authorization: userStore.user.token,
           "Content-Type": "application/json",
         },
       });
@@ -436,11 +439,6 @@ const btnToggleListsName = (id) => {
       toggleListsName.value = !toggleListsName.value;
     }
   });
-};
-
-const logOut = () => {
-  userStore.removeToken();
-  router.push("/campus-pass/login");
 };
 
 let filteredItems;

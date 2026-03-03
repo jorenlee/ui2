@@ -1,7 +1,4 @@
 <script setup>
-  import {
-    useUserStore
-  } from "@/stores/user";
   import _ from "lodash";
   import VueDatePicker from "@vuepic/vue-datepicker";
   import "./css/main.css";
@@ -12,7 +9,7 @@
   } from 'vue';
   import axios from 'axios';  // For making HTTP requests
   const pleaseFillUpAllRequiredFields = ref(false);
-  const userStore = useUserStore();
+
   const config = useRuntimeConfig();
   const endpoint = ref(config.public.apiUrl);
   const formDisplay = ref(true);

@@ -1,8 +1,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import { useUserStore } from "@/stores/user";
 const router = useRouter();
-const userStore = useUserStore();
 import _ from "lodash";
 
 const config = useRuntimeConfig();
@@ -14,7 +12,7 @@ onMounted(() => {
     userStore.user.email === userStore.user.email) {
     router.push("/library/dashboard");
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 });
 
@@ -189,3 +187,4 @@ const logOut = () => {
   </div>
 </template>
 <style scoped></style>
+

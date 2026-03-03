@@ -1,6 +1,5 @@
 <script setup>
 import { ref, onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
 import moment from "moment";
 
 const userStore = useUserStore();

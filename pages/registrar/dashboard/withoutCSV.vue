@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted, ref, onBeforeUnmount } from "vue";
-import { useUserStore } from "@/stores/user";
 const router = useRouter();
 const userStore = useUserStore();
 import _ from "lodash";
@@ -226,7 +225,7 @@ onMounted(() => {
       router.push("/registrar/dashboard");
       startAutoRefresh();
     } else {
-      router.push("/unauthorized");
+      router.push("/");
     }
   }, 5000);
 });
@@ -1635,3 +1634,4 @@ const sortedLogs = computed(() => {
   </div>
 </template>
 <style lang="scss" scoped></style>
+

@@ -1,9 +1,7 @@
 <script setup>
-import { useUserStore } from "@/stores/user";
 import { ref, onMounted, computed, watch } from "vue";
 import moment from "moment";
 
-const userStore = useUserStore();
 const title = ["learning resource center", "(lrc)", "LRC"];
 const VMGO = [
   "The Learning Resource Center (LRC) aims to empower lifelong learning through a dynamic and inclusive hub of resources, innovation, collaboration, and linkages.",

@@ -1,5 +1,4 @@
 <script setup>
-import { useUserStore } from "@/stores/user";
 import { onMounted } from "vue";
 import courseOrProgramJSON from "./courseProgram.json";
 import _ from "lodash";

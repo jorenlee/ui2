@@ -1,13 +1,9 @@
 <script setup>
-const router = useRouter();
-
-import { useUserStore } from "@/stores/user";
-const userStore = useUserStore();
+  const router = useRouter();
   const route = useRoute();
   const config = useRuntimeConfig();
   const endpoint = ref(config.public.apiUrl);
   const procurements = await $fetch(endpoint.value + "/api/procurements/" + route.params.id + "/").catch((error) => error.data)
-
 </script>
 
 <template>

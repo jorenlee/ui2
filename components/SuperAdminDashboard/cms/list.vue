@@ -1,7 +1,5 @@
 <script setup>
 import { onMounted, ref, computed, watch, onBeforeUnmount } from "vue";
-import { useUserStore } from "@/stores/user";
-import { useRouter, useRoute } from "vue-router";
 import _ from "lodash";
 import moment from "moment";
 
@@ -12,9 +10,13 @@ const props = defineProps({
 
 const router = useRouter();
 const route = useRoute();
-const userStore = useUserStore();
+const { user, init } = useAuth();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
+
+onMounted(() => {
+  init();
+});
 const listItems = ref([]);
 let deleteIDItem = ref();
 let tableDisplay = ref(true);
@@ -915,7 +917,7 @@ const superAdminEmails = [
 const canVerify = (contributorEmail) => {
   return directHeadEmails.some(
     (d) =>
-      d.directHeadEmail === userStore.user.email &&
+      d.directHeadEmail === user.value?.email &&
       d.contributorEmail.includes(contributorEmail),
   );
 };
@@ -980,7 +982,7 @@ const toPublish = () => {
                     :class="
                       showEditModal ? 'grid grid-cols-2 lg:mb-3' : 'w-fit'
                     "
-                    v-if="userStore.user.email.includes(superAdminEmails)"
+                    v-if="superAdminEmails.includes(user.value?.email)"
                   >
                     <div
                       class="p-2 lg:px-3 w-full lg:py-1 rounded-lg border-l-4 border-blue-500"
@@ -1165,8 +1167,8 @@ const toPublish = () => {
                         <!-- v-if="
                             j.logs?.[0]?.personnel_email &&
                             (canVerify(j.logs[0].personnel_email) ||
-                              superAdminEmails.includes(userStore.user.email) ||
-                              userStore.user.email ===
+                              superAdminEmails.includes(user.value?.email) ||
+                              user.value?.email ===
                                 j.logs[0].personnel_email)
                           " -->
 

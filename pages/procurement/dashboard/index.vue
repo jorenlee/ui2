@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import { useUserStore } from "@/stores/user";
+
 const router = useRouter();
 const userStore = useUserStore();
 import _ from "lodash";
@@ -30,7 +30,7 @@ onMounted(() => {
       procurements.value = await $fetch(endpoint.value + "/api/procurements/list").catch((error) => error.data) || 0;
       router.push("/procurement/dashboard");
     } else {
-      router.push("/unauthorized");
+      router.push("/");
     }
   }, 3000)
 });
@@ -238,3 +238,4 @@ input[type="checkbox"] {
   color: #116f00;
 }
 </style>
+

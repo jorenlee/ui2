@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
 import scheduleJSON from "../schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "../css/main.css";
@@ -70,7 +69,7 @@ onMounted(() => {
     fetchData();
     router.push("/library/dashboard/appointment/set-schedules/create");
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 });
 
@@ -367,3 +366,4 @@ const addDates = async () => {
   </div>
 </template>
 <style scoped></style>
+

@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
 import scheduleJSON from "../../schedule.json";
@@ -8,7 +7,6 @@ import providerListDepartmentJSON from "../../providerListDepartment.json";
 import moment from "moment";
 const route = useRoute();
 const router = useRouter();
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
@@ -57,7 +55,7 @@ onMounted(() => {
     });
     // console.log(schedule)
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 })
 

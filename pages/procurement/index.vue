@@ -1,9 +1,5 @@
 <script setup>
-// import VueSocialSharing from "vue-social-sharing";
 const router = useRouter();
-
-import { useUserStore } from "@/stores/user";
-const userStore = useUserStore();
 
 import { MdPreview } from 'md-editor-v3';
 import './lib/preview.css';

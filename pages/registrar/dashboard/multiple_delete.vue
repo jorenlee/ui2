@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted, ref, onBeforeUnmount } from "vue";
-import { useUserStore } from "@/stores/user";
 const router = useRouter();
 const userStore = useUserStore();
 import _ from "lodash";
@@ -156,7 +155,7 @@ onMounted(async () => {
       // Start auto-refresh after initial load
       startAutoRefresh();
     } else {
-      router.push("/unauthorized");
+      router.push("/");
     }
   }, 5000);
   await fetchListItems();
@@ -1216,3 +1215,4 @@ onBeforeUnmount(() => {
   </div>
 </template>
 <style lang="scss" scoped></style>
+

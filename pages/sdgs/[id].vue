@@ -3,7 +3,6 @@
 <script setup>
 import { ref, onMounted, nextTick, computed } from "vue";
 import { useRoute } from "vue-router";
-import { useUserStore } from "@/stores/user";
 import moment from 'moment';
 
 const route = useRoute();

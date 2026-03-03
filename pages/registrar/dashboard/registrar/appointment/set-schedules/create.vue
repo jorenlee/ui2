@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted, provide } from "vue";
-import { useUserStore } from "@/stores/user";
 import providerListJSON from "../providerList.json";
 import providerListDepartmentJSON from "../providerListDepartment.json";
 import scheduleJSON from "../schedule.json";
@@ -8,7 +7,6 @@ import VueDatePicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
 import moment from "moment";
 const router = useRouter();
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 import _ from "lodash";
@@ -48,7 +46,7 @@ onMounted(() => {
   ) {
     // router.push("/registrar/appointment/set-schedules/create");
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 });
 
@@ -361,3 +359,4 @@ input[type="radio"] {
   accent-color: #20990b;
 }
 </style>
+

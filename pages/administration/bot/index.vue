@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed } from "vue";
-import { useUserStore } from "@/stores/user";
+
 
 const info = ref([]);
 const userStore = useUserStore();

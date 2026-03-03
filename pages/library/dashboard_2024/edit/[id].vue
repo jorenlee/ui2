@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
 
 import scheduleJSON from "../schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
@@ -95,7 +94,7 @@ onMounted(() => {
       }
     });
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 });
 

@@ -88,7 +88,6 @@ import { useRouter } from "vue-router";
 import moment from "moment";
 
 const router = useRouter();
-import { useUserStore } from "@/stores/user";
 const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);

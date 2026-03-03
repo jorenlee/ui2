@@ -1,4 +1,5 @@
 export default defineNuxtConfig({
+  compatibilityDate: '2025-07-30',
   experimental: { appManifest: false },
   devtools: { enabled: false },
   app: {
@@ -29,9 +30,6 @@ export default defineNuxtConfig({
       tailwindcss: {},
       autoprefixer: {},
     },
-  },
-  googleSignIn: {
-    clientId: '818409831356-g3thpiuagqs1oj6sh1bk6j1c25j2m2mk.apps.googleusercontent.com'
   },
   googleAdsense: {
     id: 'ca-pub-5434839287765657'
@@ -67,11 +65,13 @@ export default defineNuxtConfig({
     }
   },
   modules: [
-    'nuxt-vue3-google-signin', 
-    '@pinia/nuxt', 
-    'nuxt-lodash', 
-    '@nuxtjs/google-adsense', 
-    'nuxt-gtag'
+    '@pinia/nuxt',
+    'nuxt-lodash',
+    '@nuxtjs/google-adsense',
+    'nuxt-gtag',
+    ['nuxt-google-auth', {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+    }]
   ],
   gtag: {
     id: 'G-G21JEZYE42'
@@ -81,10 +81,15 @@ export default defineNuxtConfig({
       failOnError: false,
     },
   },
-  compatibilityDate: '2025-07-30',
   runtimeConfig: {
+    apiBase: (process.env.API_BASE || "http://127.0.0.1:8000").replace(
+      /\/$/,
+      "",
+    ),
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
     public: {
-      apiUrl: process.env.NUXT_PUBLIC_API_URL
-    }
-  }
+      apiUrl: process.env.NUXT_PUBLIC_API_URL,
+      googleClientId: process.env.GOOGLE_CLIENT_ID,
+    },
+  },
 })

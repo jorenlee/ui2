@@ -304,7 +304,6 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
-import { useUserStore } from "@/stores/user";
 import scheduleJSON from "../schedule.json";
 import moment from "moment";
 
@@ -479,7 +478,6 @@ const formToPayload = (f) => {
 };
 
 /* ----------------------- Main state ----------------------- */
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = computed(() => config.public.apiUrl || "");
 

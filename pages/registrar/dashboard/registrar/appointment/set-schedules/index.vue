@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
 import providerListJSON from "../providerList.json";
 import providerListDepartmentJSON from "../providerListDepartment.json";
 import scheduleJSON from "../schedule.json";
@@ -10,7 +9,6 @@ import addDays from "date-fns/addDays";
 import moment from "moment";
 const route = useRoute();
 const router = useRouter();
-const userStore = useUserStore();
 import _ from "lodash";
 
 const config = useRuntimeConfig();
@@ -47,7 +45,7 @@ onMounted(() => {
   ) {
     // router.push("/registrar/appointment/set-schedules");
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
   // console.log("schedulesLists", schedulesLists);
   // console.log("schedulesListsData", schedulesListsData);
@@ -387,3 +385,4 @@ input[type="radio"] {
   accent-color: #20990b;
 }
 </style>
+

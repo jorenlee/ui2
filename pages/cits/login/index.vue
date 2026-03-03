@@ -1,39 +1,26 @@
 <script setup>
-  import {
-    useUserStore
-  } from "@/stores/user";
-  import {
-    useTokenClient
-  } from "vue3-google-signin";
+
   const userStore = useUserStore();
   const router = useRouter();
-  const handleOnError = (errorResponse) => {
-    // console.log("Error: ", errorResponse);
+  const handleOnError = (error) => {
+    console.error("Google Login Error:", error);
   };
-  const handleOnSuccess = async (response) => {
+  const handleOnSuccess = async (event) => {
     try {
-      const userInfo = await $fetch("https://www.googleapis.com/oauth2/v1/userinfo?access_token=" + response.access_token);
-      
+      const userInfo = event.claims;
+
       if (!userInfo?.email) {
         console.error("No email found in response:", userInfo);
         return;
       }
-      
-      userStore.setToken(response.access_token, userInfo.email);
+
+      userStore.setToken(event.credential, userInfo.email);
       console.log("User info:", userInfo);
       router.push("/");
     } catch (error) {
       console.error("Login error:", error);
     }
   };
-  const {
-    isReady,
-    login
-  } = useTokenClient({
-    onSuccess: handleOnSuccess,
-    onError: handleOnError,
-    // other options
-  });
 </script>
 <template>
   <div class="lg:bg-gray-50">
@@ -52,8 +39,14 @@
                 </svg>
                 <h1 class="font-bold text-sm text-green-900"> Back to LSU Homepage </h1>
               </a>
-              <button :disabled="!isReady" @click="login" class="h-fit pl-12 pr-3 py-3 bg-green-10 rounded-lg text-sm text-white text-center font-semibold lg:w-auto w-full
-              login-with-google-btn block mx-auto uppercase mt-2 tracking-widest"> LSU Admin Login </button>
+              <ClientOnly>
+                <GoogleLoginButton
+                  :options="{ theme: 'filled_blue', size: 'large', text: 'signin_with' }"
+                  @success="handleOnSuccess"
+                  @error="handleOnError"
+                  class="mx-auto mt-2"
+                />
+              </ClientOnly>
               <a href="/" class=" gap-1 lg:w-auto md:w-fit w-full mx-auto lg:mt-0 mt-5 lg:hidden flex shadow-xl py-3 px-3.5 rounded-lg justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />

@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import { useUserStore } from "@/stores/user";
 import moment from "moment";
 const router = useRouter();
 const userStore = useUserStore();
@@ -21,7 +20,7 @@ onMounted(() => {
     ) {
       router.push("/hr/dashboard/portal/create");
     } else {
-      router.push("/unauthorized");
+      router.push("/");
     }
   }, 3000);
 });
@@ -274,3 +273,4 @@ const logOut = () => {
 </template>
 
 <style scoped></style>
+

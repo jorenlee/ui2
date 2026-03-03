@@ -1,26 +1,23 @@
 <script setup>
-import { useUserStore } from "@/stores/user";
-import { useTokenClient } from "vue3-google-signin";
+
 
 const userStore = useUserStore();
 const router = useRouter();
 
-const handleOnError = (errorResponse) => {
-  console.error("Google Login Error:", errorResponse);
+const handleOnError = (error) => {
+  console.error("Google Login Error:", error);
 };
 
-const handleOnSuccess = async (response) => {
+const handleOnSuccess = async (event) => {
   try {
-    const userInfo = await $fetch(
-      "https://www.googleapis.com/oauth2/v1/userinfo?access_token=" + response.access_token
-    );
+    const userInfo = event.claims;
 
     if (!userInfo?.email) {
       console.error("No email found in response:", userInfo);
       return;
     }
 
-    userStore.setToken(response.access_token, userInfo.email);
+    userStore.setToken(event.credential, userInfo.email);
     console.log("CCC User info:", userInfo);
 
     // ✅ Redirect to CCC Dashboard
@@ -29,11 +26,6 @@ const handleOnSuccess = async (response) => {
     console.error("Login error:", error);
   }
 };
-
-const { isReady, login } = useTokenClient({
-  onSuccess: handleOnSuccess,
-  onError: handleOnError,
-});
 </script>
 
 <template>
@@ -77,14 +69,14 @@ const { isReady, login } = useTokenClient({
               </a>
 
               <!-- CCC Login Button -->
-              <button
-                :disabled="!isReady"
-                @click="login"
-                class="h-fit pl-12 pr-3 py-3 bg-[#003613] rounded-lg text-sm text-white text-center font-semibold lg:w-auto w-full
-                login-with-google-btn block mx-auto uppercase mt-2 tracking-widest"
-              >
-                CCC Admin Login
-              </button>
+              <ClientOnly>
+                <GoogleLoginButton
+                  :options="{ theme: 'filled_blue', size: 'large', text: 'signin_with' }"
+                  @success="handleOnSuccess"
+                  @error="handleOnError"
+                  class="mx-auto mt-2"
+                />
+              </ClientOnly>
 
               <!-- Back to CCC Homepage (Mobile) -->
               <a

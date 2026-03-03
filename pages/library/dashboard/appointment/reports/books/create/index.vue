@@ -25,7 +25,7 @@ onMounted(() => {
     router.push("/library/dashboard/appointment/reports/books/create");
   } else {
     // setTimeout(() => {
-    //   router.push("/unauthorized");
+    //   router.push("/");
     // }, 5000)
   }
 });
@@ -323,3 +323,4 @@ input[type="radio"]:disabled {
   accent-color: #ff8f8f;
 }
 </style>
+

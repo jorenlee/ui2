@@ -1,6 +1,5 @@
 <script setup>
 import { onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
 import scheduleJSON from "../schedule.json";
 import VueDatePicker from "@vuepic/vue-datepicker";
 // import "@vuepic/vue-datepicker/dist/main.css";
@@ -61,7 +60,7 @@ onMounted(() => {
     });
     router.push("/library/dashboard/appointment/set-schedules");
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 });
 
@@ -348,3 +347,4 @@ input[type='radio'] {
   box-shadow: none;
 }
 </style>
+

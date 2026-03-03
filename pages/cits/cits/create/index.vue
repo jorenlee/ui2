@@ -15,7 +15,7 @@ onMounted(() => {
   ) {
     // router.push("/_/panels/cits/create");
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 })
 
@@ -153,3 +153,4 @@ const submitForm = async () => {
     <DashboardFooter/>
   </div>
 </template>
+

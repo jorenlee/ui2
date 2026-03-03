@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import { useUserStore } from "@/stores/user";
+
 import _ from "lodash";
 const router = useRouter();
 const userStore = useUserStore();
@@ -41,7 +41,7 @@ onMounted(() => {
     // console.log(library)
     // console.log('info.value', info.value)
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 })
 

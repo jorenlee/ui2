@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, computed, watch, onBeforeUnmount } from "vue";
-import { useUserStore } from "@/stores/user";
+
 import _ from "lodash";
 import moment from "moment";
 const router = useRouter();
@@ -154,7 +154,7 @@ onMounted(async () => {
       router.push("/campus-pass/dashboard");
       startAutoRefresh();
     } else {
-      router.push("/unauthorized");
+      router.push("/");
     }
   }, 5000);
 
@@ -1129,3 +1129,4 @@ input[type="checkbox"] {
   accent-color: #6f0000;
 }
 </style>
+

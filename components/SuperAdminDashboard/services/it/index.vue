@@ -1,6 +1,5 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from "vue";
-import { useUserStore } from "@/stores/user";
 import moment from "moment";
 import itServiceConfig from "@/it-service-config.json";
 import userRolesConfig from "@/user-roles-config.json";
@@ -9,7 +8,12 @@ const props = defineProps({
   darkMode: Boolean,
 });
 
-const userStore = useUserStore();
+const { user, init } = useAuth();
+
+onMounted(() => {
+  init();
+});
+
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
@@ -151,11 +155,11 @@ function addStatusLog() {
   if (!info.value.logs) info.value.logs = [];
 
   // Get logged-in user information
-  const loggedInUser = userStore.user?.email || userStore.userEmail;
+  const loggedInUser = user.value?.email;
   const loggedInTech = TECHNICIANS_PERSONNEL.find(
     (tech) => tech.email === loggedInUser,
   );
-  const updaterName = loggedInTech?.name || userStore.user?.name || "Unknown";
+  const updaterName = loggedInTech?.name || user.value?.name || "Unknown";
   const updaterEmail = loggedInUser || "";
 
   // Special handling for ALL status changes - create log entry for each assigned technician
@@ -224,11 +228,11 @@ const sortBy = (column) => {
 // Enhanced filter with sorting
 // Check if logged-in user is an assigned technician
 const isAssignedTechnician = computed(() => {
-  if (!info.value.technicians_assigned || !userStore.user?.email) return false;
+  if (!info.value.technicians_assigned || !user.value?.email) return false;
 
   return info.value.technicians_assigned.some(
     (tech) =>
-      tech.email === userStore.user.email || tech.email === userStore.userEmail,
+      tech.email === user.value?.email,
   );
 });
 
@@ -844,9 +848,9 @@ const createTicket = async () => {
 
   // Update the initial log with technician information (who created the walk-in ticket)
   if (info.value.logs && info.value.logs.length > 0) {
-    info.value.logs[0].assigned_technician_name = userStore.user?.name || "";
+    info.value.logs[0].assigned_technician_name = user.value?.name || "";
     info.value.logs[0].assigned_technician_lsu_email =
-      userStore.user?.email || "";
+      user.value?.email || "";
 
     // If user changed the initial status or added remarks, update the log
     if (newLog.status && newLog.status !== "Pending") {
@@ -2090,11 +2094,11 @@ const itemStatusClass = (status) => {
                       darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50',
                       {
                         'bg-green-50 border-green-500 font-semibold':
-                          tech.email === userStore.user?.email && !darkMode,
+                          tech.email === user.value?.email && !darkMode,
                         'bg-green-900/30 border-green-500 font-semibold':
-                          tech.email === userStore.user?.email && darkMode,
-                        'border-gray-200': tech.email !== userStore.user?.email && !darkMode,
-                        'border-gray-600': tech.email !== userStore.user?.email && darkMode,
+                          tech.email === user.value?.email && darkMode,
+                        'border-gray-200': tech.email !== user.value?.email && !darkMode,
+                        'border-gray-600': tech.email !== user.value?.email && darkMode,
                       }
                     ]"
                   >
@@ -2106,14 +2110,14 @@ const itemStatusClass = (status) => {
                     />
                     <span
                       :class="{
-                        'text-green-700': tech.email === userStore.user?.email && !darkMode,
-                        'text-green-400': tech.email === userStore.user?.email && darkMode,
-                        'text-gray-200': tech.email !== userStore.user?.email && darkMode,
+                        'text-green-700': tech.email === user.value?.email && !darkMode,
+                        'text-green-400': tech.email === user.value?.email && darkMode,
+                        'text-gray-200': tech.email !== user.value?.email && darkMode,
                       }"
                     >
                       {{ tech.name }}
                       <span
-                        v-if="tech.email === userStore.user?.email"
+                        v-if="tech.email === user.value?.email"
                         class="ml-1 font-bold"
                         :class="darkMode ? 'text-green-400' : 'text-green-600'"
                       >
@@ -2150,7 +2154,7 @@ const itemStatusClass = (status) => {
                       <span :class="darkMode ? 'text-green-400' : 'text-green-700'">
                         {{ tech.name }}
                         <span
-                          v-if="tech.email === userStore.user?.email"
+                          v-if="tech.email === user.value?.email"
                           class="ml-1 font-bold"
                           :class="darkMode ? 'text-green-400' : 'text-green-600'"
                         >

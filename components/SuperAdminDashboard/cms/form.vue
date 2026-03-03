@@ -1,11 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from "vue";
-import { useRouter } from "vue-router";
-import { useUserStore } from "@/stores/user";
 import moment from "moment";
-
-const router = useRouter();
-const userStore = useUserStore();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
@@ -16,6 +11,13 @@ const props = defineProps({
 
 // Define emit for parent
 const emit = defineEmits(["contentSubmitted"]);
+
+/* ================= AUTH ================= */
+const { user, init } = useAuth();
+
+onMounted(() => {
+  init();
+});
 
 // ---------------- CONTENT MODEL ----------------
 const content = ref({
@@ -32,9 +34,9 @@ const content = ref({
   is_published: false,
   logs: [
     {
-      personnel_fullname: userStore.user.name,
-      personnel_designation: userStore.user.email,
-      personnel_email: userStore.user.email,
+      personnel_fullname: user.value?.name || "",
+      personnel_designation: user.value?.email || "",
+      personnel_email: user.value?.email || "",
       remarks_title: "N/A",
       remarks_description: "N/A",
       timestamp: moment().valueOf(),

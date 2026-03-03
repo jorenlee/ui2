@@ -24,7 +24,7 @@ onMounted(() => {
     router.push("/library/dashboard/appointment/reports/books/edit/" + route.params.id);
   } else {
     // setTimeout(() => {
-    //   router.push("/unauthorized");
+    //   router.push("/");
     // }, 5000)
   }
 });

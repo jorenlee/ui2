@@ -3,9 +3,6 @@
     onMounted,
     ref
   } from "vue";
-  import {
-    useUserStore
-  } from "@/stores/user";
   import moment from "moment";
   const router = useRouter();
   const userStore = useUserStore();
@@ -29,7 +26,7 @@
         router.push("/");
         console.log(listItems.value)
       } else {
-        router.push("/unauthorized");
+        router.push("/");
       }
     }, 5000)
   });
@@ -275,3 +272,4 @@
     color: #116f00;
   }
 </style>
+

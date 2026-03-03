@@ -1,5 +1,31 @@
 <script setup>
+import { onMounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import userRolesConfig from "@/user-roles-config.json";
+
+const router = useRouter();
+const route = useRoute();
+const { user, isLoggedIn, setAuth, init } = useAuth();
+
+// ---------------- HANDLE TOKEN FROM URL ----------------
+onMounted(() => {
+  // Initialize auth from localStorage
+  init();
+
+  // Check if we're returning from OAuth callback with token
+  const token = route.query.token;
+
+  if (token && typeof token === 'string') {
+    // Store the token and decode user info
+    setAuth(token);
+
+    // Clean up URL
+    router.replace('/dashboard');
+  } else if (!isLoggedIn.value) {
+    // If no token and not logged in, redirect to login
+    router.replace('/cms/login');
+  }
+});
 
 // ---------------- PROCESS ROLES FROM JSON ----------------
 // Build email arrays from JSON configuration
@@ -55,3 +81,4 @@ const drsAdminEmails = userRolesConfig.userRoles
     />
   </div>
 </template>
+

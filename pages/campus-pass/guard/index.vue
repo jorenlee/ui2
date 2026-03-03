@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import { useUserStore } from "@/stores/user";
+
 
 const userStore = useUserStore();
 import _ from "lodash";

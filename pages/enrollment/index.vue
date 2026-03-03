@@ -1,42 +1,28 @@
 <script setup>
-  import {
-    useUserStore
-  } from "@/stores/user";
-  import {
-    useTokenClient
-  } from "vue3-google-signin";
   const userStore = useUserStore();
   const router = useRouter();
   const paymentMethodImage = ref(false);
   const toggleVarAdmissions = ref(false)
   const toggleVarPayment = ref(false)
-  const handleOnError = (errorResponse) => {
-    // console.log("Error: ", errorResponse);
+  const handleOnError = (error) => {
+    console.error("Google Login Error:", error);
   };
-  const handleOnSuccess = async (response) => {
+  const handleOnSuccess = async (event) => {
     try {
-      const userInfo = await $fetch("https://www.googleapis.com/oauth2/v1/userinfo?access_token=" + response.access_token);
-      
+      const userInfo = event.claims;
+
       if (!userInfo?.email) {
         console.error("No email found in response:", userInfo);
         return;
       }
-      
-      userStore.setToken(response.access_token, userInfo.email);
+
+      userStore.setToken(event.credential, userInfo.email);
       console.log("User info:", userInfo);
       router.push("/enrollment/portal");
     } catch (error) {
       console.error("Login error:", error);
     }
   };
-  const {
-    isReady,
-    login
-  } = useTokenClient({
-    onSuccess: handleOnSuccess,
-    onError: handleOnError,
-    // other options
-  });
 </script>
 <template>
   <div class="bg-gray-50">

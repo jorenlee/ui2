@@ -1,9 +1,7 @@
 <script setup>
 import axios from "axios";
 import { onMounted, ref, computed } from "vue";
-import { useUserStore } from "@/stores/user";
 const router = useRouter();
-const userStore = useUserStore();
 import _ from "lodash";
 import collegeOrSchoolJSON from "../college_school.json";
 import courseOrProgramJSON from "../course_program.json";
@@ -80,7 +78,7 @@ onMounted(() => {
     ) {
       router.push("/");
     } else {
-      router.push("/unauthorized");
+      router.push("/");
     }
   }, 5000);
 });
@@ -457,3 +455,4 @@ input[type="file"]::file-selector-button {
   background: #004d01;
 }
 </style>
+

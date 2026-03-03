@@ -1,9 +1,6 @@
 <script setup>
 const router = useRouter();
 
-import { useUserStore } from "@/stores/user";
-const userStore = useUserStore();
-
 import { MdPreview } from "md-editor-v3";
 import "./lib/preview.css";
 const config = useRuntimeConfig();

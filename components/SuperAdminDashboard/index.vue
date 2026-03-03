@@ -1,7 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useUserStore } from "@/stores/user";
 
 // ---------------- DARK MODE ----------------
 const darkMode = ref(false);
@@ -44,7 +43,7 @@ const props = defineProps({
 // ---------------- STATE ----------------
 definePageMeta({ middleware: "cms-auth" });
 const router = useRouter();
-const userStore = useUserStore();
+const { user, isLoggedIn, logout } = useAuth();
 const currentView = ref("Menu");
 const openGroups = ref([
   "Content Management",
@@ -59,7 +58,7 @@ const openGroups = ref([
 ]);
 
 // ---------------- AUTH & COMPUTED ----------------
-const isUserAuthenticated = computed(() => userStore.isLoggedIn);
+const isUserAuthenticated = computed(() => isLoggedIn.value);
 
 const rolesByEmail = computed(() => ({
   superAdmin: props.superAdminEmails,
@@ -74,7 +73,7 @@ const rolesByEmail = computed(() => ({
 }));
 
 const userRole = computed(() => {
-  const email = userStore.user?.email;
+  const email = user.value?.email;
   if (!email) return null;
 
   for (const [role, emails] of Object.entries(rolesByEmail.value)) {
@@ -92,8 +91,7 @@ const toggleGroup = (groupName) => {
 };
 
 const logOut = () => {
-  userStore.removeToken();
-  router.push("/cms/login");
+  logout();
 };
 
 const handleContentSubmitted = () => {
@@ -102,19 +100,8 @@ const handleContentSubmitted = () => {
 
 // ---------------- LIFECYCLE ----------------
 onMounted(() => {
-  if (!userStore.isLoggedIn) router.replace("/cms/login");
+  if (!isLoggedIn.value) router.replace("/cms/login");
 });
-
-// Only run watcher on client-side to avoid SSR issues with localStorage
-if (process.client) {
-  watch(
-    () => userStore.user?.email,
-    (newEmail) => {
-      if (!newEmail || !userRole.value) logOut();
-    },
-    { immediate: true },
-  );
-}
 
 
 
@@ -258,7 +245,7 @@ const menuList = [
 
 const filteredMenuList = computed(() => {
   const role = userRole.value;
-  const email = userStore.user?.email;
+  const email = user.value?.email;
   if (!role) return [];
   return subMenuList.filter(
     (menu) =>
@@ -404,7 +391,7 @@ const handleMenuClick = (menu) => {
         />
       </div>
     </div>
-    <SuperAdminDashboardUnauthorizedAccess v-else />
+
   </div>
 </template>
 

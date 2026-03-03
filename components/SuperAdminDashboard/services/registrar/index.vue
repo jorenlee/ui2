@@ -1,10 +1,13 @@
 <script setup>
 import { onMounted, ref, onBeforeUnmount, watch, computed } from "vue";
-import { useUserStore } from "@/stores/user";
 const router = useRouter();
-const userStore = useUserStore();
+const { user, logout, init } = useAuth();
 import _ from "lodash";
 import moment from "moment";
+
+onMounted(() => {
+  init();
+});
 
 const props = defineProps({
   darkMode: Boolean,
@@ -737,7 +740,7 @@ const sortDirection = ref("asc");
 const collegeFilterList = ref(false);
 
 onMounted(async () => {
-  const email = userStore.user.email;
+  const email = user.value?.email;
 
   const emailToCollegeMap = {
     "ccsea.registrar@lsu.edu.ph":
@@ -761,7 +764,7 @@ onMounted(async () => {
     }
   });
 
-  if (userStore.user.isAuthenticated && authorizedEmails.includes(email)) {
+  if (email && authorizedEmails.includes(email)) {
     if (!fullAccessEmails.includes(email)) {
       selectedCollege.value = emailToCollegeMap[email] || "";
     } else {
@@ -1137,8 +1140,7 @@ onBeforeUnmount(() => {
 });
 
 const logOut = () => {
-  router.push("/registrar/login");
-  userStore.removeToken();
+  logout();
 };
 
 const selectedItems = ref([]);
@@ -1423,8 +1425,8 @@ watch(statusFilter, () => {
 
 const isFullAccess = computed(() => {
   return (
-    userStore.user.email === "jorenlee.luna@lsu.edu.ph" ||
-    userStore.user.email === "registrar@lsu.edu.ph"
+    user.value?.email === "jorenlee.luna@lsu.edu.ph" ||
+    user.value?.email === "registrar@lsu.edu.ph"
   );
 });
 

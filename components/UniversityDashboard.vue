@@ -91,16 +91,14 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useUserStore } from "@/stores/user";
-import { useRouter } from "vue-router";
+import { useAuth } from "@/composables/useAuth";
 
-const userStore = useUserStore();
-const router = useRouter();
+const { user, isLoggedIn, logout } = useAuth();
 
 const active = ref("Portfolio");
 
 onMounted(() => {
-  if (!userStore.isLoggedIn) {
+  if (!isLoggedIn.value) {
     router.replace("/");
   }
 });

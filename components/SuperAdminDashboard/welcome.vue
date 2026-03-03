@@ -1,11 +1,15 @@
 <script setup>
 import { computed, ref, onMounted, onBeforeUnmount } from "vue";
-import { useUserStore } from "@/stores/user";
-
-const userStore = useUserStore();
 
 const props = defineProps({
   darkMode: Boolean,
+});
+
+/* ================= AUTH ================= */
+const { user, init } = useAuth();
+
+onMounted(() => {
+  init();
 });
 
 /* ================= CLOCK ================= */
@@ -39,16 +43,19 @@ onBeforeUnmount(() => {
 });
 
 /* ================= USER DATA ================= */
-const userEmail = computed(() => userStore.user?.email || "user@email.com");
-const userName = computed(() => userStore.user?.name || userEmail.value);
-const userPicture = computed(() => userStore.user?.picture);
+const userEmail = computed(() => user.value?.email || "user@email.com");
+const userName = computed(() => user.value?.name || userEmail.value);
+const userPicture = computed(() => user.value?.image);
 
 /* ================= INITIALS ================= */
 const userInitials = computed(() => {
-  const name = userName.value.split(" ");
-  return (
-    (name[0]?.charAt(0) || "U") + (name[1]?.charAt(0) || "")
-  ).toUpperCase();
+  if (!user.value?.name) return "?";
+  return user.value.name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 });
 
 /* ================= PROFILE IMAGE ================= */
@@ -82,7 +89,9 @@ const currentHour = computed(() => {
     <!-- HEADER -->
     <div
       class="relative overflow-hidden rounded-3xl shadow-2xl lg:py-3 lg:px-10 px-5 p-6 mb-4"
-      :class="[darkMode ? 'bg-green-950 text-white' : 'bg-green-600 text-white']"
+      :class="[
+        darkMode ? 'bg-green-950 text-white' : 'bg-green-600 text-white',
+      ]"
     >
       <div class="relative z-10 lg:flex items-center justify-between gap-8">
         <!-- LEFT -->
@@ -101,7 +110,7 @@ const currentHour = computed(() => {
 
           <!-- USER INFO -->
           <div class="space-y-2">
-            <div class="flex items-center gap-3 text-white/90">
+            <div class="flex items-center gap-3 text-white/90 mb-2">
               <!-- Avatar -->
               <div
                 class="w-16 h-16 lg:w-20 lg:h-20 bg-white/20 rounded-2xl flex items-center justify-center border-2 border-white/30"
@@ -124,16 +133,15 @@ const currentHour = computed(() => {
                 </p>
               </div>
             </div>
-
-            <div class="flex items-center gap-2 text-white/80">
-              <i class="fa fa-calendar text-sm"></i>
-              <span class="text-xs lg:text-sm">{{ currentDate }}</span>
-            </div>
           </div>
         </div>
 
         <!-- CLOCK -->
         <div class="lg:w-auto w-full">
+          <div class="flex items-center gap-2 text-white/80 w-fit mx-auto mb-2">
+            <i class="fa fa-calendar text-sm"></i>
+            <span class="text-xs lg:text-sm">{{ currentDate }}</span>
+          </div>
           <div
             class="bg-white/15 backdrop-blur-xl rounded-2xl lg:p-6 px-3 border border-white/20"
           >

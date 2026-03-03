@@ -1,7 +1,6 @@
 
 <script setup>
 import { onMounted, ref, onBeforeUnmount, toRaw, computed, nextTick, watch } from "vue";
-import { useUserStore } from "@/stores/user";
 import moment from "moment";
 import { useRouter } from "vue-router";
 import scheduleJSON from "./time.json";

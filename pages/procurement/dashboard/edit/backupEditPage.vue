@@ -18,7 +18,7 @@ onMounted(() => {
   ) {
     router.push("/procurement/dashboard/edit/" + route.params.id);
   } else {
-    router.push("/unauthorized");
+    router.push("/");
   }
 })
 
@@ -335,3 +335,4 @@ input[type="checkbox"] {
   color: #116f00;
 }
 </style>
+
