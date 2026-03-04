@@ -59,7 +59,18 @@ const openGroups = ref([
   "External Links",
   "General Services Office",
   "Animo Run",
+  "Safety and Security Center",
 ]);
+
+// Public menu groups accessible to all authenticated users
+const publicMenuGroups = [
+  "IT Services Feedback",
+  "Animo Run",
+  "Commission on Election",
+  "General Services Office",
+  "External Links",
+  "Safety and Security Center",
+];
 
 // ---------------- AUTH & COMPUTED ----------------
 const isUserAuthenticated = computed(() => isLoggedIn.value);
@@ -231,7 +242,7 @@ const subMenuList = [
         label: "IT Services Feedback",
         icon: "fa-list",
         type: "button",
-        view: "itServicesFeedback",
+        view: "ITServicesFeedback",
       },
     ],
   },
@@ -242,13 +253,13 @@ const subMenuList = [
         label: "Registration",
         icon: "fa-running",
         type: "button",
-        view: "animoRunRegistration",
+        view: "AnimoRunRegistration",
       },
       {
         label: "Status Checking",
         icon: "fa-list",
         type: "button",
-        view: "animoRunStatus",
+        view: "AnimoRunStatus",
       },
     ],
   },
@@ -286,14 +297,25 @@ const subMenuList = [
       },
     ],
   },
-    {
+  {
+    group: "Safety and Security Center",
+    items: [
+      {
+        label: "Borrow Office Keys",
+        icon: "fa-key",
+        type: "button",
+        view: "BorrowOfficeKeys",
+      }
+    ],
+  },
+  {
     group: "External Links",
     items: [
       {
         label: "LSU Home Page",
         icon: "fa-home",
-        type: "button",
-        view: "externalLinks",
+        type: "link",
+        view: "https://lsu.edu.ph",
       },
     ],
   }
@@ -308,14 +330,7 @@ const menuList = [
   { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
 ];
 
-// Public menu groups accessible to all authenticated users
-const publicMenuGroups = [
-  "IT Services Feedback",
-  "Animo Run",
-  "Commission on Election",
-  "General Services Office",
-  "External Links"
-];
+
 
 const filteredMenuList = computed(() => {
   const role = userRole.value;
@@ -340,9 +355,14 @@ const filteredMenuList = computed(() => {
 
 const navigateTo = (url) => router.push(url);
 const handleMenuClick = (menu) => {
-  menu.type === "button"
-    ? (currentView.value = menu.view)
-    : navigateTo(menu.to);
+  if (menu.type === "button") {
+    currentView.value = menu.view;
+  } else if (menu.type === "link") {
+    // Open external link in new tab
+    window.open(menu.view, "_blank");
+  } else {
+    navigateTo(menu.to);
+  }
 };
 </script>
 
@@ -409,7 +429,7 @@ const handleMenuClick = (menu) => {
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->
       <div
-        class="w-full px-3"
+        class="w-full"
         :class="
           darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'
         ">
@@ -467,6 +487,32 @@ const handleMenuClick = (menu) => {
           <div v-else-if="currentView === 'itServicesFeedback'" class="pb-32">
             <!-- <SuperAdminDashboardExternalLinks :darkMode="darkMode" /> -->
             <UniversityPortalITServicesList :darkMode="darkMode" />
+          </div>
+          <div v-else-if="currentView === 'BorrowOfficeKeys'">
+            <ComingSoon :darkMode="darkMode" />
+          </div>
+          <div v-else-if="currentView === 'VehicleReservation'">
+            <ComingSoon :darkMode="darkMode" />
+          </div>
+          <div v-else-if="currentView === 'VenueReservation'">
+            <ComingSoon :darkMode="darkMode" />
+          </div>
+
+           <div v-else-if="currentView === 'LSUCommissionOnElectionVoting'">
+            <ComingSoon :darkMode="darkMode" />
+          </div>
+
+           <div v-else-if="currentView === 'LSUCommissionOnElectionResults'">
+            <ComingSoon :darkMode="darkMode" />
+          </div>
+           <div v-else-if="currentView === 'AnimoRunStatus'">
+            <ComingSoon :darkMode="darkMode" />
+          </div>
+             <div v-else-if="currentView === 'AnimoRunRegistration'">
+            <ComingSoon :darkMode="darkMode" />
+          </div>
+           <div v-else-if="currentView === 'ITServicesFeedback'">
+            <ComingSoon :darkMode="darkMode" />
           </div>
         </div>
         <SuperAdminDashboardNavigation
