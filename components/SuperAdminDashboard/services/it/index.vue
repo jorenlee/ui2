@@ -1314,7 +1314,7 @@ const itemStatusClass = (status) => {
 </script>
 
 <template>
-  <div class="min-w-[1500px] min-h-screen" :class="
+  <div class="w-full min-h-screen" :class="
       darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'
     ">
     <!-- Header with Title and Count -->
