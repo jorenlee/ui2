@@ -438,7 +438,7 @@ const handleMenuClick = (menu) => {
           <div v-if="currentView === 'Profile'" class="w-full p-4">
             <SuperAdminDashboardWelcome :darkMode="darkMode" />
           </div>
-          <div v-if="currentView === 'Menu'" class="lg:px-6 pt-6 pb-80">
+          <div v-if="currentView === 'Menu'" class="lg:px-6 px-3 pt-6 pb-80">
             <SuperAdminDashboardWelcome :darkMode="darkMode" />
             <SuperAdminDashboardMenuList
               :filteredMenuList="filteredMenuList"

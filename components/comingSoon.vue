@@ -1,5 +1,5 @@
 <template>
-  <div class="relative min-h-screen flex lg:items-center justify-center overflow-hidden bg-gradient-to-br from-green-600 via-green-500 to-emerald-600 pt-3">
+  <div class="relative min-h-screen flex lg:items-center justify-center overflow-hidden bg-gradient-to-br from-green-600 via-green-500 to-emerald-600 lg:pt-3">
 
 <div class="lg:-mt-28">
         <!-- Animated Background Blobs -->
@@ -7,7 +7,7 @@
     <div class="absolute w-96 h-96 bg-white/10 rounded-full blur-3xl animate-blob animation-delay-2000 bottom-10 right-10"></div>
 
     <!-- Main Card -->
-    <div class="relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl p-10 text-center max-w-2xl mx-6 animate-fade-in">
+    <div class="relative z-10 bg-white/10 backdrop-blur-xl border border-white/20 shadow-2xl lg:rounded-3xl p-10 lg:pb-10 pb-16 text-center max-w-2xl lg:mx-6 animate-fade-in">
 
       <!-- Logo/Icon -->
       <div class="flex justify-center lg:mb-6">
@@ -22,7 +22,7 @@
       </h1>
 
       <!-- Subtitle -->
-      <p class="text-white/80 lg:mt-4 text-lg animate-slide-up delay-200">
+      <p class="text-white/80 lg:mt-4 mt-2 lg:text-lg leading-0 animate-slide-up delay-200">
         We're building something amazing for you.
       </p>
 
@@ -47,7 +47,7 @@
       </div>
 
       <!-- Footer Text -->
-      <p class="text-white/60 mt-10 text-sm animate-fade-in delay-500">
+      <p class="text-white lg:mt-10 mt-5 text-sm animate-fade-in delay-500">
         © {{ new Date().getFullYear() }} LSU Central
       </p>
     </div>
