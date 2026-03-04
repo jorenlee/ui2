@@ -6,75 +6,9 @@ const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 const developerEmail = ref(userStore.user.developerEmail);
 
-onMounted(() => {
-  if (userStore.user.isAuthenticated && 
-      (
-      userStore.user.email === developerEmail.value ||
-      userStore.user.email === 'monaliza.mugot@lsu.edu.ph' ||
-      userStore.user.email === 'marilyn.bejec@lsu.edu.ph' ||
-      userStore.user.email === 'applejane.ebarle@lsu.edu.ph' ||
-      userStore.user.email === 'janekaren.gudmalin@lsu.edu.ph' ||
-      userStore.user.email === 'macy.beniola@lsu.edu.ph' ||
-      userStore.user.email === 'lynn.lumacad@lsu.edu.ph' ||
-      userStore.user.email === 'zosette.salas@lsu.edu.ph' 
-    )) {
-    router.push("/library/dashboard");
-  } else {
-    router.push("/");
-  }
-});
-
-let libraryInfo = ref(true);
 
 let toggleSideBarMenu = ref(true);
-let toggleConfirmDelete = ref(false);
 
-let idToBeDeleted = ref();
-
-const bookingLibrary = await $fetch(endpoint.value + "/api/library/booking/list/").catch(
-  (error) => error.data
-);
-
-let toggleMenu = (a) => {
-  libraryInfo.value = a;
-  appointmentDetails.value = false;
-};
-
-// const goToList = () => {
-//   router.push("/library/dashboard");
-// };
-
-// const goToEdit = (id) => {
-//   router.push("/library/dashboard/edit/" + id);
-// };
-
-// const toggleDeleteBtn = (id) => {
-//   toggleConfirmDelete.value = !toggleConfirmDelete.value;
-//   idToBeDeleted.value = id;
-//   // console.log(id);
-// }
-
-const deleteLibrary = async () => {
-  await $fetch(
-    endpoint.value + "/api/library/booking/" + idToBeDeleted.value + "/delete/",
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: userStore.user.token,
-        "Content-Type": "application/json",
-      },
-    }
-  ).then(async (response) => {
-    // console.log("response", response);
-    router.go();
-    toggleConfirmDelete.value = !toggleConfirmDelete.value;
-  });
-}
-
-const logOut = () => {
-  router.push("/library/login");
-  userStore.removeToken();
-}
 
 </script>
 <template>
@@ -152,10 +86,7 @@ const logOut = () => {
             <div @click="toggleSideBarMenu = !toggleSideBarMenu" class="w-10 px-1.5">
               <i class="fa text-3xl text-white" :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'" aria-hidden="true"></i>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+           
           </div>
         </div>
         <div class="px-3">

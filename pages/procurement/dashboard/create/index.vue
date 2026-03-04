@@ -8,20 +8,6 @@ const router = useRouter();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
-onMounted(() => {
-  if (
-    userStore.user.isAuthenticated &&
-    (userStore.user.email === "jorenleeluna24@gmail.com" ||
-      userStore.user.email === "procurement@lsu.edu.ph" ||
-      userStore.user.email === "jason.yap@lsu.edu.ph"
-    )
-  ) {
-    router.push("/procurement/dashboard/create");
-  } else {
-    router.push("/");
-  }
-});
-
 // lsu_address: "La Salle University, La Salle St. Barangay Aguada Ozamiz City, Misamis Occidental, Philippines",
 
 const info = ref({
@@ -53,11 +39,6 @@ const uploadedFile = (e) => {
   info.value.banner_image = imagePath.value + '' + e.target.files[0].name
 }
 
-// console.log(banner_imageData.value);
-// console.log(e.target.files[0].name);
-// const uploadTask = ref(null);
-// const progress = ref(0);
-// const progressPercent = computed(() => Math.round(progress.value));
 
 const saveFile = async () => {
   let formData = new FormData();
@@ -73,10 +54,6 @@ const saveFile = async () => {
   });
 };
 
-const logOut = () => {
-  router.push("/procurement/login");
-  userStore.removeToken();
-};
 
 const goToList = (e) => {
   router.push("/procurement/dashboard");
@@ -139,10 +116,7 @@ const submitForm = async () => {
                   </h1>
                 </div>
               </div>
-              <button @click="logOut" class="flex hover:font-bold pt-1">
-                <i class="fa fa-sign-out text-white text-xl"></i>
-                <h1 class="text-xs text-white p-1.5">Log Out</h1>
-              </button>
+           
             </div>
           </div>
 

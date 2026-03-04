@@ -1,17 +1,14 @@
 <script setup>
 import { onMounted, ref, onBeforeUnmount, watch, computed } from "vue";
 const router = useRouter();
-const { user, logout, init } = useAuth();
 import _ from "lodash";
 import moment from "moment";
-
-onMounted(() => {
-  init();
-});
 
 const props = defineProps({
   darkMode: Boolean,
 });
+
+const { user } = useAuth();
 
 // const cardClass = computed(() =>
 //   props.darkMode
@@ -1138,10 +1135,6 @@ const fetchListItems = async () => {
 onBeforeUnmount(() => {
   stopAutoRefresh();
 });
-
-const logOut = () => {
-  logout();
-};
 
 const selectedItems = ref([]);
 const isDeleting = ref(false);

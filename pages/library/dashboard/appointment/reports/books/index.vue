@@ -75,12 +75,6 @@ const deleteItem = async() => {
     infoStatus()
   });
 }
-
-const logOut = () => {
-  router.push("/library/login");
-  userStore.removeToken();
-}
-
 </script>
 <template>
   <div class="">
@@ -163,10 +157,7 @@ const logOut = () => {
                 ></i>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-boldn pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+           
           </div>
         </div>
         <div>

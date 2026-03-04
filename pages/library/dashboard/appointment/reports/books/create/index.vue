@@ -46,11 +46,6 @@ let reportsSaved = ref(false);
 let allFieldsAreRequired = ref(false);
 let toggleSideBarMenu = ref(true);
 
-const logOut = () => {
-  router.push("/library/login");
-  userStore.removeToken();
-};
-
 const submitForm = async () => {
   console.log("submitForm");
   info.value.created_by_email = userStore.user.email
@@ -163,10 +158,7 @@ const submitForm = async () => {
                 ></i>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+           
           </div>
         </div>
         <div class="text-xs lg:mb-5">

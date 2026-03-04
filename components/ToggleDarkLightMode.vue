@@ -1,10 +1,10 @@
 <template>
   <div>
     <!-- DARK MODE TOGGLE - Fixed Position -->
-    <div class="fixed bottom-3 left-4 z-[60]">
+    <div class="fixed lg:bottom-3 bottom-52 lg:left-4 lg:right-auto right-2 z-[60]">
       <button
         @click="toggleDarkMode"
-        class="group relative flex items-center gap-3 px-5 py-3 rounded-full shadow-lg transition-all duration-300 hover:scale-105"
+        class="group relative flex items-center gap-3 lg:px-5 px-3 py-3 rounded-full shadow-lg transition-all duration-300 hover:scale-105"
         :class="
           darkMode
             ? 'bg-gradient-to-r from-gray-800 to-gray-700 text-white hover:shadow-gray-700/50 border border-gray-600'
@@ -45,7 +45,7 @@
         </div>
 
         <!-- Informative Label Text -->
-        <div class="flex flex-col items-start">
+        <div class="lg:flex hidden flex-col items-start">
           <span class="font-semibold text-sm whitespace-nowrap">
             {{ darkMode ? "Dark Mode" : "Light Mode" }}
           </span>

@@ -127,7 +127,7 @@
               </ul>
               <ul class="flex text-green-800 capitalize text-xs">
                 <li>
-                  <a href="/library/login" class="mr-1 flex items-center">
+                  <a href="/login" class="mr-1 flex items-center">
                     <i class="fa fa-user mr-2" aria-hidden="true"></i> Admin Login </a>
                 </li>
               </ul>

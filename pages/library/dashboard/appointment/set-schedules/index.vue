@@ -26,87 +26,7 @@ let displayAction = ref(false);
 let toggleSideBarMenu = ref(true);
 let toggleConfirmDelete = ref(false);
 
-const minDate = ref(new Date());
-let timeList = ref();
 
-const emailRegistrar = ref(userStore.user.registrarEmail);
-const developerEmail = ref(userStore.user.developerEmail);
-const testEmail = ref(userStore.user.testEmail);
-
-onMounted(() => {
-  if (
-    userStore.user.isAuthenticated &&
-    (userStore.user.email === developerEmail.value ||
-      userStore.user.email === 'monaliza.mugot@lsu.edu.ph' ||
-      userStore.user.email === 'marilyn.bejec@lsu.edu.ph' ||
-      userStore.user.email === 'applejane.ebarle@lsu.edu.ph' ||
-      userStore.user.email === 'janekaren.gudmalin@lsu.edu.ph' ||
-      userStore.user.email === 'macy.beniola@lsu.edu.ph' ||
-      userStore.user.email === 'lynn.lumacad@lsu.edu.ph' ||
-      userStore.user.email === 'zosette.salas@lsu.edu.ph'
-    )
-  ) {
-    schedulesListsData.filter(function (params) {
-      info.value.date = params.date;
-      highlightedDates.value.push(params.date);
-    });
-    router.push("/library/dashboard/appointment/set-schedules");
-  } else {
-    router.push("/");
-  }
-});
-
-const setDate = (value) => {
-  info.value.date = moment(value).format("MM-DD-YYYY");
-  displayAction.value = false;
-  info.value.time = ["-"];
-  setTimeout(() => {
-    schedulesListsData.filter(function (params) {
-      if (params.date === info.value.date) {
-        id.value = params.id;
-        info.value.time = params.time;
-        timeList.value = params.time;
-        displayAction.value = true;
-      }
-    });
-  }, 100);
-};
-
-const toggleDeleteBtn = (id) => {
-  toggleConfirmDelete.value = !toggleConfirmDelete.value;
-  id.value = id;
-};
-
-const deleteSchedule = async () => {
-  await $fetch(
-    endpoint.value + "/api/library/schedule/booking/" + id.value + "/delete/",
-    {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  )
-    .then(async (response) => {
-      // console.log("response", response);
-      router.go();
-      toggleConfirmDelete.value = !toggleConfirmDelete.value;
-    });
-};
-
-const addSchedules = () => {
-  router.push("/library/dashboard/appointment/set-schedules/create");
-};
-
-const logOut = () => {
-  router.push("/library/login");
-  userStore.removeToken();
-};
-
-const editTime = (id) => {
-  router.push("/library/dashboard/appointment/set-schedules/edit/" + id);
-  // console.log(id);
-};
 </script>
 
 <template>
@@ -187,10 +107,7 @@ const editTime = (id) => {
                   aria-hidden="true"></i>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+          
           </div>
         </div>
         <div class="">

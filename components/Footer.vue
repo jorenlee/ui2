@@ -28,11 +28,6 @@ const socials = [
 
 const quickLinks = [
   {
-    label: "Admin",
-    href: "/cms/login",
-    icon: "fa-cogs",
-  },
-  {
     label: "Data Privacy",
     href: "/data-privacy",
     icon: "fa-shield",
@@ -53,7 +48,7 @@ const quickLinks = [
     icon: "fa-share-alt",
   },
   {
-    label: "Central",
+    label: "Login",
     href: "/login",
     icon: "fa-users-gear",
   },

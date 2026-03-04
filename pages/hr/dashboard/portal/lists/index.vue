@@ -50,11 +50,6 @@ const deleteAppointment = async () => {
     toggleConfirmDelete.value = !toggleConfirmDelete.value;
   });
 };
-
-const logOut = () => {
-  router.push("/hr");
-  userStore.removeToken();
-};
 </script>
 <template>
   <div>
@@ -128,10 +123,7 @@ const logOut = () => {
                 <h1 class="text-sm">{{ userStore.user.email }}</h1>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+           
           </div>
         </div>
         <div class="relative">

@@ -166,15 +166,6 @@ const deleteEnrollment = async () => {
     })
 }
 
-const goToEdit = (id) => {
-  // router.push("/registrar/enrollment/edit/" + id);
-};
-
-const logOut = () => {
-  router.push("/registrar/login");
-  userStore.removeToken();
-};
-
 
 
 </script>
@@ -205,10 +196,7 @@ const logOut = () => {
                 </h1>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-boldn pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+           
           </div>
         </div>
         <div class="px-3">

@@ -37,7 +37,7 @@
               <div
                 class="hover:bg-green-800 bg-white hover:text-white text-green-800 px-1 lg:px-4 lg:h-10 h-8 flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full"
               >
-                <a href="/cms/login" class="flex items-center w-fit mx-auto">
+                <a href="/login" class="flex items-center w-fit mx-auto">
                   <i class="fa fa-user" aria-hidden="true"></i>
                   <span class="ml-3 whitespace-nowrap">Admin Login</span>
                 </a>
@@ -92,7 +92,7 @@
                   request. Your feedback helps us improve our services!
                 </p>
                 <a
-                  href="/central/login"
+                  href="/login"
                   class="inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
                 >
                   <i class="fas fa-sign-in-alt mr-2"></i>

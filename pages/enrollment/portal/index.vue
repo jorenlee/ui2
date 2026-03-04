@@ -54,11 +54,6 @@ const info = ref({
 
 const banner_image_preview_receipt = ref("https://firebasestorage.googleapis.com/v0/b/public-images-cbecf.appspot.com/o/public%2F1684826293302?alt=media&token=6bd368c2-5a1b-4d13-9c83-eafccfee8fd2")
 
-const logOut = () => {
-  router.push("/enrollment");
-  userStore.removeToken();
-}
-
 const submitNewEnrollmentBtn = () => {
   isFormSubmitted.value = true;
   submitForm();
@@ -125,12 +120,7 @@ async function updateEnrollment() {
             <h1 class="text-gray-300 text-base py-5 block">
               {{ userStore.user.email }}
             </h1>
-            <p
-              class="text-white whitespace-nowrap py-5 font-bold text-base cursor-pointer hover:underline lg:pl-5"
-              @click="logOut"
-            >
-              Log Out
-            </p>
+            
           </div>
         </div>
       </div>

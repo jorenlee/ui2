@@ -36,7 +36,7 @@
               </div>
               <div class="hover:bg-green-800 border-x bg-white hover:text-white 
                 text-green-800 px-1 lg:px-4 lg:h-10 h-8 flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full">
-                <a href="/drs/login" class="flex items-center w-fit mx-auto">
+                <a href="/login" class="flex items-center w-fit mx-auto">
                   <i class="fa fa-user " aria-hidden="true"></i>
                   <span class="ml-3 whitespace-nowrap">Admin Login</span>
                 </a>

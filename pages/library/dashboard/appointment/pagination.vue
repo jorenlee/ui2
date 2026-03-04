@@ -103,10 +103,6 @@ const deleteAppointment = async () => {
     });
 };
 
-const logOut = () => {
-  router.push("/library/login");
-  userStore.removeToken();
-}
 
 </script>
 <template>
@@ -136,10 +132,7 @@ const logOut = () => {
                 </h1>
               </div>
             </div>
-            <button @click="logOut()" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+           
           </div>
         </div>
 

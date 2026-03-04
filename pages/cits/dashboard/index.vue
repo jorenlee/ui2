@@ -38,10 +38,6 @@
       toggleConfirmDelete.value = !toggleConfirmDelete.value;
     })
   }
-  const logOut = () => {
-    userStore.removeToken();
-    // router.push("/_/campus-pass-admin");
-  };
 </script>
 <template>
   <div>
@@ -93,10 +89,6 @@
             <div @click="toggleSideBarMenu = !toggleSideBarMenu" class="w-10 px-1.5">
               <i class="fa text-3xl text-white" :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'" aria-hidden="true"></i>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
           </div>
         </div>
         <div>

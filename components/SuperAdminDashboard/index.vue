@@ -54,7 +54,11 @@ const openGroups = ref([
   "University Registrar",
   "Campus Pass",
   "Document Reviewer",
+  "IT Services Feedback",
+  "Commission on Election",
   "External Links",
+  "General Services Office",
+  "Animo Run",
 ]);
 
 // ---------------- AUTH & COMPUTED ----------------
@@ -100,14 +104,8 @@ const handleContentSubmitted = () => {
 
 // ---------------- LIFECYCLE ----------------
 onMounted(() => {
-  if (!isLoggedIn.value) router.replace("/cms/login");
+  if (!isLoggedIn.value) router.replace("/login");
 });
-
-
-
-
-
-
 
 // ---------------- MENU ----------------
 const subMenuList = [
@@ -227,11 +225,78 @@ const subMenuList = [
     ],
   },
   {
-    group: "External Links",
+    group: "IT Services Feedback",
     items: [
-      { label: "LSU Home Page", icon: "fa-globe", type: "link", to: "/" },
+      {
+        label: "IT Services Feedback",
+        icon: "fa-list",
+        type: "button",
+        view: "itServicesFeedback",
+      },
     ],
   },
+  {
+    group: "Animo Run",
+    items: [
+      {
+        label: "Registration",
+        icon: "fa-running",
+        type: "button",
+        view: "animoRunRegistration",
+      },
+      {
+        label: "Status Checking",
+        icon: "fa-list",
+        type: "button",
+        view: "animoRunStatus",
+      },
+    ],
+  },
+  {
+    group: "Commission on Election",
+    items: [
+      {
+        label: "Student Election Results",
+        icon: "fa-check",
+        type: "button",
+        view: "LSUCommissionOnElectionResults",
+      },
+      {
+        label: "Student Election Voting",
+        icon: "fa-list",
+        type: "button",
+        view: "LSUCommissionOnElectionVoting",
+      },
+    ],
+  },
+  {
+    group: "General Services Office",
+    items: [
+      {
+        label: "Venue Reservation",
+        icon: "fa-building",
+        type: "button",
+        view: "VenueReservation",
+      },
+      {
+        label: "Vehicle Reservation",
+        icon: "fa-car",
+        type: "button",
+        view: "VehicleReservation",
+      },
+    ],
+  },
+    {
+    group: "External Links",
+    items: [
+      {
+        label: "LSU Home Page",
+        icon: "fa-home",
+        type: "button",
+        view: "externalLinks",
+      },
+    ],
+  }
 ];
 
 
@@ -243,16 +308,34 @@ const menuList = [
   { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
 ];
 
+// Public menu groups accessible to all authenticated users
+const publicMenuGroups = [
+  "IT Services Feedback",
+  "Animo Run",
+  "Commission on Election",
+  "General Services Office",
+  "External Links"
+];
+
 const filteredMenuList = computed(() => {
   const role = userRole.value;
   const email = user.value?.email;
-  if (!role) return [];
-  return subMenuList.filter(
-    (menu) =>
+
+  return subMenuList.filter((menu) => {
+    // Allow public menu groups for all authenticated users
+    if (publicMenuGroups.includes(menu.group)) {
+      return true;
+    }
+
+    // For non-public groups, check role and email permissions
+    if (!role) return false;
+
+    return (
       role === "superAdmin" ||
       !menu.allowedEmails ||
-      menu.allowedEmails.includes(email),
-  );
+      menu.allowedEmails.includes(email)
+    );
+  });
 });
 
 const navigateTo = (url) => router.push(url);
@@ -326,7 +409,7 @@ const handleMenuClick = (menu) => {
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->
       <div
-        class="w-full min-w-[1000px]"
+        class="w-full px-3"
         :class="
           darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'
         ">
@@ -380,6 +463,10 @@ const handleMenuClick = (menu) => {
           </div>
           <div v-else-if="currentView === 'drs'" class="pb-32">
             <SuperAdminDashboardServicesDrs :darkMode="darkMode" />
+          </div>
+          <div v-else-if="currentView === 'itServicesFeedback'" class="pb-32">
+            <!-- <SuperAdminDashboardExternalLinks :darkMode="darkMode" /> -->
+            <UniversityPortalITServicesList :darkMode="darkMode" />
           </div>
         </div>
         <SuperAdminDashboardNavigation

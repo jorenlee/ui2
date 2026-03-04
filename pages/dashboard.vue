@@ -23,7 +23,7 @@ onMounted(() => {
     router.replace('/dashboard');
   } else if (!isLoggedIn.value) {
     // If no token and not logged in, redirect to login
-    router.replace('/cms/login');
+    router.replace('/login');
   }
 });
 

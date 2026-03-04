@@ -90,16 +90,5 @@
 
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useAuth } from "@/composables/useAuth";
-
-const { user, isLoggedIn, logout } = useAuth();
-
 const active = ref("Portfolio");
-
-onMounted(() => {
-  if (!isLoggedIn.value) {
-    router.replace("/");
-  }
-});
 </script>

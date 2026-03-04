@@ -80,31 +80,6 @@ let successToastSubmitCredentialToGmail = ref(false);
 
 let toggleSideBarMenu = ref(true);
 
-const goToList = () => {
-  router.push("/registrar");
-};
-
-const goToCreate = () => {
-  router.push("/registrar/create");
-};
-
-const goToSchedules = () => {
-  router.push("/registrar/set-schedules");
-};
-
-const goToEnrollment = () => {
-  // router.push("/registrar/enrollment");
-};
-
-const btnTogoEnrollmentList = () => {
-  // router.push("/registrar/enrollment");
-};
-
-const logOut = () => {
-  router.push("/registrar/login");
-  userStore.removeToken();
-};
-
 const collegeOrSchool = ref(collegeOrSchoolJSON);
 const courseOrProgram = ref(courseOrProgramJSON);
 const courseMajorList = ref(courseMajorJSON);
@@ -250,10 +225,7 @@ const submitCredentialsToGmail = async () => {
                 </h1>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-boldn pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+         
           </div>
         </div>
         <div class="">

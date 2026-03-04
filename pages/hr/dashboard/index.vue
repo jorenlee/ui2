@@ -11,25 +11,6 @@ const procurements = await $fetch(endpoint.value + "/api/procurements/list").cat
 );
 let toggleSideBarMenu = ref(true);
 let toggleConfirmDelete = ref(false);
-
-onMounted(() => {
-  if (
-    userStore.user.isAuthenticated &&
-    (userStore.user.email === "hr@lsu.edu.ph" ||
-    userStore.user.email === "jorenleeluna24@gmail.com"
-    )
-  ) 
-  {
-    router.push("/hr/dashboard");
-  } else {
-    router.push("/");
-  }
-});
-
-const logOut = () => {
-  router.push("/hr");
-  userStore.removeToken();
-};
 </script>
 <template>
   <div>
@@ -98,10 +79,7 @@ const logOut = () => {
                 <h1 class="text-sm">{{ userStore.user.email }}</h1>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+          
           </div>
         </div>
         <div>

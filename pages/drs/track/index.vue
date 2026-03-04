@@ -59,7 +59,7 @@
               </div>
               <div class="hover:bg-green-800 shadow-sm border bg-white hover:text-white 
                 text-green-800 px-3 h-full flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full">
-                <a href="/drs/login" class="flex items-center w-fit mx-auto">
+                <a href="/login" class="flex items-center w-fit mx-auto">
                   <i class="fa fa-user " aria-hidden="true"></i>
                   <span class="ml-3">Admin Login</span>
                 </a>

@@ -6,44 +6,9 @@ import 'md-editor-v3/lib/style.css';
 const router = useRouter();
 const route = useRoute();
 
-onMounted(() => {
-  if (userStore.user.isAuthenticated &&
-    (userStore.user.email === "jorenleeluna24@gmail.com" ||
-      userStore.user.email === "procurement@lsu.edu.ph" ||
-      userStore.user.email === "jason.yap@lsu.edu.ph"
-    )
-  ) {
-    router.push("/procurement/dashboard/edit/" + route.params.id);
-  } else {
-    router.push("/");
-  }
-})
-
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 const procurements = await $fetch(endpoint.value + "/api/procurements/" + route.params.id + "/").catch((error) => error.data)
-// let id = ref();
-// console.log('procurements', procurements)
-
-
-// const info = ref({
-//   id: procurements.id,
-//   open_for_bids: procurements.open_for_bids,
-//   title: procurements.title,
-//   start_date: procurements.start_date,
-//   lead_time: procurements.lead_time,
-//   deadline: procurements.deadline,
-//   quantity: procurements.quantity,
-//   project_ceiling_budget: procurements.project_ceiling_budget,
-//   lsu_address: procurements.lsu_address,
-//   specifications: procurements.specifications,
-//   banner_image: procurements.banner_image,
-//   updated_at: new Date().toDateString(),
-//   created_by_name: "Procurement Admin",
-//   created_by_email: userStore.user.email,
-//   created_at: procurements.updated_at,
-// })
-
 let imagePreview = ref(procurements.banner_image);
 let toggleSideBarMenu = ref(true);
 const banner_imageData = ref();
@@ -53,16 +18,10 @@ const imagePath = ref('https://lsu-media-styles.sgp1.digitaloceanspaces.com/stor
 const uploadedFile = (e) => {
   banner_imageData.value = e.target.files[0];
   imagePreview.value = URL.createObjectURL(banner_imageData.value);
-  // console.log(banner_imageData.value);
-  // console.log(e.target.files[0].name);
   info.value.banner_image = imagePath.value + '' + e.target.files[0].name
 }
 
 
-const logOut = () => {
-  router.push("/procurement/login");
-  userStore.removeToken();
-}
 
 const goToList = () => {
   router.push("/procurement/dashboard");
@@ -119,10 +78,7 @@ const submitForm = async (e) => {
                   </h1>
                 </div>
               </div>
-              <button @click="logOut" class="flex hover:font-bold pt-1">
-                <i class="fa fa-sign-out text-white text-xl"></i>
-                <h1 class="text-xs text-white p-1.5">Log Out</h1>
-              </button>
+             
             </div>
           </div>
 

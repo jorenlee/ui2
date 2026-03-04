@@ -26,7 +26,7 @@
     </transition>
 
     <!-- Feedback Widget Button -->
-    <div class="fixed bottom-20 right-4 z-[9999]">
+    <div class="fixed lg:bottom-20 bottom-32 lg:right-4 right-2 z-[9999]">
       <div class="relative">
         <!-- Pulsing Ring Animations (only show when attention animation is active) -->
         <div v-if="showAttentionAnimation && !showWidget" class="absolute inset-0 flex items-center justify-center pointer-events-none">

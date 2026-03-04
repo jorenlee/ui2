@@ -75,7 +75,7 @@
               <div
                 class="hover:bg-green-800 border-x bg-white hover:text-white text-green-800 px-1 lg:px-4 lg:h-10 h-8 flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full"
               >
-                <a href="/registrar/login" class="flex items-center w-fit mx-auto">
+                <a href="/login" class="flex items-center w-fit mx-auto">
                   <i class="fa fa-user" aria-hidden="true"></i>
                   <span class="ml-3 whitespace-nowrap">Admin Login</span>
                 </a>
@@ -102,24 +102,6 @@
               ></i>
               <h1 class="my-auto whitespace-nowrap">Book Request Form</h1>
             </a>
-            <!-- href="/registrar/track-appointment-status" -->
-            <!-- <a
-              href="/registrar/track-appointment-status"
-              class="rounded-lg lg:py-2.5 p-2 lg:my-6 my-6 lg:w-80 justify-center mx-auto flex shadow-xl bg-white text-green-800 lg:text-sm text-xs font-bold lg:whitespace-nowrap"
-            >
-              <i class="fa fa-search mr-5 text-3xl" aria-hidden="true"></i>
-              <h1 class="my-auto whitespace-nowrap">
-                Track Appointment Status
-              </h1>
-            </a> -->
-            <!-- href="/registrar/login" -->
-            <!-- <a
-              href="/registrar/login"
-              class="rounded-lg lg:py-2.5 p-2 lg:my-6 my-6 lg:w-80 justify-center mx-auto flex shadow-xl bg-white text-green-800 lg:text-sm text-xs font-bold lg:whitespace-nowrap"
-            >
-              <i class="fa fa-user mr-5 text-3xl" aria-hidden="true"></i>
-              <h1 class="my-auto whitespace-nowrap">Admin Login</h1>
-            </a> -->
           </div>
         </div>
       </div>

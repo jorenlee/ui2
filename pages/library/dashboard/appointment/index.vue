@@ -161,11 +161,6 @@ const goToBack = () => {
   // Data will be refetched automatically via watch()
 };
 
-const logOut = () => {
-  isEditingOrViewing.value = false;
-  router.push("/library/login");
-  userStore.removeToken();
-};
 
 const goToEdit = async (id) => {
   isEditingOrViewing.value = true;
@@ -392,10 +387,7 @@ onBeforeUnmount(() => {
               </div>
               <p class="font-bold">Dashboard</p>
             </div>
-            <button @click="logOut()" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+           
           </div>
         </div>
 
@@ -658,10 +650,7 @@ onBeforeUnmount(() => {
               </div>
               <p class="font-bold">Dashboard</p>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+          
           </div>
         </div>
         <div class="text-xs mb-5">

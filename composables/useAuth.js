@@ -48,7 +48,7 @@ export const useAuth = () => {
     }
     token.value = null
     user.value = null
-    navigateTo('/cms/login')
+    navigateTo('/login')
   }
 
   return { user, token, isLoggedIn, init, setAuth, login, logout }

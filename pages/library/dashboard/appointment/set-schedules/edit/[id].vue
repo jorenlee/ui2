@@ -19,33 +19,6 @@ const info = ref({
 let toggleSideBarMenu = ref(true);
 const developerEmail = ref(userStore.user.developerEmail);
 
-onMounted(async () => {
-  if (
-    userStore.user.isAuthenticated &&
-    (userStore.user.email === developerEmail.value ||
-      userStore.user.email === 'monaliza.mugot@lsu.edu.ph' ||
-      userStore.user.email === 'marilyn.bejec@lsu.edu.ph' ||
-      userStore.user.email === 'applejane.ebarle@lsu.edu.ph' ||
-      userStore.user.email === 'janekaren.gudmalin@lsu.edu.ph' ||
-      userStore.user.email === 'macy.beniola@lsu.edu.ph' ||
-      userStore.user.email === 'lynn.lumacad@lsu.edu.ph' ||
-      userStore.user.email === 'zosette.salas@lsu.edu.ph'
-    )
-  ) {
-    router.push("/library/dashboard/appointment/set-schedules/edit/" + route.params.id);
-    schedule.time.filter((params) => {
-      info.value.time.push(params);
-    })
-  } else {
-    router.push("/");
-  }
-})
-
-const logOut = () => {
-  router.push("/library/login");
-  userStore.removeToken();
-};
-
 const editSchedule = async () => {
   // console.log("updated");
   if (info.value.time < 2) {
@@ -144,10 +117,7 @@ const editSchedule = async () => {
                   aria-hidden="true"></i>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+           
           </div>
         </div>
         <div class="">

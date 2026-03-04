@@ -10,21 +10,6 @@ let appointmentInfo = ref(true);
 let toggleSideBarMenu = ref(true);
 let toggleConfirmDelete = ref(false);
 
-onMounted(() => {
-  setTimeout(async () => {
-    if (userStore.user.isAuthenticated &&
-      (userStore.user.email === "jorenleeluna24@gmail.com" ||
-        userStore.user.email === "procurement@lsu.edu.ph" ||
-        userStore.user.email === "jason.yap@lsu.edu.ph"
-      )) {
-      procurements.value = await $fetch(endpoint.value + "/api/procurements/list").catch((error) => error.data) || 0;
-      router.push("/procurement/dashboard");
-    } else {
-      router.push("/");
-    }
-  }, 3000)
-});
-
 const toggleDeleteBtn = (id) => {
   toggleConfirmDelete.value = !toggleConfirmDelete.value;
   deleteIDProcurement.value = id;
@@ -51,18 +36,6 @@ const deleteProcurement = async () => {
       toggleConfirmDelete.value = !toggleConfirmDelete.value;
     })
 }
-
-const logOut = () => {
-  router.push("/procurement/login");
-  userStore.removeToken();
-};
-
-let procurementDetails = ref(true);
-
-let toggleMenu = (a) => {
-  appointmentInfo.value = a;
-  procurementDetails.value = false;
-};
 
 const goToList = () => {
   router.push("/procurement/dashboard");
@@ -99,10 +72,7 @@ const goToCreate = () => {
               </h1>
             </div>
           </div>
-          <button @click="logOut" class="flex hover:font-bold pt-1">
-            <i class="fa fa-sign-out text-white text-xl"></i>
-            <h1 class="text-xs text-white p-1.5">Log Out</h1>
-          </button>
+         
         </div>
       </div>
       <div>
@@ -187,31 +157,7 @@ const goToCreate = () => {
                   </div>
                 </div>
               </div>
-              <!-- <div class="mx-auto w-4/12 text-center mt-5 text-gray-400 mb-3">
-                  <div class="inline-flex gap-5">
-                    <button
-                      class="bg-green-800 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-l"
-                      @click="prevBtn"
-                    >
-                      Prev
-                    </button>
-                    <button class="bg-green-800 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-l"
-                    @click="currentBtn">
-                      1
-                    </button>
-                    <button class="bg-green-800 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-l">
-                      2
-                    </button>
-                    <button class="bg-green-800 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-l">
-                      3
-                    </button>
-                    <button
-                      class="bg-green-800 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-r"
-                    @click="nextBtn">
-                      Next
-                    </button>
-                  </div>
-                </div> -->
+              
             </div>
           </div>
         </div>

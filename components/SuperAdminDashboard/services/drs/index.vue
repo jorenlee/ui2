@@ -2,17 +2,13 @@
 import { onMounted, onUnmounted, ref, computed } from "vue";
 import VueDatePicker from "@vuepic/vue-datepicker";
 import "./css/main.css";
-const router = useRouter();
-const { user, token, logout, init } = useAuth();
 import _ from "lodash";
-
-onMounted(() => {
-  init();
-});
 
 const props = defineProps({
   darkMode: Boolean,
 });
+
+const { user } = useAuth();
 
 const superAdminEmail = ref("jorenlee.luna@lsu.edu.ph");
 const superAdminTwo = ref("macristina.llauder@lsu.edu.ph");
@@ -397,10 +393,7 @@ const deleteItem = async () => {
     toggleConfirmDelete.value = !toggleConfirmDelete.value;
   });
 };
-const logOut = () => {
-  logout();
-  router.push("/drs/login");
-};
+
 
 const goToEdit = async (id) => {
   filteredItems = await $fetch(endpoint.value + "/api/drs/" + id + "/").catch(

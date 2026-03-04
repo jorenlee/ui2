@@ -1,16 +1,1295 @@
+<script setup>
+import { ref, computed, onMounted, onUnmounted, reactive } from "vue";
+import moment from "moment";
+
+/* ================= AUTH ================= */
+const { user, init } = useAuth();
+
+
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
+
+const requests = ref([]);
+const showModal = ref(false);
+const isCreate = ref(false);
+const statusFilter = ref("");
+const technicianFilter = ref("");
+const searchFilter = ref("");
+const dateFilter = ref("");
+const customOffice = ref("");
+
+// Pagination
+const currentPage = ref(1);
+const itemsPerPage = ref(20);
+
+// Sorting
+const sortColumn = ref("created_at");
+const sortDirection = ref("asc"); // oldest first by default
+
+// Real-time update
+let realtimeInterval = null;
+
+const successfullySavedData = ref(false);
+
+// Dropdown options
+const CATEGORY_OPTIONS = [
+  "Hardware",
+  "Software",
+  "Network",
+  "Computer Lab",
+  "Accounts",
+  "LSU Webpages",
+  "Student Portal",
+  "Others",
+];
+
+const ITEM_TYPE_OPTIONS_MAP = {
+  Hardware: [
+    "Laptop",
+    "Desktop",
+    "Printer",
+    "Scanner",
+    "Monitor",
+    "Keyboard",
+    "Mouse",
+    "Projector",
+    "Webcam",
+    "Headset",
+    "Speaker",
+    "Microphone",
+    "External Hard Drive",
+    "USB Flash Drive",
+    "Power Supply",
+    "Motherboard",
+    "RAM",
+    "Graphics Card",
+    "CPU",
+    "Cooling Fan",
+    "Others",
+  ],
+  Software: ["Installation", "Repair", "Uninstall"],
+  Network: ["WiFi Access", "Network Configuration"],
+  "Computer Lab": [
+    "Computer Setup",
+    "Software Installation",
+    "Hardware Issue",
+    "Network Connectivity",
+    "Maintenance",
+    "Others",
+  ],
+  Accounts: ["LSU Gmail", "Canvas", "Microsoft", "Student Portal", "Others"],
+  "LSU Webpages": [
+    "Update Content",
+    "Fix Errors",
+    "Add New Page",
+    "Remove Page",
+    "Others",
+  ],
+  "Student Portal": ["Forgot Password", "Others"],
+  Others: [
+    "Screwdriver Set",
+    "Cable Ties",
+    "Thermal Paste",
+    "Cleaning Kit",
+    "Cable Tester",
+    "Crimping Tool",
+    "Anti-static Wrist Strap",
+    "Compressed Air",
+    "HDMI Cable",
+    "VGA Cable",
+    "Ethernet Cable",
+    "USB Cable",
+    "Power Cable",
+    "Extension Cord",
+    "Others",
+  ],
+};
+
+// Computer Lab location options
+const COMPUTER_LAB_LOCATIONS = {
+  "BVM and SJ Buildings": [
+    "BVM 4F Computer Lab",
+    "BVM 2F Computer Lab",
+    "SJ Computer Lab",
+  ],
+  "LS Building": [
+    "LS209 - Maclab",
+    "LS211 - Networking",
+    "LS212 - Programming",
+    "LS213 - Multimedia",
+    "LS215 - Openlab",
+  ],
+};
+
+const CENTER_OFFICE_ROOM_OPTIONS = ["OCH", "NPCC", "Registrar", "N/A", "OTHER"];
+
+// Computed property to get location options based on category
+const getLocationOptions = computed(() => {
+  // If Computer Lab is selected, show computer lab locations
+  if (info.value.issue_concern_request_category_type === "Computer Lab") {
+    // Combine all computer lab locations
+    const allLabLocations = [
+      ...COMPUTER_LAB_LOCATIONS["BVM and SJ Buildings"],
+      ...COMPUTER_LAB_LOCATIONS["LS Building"],
+    ];
+    return allLabLocations;
+  }
+
+  // Otherwise, show default office options
+  return CENTER_OFFICE_ROOM_OPTIONS;
+});
+
+const SEMESTER_OPTIONS = ["First Semester", "Second Semester", "Summer"];
+const STATUS_OPTIONS = [
+  "New",
+  "Used",
+  "For Repair",
+  "For Disposal",
+  "Returned",
+  "Issued",
+  "Replaced",
+  "Condemned",
+  "Serviceable",
+  "Unserviceable",
+  "Running",
+];
+const TECHNICIANS_PERSONNEL = [
+  {
+    name: "Michael John Puertogalera",
+    email: "michaeljohn.puertogalera@lsu.edu.ph",
+    specializations: ["Accounts", "Software"],
+    role: "Accounts / Software",
+  },
+  {
+    name: "Jason Yap",
+    email: "jason.yap@lsu.edu.ph",
+    specializations: ["Network", "Accounts", "Software"],
+    role: "Network / Accounts / Software",
+  },
+  {
+    name: "Flourence John Gonzaga",
+    email: "johny14_gonzaga@lsu.edu.ph",
+    specializations: ["Network", "Accounts", "Software"],
+    role: "Network / Accounts / Software",
+  },
+  {
+    name: "Denzel Roy Suarez",
+    email: "denzelroy.suarez@lsu.edu.ph",
+    specializations: ["Computer Lab"],
+    location: "BVM and SJ Buildings",
+    role: "Computer Laboratory: BVM and SJ Buildings Rooms",
+  },
+  {
+    name: "Rommel Rosal",
+    email: "rommel.rosal@lsu.edu.ph",
+    specializations: ["Computer Lab"],
+    location: "LS Building",
+    role: "Computer Laboratory: LS Building Rooms",
+  },
+  {
+    name: "Giovanni Jose Morales",
+    email: "giovanni.morales@lsu.edu.ph",
+    specializations: ["Hardware"],
+    role: "PC and Printers and Other Hardwares - Whole LSU Campus Admins and Staffs",
+  },
+  {
+    name: "Jo Renlee Luna",
+    email: "jorenlee.luna@lsu.edu.ph",
+    specializations: ["Software"],
+    role: "LSU Website",
+  },
+];
+
+const loading = ref(false);
+const modalLoading = ref(false);
+
+const fetchRequests = async (silent = false) => {
+  if (!silent) loading.value = true;
+  try {
+    const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
+    requests.value = res.data || res;
+
+    // console.log(requests.value);
+  } catch (err) {
+    console.error("Failed to fetch tech support list", err);
+  } finally {
+    if (!silent) loading.value = false;
+  }
+};
+
+// Real-time updates every second
+const startRealtimeUpdates = () => {
+  realtimeInterval = setInterval(() => {
+    fetchRequests(true); // silent update
+  }, 1000);
+};
+
+const stopRealtimeUpdates = () => {
+  if (realtimeInterval) {
+    clearInterval(realtimeInterval);
+    realtimeInterval = null;
+  }
+};
+
+onMounted(() => {
+  fetchRequests();
+  startRealtimeUpdates();
+});
+
+onUnmounted(() => {
+  stopRealtimeUpdates();
+});
+
+// Function to auto-assign technicians based on category and specific concern
+const autoAssignTechnicians = (category, specificConcern = null) => {
+  // Get Michael John Puertogalera (always included in all tickets)
+  const michael = TECHNICIANS_PERSONNEL.find(
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph",
+  );
+
+  // Check for specific concern first (highest priority)
+  if (specificConcern === "LSU Website") {
+    // For LSU Website: assign Jo Renlee + Michael
+    const joRenlee = TECHNICIANS_PERSONNEL.find(
+      (tech) => tech.email === "jorenlee.luna@lsu.edu.ph",
+    );
+
+    const assignedTechs = [];
+    if (michael) {
+      assignedTechs.push({
+        name: michael.name,
+        email: michael.email,
+      });
+    }
+    if (joRenlee) {
+      assignedTechs.push({
+        name: joRenlee.name,
+        email: joRenlee.email,
+      });
+    }
+
+    info.value.technicians_assigned = assignedTechs;
+    return;
+  }
+
+  if (!category) {
+    // Reset to default if no category (Michael only)
+    info.value.technicians_assigned = michael
+      ? [
+          {
+            name: michael.name,
+            email: michael.email,
+          },
+        ]
+      : [];
+    return;
+  }
+
+  // Filter technicians based on their specializations
+  const assignedTechs = TECHNICIANS_PERSONNEL.filter((tech) =>
+    tech.specializations?.includes(category),
+  );
+
+  // Always include Michael in all assignments
+  const finalAssignedTechs = assignedTechs.map((tech) => ({
+    name: tech.name,
+    email: tech.email,
+  }));
+
+  // Make sure Michael is included (avoid duplicates)
+  const hasMichael = finalAssignedTechs.some(
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph",
+  );
+
+  if (!hasMichael && michael) {
+    finalAssignedTechs.unshift({
+      name: michael.name,
+      email: michael.email,
+    });
+  }
+
+  // If no match found, assign only Michael
+  if (finalAssignedTechs.length === 0 && michael) {
+    info.value.technicians_assigned = [
+      {
+        name: michael.name,
+        email: michael.email,
+      },
+    ];
+  } else {
+    info.value.technicians_assigned = finalAssignedTechs;
+  }
+};
+
+// Function to refine technician assignment based on Computer Lab location
+const refineComputerLabAssignment = (location) => {
+  if (
+    !location ||
+    info.value.issue_concern_request_category_type !== "Computer Lab"
+  ) {
+    return;
+  }
+
+  // Get Michael John Puertogalera (always included)
+  const michael = TECHNICIANS_PERSONNEL.find(
+    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph",
+  );
+
+  // Determine which technician based on location
+  let assignedTech = null;
+
+  if (location.startsWith("BVM") || location.startsWith("SJ")) {
+    // BVM and SJ Buildings -> Denzel Roy Suarez
+    assignedTech = TECHNICIANS_PERSONNEL.find(
+      (tech) => tech.name === "Denzel Roy Suarez",
+    );
+  } else if (location.startsWith("LS")) {
+    // LS Building -> Rommel Rosal
+    assignedTech = TECHNICIANS_PERSONNEL.find(
+      (tech) => tech.name === "Rommel Rosal",
+    );
+  }
+
+  if (assignedTech) {
+    const assignedTechs = [];
+
+    // Always add Michael first
+    if (michael) {
+      assignedTechs.push({
+        name: michael.name,
+        email: michael.email,
+      });
+    }
+
+    // Add the lab-specific technician
+    assignedTechs.push({
+      name: assignedTech.name,
+      email: assignedTech.email,
+    });
+
+    info.value.technicians_assigned = assignedTechs;
+  }
+};
+
+const newLog = reactive({ status: "", remarks: "" });
+
+function addStatusLog() {
+  // Make status update optional - only add if status is provided
+  if (!newLog.status) {
+    return; // Skip adding log if no status selected
+  }
+
+  if (!info.value.logs) info.value.logs = [];
+
+  info.value.logs.push({
+    status: newLog.status,
+    remarks: newLog.remarks || "N/A",
+    timestamp: new Date(),
+  });
+
+  // Update ticket's current_status
+  info.value.current_status = newLog.status;
+
+  // Reset input
+  newLog.status = "";
+  newLog.remarks = "";
+}
+
+// ================= STATUS HELPERS =================
+const latestStatus = (item) =>
+  item.logs?.length ? item.logs[item.logs.length - 1] : null;
+
+// Check if ticket is completed for rating
+const isTicketCompletedForRating = (item) => {
+  const currentStatus = item.current_status || latestStatus(item)?.status;
+  return currentStatus === "Completed";
+};
+
+// Check if modal ticket is completed (for showing rating/feedback fields)
+const isModalTicketCompleted = computed(() => {
+  const currentStatus =
+    info.value.current_status || latestStatus(info.value)?.status;
+  return currentStatus === "Completed";
+});
+
+// Deduplicated logs for client view - show only one log per unique status
+const deduplicatedLogs = computed(() => {
+  if (!info.value.logs || info.value.logs.length === 0) return [];
+
+  const uniqueStatuses = new Map();
+
+  // Iterate through logs and keep only the latest entry for each unique status
+  info.value.logs.forEach((log) => {
+    if (!uniqueStatuses.has(log.status)) {
+      uniqueStatuses.set(log.status, log);
+    } else {
+      // If status already exists, keep the one with the latest timestamp
+      const existingLog = uniqueStatuses.get(log.status);
+      const existingTime = new Date(existingLog.timestamp).getTime();
+      const currentTime = new Date(log.timestamp).getTime();
+
+      if (currentTime > existingTime) {
+        uniqueStatuses.set(log.status, log);
+      }
+    }
+  });
+
+  // Convert Map values back to array
+  return Array.from(uniqueStatuses.values());
+});
+
+// Backend-aligned filter mapping
+const TICKET_STATUS_FILTER_MAP = {
+  pending: ["Pending"],
+  "in progress": ["In Progress", "Reviewed"],
+  completed: ["Completed", "Closed"],
+};
+
+// Clear filters function
+const clearFilters = () => {
+  statusFilter.value = "";
+  technicianFilter.value = "";
+  searchFilter.value = "";
+  dateFilter.value = "";
+  currentPage.value = 1;
+};
+
+// Sort function
+const sortBy = (column) => {
+  if (sortColumn.value === column) {
+    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
+  } else {
+    sortColumn.value = column;
+    sortDirection.value = "asc";
+  }
+  currentPage.value = 1; // Reset to first page when sorting
+};
+
+// Enhanced filter with sorting
+const filteredRequests = computed(() => {
+  let filtered = [...requests.value];
+
+  // Filter by logged-in user's email (only show their own tickets)
+  const userEmail = user.value?.email;
+  if (userEmail) {
+    filtered = filtered.filter((r) => {
+      return r.requestor_lsu_email === userEmail;
+    });
+  }
+  // Status filter
+  if (statusFilter.value) {
+    filtered = filtered.filter((r) => {
+      const status = latestStatus(r)?.status;
+      return TICKET_STATUS_FILTER_MAP[statusFilter.value]?.includes(status);
+    });
+  }
+
+  // Technician filter
+  if (technicianFilter.value) {
+    filtered = filtered.filter((r) =>
+      r.technicians_assigned?.includes(technicianFilter.value),
+    );
+  }
+
+  // Search filter
+  if (searchFilter.value) {
+    const search = searchFilter.value.toLowerCase();
+    filtered = filtered.filter(
+      (r) =>
+        r.ticket_id?.toLowerCase().includes(search) ||
+        r.requestor_fullname?.toLowerCase().includes(search) ||
+        r.requestor_lsu_email?.toLowerCase().includes(search),
+    );
+  }
+
+  // Date filter
+  if (dateFilter.value) {
+    const now = moment();
+    filtered = filtered.filter((r) => {
+      const created = moment(r.created_at);
+      switch (dateFilter.value) {
+        case "today":
+          return created.isSame(now, "day");
+        case "week":
+          return created.isSame(now, "week");
+        case "month":
+          return created.isSame(now, "month");
+        case "year":
+          return created.isSame(now, "year");
+        default:
+          return true;
+      }
+    });
+  }
+
+  // Sorting
+  filtered.sort((a, b) => {
+    let aVal, bVal;
+
+    switch (sortColumn.value) {
+      case "ticket_id":
+        aVal = a.ticket_id || "";
+        bVal = b.ticket_id || "";
+        break;
+      case "category":
+        aVal = a.issue_concern_request_category_type || "";
+        bVal = b.issue_concern_request_category_type || "";
+        break;
+      case "requestor_fullname":
+        aVal = a.requestor_fullname || "";
+        bVal = b.requestor_fullname || "";
+        break;
+      case "requestor_lsu_email":
+        aVal = a.requestor_lsu_email || "";
+        bVal = b.requestor_lsu_email || "";
+        break;
+      case "technicians_assigned":
+        aVal = a.technicians_assigned?.join(", ") || "";
+        bVal = b.technicians_assigned?.join(", ") || "";
+        break;
+      case "status":
+        aVal = latestStatus(a)?.status || "";
+        bVal = latestStatus(b)?.status || "";
+        break;
+      case "created_at":
+      default:
+        aVal = moment(a.created_at).valueOf();
+        bVal = moment(b.created_at).valueOf();
+        break;
+    }
+
+    if (sortDirection.value === "asc") {
+      return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+    } else {
+      return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+    }
+  });
+
+  return filtered;
+});
+
+// Paginated results
+const paginatedRequests = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredRequests.value.slice(start, end);
+});
+
+const totalPages = computed(() => {
+  return Math.ceil(filteredRequests.value.length / itemsPerPage.value);
+});
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
+
+// Visible page numbers for pagination
+const visiblePages = computed(() => {
+  const pages = [];
+  const maxVisible = 5;
+  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
+  let end = Math.min(totalPages.value, start + maxVisible - 1);
+
+  if (end - start + 1 < maxVisible) {
+    start = Math.max(1, end - maxVisible + 1);
+  }
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  return pages;
+});
+
+// Get specific type options based on category
+const getSpecificTypeOptions = (categoryType) => {
+  if (!categoryType || !ITEM_TYPE_OPTIONS_MAP[categoryType]) {
+    return [];
+  }
+  return ITEM_TYPE_OPTIONS_MAP[categoryType];
+};
+
+// Get mood icon based on ticket age and status
+const getMoodIcon = (item) => {
+  const status = latestStatus(item)?.status?.toLowerCase();
+  const isDone =
+    status === "completed" || status === "closed" || status === "for review";
+
+  // If ticket is completed/closed/for review - trophy
+  if (isDone) {
+    return {
+      emoji: "🏆",
+      bgClass: "bg-gradient-to-br from-gray-200 to-gray-300",
+      title: "Completed",
+    };
+  }
+
+  // If ticket is lacking content - document/clipboard emoji
+  if (status === "lacking content") {
+    return {
+      emoji: "📋",
+      bgClass: "bg-gradient-to-br from-orange-400 to-orange-500",
+      title: "Lacking Content",
+    };
+  }
+
+  const createdAt = moment(item.created_at);
+  const now = moment();
+  const hoursPassed = now.diff(createdAt, "hours");
+
+  // Special handling for "In Progress" status based on age
+  if (status === "in progress") {
+    if (hoursPassed < 24) {
+      return {
+        emoji: "😊",
+        bgClass: "bg-gradient-to-br from-green-400 to-green-500",
+        title: "In Progress (< 24 hours)",
+      };
+    } else {
+      return {
+        emoji: "☹️",
+        bgClass: "bg-gradient-to-br from-red-400 to-red-500",
+        title: "In Progress (> 24 hours)",
+      };
+    }
+  }
+
+  // For other statuses (Pending, Unsuccessful, Cancelled, etc.)
+  // New ticket (less than 24 hours) - green happy face
+  if (hoursPassed < 24) {
+    return {
+      emoji: "😊",
+      bgClass: "bg-gradient-to-br from-green-400 to-green-500",
+      title: "New ticket (< 24 hours)",
+    };
+  }
+  // 24-48 hours - yellow neutral face
+  else if (hoursPassed < 48) {
+    return {
+      emoji: "😐",
+      bgClass: "bg-gradient-to-br from-yellow-400 to-yellow-500",
+      title: "Aging ticket (24-48 hours)",
+    };
+  }
+  // 48+ hours and not done - red sad face
+  else {
+    return {
+      emoji: "☹️",
+      bgClass: "bg-gradient-to-br from-red-400 to-red-500",
+      title: "Overdue ticket (48+ hours)",
+    };
+  }
+};
+
+// Date helpers
+const getCurrentSemester = () => {
+  const month = moment().month() + 1;
+  if (month >= 1 && month <= 5) return "Second Semester";
+  if (month >= 6 && month <= 7) return "Summer";
+  return "First Semester";
+};
+
+const getAcademicYear = () => {
+  const year = moment().year();
+  const month = moment().month() + 1;
+  return month >= 6 ? `A.Y ${year} - ${year + 1}` : `A.Y ${year - 1} - ${year}`;
+};
+
+const getTodayDateChecked = () => moment().format("DD/MM/YYYY hh:mm A");
+
+const ACADEMIC_YEAR_OPTIONS = (() => {
+  const currentYear = moment().year();
+  const years = [];
+  for (let i = -5; i <= 1; i++) {
+    const start = currentYear + i;
+    years.push(`A.Y ${start} - ${start + 1}`);
+  }
+  return years;
+})();
+
+// Receipt handling
+const receiptFile = ref(null);
+const receiptPreview = ref("");
+
+const handleReceiptUpload = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    receiptFile.value = file;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      receiptPreview.value = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+};
+
+const removeReceipt = () => {
+  receiptFile.value = null;
+  receiptPreview.value = "";
+};
+
+// Form info
+const info = ref({
+  ticket_id: "TID" + Date.now(),
+  requestor_fullname: "",
+  requestor_lsu_email: "",
+  technicians_assigned: [],
+  issue_concern_request_details: "",
+  issue_concern_request_category_type: "",
+  issue_concern_request_item_type: "",
+  issue_concern_request_center_office_room: "",
+  owner_type: "LSU",
+  client_role: "",
+  buy_me_coffee: "No",
+  evaluation_feedback_client_star_rating: "",
+  logs: [
+    {
+      timestamp: new Date().toISOString(),
+      remarks: "Initial status",
+      status: "Pending",
+      assigned_technician_name: "",
+      assigned_technician_lsu_email: "",
+    },
+  ],
+});
+
+// Watch for category changes to auto-assign technicians
+watch(
+  () => info.value.issue_concern_request_category_type,
+  (newCategory) => {
+    // Only auto-assign when creating new tickets
+    if (isCreate.value) {
+      autoAssignTechnicians(
+        newCategory,
+        info.value.issue_concern_request_item_type,
+      );
+      // Clear location when category changes
+      info.value.issue_concern_request_center_office_room = "";
+      // Clear specific concern when category changes
+      info.value.issue_concern_request_item_type = "";
+    }
+  },
+);
+
+// Watch for specific concern changes to refine technician assignment
+watch(
+  () => info.value.issue_concern_request_item_type,
+  (newSpecificConcern) => {
+    // Only auto-assign when creating new tickets
+    if (isCreate.value) {
+      // Re-assign based on specific concern
+      autoAssignTechnicians(
+        info.value.issue_concern_request_category_type,
+        newSpecificConcern,
+      );
+    }
+  },
+);
+
+// Watch for Computer Lab location changes to refine technician assignment
+watch(
+  () => info.value.issue_concern_request_center_office_room,
+  (newLocation) => {
+    // Only auto-assign when creating new tickets
+    if (isCreate.value) {
+      refineComputerLabAssignment(newLocation);
+    }
+  },
+);
+
+// Modal controls
+const openCreateModal = () => {
+  isCreate.value = true;
+  receiptFile.value = null;
+  receiptPreview.value = "";
+  info.value = {
+    ticket_id: "TID" + Date.now(),
+    requestor_fullname: "",
+    requestor_lsu_email: "",
+    technicians_assigned: [],
+    issue_concern_request_details: "",
+    issue_concern_request_category_type: "",
+    issue_concern_request_item_type: "",
+    issue_concern_request_center_office_room: "",
+    owner_type: "LSU",
+    client_role: "",
+    buy_me_coffee: "No",
+    evaluation_feedback_client_star_rating: "",
+    logs: [
+      {
+        timestamp: new Date().toISOString(),
+        remarks: "Initial status",
+        status: "Pending",
+        assigned_technician_name: "",
+        assigned_technician_lsu_email: "",
+      },
+    ],
+  };
+  showModal.value = true;
+};
+
+const openModal = (item) => {
+  isCreate.value = false;
+
+  // Directly assign reactive ref
+  info.value = reactive({
+    ...item,
+    technicians_assigned: Array.isArray(item.technicians_assigned)
+      ? item.technicians_assigned
+      : item.technician_assigned
+        ? [item.technician_assigned]
+        : [],
+    logs: item.logs ? [...item.logs] : [],
+  });
+
+  showModal.value = true;
+};
+
+const closeModal = () => (showModal.value = false);
+
+// Normalize office before submit
+const normalizeOffice = () => {
+  if (info.value.issue_concern_request_center_office_room === "OTHER")
+    info.value.issue_concern_request_center_office_room =
+      customOffice.value || "Other";
+};
+
+// Check if user has unrated tickets (ANY status - pending, in progress, completed, etc.)
+const checkForUnratedTickets = async (email) => {
+  try {
+    const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
+
+    if (res && Array.isArray(res)) {
+      // Filter tickets for this user
+      const userTickets = res.filter(
+        (ticket) => ticket.requestor_lsu_email === email,
+      );
+
+      // Check if ANY ticket (regardless of status) is missing rating or feedback
+      const unratedTickets = userTickets.filter((ticket) => {
+        const hasNoRating =
+          !ticket.evaluation_feedback_client_star_rating ||
+          ticket.evaluation_feedback_client_star_rating === "" ||
+          ticket.evaluation_feedback_client_star_rating === null;
+        const hasNoFeedback =
+          !ticket.evaluation_feedback_client_comment ||
+          ticket.evaluation_feedback_client_comment === "" ||
+          ticket.evaluation_feedback_client_comment === null;
+
+        // Consider a ticket unrated if it's missing BOTH rating AND feedback
+        return hasNoRating && hasNoFeedback;
+      });
+
+      return unratedTickets.length > 0 ? unratedTickets.length : false;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Error checking for unrated tickets:", error);
+    // If there's an error, allow submission to proceed
+    return false;
+  }
+};
+
+const createTicket = async () => {
+  // Validate required fields
+  if (!info.value.requestor_fullname || !info.value.requestor_lsu_email) {
+    showToaster(
+      "❌ Please fill in all required fields (Name and Email).",
+      "error",
+    );
+    return;
+  }
+
+  // Check for unrated tickets
+  const unratedCount = await checkForUnratedTickets(
+    info.value.requestor_lsu_email,
+  );
+  if (unratedCount) {
+    showToaster(
+      `❌ You have ${unratedCount} unrated ticket${unratedCount > 1 ? "s" : ""}. Please rate all your previous tickets before creating a new one.`,
+      "error",
+      5000,
+    );
+    return;
+  }
+
+  modalLoading.value = true;
+  normalizeOffice();
+
+  const formData = new FormData();
+  formData.append("ticket_id", info.value.ticket_id || `TID${Date.now()}`);
+  formData.append(
+    "requestor_fullname",
+    info.value.requestor_fullname?.trim() || "",
+  );
+  formData.append(
+    "requestor_lsu_email",
+    info.value.requestor_lsu_email?.trim() || "",
+  );
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(info.value.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    info.value.issue_concern_request_details?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    info.value.issue_concern_request_category_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    info.value.issue_concern_request_item_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    info.value.issue_concern_request_center_office_room?.trim() || "",
+  );
+  formData.append("owner_type", info.value.owner_type || "LSU");
+  formData.append("client_role", info.value.client_role || "");
+  formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
+  formData.append("logs", JSON.stringify(info.value.logs || []));
+
+  if (receiptFile.value) {
+    formData.append("buy_me_coffee_gcash_receipt", receiptFile.value);
+  }
+
+  try {
+    const res = await $fetch(
+      endpoint.value + "/api/cits/request-ticket/create/",
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    if (res.status === "created") {
+      showToaster(
+        "✅ Ticket created successfully! Confirmation email sent.",
+        "success",
+      );
+      showModal.value = false;
+      await fetchRequests(); // Refresh the list
+    } else if (res.status === "errors") {
+      console.error("Form errors:", res.errors);
+      showToaster(
+        "❌ Failed to create ticket. Check console for errors.",
+        "error",
+      );
+    }
+  } catch (err) {
+    console.error("Failed to create ticket:", err);
+    showToaster("❌ Failed to create ticket. Please try again.", "error");
+  } finally {
+    modalLoading.value = false;
+  }
+};
+
+const toaster = ref({
+  show: false,
+  message: "",
+  type: "success", // we can extend later to warning, error, etc.
+});
+
+const showToaster = (message, type = "success", duration = 3000) => {
+  toaster.value.message = message;
+  toaster.value.type = type;
+  toaster.value.show = true;
+
+  setTimeout(() => {
+    toaster.value.show = false;
+  }, duration);
+};
+
+const saveChanges = async () => {
+  modalLoading.value = true;
+  normalizeOffice();
+  addStatusLog();
+
+  const formData = new FormData();
+  formData.append("ticket_id", info.value.ticket_id);
+  formData.append(
+    "requestor_fullname",
+    info.value.requestor_fullname?.trim() || "",
+  );
+  formData.append(
+    "requestor_lsu_email",
+    info.value.requestor_lsu_email?.trim() || "",
+  );
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(info.value.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    info.value.issue_concern_request_details?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    info.value.issue_concern_request_category_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    info.value.issue_concern_request_item_type?.trim() || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    info.value.issue_concern_request_center_office_room?.trim() || "",
+  );
+  formData.append("owner_type", info.value.owner_type || "LSU");
+  formData.append("client_role", info.value.client_role || "");
+  formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
+  formData.append(
+    "evaluation_feedback_client_star_rating",
+    info.value.evaluation_feedback_client_star_rating || "",
+  );
+  formData.append(
+    "evaluation_feedback_client_comment",
+    info.value.evaluation_feedback_client_comment || "",
+  );
+  formData.append("logs", JSON.stringify(info.value.logs || []));
+
+  if (receiptFile.value) {
+    formData.append("buy_me_coffee_gcash_receipt", receiptFile.value);
+  }
+
+  try {
+    const res = await $fetch(
+      endpoint.value + `/api/cits/request-ticket/${info.value.id}/edit/`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    if (res.status === "updated") {
+      showToaster("✅ Changes saved successfully!", "success");
+      showModal.value = false;
+      await fetchRequests(); // refresh list
+    } else {
+      console.error("Update failed:", res);
+      showToaster("❌ Failed to update ticket.", "error");
+    }
+  } catch (err) {
+    console.error("Failed to update ticket:", err);
+    showToaster("❌ Failed to update ticket. Please try again.", "error");
+  } finally {
+    modalLoading.value = false;
+  }
+};
+
+// Update star rating
+const updateRating = async (item, rating) => {
+  const formData = new FormData();
+  formData.append("ticket_id", item.ticket_id);
+  formData.append("requestor_fullname", item.requestor_fullname || "");
+  formData.append("requestor_lsu_email", item.requestor_lsu_email || "");
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(item.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    item.issue_concern_request_details || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    item.issue_concern_request_category_type || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    item.issue_concern_request_item_type || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    item.issue_concern_request_center_office_room || "",
+  );
+  formData.append("owner_type", item.owner_type || "LSU");
+  formData.append("client_role", item.client_role || "");
+  formData.append("buy_me_coffee", item.buy_me_coffee || "No");
+  formData.append("evaluation_feedback_client_star_rating", String(rating));
+  formData.append(
+    "evaluation_feedback_client_comment",
+    item.evaluation_feedback_client_comment || "",
+  );
+  formData.append("logs", JSON.stringify(item.logs || []));
+
+  try {
+    const res = await $fetch(
+      endpoint.value + `/api/cits/request-ticket/${item.id}/edit/`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    if (res.status === "updated") {
+      showToaster(
+        `✅ Rating updated to ${rating} star${rating > 1 ? "s" : ""}!`,
+        "success",
+      );
+      await fetchRequests(true); // silent refresh
+    } else {
+      console.error("Rating update failed:", res);
+      showToaster("❌ Failed to update rating.", "error");
+    }
+  } catch (err) {
+    console.error("Failed to update rating:", err);
+    showToaster("❌ Failed to update rating. Please try again.", "error");
+  }
+};
+
+// Update feedback comment
+const updateFeedbackComment = async (item) => {
+  // Only update if ticket is completed/done
+  if (!isTicketCompletedForRating(item)) {
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("ticket_id", item.ticket_id);
+  formData.append("requestor_fullname", item.requestor_fullname || "");
+  formData.append("requestor_lsu_email", item.requestor_lsu_email || "");
+  formData.append(
+    "technicians_assigned",
+    JSON.stringify(item.technicians_assigned || []),
+  );
+  formData.append(
+    "issue_concern_request_details",
+    item.issue_concern_request_details || "",
+  );
+  formData.append(
+    "issue_concern_request_category_type",
+    item.issue_concern_request_category_type || "",
+  );
+  formData.append(
+    "issue_concern_request_item_type",
+    item.issue_concern_request_item_type || "",
+  );
+  formData.append(
+    "issue_concern_request_center_office_room",
+    item.issue_concern_request_center_office_room || "",
+  );
+  formData.append("owner_type", item.owner_type || "LSU");
+  formData.append("client_role", item.client_role || "");
+  formData.append("buy_me_coffee", item.buy_me_coffee || "No");
+  formData.append(
+    "evaluation_feedback_client_star_rating",
+    item.evaluation_feedback_client_star_rating || "",
+  );
+  formData.append(
+    "evaluation_feedback_client_comment",
+    item.evaluation_feedback_client_comment || "",
+  );
+  formData.append("logs", JSON.stringify(item.logs || []));
+
+  try {
+    const res = await $fetch(
+      endpoint.value + `/api/cits/request-ticket/${item.id}/edit/`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
+
+    if (res.status === "updated") {
+      showToaster("✅ Feedback comment saved!", "success");
+      await fetchRequests(true); // silent refresh
+    } else {
+      console.error("Feedback comment update failed:", res);
+      showToaster("❌ Failed to save feedback comment.", "error");
+    }
+  } catch (err) {
+    console.error("Failed to update feedback comment:", err);
+    showToaster(
+      "❌ Failed to save feedback comment. Please try again.",
+      "error",
+    );
+  }
+};
+
+const ticketStatusClass = (status) => {
+  switch (status) {
+    case "Pending":
+      return "bg-yellow-100 text-yellow-800";
+    case "In Progress":
+      return "bg-blue-100 text-blue-800";
+    case "For Review":
+      return "bg-purple-100 text-purple-800";
+    case "Lacking Content":
+      return "bg-orange-100 text-orange-800";
+    case "Completed":
+      return "bg-green-100 text-green-800";
+    case "Closed":
+      return "bg-gray-200 text-gray-800";
+    case "Cancelled":
+    case "Unsuccessful":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-50 text-gray-700";
+  }
+};
+
+const itemStatusClass = (status) => {
+  switch (status) {
+    case "New":
+      return "bg-blue-100 text-blue-800";
+    case "Used":
+      return "bg-yellow-100 text-yellow-800";
+    case "For Repair":
+      return "bg-orange-100 text-orange-800";
+    case "For Disposal":
+      return "bg-red-100 text-red-800";
+    case "Returned":
+      return "bg-green-100 text-green-800";
+    case "Issued":
+      return "bg-purple-100 text-purple-800";
+    case "Replaced":
+      return "bg-teal-100 text-teal-800";
+    case "Condemned":
+      return "bg-gray-100 text-gray-700";
+    case "Serviceable":
+      return "bg-indigo-100 text-indigo-800";
+    case "Unserviceable":
+      return "bg-pink-100 text-pink-800";
+    default:
+      return "bg-gray-50 text-gray-700";
+  }
+};
+
+const getStatusIconColor = (status) => {
+  switch (status) {
+    case "Pending":
+      return "text-yellow-500";
+    case "In Progress":
+      return "text-blue-500";
+    case "Lacking Content":
+      return "text-orange-500";
+    case "Completed":
+      return "text-green-500";
+    case "Cancelled":
+      return "text-red-500";
+    case "Unsuccessful":
+      return "text-red-600";
+    case "For Review":
+      return "text-purple-500";
+    case "Closed":
+      return "text-gray-500";
+    default:
+      return "text-gray-400";
+  }
+};
+</script>
+
 <template>
-  <div class="lg:p-1 text-sm">
+  <div class="lg:p-4 p-1 text-sm">
     <!-- User Info Banner -->
     <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-      <div class="flex items-center gap-2">
-        <i class="fa fa-user-circle text-green-700 text-xl"></i>
-        <div>
-          <p class="text-xs text-gray-600">Logged in as:</p>
-          <p class="text-sm font-bold text-green-800">
-            {{ userStore.userEmail || userStore.user.email }}
-          </p>
-        </div>
-      </div>
+      
       <p class="text-xs text-gray-600 mt-2">
         <i class="fa fa-info-circle mr-1"></i>
         You can only view and manage your own tickets
@@ -896,1287 +2175,7 @@
     </div>
   </div>
 </template>
-<script setup>
-import { ref, computed, onMounted, onUnmounted, reactive } from "vue";
-import moment from "moment";
-const config = useRuntimeConfig();
-const endpoint = ref(config.public.apiUrl);
 
-const requests = ref([]);
-const showModal = ref(false);
-const isCreate = ref(false);
-const statusFilter = ref("");
-const technicianFilter = ref("");
-const searchFilter = ref("");
-const dateFilter = ref("");
-const customOffice = ref("");
-
-// Pagination
-const currentPage = ref(1);
-const itemsPerPage = ref(20);
-
-// Sorting
-const sortColumn = ref("created_at");
-const sortDirection = ref("asc"); // oldest first by default
-
-// Real-time update
-let realtimeInterval = null;
-
-const successfullySavedData = ref(false);
-
-// Dropdown options
-const CATEGORY_OPTIONS = [
-  "Hardware",
-  "Software",
-  "Network",
-  "Computer Lab",
-  "Accounts",
-  "LSU Webpages",
-  "Student Portal",
-  "Others",
-];
-
-const ITEM_TYPE_OPTIONS_MAP = {
-  Hardware: [
-    "Laptop",
-    "Desktop",
-    "Printer",
-    "Scanner",
-    "Monitor",
-    "Keyboard",
-    "Mouse",
-    "Projector",
-    "Webcam",
-    "Headset",
-    "Speaker",
-    "Microphone",
-    "External Hard Drive",
-    "USB Flash Drive",
-    "Power Supply",
-    "Motherboard",
-    "RAM",
-    "Graphics Card",
-    "CPU",
-    "Cooling Fan",
-    "Others",
-  ],
-  Software: ["Installation", "Repair", "Uninstall"],
-  Network: ["WiFi Access", "Network Configuration"],
-  "Computer Lab": [
-    "Computer Setup",
-    "Software Installation",
-    "Hardware Issue",
-    "Network Connectivity",
-    "Maintenance",
-    "Others",
-  ],
-  Accounts: ["LSU Gmail", "Canvas", "Microsoft", "Student Portal", "Others"],
-  "LSU Webpages": [
-    "Update Content",
-    "Fix Errors",
-    "Add New Page",
-    "Remove Page",
-    "Others",
-  ],
-  "Student Portal": ["Forgot Password", "Others"],
-  Others: [
-    "Screwdriver Set",
-    "Cable Ties",
-    "Thermal Paste",
-    "Cleaning Kit",
-    "Cable Tester",
-    "Crimping Tool",
-    "Anti-static Wrist Strap",
-    "Compressed Air",
-    "HDMI Cable",
-    "VGA Cable",
-    "Ethernet Cable",
-    "USB Cable",
-    "Power Cable",
-    "Extension Cord",
-    "Others",
-  ],
-};
-
-// Computer Lab location options
-const COMPUTER_LAB_LOCATIONS = {
-  "BVM and SJ Buildings": [
-    "BVM 4F Computer Lab",
-    "BVM 2F Computer Lab",
-    "SJ Computer Lab",
-  ],
-  "LS Building": [
-    "LS209 - Maclab",
-    "LS211 - Networking",
-    "LS212 - Programming",
-    "LS213 - Multimedia",
-    "LS215 - Openlab",
-  ],
-};
-
-const CENTER_OFFICE_ROOM_OPTIONS = ["OCH", "NPCC", "Registrar", "N/A", "OTHER"];
-
-// Computed property to get location options based on category
-const getLocationOptions = computed(() => {
-  // If Computer Lab is selected, show computer lab locations
-  if (info.value.issue_concern_request_category_type === "Computer Lab") {
-    // Combine all computer lab locations
-    const allLabLocations = [
-      ...COMPUTER_LAB_LOCATIONS["BVM and SJ Buildings"],
-      ...COMPUTER_LAB_LOCATIONS["LS Building"],
-    ];
-    return allLabLocations;
-  }
-
-  // Otherwise, show default office options
-  return CENTER_OFFICE_ROOM_OPTIONS;
-});
-
-const SEMESTER_OPTIONS = ["First Semester", "Second Semester", "Summer"];
-const STATUS_OPTIONS = [
-  "New",
-  "Used",
-  "For Repair",
-  "For Disposal",
-  "Returned",
-  "Issued",
-  "Replaced",
-  "Condemned",
-  "Serviceable",
-  "Unserviceable",
-  "Running",
-];
-const TECHNICIANS_PERSONNEL = [
-  {
-    name: "Michael John Puertogalera",
-    email: "michaeljohn.puertogalera@lsu.edu.ph",
-    specializations: ["Accounts", "Software"],
-    role: "Accounts / Software",
-  },
-  {
-    name: "Jason Yap",
-    email: "jason.yap@lsu.edu.ph",
-    specializations: ["Network", "Accounts", "Software"],
-    role: "Network / Accounts / Software",
-  },
-  {
-    name: "Flourence John Gonzaga",
-    email: "johny14_gonzaga@lsu.edu.ph",
-    specializations: ["Network", "Accounts", "Software"],
-    role: "Network / Accounts / Software",
-  },
-  {
-    name: "Denzel Roy Suarez",
-    email: "denzelroy.suarez@lsu.edu.ph",
-    specializations: ["Computer Lab"],
-    location: "BVM and SJ Buildings",
-    role: "Computer Laboratory: BVM and SJ Buildings Rooms",
-  },
-  {
-    name: "Rommel Rosal",
-    email: "rommel.rosal@lsu.edu.ph",
-    specializations: ["Computer Lab"],
-    location: "LS Building",
-    role: "Computer Laboratory: LS Building Rooms",
-  },
-  {
-    name: "Giovanni Jose Morales",
-    email: "giovanni.morales@lsu.edu.ph",
-    specializations: ["Hardware"],
-    role: "PC and Printers and Other Hardwares - Whole LSU Campus Admins and Staffs",
-  },
-  {
-    name: "Jo Renlee Luna",
-    email: "jorenlee.luna@lsu.edu.ph",
-    specializations: ["Software"],
-    role: "LSU Website",
-  },
-];
-
-const loading = ref(false);
-const modalLoading = ref(false);
-
-const fetchRequests = async (silent = false) => {
-  if (!silent) loading.value = true;
-  try {
-    const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
-    requests.value = res.data || res;
-
-    // console.log(requests.value);
-  } catch (err) {
-    console.error("Failed to fetch tech support list", err);
-  } finally {
-    if (!silent) loading.value = false;
-  }
-};
-
-// Real-time updates every second
-const startRealtimeUpdates = () => {
-  realtimeInterval = setInterval(() => {
-    fetchRequests(true); // silent update
-  }, 1000);
-};
-
-const stopRealtimeUpdates = () => {
-  if (realtimeInterval) {
-    clearInterval(realtimeInterval);
-    realtimeInterval = null;
-  }
-};
-
-onMounted(() => {
-  fetchRequests();
-  startRealtimeUpdates();
-});
-
-onUnmounted(() => {
-  stopRealtimeUpdates();
-});
-
-// Function to auto-assign technicians based on category and specific concern
-const autoAssignTechnicians = (category, specificConcern = null) => {
-  // Get Michael John Puertogalera (always included in all tickets)
-  const michael = TECHNICIANS_PERSONNEL.find(
-    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph",
-  );
-
-  // Check for specific concern first (highest priority)
-  if (specificConcern === "LSU Website") {
-    // For LSU Website: assign Jo Renlee + Michael
-    const joRenlee = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.email === "jorenlee.luna@lsu.edu.ph",
-    );
-
-    const assignedTechs = [];
-    if (michael) {
-      assignedTechs.push({
-        name: michael.name,
-        email: michael.email,
-      });
-    }
-    if (joRenlee) {
-      assignedTechs.push({
-        name: joRenlee.name,
-        email: joRenlee.email,
-      });
-    }
-
-    info.value.technicians_assigned = assignedTechs;
-    return;
-  }
-
-  if (!category) {
-    // Reset to default if no category (Michael only)
-    info.value.technicians_assigned = michael
-      ? [
-          {
-            name: michael.name,
-            email: michael.email,
-          },
-        ]
-      : [];
-    return;
-  }
-
-  // Filter technicians based on their specializations
-  const assignedTechs = TECHNICIANS_PERSONNEL.filter((tech) =>
-    tech.specializations?.includes(category),
-  );
-
-  // Always include Michael in all assignments
-  const finalAssignedTechs = assignedTechs.map((tech) => ({
-    name: tech.name,
-    email: tech.email,
-  }));
-
-  // Make sure Michael is included (avoid duplicates)
-  const hasMichael = finalAssignedTechs.some(
-    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph",
-  );
-
-  if (!hasMichael && michael) {
-    finalAssignedTechs.unshift({
-      name: michael.name,
-      email: michael.email,
-    });
-  }
-
-  // If no match found, assign only Michael
-  if (finalAssignedTechs.length === 0 && michael) {
-    info.value.technicians_assigned = [
-      {
-        name: michael.name,
-        email: michael.email,
-      },
-    ];
-  } else {
-    info.value.technicians_assigned = finalAssignedTechs;
-  }
-};
-
-// Function to refine technician assignment based on Computer Lab location
-const refineComputerLabAssignment = (location) => {
-  if (
-    !location ||
-    info.value.issue_concern_request_category_type !== "Computer Lab"
-  ) {
-    return;
-  }
-
-  // Get Michael John Puertogalera (always included)
-  const michael = TECHNICIANS_PERSONNEL.find(
-    (tech) => tech.email === "michaeljohn.puertogalera@lsu.edu.ph",
-  );
-
-  // Determine which technician based on location
-  let assignedTech = null;
-
-  if (location.startsWith("BVM") || location.startsWith("SJ")) {
-    // BVM and SJ Buildings -> Denzel Roy Suarez
-    assignedTech = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.name === "Denzel Roy Suarez",
-    );
-  } else if (location.startsWith("LS")) {
-    // LS Building -> Rommel Rosal
-    assignedTech = TECHNICIANS_PERSONNEL.find(
-      (tech) => tech.name === "Rommel Rosal",
-    );
-  }
-
-  if (assignedTech) {
-    const assignedTechs = [];
-
-    // Always add Michael first
-    if (michael) {
-      assignedTechs.push({
-        name: michael.name,
-        email: michael.email,
-      });
-    }
-
-    // Add the lab-specific technician
-    assignedTechs.push({
-      name: assignedTech.name,
-      email: assignedTech.email,
-    });
-
-    info.value.technicians_assigned = assignedTechs;
-  }
-};
-
-const newLog = reactive({ status: "", remarks: "" });
-
-function addStatusLog() {
-  // Make status update optional - only add if status is provided
-  if (!newLog.status) {
-    return; // Skip adding log if no status selected
-  }
-
-  if (!info.value.logs) info.value.logs = [];
-
-  info.value.logs.push({
-    status: newLog.status,
-    remarks: newLog.remarks || "N/A",
-    timestamp: new Date(),
-  });
-
-  // Update ticket's current_status
-  info.value.current_status = newLog.status;
-
-  // Reset input
-  newLog.status = "";
-  newLog.remarks = "";
-}
-
-// ================= STATUS HELPERS =================
-const latestStatus = (item) =>
-  item.logs?.length ? item.logs[item.logs.length - 1] : null;
-
-// Check if ticket is completed for rating
-const isTicketCompletedForRating = (item) => {
-  const currentStatus = item.current_status || latestStatus(item)?.status;
-  return currentStatus === "Completed";
-};
-
-// Check if modal ticket is completed (for showing rating/feedback fields)
-const isModalTicketCompleted = computed(() => {
-  const currentStatus =
-    info.value.current_status || latestStatus(info.value)?.status;
-  return currentStatus === "Completed";
-});
-
-// Deduplicated logs for client view - show only one log per unique status
-const deduplicatedLogs = computed(() => {
-  if (!info.value.logs || info.value.logs.length === 0) return [];
-
-  const uniqueStatuses = new Map();
-
-  // Iterate through logs and keep only the latest entry for each unique status
-  info.value.logs.forEach((log) => {
-    if (!uniqueStatuses.has(log.status)) {
-      uniqueStatuses.set(log.status, log);
-    } else {
-      // If status already exists, keep the one with the latest timestamp
-      const existingLog = uniqueStatuses.get(log.status);
-      const existingTime = new Date(existingLog.timestamp).getTime();
-      const currentTime = new Date(log.timestamp).getTime();
-
-      if (currentTime > existingTime) {
-        uniqueStatuses.set(log.status, log);
-      }
-    }
-  });
-
-  // Convert Map values back to array
-  return Array.from(uniqueStatuses.values());
-});
-
-// Backend-aligned filter mapping
-const TICKET_STATUS_FILTER_MAP = {
-  pending: ["Pending"],
-  "in progress": ["In Progress", "Reviewed"],
-  completed: ["Completed", "Closed"],
-};
-
-// Clear filters function
-const clearFilters = () => {
-  statusFilter.value = "";
-  technicianFilter.value = "";
-  searchFilter.value = "";
-  dateFilter.value = "";
-  currentPage.value = 1;
-};
-
-// Sort function
-const sortBy = (column) => {
-  if (sortColumn.value === column) {
-    sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
-  } else {
-    sortColumn.value = column;
-    sortDirection.value = "asc";
-  }
-  currentPage.value = 1; // Reset to first page when sorting
-};
-
-// Enhanced filter with sorting
-const filteredRequests = computed(() => {
-  let filtered = [...requests.value];
-
-  // Filter by logged-in user's email (only show their own tickets)
-  const userEmail = userStore.userEmail || userStore.user.email;
-  if (userEmail) {
-    filtered = filtered.filter((r) => {
-      return r.requestor_lsu_email === userEmail;
-    });
-  }
-  // Status filter
-  if (statusFilter.value) {
-    filtered = filtered.filter((r) => {
-      const status = latestStatus(r)?.status;
-      return TICKET_STATUS_FILTER_MAP[statusFilter.value]?.includes(status);
-    });
-  }
-
-  // Technician filter
-  if (technicianFilter.value) {
-    filtered = filtered.filter((r) =>
-      r.technicians_assigned?.includes(technicianFilter.value),
-    );
-  }
-
-  // Search filter
-  if (searchFilter.value) {
-    const search = searchFilter.value.toLowerCase();
-    filtered = filtered.filter(
-      (r) =>
-        r.ticket_id?.toLowerCase().includes(search) ||
-        r.requestor_fullname?.toLowerCase().includes(search) ||
-        r.requestor_lsu_email?.toLowerCase().includes(search),
-    );
-  }
-
-  // Date filter
-  if (dateFilter.value) {
-    const now = moment();
-    filtered = filtered.filter((r) => {
-      const created = moment(r.created_at);
-      switch (dateFilter.value) {
-        case "today":
-          return created.isSame(now, "day");
-        case "week":
-          return created.isSame(now, "week");
-        case "month":
-          return created.isSame(now, "month");
-        case "year":
-          return created.isSame(now, "year");
-        default:
-          return true;
-      }
-    });
-  }
-
-  // Sorting
-  filtered.sort((a, b) => {
-    let aVal, bVal;
-
-    switch (sortColumn.value) {
-      case "ticket_id":
-        aVal = a.ticket_id || "";
-        bVal = b.ticket_id || "";
-        break;
-      case "category":
-        aVal = a.issue_concern_request_category_type || "";
-        bVal = b.issue_concern_request_category_type || "";
-        break;
-      case "requestor_fullname":
-        aVal = a.requestor_fullname || "";
-        bVal = b.requestor_fullname || "";
-        break;
-      case "requestor_lsu_email":
-        aVal = a.requestor_lsu_email || "";
-        bVal = b.requestor_lsu_email || "";
-        break;
-      case "technicians_assigned":
-        aVal = a.technicians_assigned?.join(", ") || "";
-        bVal = b.technicians_assigned?.join(", ") || "";
-        break;
-      case "status":
-        aVal = latestStatus(a)?.status || "";
-        bVal = latestStatus(b)?.status || "";
-        break;
-      case "created_at":
-      default:
-        aVal = moment(a.created_at).valueOf();
-        bVal = moment(b.created_at).valueOf();
-        break;
-    }
-
-    if (sortDirection.value === "asc") {
-      return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-    } else {
-      return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
-    }
-  });
-
-  return filtered;
-});
-
-// Paginated results
-const paginatedRequests = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  const end = start + itemsPerPage.value;
-  return filteredRequests.value.slice(start, end);
-});
-
-const totalPages = computed(() => {
-  return Math.ceil(filteredRequests.value.length / itemsPerPage.value);
-});
-
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page;
-  }
-};
-
-// Visible page numbers for pagination
-const visiblePages = computed(() => {
-  const pages = [];
-  const maxVisible = 5;
-  let start = Math.max(1, currentPage.value - Math.floor(maxVisible / 2));
-  let end = Math.min(totalPages.value, start + maxVisible - 1);
-
-  if (end - start + 1 < maxVisible) {
-    start = Math.max(1, end - maxVisible + 1);
-  }
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i);
-  }
-
-  return pages;
-});
-
-// Get specific type options based on category
-const getSpecificTypeOptions = (categoryType) => {
-  if (!categoryType || !ITEM_TYPE_OPTIONS_MAP[categoryType]) {
-    return [];
-  }
-  return ITEM_TYPE_OPTIONS_MAP[categoryType];
-};
-
-// Get mood icon based on ticket age and status
-const getMoodIcon = (item) => {
-  const status = latestStatus(item)?.status?.toLowerCase();
-  const isDone =
-    status === "completed" || status === "closed" || status === "for review";
-
-  // If ticket is completed/closed/for review - trophy
-  if (isDone) {
-    return {
-      emoji: "🏆",
-      bgClass: "bg-gradient-to-br from-gray-200 to-gray-300",
-      title: "Completed",
-    };
-  }
-
-  // If ticket is lacking content - document/clipboard emoji
-  if (status === "lacking content") {
-    return {
-      emoji: "📋",
-      bgClass: "bg-gradient-to-br from-orange-400 to-orange-500",
-      title: "Lacking Content",
-    };
-  }
-
-  const createdAt = moment(item.created_at);
-  const now = moment();
-  const hoursPassed = now.diff(createdAt, "hours");
-
-  // Special handling for "In Progress" status based on age
-  if (status === "in progress") {
-    if (hoursPassed < 24) {
-      return {
-        emoji: "😊",
-        bgClass: "bg-gradient-to-br from-green-400 to-green-500",
-        title: "In Progress (< 24 hours)",
-      };
-    } else {
-      return {
-        emoji: "☹️",
-        bgClass: "bg-gradient-to-br from-red-400 to-red-500",
-        title: "In Progress (> 24 hours)",
-      };
-    }
-  }
-
-  // For other statuses (Pending, Unsuccessful, Cancelled, etc.)
-  // New ticket (less than 24 hours) - green happy face
-  if (hoursPassed < 24) {
-    return {
-      emoji: "😊",
-      bgClass: "bg-gradient-to-br from-green-400 to-green-500",
-      title: "New ticket (< 24 hours)",
-    };
-  }
-  // 24-48 hours - yellow neutral face
-  else if (hoursPassed < 48) {
-    return {
-      emoji: "😐",
-      bgClass: "bg-gradient-to-br from-yellow-400 to-yellow-500",
-      title: "Aging ticket (24-48 hours)",
-    };
-  }
-  // 48+ hours and not done - red sad face
-  else {
-    return {
-      emoji: "☹️",
-      bgClass: "bg-gradient-to-br from-red-400 to-red-500",
-      title: "Overdue ticket (48+ hours)",
-    };
-  }
-};
-
-// Date helpers
-const getCurrentSemester = () => {
-  const month = moment().month() + 1;
-  if (month >= 1 && month <= 5) return "Second Semester";
-  if (month >= 6 && month <= 7) return "Summer";
-  return "First Semester";
-};
-
-const getAcademicYear = () => {
-  const year = moment().year();
-  const month = moment().month() + 1;
-  return month >= 6 ? `A.Y ${year} - ${year + 1}` : `A.Y ${year - 1} - ${year}`;
-};
-
-const getTodayDateChecked = () => moment().format("DD/MM/YYYY hh:mm A");
-
-const ACADEMIC_YEAR_OPTIONS = (() => {
-  const currentYear = moment().year();
-  const years = [];
-  for (let i = -5; i <= 1; i++) {
-    const start = currentYear + i;
-    years.push(`A.Y ${start} - ${start + 1}`);
-  }
-  return years;
-})();
-
-// Receipt handling
-const receiptFile = ref(null);
-const receiptPreview = ref("");
-
-const handleReceiptUpload = (event) => {
-  const file = event.target.files[0];
-  if (file) {
-    receiptFile.value = file;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      receiptPreview.value = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-};
-
-const removeReceipt = () => {
-  receiptFile.value = null;
-  receiptPreview.value = "";
-};
-
-// Form info
-const info = ref({
-  ticket_id: "TID" + Date.now(),
-  requestor_fullname: "",
-  requestor_lsu_email: "",
-  technicians_assigned: [],
-  issue_concern_request_details: "",
-  issue_concern_request_category_type: "",
-  issue_concern_request_item_type: "",
-  issue_concern_request_center_office_room: "",
-  owner_type: "LSU",
-  client_role: "",
-  buy_me_coffee: "No",
-  evaluation_feedback_client_star_rating: "",
-  logs: [
-    {
-      timestamp: new Date().toISOString(),
-      remarks: "Initial status",
-      status: "Pending",
-      assigned_technician_name: "",
-      assigned_technician_lsu_email: "",
-    },
-  ],
-});
-
-// Watch for category changes to auto-assign technicians
-watch(
-  () => info.value.issue_concern_request_category_type,
-  (newCategory) => {
-    // Only auto-assign when creating new tickets
-    if (isCreate.value) {
-      autoAssignTechnicians(
-        newCategory,
-        info.value.issue_concern_request_item_type,
-      );
-      // Clear location when category changes
-      info.value.issue_concern_request_center_office_room = "";
-      // Clear specific concern when category changes
-      info.value.issue_concern_request_item_type = "";
-    }
-  },
-);
-
-// Watch for specific concern changes to refine technician assignment
-watch(
-  () => info.value.issue_concern_request_item_type,
-  (newSpecificConcern) => {
-    // Only auto-assign when creating new tickets
-    if (isCreate.value) {
-      // Re-assign based on specific concern
-      autoAssignTechnicians(
-        info.value.issue_concern_request_category_type,
-        newSpecificConcern,
-      );
-    }
-  },
-);
-
-// Watch for Computer Lab location changes to refine technician assignment
-watch(
-  () => info.value.issue_concern_request_center_office_room,
-  (newLocation) => {
-    // Only auto-assign when creating new tickets
-    if (isCreate.value) {
-      refineComputerLabAssignment(newLocation);
-    }
-  },
-);
-
-// Modal controls
-const openCreateModal = () => {
-  isCreate.value = true;
-  receiptFile.value = null;
-  receiptPreview.value = "";
-  info.value = {
-    ticket_id: "TID" + Date.now(),
-    requestor_fullname: "",
-    requestor_lsu_email: "",
-    technicians_assigned: [],
-    issue_concern_request_details: "",
-    issue_concern_request_category_type: "",
-    issue_concern_request_item_type: "",
-    issue_concern_request_center_office_room: "",
-    owner_type: "LSU",
-    client_role: "",
-    buy_me_coffee: "No",
-    evaluation_feedback_client_star_rating: "",
-    logs: [
-      {
-        timestamp: new Date().toISOString(),
-        remarks: "Initial status",
-        status: "Pending",
-        assigned_technician_name: "",
-        assigned_technician_lsu_email: "",
-      },
-    ],
-  };
-  showModal.value = true;
-};
-
-const openModal = (item) => {
-  isCreate.value = false;
-
-  // Directly assign reactive ref
-  info.value = reactive({
-    ...item,
-    technicians_assigned: Array.isArray(item.technicians_assigned)
-      ? item.technicians_assigned
-      : item.technician_assigned
-        ? [item.technician_assigned]
-        : [],
-    logs: item.logs ? [...item.logs] : [],
-  });
-
-  showModal.value = true;
-};
-
-const closeModal = () => (showModal.value = false);
-
-// Normalize office before submit
-const normalizeOffice = () => {
-  if (info.value.issue_concern_request_center_office_room === "OTHER")
-    info.value.issue_concern_request_center_office_room =
-      customOffice.value || "Other";
-};
-
-// Check if user has unrated tickets (ANY status - pending, in progress, completed, etc.)
-const checkForUnratedTickets = async (email) => {
-  try {
-    const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
-
-    if (res && Array.isArray(res)) {
-      // Filter tickets for this user
-      const userTickets = res.filter(
-        (ticket) => ticket.requestor_lsu_email === email,
-      );
-
-      // Check if ANY ticket (regardless of status) is missing rating or feedback
-      const unratedTickets = userTickets.filter((ticket) => {
-        const hasNoRating =
-          !ticket.evaluation_feedback_client_star_rating ||
-          ticket.evaluation_feedback_client_star_rating === "" ||
-          ticket.evaluation_feedback_client_star_rating === null;
-        const hasNoFeedback =
-          !ticket.evaluation_feedback_client_comment ||
-          ticket.evaluation_feedback_client_comment === "" ||
-          ticket.evaluation_feedback_client_comment === null;
-
-        // Consider a ticket unrated if it's missing BOTH rating AND feedback
-        return hasNoRating && hasNoFeedback;
-      });
-
-      return unratedTickets.length > 0 ? unratedTickets.length : false;
-    }
-
-    return false;
-  } catch (error) {
-    console.error("Error checking for unrated tickets:", error);
-    // If there's an error, allow submission to proceed
-    return false;
-  }
-};
-
-const createTicket = async () => {
-  // Validate required fields
-  if (!info.value.requestor_fullname || !info.value.requestor_lsu_email) {
-    showToaster(
-      "❌ Please fill in all required fields (Name and Email).",
-      "error",
-    );
-    return;
-  }
-
-  // Check for unrated tickets
-  const unratedCount = await checkForUnratedTickets(
-    info.value.requestor_lsu_email,
-  );
-  if (unratedCount) {
-    showToaster(
-      `❌ You have ${unratedCount} unrated ticket${unratedCount > 1 ? "s" : ""}. Please rate all your previous tickets before creating a new one.`,
-      "error",
-      5000,
-    );
-    return;
-  }
-
-  modalLoading.value = true;
-  normalizeOffice();
-
-  const formData = new FormData();
-  formData.append("ticket_id", info.value.ticket_id || `TID${Date.now()}`);
-  formData.append(
-    "requestor_fullname",
-    info.value.requestor_fullname?.trim() || "",
-  );
-  formData.append(
-    "requestor_lsu_email",
-    info.value.requestor_lsu_email?.trim() || "",
-  );
-  formData.append(
-    "technicians_assigned",
-    JSON.stringify(info.value.technicians_assigned || []),
-  );
-  formData.append(
-    "issue_concern_request_details",
-    info.value.issue_concern_request_details?.trim() || "",
-  );
-  formData.append(
-    "issue_concern_request_category_type",
-    info.value.issue_concern_request_category_type?.trim() || "",
-  );
-  formData.append(
-    "issue_concern_request_item_type",
-    info.value.issue_concern_request_item_type?.trim() || "",
-  );
-  formData.append(
-    "issue_concern_request_center_office_room",
-    info.value.issue_concern_request_center_office_room?.trim() || "",
-  );
-  formData.append("owner_type", info.value.owner_type || "LSU");
-  formData.append("client_role", info.value.client_role || "");
-  formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
-  formData.append("logs", JSON.stringify(info.value.logs || []));
-
-  if (receiptFile.value) {
-    formData.append("buy_me_coffee_gcash_receipt", receiptFile.value);
-  }
-
-  try {
-    const res = await $fetch(
-      endpoint.value + "/api/cits/request-ticket/create/",
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
-
-    if (res.status === "created") {
-      showToaster(
-        "✅ Ticket created successfully! Confirmation email sent.",
-        "success",
-      );
-      showModal.value = false;
-      await fetchRequests(); // Refresh the list
-    } else if (res.status === "errors") {
-      console.error("Form errors:", res.errors);
-      showToaster(
-        "❌ Failed to create ticket. Check console for errors.",
-        "error",
-      );
-    }
-  } catch (err) {
-    console.error("Failed to create ticket:", err);
-    showToaster("❌ Failed to create ticket. Please try again.", "error");
-  } finally {
-    modalLoading.value = false;
-  }
-};
-
-const toaster = ref({
-  show: false,
-  message: "",
-  type: "success", // we can extend later to warning, error, etc.
-});
-
-const showToaster = (message, type = "success", duration = 3000) => {
-  toaster.value.message = message;
-  toaster.value.type = type;
-  toaster.value.show = true;
-
-  setTimeout(() => {
-    toaster.value.show = false;
-  }, duration);
-};
-
-const saveChanges = async () => {
-  modalLoading.value = true;
-  normalizeOffice();
-  addStatusLog();
-
-  const formData = new FormData();
-  formData.append("ticket_id", info.value.ticket_id);
-  formData.append(
-    "requestor_fullname",
-    info.value.requestor_fullname?.trim() || "",
-  );
-  formData.append(
-    "requestor_lsu_email",
-    info.value.requestor_lsu_email?.trim() || "",
-  );
-  formData.append(
-    "technicians_assigned",
-    JSON.stringify(info.value.technicians_assigned || []),
-  );
-  formData.append(
-    "issue_concern_request_details",
-    info.value.issue_concern_request_details?.trim() || "",
-  );
-  formData.append(
-    "issue_concern_request_category_type",
-    info.value.issue_concern_request_category_type?.trim() || "",
-  );
-  formData.append(
-    "issue_concern_request_item_type",
-    info.value.issue_concern_request_item_type?.trim() || "",
-  );
-  formData.append(
-    "issue_concern_request_center_office_room",
-    info.value.issue_concern_request_center_office_room?.trim() || "",
-  );
-  formData.append("owner_type", info.value.owner_type || "LSU");
-  formData.append("client_role", info.value.client_role || "");
-  formData.append("buy_me_coffee", info.value.buy_me_coffee || "No");
-  formData.append(
-    "evaluation_feedback_client_star_rating",
-    info.value.evaluation_feedback_client_star_rating || "",
-  );
-  formData.append(
-    "evaluation_feedback_client_comment",
-    info.value.evaluation_feedback_client_comment || "",
-  );
-  formData.append("logs", JSON.stringify(info.value.logs || []));
-
-  if (receiptFile.value) {
-    formData.append("buy_me_coffee_gcash_receipt", receiptFile.value);
-  }
-
-  try {
-    const res = await $fetch(
-      endpoint.value + `/api/cits/request-ticket/${info.value.id}/edit/`,
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
-
-    if (res.status === "updated") {
-      showToaster("✅ Changes saved successfully!", "success");
-      showModal.value = false;
-      await fetchRequests(); // refresh list
-    } else {
-      console.error("Update failed:", res);
-      showToaster("❌ Failed to update ticket.", "error");
-    }
-  } catch (err) {
-    console.error("Failed to update ticket:", err);
-    showToaster("❌ Failed to update ticket. Please try again.", "error");
-  } finally {
-    modalLoading.value = false;
-  }
-};
-
-// Update star rating
-const updateRating = async (item, rating) => {
-  const formData = new FormData();
-  formData.append("ticket_id", item.ticket_id);
-  formData.append("requestor_fullname", item.requestor_fullname || "");
-  formData.append("requestor_lsu_email", item.requestor_lsu_email || "");
-  formData.append(
-    "technicians_assigned",
-    JSON.stringify(item.technicians_assigned || []),
-  );
-  formData.append(
-    "issue_concern_request_details",
-    item.issue_concern_request_details || "",
-  );
-  formData.append(
-    "issue_concern_request_category_type",
-    item.issue_concern_request_category_type || "",
-  );
-  formData.append(
-    "issue_concern_request_item_type",
-    item.issue_concern_request_item_type || "",
-  );
-  formData.append(
-    "issue_concern_request_center_office_room",
-    item.issue_concern_request_center_office_room || "",
-  );
-  formData.append("owner_type", item.owner_type || "LSU");
-  formData.append("client_role", item.client_role || "");
-  formData.append("buy_me_coffee", item.buy_me_coffee || "No");
-  formData.append("evaluation_feedback_client_star_rating", String(rating));
-  formData.append(
-    "evaluation_feedback_client_comment",
-    item.evaluation_feedback_client_comment || "",
-  );
-  formData.append("logs", JSON.stringify(item.logs || []));
-
-  try {
-    const res = await $fetch(
-      endpoint.value + `/api/cits/request-ticket/${item.id}/edit/`,
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
-
-    if (res.status === "updated") {
-      showToaster(
-        `✅ Rating updated to ${rating} star${rating > 1 ? "s" : ""}!`,
-        "success",
-      );
-      await fetchRequests(true); // silent refresh
-    } else {
-      console.error("Rating update failed:", res);
-      showToaster("❌ Failed to update rating.", "error");
-    }
-  } catch (err) {
-    console.error("Failed to update rating:", err);
-    showToaster("❌ Failed to update rating. Please try again.", "error");
-  }
-};
-
-// Update feedback comment
-const updateFeedbackComment = async (item) => {
-  // Only update if ticket is completed/done
-  if (!isTicketCompletedForRating(item)) {
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("ticket_id", item.ticket_id);
-  formData.append("requestor_fullname", item.requestor_fullname || "");
-  formData.append("requestor_lsu_email", item.requestor_lsu_email || "");
-  formData.append(
-    "technicians_assigned",
-    JSON.stringify(item.technicians_assigned || []),
-  );
-  formData.append(
-    "issue_concern_request_details",
-    item.issue_concern_request_details || "",
-  );
-  formData.append(
-    "issue_concern_request_category_type",
-    item.issue_concern_request_category_type || "",
-  );
-  formData.append(
-    "issue_concern_request_item_type",
-    item.issue_concern_request_item_type || "",
-  );
-  formData.append(
-    "issue_concern_request_center_office_room",
-    item.issue_concern_request_center_office_room || "",
-  );
-  formData.append("owner_type", item.owner_type || "LSU");
-  formData.append("client_role", item.client_role || "");
-  formData.append("buy_me_coffee", item.buy_me_coffee || "No");
-  formData.append(
-    "evaluation_feedback_client_star_rating",
-    item.evaluation_feedback_client_star_rating || "",
-  );
-  formData.append(
-    "evaluation_feedback_client_comment",
-    item.evaluation_feedback_client_comment || "",
-  );
-  formData.append("logs", JSON.stringify(item.logs || []));
-
-  try {
-    const res = await $fetch(
-      endpoint.value + `/api/cits/request-ticket/${item.id}/edit/`,
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
-
-    if (res.status === "updated") {
-      showToaster("✅ Feedback comment saved!", "success");
-      await fetchRequests(true); // silent refresh
-    } else {
-      console.error("Feedback comment update failed:", res);
-      showToaster("❌ Failed to save feedback comment.", "error");
-    }
-  } catch (err) {
-    console.error("Failed to update feedback comment:", err);
-    showToaster(
-      "❌ Failed to save feedback comment. Please try again.",
-      "error",
-    );
-  }
-};
-
-const ticketStatusClass = (status) => {
-  switch (status) {
-    case "Pending":
-      return "bg-yellow-100 text-yellow-800";
-    case "In Progress":
-      return "bg-blue-100 text-blue-800";
-    case "For Review":
-      return "bg-purple-100 text-purple-800";
-    case "Lacking Content":
-      return "bg-orange-100 text-orange-800";
-    case "Completed":
-      return "bg-green-100 text-green-800";
-    case "Closed":
-      return "bg-gray-200 text-gray-800";
-    case "Cancelled":
-    case "Unsuccessful":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-50 text-gray-700";
-  }
-};
-
-const itemStatusClass = (status) => {
-  switch (status) {
-    case "New":
-      return "bg-blue-100 text-blue-800";
-    case "Used":
-      return "bg-yellow-100 text-yellow-800";
-    case "For Repair":
-      return "bg-orange-100 text-orange-800";
-    case "For Disposal":
-      return "bg-red-100 text-red-800";
-    case "Returned":
-      return "bg-green-100 text-green-800";
-    case "Issued":
-      return "bg-purple-100 text-purple-800";
-    case "Replaced":
-      return "bg-teal-100 text-teal-800";
-    case "Condemned":
-      return "bg-gray-100 text-gray-700";
-    case "Serviceable":
-      return "bg-indigo-100 text-indigo-800";
-    case "Unserviceable":
-      return "bg-pink-100 text-pink-800";
-    default:
-      return "bg-gray-50 text-gray-700";
-  }
-};
-
-const getStatusIconColor = (status) => {
-  switch (status) {
-    case "Pending":
-      return "text-yellow-500";
-    case "In Progress":
-      return "text-blue-500";
-    case "Lacking Content":
-      return "text-orange-500";
-    case "Completed":
-      return "text-green-500";
-    case "Cancelled":
-      return "text-red-500";
-    case "Unsuccessful":
-      return "text-red-600";
-    case "For Review":
-      return "text-purple-500";
-    case "Closed":
-      return "text-gray-500";
-    default:
-      return "text-gray-400";
-  }
-};
-</script>
 
 <style>
 .fade-enter-active,

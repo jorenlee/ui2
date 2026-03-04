@@ -26,10 +26,7 @@ let toggleSideBarMenu = ref(true);
 
 const imagePath = ref('https://lsu-media-styles.sgp1.digitaloceanspaces.com/storage-bucket-name/folder-location/files/admissions/files/');
 
-const logOut = () => {
-  router.push("/procurement/login");
-  userStore.removeToken();
-}
+
 
 const goToList = () => {
   router.push("/procurement/dashboard");
@@ -85,10 +82,7 @@ const submitForm = async (e) => {
                   </h1>
                 </div>
               </div>
-              <button @click="logOut" class="flex hover:font-bold pt-1">
-                <i class="fa fa-sign-out text-white text-xl"></i>
-                <h1 class="text-xs text-white p-1.5">Log Out</h1>
-              </button>
+             
             </div>
           </div>
 

@@ -16,7 +16,7 @@
       <template v-if="menu.group">
         <!-- Group Header with Gradient Background -->
         <button
-          class="w-full flex flex-col items-center justify-center p-6 text-center font-semibold transition-all relative overflow-hidden"
+          class="w-full flex flex-col items-center justify-center p-2 text-center font-semibold transition-all relative overflow-hidden"
           :class="
             darkMode
               ? 'text-gray-200 hover:text-green-400'
@@ -36,7 +36,7 @@
 
           <!-- Icon with Modern Design -->
           <div
-            class="relative w-16 h-16 flex items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-3 shadow-lg"
+            class="relative w-20 h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-3 shadow-lg"
           >
             <i class="fa fa-folder-open text-2xl text-white"></i>
           </div>
@@ -67,7 +67,7 @@
                 : 'border-gray-100 bg-gray-50'
             "
           >
-            <ul class="space-y-1 p-3">
+            <ul class="space-y-1 p-1">
               <li
                 v-for="item in menu.items"
                 :key="item.label"

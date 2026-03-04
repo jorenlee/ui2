@@ -59,33 +59,6 @@ onMounted(() => {
   }
 })
 
-const logOut = () => {
-  router.push("/registrar/login");
-  userStore.removeToken();
-}
-
-const editSchedule = async () => {
-  // console.log("updated");
-  if(time.value < 2) {
-    time.value = ['-']
-    // console.log('1 left')
-  }
-  await $fetch(endpoint.value + "/api/schedules/" + route.params.id + "/edit/", {
-    method: "PUT",
-    // headers: {
-    //   "Content-Type": "application/json",
-    // },
-    body: {
-      provider: provider.value,
-      date: date.value,
-      time: time.value,
-    },
-  })
-  .then((response) => {
-    // console.log("response", response);
-    // router.push({ path: "/registrar/appointment/set-schedules" });
-  });
-};
 </script>
 
 <template>
@@ -95,7 +68,7 @@ const editSchedule = async () => {
         class="pt-7 pb-24 w-3/12 px-1 bg-gray-100 lg:block hidden"
         v-show="toggleSideBarMenu"
       >
-<RegistrarMenuBar/>
+      <RegistrarMenuBar/>
       </div>
       <div class="w-full">
         <div class="bg-green-800">
@@ -115,10 +88,7 @@ const editSchedule = async () => {
                 </h1>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+          
           </div>
         </div>
         <div class="">

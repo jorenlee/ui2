@@ -8,12 +8,12 @@
           : 'bg-white/95 text-gray-900 border-gray-200',
       ]"
     >
-      <div class="flex justify-evenly items-center px-4 mx-auto">
+      <div class="flex lg:justify-center justify-evenly items-center px-4 mx-auto">
         <button
           v-for="(menu, index) in menuList"
           :key="index"
           @click="handleMenuClick(menu)"
-          class="flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-300 relative group"
+          class="flex flex-col items-center gap-1 lg:px-24 px-4 py-2 rounded-xl transition-all duration-300 relative group"
           :class="
             currentView === menu.view
               ? darkMode

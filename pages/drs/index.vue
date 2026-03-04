@@ -10,7 +10,7 @@
       :actionButtons="[
         { label: 'Demo Guide', url: '/drs/guide', icon: 'fa fa-video-camera' },
         { label: 'Track', url: '/drs/track', icon: 'fa fa-universal-access' },
-        { label: 'Admin Login', url: '/drs/login', icon: 'fa fa-user' }
+        { label: 'Admin Login', url: '/login', icon: 'fa fa-user' }
       ]"
     />
     <SuperAdminDashboardServicesDrsForm/>

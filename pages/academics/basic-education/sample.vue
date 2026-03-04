@@ -8,7 +8,7 @@
 
         <a
           class="rounded-xl lg:pl-8 pl-4 pr-2 lg:py-3 py-2.5 lg:text-left text-center lg:w-11/12 w-9/12 mx-auto shadow-xl drop-shadow-xl lg:mb-10 mb-6 whitespace-nowrap bg-white text-green-800 text-xl font-bold flex"
-          href="basic-education/login"
+          href="/login"
           >Adminstrator Login</a
         >
       </div>

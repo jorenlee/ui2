@@ -34,12 +34,6 @@ console.log(booksData)
 let reportsSaved = ref(false);
 let allFieldsAreRequired = ref(false);
 let toggleSideBarMenu = ref(true);
-
-const logOut = () => {
-  router.push("/library/login");
-  userStore.removeToken();
-};
-
 const editForm = async () => {
   console.log("submitForm");
   await $fetch(endpoint.value + "/api/library/reports/book/edit/" + route.params.id + "/", {
@@ -93,10 +87,7 @@ const editForm = async () => {
                 </h1>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+           
           </div>
         </div>
         <div class="text-xs lg:mb-5">

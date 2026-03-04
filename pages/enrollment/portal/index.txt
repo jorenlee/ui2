@@ -138,10 +138,6 @@ let filteredCourseMajor = computed(() =>
   })
 );
 
-const logOut = () => {
-  router.push("/enrollment");
-  userStore.removeToken();
-};
 
 // Document or ID Upload
 const uploadTask = ref(null);
@@ -483,12 +479,7 @@ async function updateEnrollment() {
             <h1 class="text-gray-300 text-base py-5 block">
               {{ userStore.user.email }}
             </h1>
-            <p
-              class="text-white whitespace-nowrap py-5 font-bold text-base cursor-pointer hover:underline lg:pl-5"
-              @click="logOut"
-            >
-              Log Out
-            </p>
+           
           </div>
         </div>
       </div>

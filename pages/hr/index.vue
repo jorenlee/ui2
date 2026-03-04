@@ -127,14 +127,14 @@ onBeforeUnmount(() => {
             </ul>
             <ul class="flex hover:text-green-800 text-white">
               <li class="px-3 h-full flex items-center capitalize text-xs">
-                <a href="/cms/login" class="flex items-center">
+                <a href="/login" class="flex items-center">
                   <span>Admin Login</span>
                 </a>
               </li>
               <li
                 class="bg-green-800 px-3 h-full flex items-center capitalize text-xs"
               >
-                <a href="/hr/login" class="flex items-center">
+                <a href="/login" class="flex items-center">
                   <i class="fa fa-user text-white" aria-hidden="true"></i>
                 </a>
               </li>

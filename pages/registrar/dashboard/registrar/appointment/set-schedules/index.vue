@@ -53,30 +53,6 @@ onMounted(() => {
   providersSelection("CAS / CON");
 });
 
-// let listAvailableDates = () => {
-//   highlightedDates.value = [];
-//   displayAction.value = false;
-//   time.value = ["-"];
-//   setTimeout(() => {
-//     schedulesListsData.filter(function (params) {
-//       if (provider.value === params.provider) {
-//         highlightedDates.value.push(params.date);
-//       }
-//     }, 1000);
-//   });
-// };
-
-// const displayAvailableDates = () => {
-//   schedulesListsData.filter(function (params) {
-//     if (date.value === params.date) {
-//       id.value = params.id;
-//       date.value = params.date;
-//       time.value = params.time;
-//       provider.value = params.provider;
-//       displayAction.value = true;
-//     }
-//   });
-// };
 
 let providersSelection = (department) => {
   highlightedDates.value = [];
@@ -128,39 +104,6 @@ const deleteSchedule = async () => {
     })
 };
 
-const goToList = () => {
-  // router.push("/registrar/appointment");
-};
-
-const goToCreate = () => {
-  router.push("/");
-};
-
-const goToSchedules = () => {
-  // router.push("/registrar/appointment/set-schedules");
-};
-
-const addSchedules = () => {
-  // router.push("/registrar/appointment/set-schedules/create");
-};
-
-const browseDates = () => {
-  // router.push("/registrar/appointment/set-schedules");
-};
-
-const logOut = () => {
-  router.push("/registrar/login");
-  userStore.removeToken();
-};
-
-const updateTimeAndProviders = (id) => {
-  // router.push("/registrar/appointment/set-schedules/edit/" + id);
-  // console.log(id);
-};
-
-const goToEdit = (id) => {
-  // router.push("/registrar/appointment/edit/" + id);
-};
 </script>
 
 <template>
@@ -190,10 +133,7 @@ const goToEdit = (id) => {
                 </h1>
               </div>
             </div>
-            <button @click="logOut" class="flex hover:font-bold pt-1">
-              <i class="fa fa-sign-out text-white text-xl"></i>
-              <h1 class="text-xs text-white p-1.5">Log Out</h1>
-            </button>
+          
           </div>
         </div>
         <div class="">
