@@ -1862,7 +1862,7 @@ const submitDRSFormToGmailApproved = async () => {
                           </div>
                         </div>
                         <div
-                          class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
+                          class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5 hidden"
                           :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                         >
                           <div class="w-full mb-2 block">
