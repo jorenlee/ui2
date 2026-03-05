@@ -8,14 +8,14 @@ const props = defineProps({ darkMode: Boolean });
 const { user } = useAuth();
 
 // CSV download allowed emails
-const csvAllowedEmails = [
+const drsAdminEmails = [
   'meredith.embuscado@lsu.edu.ph',
   'macristina.llauder@lsu.edu.ph',
   'jorenlee.luna@lsu.edu.ph',
 ];
 
-const canDownloadCSV = computed(() => {
-  return csvAllowedEmails.includes(user.value?.email);
+const drsAdmins = computed(() => {
+  return drsAdminEmails.includes(user.value?.email);
 });
 
 const listItems = ref(null);
@@ -728,7 +728,7 @@ const submitDRSFormToGmailApproved = async () => {
                 </div>
 
                 <button
-                  v-if="canDownloadCSV"
+                  v-if="drsAdmins"
                   @click="downloadCSV"
                   class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
                   title="Download filtered data as CSV"
@@ -808,7 +808,7 @@ const submitDRSFormToGmailApproved = async () => {
                         <i v-else class="fa fa-sort ml-1"></i>
                       </div>
 
-                      <div class="w-6/12 mx-auto text-center py-1">Action</div>
+                      <div class="w-6/12 mx-auto text-center py-1"   v-if="drsAdmins">Action</div>
                     </div>
 
                     <div v-if="isLoading" class="text-center">
@@ -1071,6 +1071,7 @@ const submitDRSFormToGmailApproved = async () => {
                             </div>
 
                             <div
+                              v-if="drsAdmins"
                               class="w-6/12 flex items-center justify-end"
                               @click.stop
                             >
