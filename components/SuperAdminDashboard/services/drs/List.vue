@@ -4,27 +4,29 @@ import VueDatePicker from "@vuepic/vue-datepicker";
 import "./css/main.css";
 import _ from "lodash";
 
-const props = defineProps({
-  darkMode: Boolean,
-});
-
+const props = defineProps({ darkMode: Boolean });
 const { user } = useAuth();
-
-const superAdminEmail = ref("jorenlee.luna@lsu.edu.ph");
-const superAdminTwo = ref("macristina.llauder@lsu.edu.ph");
-import designationJSON from "./designation.json";
-import authorizedEmailsJSON from "./authorized_emails.json";
-
-const designation = ref(designationJSON);
-const authorizedEmails = ref(authorizedEmailsJSON);
-
 const listItems = ref(null);
-
 const effectivityDate = ref(null);
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
+let deleteIDItem = ref();
+let tableDisplay = ref(true);
+let toggleConfirmDelete = ref(false);
+const confirmModal = ref(false);
+const displayUpdateForm = ref(false);
+const statusNotificationAlertModal = ref(false);
+let filteredItems;
+const selectedDocumentType = ref("");
+const selectedOriginatingOffice = ref("");
+const selectedStatus = ref("");
+const selectedAll = ref(null);
+const selectedReviewed = ref(false);
+const selectedVerified = ref(false);
+const selectedApproved = ref(false);
 
 // Dynamic year range for date picker (current year)
 const currentYear = computed(() => new Date().getFullYear());
-
 // Universal search
 const searchQuery = ref("");
 
@@ -38,21 +40,6 @@ const documentTypeList = ref([
   "MOA or MOU",
   "Portfolio",
 ]);
-
-const statusList = ref(["All", "New", "For Revision"]);
-
-const config = useRuntimeConfig();
-const endpoint = ref(config.public.apiUrl);
-
-let deleteIDItem = ref();
-let tableDisplay = ref(true);
-let toggleSideBarMenu = ref(false);
-let toggleConfirmDelete = ref(false);
-const confirmModal = ref(false);
-
-const displayUpdateForm = ref(false);
-
-const statusNotificationAlertModal = ref(false);
 
 // Auto-refresh interval
 let refreshInterval = null;
@@ -73,16 +60,6 @@ onUnmounted(() => {
   }
 });
 
-let filteredItems;
-const selectedDocumentType = ref("");
-const selectedOriginatingOffice = ref("");
-const selectedStatus = ref("");
-
-const selectedAll = ref(null);
-const selectedReviewed = ref(false);
-const selectedVerified = ref(false);
-const selectedApproved = ref(false);
-
 // Helper function to set pagination
 const setPagination = (itemCount) => {
   currentPage.value = 1;
@@ -91,15 +68,15 @@ const setPagination = (itemCount) => {
 };
 
 // Admin emails list
-const adminEmails = [
-  superAdminEmail.value,
-  "president@lsu.edu.ph",
-  "rey.mejias@lsu.edu.ph",
-  "meredith.embuscado@lsu.edu.ph",
-  "macristina.llauder@lsu.edu.ph",
-  "recordsmanagement@lsu.edu.ph",
-  "wenny.caseros@lsu.edu.ph"
-];
+// const adminEmails = [
+//   superAdminEmail.value,
+//   "president@lsu.edu.ph",
+//   "rey.mejias@lsu.edu.ph",
+//   "meredith.embuscado@lsu.edu.ph",
+//   "macristina.llauder@lsu.edu.ph",
+//   "recordsmanagement@lsu.edu.ph",
+//   "wenny.caseros@lsu.edu.ph"
+// ];
 
 const fetchListItems = async () => {
   try {
@@ -213,7 +190,7 @@ const downloadCSV = () => {
       "Document Title",
       "Document Type",
       "Status",
-      "Document Code"
+      "Document Code",
     ];
 
     // Convert data to CSV rows
@@ -393,7 +370,6 @@ const deleteItem = async () => {
     toggleConfirmDelete.value = !toggleConfirmDelete.value;
   });
 };
-
 
 const goToEdit = async (id) => {
   filteredItems = await $fetch(endpoint.value + "/api/drs/" + id + "/").catch(
@@ -591,7 +567,7 @@ const submitDRSFormToGmailApproved = async () => {
                           ? 'bg-green-700 text-white border-green-700'
                           : darkMode
                             ? 'bg-gray-800 text-green-400 border-gray-700 hover:bg-green-700 hover:text-white hover:border-green-700'
-                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300'
+                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300',
                       ]"
                       for="checkboxAll"
                     >
@@ -606,7 +582,11 @@ const submitDRSFormToGmailApproved = async () => {
                       <span
                         v-if="listItems"
                         class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
-                        :class="selectedAll ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'"
+                        :class="
+                          selectedAll
+                            ? 'bg-green-600 text-white'
+                            : 'bg-green-100 text-green-800'
+                        "
                         >{{ listItems.length }}</span
                       >
                     </label>
@@ -618,7 +598,7 @@ const submitDRSFormToGmailApproved = async () => {
                           ? 'bg-green-700 text-white border-green-700'
                           : darkMode
                             ? 'bg-gray-800 text-green-400 border-gray-700 hover:bg-green-700 hover:text-white hover:border-green-700'
-                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300'
+                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300',
                       ]"
                       for="checkboxReviewed"
                     >
@@ -632,7 +612,11 @@ const submitDRSFormToGmailApproved = async () => {
                       Reviewed
                       <span
                         class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
-                        :class="selectedReviewed ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'"
+                        :class="
+                          selectedReviewed
+                            ? 'bg-green-600 text-white'
+                            : 'bg-green-100 text-green-800'
+                        "
                         >{{ reviewedLength }}</span
                       >
                     </label>
@@ -644,7 +628,7 @@ const submitDRSFormToGmailApproved = async () => {
                           ? 'bg-green-700 text-white border-green-700'
                           : darkMode
                             ? 'bg-gray-800 text-green-400 border-gray-700 hover:bg-green-700 hover:text-white hover:border-green-700'
-                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300'
+                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300',
                       ]"
                       for="checkboxVerified"
                     >
@@ -658,7 +642,11 @@ const submitDRSFormToGmailApproved = async () => {
                       Verified
                       <span
                         class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
-                        :class="selectedVerified ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'"
+                        :class="
+                          selectedVerified
+                            ? 'bg-green-600 text-white'
+                            : 'bg-green-100 text-green-800'
+                        "
                         >{{ verifiedLength }}</span
                       >
                     </label>
@@ -670,7 +658,7 @@ const submitDRSFormToGmailApproved = async () => {
                           ? 'bg-green-700 text-white border-green-700'
                           : darkMode
                             ? 'bg-gray-800 text-green-400 border-gray-700 hover:bg-green-700 hover:text-white hover:border-green-700'
-                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300'
+                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300',
                       ]"
                       for="checkboxApproved"
                     >
@@ -684,7 +672,11 @@ const submitDRSFormToGmailApproved = async () => {
                       Approved
                       <span
                         class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
-                        :class="selectedApproved ? 'bg-green-600 text-white' : 'bg-green-100 text-green-800'"
+                        :class="
+                          selectedApproved
+                            ? 'bg-green-600 text-white'
+                            : 'bg-green-100 text-green-800'
+                        "
                         >{{ approvedLength }}</span
                       >
                     </label>
@@ -696,17 +688,21 @@ const submitDRSFormToGmailApproved = async () => {
                     <div
                       class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
                     >
-                      <i class="fa fa-search"
-                        :class="darkMode ? 'text-green-400' : 'text-green-700'"></i>
+                      <i
+                        class="fa fa-search"
+                        :class="darkMode ? 'text-green-400' : 'text-green-700'"
+                      ></i>
                     </div>
                     <input
                       v-model="searchQuery"
                       type="text"
                       placeholder="Search by title, code, type, office, status, name, ID..."
                       class="pl-10 pr-4 w-full border-2 shadow-lg rounded-full h-10 lg:h-12 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
-                      :class="darkMode
-                        ? 'border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-400 focus:border-green-500'
-                        : 'border-green-700 bg-white text-gray-900 placeholder-gray-500 focus:border-green-500'"
+                      :class="
+                        darkMode
+                          ? 'border-gray-600 bg-gray-700 text-gray-200 placeholder-gray-400 focus:border-green-500'
+                          : 'border-green-700 bg-white text-gray-900 placeholder-gray-500 focus:border-green-500'
+                      "
                     />
                   </div>
                 </div>
@@ -716,7 +712,7 @@ const submitDRSFormToGmailApproved = async () => {
                     [
                       'meredith.embuscado@lsu.edu.ph',
                       'macristina.llauder@lsu.edu.ph',
-                      superAdminEmail.value,
+                      'jorenlee.luna@lsu.edu.ph',
                     ].includes(user.value?.email)
                       ? ''
                       : 'hidden'
@@ -735,11 +731,17 @@ const submitDRSFormToGmailApproved = async () => {
                   <div class="text-xs">
                     <div
                       class="lg:flex hidden pb-2 pt-2.5 px-3 gap-x-6"
-                      :class="darkMode ? 'bg-green-900 text-gray-200' : 'bg-green-800 text-white'"
+                      :class="
+                        darkMode
+                          ? 'bg-green-900 text-gray-200'
+                          : 'bg-green-800 text-white'
+                      "
                     >
                       <div
                         class="w-full mx-auto cursor-pointer px-2 py-1 rounded"
-                        :class="darkMode ? 'hover:bg-green-700' : 'hover:bg-green-950'"
+                        :class="
+                          darkMode ? 'hover:bg-green-700' : 'hover:bg-green-950'
+                        "
                         @click="sortBy('originating_office')"
                       >
                         Office
@@ -757,7 +759,9 @@ const submitDRSFormToGmailApproved = async () => {
 
                       <div
                         class="w-full mx-auto cursor-pointer px-2 py-1 rounded"
-                         :class="darkMode ? 'hover:bg-green-700' : 'hover:bg-green-950'"
+                        :class="
+                          darkMode ? 'hover:bg-green-700' : 'hover:bg-green-950'
+                        "
                         @click="sortBy('document_title')"
                       >
                         Document Title
@@ -773,8 +777,10 @@ const submitDRSFormToGmailApproved = async () => {
                         <i v-else class="fa fa-sort ml-1"></i>
                       </div>
                       <div
-                        class="w-full mx-auto cursor-pointer px-2 py-1 rounded"
-                        :class="darkMode ? 'hover:bg-green-700' : 'hover:bg-green-950'"
+                        class="lg:w-6/12 w-full mx-auto cursor-pointer px-2 py-1 rounded"
+                        :class="
+                          darkMode ? 'hover:bg-green-700' : 'hover:bg-green-950'
+                        "
                         @click="sortBy('document_type')"
                       >
                         Document Type
@@ -823,8 +829,12 @@ const submitDRSFormToGmailApproved = async () => {
                           class="lg:flex text-left items-stretch h-auto lg:px-3 px-2 lg:gap-x-6 gap-y-2 py-1 lg:mb-0 mb-3 lg:border-b border rounded-lg lg:rounded-none cursor-pointer transition-all duration-200 group"
                           :class="[
                             darkMode
-                              ? (i % 2 === 0 ? 'bg-gray-800 border-gray-700' : 'bg-gray-900 border-gray-700')
-                              : (i % 2 === 0 ? 'bg-white border-gray-200' : 'bg-gray-100 border-gray-200'),
+                              ? i % 2 === 0
+                                ? 'bg-gray-800 border-gray-700'
+                                : 'bg-gray-900 border-gray-700'
+                              : i % 2 === 0
+                                ? 'bg-white border-gray-200'
+                                : 'bg-gray-100 border-gray-200',
                             darkMode
                               ? 'hover:bg-gray-700 hover:shadow-lg hover:scale-[1.01] lg:hover:scale-100'
                               : 'hover:bg-green-50 hover:shadow-lg hover:scale-[1.01] lg:hover:scale-100',
@@ -839,12 +849,18 @@ const submitDRSFormToGmailApproved = async () => {
                               <div class="flex-1">
                                 <div
                                   class="text-xs uppercase font-semibold mb-1"
-                                  :class="darkMode ? 'text-white' : 'text-gray-900'"
+                                  :class="
+                                    darkMode ? 'text-white' : 'text-gray-900'
+                                  "
                                 >
                                   Office
                                 </div>
-                                <div class="font-medium text-sm"
-                                  :class="darkMode ? 'text-white' : 'text-gray-900'">
+                                <div
+                                  class="font-medium text-sm"
+                                  :class="
+                                    darkMode ? 'text-white' : 'text-gray-900'
+                                  "
+                                >
                                   {{ b.originating_office }}
                                 </div>
                               </div>
@@ -859,14 +875,6 @@ const submitDRSFormToGmailApproved = async () => {
                                   ></i>
                                 </button>
                                 <button
-                                  v-if="
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminEmail ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminTwo
-                                  "
                                   class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-colors"
                                   @click="toggleDeleteBtn(b.id)"
                                 >
@@ -878,12 +886,18 @@ const submitDRSFormToGmailApproved = async () => {
                             <div>
                               <div
                                 class="text-xs uppercase font-semibold mb-1"
-                                :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
+                                :class="
+                                  darkMode ? 'text-gray-400' : 'text-gray-500'
+                                "
                               >
                                 Document Title
                               </div>
-                              <div class="font-medium text-sm"
-                                :class="darkMode ? 'text-gray-200' : 'text-gray-900'">
+                              <div
+                                class="font-medium text-sm"
+                                :class="
+                                  darkMode ? 'text-gray-200' : 'text-gray-900'
+                                "
+                              >
                                 {{ b.document_title }}
                               </div>
                             </div>
@@ -892,7 +906,9 @@ const submitDRSFormToGmailApproved = async () => {
                               <div>
                                 <div
                                   class="text-xs uppercase font-semibold mb-1"
-                                  :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
+                                  :class="
+                                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                                  "
                                 >
                                   Status
                                 </div>
@@ -910,7 +926,11 @@ const submitDRSFormToGmailApproved = async () => {
                                   <span
                                     v-if="b.revision_number"
                                     class="ml-1 text-xs"
-                                    :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
+                                    :class="
+                                      darkMode
+                                        ? 'text-gray-400'
+                                        : 'text-gray-600'
+                                    "
                                     >No. {{ b.revision_number }}</span
                                   >
                                 </div>
@@ -918,7 +938,9 @@ const submitDRSFormToGmailApproved = async () => {
                               <div>
                                 <div
                                   class="text-xs uppercase font-semibold mb-1"
-                                  :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
+                                  :class="
+                                    darkMode ? 'text-gray-400' : 'text-gray-500'
+                                  "
                                 >
                                   Type
                                 </div>
@@ -946,9 +968,18 @@ const submitDRSFormToGmailApproved = async () => {
 
                           <!-- Desktop: Table Row Layout -->
                           <div class="hidden lg:contents">
-                            <div class="w-full flex items-center px-2">
-                              <div class="text-sm">
+                            <div class="w-full px-2">
+                              <div
+                                class="text-sm tracking-tighter whitespace-nowrap"
+                              >
                                 {{ b.originating_office }}
+                              </div>
+                              <div>
+                                {{ b.originating_firstname }}
+                                {{ b.originating_lastname }}
+                              </div>
+                              <div>
+                                {{ b.originating_email }}
                               </div>
                             </div>
 
@@ -957,26 +988,35 @@ const submitDRSFormToGmailApproved = async () => {
                                 <div class="font-medium">
                                   {{ b.document_title }}
                                 </div>
-                                <div class="text-xs  mt-1" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                                <div
+                                  class="text-xs mt-1"
+                                  :class="
+                                    darkMode ? 'text-white' : 'text-gray-900'
+                                  "
+                                >
                                   <span
                                     v-if="
                                       b.document_code !==
                                       'To Be Assigned By RMO'
                                     "
-                                    :class="darkMode ? 'text-white' : 'text-gray-900'"
+                                    :class="
+                                      darkMode ? 'text-white' : 'text-gray-900'
+                                    "
                                     class="font-mono"
                                     >{{ b.document_code }}</span
                                   >
-                                  <span class="font-mono"
-                                  :class="darkMode ? 'text-white' : 'text-gray-900'"
-                                  >{{
-                                    b.tracking_id
-                                  }}</span>
+                                  <span
+                                    class="font-mono"
+                                    :class="
+                                      darkMode ? 'text-white' : 'text-gray-900'
+                                    "
+                                    >{{ b.tracking_id }}</span
+                                  >
                                 </div>
                               </div>
                             </div>
 
-                            <div class="w-full flex items-center px-2">
+                            <div class="lg:w-6/12 w-full flex items-center px-2">
                               <div class="text-sm">
                                 <div>
                                   <span
@@ -991,13 +1031,18 @@ const submitDRSFormToGmailApproved = async () => {
                                   </span>
                                   <span
                                     v-if="b.revision_number"
-                                    class="ml-1 text-xs "
-                                    :class="darkMode ? 'text-white' : 'text-gray-900'"
+                                    class="ml-1 text-xs"
+                                    :class="
+                                      darkMode ? 'text-white' : 'text-gray-900'
+                                    "
                                     >No. {{ b.revision_number }}</span
                                   >
                                 </div>
-                                <div class="mt-1 text-gray-700"
-                                :class="darkMode ? 'text-white' : 'text-gray-900'"
+                                <div
+                                  class="mt-1 text-gray-700"
+                                  :class="
+                                    darkMode ? 'text-white' : 'text-gray-900'
+                                  "
                                 >
                                   {{ b.document_type }}
                                 </div>
@@ -1038,14 +1083,6 @@ const submitDRSFormToGmailApproved = async () => {
                                   ></i>
                                 </button>
                                 <button
-                                  v-if="
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminEmail ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminTwo
-                                  "
                                   class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
                                   @click="toggleDeleteBtn(b.id)"
                                   title="Delete"
@@ -1147,7 +1184,10 @@ const submitDRSFormToGmailApproved = async () => {
                         v-if="filteredListItems.length > 0"
                       >
                         <!-- Page info -->
-                        <div class="text-xs" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                        <div
+                          class="text-xs"
+                          :class="darkMode ? 'text-white' : 'text-gray-900'"
+                        >
                           Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to
                           {{
                             Math.min(
@@ -1209,14 +1249,18 @@ const submitDRSFormToGmailApproved = async () => {
           <div class="w-full lg:p-5 px-2 py-2">
             <div>
               <form>
-                <div class="shadow-lg mx-auto"
-                  :class="darkMode ? 'bg-gray-800' : 'bg-white'">
+                <div
+                  class="shadow-lg mx-auto"
+                  :class="darkMode ? 'bg-gray-800' : 'bg-white'"
+                >
                   <div class="">
                     <h2
                       class="lg:text-base text-xs px-10 uppercase py-1.5 font-bold text-center border-2"
-                      :class="darkMode
-                        ? 'text-green-400 border-gray-700 bg-gray-800'
-                        : 'text-green-900 border-gray-100 bg-white'"
+                      :class="
+                        darkMode
+                          ? 'text-green-400 border-gray-700 bg-gray-800'
+                          : 'text-green-900 border-gray-100 bg-white'
+                      "
                     >
                       Document Review Sheet Form
                       <!-- <span class="font-light text-xs bg-green-900 text-white block">
@@ -1227,10 +1271,13 @@ const submitDRSFormToGmailApproved = async () => {
                       :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
                     >
                       DRS No.
-                      <span class="border-b px-1"
-                        :class="darkMode ? 'border-gray-600' : 'border-gray-400'">{{
-                        filteredItems.tracking_id
-                      }}</span>
+                      <span
+                        class="border-b px-1"
+                        :class="
+                          darkMode ? 'border-gray-600' : 'border-gray-400'
+                        "
+                        >{{ filteredItems.tracking_id }}</span
+                      >
                     </div>
                     <div class="lg:px-2 pt-3 pb-2 gap-3">
                       <div class="w-full lg:mb-0 mb-5">
@@ -1243,7 +1290,11 @@ const submitDRSFormToGmailApproved = async () => {
                                 <div class="lg:flex items-center w-full mb-2">
                                   <label
                                     class="lg:text-xs text-[10px] font-bold whitespace-nowrap lg:w-5/12"
-                                    :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                                    :class="
+                                      darkMode
+                                        ? 'text-gray-300'
+                                        : 'text-gray-900'
+                                    "
                                   >
                                     <div class="w-fit lg:ml-auto pr-5">
                                       Attached Document
@@ -1252,9 +1303,11 @@ const submitDRSFormToGmailApproved = async () => {
 
                                   <div
                                     class="w-full flex items-center gap-x-1 border-b-2 rounded-sm h-fit"
-                                    :class="darkMode
-                                      ? 'bg-gray-700 border-gray-600'
-                                      : 'bg-white border-green-700'"
+                                    :class="
+                                      darkMode
+                                        ? 'bg-gray-700 border-gray-600'
+                                        : 'bg-white border-green-700'
+                                    "
                                   >
                                     <img
                                       src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/Google_Drive.png"
@@ -1263,31 +1316,14 @@ const submitDRSFormToGmailApproved = async () => {
                                     <input
                                       type="url"
                                       class="px-1 w-full border-t-0 border-x-0 text-xs py-1.5"
-                                      :class="darkMode
-                                        ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                        : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500'"
+                                      :class="
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                          : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500'
+                                      "
                                       placeholder="Google Drive Link"
                                       v-model="
                                         filteredItems.document_attachment
-                                      "
-                                      :disabled="
-                                        !(
-                                          user.value?.email
-                                            ?.trim()
-                                            .toLowerCase() ===
-                                            filteredItems.reviewed_by_email ||
-                                          user.value?.email
-                                            ?.trim()
-                                            .toLowerCase() ===
-                                            filteredItems.originating_email ||
-                                          user.value?.email
-                                            ?.trim()
-                                            .toLowerCase() ===
-                                            superAdminEmail ||
-                                          user.value?.email
-                                            ?.trim()
-                                            .toLowerCase() === superAdminTwo
-                                        )
                                       "
                                     />
                                     <a
@@ -1296,7 +1332,11 @@ const submitDRSFormToGmailApproved = async () => {
                                     >
                                       <i
                                         class="fa fa-external-link px-2"
-                                        :class="darkMode ? 'text-green-400' : 'text-green-800'"
+                                        :class="
+                                          darkMode
+                                            ? 'text-green-400'
+                                            : 'text-green-800'
+                                        "
                                       ></i>
                                     </a>
                                   </div>
@@ -1305,30 +1345,11 @@ const submitDRSFormToGmailApproved = async () => {
                                 <div class="lg:flex items-center w-full mb-2">
                                   <label
                                     class="lg:text-xs text-[10px] font-bold whitespace-nowrap lg:w-5/12"
-                                    :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
-                                  >
-                                    <div class="w-fit lg:ml-auto pr-5">
-                                      Originating Office
-                                    </div>
-                                  </label>
-                                  <div class="w-full">
-                                    <input
-                                      type="text"
-                                      class="px-2 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
-                                      :class="darkMode
-                                        ? 'bg-gray-700 border-gray-600 text-gray-200'
-                                        : 'bg-white border-gray-400 text-gray-900'"
-                                      placeholder="Originating Office"
-                                      v-model="filteredItems.originating_office"
-                                      disabled
-                                    />
-                                  </div>
-                                </div>
-
-                                <div class="lg:flex items-center w-full mb-2">
-                                  <label
-                                    class="lg:text-xs text-[10px] font-bold whitespace-nowrap lg:w-5/12"
-                                    :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                                    :class="
+                                      darkMode
+                                        ? 'text-gray-300'
+                                        : 'text-gray-900'
+                                    "
                                   >
                                     <div class="w-fit lg:ml-auto pr-5">
                                       Document Title
@@ -1338,69 +1359,23 @@ const submitDRSFormToGmailApproved = async () => {
                                     <input
                                       type="text"
                                       class="px-2 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
-                                      :class="darkMode
-                                        ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                        : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500'"
+                                      :class="
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                          : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500'
+                                      "
                                       placeholder="Document Title"
                                       v-model="filteredItems.document_title"
-                                      :disabled="
-                                        !(
-                                          user.value?.email
-                                            ?.trim()
-                                            .toLowerCase() ===
-                                            filteredItems.reviewed_by_email ||
-                                          user.value?.email
-                                            ?.trim()
-                                            .toLowerCase() ===
-                                            superAdminEmail ||
-                                          user.value?.email
-                                            ?.trim()
-                                            .toLowerCase() === superAdminTwo
-                                        )
-                                      "
                                     />
                                   </div>
                                 </div>
-                                <div class="lg:flex items-center w-full mb-2">
-                                  <label
-                                    class="lg:text-xs text-[10px] font-bold whitespace-nowrap lg:w-5/12"
-                                    :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
-                                  >
-                                    <div class="w-fit lg:ml-auto pr-5">
-                                      Originating Email
-                                    </div>
-                                  </label>
-                                  <div class="w-full">
-                                    <input
-                                      type="email"
-                                      class="px-2 lg:w-7/12 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
-                                      :class="darkMode
-                                        ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                        : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500'"
-                                      placeholder="Email"
-                                      v-model="filteredItems.originating_email"
-                                      :disabled="
-                                        !(
-                                          user.value?.email
-                                            ?.trim()
-                                            .toLowerCase() ===
-                                            filteredItems.reviewed_by_email ||
-                                          user.value?.email
-                                            ?.trim()
-                                            .toLowerCase() ===
-                                            superAdminEmail ||
-                                          user.value?.email
-                                            ?.trim()
-                                            .toLowerCase() === superAdminTwo
-                                        )
-                                      "
-                                    />
-                                  </div>
-                                </div>
+
                                 <div class="lg:flex items-center w-full mb-2">
                                   <label
                                     class="lg:text-xs text-[10px] pb-2 font-bold whitespace-nowrap lg:w-5/12"
-                                    :class="darkMode ? 'text-gray-300' : 'text-black'"
+                                    :class="
+                                      darkMode ? 'text-gray-300' : 'text-black'
+                                    "
                                   >
                                     <div class="w-fit lg:ml-auto pr-5">
                                       Document Type
@@ -1410,9 +1385,11 @@ const submitDRSFormToGmailApproved = async () => {
                                     <select
                                       v-model="filteredItems.document_type"
                                       class="lg:w-7/12 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs pr-10"
-                                      :class="darkMode
-                                        ? 'bg-gray-700 border-gray-600 text-gray-200'
-                                        : 'bg-white border-gray-400 text-gray-900'"
+                                      :class="
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                          : 'bg-white border-gray-400 text-gray-900'
+                                      "
                                       required
                                     >
                                       <option
@@ -1436,7 +1413,9 @@ const submitDRSFormToGmailApproved = async () => {
                                 <div class="lg:flex items-center w-full mb-2">
                                   <label
                                     class="lg:text-xs text-[10px] pb-2 font-bold whitespace-nowrap lg:w-5/12"
-                                    :class="darkMode ? 'text-gray-300' : 'text-black'"
+                                    :class="
+                                      darkMode ? 'text-gray-300' : 'text-black'
+                                    "
                                   >
                                     <div class="w-fit lg:ml-auto pr-5">
                                       Status
@@ -1445,13 +1424,19 @@ const submitDRSFormToGmailApproved = async () => {
                                   <div class="w-full">
                                     <div
                                       class="flex lg:w-fit lg:px-0 border-b-2"
-                                      :class="darkMode
-                                        ? 'bg-gray-700 border-gray-600'
-                                        : 'bg-white border-green-700'"
+                                      :class="
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600'
+                                          : 'bg-white border-green-700'
+                                      "
                                     >
                                       <div
                                         class="px-1 text-xs items-center flex"
-                                        :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                        :class="
+                                          darkMode
+                                            ? 'text-gray-200'
+                                            : 'text-black'
+                                        "
                                       >
                                         <span>
                                           <input
@@ -1461,22 +1446,6 @@ const submitDRSFormToGmailApproved = async () => {
                                             class="mr-1"
                                             id="New"
                                             @change="statusChange"
-                                            :disabled="
-                                              !(
-                                                user.value?.email
-                                                  ?.trim()
-                                                  .toLowerCase() ===
-                                                  filteredItems.reviewed_by_email ||
-                                                user.value?.email
-                                                  ?.trim()
-                                                  .toLowerCase() ===
-                                                  superAdminEmail ||
-                                                user.value?.email
-                                                  ?.trim()
-                                                  .toLowerCase() ===
-                                                  superAdminTwo
-                                              )
-                                            "
                                           />
                                         </span>
                                         <label class="ml-2 py-2" for="New">
@@ -1488,7 +1457,11 @@ const submitDRSFormToGmailApproved = async () => {
                                       >
                                         <label
                                           class="ml-2 flex items-center w-full text-xs"
-                                          :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                          :class="
+                                            darkMode
+                                              ? 'text-gray-200'
+                                              : 'text-black'
+                                          "
                                           for="ForRevision"
                                         >
                                           <span class="mr-2">
@@ -1499,22 +1472,6 @@ const submitDRSFormToGmailApproved = async () => {
                                               class=""
                                               id="ForRevision"
                                               @change="statusChange"
-                                              :disabled="
-                                                !(
-                                                  user.value?.email
-                                                    ?.trim()
-                                                    .toLowerCase() ===
-                                                    filteredItems.reviewed_by_email ||
-                                                  user.value?.email
-                                                    ?.trim()
-                                                    .toLowerCase() ===
-                                                    superAdminEmail ||
-                                                  user.value?.email
-                                                    ?.trim()
-                                                    .toLowerCase() ===
-                                                    superAdminTwo
-                                                )
-                                              "
                                             />
                                           </span>
 
@@ -1535,9 +1492,11 @@ const submitDRSFormToGmailApproved = async () => {
                                             <input
                                               type="text"
                                               class="px-2 w-full border-b-2 border-t-0 border-x-0 py-1 rounded-sm text-xs"
-                                              :class="darkMode
-                                                ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                                : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500'"
+                                              :class="
+                                                darkMode
+                                                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                                  : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500'
+                                              "
                                               placeholder="Revision Number"
                                               v-model="
                                                 filteredItems.revision_number
@@ -1550,78 +1509,115 @@ const submitDRSFormToGmailApproved = async () => {
                                     </div>
                                   </div>
                                 </div>
+
                                 <div class="lg:flex items-center w-full mb-2">
                                   <label
                                     class="lg:text-xs text-[10px] font-bold whitespace-nowrap lg:w-5/12"
-                                    :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                                    :class="
+                                      darkMode
+                                        ? 'text-gray-300'
+                                        : 'text-gray-900'
+                                    "
+                                  >
+                                    <div class="w-fit lg:ml-auto pr-5">
+                                      Originating Office
+                                    </div>
+                                  </label>
+                                  <div class="w-full">
+                                    <input
+                                      type="text"
+                                      class="px-2 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
+                                      :class="
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                          : 'bg-white border-gray-400 text-gray-900'
+                                      "
+                                      placeholder="Originating Office"
+                                      v-model="filteredItems.originating_office"
+                                      disabled
+                                    />
+                                  </div>
+                                </div>
+
+                                <div class="lg:flex items-center w-full mb-2">
+                                  <label
+                                    class="lg:text-xs text-[10px] font-bold whitespace-nowrap lg:w-5/12"
+                                    :class="
+                                      darkMode
+                                        ? 'text-gray-300'
+                                        : 'text-gray-900'
+                                    "
+                                  >
+                                    <div class="w-fit lg:ml-auto pr-5">
+                                      Originating Fullname
+                                    </div>
+                                  </label>
+                                  <div
+                                    class="text-center flex mx-auto px-2 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
+                                    :class="
+                                      darkMode
+                                        ? 'text-gray-200'
+                                        : 'text-gray-900'
+                                    "
+                                  >
+                                    {{ filteredItems.originating_firstname }}
+                                    {{ filteredItems.originating_lastname }}
+                                  </div>
+                                </div>
+                                <div class="lg:flex items-center w-full mb-2">
+                                  <label
+                                    class="lg:text-xs text-[10px] font-bold whitespace-nowrap lg:w-5/12"
+                                    :class="
+                                      darkMode
+                                        ? 'text-gray-300'
+                                        : 'text-gray-900'
+                                    "
+                                  >
+                                    <div class="w-fit lg:ml-auto pr-5">
+                                      Originating Email
+                                    </div>
+                                  </label>
+                                  <div class="w-full">
+                                    <input
+                                      type="email"
+                                      class="px-2 lg:w-7/12 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
+                                      :class="
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                          : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500'
+                                      "
+                                      placeholder="Email"
+                                      v-model="filteredItems.originating_email"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div class="lg:flex items-center w-full mb-2">
+                                  <label
+                                    class="lg:text-xs text-[10px] font-bold whitespace-nowrap lg:w-5/12"
+                                    :class="
+                                      darkMode
+                                        ? 'text-gray-300'
+                                        : 'text-gray-900'
+                                    "
                                   >
                                     <div class="w-fit lg:ml-auto pr-5">
                                       Date Submitted
                                     </div>
                                   </label>
                                   <div class="w-full">
-                                    <!-- <input
-                                      type="date"
-                                      class="px-2 w-6/12 border-b-2 border-t-0 border-x-0 border-gray-400 shadow-lg rounded-sm py-2 text-xs"
-                                      v-model=""
-                                      disabled
-                                    /> -->
                                     <div
                                       class="px-2 lg:w-6/12 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
-                                      :class="darkMode
-                                        ? 'bg-gray-700 border-gray-600 text-gray-200'
-                                        : 'bg-[#EFEFEF4D] border-gray-400 text-gray-900'"
+                                      :class="
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                          : 'bg-[#EFEFEF4D] border-gray-400 text-gray-900'
+                                      "
                                     >
                                       {{ filteredItems.schedule }}
                                     </div>
                                   </div>
-                                  <!-- <div class="w-full">
-                                    <div
-                                      class="border-b-2 border-green-700 w-fit shadow-lg"
-                                    >
-                                      <VueDatePicker
-                                        v-model="filteredItems.schedule"
-                                        :enable-time-picker="false"
-                                        name="date"
-                                        auto-apply
-                                        :year-range="[currentYear - 5, currentYear + 5]"
-                                        week-start="0"
-                                        @update:model-value="setDate(date)"
-                                        disabled
-                                      />
-                                    </div>
-                                  </div> -->
                                 </div>
-                              </div>
-                            </div>
-                            <div class="w-fit mx-auto my-5">
-                              <div
-                                class="text-center flex w-fit mx-auto text-sm"
-                                :class="darkMode ? 'text-gray-200' : 'text-gray-900'"
-                              >
-                                <!-- <input 
-                                  type="text" 
-                                  class="px-0.5 uppercase w-full rounded-sm lg:h-9 h-8 text-xs text-right" 
-                                  placeholder="First Name" 
-                                  v-model="filteredItems.originating_firstname" 
-                                  :disabled="!(user.value?.email?.trim().toLowerCase() === filteredItems.reviewed_by_email)"
-                                />
-                                <input 
-                                  type="text" 
-                                  class="px-0.5 uppercase w-full rounded-sm lg:h-9 h-8 text-xs" 
-                                  placeholder="Last Name" 
-                                  v-model="filteredItems.originating_lastname" 
-                                  :disabled="!(user.value?.email?.trim().toLowerCase() === filteredItems.reviewed_by_email)"
-                                /> -->
-
-                                {{ filteredItems.originating_firstname }}
-                                {{ filteredItems.originating_lastname }}
-                              </div>
-                              <div
-                                class="border-t-2 text-center text-xs px-5"
-                                :class="darkMode ? 'border-gray-600 text-gray-300' : 'border-black text-gray-900'"
-                              >
-                                Originator’s Printed Name
                               </div>
                             </div>
                           </div>
@@ -1633,19 +1629,13 @@ const submitDRSFormToGmailApproved = async () => {
                         <div
                           class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
                           :class="darkMode ? 'bg-gray-800' : 'bg-white'"
-                          v-if="
-                            user.value?.email?.trim().toLowerCase() ===
-                              filteredItems.reviewed_by_email ||
-                            user.value?.email?.trim().toLowerCase() ===
-                              superAdminEmail ||
-                            user.value?.email?.trim().toLowerCase() ===
-                              superAdminTwo
-                          "
                         >
                           <div class="w-full mb-2 block">
                             <label
                               class="lg:text-xs text-[10px] pb-2 font-bold"
-                              :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                              :class="
+                                darkMode ? 'text-gray-300' : 'text-gray-900'
+                              "
                             >
                               Direct Head
                             </label>
@@ -1654,73 +1644,31 @@ const submitDRSFormToGmailApproved = async () => {
                                 <input
                                   type="text"
                                   class="px-2 w-full rounded-sm h-fit py-1 text-sm text-center"
-                                  :class="darkMode
-                                    ? 'bg-gray-700 border-gray-600 text-gray-200'
-                                    : 'bg-white border-gray-400 text-gray-900'"
+                                  :class="
+                                    darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-white border-gray-400 text-gray-900'
+                                  "
                                   placeholder=""
                                   v-model="filteredItems.reviewed_by_name"
-                                  :disabled="
-                                    !(
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() ===
-                                        filteredItems.reviewed_by_email ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminEmail ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminTwo
-                                    )
-                                  "
                                 />
                               </div>
                               <div class="w-full">
                                 <input
                                   type="text"
                                   class="border-t-2 text-center text-xs w-full"
-                                  :class="darkMode
-                                    ? 'bg-gray-700 border-gray-600 text-gray-200'
-                                    : 'bg-white border-black text-gray-900'"
+                                  :class="
+                                    darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-white border-black text-gray-900'
+                                  "
                                   placeholder=""
                                   v-model="
                                     filteredItems.reviewed_by_designation
                                   "
-                                  :disabled="
-                                    !(
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() ===
-                                        filteredItems.reviewed_by_email ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminEmail ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminTwo
-                                    )
-                                  "
                                 />
-
                                 <input
                                   v-model="filteredItems.reviewed_by_email"
-                                  :class="[
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      filteredItems.reviewed_by_email ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminTwo ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminEmail
-                                      ? ''
-                                      : 'hidden',
-                                    darkMode
-                                      ? 'bg-gray-700 text-gray-200'
-                                      : 'bg-white text-gray-900'
-                                  ]"
                                   class="text-center text-xs w-full h-fit -mt-0.5 block"
                                   type="email"
                                 />
@@ -1730,19 +1678,25 @@ const submitDRSFormToGmailApproved = async () => {
                           <div class="w-full mb-2 block">
                             <label
                               class="lg:text-xs text-[10px] pb-2 font-bold"
-                              :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                              :class="
+                                darkMode ? 'text-gray-300' : 'text-gray-900'
+                              "
                             >
                               Action
                             </label>
                             <div
                               class="flex lg:gap-x-3 w-full lg:px-0 lg:shadow border-b-2"
-                              :class="darkMode
-                                ? 'bg-gray-700 border-gray-600'
-                                : 'bg-white border-green-700'"
+                              :class="
+                                darkMode
+                                  ? 'bg-gray-700 border-gray-600'
+                                  : 'bg-white border-green-700'
+                              "
                             >
                               <div
                                 class="lg:shadow-lg lg:pt-[8px] lg:pb-[9px] w-full text-xs items-center flex"
-                                :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                :class="
+                                  darkMode ? 'text-gray-200' : 'text-black'
+                                "
                               >
                                 <div class="w-fit mx-auto flex items-center">
                                   <input
@@ -1753,20 +1707,6 @@ const submitDRSFormToGmailApproved = async () => {
                                     id="reviewedByActionApproved"
                                     name="reviewedByAction"
                                     @change="actionChecked()"
-                                    :disabled="
-                                      !(
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          filteredItems.reviewed_by_email ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminEmail ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo
-                                      )
-                                    "
                                   />
                                   <label
                                     class="ml-0.5"
@@ -1780,7 +1720,9 @@ const submitDRSFormToGmailApproved = async () => {
                               </div>
                               <div
                                 class="lg:shadow-lg lg:mt-0 mt-2 lg:pt-[8px] lg:pb-[9px] pb-2.5 w-full text-xs items-center flex"
-                                :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                :class="
+                                  darkMode ? 'text-gray-200' : 'text-black'
+                                "
                               >
                                 <div class="w-fit mx-auto flex items-center">
                                   <input
@@ -1791,20 +1733,6 @@ const submitDRSFormToGmailApproved = async () => {
                                     id="reviewedByActionDisapproved"
                                     name="reviewedByAction"
                                     @change="actionChecked()"
-                                    :disabled="
-                                      !(
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          filteredItems.reviewed_by_email ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminEmail ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo
-                                      )
-                                    "
                                   />
                                   <label
                                     class="ml-0.5"
@@ -1818,7 +1746,9 @@ const submitDRSFormToGmailApproved = async () => {
                               </div>
                               <div
                                 class="lg:shadow-lg lg:mt-0 mt-2 lg:pt-[8px] lg:pb-[9px] pb-2.5 w-full text-xs items-center flex"
-                                :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                :class="
+                                  darkMode ? 'text-gray-200' : 'text-black'
+                                "
                               >
                                 <div class="w-fit mx-auto flex items-center">
                                   <input
@@ -1829,20 +1759,6 @@ const submitDRSFormToGmailApproved = async () => {
                                     id="reviewedByActionConditional"
                                     name="reviewedByAction"
                                     @change="actionChecked()"
-                                    :disabled="
-                                      !(
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          filteredItems.reviewed_by_email ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminEmail ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo
-                                      )
-                                    "
                                   />
                                   <label
                                     class="ml-0.5"
@@ -1859,49 +1775,36 @@ const submitDRSFormToGmailApproved = async () => {
                           <div class="w-full mb-2 block">
                             <label
                               class="lg:text-xs text-[10px] pb-2 font-bold"
-                              :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                              :class="
+                                darkMode ? 'text-gray-300' : 'text-gray-900'
+                              "
                             >
                               Comments or Remarks
                             </label>
                             <textarea
                               type="text"
                               class="px-2 w-full border-b-2 border-t-0 border-x-0 shadow-lg py-2 rounded-sm lg:h-9 h-8 text-xs"
-                              :class="darkMode
-                                ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'"
+                              :class="
+                                darkMode
+                                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                  : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'
+                              "
                               placeholder="Comments or Remarks"
                               v-model="filteredItems.reviewed_by_remarks"
-                              :disabled="
-                                !(
-                                  user.value?.email?.trim().toLowerCase() ===
-                                    filteredItems.reviewed_by_email ||
-                                  user.value?.email?.trim().toLowerCase() ===
-                                    superAdminEmail ||
-                                  user.value?.email?.trim().toLowerCase() ===
-                                    superAdminTwo
-                                )
-                              "
                             >
                             </textarea>
                           </div>
                         </div>
-
                         <div
-                          v-if="
-                            user.value?.email?.trim().toLowerCase() ===
-                              filteredItems.verified_by_email ||
-                            user.value?.email?.trim().toLowerCase() ===
-                              superAdminEmail ||
-                            user.value?.email?.trim().toLowerCase() ===
-                              superAdminTwo
-                          "
                           class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
                           :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                         >
                           <div class="w-full mb-2 block">
                             <label
                               class="lg:text-xs text-[10px] pb-2 font-bold"
-                              :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                              :class="
+                                darkMode ? 'text-gray-300' : 'text-gray-900'
+                              "
                             >
                               Chancellor
                             </label>
@@ -1910,73 +1813,31 @@ const submitDRSFormToGmailApproved = async () => {
                                 <input
                                   type="text"
                                   class="px-2 w-full rounded-sm h-fit py-1 text-sm text-center"
-                                  :class="darkMode
-                                    ? 'bg-gray-700 border-gray-600 text-gray-200'
-                                    : 'bg-white border-gray-400 text-gray-900'"
+                                  :class="
+                                    darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-white border-gray-400 text-gray-900'
+                                  "
                                   placeholder=""
                                   v-model="filteredItems.verified_by_name"
-                                  :disabled="
-                                    !(
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() ===
-                                        filteredItems.verified_by_email ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminEmail ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminTwo
-                                    )
-                                  "
                                 />
                               </div>
                               <div class="w-full">
                                 <input
                                   type="text"
                                   class="border-t-2 text-center text-xs w-full"
-                                  :class="darkMode
-                                    ? 'bg-gray-700 border-gray-600 text-gray-200'
-                                    : 'bg-white border-black text-gray-900'"
+                                  :class="
+                                    darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-white border-black text-gray-900'
+                                  "
                                   placeholder=""
                                   v-model="
                                     filteredItems.verified_by_designation
                                   "
-                                  :disabled="
-                                    !(
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() ===
-                                        filteredItems.verified_by_email ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminEmail ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminTwo
-                                    )
-                                  "
                                 />
-
                                 <input
                                   v-model="filteredItems.verified_by_email"
-                                  :class="[
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      filteredItems.verified_by_email ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminEmail
-                                      ? ''
-                                      : 'hidden' ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo,
-                                    darkMode
-                                      ? 'bg-gray-700 text-gray-200'
-                                      : 'bg-white text-gray-900'
-                                  ]"
                                   class="text-center text-xs w-full h-fit -mt-0.5 block"
                                   type="email"
                                 />
@@ -1986,19 +1847,25 @@ const submitDRSFormToGmailApproved = async () => {
                           <div class="w-full mb-2 block">
                             <label
                               class="lg:text-xs text-[10px] pb-2 font-bold"
-                              :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                              :class="
+                                darkMode ? 'text-gray-300' : 'text-gray-900'
+                              "
                             >
                               Action
                             </label>
                             <div
                               class="flex gap-x-3 w-full lg:shadow border-b-2"
-                              :class="darkMode
-                                ? 'bg-gray-700 border-gray-600'
-                                : 'bg-white border-green-700'"
+                              :class="
+                                darkMode
+                                  ? 'bg-gray-700 border-gray-600'
+                                  : 'bg-white border-green-700'
+                              "
                             >
                               <div
                                 class="lg:shadow-lg lg:pt-[8px] lg:pb-[9px] w-full pb-2.5 text-xs items-center flex"
-                                :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                :class="
+                                  darkMode ? 'text-gray-200' : 'text-black'
+                                "
                               >
                                 <div class="w-fit mx-auto flex items-center">
                                   <input
@@ -2009,20 +1876,6 @@ const submitDRSFormToGmailApproved = async () => {
                                     id="verifiedByActionApproved"
                                     name="verifiedByAction"
                                     @change="actionChecked()"
-                                    :disabled="
-                                      !(
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          filteredItems.verified_by_email ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminEmail ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo
-                                      )
-                                    "
                                   />
                                   <label
                                     class="ml-0.5"
@@ -2036,7 +1889,9 @@ const submitDRSFormToGmailApproved = async () => {
                               </div>
                               <div
                                 class="lg:shadow-lg lg:pt-[8px] lg:pb-[9px] w-full pb-2.5 text-xs items-center flex"
-                                :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                :class="
+                                  darkMode ? 'text-gray-200' : 'text-black'
+                                "
                               >
                                 <div class="w-fit mx-auto flex items-center">
                                   <input
@@ -2047,20 +1902,6 @@ const submitDRSFormToGmailApproved = async () => {
                                     id="verifiedByActionDisapproved"
                                     name="verifiedByAction"
                                     @change="actionChecked()"
-                                    :disabled="
-                                      !(
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          filteredItems.verified_by_email ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminEmail ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo
-                                      )
-                                    "
                                   />
                                   <label
                                     class="ml-2"
@@ -2074,7 +1915,9 @@ const submitDRSFormToGmailApproved = async () => {
                               </div>
                               <div
                                 class="lg:shadow-lg lg:pt-[8px] lg:pb-[9px] w-full pb-2.5 text-xs items-center flex"
-                                :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                :class="
+                                  darkMode ? 'text-gray-200' : 'text-black'
+                                "
                               >
                                 <div class="w-fit mx-auto flex items-center">
                                   <input
@@ -2085,20 +1928,6 @@ const submitDRSFormToGmailApproved = async () => {
                                     id="verifiedByActionConditional"
                                     name="verifiedByAction"
                                     @change="actionChecked()"
-                                    :disabled="
-                                      !(
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          filteredItems.verified_by_email ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminEmail ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo
-                                      )
-                                    "
                                   />
                                   <label
                                     class="ml-0.5"
@@ -2115,49 +1944,36 @@ const submitDRSFormToGmailApproved = async () => {
                           <div class="w-full mb-2 block">
                             <label
                               class="lg:text-xs text-[10px] pb-2 font-bold"
-                              :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                              :class="
+                                darkMode ? 'text-gray-300' : 'text-gray-900'
+                              "
                             >
                               Comments or Remarks
                             </label>
                             <textarea
                               type="text"
                               class="px-2 w-full border-b-2 border-t-0 border-x-0 shadow-lg py-2 rounded-sm lg:h-9 h-8 text-xs"
-                              :class="darkMode
-                                ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'"
+                              :class="
+                                darkMode
+                                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                  : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'
+                              "
                               placeholder="Comments or Remarks"
                               v-model="filteredItems.verified_by_remarks"
-                              :disabled="
-                                !(
-                                  user.value?.email?.trim().toLowerCase() ===
-                                    filteredItems.verified_by_email ||
-                                  user.value?.email?.trim().toLowerCase() ===
-                                    superAdminEmail ||
-                                  user.value?.email?.trim().toLowerCase() ===
-                                    superAdminTwo
-                                )
-                              "
                             >
                             </textarea>
                           </div>
                         </div>
-
                         <div
-                          v-if="
-                            user.value?.email?.trim().toLowerCase() ===
-                              filteredItems.approved_by_email ||
-                            user.value?.email?.trim().toLowerCase() ===
-                              superAdminEmail ||
-                            user.value?.email?.trim().toLowerCase() ===
-                              superAdminTwo
-                          "
                           class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
                           :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                         >
                           <div class="w-full mb-2 block">
                             <label
                               class="lg:text-xs text-[10px] pb-2 font-bold"
-                              :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                              :class="
+                                darkMode ? 'text-gray-300' : 'text-gray-900'
+                              "
                             >
                               President
                             </label>
@@ -2166,70 +1982,32 @@ const submitDRSFormToGmailApproved = async () => {
                                 <input
                                   type="text"
                                   class="px-2 w-full rounded-sm h-fit py-1 text-sm text-center"
-                                  :class="darkMode
-                                    ? 'bg-gray-700 border-gray-600 text-gray-200'
-                                    : 'bg-white border-gray-400 text-gray-900'"
+                                  :class="
+                                    darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-white border-gray-400 text-gray-900'
+                                  "
                                   placeholder=""
                                   v-model="filteredItems.approved_by_name"
-                                  :disabled="
-                                    !(
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() ===
-                                        filteredItems.approved_by_email ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminEmail
-                                    )
-                                  "
                                 />
                               </div>
                               <div class="w-full">
                                 <input
                                   type="text"
                                   class="border-t-2 text-center text-xs w-full"
-                                  :class="darkMode
-                                    ? 'bg-gray-700 border-gray-600 text-gray-200'
-                                    : 'bg-white border-black text-gray-900'"
+                                  :class="
+                                    darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                      : 'bg-white border-black text-gray-900'
+                                  "
                                   placeholder=""
                                   v-model="
                                     filteredItems.approved_by_designation
-                                  "
-                                  :disabled="
-                                    !(
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() ===
-                                        filteredItems.approved_by_email ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminEmail ||
-                                      user.value?.email
-                                        ?.trim()
-                                        .toLowerCase() === superAdminTwo
-                                    )
                                   "
                                 />
 
                                 <input
                                   v-model="filteredItems.approved_by_email"
-                                  :class="[
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      filteredItems.approved_by_email ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminEmail
-                                      ? ''
-                                      : 'hidden' ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo,
-                                    darkMode
-                                      ? 'bg-gray-700 text-gray-200'
-                                      : 'bg-white text-gray-900'
-                                  ]"
                                   class="text-center text-xs w-full h-fit -mt-0.5 block"
                                   type="email"
                                 />
@@ -2239,19 +2017,25 @@ const submitDRSFormToGmailApproved = async () => {
                           <div class="w-full mb-2 block">
                             <label
                               class="lg:text-xs text-[10px] pb-2 font-bold"
-                              :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                              :class="
+                                darkMode ? 'text-gray-300' : 'text-gray-900'
+                              "
                             >
                               Action
                             </label>
                             <div
                               class="flex gap-x-3 w-full lg:shadow border-b-2"
-                              :class="darkMode
-                                ? 'bg-gray-700 border-gray-600'
-                                : 'bg-white border-green-700'"
+                              :class="
+                                darkMode
+                                  ? 'bg-gray-700 border-gray-600'
+                                  : 'bg-white border-green-700'
+                              "
                             >
                               <div
                                 class="lg:shadow-lg lg:pt-[8px] lg:pb-[9px] w-full text-xs items-center flex"
-                                :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                :class="
+                                  darkMode ? 'text-gray-200' : 'text-black'
+                                "
                               >
                                 <div class="w-fit mx-auto flex items-center">
                                   <input
@@ -2262,24 +2046,6 @@ const submitDRSFormToGmailApproved = async () => {
                                     id="approvedByActionApproved"
                                     name="approvedByAction"
                                     @change="actionChecked()"
-                                    :disabled="
-                                      !(
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          filteredItems.approved_by_email ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          'president@lsu.edu.ph' ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminEmail ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo
-                                      )
-                                    "
                                   />
                                   <label
                                     class="ml-0.5"
@@ -2293,7 +2059,9 @@ const submitDRSFormToGmailApproved = async () => {
                               </div>
                               <div
                                 class="lg:shadow-lg lg:mt-0 mt-2 lg:pt-[8px] lg:pb-[9px] pb-2.5 w-full text-xs items-center flex"
-                                :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                :class="
+                                  darkMode ? 'text-gray-200' : 'text-black'
+                                "
                               >
                                 <div class="w-fit mx-auto flex items-center">
                                   <input
@@ -2304,24 +2072,6 @@ const submitDRSFormToGmailApproved = async () => {
                                     id="approvedByActionDisapproved"
                                     name="approvedByAction"
                                     @change="actionChecked()"
-                                    :disabled="
-                                      !(
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          filteredItems.approved_by_email ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          'president@lsu.edu.ph' ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminEmail ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo
-                                      )
-                                    "
                                   />
 
                                   <label
@@ -2336,7 +2086,9 @@ const submitDRSFormToGmailApproved = async () => {
                               </div>
                               <div
                                 class="lg:shadow-lg lg:mt-0 mt-2 lg:pt-[8px] lg:pb-[9px] pb-2.5 w-full text-xs items-center flex"
-                                :class="darkMode ? 'text-gray-200' : 'text-black'"
+                                :class="
+                                  darkMode ? 'text-gray-200' : 'text-black'
+                                "
                               >
                                 <div class="w-fit mx-auto flex items-center">
                                   <input
@@ -2347,24 +2099,6 @@ const submitDRSFormToGmailApproved = async () => {
                                     id="approvedByActionConditional"
                                     name="approvedByAction"
                                     @change="actionChecked()"
-                                    :disabled="
-                                      !(
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          filteredItems.approved_by_email ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() ===
-                                          'president@lsu.edu.ph' ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminEmail ||
-                                        user.value?.email
-                                          ?.trim()
-                                          .toLowerCase() === superAdminTwo
-                                      )
-                                    "
                                   />
 
                                   <label
@@ -2382,48 +2116,28 @@ const submitDRSFormToGmailApproved = async () => {
                           <div class="w-full mb-2 block">
                             <label
                               class="lg:text-xs text-[10px] pb-2 font-bold"
-                              :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                              :class="
+                                darkMode ? 'text-gray-300' : 'text-gray-900'
+                              "
                             >
                               Comments or Remarks
                             </label>
                             <textarea
                               type="text"
                               class="px-2 w-full border-b-2 border-t-0 border-x-0 shadow-lg py-2 rounded-sm lg:h-9 h-8 text-xs"
-                              :class="darkMode
-                                ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'"
+                              :class="
+                                darkMode
+                                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                  : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'
+                              "
                               placeholder="Comments or Remarks"
                               v-model="filteredItems.approved_by_remarks"
-                              :disabled="
-                                !(
-                                  user.value?.email?.trim().toLowerCase() ===
-                                    filteredItems.approved_by_email ||
-                                  user.value?.email?.trim().toLowerCase() ===
-                                    'president@lsu.edu.ph' ||
-                                  user.value?.email?.trim().toLowerCase() ===
-                                    superAdminEmail ||
-                                  user.value?.email?.trim().toLowerCase() ===
-                                    superAdminTwo
-                                )
-                              "
                             ></textarea>
                           </div>
                         </div>
                       </div>
 
                       <div
-                        v-if="
-                          user.value?.email?.trim().toLowerCase() ===
-                            'meredith.embuscado@lsu.edu.ph' ||
-                          user.value?.email?.trim().toLowerCase() ===
-                            superAdminTwo ||
-                          user.value?.email?.trim().toLowerCase() ===
-                            filteredItems.rmo_email ||
-                          user.value?.email?.trim().toLowerCase() ===
-                            superAdminEmail ||
-                          user.value?.email?.trim().toLowerCase() ===
-                            reviewed_by_email
-                        "
                         class="lg:flex lg:gap-x-2 gap-x-1 w-full shadow px-3 py-3 my-5"
                         :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                       >
@@ -2432,105 +2146,63 @@ const submitDRSFormToGmailApproved = async () => {
                             <div class="lg:w-6/12 w-full mb-2 block">
                               <label
                                 class="lg:text-xs text-[10px] pb-2 font-bold"
-                                :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                                :class="
+                                  darkMode ? 'text-gray-300' : 'text-gray-900'
+                                "
                               >
                                 Records Management Officer (RMO)
                               </label>
                               <input
                                 type="text"
                                 class="px-2 w-full border-b-2 border-t-0 border-x-0 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                :class="darkMode
-                                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                  : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'"
+                                :class="
+                                  darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                    : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'
+                                "
                                 placeholder="Records Management Officer (RMO)"
                                 v-model="filteredItems.rmo_name"
-                                :disabled="
-                                  !(
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      'meredith.embuscado@lsu.edu.ph' ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      'macristina.llauder@lsu.edu.ph' ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      filteredItems.rmo_email ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminEmail ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminTwo
-                                  )
-                                "
                               />
                             </div>
                             <div class="lg:w-4/12 w-full mb-2 block">
                               <label
                                 class="lg:text-xs text-[10px] pb-2 font-bold"
-                                :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                                :class="
+                                  darkMode ? 'text-gray-300' : 'text-gray-900'
+                                "
                               >
                                 Document Code
                               </label>
                               <input
                                 type="text"
                                 class="px-2 w-full border-b-2 border-t-0 border-x-0 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                :class="darkMode
-                                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                  : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'"
+                                :class="
+                                  darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                    : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'
+                                "
                                 placeholder="Document Code"
                                 v-model="filteredItems.document_code"
                                 required
-                                :disabled="
-                                  !(
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      'meredith.embuscado@lsu.edu.ph' ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      'macristina.llauder@lsu.edu.ph' ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      filteredItems.rmo_email ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminEmail ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminTwo
-                                  )
-                                "
                               />
                             </div>
 
-                            <div
-                              class="lg:w-5/12 w-full mb-2 block"
-                              :class="
-                                [
-                                  'meredith.embuscado@lsu.edu.ph',
-                                  'macristina.llauder@lsu.edu.ph',
-                                  filteredItems.rmo_email,
-                                  superAdminEmail,
-                                ].includes(user.value?.email)
-                                  ? ''
-                                  : 'hidden'
-                              "
-                            >
+                            <div class="lg:w-5/12 w-full mb-2 block">
                               <label
                                 class="lg:text-xs text-[10px] pb-2 font-bold"
-                                :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                                :class="
+                                  darkMode ? 'text-gray-300' : 'text-gray-900'
+                                "
                               >
                                 Effectivity Date
                               </label>
                               <div
                                 class="border-b-2 shadow-lg"
-                                :class="darkMode ? 'border-gray-600' : 'border-green-700'"
+                                :class="
+                                  darkMode
+                                    ? 'border-gray-600'
+                                    : 'border-green-700'
+                                "
                               >
                                 <VueDatePicker
                                   v-model="effectivityDate"
@@ -2550,36 +2222,22 @@ const submitDRSFormToGmailApproved = async () => {
                             <div class="w-full mb-2 block">
                               <label
                                 class="lg:text-xs text-[10px] pb-2 font-bold"
-                                :class="darkMode ? 'text-gray-300' : 'text-gray-900'"
+                                :class="
+                                  darkMode ? 'text-gray-300' : 'text-gray-900'
+                                "
                               >
                                 Other Comment and Remarks
                               </label>
                               <input
                                 type="text"
                                 class="px-2 w-full border-b-2 border-t-0 border-x-0 shadow-lg py-2 rounded-sm lg:h-9 h-8 text-xs"
-                                :class="darkMode
-                                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                  : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'"
+                                :class="
+                                  darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                                    : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'
+                                "
                                 placeholder="Other Comment and Remarks"
                                 v-model="filteredItems.other_comments_remarks"
-                                :disabled="
-                                  !(
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      'meredith.embuscado@lsu.edu.ph' ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminTwo ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() ===
-                                      filteredItems.rmo_email ||
-                                    user.value?.email
-                                      ?.trim()
-                                      .toLowerCase() === superAdminEmail
-                                  )
-                                "
                               />
                             </div>
                           </div>
@@ -2594,14 +2252,6 @@ const submitDRSFormToGmailApproved = async () => {
                     </div>
                     <div class="pb-5 lg:px-5 px-3 mb-5">
                       <div
-                        v-if="
-                          user.value?.email?.trim().toLowerCase() ===
-                            filteredItems.rmo_email ||
-                          user.value?.email?.trim().toLowerCase() ===
-                            superAdminEmail ||
-                          user.value?.email?.trim().toLowerCase() ===
-                            superAdminTwo
-                        "
                         class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
                         @click="updateData(filteredItems.id)"
                       >
@@ -2610,57 +2260,7 @@ const submitDRSFormToGmailApproved = async () => {
                           aria-hidden="true"
                         ></i>
                         Update
-                      </div>
-
-                      <div
-                        v-if="
-                          user.value?.email?.trim().toLowerCase() ===
-                            filteredItems.reviewed_by_email ||
-                          user.value?.email?.trim().toLowerCase() ===
-                            superAdminEmail
-                        "
-                        class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
-                        @click="updateReviewed(filteredItems.id)"
-                      >
-                        <i
-                          class="fa fa-paper-plane mr-2"
-                          aria-hidden="true"
-                        ></i>
-                        Reviewed
-                      </div>
-
-                      <div
-                        v-if="
-                          user.value?.email?.trim().toLowerCase() ===
-                            filteredItems.verified_by_email ||
-                          user.value?.email?.trim().toLowerCase() ===
-                            superAdminEmail
-                        "
-                        class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
-                        @click="updateVerified(filteredItems.id)"
-                      >
-                        <i
-                          class="fa fa-paper-plane mr-2"
-                          aria-hidden="true"
-                        ></i>
-                        Verified
-                      </div>
-
-                      <div
-                        v-if="
-                          user.value?.email?.trim().toLowerCase() ===
-                            filteredItems.approved_by_email ||
-                          user.value?.email?.trim().toLowerCase() ===
-                            superAdminEmail
-                        "
-                        class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
-                        @click="updateApproved(filteredItems.id)"
-                      >
-                        <i
-                          class="fa fa-paper-plane mr-2"
-                          aria-hidden="true"
-                        ></i>
-                        Approved
+                        <!-- Add Dynamic Text: Reviewed, Verified, Approved -->
                       </div>
                     </div>
                   </div>
@@ -2673,4 +2273,3 @@ const submitDRSFormToGmailApproved = async () => {
     </div>
   </div>
 </template>
-<style scoped></style>

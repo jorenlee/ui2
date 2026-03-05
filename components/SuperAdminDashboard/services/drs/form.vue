@@ -3,10 +3,14 @@ import _ from "lodash";
 import "./css/main.css";
 import moment from "moment";
 import { ref, computed } from "vue";
-import axios from "axios"; // For making HTTP requests
 import headOfficeJSON from "./head_office.json";
-const headOffice = ref(headOfficeJSON);
 
+/* ================= AUTH ================= */
+const { user, init } = useAuth();
+
+onMounted(() => { init();});
+
+const headOffice = ref(headOfficeJSON);
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 const formDisplay = ref(true);
@@ -14,6 +18,7 @@ const thankYouDisplay = ref(false);
 const submitCounter = ref(1);
 const dateToday = moment().format("MMMM DD, YYYY h:mm:ss A");
 const digitsNum = ref(0);
+const requireAllFields = ref(false);
 
 const documentTypeList = ref([
   "Manual",
@@ -24,16 +29,6 @@ const documentTypeList = ref([
   "MOA or MOU",
   "Portfolio",
 ]);
-
-/* ================= AUTH ================= */
-const { user, init } = useAuth();
-
-onMounted(() => {
-  init();
-});
-
-
-const requireAllFields = ref(false);
 
 const info = ref({
   originating_firstname: "",
