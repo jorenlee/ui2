@@ -6,6 +6,18 @@ import _ from "lodash";
 
 const props = defineProps({ darkMode: Boolean });
 const { user } = useAuth();
+
+// CSV download allowed emails
+const csvAllowedEmails = [
+  'meredith.embuscado@lsu.edu.ph',
+  'macristina.llauder@lsu.edu.ph',
+  'jorenlee.luna@lsu.edu.ph',
+];
+
+const canDownloadCSV = computed(() => {
+  return csvAllowedEmails.includes(user.value?.email);
+});
+
 const listItems = ref(null);
 const effectivityDate = ref(null);
 const config = useRuntimeConfig();
@@ -29,6 +41,8 @@ const selectedApproved = ref(false);
 const currentYear = computed(() => new Date().getFullYear());
 // Universal search
 const searchQuery = ref("");
+// Date sort order
+const dateSortOrder = ref("newest");
 
 const documentTypeList = ref([
   "All",
@@ -286,8 +300,14 @@ const filteredListItems = computed(() => {
     currentPage.value = 1;
   }
 
-  // Apply sorting
-  return _.orderBy(filteredItems, [sortColumn.value], [sortDirection.value]);
+  // Apply date sorting based on dateSortOrder
+  if (dateSortOrder.value === "newest") {
+    filteredItems = _.orderBy(filteredItems, ['id'], ['desc']);
+  } else if (dateSortOrder.value === "oldest") {
+    filteredItems = _.orderBy(filteredItems, ['id'], ['asc']);
+  }
+
+  return filteredItems;
 });
 let displayRevision = ref(null);
 const statusChange = () => {
@@ -707,16 +727,36 @@ const submitDRSFormToGmailApproved = async () => {
                   </div>
                 </div>
 
+                <!-- Date Sort Buttons -->
+                <div class="flex gap-2">
+                  <button
+                    @click="dateSortOrder = 'newest'"
+                    class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg"
+                    :class="dateSortOrder === 'newest'
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : darkMode
+                        ? 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-green-500'
+                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'"
+                  >
+                    <i class="fa fa-arrow-down"></i>
+                    <span class="hidden sm:inline">Newest</span>
+                  </button>
+                  <button
+                    @click="dateSortOrder = 'oldest'"
+                    class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg"
+                    :class="dateSortOrder === 'oldest'
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : darkMode
+                        ? 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-green-500'
+                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'"
+                  >
+                    <i class="fa fa-arrow-up"></i>
+                    <span class="hidden sm:inline">Oldest</span>
+                  </button>
+                </div>
+
                 <button
-                  :class="
-                    [
-                      'meredith.embuscado@lsu.edu.ph',
-                      'macristina.llauder@lsu.edu.ph',
-                      'jorenlee.luna@lsu.edu.ph',
-                    ].includes(user.value?.email)
-                      ? ''
-                      : 'hidden'
-                  "
+                  v-if="canDownloadCSV"
                   @click="downloadCSV"
                   class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
                   title="Download filtered data as CSV"
@@ -796,7 +836,7 @@ const submitDRSFormToGmailApproved = async () => {
                         <i v-else class="fa fa-sort ml-1"></i>
                       </div>
 
-                      <div class="w-4/12 mx-auto text-center py-1">Action</div>
+                      <div class="w-6/12 mx-auto text-center py-1">Action</div>
                     </div>
 
                     <div v-if="isLoading" class="text-center">
@@ -1059,10 +1099,22 @@ const submitDRSFormToGmailApproved = async () => {
                             </div>
 
                             <div
-                              class="w-4/12 flex items-center justify-center"
+                              class="w-6/12 flex items-center justify-end"
                               @click.stop
                             >
                               <div class="flex gap-x-2">
+                                               <button
+                                v-if="b.other_comments_remarks"
+                                  class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                  @click="goToEdit(b.id)"
+                                  title="Records Manager Comment"
+                                >
+                                  <i
+                                    class="fa fa-comment"
+                                    aria-hidden="true"
+                                  ></i>
+                                </button>
+
                                 <a
                                   v-if="b.document_attachment"
                                   :href="b.document_attachment"
@@ -1081,6 +1133,11 @@ const submitDRSFormToGmailApproved = async () => {
                                 >
                                   <i class="fab fa-google-drive"></i>
                                 </button>
+                                
+                                
+                 
+
+
                                 <button
                                   class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
                                   @click="goToEdit(b.id)"

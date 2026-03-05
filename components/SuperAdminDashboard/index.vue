@@ -149,6 +149,52 @@ onMounted(() => {
 // ---------------- MENU ----------------
 const subMenuList = [
   {
+    group: "Animo Run",
+    items: [
+      {
+        label: "Registration",
+        icon: "fa-running",
+        type: "button",
+        view: "AnimoRunRegistration",
+      },
+      {
+        label: "Status Checking",
+        icon: "fa-list",
+        type: "button",
+        view: "AnimoRunStatus",
+      },
+    ],
+  },
+    {
+    group: "Campus Pass",
+    allowedEmails: props.campusPassAdminEmails,
+    items: [
+      {
+        label: "Campus Pass Management",
+        icon: "fa-id-card",
+        type: "button",
+        view: "campusPass",
+      },
+    ],
+  },
+    {
+    group: "Commission on Election",
+    items: [
+      {
+        label: "Student Election Results",
+        icon: "fa-check",
+        type: "button",
+        view: "LSUCommissionOnElectionResults",
+      },
+      {
+        label: "Student Election Voting",
+        icon: "fa-list",
+        type: "button",
+        view: "LSUCommissionOnElectionVoting",
+      },
+    ],
+  },
+  {
     group: "Content Management",
     allowedEmails: props.contentWritersEmails,
     items: [
@@ -161,19 +207,43 @@ const subMenuList = [
       },
     ],
   },
-  {
-    group: "NPCC IT Services",
-    allowedEmails: props.npccMenuEmails,
+  
+    {
+    group: "Document Reviewer System",
+    allowedEmails: props.drsAdminEmails,
     items: [
       {
-        label: "NPCC Management",
-        icon: "fa-cogs",
+        label: "DRS List",
+        icon: "fa-list",
         type: "button",
-        view: "npcc",
+        view: "drsList",
+      },
+      {
+        label: "DRS Form",
+        icon: "fa-file-alt",
+        type: "button",
+        view: "drsForm",
       },
     ],
   },
-  {
+    {
+    group: "General Services Office",
+    items: [
+      {
+        label: "Venue Reservation",
+        icon: "fa-building",
+        type: "button",
+        view: "VenueReservation",
+      },
+      {
+        label: "Vehicle Reservation",
+        icon: "fa-car",
+        type: "button",
+        view: "VehicleReservation",
+      },
+    ],
+  },
+    {
     group: "Human Resource",
     allowedEmails: props.hrMenuEmails,
     items: [
@@ -191,7 +261,19 @@ const subMenuList = [
       // },
     ],
   },
+  
   {
+    group: "IT Services Feedback",
+    items: [
+      {
+        label: "IT Services Feedback",
+        icon: "fa-list",
+        type: "button",
+        view: "ITServicesFeedback",
+      },
+    ],
+  },
+    {
     group: "Library Management",
     allowedEmails: props.libraryMenuEmails,
     items: [
@@ -216,6 +298,20 @@ const subMenuList = [
     ],
   },
   {
+    group: "NPCC IT Services",
+    allowedEmails: props.npccMenuEmails,
+    items: [
+      {
+        label: "NPCC Management",
+        icon: "fa-cogs",
+        type: "button",
+        view: "npcc",
+      },
+    ],
+  },
+
+
+  {
     group: "Office of The Chancellor",
     allowedEmails: props.ochAdminEmails,
     items: [
@@ -224,6 +320,17 @@ const subMenuList = [
         icon: "fa-calendar",
         type: "button",
         view: "universityCalendar",
+      },
+    ],
+  },
+    {
+    group: "Safety and Security Center",
+    items: [
+      {
+        label: "Borrow Office Keys",
+        icon: "fa-key",
+        type: "button",
+        view: "BorrowOfficeKeys",
       },
     ],
   },
@@ -239,109 +346,11 @@ const subMenuList = [
       },
     ],
   },
-  {
-    group: "Campus Pass",
-    allowedEmails: props.campusPassAdminEmails,
-    items: [
-      {
-        label: "Campus Pass Management",
-        icon: "fa-id-card",
-        type: "button",
-        view: "campusPass",
-      },
-    ],
-  },
-  {
-    group: "Document Reviewer System",
-    allowedEmails: props.drsAdminEmails,
-    items: [
-      {
-        label: "DRS List",
-        icon: "fa-list",
-        type: "button",
-        view: "drsList",
-      },
-      {
-        label: "DRS Form",
-        icon: "fa-file-alt",
-        type: "button",
-        view: "drsForm",
-      },
-    ],
-  },
-  {
-    group: "IT Services Feedback",
-    items: [
-      {
-        label: "IT Services Feedback",
-        icon: "fa-list",
-        type: "button",
-        view: "ITServicesFeedback",
-      },
-    ],
-  },
-  {
-    group: "Animo Run",
-    items: [
-      {
-        label: "Registration",
-        icon: "fa-running",
-        type: "button",
-        view: "AnimoRunRegistration",
-      },
-      {
-        label: "Status Checking",
-        icon: "fa-list",
-        type: "button",
-        view: "AnimoRunStatus",
-      },
-    ],
-  },
-  {
-    group: "Commission on Election",
-    items: [
-      {
-        label: "Student Election Results",
-        icon: "fa-check",
-        type: "button",
-        view: "LSUCommissionOnElectionResults",
-      },
-      {
-        label: "Student Election Voting",
-        icon: "fa-list",
-        type: "button",
-        view: "LSUCommissionOnElectionVoting",
-      },
-    ],
-  },
-  {
-    group: "General Services Office",
-    items: [
-      {
-        label: "Venue Reservation",
-        icon: "fa-building",
-        type: "button",
-        view: "VenueReservation",
-      },
-      {
-        label: "Vehicle Reservation",
-        icon: "fa-car",
-        type: "button",
-        view: "VehicleReservation",
-      },
-    ],
-  },
-  {
-    group: "Safety and Security Center",
-    items: [
-      {
-        label: "Borrow Office Keys",
-        icon: "fa-key",
-        type: "button",
-        view: "BorrowOfficeKeys",
-      },
-    ],
-  },
+
+
+
+
+
   {
     group: "External Links",
     items: [
