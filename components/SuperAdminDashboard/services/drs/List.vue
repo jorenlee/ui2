@@ -1703,7 +1703,7 @@ const submitDRSFormToGmailApproved = async () => {
                                 darkMode ? 'text-gray-300' : 'text-gray-900'
                               "
                             >
-                              Direct Head
+                              Verified By
                             </label>
                             <div class="w-full">
                               <div class="text-center flex">
@@ -1872,7 +1872,7 @@ const submitDRSFormToGmailApproved = async () => {
                                 darkMode ? 'text-gray-300' : 'text-gray-900'
                               "
                             >
-                              Chancellor
+                             Recommending Approval
                             </label>
                             <div class="w-full">
                               <div class="text-center flex">
@@ -2041,7 +2041,7 @@ const submitDRSFormToGmailApproved = async () => {
                                 darkMode ? 'text-gray-300' : 'text-gray-900'
                               "
                             >
-                              President
+                              Approved By
                             </label>
                             <div class="w-full">
                               <div class="text-center flex">
