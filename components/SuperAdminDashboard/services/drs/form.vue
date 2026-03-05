@@ -34,7 +34,7 @@ const info = ref({
   originating_firstname: "",
   originating_middlename: "-",
   originating_lastname: "",
-  originating_office: "Originating Office",
+  originating_office: "Head Office Reviewer",
   originating_email: user.value?.email,
   document_title: "",
   status: "",
@@ -90,7 +90,7 @@ const submitForm = async () => {
   if (listItems.length === 0) {
     info.value.tracking_id = "DRS-" + moment().year() + "-001";
     postAPI();
-  } else if (info.value.originating_office === "Originating Office") {
+  } else if (info.value.originating_office === "Head Office Reviewer") {
     requireAllFields.value = true;
     setTimeout(() => {
       requireAllFields.value = false;
@@ -255,11 +255,11 @@ const submitDRSFormToGmail = async () => {
                                   @change="updateReviewedByName"
                                 >
                                   <option
-                                    value="Originating Office"
+                                    value="Head Office Reviewer"
                                     disabled
                                     selected
                                   >
-                                    Originating Office
+                                    Head Office Reviewer
                                   </option>
                                   <option
                                     :value="j.designation"

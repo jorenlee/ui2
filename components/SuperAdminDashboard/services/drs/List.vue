@@ -611,35 +611,7 @@ const submitDRSFormToGmailApproved = async () => {
                       >
                     </label>
 
-                    <label
-                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
-                      :class="[
-                        selectedReviewed
-                          ? 'bg-green-700 text-white border-green-700'
-                          : darkMode
-                            ? 'bg-gray-800 text-green-400 border-gray-700 hover:bg-green-700 hover:text-white hover:border-green-700'
-                            : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300',
-                      ]"
-                      for="checkboxReviewed"
-                    >
-                      <input
-                        type="checkbox"
-                        id="checkboxReviewed"
-                        class="mr-2 w-4 h-4 accent-green-600"
-                        value="Approved"
-                        v-model="selectedReviewed"
-                      />
-                      Reviewed
-                      <span
-                        class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
-                        :class="
-                          selectedReviewed
-                            ? 'bg-green-600 text-white'
-                            : 'bg-green-100 text-green-800'
-                        "
-                        >{{ reviewedLength }}</span
-                      >
-                    </label>
+
 
                     <label
                       class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
