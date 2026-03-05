@@ -616,30 +616,30 @@ const submitDRSFormToGmailApproved = async () => {
                     <label
                       class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
                       :class="[
-                        selectedVerified
+                        selectedReviewed
                           ? 'bg-green-700 text-white border-green-700'
                           : darkMode
                             ? 'bg-gray-800 text-green-400 border-gray-700 hover:bg-green-700 hover:text-white hover:border-green-700'
                             : 'bg-white text-green-700 border-green-200 hover:bg-green-50 hover:border-green-300',
                       ]"
-                      for="checkboxVerified"
+                      for="checkboxReviewed"
                     >
                       <input
                         type="checkbox"
-                        id="checkboxVerified"
+                        id="checkboxReviewed"
                         class="mr-2 w-4 h-4 accent-green-600"
-                        value="Approved"
-                        v-model="selectedVerified"
+                        value="Reviewed"
+                        v-model="selectedReviewed"
                       />
-                      Verified
+                      Reviewed
                       <span
                         class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
                         :class="
-                          selectedVerified
+                          selectedReviewed
                             ? 'bg-green-600 text-white'
                             : 'bg-green-100 text-green-800'
                         "
-                        >{{ verifiedLength }}</span
+                        >{{ reviewedLength }}</span
                       >
                     </label>
 
@@ -1665,7 +1665,7 @@ const submitDRSFormToGmailApproved = async () => {
                     <div class="px-2">
                       <div class="lg:flex gap-x-5">
                         <div
-                          class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
+                          class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5 hidden"
                           :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                         >
                           <div class="w-full mb-2 block">
@@ -1834,7 +1834,7 @@ const submitDRSFormToGmailApproved = async () => {
                           </div>
                         </div>
                         <div
-                          class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5 hidden"
+                          class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
                           :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                         >
                           <div class="w-full mb-2 block">
@@ -1844,7 +1844,7 @@ const submitDRSFormToGmailApproved = async () => {
                                 darkMode ? 'text-gray-300' : 'text-gray-900'
                               "
                             >
-                             Recommending Approval
+                             Reviewed By
                             </label>
                             <div class="w-full">
                               <div class="text-center flex">
