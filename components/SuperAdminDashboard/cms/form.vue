@@ -1432,19 +1432,6 @@ const displayToast = (message, type = "success", duration = 3000) => {
   @apply border p-2 rounded w-full text-xs;
 }
 
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.3s ease;
-}
-.slide-fade-enter-from {
-  transform: translateX(10px);
-  opacity: 0;
-}
-.slide-fade-leave-to {
-  transform: translateX(10px);
-  opacity: 0;
-}
-
 /* Drag and drop styles */
 .cursor-move {
   cursor: move;

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, resolveComponent } from "vue";
 import { useRouter } from "vue-router";
 
 // ---------------- DARK MODE ----------------
@@ -53,7 +53,7 @@ const openGroups = ref([
   "NPCC IT Services",
   "University Registrar",
   "Campus Pass",
-  "Document Reviewer",
+  "Document Reviewer System",
   "IT Services Feedback",
   "Commission on Election",
   "External Links",
@@ -113,6 +113,34 @@ const handleContentSubmitted = () => {
   currentView.value = "list";
 };
 
+// ---------------- VIEW CONFIGURATION ----------------
+const currentViewConfig = computed(() => {
+  const config = {
+    form: { component: resolveComponent('SuperAdminDashboardCmsForm'), class: 'p-4 pb-52', props: { onContentSubmitted: handleContentSubmitted } },
+    list: { component: resolveComponent('SuperAdminDashboardCmsList'), class: 'p-4 pb-32' },
+    appointments: { component: resolveComponent('SuperAdminDashboardServicesLibraryReserved'), class: 'pb-32' },
+    books: { component: resolveComponent('SuperAdminDashboardServicesLibraryBooks'), class: 'pb-32' },
+    schedules: { component: resolveComponent('SuperAdminDashboardServicesLibrarySchedules'), class: 'pb-24' },
+    hrJobVacancyList: { component: resolveComponent('SuperAdminDashboardServicesHr'), class: 'p-4 pb-32' },
+    hrRaffle: { component: resolveComponent('SuperAdminDashboardServicesHrRaffle'), class: 'p-4 pb-32' },
+    universityCalendar: { component: resolveComponent('SuperAdminDashboardChancellorOffice'), class: 'p-4 pb-32' },
+    npcc: { component: resolveComponent('SuperAdminDashboardServicesIt'), class: 'px-2 pb-32' },
+    registrar: { component: resolveComponent('SuperAdminDashboardServicesRegistrar'), class: 'pb-32' },
+    campusPass: { component: resolveComponent('SuperAdminDashboardServicesCampusPass'), class: 'pb-32' },
+    drsList: { component: resolveComponent('SuperAdminDashboardServicesDrsList'), class: 'pb-32' },
+    drsForm: { component: resolveComponent('SuperAdminDashboardServicesDrsForm'), class: 'pb-20' },
+    ITServicesFeedback: { component: resolveComponent('UniversityPortalITServicesList'), class: 'pb-32' },
+    BorrowOfficeKeys: { component: resolveComponent('ComingSoon'), class: '' },
+    VehicleReservation: { component: resolveComponent('ComingSoon'), class: '' },
+    VenueReservation: { component: resolveComponent('ComingSoon'), class: '' },
+    LSUCommissionOnElectionVoting: { component: resolveComponent('ComingSoon'), class: '' },
+    LSUCommissionOnElectionResults: { component: resolveComponent('ComingSoon'), class: '' },
+    AnimoRunStatus: { component: resolveComponent('ComingSoon'), class: '' },
+    AnimoRunRegistration: { component: resolveComponent('ComingSoon'), class: '' },
+  };
+  return config[currentView.value];
+});
+
 // ---------------- LIFECYCLE ----------------
 onMounted(() => {
   if (!isLoggedIn.value) router.replace("/login");
@@ -153,13 +181,13 @@ const subMenuList = [
         label: "Human Resource Analytics",
         icon: "fa-list-alt",
         type: "button",
-        view: "hr-job-vacancy-list",
+        view: "hrJobVacancyList",
       },
       // {
       //   label: "Raffle Draw",
       //   icon: "fa-list-alt",
       //   type: "button",
-      //   view: "hr-raffle",
+      //   view: "hrRaffle",
       // },
     ],
   },
@@ -195,7 +223,7 @@ const subMenuList = [
         label: "University Calendar",
         icon: "fa-calendar",
         type: "button",
-        view: "university-calendar",
+        view: "universityCalendar",
       },
     ],
   },
@@ -224,14 +252,20 @@ const subMenuList = [
     ],
   },
   {
-    group: "Document Reviewer",
+    group: "Document Reviewer System",
     allowedEmails: props.drsAdminEmails,
     items: [
       {
-        label: "Document Reviewer System",
+        label: "DRS List",
+        icon: "fa-list",
+        type: "button",
+        view: "drsList",
+      },
+      {
+        label: "DRS Form",
         icon: "fa-file-alt",
         type: "button",
-        view: "drs",
+        view: "drsForm",
       },
     ],
   },
@@ -323,8 +357,7 @@ const subMenuList = [
 
 const menuList = [
   { label: "Menu", icon: "fa-bars", type: "button", view: "Menu" },
-  { label: "Search", icon: "fa-search", type: "button", view: "Search" },
-  { label: "Profile", icon: "fa-user", type: "button", view: "Profile" },
+  { label: "Settings", icon: "fa-cog", type: "button", view: "Settings" },
   { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
 ];
 
@@ -363,147 +396,41 @@ const handleMenuClick = (menu) => {
 </script>
 
 <template>
-  <div
-    :class="[
-      darkMode ? 'bg-gray-800 text-white' : 'bg-gray-50 text-gray-900',
-      'min-h-screen transition-colors duration-300',
-    ]"
-  >
-    <ToggleDarkLightMode
-      :darkMode="darkMode"
-      @toggle-dark-mode="toggleDarkMode"
-    />
+  <div :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'">
     <!-- LOGOUT CONFIRMATION -->
-    <div
-      v-if="currentView === 'Logout'"
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-    >
-      <div
-        class="w-full rounded-3xl p-8 text-center shadow-2xl transform transition-all max-w-md"
-        :class="darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white'"
-      >
-        <!-- Icon with Animation -->
-        <div
-          class="mx-auto mb-6 w-20 h-20 flex items-center justify-center rounded-full bg-gradient-to-br from-red-500 to-rose-600 shadow-lg shadow-red-500/30"
-        >
-          <i class="fa fa-sign-out text-3xl text-white"></i>
-        </div>
-
-        <!-- Title -->
-        <h3
-          class="text-2xl font-bold mb-2"
-          :class="darkMode ? 'text-gray-100' : 'text-gray-900'"
-        >
-          Logout Confirmation
-        </h3>
-
-        <!-- Description -->
-        <p class="mb-8" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
-          Are you sure you want to log out of your account?
-        </p>
-
-        <!-- Actions -->
-        <div class="flex gap-3 justify-center">
-          <button
-            @click="currentView = 'Profile'"
-            class="flex-1 px-6 py-3 text-sm font-semibold rounded-xl border-2 transition-all duration-300"
-            :class="
-              darkMode
-                ? 'border-gray-600 hover:border-gray-500 hover:bg-gray-700 text-gray-300'
-                : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50 text-gray-700'
-            "
-          >
-            Cancel
-          </button>
-          <button
-            @click="logOut"
-            class="flex-1 px-6 py-3 text-sm font-semibold rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-600 hover:to-rose-700 shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 transition-all duration-300 flex items-center justify-center gap-2"
-          >
-            <i class="fa fa-sign-out"></i>
-            Logout
-          </button>
-        </div>
-      </div>
-    </div>
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->
-      <div
-        class="w-full" :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'">
+      <div class="w-full">
         <!-- CONTENT AREA -->
         <div class="overflow-y-auto">
-          <div v-if="currentView === 'Profile'" class="w-full p-4">
-            <SuperAdminDashboardWelcome :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'Menu'" class="lg:px-6 px-3 pt-6 pb-80">
-            <SuperAdminDashboardWelcome :darkMode="darkMode" />
-            <SuperAdminDashboardMenuList
-              :filteredMenuList="filteredMenuList"
+          <!-- Dynamic Component Rendering -->
+          <div v-if="currentViewConfig" :class="currentViewConfig.class">
+            <component
+              :is="currentViewConfig.component"
               :darkMode="darkMode"
-              :currentView="currentView"
-              :defaultOpenGroups="openGroups"
-              @menu-click="handleMenuClick"
+              v-bind="currentViewConfig.props || {}"
             />
           </div>
-          <div v-if="currentView === 'form'" class="p-4 pb-52">
-            <SuperAdminDashboardCmsForm @contentSubmitted="handleContentSubmitted" :darkMode="darkMode"/>
-          </div>
-          <div v-if="currentView === 'list'" class="p-4 pb-32">
-            <SuperAdminDashboardCmsList :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'appointments'" class="pb-32">
-            <SuperAdminDashboardServicesLibraryReserved :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'books'" class="pb-32">
-            <SuperAdminDashboardServicesLibraryBooks :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'schedules'" class="pb-24">
-            <SuperAdminDashboardServicesLibrarySchedules :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'hr-job-vacancy-list'" class="p-4 pb-32">
-            <SuperAdminDashboardServicesHr :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'hr-raffle'" class="p-4 pb-32">
-            <SuperAdminDashboardServicesHrRaffle :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'university-calendar'" class="p-4 pb-32">
-            <SuperAdminDashboardChancellorOffice :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'npcc'" class="px-2 pb-32">
-            <SuperAdminDashboardServicesIt :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'registrar'" class="pb-32">
-            <SuperAdminDashboardServicesRegistrar :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'campusPass'" class="pb-32">
-            <SuperAdminDashboardServicesCampusPass :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'drs'" class="pb-32">
-            <SuperAdminDashboardServicesDrs :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'ITServicesFeedback'" class="pb-32">
-            <UniversityPortalITServicesList :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'BorrowOfficeKeys'">
-            <ComingSoon :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'VehicleReservation'">
-            <ComingSoon :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'VenueReservation'">
-            <ComingSoon :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'LSUCommissionOnElectionVoting'">
-            <ComingSoon :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'LSUCommissionOnElectionResults'">
-            <ComingSoon :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'AnimoRunStatus'">
-            <ComingSoon :darkMode="darkMode" />
-          </div>
-          <div v-if="currentView === 'AnimoRunRegistration'">
-            <ComingSoon :darkMode="darkMode" />
-          </div>
+        </div>
+        <div v-if="currentView === 'Menu'" class="lg:px-6 px-3 pt-6 pb-80">
+          <SuperAdminDashboardWelcome :darkMode="darkMode" />
+          <SuperAdminDashboardMenuList
+            :filteredMenuList="filteredMenuList"
+            :darkMode="darkMode"
+            :currentView="currentView"
+            :defaultOpenGroups="openGroups"
+            @menu-click="handleMenuClick"
+          />
+        </div>
+        <div v-if="currentView === 'Settings'" class="w-full p-4">
+          <SuperAdminDashboardWelcome :darkMode="darkMode" />
+          <ToggleDarkLightMode
+            :darkMode="darkMode"
+            @toggle-dark-mode="toggleDarkMode"
+          />
+        </div>
+        <div v-if="currentView === 'Logout'">
+          <Logout :darkMode="darkMode" @confirm="logOut" @cancel="currentView = 'Menu'" />
         </div>
         <SuperAdminDashboardNavigation
           :darkMode="darkMode"
@@ -518,18 +445,6 @@ const handleMenuClick = (menu) => {
 </template>
 
 <style scoped>
-/* Slide Fade Animation for Menu Groups */
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.25s ease;
-}
-
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-5px);
-}
-
 /* Smooth Theme Transition */
 :global(.theme-transition),
 :global(.theme-transition *) {

@@ -25,6 +25,14 @@ const documentTypeList = ref([
   "Portfolio",
 ]);
 
+/* ================= AUTH ================= */
+const { user, init } = useAuth();
+
+onMounted(() => {
+  init();
+});
+
+
 const requireAllFields = ref(false);
 
 const info = ref({
@@ -32,7 +40,7 @@ const info = ref({
   originating_middlename: "-",
   originating_lastname: "",
   originating_office: "Originating Office",
-  originating_email: "",
+  originating_email: user.value?.email,
   document_title: "",
   status: "",
   revision_number: "",
@@ -238,7 +246,7 @@ const submitDRSFormToGmail = async () => {
                                 class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
                               >
                                 <div class="w-fit lg:ml-auto pr-5">
-                                  Head Office
+                                  Head Office Reviewer
                                   <span class="text-red-600 font-normal text-sm"
                                     >*</span
                                   >
@@ -269,37 +277,7 @@ const submitDRSFormToGmail = async () => {
                               </div>
                             </div>
 
-                            <div class="lg:flex items-center w-full mb-2">
-                              <label
-                                class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                              >
-                                <div class="w-fit lg:ml-auto pr-5">
-                                  Originating Email
-                                  <span class="text-red-600 font-normal text-sm"
-                                    >*</span
-                                  >
-                                </div>
-                              </label>
-                              <div class="w-full">
-                                <input
-                                  type="email"
-                                  id="email"
-                                  class="px-2 lg:w-8/12 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                  placeholder="e.g. user.name@lsu.edu.ph"
-                                  v-model="info.originating_email"
-                                  required
-                                  title="Please enter a valid LSU email address (e.g., user.name@lsu.edu.ph)"
-                                />
 
-                                <!-- pattern="^[a-zA-Z0-9._-]+@lsu\.edu\.ph$" -->
-                                <p
-                                  v-if="invalidLSUEmail"
-                                  class="text-xs text-red-700 mt-2 px-1"
-                                >
-                                  Invalid LSU email address.
-                                </p>
-                              </div>
-                            </div>
 
                             <div class="lg:flex items-center w-full mb-2">
                               <label
@@ -412,6 +390,38 @@ const submitDRSFormToGmail = async () => {
                                 </div>
                               </div>
                             </div>
+                            <div class="w-full mb-2 hidden">
+                              <label
+                                class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
+                              >
+                                <div class="w-fit lg:ml-auto pr-5">
+                                  Originating Email
+                                  <span class="text-red-600 font-normal text-sm"
+                                    >*</span
+                                  >
+                                </div>
+                              </label>
+                              <div class="w-full">
+                                <input
+                                  :disabled="true"
+                                  type="email"
+                                  id="email"
+                                  class="px-2 lg:w-8/12 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
+                                  placeholder="e.g. user.name@lsu.edu.ph"
+                                  v-model="info.originating_email"
+                                  required
+                                  title="Please enter a valid LSU email address (e.g., user.name@lsu.edu.ph)"
+                                />
+
+                                <!-- pattern="^[a-zA-Z0-9._-]+@lsu\.edu\.ph$" -->
+                                <p
+                                  v-if="invalidLSUEmail"
+                                  class="text-xs text-red-700 mt-2 px-1"
+                                >
+                                  Invalid LSU email address.
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         <div class="w-fit mx-auto my-5">
@@ -437,7 +447,7 @@ const submitDRSFormToGmail = async () => {
                           <div
                             class="border-t-2 border-black text-center text-xs py-1"
                           >
-                            Originator’s Printed Name
+                            Originator’s Printed Name (E-Signature)
                           </div>
                         </div>
                       </div>
