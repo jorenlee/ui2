@@ -1665,7 +1665,7 @@ const submitDRSFormToGmailApproved = async () => {
                     <div class="px-2">
                       <div class="lg:flex gap-x-5">
                         <div
-                          class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5 hidden"
+                          class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
                           :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                         >
                           <div class="w-full mb-2 block">
@@ -1675,7 +1675,7 @@ const submitDRSFormToGmailApproved = async () => {
                                 darkMode ? 'text-gray-300' : 'text-gray-900'
                               "
                             >
-                              Verified By
+                              Reviewed By
                             </label>
                             <div class="w-full">
                               <div class="text-center flex">
@@ -1834,7 +1834,7 @@ const submitDRSFormToGmailApproved = async () => {
                           </div>
                         </div>
                         <div
-                          class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5"
+                          class="lg:gap-x-10 gap-x-1 w-full shadow lg:px-5 px-3 py-3 my-5 hidden"
                           :class="darkMode ? 'bg-gray-800' : 'bg-white'"
                         >
                           <div class="w-full mb-2 block">
