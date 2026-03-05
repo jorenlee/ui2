@@ -989,7 +989,7 @@ const submitDRSFormToGmailApproved = async () => {
                                   {{ b.document_title }}
                                 </div>
                                 <div
-                                  class="text-xs mt-1"
+                                  class="text-xs"
                                   :class="
                                     darkMode ? 'text-white' : 'text-gray-900'
                                   "
@@ -1005,6 +1005,15 @@ const submitDRSFormToGmailApproved = async () => {
                                     class="font-mono"
                                     >{{ b.document_code }}</span
                                   >
+                              
+                                </div>
+                                <div
+                                  class="text-xs"
+                                  :class="
+                                    darkMode ? 'text-white' : 'text-gray-900'
+                                  "
+                                >
+ 
                                   <span
                                     class="font-mono"
                                     :class="
@@ -1031,7 +1040,7 @@ const submitDRSFormToGmailApproved = async () => {
                                   </span>
                                   <span
                                     v-if="b.revision_number"
-                                    class="ml-1 mr-2 text-xs"
+                                    class="ml-1 text-xs"
                                     :class="
                                       darkMode ? 'text-white' : 'text-gray-900'
                                     "
