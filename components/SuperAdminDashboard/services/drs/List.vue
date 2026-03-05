@@ -1031,15 +1031,15 @@ const submitDRSFormToGmailApproved = async () => {
                                   </span>
                                   <span
                                     v-if="b.revision_number"
-                                    class="ml-1 text-xs"
+                                    class="ml-1 mr-2 text-xs"
                                     :class="
                                       darkMode ? 'text-white' : 'text-gray-900'
                                     "
-                                    >No. {{ b.revision_number }}</span
+                                    >No.{{ b.revision_number }}</span
                                   >
                                 </div>
                                 <div
-                                  class="mt-1 text-gray-700"
+                                  class="mt-1 text-gray-700 ml-2"
                                   :class="
                                     darkMode ? 'text-white' : 'text-gray-900'
                                   "
