@@ -23,28 +23,28 @@
         </h1>
 
         <!-- Subtitle -->
-        <p class="text-white/80 lg:mt-4 mt-2 lg:text-lg animate-slide-up delay-200">
+        <p class="text-white/80 lg:mt-4 mt-2 lg:text-lg animate-slide-up delay-200 tracking-tighter whitespace-nowrap">
           We're building something amazing for you.
         </p>
 
         <!-- Countdown -->
         <div class="grid lg:grid-cols-4 grid-cols-2 gap-4 mt-8 text-white animate-slide-up delay-300">
-          <div class="count-box">
+          <div class="border bg-[#ffffff2d] rounded-xl px-3 py-4">
             <p class="text-3xl font-bold">{{ days }}</p>
             <p class="text-sm opacity-70">Days</p>
           </div>
 
-          <div class="count-box">
+          <div class="border bg-[#ffffff2d] rounded-xl px-3 py-4"">
             <p class="text-3xl font-bold">{{ hours }}</p>
             <p class="text-sm opacity-70">Hours</p>
           </div>
 
-          <div class="count-box">
+          <div class="border bg-[#ffffff2d] rounded-xl px-3 py-4"">
             <p class="text-3xl font-bold">{{ minutes }}</p>
             <p class="text-sm opacity-70">Minutes</p>
           </div>
 
-          <div class="count-box">
+          <div class="border bg-[#ffffff2d] rounded-xl px-3 py-4"">
             <p class="text-3xl font-bold">{{ seconds }}</p>
             <p class="text-sm opacity-70">Seconds</p>
           </div>
@@ -156,15 +156,6 @@ onUnmounted(() => {
 
 .animate-slide-up {
   animation: slideUp 1s ease forwards;
-}
-
-/* Countdown Box */
-.count-box {
-  background: rgba(255,255,255,0.1);
-  backdrop-filter: blur(10px);
-  padding: 15px;
-  border-radius: 15px;
-  border: 1px solid rgba(255,255,255,0.2);
 }
 
 </style>
