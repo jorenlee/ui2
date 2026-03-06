@@ -2,19 +2,19 @@
   "userRoles": [
     {
       "email": "npc@lsu.edu.ph",
-      "roles": ["superAdmin", "npccMenu"]
+      "roles": ["superAdmin"]
     },
     {
       "email": "jorenlee.luna@lsu.edu.ph",
-      "roles": ["superAdmin", "npccMenu"]
+      "roles": ["superAdmin"]
     },
     {
       "email": "michaeljohn.puertogalera@lsu.edu.ph",
-      "roles": ["superAdmin", "npccMenu"]
+      "roles": ["superAdmin"]
     },
     {
       "email": "jason.yap@lsu.edu.ph",
-      "roles": ["superAdmin", "npccMenu"]
+      "roles": ["superAdmin"]
     },
     {
       "email": "johny14_gonzaga@lsu.edu.ph",
