@@ -9,9 +9,9 @@ const { user } = useAuth();
 
 // CSV download allowed emails
 const drsAdminEmails = [
-  'meredith.embuscado@lsu.edu.ph',
-  'macristina.llauder@lsu.edu.ph',
-  'jorenlee.luna@lsu.edu.ph',
+  "meredith.embuscado@lsu.edu.ph",
+  "macristina.llauder@lsu.edu.ph",
+  "jorenlee.luna@lsu.edu.ph",
 ];
 
 const drsAdmins = computed(() => {
@@ -123,23 +123,12 @@ const fetchListItems = async () => {
     // User-specific configurations
     const userEmail = user.value?.email;
 
-    if (adminEmails.includes(userEmail)) {
-      selectedAll.value = true;
-      setPagination(filteredItems.length);
-    } else if (userEmail === "jorenlee.luna@lsu.edu.ph") {
-      selectedReviewed.value = true;
-      setPagination(filteredItems.length);
-    } else if (userEmail === "jason.yap@lsu.edu.ph") {
-      selectedVerified.value = true;
-      setPagination(filteredItems.length);
-    } else {
-      selectedAll.value = false;
-      selectedOriginatingOffice.value = filteredItems[0]?.originating_office;
-      unitOfficeSelectedTotalLength.value = filteredItems.length;
-      documentTypeSelectedTotalLength.value = 0;
-      statusSelectedTotalLength.value = 0;
-      setPagination(filteredItems.length);
-    }
+    selectedAll.value = false;
+    selectedOriginatingOffice.value = filteredItems[0]?.originating_office;
+    unitOfficeSelectedTotalLength.value = filteredItems.length;
+    documentTypeSelectedTotalLength.value = 0;
+    statusSelectedTotalLength.value = 0;
+    setPagination(filteredItems.length);
   } catch (error) {
     console.error("Error fetching list items:", error);
   } finally {
@@ -302,9 +291,9 @@ const filteredListItems = computed(() => {
 
   // Apply date sorting based on dateSortOrder
   if (dateSortOrder.value === "newest") {
-    filteredItems = _.orderBy(filteredItems, ['id'], ['desc']);
+    filteredItems = _.orderBy(filteredItems, ["id"], ["desc"]);
   } else if (dateSortOrder.value === "oldest") {
-    filteredItems = _.orderBy(filteredItems, ['id'], ['asc']);
+    filteredItems = _.orderBy(filteredItems, ["id"], ["asc"]);
   }
 
   return filteredItems;
@@ -471,7 +460,6 @@ const submitDRSFormToGmailRMO = async () => {
     console.log("Details Updated");
   });
 };
-
 </script>
 <template>
   <div>
@@ -520,8 +508,6 @@ const submitDRSFormToGmailRMO = async () => {
                         >{{ listItems.length }}</span
                       >
                     </label>
-
-
 
                     <label
                       class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
@@ -614,11 +600,13 @@ const submitDRSFormToGmailRMO = async () => {
                   <button
                     @click="dateSortOrder = 'newest'"
                     class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg"
-                    :class="dateSortOrder === 'newest'
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : darkMode
-                        ? 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-green-500'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'"
+                    :class="
+                      dateSortOrder === 'newest'
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : darkMode
+                          ? 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-green-500'
+                          : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'
+                    "
                   >
                     <i class="fa fa-arrow-down"></i>
                     <span class="hidden sm:inline">Newest</span>
@@ -626,11 +614,13 @@ const submitDRSFormToGmailRMO = async () => {
                   <button
                     @click="dateSortOrder = 'oldest'"
                     class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg"
-                    :class="dateSortOrder === 'oldest'
-                      ? 'bg-green-600 text-white hover:bg-green-700'
-                      : darkMode
-                        ? 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-green-500'
-                        : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'"
+                    :class="
+                      dateSortOrder === 'oldest'
+                        ? 'bg-green-600 text-white hover:bg-green-700'
+                        : darkMode
+                          ? 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-green-500'
+                          : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'
+                    "
                   >
                     <i class="fa fa-arrow-up"></i>
                     <span class="hidden sm:inline">Oldest</span>
@@ -718,7 +708,12 @@ const submitDRSFormToGmailRMO = async () => {
                         <i v-else class="fa fa-sort ml-1"></i>
                       </div>
 
-                      <div class="w-6/12 mx-auto text-center py-1"   v-if="drsAdmins">Action</div>
+                      <div
+                        class="w-6/12 mx-auto text-center py-1"
+                        v-if="drsAdmins"
+                      >
+                        Action
+                      </div>
                     </div>
 
                     <div v-if="isLoading" class="text-center">
@@ -927,7 +922,6 @@ const submitDRSFormToGmailRMO = async () => {
                                     class="font-mono"
                                     >{{ b.document_code }}</span
                                   >
-                              
                                 </div>
                                 <div
                                   class="text-xs"
@@ -935,7 +929,6 @@ const submitDRSFormToGmailRMO = async () => {
                                     darkMode ? 'text-white' : 'text-gray-900'
                                   "
                                 >
- 
                                   <span
                                     class="font-mono"
                                     :class="
@@ -947,7 +940,9 @@ const submitDRSFormToGmailRMO = async () => {
                               </div>
                             </div>
 
-                            <div class="lg:w-6/12 w-full flex items-center px-2">
+                            <div
+                              class="lg:w-6/12 w-full flex items-center px-2"
+                            >
                               <div class="text-sm">
                                 <div>
                                   <span
@@ -986,8 +981,8 @@ const submitDRSFormToGmailRMO = async () => {
                               @click.stop
                             >
                               <div class="flex gap-x-2">
-                                               <button
-                                v-if="b.other_comments_remarks"
+                                <button
+                                  v-if="b.other_comments_remarks"
                                   class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
                                   @click="goToEdit(b.id)"
                                   title="Records Manager Comment"
@@ -1016,10 +1011,6 @@ const submitDRSFormToGmailRMO = async () => {
                                 >
                                   <i class="fab fa-google-drive"></i>
                                 </button>
-                                
-                                
-                 
-
 
                                 <button
                                   class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
@@ -1755,7 +1746,7 @@ const submitDRSFormToGmailRMO = async () => {
                                 darkMode ? 'text-gray-300' : 'text-gray-900'
                               "
                             >
-                             Reviewed By
+                              Reviewed By
                             </label>
                             <div class="w-full">
                               <div class="text-center flex">
