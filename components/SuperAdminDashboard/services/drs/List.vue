@@ -18,6 +18,44 @@ const drsAdmins = computed(() => {
   return drsAdminEmails.includes(user.value?.email);
 });
 
+const canEditReviewedBy = computed(() => {
+  if (!filteredItems || !user.value?.email) return false;
+  return (
+    filteredItems.reviewed_by_email === user.value?.email ||
+    drsAdminEmails.includes(user.value?.email)
+  );
+});
+
+const canEditApprovedBy = computed(() => {
+  if (!filteredItems || !user.value?.email) return false;
+  return (
+    filteredItems.approved_by_email === user.value?.email ||
+    drsAdminEmails.includes(user.value?.email)
+  );
+});
+
+const canEditOriginatingSection = computed(() => {
+  if (!filteredItems || !user.value?.email) return false;
+  return (
+    filteredItems.originating_email === user.value?.email ||
+    drsAdminEmails.includes(user.value?.email)
+  );
+});
+
+const updateButtonText = computed(() => {
+  if (!filteredItems || !user.value?.email) return "Update";
+
+  if (filteredItems.approved_by_email === user.value?.email) {
+    return "Approved";
+  }
+
+  if (filteredItems.reviewed_by_email === user.value?.email) {
+    return "Reviewed";
+  }
+
+  return "Update";
+});
+
 const listItems = ref(null);
 const effectivityDate = ref(null);
 const config = useRuntimeConfig();
@@ -28,6 +66,7 @@ let toggleConfirmDelete = ref(false);
 const confirmModal = ref(false);
 const displayUpdateForm = ref(false);
 const statusNotificationAlertModal = ref(false);
+const isUpdating = ref(false);
 let filteredItems;
 const selectedDocumentType = ref("");
 const selectedOriginatingOffice = ref("");
@@ -403,19 +442,25 @@ const refetchAllData = async () => {
 
 const updateData = async (id) => {
   console.log(id);
+  isUpdating.value = true;
   filteredItems.effectivity_date = effectivityDate.value;
   await $fetch(endpoint.value + "/api/drs/edit/" + id + "/", {
     method: "PUT",
     body: filteredItems,
-  }).then((response) => {
-    statusNotificationAlertModal.value = true;
+  })
+    .then(() => {
+      isUpdating.value = false;
+      statusNotificationAlertModal.value = true;
 
-    setTimeout(() => {
-      statusNotificationAlertModal.value = false;
-      submitDRSFormToGmailRMO();
-      refetchAllData();
-    }, 2000);
-  });
+      setTimeout(() => {
+        statusNotificationAlertModal.value = false;
+        submitDRSFormToGmailRMO();
+        refetchAllData();
+      }, 2000);
+    })
+    .catch(() => {
+      isUpdating.value = false;
+    });
 };
 
 // Pagination configuration
@@ -688,29 +733,10 @@ const submitDRSFormToGmailRMO = async () => {
                         ></i>
                         <i v-else class="fa fa-sort ml-1"></i>
                       </div>
-                      <div
-                        class="lg:w-6/12 w-full mx-auto cursor-pointer px-2 py-1 rounded"
-                        :class="
-                          darkMode ? 'hover:bg-green-700' : 'hover:bg-green-950'
-                        "
-                        @click="sortBy('document_type')"
-                      >
-                        Document Type
-                        <i
-                          v-if="sortColumn === 'document_type'"
-                          :class="
-                            sortDirection === 'asc'
-                              ? 'fa fa-arrow-up'
-                              : 'fa fa-arrow-down'
-                          "
-                          class="ml-1"
-                        ></i>
-                        <i v-else class="fa fa-sort ml-1"></i>
-                      </div>
 
                       <div
-                        class="w-6/12 mx-auto text-center py-1"
-                        v-if="drsAdmins"
+                        class="w-6/12 py-1"
+                        :class="drsAdmins ? 'text-center' : 'text-right px-1'"
                       >
                         Action
                       </div>
@@ -902,7 +928,7 @@ const submitDRSFormToGmailRMO = async () => {
                             <div class="w-full flex items-center px-2">
                               <div class="text-sm">
                                 <div class="font-medium">
-                                  {{ b.document_title }}
+                                  {{ b.document_type }} : {{ b.document_title }}
                                 </div>
                                 <div
                                   class="text-xs"
@@ -939,39 +965,15 @@ const submitDRSFormToGmailRMO = async () => {
                               </div>
                             </div>
 
-                            <div
-                              class="lg:w-6/12 w-full flex items-center px-2"
-                            >
-                              <div class="text-sm">
-                                <div>
-                                  <span
-                                    class="inline-block px-2 py-0.5 rounded-full text-xs font-medium"
-                                    :class="
-                                      b.status === 'New'
-                                        ? 'bg-blue-100 text-blue-800'
-                                        : 'bg-orange-100 text-orange-800'
-                                    "
-                                  >
-                                    {{ b.status }}
-                                  </span>
-                                  <span
-                                    v-if="b.revision_number"
-                                    class="ml-1 text-xs"
-                                    :class="
-                                      darkMode ? 'text-white' : 'text-gray-900'
-                                    "
-                                    >No.{{ b.revision_number }}</span
-                                  >
-                                </div>
-                                <div
-                                  class="mt-1 text-gray-700 ml-2"
-                                  :class="
-                                    darkMode ? 'text-white' : 'text-gray-900'
-                                  "
-                                >
-                                  {{ b.document_type }}
-                                </div>
-                              </div>
+                            <div class="w-6/12 flex items-center justify-end">
+                              <button
+                                v-if="!drsAdmins"
+                                class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105 h-fit"
+                                @click="goToEdit(b.id)"
+                                title="Edit"
+                              >
+                                <i class="fa fa-eye" aria-hidden="true"></i>
+                              </button>
                             </div>
 
                             <div
@@ -1202,8 +1204,6 @@ const submitDRSFormToGmailRMO = async () => {
                       "
                     >
                       Document Review Sheet Form
-                      <!-- <span class="font-light text-xs bg-green-900 text-white block">
-                        {{ filteredItems.document_code }}</span> -->
                     </h2>
                     <div
                       class="w-fit mx-auto text-xs mt-4 px-4 font-montserrat tracking-tight"
@@ -1264,6 +1264,7 @@ const submitDRSFormToGmailRMO = async () => {
                                       v-model="
                                         filteredItems.document_attachment
                                       "
+                                      :disabled="!canEditOriginatingSection"
                                     />
                                     <a
                                       :href="filteredItems.document_attachment"
@@ -1297,7 +1298,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   <div class="w-full">
                                     <input
                                       type="text"
-                                      class="px-2 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
+                                      class="px-2 w-full border-green-700 border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
                                       :class="
                                         darkMode
                                           ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
@@ -1305,6 +1306,7 @@ const submitDRSFormToGmailRMO = async () => {
                                       "
                                       placeholder="Document Title"
                                       v-model="filteredItems.document_title"
+                                      :disabled="!canEditOriginatingSection"
                                     />
                                   </div>
                                 </div>
@@ -1323,13 +1325,14 @@ const submitDRSFormToGmailRMO = async () => {
                                   <div class="w-full">
                                     <select
                                       v-model="filteredItems.document_type"
-                                      class="lg:w-7/12 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs pr-10"
+                                      class="lg:w-7/12 w-full border-green-700 border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs pr-10"
                                       :class="
                                         darkMode
                                           ? 'bg-gray-700 border-gray-600 text-gray-200'
                                           : 'bg-white border-gray-400 text-gray-900'
                                       "
                                       required
+                                      :disabled="!canEditOriginatingSection"
                                     >
                                       <option
                                         value="Document Type"
@@ -1385,6 +1388,9 @@ const submitDRSFormToGmailRMO = async () => {
                                             class="mr-1"
                                             id="New"
                                             @change="statusChange"
+                                            :disabled="
+                                              !canEditOriginatingSection
+                                            "
                                           />
                                         </span>
                                         <label class="ml-2 py-2" for="New">
@@ -1411,6 +1417,9 @@ const submitDRSFormToGmailRMO = async () => {
                                               class=""
                                               id="ForRevision"
                                               @change="statusChange"
+                                              :disabled="
+                                                !canEditOriginatingSection
+                                              "
                                             />
                                           </span>
 
@@ -1441,6 +1450,9 @@ const submitDRSFormToGmailRMO = async () => {
                                                 filteredItems.revision_number
                                               "
                                               ref="fileInput"
+                                              :disabled="
+                                                !canEditOriginatingSection
+                                              "
                                             />
                                           </div>
                                         </label>
@@ -1465,7 +1477,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   <div class="w-full">
                                     <input
                                       type="text"
-                                      class="px-2 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
+                                      class="px-2 w-full border-green-700 border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
                                       :class="
                                         darkMode
                                           ? 'bg-gray-700 border-gray-600 text-gray-200'
@@ -1491,15 +1503,22 @@ const submitDRSFormToGmailRMO = async () => {
                                       Originating Fullname
                                     </div>
                                   </label>
-                                  <div
-                                    class="text-center flex mx-auto px-2 w-full border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
-                                    :class="
-                                      darkMode
-                                        ? 'text-gray-200'
-                                        : 'text-gray-900'
-                                    "
-                                  >
-                                    {{ filteredItems.originating_firstname }}
+
+                                  <div class="w-full">
+                                    <input
+                                      type="text"
+                                      class="capitalize px-2 w-full border-green-700 border-b-2 border-t-0 border-x-0 rounded-sm py-2 text-xs"
+                                      :class="
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-gray-200'
+                                          : 'bg-white border-gray-400 text-gray-900'
+                                      "
+                                      placeholder="Originating Office"
+                                      v-model="
+                                        filteredItems.originating_firstname
+                                      "
+                                      disabled
+                                    />
                                   </div>
                                 </div>
                                 <div class="lg:flex items-center w-full mb-2">
@@ -1522,10 +1541,11 @@ const submitDRSFormToGmailRMO = async () => {
                                       :class="
                                         darkMode
                                           ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                                          : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500'
+                                          : 'bg-white border-green-700 text-gray-900 placeholder-gray-500'
                                       "
                                       placeholder="Email"
                                       v-model="filteredItems.originating_email"
+                                     disabled
                                     />
                                   </div>
                                 </div>
@@ -1549,7 +1569,7 @@ const submitDRSFormToGmailRMO = async () => {
                                       :class="
                                         darkMode
                                           ? 'bg-gray-700 border-gray-600 text-gray-200'
-                                          : 'bg-[#EFEFEF4D] border-gray-400 text-gray-900'
+                                          : 'bg-[#EFEFEF4D] border-green-700 text-gray-900'
                                       "
                                     >
                                       {{ filteredItems.schedule }}
@@ -1589,6 +1609,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   "
                                   placeholder=""
                                   v-model="filteredItems.reviewed_by_name"
+                                  :disabled="!canEditReviewedBy"
                                 />
                               </div>
                               <div class="w-full">
@@ -1604,11 +1625,13 @@ const submitDRSFormToGmailRMO = async () => {
                                   v-model="
                                     filteredItems.reviewed_by_designation
                                   "
+                                  :disabled="!canEditReviewedBy"
                                 />
                                 <input
                                   v-model="filteredItems.reviewed_by_email"
                                   class="text-center text-xs w-full h-fit -mt-0.5 block"
                                   type="email"
+                                  :disabled="!canEditReviewedBy"
                                 />
                               </div>
                             </div>
@@ -1636,7 +1659,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center">
+                                <div class="w-fit mx-auto flex items-center space-x-1">
                                   <input
                                     type="radio"
                                     value="Approved"
@@ -1645,12 +1668,18 @@ const submitDRSFormToGmailRMO = async () => {
                                     id="reviewedByActionApproved"
                                     name="reviewedByAction"
                                     @change="actionChecked()"
+                                    :disabled="!canEditReviewedBy"
                                   />
                                   <label
                                     class="ml-0.5"
                                     for="reviewedByActionApproved"
                                   >
-                                    <span class="hover:font-bold"
+                                    <span
+                                      :class="
+                                        !canEditReviewedBy
+                                          ? ''
+                                          : 'hover:font-bold'
+                                      "
                                       >Approved</span
                                     >
                                   </label>
@@ -1662,7 +1691,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center">
+                                <div class="w-fit mx-auto flex items-center space-x-1">
                                   <input
                                     type="radio"
                                     value="Disapproved"
@@ -1671,12 +1700,18 @@ const submitDRSFormToGmailRMO = async () => {
                                     id="reviewedByActionDisapproved"
                                     name="reviewedByAction"
                                     @change="actionChecked()"
+                                    :disabled="!canEditReviewedBy"
                                   />
                                   <label
                                     class="ml-0.5"
                                     for="reviewedByActionDisapproved"
                                   >
-                                    <span class="hover:font-bold"
+                                    <span
+                                      :class="
+                                        !canEditReviewedBy
+                                          ? ''
+                                          : 'hover:font-bold'
+                                      "
                                       >Disapproved</span
                                     >
                                   </label>
@@ -1688,7 +1723,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center">
+                                <div class="w-fit mx-auto flex items-center space-x-1">
                                   <input
                                     type="radio"
                                     value="Conditional"
@@ -1697,12 +1732,18 @@ const submitDRSFormToGmailRMO = async () => {
                                     id="reviewedByActionConditional"
                                     name="reviewedByAction"
                                     @change="actionChecked()"
+                                    :disabled="!canEditReviewedBy"
                                   />
                                   <label
                                     class="ml-0.5"
                                     for="reviewedByActionConditional"
                                   >
-                                    <span class="hover:font-bold"
+                                    <span
+                                      :class="
+                                        !canEditReviewedBy
+                                          ? ''
+                                          : 'hover:font-bold'
+                                      "
                                       >Conditional</span
                                     >
                                   </label>
@@ -1729,6 +1770,7 @@ const submitDRSFormToGmailRMO = async () => {
                               "
                               placeholder="Comments or Remarks"
                               v-model="filteredItems.reviewed_by_remarks"
+                              :disabled="!canEditReviewedBy"
                             >
                             </textarea>
                           </div>
@@ -1805,12 +1847,11 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center">
+                                <div class="w-fit mx-auto flex items-center space-x-1">
                                   <input
                                     type="radio"
                                     value="Approved"
                                     v-model="filteredItems.verified_by_action"
-                                    class="mr-1"
                                     id="verifiedByActionApproved"
                                     name="verifiedByAction"
                                     @change="actionChecked()"
@@ -1831,12 +1872,11 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center">
+                                <div class="w-fit mx-auto flex items-center space-x-1">
                                   <input
                                     type="radio"
                                     value="Disapproved"
                                     v-model="filteredItems.verified_by_action"
-                                    class="mr-1"
                                     id="verifiedByActionDisapproved"
                                     name="verifiedByAction"
                                     @change="actionChecked()"
@@ -1857,12 +1897,11 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center">
+                                <div class="w-fit mx-auto flex items-center space-x-1">
                                   <input
                                     type="radio"
                                     value="Conditional"
                                     v-model="filteredItems.verified_by_action"
-                                    class="mr-1"
                                     id="verifiedByActionConditional"
                                     name="verifiedByAction"
                                     @change="actionChecked()"
@@ -1927,6 +1966,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   "
                                   placeholder=""
                                   v-model="filteredItems.approved_by_name"
+                                  :disabled="!canEditApprovedBy"
                                 />
                               </div>
                               <div class="w-full">
@@ -1942,12 +1982,14 @@ const submitDRSFormToGmailRMO = async () => {
                                   v-model="
                                     filteredItems.approved_by_designation
                                   "
+                                  :disabled="!canEditApprovedBy"
                                 />
 
                                 <input
                                   v-model="filteredItems.approved_by_email"
                                   class="text-center text-xs w-full h-fit -mt-0.5 block"
                                   type="email"
+                                  :disabled="!canEditApprovedBy"
                                 />
                               </div>
                             </div>
@@ -1975,7 +2017,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center">
+                                <div class="w-fit mx-auto flex items-center space-x-1">
                                   <input
                                     type="radio"
                                     value="Approved"
@@ -1984,12 +2026,18 @@ const submitDRSFormToGmailRMO = async () => {
                                     id="approvedByActionApproved"
                                     name="approvedByAction"
                                     @change="actionChecked()"
+                                    :disabled="!canEditApprovedBy"
                                   />
                                   <label
                                     class="ml-0.5"
                                     for="approvedByActionApproved"
                                   >
-                                    <span class="hover:font-bold"
+                                    <span
+                                      :class="
+                                        !canEditApprovedBy
+                                          ? ''
+                                          : 'hover:font-bold'
+                                      "
                                       >Approved</span
                                     >
                                   </label>
@@ -2001,7 +2049,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center">
+                                <div class="w-fit mx-auto flex items-center space-x-1">
                                   <input
                                     type="radio"
                                     value="Disapproved"
@@ -2010,13 +2058,19 @@ const submitDRSFormToGmailRMO = async () => {
                                     id="approvedByActionDisapproved"
                                     name="approvedByAction"
                                     @change="actionChecked()"
+                                    :disabled="!canEditApprovedBy"
                                   />
 
                                   <label
                                     class="ml-0.5"
                                     for="approvedByActionDisapproved"
                                   >
-                                    <span class="hover:font-bold"
+                                    <span
+                                      :class="
+                                        !canEditApprovedBy
+                                          ? ''
+                                          : 'hover:font-bold'
+                                      "
                                       >Disapproved</span
                                     >
                                   </label>
@@ -2028,7 +2082,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center">
+                                <div class="w-fit mx-auto flex items-center space-x-1">
                                   <input
                                     type="radio"
                                     value="Conditional"
@@ -2037,13 +2091,19 @@ const submitDRSFormToGmailRMO = async () => {
                                     id="approvedByActionConditional"
                                     name="approvedByAction"
                                     @change="actionChecked()"
+                                    :disabled="!canEditApprovedBy"
                                   />
 
                                   <label
                                     class="ml-0.5"
                                     for="approvedByActionConditional"
                                   >
-                                    <span class="hover:font-bold"
+                                    <span
+                                      :class="
+                                        !canEditApprovedBy
+                                          ? ''
+                                          : 'hover:font-bold'
+                                      "
                                       >Conditional</span
                                     >
                                   </label>
@@ -2070,6 +2130,7 @@ const submitDRSFormToGmailRMO = async () => {
                               "
                               placeholder="Comments or Remarks"
                               v-model="filteredItems.approved_by_remarks"
+                              :disabled="!canEditApprovedBy"
                             ></textarea>
                           </div>
                         </div>
@@ -2100,6 +2161,7 @@ const submitDRSFormToGmailRMO = async () => {
                                 "
                                 placeholder="Records Management Officer (RMO)"
                                 v-model="filteredItems.rmo_name"
+                                :disabled="!drsAdmins"
                               />
                             </div>
                             <div class="lg:w-4/12 w-full mb-2 block">
@@ -2122,6 +2184,7 @@ const submitDRSFormToGmailRMO = async () => {
                                 placeholder="Document Code"
                                 v-model="filteredItems.document_code"
                                 required
+                                :disabled="!drsAdmins"
                               />
                             </div>
 
@@ -2176,6 +2239,7 @@ const submitDRSFormToGmailRMO = async () => {
                                 "
                                 placeholder="Other Comment and Remarks"
                                 v-model="filteredItems.other_comments_remarks"
+                                :disabled="!drsAdmins"
                               />
                             </div>
                           </div>
@@ -2188,18 +2252,31 @@ const submitDRSFormToGmailRMO = async () => {
                     >
                       Updated!
                     </div>
-                    <div class="pb-5 lg:px-5 px-3 mb-5">
-                      <div
-                        class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer"
+                    <div class="pb-5 lg:px-5 px-3 mb-5 flex gap-x-3">
+                      <button
+                        @click="refetchAllData()"
+                        class="px-10 lg:rounded-lg rounded-md bg-gray-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-gray-500 hover:text-gray-500 lg:text-sm text-xs cursor-pointer transition-all"
+                      >
+                        <i class="fa fa-arrow-left mr-2" aria-hidden="true"></i>
+                        Back
+                      </button>
+                      <button
+                        :disabled="isUpdating"
+                        class="px-10 lg:rounded-lg rounded-md bg-yellow-500 text-white font-bold lg:py-2 py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-yellow-500 hover:text-yellow-500 lg:text-sm text-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                         @click="updateData(filteredItems.id)"
                       >
                         <i
+                          v-if="!isUpdating"
                           class="fa fa-paper-plane mr-2"
                           aria-hidden="true"
                         ></i>
-                        Update
-                        <!-- Add Dynamic Text: Reviewed, Verified, Approved -->
-                      </div>
+                        <i
+                          v-if="isUpdating"
+                          class="fa fa-spinner fa-spin mr-2"
+                          aria-hidden="true"
+                        ></i>
+                        {{ isUpdating ? "Updating..." : updateButtonText }}
+                      </button>
                     </div>
                   </div>
                 </div>
