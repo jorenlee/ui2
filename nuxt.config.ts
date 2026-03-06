@@ -66,15 +66,12 @@ export default defineNuxtConfig({
     'nuxt-lodash',
     '@nuxtjs/google-adsense',
     'nuxt-gtag',
-    ['nuxt-google-auth', {
-      clientId: process.env.GOOGLE_CLIENT_ID,
-    }]
   ],
   gtag: {
-    id: process.env.GOOGLE_ANALYTICS
+    id: process.env.NUXT_PUBLIC_ANALYTICS
   },
   googleAdsense: {
-    id: process.env.GOOGLE_CLIENT_ID
+    id: process.env.NUXT_PUBLIC_ADSENSE
   },
   nitro: {
     prerender: {
@@ -82,14 +79,14 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
-    apiBase: (process.env.API_BASE || "http://127.0.0.1:8000").replace(
-      /\/$/,
-      "",
-    ),
+    apiUrl: process.env.API_URL || "http://127.0.0.1:8000",
+    googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    authSecret: process.env.AUTH_SECRET,
+    authOrigin: process.env.AUTH_ORIGIN,
     public: {
-      apiUrl: process.env.NUXT_PUBLIC_API_URL,
-      googleClientId: process.env.GOOGLE_CLIENT_ID,
+      adsenseId: process.env.NUXT_PUBLIC_ADSENSE,
+      analyticsId: process.env.NUXT_PUBLIC_ANALYTICS,
     },
   },
 })
