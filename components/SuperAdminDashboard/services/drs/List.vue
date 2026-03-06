@@ -381,7 +381,6 @@ const deleteItem = async () => {
   await $fetch(endpoint.value + "/api/drs/delete/" + deleteIDItem.value, {
     method: "DELETE",
     headers: {
-      Authorization: token.value,
       "Content-Type": "application/json",
     },
   }).then(async (response) => {
@@ -430,57 +429,6 @@ const updateData = async (id) => {
   });
 };
 
-const updateReviewed = async (id) => {
-  console.log(id);
-  filteredItems.effectivity_date = effectivityDate.value;
-  await $fetch(endpoint.value + "/api/drs/edit/" + id + "/", {
-    method: "PUT",
-    body: filteredItems,
-  }).then((response) => {
-    statusNotificationAlertModal.value = true;
-
-    setTimeout(() => {
-      statusNotificationAlertModal.value = false;
-      submitDRSFormToGmailReviewed();
-      refetchAllData();
-    }, 2000);
-  });
-};
-
-const updateVerified = async (id) => {
-  console.log(id);
-  filteredItems.effectivity_date = effectivityDate.value;
-  await $fetch(endpoint.value + "/api/drs/edit/" + id + "/", {
-    method: "PUT",
-    body: filteredItems,
-  }).then((response) => {
-    statusNotificationAlertModal.value = true;
-
-    setTimeout(() => {
-      statusNotificationAlertModal.value = false;
-      submitDRSFormToGmailVerified();
-      refetchAllData();
-    }, 2000);
-  });
-};
-
-const updateApproved = async (id) => {
-  console.log(id);
-  filteredItems.effectivity_date = effectivityDate.value;
-  await $fetch(endpoint.value + "/api/drs/edit/" + id + "/", {
-    method: "PUT",
-    body: filteredItems,
-  }).then((response) => {
-    statusNotificationAlertModal.value = true;
-
-    setTimeout(() => {
-      statusNotificationAlertModal.value = false;
-      submitDRSFormToGmailApproved();
-      refetchAllData();
-    }, 2000);
-  });
-};
-
 // Pagination configuration
 let currentPage = ref(1);
 let itemsPerPage = 100;
@@ -524,44 +472,6 @@ const submitDRSFormToGmailRMO = async () => {
   });
 };
 
-const submitDRSFormToGmailReviewed = async () => {
-  await $fetch(endpoint.value + "/api/drs/drs-notification-reviewed/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: filteredItems,
-  }).then((response) => {
-    console.log(response);
-    console.log("Gmail Reviewed");
-  });
-};
-
-const submitDRSFormToGmailVerified = async () => {
-  await $fetch(endpoint.value + "/api/drs/drs-notification-verified/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: filteredItems,
-  }).then((response) => {
-    console.log(response);
-    console.log("Gmail Verified");
-  });
-};
-
-const submitDRSFormToGmailApproved = async () => {
-  await $fetch(endpoint.value + "/api/drs/drs-notification-approved/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: filteredItems,
-  }).then((response) => {
-    console.log(response);
-    console.log("Gmail Approved");
-  });
-};
 </script>
 <template>
   <div>
