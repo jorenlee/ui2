@@ -109,20 +109,12 @@
       "roles": ["contentWriter"]
     },
     {
-      "email": "macristina.llauder@lsu.edu.ph",
-      "roles": ["contentWriter", "drsAdmin"]
-    },
-    {
       "email": "markjohn.dalagan@lsu.edu.ph",
       "roles": ["contentWriter"]
     },
     {
       "email": "menchie.grana@lsu.edu.ph",
       "roles": ["contentWriter"]
-    },
-    {
-      "email": "meredith.embuscado@lsu.edu.ph",
-      "roles": ["contentWriter", "drsAdmin"]
     },
     {
       "email": "naiza.amba@lsu.edu.ph",
@@ -209,37 +201,44 @@
       "roles": ["campusPassAdmin"]
     },
     {
+      "email": "development@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
       "email": "president@lsu.edu.ph",
-      "roles": ["drsAdmin"]
+      "roles": ["contentWriter"]
     },
     {
       "email": "rey.mejias@lsu.edu.ph",
-      "roles": ["drsAdmin"]
+      "roles": ["contentWriter"]
     },
     {
       "email": "recordsmanagement@lsu.edu.ph",
-      "roles": ["drsAdmin"]
+      "roles": ["contentWriter"]
     },
     {
       "email": "wenny.caseros@lsu.edu.ph",
-      "roles": ["drsAdmin"]
+      "roles": ["contentWriter"]
     },
     {
       "email": "charlene.fernan@lsu.edu.ph",
-      "roles": ["drsAdmin"]
+      "roles": ["contentWriter"]
     },
     {
       "email": "raymundo.dolor@lsu.edu.ph",
-      "roles": ["drsAdmin"]
+      "roles": ["contentWriter"]
     },
     {
       "email": "quincodf@lsu.edu.ph",
-      "roles": ["drsAdmin"]
+      "roles": ["contentWriter"]
     },
     {
-      "email": "development@lsu.edu.ph",
+      "email": "macristina.llauder@lsu.edu.ph",
+      "roles": ["contentWriter"]
+    },
+    {
+      "email": "meredith.embuscado@lsu.edu.ph",
       "roles": ["contentWriter"]
     }
   ]
 }
-

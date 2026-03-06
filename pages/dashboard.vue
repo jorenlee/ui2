@@ -60,10 +60,6 @@ const registrarMenuEmails = userRolesConfig.userRoles
 const campusPassAdminEmails = userRolesConfig.userRoles
   .filter((user) => user.roles.includes("campusPassAdmin"))
   .map((user) => user.email);
-
-const drsAdminEmails = userRolesConfig.userRoles
-  .filter((user) => user.roles.includes("drsAdmin"))
-  .map((user) => user.email);
 </script>
 
 <template>
@@ -77,7 +73,6 @@ const drsAdminEmails = userRolesConfig.userRoles
       :libraryMenuEmails="libraryMenuEmails"
       :registrarMenuEmails="registrarMenuEmails"
       :campusPassAdminEmails="campusPassAdminEmails"
-      :drsAdminEmails="drsAdminEmails"
     />
   </div>
 </template>

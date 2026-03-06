@@ -37,7 +37,6 @@ const props = defineProps({
   libraryMenuEmails: { type: Array, required: true },
   registrarMenuEmails: { type: Array, required: true },
   campusPassAdminEmails: { type: Array, required: true },
-  drsAdminEmails: { type: Array, required: true },
 });
 
 // ---------------- STATE ----------------
@@ -66,9 +65,14 @@ const openGroups = ref([
 const publicMenuGroups = [
   "IT Services Feedback",
   "Animo Run",
+  "External Links",
+];
+
+// LSU-only menu groups (only @lsu.edu.ph domain)
+const lsuOnlyMenuGroups = [
   "Commission on Election",
   "General Services Office",
-  "External Links",
+  "Document Reviewer System",
   "Safety and Security Center",
 ];
 
@@ -84,7 +88,6 @@ const rolesByEmail = computed(() => ({
   npcc: props.npccMenuEmails,
   registrar: props.registrarMenuEmails,
   campusPass: props.campusPassAdminEmails,
-  drs: props.drsAdminEmails,
 }));
 
 const userRole = computed(() => {
@@ -207,10 +210,8 @@ const subMenuList = [
       },
     ],
   },
-  
-    {
+  {
     group: "Document Reviewer System",
-    allowedEmails: props.drsAdminEmails,
     items: [
       {
         label: "DRS List",
@@ -226,7 +227,7 @@ const subMenuList = [
       },
     ],
   },
-    {
+  {
     group: "General Services Office",
     items: [
       {
@@ -243,7 +244,7 @@ const subMenuList = [
       },
     ],
   },
-    {
+  {
     group: "Human Resource",
     allowedEmails: props.hrMenuEmails,
     items: [
@@ -378,6 +379,11 @@ const filteredMenuList = computed(() => {
     // Allow public menu groups for all authenticated users
     if (publicMenuGroups.includes(menu.group)) {
       return true;
+    }
+
+    // LSU-only menu groups (only @lsu.edu.ph domain)
+    if (lsuOnlyMenuGroups.includes(menu.group)) {
+      return email?.endsWith("@lsu.edu.ph");
     }
 
     // For non-public groups, check role and email permissions
