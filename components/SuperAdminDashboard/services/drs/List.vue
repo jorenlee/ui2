@@ -85,13 +85,14 @@ const dateSortOrder = ref("newest");
 
 const documentTypeList = ref([
   "All",
-  "Manual",
-  "Procedure",
-  "Policy",
   "Form or Template",
-  "Work Instructions",
+  "Manual",
   "MOA or MOU",
+  "Policy",
   "Portfolio",
+  "Procedure",
+  "Records",
+  "Work Instructions",
 ]);
 
 // Auto-refresh interval
@@ -513,18 +514,18 @@ const submitDRSFormToGmailRMO = async () => {
         <div v-if="!displayUpdateForm">
           <div class="p-2">
             <div v-show="tableDisplay">
-              <div class="lg:flex items-center gap-x-3 py-5">
+              <div class="lg:flex items-center gap-x-3 pb-5">
                 <div class="flex items-center gap-x-2">
                   <div
                     class="flex items-center font-bold text-sm lg:text-base"
                     :class="darkMode ? 'text-green-400' : 'text-green-800'"
                   >
                     <i class="fa fa-filter mr-2"></i>
-                    <span>Filters</span>
+                    <span class="lg:flex hidden">Filters</span>
                   </div>
-                  <div class="lg:flex gap-2">
+                  <div class="flex gap-2">
                     <label
-                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
+                      class="inline-flex items-center lg:px-3 px-1.5 lg:py-2 py-1 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
                       :class="[
                         selectedAll
                           ? 'bg-green-700 text-white border-green-700'
@@ -555,7 +556,7 @@ const submitDRSFormToGmailRMO = async () => {
                     </label>
 
                     <label
-                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
+                      class="inline-flex items-center lg:px-3 px-1.5 lg:py-2 py-1 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
                       :class="[
                         selectedReviewed
                           ? 'bg-green-700 text-white border-green-700'
@@ -572,7 +573,11 @@ const submitDRSFormToGmailRMO = async () => {
                         value="Reviewed"
                         v-model="selectedReviewed"
                       />
-                      Reviewed
+                      <span class="lg:flex hidden">Reviewed</span>
+
+                      <span class="lg:hidden flex">
+                        <i class="fa fa-clock"></i>
+                      </span>
                       <span
                         class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
                         :class="
@@ -585,7 +590,7 @@ const submitDRSFormToGmailRMO = async () => {
                     </label>
 
                     <label
-                      class="inline-flex items-center px-3 py-2 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
+                      class="inline-flex items-center lg:px-3 px-1.5 lg:py-2 py-1 shadow-lg text-center cursor-pointer rounded-full text-xs lg:text-sm font-medium transition-all border-2"
                       :class="[
                         selectedApproved
                           ? 'bg-green-700 text-white border-green-700'
@@ -602,7 +607,12 @@ const submitDRSFormToGmailRMO = async () => {
                         value="Approved"
                         v-model="selectedApproved"
                       />
-                      Approved
+
+                      <span class="lg:flex hidden">Approved</span>
+
+                      <span class="lg:hidden flex">
+                        <i class="fa fa-check"></i>
+                      </span>
                       <span
                         class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold"
                         :class="
@@ -616,7 +626,7 @@ const submitDRSFormToGmailRMO = async () => {
                   </div>
                 </div>
                 <!-- Universal Search Input -->
-                <div class="w-full">
+                <div class="w-full lg:my-0 my-3">
                   <div class="relative">
                     <div
                       class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"
@@ -641,46 +651,48 @@ const submitDRSFormToGmailRMO = async () => {
                 </div>
 
                 <!-- Date Sort Buttons -->
-                <div class="flex gap-2">
+                <div class="flex gap-2 lg:mt-0 mt-3 justify-between">
+                  <div class="flex space-x-3">
+                    <button
+                      @click="dateSortOrder = 'newest'"
+                      class="px-4 lg:py-2 py-1 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg"
+                      :class="
+                        dateSortOrder === 'newest'
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : darkMode
+                            ? 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-green-500'
+                            : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'
+                      "
+                    >
+                      <i class="fa fa-arrow-down"></i>
+                      <span class="hidden sm:inline">Newest</span>
+                    </button>
+                    <button
+                      @click="dateSortOrder = 'oldest'"
+                      class="px-4 lg:py-2 py-1 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg"
+                      :class="
+                        dateSortOrder === 'oldest'
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : darkMode
+                            ? 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-green-500'
+                            : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'
+                      "
+                    >
+                      <i class="fa fa-arrow-up"></i>
+                      <span class="hidden sm:inline">Oldest</span>
+                    </button>
+                  </div>
+
                   <button
-                    @click="dateSortOrder = 'newest'"
-                    class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg"
-                    :class="
-                      dateSortOrder === 'newest'
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : darkMode
-                          ? 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-green-500'
-                          : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'
-                    "
+                    v-if="drsAdmins"
+                    @click="downloadCSV"
+                    class="px-4 lg:py-2 py-1 bg-green-700 hover:bg-green-800 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
+                    title="Download filtered data as CSV"
                   >
-                    <i class="fa fa-arrow-down"></i>
-                    <span class="hidden sm:inline">Newest</span>
-                  </button>
-                  <button
-                    @click="dateSortOrder = 'oldest'"
-                    class="px-4 py-2 rounded-lg font-semibold transition-all duration-300 flex items-center gap-2 shadow-lg"
-                    :class="
-                      dateSortOrder === 'oldest'
-                        ? 'bg-green-600 text-white hover:bg-green-700'
-                        : darkMode
-                          ? 'bg-gray-700 text-gray-300 border-2 border-gray-600 hover:border-green-500'
-                          : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-500'
-                    "
-                  >
-                    <i class="fa fa-arrow-up"></i>
-                    <span class="hidden sm:inline">Oldest</span>
+                    <i class="fa fa-download"></i>
+                    <span class="">CSV</span>
                   </button>
                 </div>
-
-                <button
-                  v-if="drsAdmins"
-                  @click="downloadCSV"
-                  class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg font-medium transition-all flex items-center gap-2 shadow-lg hover:shadow-xl"
-                  title="Download filtered data as CSV"
-                >
-                  <i class="fa fa-download"></i>
-                  <span class="">CSV</span>
-                </button>
               </div>
 
               <div class="relative">
@@ -965,9 +977,9 @@ const submitDRSFormToGmailRMO = async () => {
                               </div>
                             </div>
 
-                            <div class="w-6/12 flex items-center justify-end">
+                            <div class="w-6/12 flex items-center justify-end"   v-if="!drsAdmins">
                               <button
-                                v-if="!drsAdmins"
+                              
                                 class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105 h-fit"
                                 @click="goToEdit(b.id)"
                                 title="Edit"
@@ -978,7 +990,7 @@ const submitDRSFormToGmailRMO = async () => {
 
                             <div
                               v-if="drsAdmins"
-                              class="w-6/12 flex items-center justify-end"
+                              class="w-6/12 flex items-center justify-end px-4"
                               @click.stop
                             >
                               <div class="flex gap-x-2">
@@ -1545,7 +1557,7 @@ const submitDRSFormToGmailRMO = async () => {
                                       "
                                       placeholder="Email"
                                       v-model="filteredItems.originating_email"
-                                     disabled
+                                      disabled
                                     />
                                   </div>
                                 </div>
@@ -1659,7 +1671,9 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center space-x-1">
+                                <div
+                                  class="w-fit mx-auto flex items-center space-x-1"
+                                >
                                   <input
                                     type="radio"
                                     value="Approved"
@@ -1691,7 +1705,9 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center space-x-1">
+                                <div
+                                  class="w-fit mx-auto flex items-center space-x-1"
+                                >
                                   <input
                                     type="radio"
                                     value="Disapproved"
@@ -1723,7 +1739,9 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center space-x-1">
+                                <div
+                                  class="w-fit mx-auto flex items-center space-x-1"
+                                >
                                   <input
                                     type="radio"
                                     value="Conditional"
@@ -1847,7 +1865,9 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center space-x-1">
+                                <div
+                                  class="w-fit mx-auto flex items-center space-x-1"
+                                >
                                   <input
                                     type="radio"
                                     value="Approved"
@@ -1872,7 +1892,9 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center space-x-1">
+                                <div
+                                  class="w-fit mx-auto flex items-center space-x-1"
+                                >
                                   <input
                                     type="radio"
                                     value="Disapproved"
@@ -1897,7 +1919,9 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center space-x-1">
+                                <div
+                                  class="w-fit mx-auto flex items-center space-x-1"
+                                >
                                   <input
                                     type="radio"
                                     value="Conditional"
@@ -2017,7 +2041,9 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center space-x-1">
+                                <div
+                                  class="w-fit mx-auto flex items-center space-x-1"
+                                >
                                   <input
                                     type="radio"
                                     value="Approved"
@@ -2049,7 +2075,9 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center space-x-1">
+                                <div
+                                  class="w-fit mx-auto flex items-center space-x-1"
+                                >
                                   <input
                                     type="radio"
                                     value="Disapproved"
@@ -2082,7 +2110,9 @@ const submitDRSFormToGmailRMO = async () => {
                                   darkMode ? 'text-gray-200' : 'text-black'
                                 "
                               >
-                                <div class="w-fit mx-auto flex items-center space-x-1">
+                                <div
+                                  class="w-fit mx-auto flex items-center space-x-1"
+                                >
                                   <input
                                     type="radio"
                                     value="Conditional"

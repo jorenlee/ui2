@@ -22,13 +22,15 @@ const requireAllFields = ref(false);
 const isSubmitting = ref(false);
 
 const documentTypeList = ref([
-  "Manual",
-  "Procedure",
-  "Policy",
+  "All",
   "Form or Template",
-  "Work Instructions",
+  "Manual",
   "MOA or MOU",
+  "Policy",
   "Portfolio",
+  "Procedure",
+  "Records",
+  "Work Instructions",
 ]);
 
 const info = ref({
