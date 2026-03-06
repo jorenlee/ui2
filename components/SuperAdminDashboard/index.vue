@@ -405,7 +405,7 @@ const handleMenuClick = (menu) => {
 </script>
 
 <template>
-  <div :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-600'">
+  <div :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-600'">
     <!-- LOGOUT CONFIRMATION -->
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->

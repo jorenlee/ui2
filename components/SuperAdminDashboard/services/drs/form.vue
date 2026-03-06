@@ -19,6 +19,7 @@ const submitCounter = ref(1);
 const dateToday = moment().format("MMMM DD, YYYY h:mm:ss A");
 const digitsNum = ref(0);
 const requireAllFields = ref(false);
+const isSubmitting = ref(false);
 
 const documentTypeList = ref([
   "Manual",
@@ -31,9 +32,9 @@ const documentTypeList = ref([
 ]);
 
 const info = ref({
-  originating_firstname: "",
+  originating_firstname: user.value?.name,
   originating_middlename: "-",
-  originating_lastname: "",
+  originating_lastname: "-",
   originating_office: "Head Office Reviewer",
   originating_email: user.value?.email,
   document_title: "",
@@ -83,6 +84,7 @@ const updateReviewedByName = () => {
 };
 
 const submitForm = async () => {
+  isSubmitting.value = true;
   let listItems =
     (await $fetch(endpoint.value + "/api/drs/list").catch(
       (error) => error.data,
@@ -92,6 +94,7 @@ const submitForm = async () => {
     postAPI();
   } else if (info.value.originating_office === "Head Office Reviewer") {
     requireAllFields.value = true;
+    isSubmitting.value = false;
     setTimeout(() => {
       requireAllFields.value = false;
     }, 2000);
@@ -115,6 +118,7 @@ const postAPI = async () => {
 
   if (!pattern.test(info.value.originating_email)) {
     invalidLSUEmail.value = true;
+    isSubmitting.value = false;
 
     setTimeout(() => {
       invalidLSUEmail.value = false;
@@ -132,6 +136,7 @@ const postAPI = async () => {
         formDisplay.value = false;
         thankYouDisplay.value = true;
         submitCounter.value = 0;
+        isSubmitting.value = false;
         // console.log(response);
         submitDRSFormToGmail();
       });
@@ -162,12 +167,13 @@ const submitDRSFormToGmail = async () => {
 };
 </script>
 <template>
-  <div class="bg-gray-50">
-    <div v-if="formDisplay" class="">
+  <div>
+  
       <div
-        class="header bg-gradient-to-b from-[#fefefe] via-[#fefefe] to-[#bce3c2] lg:pt-5 pt-1"
+      v-if="formDisplay"
+        class="header bg-gradient-to-b from-[#fefefe] via-[#fefefe] to-[#bce3c2]"
       >
-        <div class="lg:w-6/12 w-11/12 mx-auto bg-white">
+        <div class="lg:w-6/12 w-11/12 mx-auto bg-white my-20">
           <form v-on:submit.prevent="submitForm" class="">
             <div class="border-2 border-green-700 shadow-lg my-3">
               <div class="">
@@ -419,7 +425,7 @@ const submitDRSFormToGmail = async () => {
                             </div>
                           </div>
                         </div>
-                        <div class="w-fit mx-auto my-5">
+                        <div class="w-fit mx-auto my-5 hidden">
                           <div class="text-center flex">
                             <input
                               type="text"
@@ -457,10 +463,12 @@ const submitDRSFormToGmail = async () => {
                 </div>
                 <div class="pb-5 lg:px-5 px-3 mb-1">
                   <button
-                    class="px-10 lg:rounded-lg rounded-md bg-green-900 text-white font-bold py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-green-900 hover:text-green-900 lg:text-sm text-xs"
+                    :disabled="isSubmitting"
+                    class="px-10 lg:rounded-lg rounded-md bg-green-900 text-white font-bold py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-green-900 hover:text-green-900 lg:text-sm text-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
-                    <i class="fa fa-paper-plane mr-2" aria-hidden="true"></i>
-                    Submit
+                    <i v-if="!isSubmitting" class="fa fa-paper-plane mr-2" aria-hidden="true"></i>
+                    <i v-if="isSubmitting" class="fa fa-spinner fa-spin mr-2" aria-hidden="true"></i>
+                    {{ isSubmitting ? 'Submitting...' : 'Submit' }}
                   </button>
                 </div>
               </div>
@@ -508,19 +516,23 @@ const submitDRSFormToGmail = async () => {
         </div>
         <!--Waves end-->
       </div>
-    </div>
-    <div v-if="thankYouDisplay" class="">
+  
+      <!-- v-if="thankYouDisplay"  -->
+ 
       <div
-        class="lg:flex gap-10 lg:rounded-4xl bg-white lg:px-14 px-3 py-1 lg:w-fit w-full mx-auto lg:my-10 shadow-sm"
+      v-if="thankYouDisplay" 
+        class="flex items-center min-h-[630px]"
       >
-        <div class="flex items-center">
+       <div class="lg:w-fit lg:mx-auto w-full  lg:h-4/6 gap-10  bg-white lg:px-14 px-3 py-1 lg:my-10 shadow-lg lg:rounded-7xl">
+
+         <div>
           <img
             src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/check-mark-icon-isolated-on-white-background-vector-26464923.jpg"
-            class="lg:w-44 w-20 mx-auto lg:mt-0 mt-14"
+            class="lg:w-44 w-20 mx-auto"
           />
         </div>
         <div
-          class="text-xl text-green-900 text-center w-fit mx-auto lg:py-20 py-5"
+          class="text-xl text-green-900 text-center w-fit mx-auto lg:py-10 py-5"
         >
           <h1 class="font-bold text-3xl">Thanks for submitting!</h1>
           <p class="font-light pt-3 pb-10">Your request has been sent!</p>
@@ -534,8 +546,9 @@ const submitDRSFormToGmail = async () => {
             <i class="fa fa-arrow-circle-left mr-4"></i> Document Review Sheet
           </a>
         </div>
+       </div>
       </div>
-    </div>
+  
   </div>
 </template>
 <style scoped>

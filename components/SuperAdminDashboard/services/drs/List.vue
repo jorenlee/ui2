@@ -891,9 +891,8 @@ const submitDRSFormToGmailRMO = async () => {
                               >
                                 {{ b.originating_office }}
                               </div>
-                              <div>
+                              <div class="capitalize">
                                 {{ b.originating_firstname }}
-                                {{ b.originating_lastname }}
                               </div>
                               <div>
                                 {{ b.originating_email }}
