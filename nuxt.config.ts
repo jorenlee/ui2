@@ -79,11 +79,11 @@ export default defineNuxtConfig({
     },
   },
   runtimeConfig: {
-    googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
     authSecret: process.env.AUTH_SECRET,
     authOrigin: process.env.AUTH_ORIGIN,
     public: {
+      googleClientId: process.env.GOOGLE_CLIENT_ID,
       apiUrl: process.env.API_URL || "http://127.0.0.1:8000",
       adsenseId: process.env.NUXT_PUBLIC_ADSENSE,
       analyticsId: process.env.NUXT_PUBLIC_ANALYTICS,
