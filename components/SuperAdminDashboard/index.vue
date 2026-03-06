@@ -121,7 +121,7 @@ const currentViewConfig = computed(() => {
     appointments: { component: resolveComponent('SuperAdminDashboardServicesLibraryReserved'), class: 'pb-32' },
     books: { component: resolveComponent('SuperAdminDashboardServicesLibraryBooks'), class: 'pb-32' },
     schedules: { component: resolveComponent('SuperAdminDashboardServicesLibrarySchedules'), class: 'pb-24' },
-    hrJobVacancyList: { component: resolveComponent('SuperAdminDashboardServicesHr'), class: 'p-4 pb-32' },
+    hrJobVacancyList: { component: resolveComponent('ComingSoon'), class: '' },
     hrRaffle: { component: resolveComponent('SuperAdminDashboardServicesHrRaffle'), class: 'p-4 pb-32' },
     universityCalendar: { component: resolveComponent('SuperAdminDashboardChancellorOffice'), class: 'p-4 pb-32' },
     npcc: { component: resolveComponent('SuperAdminDashboardServicesIt'), class: 'px-2 pb-32' },
@@ -421,7 +421,7 @@ const handleMenuClick = (menu) => {
             />
           </div>
         </div>
-        <div v-if="currentView === 'Menu'" class="lg:px-6 px-3 pt-6 pb-80">
+        <div v-if="currentView === 'Menu'" class="lg:px-6 px-3 pt-2 pb-80">
           <SuperAdminDashboardWelcome :darkMode="darkMode" />
           <SuperAdminDashboardMenuList
             :filteredMenuList="filteredMenuList"

@@ -1500,7 +1500,6 @@ const submitDRSFormToGmailRMO = async () => {
                                     "
                                   >
                                     {{ filteredItems.originating_firstname }}
-                                    {{ filteredItems.originating_lastname }}
                                   </div>
                                 </div>
                                 <div class="lg:flex items-center w-full mb-2">
