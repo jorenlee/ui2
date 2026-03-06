@@ -61,7 +61,6 @@ const submitNewEnrollmentBtn = () => {
 }
 
 const submitForm = async () => {
-  // console.log("submitForm");
   await $fetch(endpoint.value + "/api/enrollment/create/", {
     method: "POST",
     headers: {
@@ -70,13 +69,11 @@ const submitForm = async () => {
     body: info.value,
   })
   .then((res) => {
-    // console.log("res", res);
     router.push("/enrollment/portal");
   })
 }
 
 const submitEnrollmentToGmail = async () => {
-  // console.log("submitEnrollmentToGmail");
   await $fetch(endpoint.value + "/api/enrollment/submit-enrollment-to-gmail/", {
     method: "POST",
     headers: {
@@ -84,23 +81,15 @@ const submitEnrollmentToGmail = async () => {
     },
     body: info.value,
   })
-    .then((res) => {
-      // console.log("res", res);
-    })
 }
 
 async function updateEnrollment() {
-  // console.log("updateEnrollment");
   await $fetch(endpoint.value + "/api/enrollment/" + id.value + "/edit/", {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
     body: info.value,
-  })
-  .then((res) => {
-    // console.log("res", res);
-    // router.push({ path: "/registrar" });
   })
 }
 </script>

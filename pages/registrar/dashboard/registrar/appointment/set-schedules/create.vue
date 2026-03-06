@@ -35,20 +35,6 @@ const testEmail = ref(userStore.user.testEmail);
 
 const minDate = ref(new Date());
 
-onMounted(() => {
-  if (
-    userStore.user.isAuthenticated &&
-    (
-      userStore.user.email === emailRegistrar.value ||
-      userStore.user.email === developerEmail.value ||
-      userStore.user.email === testEmail.value
-    )
-  ) {
-    // router.push("/registrar/appointment/set-schedules/create");
-  } else {
-    router.push("/");
-  }
-});
 
 const providersSelection = (department) => {
   highlightedDates.value = [];
@@ -57,10 +43,9 @@ const providersSelection = (department) => {
   timeSelectionList.value = true;
   addBtn.value = true;
   pleaseSelectTheProvider.value = false;
-  //let tomorrow = moment().add(1,'days');
   let currentDate = moment(moment().toDate()).format("MM-DD-YYYY");
   date.value = moment(currentDate).format("MM-DD-YYYY");
-  // console.log(date.value)
+
 
   setTimeout(() => {
     schedulesListsData.filter(function (params) {
@@ -74,7 +59,6 @@ const providersSelection = (department) => {
 };
 
 const checkIfExists = () => {
-  // addBtn.value = true;
   setTimeout(() => {
     schedulesListsData.filter(function (params) {
       if (params.provider === provider.value) {
@@ -119,7 +103,6 @@ const addDataToAPI = () => {
 }
 
 const addDates = async () => {
-  // console.log("addDates");
   errors.value = [];
 
   if (date.value == "" && provider.value == [] && time.value == []) {
@@ -139,7 +122,6 @@ const addDates = async () => {
       },
     })
       .then(async(response) => {
-        // console.log("response", response);
         addDataToAPI()
       });
   }

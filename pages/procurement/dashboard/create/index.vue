@@ -43,15 +43,11 @@ const uploadedFile = (e) => {
 const saveFile = async () => {
   let formData = new FormData();
   formData.append("image", banner_imageData.value);
-  // console.log(banner_imageData.value);
   let axiosConfig = {
     headers: { "Content-Type": "multipart/form-data" },
   };
   axios
   .post("https://tech.lsu.edu.ph/api/image_url/file/list/files/", formData, axiosConfig)
-  .then((response) => {
-    console.log(response);
-  });
 };
 
 
@@ -73,14 +69,11 @@ const submitFunc = async (e) => {
       "Content-Type": "application/json",
     },
     body: info.value,
-  }).then((response) => {
-    console.log("response", response);
-  });
+  })
 };
 
 const submitForm = async () => {
   submitFunc()
-  console.log("submitForm");
   if(banner_imageData.value !== null){
     saveFile();
   }

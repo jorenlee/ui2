@@ -364,25 +364,17 @@ const postAPI = async () => {
       info.value.additional_response_details[0].sender = info.value.firstname || 'User';
     }
 
-    // Log the data being sent for debugging
-    // console.log('Submitting data:', JSON.stringify(info.value, null, 2));
-    // console.log('detail_fees_type_document_requests:', info.value.detail_fees_type_document_requests);
-
     await $fetch(endpoint.value + "/api/registrar/create/", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: {"Content-Type": "application/json",},
       body: info.value,
     })
       .then((response) => {
-        console.log(response);
         formDisplay.value = false;
         thankYouDisplay.value = true;
         submitConfirmationEmail();
       })
       .catch((error) => {
-        console.error("Submission error:", error);
         alert(
           "There was an error submitting your form. Please check all required fields and try again."
         );
@@ -403,8 +395,6 @@ const submitConfirmationEmail = async () => {
       "Content-Type": "application/json",
     },
     body: info.value,
-  }).then((response) => {
-    console.log(response);
   });
 };
 
@@ -484,7 +474,6 @@ const handleFileUploadFront = (event) => {
   // Validate file size and type
   const validFiles = [];
   for (const file of files) {
-    console.log(`Front ID File: ${file.name}, Size: ${file.size} bytes, Type: ${file.type}`);
     if (!validateFile(file)) {
       event.target.value = ""; // Clear the input
       return;
@@ -493,7 +482,6 @@ const handleFileUploadFront = (event) => {
   }
 
   selectedFilesFront.value = validFiles;
-  console.log("Front ID files:", event);
 };
 
 // Handle file upload for Government ID (Back)
@@ -503,16 +491,13 @@ const handleFileUploadBack = (event) => {
   // Validate file size and type
   const validFiles = [];
   for (const file of files) {
-    console.log(`Back ID File: ${file.name}, Size: ${file.size} bytes, Type: ${file.type}`);
     if (!validateFile(file)) {
       event.target.value = ""; // Clear the input
       return;
     }
     validFiles.push(file);
   }
-
   selectedFilesBack.value = validFiles;
-  console.log("Back ID files:", event);
 };
 
 // Handle file upload for Credential Evaluations (Multiple files)
@@ -527,19 +512,12 @@ const handleFileUploadCredential = (event) => {
     }
     validFiles.push(file);
   }
-
   selectedFilesCredential.value = validFiles;
-  console.log("Credential files selected:", validFiles);
-  validFiles.forEach((file) => {
-    console.log(`Credential File: ${file.name}, Size: ${file.size} bytes`);
-  });
 };
 
 // Remove file from selected files (Credential)
 const removeFileCredential = (index) => {
   selectedFilesCredential.value.splice(index, 1);
-  console.log(`File at index ${index} removed. Remaining files:`, selectedFilesCredential.value);
-
   // Clear the file input if no files remain
   if (selectedFilesCredential.value.length === 0) {
     const fileInput = document.getElementById('file-upload-credential');
@@ -571,8 +549,6 @@ const removeUploadedFileCredential = (index) => {
   if (info.value.additional_documents && Array.isArray(info.value.additional_documents)) {
     info.value.additional_documents.splice(index, 1);
   }
-
-  console.log(`Uploaded file at index ${index} removed. Remaining files:`, uploadedFilesCredential.value);
 };
 
 // Upload Government ID (Front) files
@@ -596,7 +572,7 @@ const uploadFilesFront = async () => {
       }
     );
     uploadStatusFront.value = "Upload successful!";
-    console.log("Front ID files uploaded:", response.data);
+  
 
     // Handle both array and single object responses
     if (Array.isArray(response.data)) {
@@ -618,7 +594,6 @@ const uploadFilesFront = async () => {
 
     selectedFilesFront.value = []; // Clear selected files after successful upload
     info.value.valid_id_front = uploadedFilesFront.value;
-    console.log("Updated info with front ID:", info.value);
   } catch (error) {
     console.error("Front ID upload error:", error);
     uploadStatusFront.value = "Upload failed: " + error.message;
@@ -646,7 +621,6 @@ const uploadFilesBack = async () => {
       }
     );
     uploadStatusBack.value = "Upload successful!";
-    console.log("Back ID files uploaded:", response.data);
 
     // Handle both array and single object responses
     if (Array.isArray(response.data)) {
@@ -668,7 +642,6 @@ const uploadFilesBack = async () => {
 
     selectedFilesBack.value = []; // Clear selected files after successful upload
     info.value.valid_id_back = uploadedFilesBack.value;
-    console.log("Updated info with back ID:", info.value);
   } catch (error) {
     console.error("Back ID upload error:", error);
     uploadStatusBack.value = "Upload failed: " + error.message;
@@ -703,8 +676,6 @@ const uploadFilesCredential = async () => {
           }
         );
 
-        console.log(`File ${i + 1} uploaded:`, response);
-
         // Handle both array and single object responses
         if (Array.isArray(response)) {
           const mapped = response.map((item) => ({
@@ -733,10 +704,6 @@ const uploadFilesCredential = async () => {
 
       // Replace the default "N/A" value with actual uploaded files
       info.value.additional_documents = uploadedFiles;
-
-      console.log("All additional documents uploaded:", uploadedFiles);
-      console.log("Updated info.additional_documents:", info.value.additional_documents);
-
       selectedFilesCredential.value = []; // Clear selected files after successful upload
 
       // Clear status after 3 seconds

@@ -907,7 +907,7 @@ const theSameAddressBtn = (choice) => {
     if (choice === 'yesStudentContactInfo') {
         newStudent.value.student_contact_info.the_same_address.answer = 'yes'
         newStudent.value.student_contact_info.current_or_present_living_home_address_category = newStudent.value.student_contact_info.permanent_living_home_address_category
-        // console.log(newStudent.value)
+        
     }
     if (choice === 'noStudentContactInfo') {
         newStudent.value.student_contact_info.the_same_address.answer = 'no'
@@ -916,7 +916,7 @@ const theSameAddressBtn = (choice) => {
     if (choice === 'yesFatherContactInfo') {
         newStudent.value.father_contact_info.the_same_address.answer = 'yes'
         newStudent.value.father_contact_info.current_or_present_living_home_address_category = newStudent.value.father_contact_info.permanent_living_home_address_category
-        // console.log(newStudent.value)
+        
     }
     if (choice === 'noFatherContactInfo') {
         newStudent.value.father_contact_info.the_same_address.answer = 'no'
@@ -925,7 +925,7 @@ const theSameAddressBtn = (choice) => {
     if (choice === 'yesMotherContactInfo') {
         newStudent.value.mother_contact_info.the_same_address.answer = 'yes'
         newStudent.value.mother_contact_info.current_or_present_living_home_address_category = newStudent.value.mother_contact_info.permanent_living_home_address_category
-        // console.log(newStudent.value)
+        
     }
     if (choice === 'noMotherContactInfo') {
         newStudent.value.mother_contact_info.the_same_address.answer = 'no'
@@ -934,7 +934,7 @@ const theSameAddressBtn = (choice) => {
     if (choice === 'yesGuardianContactInfo') {
         newStudent.value.legal_guardian_contact_info.the_same_address.answer = 'yes'
         newStudent.value.legal_guardian_contact_info.current_or_present_living_home_address_category = newStudent.value.legal_guardian_contact_info.permanent_living_home_address_category
-        // console.log(newStudent.value)
+        
     }
     if (choice === 'noGuardianContactInfo') {
         newStudent.value.legal_guardian_contact_info.the_same_address.answer = 'no'
@@ -950,7 +950,7 @@ const submitFunc = async () => {
             body: newStudent.value,
         }
     ).then((response) => {
-        // console.log(response);
+        
         lasallianGreetingsOfPeaceTab.value = false
         stepsTab.value = false
         submitAndCheckEmailTab.value = true
@@ -962,9 +962,6 @@ const submitNewStudentToGmail = async () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: newStudentSubmitToEmail.value,
-    }).then((response) => {
-        // console.log(response);
-        // console.log(newStudentSubmitToEmail.value)
     })
 
 }
@@ -972,8 +969,6 @@ const submitNewStudentToGmail = async () => {
 const submitForm = () => {
     submitFunc()
     submitNewStudentToGmail()
-    // console.log(newStudent.value)
-    // saveFile();
 }
 </script>
 

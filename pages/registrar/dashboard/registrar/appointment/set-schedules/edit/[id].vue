@@ -44,7 +44,6 @@ onMounted(() => {
       userStore.user.email === testEmail.value
     )
   ) {
-    // router.push("/registrar/appointment/set-schedules/edit/" + route.params.id);
     schedulesListsData.filter(function (params) {
       if (params.date === schedule.value.date) {
         provider.value = params.provider;
@@ -53,7 +52,6 @@ onMounted(() => {
         date.value = params.date;
       }
     });
-    // console.log(schedule)
   } else {
     router.push("/");
   }

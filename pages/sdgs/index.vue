@@ -201,17 +201,7 @@ onMounted(async () => {
   try {
     const res = await $fetch(endpoint.value + "/api/cms/content/list/");
     cmsData.value = Array.isArray(res) ? res : [];
-    console.log("CMS Data loaded:", cmsData.value.length, "items");
-    
-    console.log('sdgsWithRelatedCount',sdgsWithRelatedCount)
-
-
-    // Debug: Log sample filters to see the data structure
-    if (cmsData.value.length > 0) {
-      console.log("Sample filters:", cmsData.value.slice(0, 3).map(item => item.filters));
-    }
   } catch (error) {
-    console.error("Error fetching CMS data:", error);
     cmsData.value = [];
   }
 });

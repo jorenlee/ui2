@@ -88,8 +88,6 @@ let listAvailableDatesInEachProvider = (value) => {
 const uploadedFile = (e) => {
   banner_imageData.value = e.target.files[0];
   imagePreview.value = URL.createObjectURL(banner_imageData.value);
-  // console.log(e.target.files[0]);
-  // banner_image.value = "https://lsufullstack.onrender.com/media/files/images/" + e.target.files[0].name;
   banner_image.value = "http://127.0.0.1:8000/media/files/images/" + e.target.files[0].name;
 };
 
@@ -106,7 +104,6 @@ const saveFile = async () => {
   axios
     .post(endpoint.value + "/api/enrollment/image/list/images/", formData, axiosConfig)
     .then((response) => {
-      // console.log(response);
       upload_status.value = "success";
     })
     .catch(() => {
@@ -142,9 +139,6 @@ const updateSchedule = async () => {
       time: timeList.value,
     },
   })
-    .then((response) => {
-      // console.log("response", response);
-    });
 };
 
 const submitAppointmentToGmail = async () => {
@@ -181,7 +175,6 @@ const submitAppointmentToGmail = async () => {
 };
 
 const submitForm = async () => {
-  // console.log("submitForm");
 
   errors.value = [];
 
@@ -241,10 +234,6 @@ const submitForm = async () => {
         created_by_email: created_by_email.value,
       },
     })
-      .then((response) => {
-        // console.log("response", response);
-        // router.push({ path: "/registrar/appointment" });
-      });
   }
 };
 </script>

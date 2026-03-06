@@ -193,7 +193,6 @@ const visibleNews = computed(() => {
 onMounted(async () => {
   try {
     const res = await $fetch(endpoint.value + "/api/cms/content/list/");
-    // console.log("res", res);
     info.value = Array.isArray(res) ? res : [];
   } catch (error) {
     console.error("Error fetching list:", error);

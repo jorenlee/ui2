@@ -105,7 +105,6 @@ const submitForm = async () => {
       filteredListItems.push(parseInt(params.tracking_id.slice(-3)));
     });
     let largestNumber = Math.max(...filteredListItems);
-    console.log(largestNumber);
     digitsNum.value = largestNumber + 1;
     info.value.tracking_id =
       "DRS-" + moment().year() + "-" + String(digitsNum.value).padStart(3, "0");
@@ -138,8 +137,7 @@ const postAPI = async () => {
         thankYouDisplay.value = true;
         submitCounter.value = 0;
         isSubmitting.value = false;
-        // console.log(response);
-        submitDRSFormToGmail();
+        notifyEmail();
       });
     }
   }
@@ -148,22 +146,18 @@ const forRevisionInput = ref(false);
 const changeStatus = () => {
   if (info.value.status === "For Revision") {
     forRevisionInput.value = true;
-    // console.log(info.value.status)
   } else {
     forRevisionInput.value = false;
-    // console.log(info.value.status)
   }
 };
 
-const submitDRSFormToGmail = async () => {
+const notifyEmail = async () => {
   await $fetch(endpoint.value + "/api/drs/drs-notification-submit/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: info.value,
-  }).then((response) => {
-    console.log(response);
   });
 };
 </script>

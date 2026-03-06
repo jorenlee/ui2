@@ -42,9 +42,8 @@ const testEmail = ref(userStore.user.testEmail);
 
 onMounted(async () => {
   const bookingAppointmentList = await $fetch(
-    endpoint.value + "/api/appointments/list/"
+    endpoint.value + "/api/appointments/list/",
   ).catch((error) => error.data);
-  // console.log(bookingAppointmentList)
   if (
     userStore.user.isAuthenticated &&
     (userStore.user.email === emailCBARegistrar.value ||
@@ -106,23 +105,13 @@ onMounted(async () => {
         bookingAppointmentListFilter.value = bookingAppointmentList || 0;
 
         numberOfPages = Math.ceil(
-          bookingAppointmentListFilter._rawValue.length / numberOfItems.value
+          bookingAppointmentListFilter._rawValue.length / numberOfItems.value,
         );
         bookingAppointmentListFilterlength =
           bookingAppointmentListFilter._rawValue.length;
-
-        // console.log(
-        //   "bookingAppointmentListFilterlength",
-        //   bookingAppointmentListFilter._rawValue.length
-        // );
-        // console.log(
-        //   "bookingAppointmentListFilter",
-        //   bookingAppointmentListFilter._rawValue
-        // );
     }
   } else {
     router.push("/");
-    // console.log(bookingAppointmentList.value);
   }
 });
 
@@ -133,14 +122,16 @@ let numberOfPages;
 let bookingAppointmentListFilterlength;
 
 let itemsLoaded = computed(() => {
-  return bookingAppointmentListFilter.value.slice(startNum.value, numberOfItems.value);
+  return bookingAppointmentListFilter.value.slice(
+    startNum.value,
+    numberOfItems.value,
+  );
 });
 
 const prev = () => {
   if (startNum.value > 0) {
     startNum.value -= initialDisplay.value;
     numberOfItems.value -= initialDisplay.value;
-    // console.log("prev");
     itemsLoaded;
   }
 };
@@ -149,7 +140,6 @@ const next = () => {
   if (numberOfItems.value < bookingAppointmentListFilterlength) {
     startNum.value += initialDisplay.value;
     numberOfItems.value += initialDisplay.value;
-    // console.log("next");
     itemsLoaded;
   }
 };
@@ -171,24 +161,19 @@ const toggleDeleteBtn = (id) => {
 };
 
 const deleteAppointment = async () => {
-  await $fetch(endpoint.value + "/api/appointments/" + idToBeDeleted.value + "/delete/", {
-    // await $fetch("/api/appointments/" + idToBeDeleted.value + "/delete/", {
-    method: "DELETE",
-    headers: {
-      Authorization: userStore.user.token,
-      "Content-Type": "application/json",
+  await $fetch(
+    endpoint.value + "/api/appointments/" + idToBeDeleted.value + "/delete/",
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
     },
-  })
-    .then(async (response) => {
-      // console.log("response", response);
-      router.go();
-      toggleConfirmDelete.value = !toggleConfirmDelete.value;
-    })
-    .catch((error) => {
-      // console.log(error);
-    });
+  ).then(async (response) => {
+    router.go();
+    toggleConfirmDelete.value = !toggleConfirmDelete.value;
+  });
 };
-
 </script>
 
 <template>
@@ -204,7 +189,10 @@ const deleteAppointment = async () => {
         <div class="bg-green-800">
           <div class="lg:flex mx-auto justify-between py-2 px-3.5">
             <div class="lg:flex items-center text-white lg:gap-5">
-              <div @click="toggleSideBarMenu = !toggleSideBarMenu" class="w-10 px-1.5">
+              <div
+                @click="toggleSideBarMenu = !toggleSideBarMenu"
+                class="w-10 px-1.5"
+              >
                 <i
                   class="fa text-3xl text-white"
                   :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'"
@@ -218,7 +206,6 @@ const deleteAppointment = async () => {
                 </h1>
               </div>
             </div>
-           
           </div>
         </div>
         <div class="px-3">
@@ -269,7 +256,9 @@ const deleteAppointment = async () => {
                         <li class="px-2 lg:w-2/12">
                           {{ moment(b.date).format("MM-DD-YYYY") }}
                         </li>
-                        <li class="flex px-2 font-bold justify-center lg:w-1/12">
+                        <li
+                          class="flex px-2 font-bold justify-center lg:w-1/12"
+                        >
                           <div class="mx-auto lg:flex justify-center">
                             <button @click="goToEdit(b.id)">
                               <i
@@ -365,7 +354,7 @@ const deleteAppointment = async () => {
         </div>
       </div>
     </div>
-    <DashboardFooter/>
+    <DashboardFooter />
   </div>
 </template>
 <style scoped>
@@ -434,4 +423,3 @@ input[type="radio"] {
   background: #00c566;
 }
 </style>
-

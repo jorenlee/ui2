@@ -117,7 +117,7 @@
   onMounted(async () => {
     donationLogs.value = await $fetch(endpoint.value + "/api/investiture/list/").catch((error) => error.data);
     donationLogsSorted.value = donationLogs.value.sort((b, a) => a.amount - b.amount);
-    console.log(donationLogsSorted.value)
+
 
     percentTotalAmountS1.value = ((totalAmountS1.value/totalAmount.value) * 100).toFixed(2)+'%'
     percentTotalAmountS2.value = ((totalAmountS2.value/totalAmount.value) * 100).toFixed(2)+'%'
@@ -142,9 +142,7 @@
     donationLogsBankTransfer.value = donationLogs.value.filter(function(params) {
       return params.payment_method === 'bank transfer'
     })
-    console.log(donationLogsCash.value.length)
-    console.log(donationLogsPledge.value.length)
-    console.log(donationLogsBankTransfer.value.length)
+
 
 
 
@@ -160,29 +158,10 @@
     degreeBankTransferNumber.value = ((totalAmountBankTranfer.value / totalAmount.value) * 100)
 
 
-
-    
-    // degreeCashNumber.value = ((donationLogsCash.value.length / donationLogs.value.length) * 100)
-    // degreePledgeNumber.value = ((donationLogsPledge.value.length / donationLogs.value.length) * 100)
-    // degreeBankTransferNumber.value = ((donationLogsBankTransfer.value.length / donationLogs.value.length) * 100)
-
-
-
-
     degreeCash.value = (degreeCashNumber.value).toFixed(2) + '%'
     degreePledge.value = (degreePledgeNumber.value).toFixed(2) + '%'
     degreeBankTransfer.value = (degreeBankTransferNumber.value).toFixed(2) + '%'
 
-
-
-
-    console.log(degreeCashNumber.value)
-    console.log(degreePledgeNumber.value)
-    console.log(degreeBankTransferNumber.value)
-
-    console.log(degreeCash.value)
-    console.log(degreePledge.value)
-    console.log(degreeBankTransfer.value)
   }
 
   // (SI amount / total amount raised)*100 Ang formula

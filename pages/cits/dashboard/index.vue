@@ -15,7 +15,6 @@
       if (userStore.user.isAuthenticated && (userStore.user.email === "jorenleeluna24@gmail.com" || userStore.user.email === "jorenlee.luna@lsu.edu.ph")) {
         listItems.value = await $fetch(endpoint.value + "/api/cits/directory/list").catch((error) => error.data) || 0;
         router.push("/");
-        console.log(listItems.value)
       } else {
         router.push("/");
       }
@@ -33,7 +32,6 @@
         "Content-Type": "application/json",
       },
     }).then(async (response) => {
-      console.log("response", response);
       listItems.value = await $fetch(endpoint.value + "/api/campus-pass/list").catch((error) => error.data) || 0;
       toggleConfirmDelete.value = !toggleConfirmDelete.value;
     })

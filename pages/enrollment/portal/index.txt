@@ -184,7 +184,7 @@ const submitNewEnrollmentBtn = () => {
 };
 
 const submitForm = async () => {
-  //console.log("submitForm");
+
 
   errors.value = [];
   if (
@@ -287,14 +287,14 @@ const submitForm = async () => {
       },
     })
       .then((response) => {
-        //console.log("response", response);
+   
         router.push("/enrollment/portal");
       })
   }
 };
 
 const submitEnrollmentToGmail = async () => {
-  //console.log("submitEnrollmentToGmail");
+
   await $fetch(endpoint.value + "/api/enrollment/submit-enrollment-to-gmail/", {
     method: "POST",
     headers: {
@@ -347,14 +347,10 @@ const submitEnrollmentToGmail = async () => {
     },
   })
     .then((response) => {})
-    .catch((error) => {
-      //console.log(error);
-    });
+
 };
 
 async function updateEnrollment() {
-  //console.log("updateEnrollment");
-  //console.log("submitForm");
 
   errors.value = [];
 
@@ -456,10 +452,6 @@ async function updateEnrollment() {
         created_by_email: created_by_email.value,
       },
     })
-      .then((response) => {
-        //console.log("response", response);
-        // router.push({ path: "/registrar" });
-      })
   }
 }
 </script>

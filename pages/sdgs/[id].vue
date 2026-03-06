@@ -178,8 +178,6 @@ onMounted(async () => {
         return regex.test(filters);
       });
     });
-    
-    console.log(`Filtered ${info.value.length} items for SDG ${sdgNum}`);
   } catch (error) {
     console.error("Error fetching list:", error);
     errorMsg.value = "Failed to load news & updates.";

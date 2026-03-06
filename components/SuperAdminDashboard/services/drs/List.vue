@@ -268,8 +268,6 @@ const downloadCSV = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
-    console.log(`✅ CSV exported successfully: ${dataToExport.length} records`);
   } catch (error) {
     console.error("Error downloading CSV:", error);
     alert("Error downloading CSV. Please try again.");
@@ -372,8 +370,6 @@ const filteredActions = reactive({
 });
 
 const actionChecked = () => {
-  console.log(filteredItems);
-
   const actions = {
     reviewedByAction: "reviewed_by_action",
     verifiedByAction: "verified_by_action",
@@ -397,8 +393,6 @@ const actionChecked = () => {
       filteredActions[actions[actionKey]] = conditionalElement.value;
     }
   }
-
-  console.log(filteredActions);
 };
 
 const toggleDeleteBtn = (id) => {
@@ -412,7 +406,6 @@ const deleteItem = async () => {
       "Content-Type": "application/json",
     },
   }).then(async (response) => {
-    console.log("response", response);
     await fetchListItems();
     toggleConfirmDelete.value = !toggleConfirmDelete.value;
   });
@@ -422,8 +415,6 @@ const goToEdit = async (id) => {
   filteredItems = await $fetch(endpoint.value + "/api/drs/" + id + "/").catch(
     (error) => error.data,
   );
-
-  console.log(filteredItems);
   displayUpdateForm.value = true;
 };
 
@@ -441,7 +432,6 @@ const refetchAllData = async () => {
 };
 
 const updateData = async (id) => {
-  console.log(id);
   isUpdating.value = true;
   filteredItems.effectivity_date = effectivityDate.value;
   await $fetch(endpoint.value + "/api/drs/edit/" + id + "/", {
@@ -500,9 +490,6 @@ const submitDRSFormToGmailRMO = async () => {
       "Content-Type": "application/json",
     },
     body: filteredItems,
-  }).then((response) => {
-    console.log(response);
-    console.log("Details Updated");
   });
 };
 </script>

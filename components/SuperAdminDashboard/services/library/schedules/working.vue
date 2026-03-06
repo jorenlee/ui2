@@ -378,8 +378,6 @@ const createSchedule = async () => {
   }
 
   const payload = formToPayload(form.value);
-  console.log("📤 Sending payload:", payload);
-  console.log("📍 Endpoint:", endpoint.value);
 
   // Safety check: ensure time array is not empty
   if (!payload.time || payload.time.length === 0) {
@@ -390,7 +388,7 @@ const createSchedule = async () => {
   isSubmitting.value = true;
   try {
     const url = `${endpoint.value}/api/library/schedule/booking/create/`;
-    console.log("🔗 Full URL:", url);
+  
 
     const response = await $fetch(url, {
       method: "POST",
@@ -398,7 +396,7 @@ const createSchedule = async () => {
       headers: { "Content-Type": "application/json" },
     });
 
-    console.log("✅ Create response:", response);
+
 
     // Success: clear form, close modal, refresh calendar
     closeModal();

@@ -37,10 +37,10 @@ const donateAnonymously = ref(false);
 const uploadReceiptBox = ref(false);
 
 const imagePath = ref(
-  "https://lsu-media-styles.sgp1.digitaloceanspaces.com/storage-bucket-name/folder-location/files/investiture/files/"
+  "https://lsu-media-styles.sgp1.digitaloceanspaces.com/storage-bucket-name/folder-location/files/investiture/files/",
 );
 const imagePreview = ref(
-  "https://lsu-media-styles.sgp1.digitaloceanspaces.com/storage-bucket-name/folder-location/files/admissions/sample.jpg"
+  "https://lsu-media-styles.sgp1.digitaloceanspaces.com/storage-bucket-name/folder-location/files/admissions/sample.jpg",
 );
 
 const eTargetFiles = ref(null);
@@ -50,8 +50,6 @@ const uploadedFile = (e) => {
   imagePreview.value = URL.createObjectURL(eTargetFiles.value);
   donationInfo.value.receipt_url =
     imagePath.value + "" + e.target.files[0].name;
-
-  console.log(donationInfo.value.receipt_url);
 };
 
 const backToDetailsBtn = () => {
@@ -97,7 +95,6 @@ const codeRestart = () => {
 const okInfo = () => {
   donationForm.value = false;
   receiptBox.value = true;
-  // console.log(donationInfo.value)
 };
 
 const submitDonation = () => {
@@ -197,15 +194,12 @@ const saveFile = () => {
     .post(
       imageUploaderEndpoint.value + "/api/investiture/file/list/files/",
       formData,
-      axiosConfig
+      axiosConfig,
     )
     .then((response) => {
-      console.log(response);
-      // 2nd to Load
       addNewDonationEntry();
     })
     .catch((error) => {
-      console.log(error.response.data.error);
     });
 };
 
@@ -213,7 +207,6 @@ const addNewDonationEntry = async () => {
   donationForm.value = false;
   receiptBox.value = false;
   thankYouMessage.value = true;
-  // console.log(donationInfo.value)
   if (donationInfo.value.payment_method === "bank transfer") {
     donationInfo.value.usher_id = "N/A";
   }
@@ -242,10 +235,6 @@ const addNewDonationEntry = async () => {
     },
     body: donationInfo.value,
   }).then((response) => {
-    //console.log(donationInfo.value)
-    console.log(response);
-    //console.log(response.errors);
-    //Last to Load
     notifyEmail();
   });
 };
@@ -258,9 +247,6 @@ const notifyEmail = async () => {
     },
     body: donationInfo.value,
   }).then((response) => {
-    //console.log(donationInfo.value)
-    console.log(response);
-    //console.log(response.errors);
   });
 };
 </script>
@@ -796,7 +782,8 @@ const notifyEmail = async () => {
                     />
                   </div>
                   <div
-                    class="font-montserrat lg:mb-2 mb-3 lg:flex items-center">
+                    class="font-montserrat lg:mb-2 mb-3 lg:flex items-center"
+                  >
                     <label
                       class="lg:-ml-6 text-sm lg:font-bold text-green-800 w-3/12 lg:text-right lg:mr-5 mr-2 whitespace-nowrap lg:static block"
                       >Name <span class="text-red-800">*</span>
@@ -809,9 +796,11 @@ const notifyEmail = async () => {
                     />
                   </div>
                   <div
-                    class="font-montserrat lg:mb-2 mb-3 lg:flex items-center">
+                    class="font-montserrat lg:mb-2 mb-3 lg:flex items-center"
+                  >
                     <label
-                      class="lg:-ml-6 text-sm lg:font-bold text-green-800 w-3/12 lg:text-right lg:mr-5 mr-2 whitespace-nowrap lg:static block">Contact No. <span class="text-red-800">*</span>
+                      class="lg:-ml-6 text-sm lg:font-bold text-green-800 w-3/12 lg:text-right lg:mr-5 mr-2 whitespace-nowrap lg:static block"
+                      >Contact No. <span class="text-red-800">*</span>
                     </label>
                     <input
                       type="tel"
@@ -819,11 +808,15 @@ const notifyEmail = async () => {
                       maxlength="13"
                       minlength="11"
                       v-model="donationInfo.contact_number"
-                      placeholder="e.g +639001002004"/>
+                      placeholder="e.g +639001002004"
+                    />
                   </div>
-                  <div class="font-montserrat lg:mb-2 mb-3 lg:flex items-center">
+                  <div
+                    class="font-montserrat lg:mb-2 mb-3 lg:flex items-center"
+                  >
                     <label
-                      class="lg:-ml-6 text-sm lg:font-bold text-green-800 w-3/12 lg:text-right lg:mr-5 mr-2 whitespace-nowrap lg:static block">Email <span class="text-red-800">*</span>
+                      class="lg:-ml-6 text-sm lg:font-bold text-green-800 w-3/12 lg:text-right lg:mr-5 mr-2 whitespace-nowrap lg:static block"
+                      >Email <span class="text-red-800">*</span>
                     </label>
                     <input
                       type="email"

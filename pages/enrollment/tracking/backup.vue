@@ -36,8 +36,6 @@ const trackBtn = async () => {
       enrolleesData.value = await $fetch(endpoint.value + "/api/admissions/list/", {
       method: "GET",
     }).then((response) => {
-      // console.log("response", response);
-      // console.log(response.length)
       response.filter(function (params) {
         if (searchBtn.value === params.tracking_id) {
           steps.value = params.enrollment_tracking_status
@@ -48,7 +46,6 @@ const trackBtn = async () => {
           sorryNoResultsFound.value = false;
           trackingList.value = true;
           enrolleesDataOneFetch.value = params
-          // console.log(enrolleesData.value)
         }
         else  {
           sorryNoResultsFound.value = true;
@@ -60,7 +57,6 @@ const trackBtn = async () => {
       })
     }).catch((err) => {
       err.data
-      // console.log(err.data)
       spinner.value = false;
       trackingList.value = false;
     })
@@ -96,9 +92,6 @@ const saveFile = async () => {
   };
   axios
     .post("https://api.lsu.edu.ph/api/admissions/file/list/files/", formData, axiosConfig)
-    .then((response) => {
-      // console.log(response);
-    });
 }
 
 const submitForm = async () => {
@@ -123,20 +116,14 @@ const submitFunc = async () => {
     status: 'ongoing',
     remarks: 'ongoing'
   }
-  // console.log("submitForm");
   await $fetch(endpoint.value + "/api/admissions/" + id.value + "/edit/", {
     method: "PUT",
     body: enrolleesDataOneFetch.value,
   }).then((response) => {
-    // console.log("response", response);
     setTimeout(() => {
       doneSubmitReceipt.value = false;
     }, 7000)
   })
-}
-
-const goToEvaluation = (id) => {
-  router.push("/enrollment/evaluation/" + id);
 }
 
 const goToAlternativeEvaluation = () => {

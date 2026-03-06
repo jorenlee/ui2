@@ -31,9 +31,6 @@ export default defineNuxtConfig({
       autoprefixer: {},
     },
   },
-  googleAdsense: {
-    id: 'ca-pub-5434839287765657'
-  },
   build: {
     transpile: ['@vuepic/vue-datepicker']
   },
@@ -74,7 +71,10 @@ export default defineNuxtConfig({
     }]
   ],
   gtag: {
-    id: 'G-G21JEZYE42'
+    id: process.env.GOOGLE_ANALYTICS
+  },
+  googleAdsense: {
+    id: process.env.GOOGLE_CLIENT_ID
   },
   nitro: {
     prerender: {

@@ -13,7 +13,6 @@ let toggleConfirmDelete = ref(false);
 const toggleDeleteBtn = (id) => {
   toggleConfirmDelete.value = !toggleConfirmDelete.value;
   deleteIDProcurement.value = id;
-  // console.log(id);
 };
 
 const deleteProcurement = async () => {
@@ -31,7 +30,6 @@ const deleteProcurement = async () => {
     }
   )
     .then(async (response) => {
-      // console.log("response", response);
       procurements.value = await $fetch(endpoint.value + "/api/procurements/list").catch((error) => error.data) || 0;
       toggleConfirmDelete.value = !toggleConfirmDelete.value;
     })

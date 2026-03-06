@@ -137,8 +137,6 @@ const fetchInitialData = async () => {
     schedulesListsData.value = scheds || [];
     books.value = bookList || [];
     highlightedDates.value = schedulesListsData.value.map((s) => s.date);
-
-    console.log(schedulesListsData.value)
   } catch (e) {
     console.error("Initial data fetch error:", e);
     showToaster("Failed to load data. Please refresh the page.", "error");

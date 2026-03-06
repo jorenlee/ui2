@@ -496,33 +496,6 @@ let evaluationData = ref({
     }
 })
 
-const fillOutInfo = async () => {
-    // console.log("enrolleesData.value", enrolleesData.value)
-    // enrolleesData.value.filter(function (params) {
-        // if (searchBtn.value === params.tracking_id) {
-        //     console.log(params)
-        //     evaluationData.value.tracking_id = params.tracking_id,
-        //     evaluationData.value.firstname = params.student_personal_info.firstname,
-        //     evaluationData.value.middlename = params.student_personal_info.middlename,
-        //     evaluationData.value.lastname = params.student_personal_info.lastname,
-        //     evaluationData.value.student_lsu_id_number = params.student_lsu_id_number,
-        //     evaluationData.value.lsu_email_address = params.student_contact_info.contact.lsu_email_address,
-        //     evaluationData.value.personal_email_address = params.student_contact_info.contact.personal_email_address
-        // }
-    // })
-    // singleData.evaluation.submitted = true
-}
-
-// musta have ID
-// const editStatus = async () => {
-//     await $fetch(endpoint.value + "/api/admissions/" + route.params.id + "/edit/", {
-//         method: "PUT",
-//         body: enrolleesData.value,
-//     }).then((response) => {
-//         console.log("response", response);
-//     })
-// }
-
 const submitEvaluation = async () => {
     await $fetch(endpoint.value + "/api/admissions/submit-evaluation-form/create/",
         {
@@ -531,16 +504,12 @@ const submitEvaluation = async () => {
             body: evaluationData.value,
         }
     ).then((response) => {
-        // console.log(response);
         evaluationFormTab.value = false
         doneEvaluationFormTab.value = true
     })
 }
 
 const submitFunc = async () => {
-    // fillOutInfo()
-    // editStatus()
-    // console.log('evaluationData', evaluationData)
     submitEvaluation()
 }
 

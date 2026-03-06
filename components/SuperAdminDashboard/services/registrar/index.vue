@@ -1147,17 +1147,16 @@ const allSelected = computed(() => {
 });
 
 const selectAllItems = () => {
-  // console.log("selectAllItems called");
-  // console.log("allSelected.value:", allSelected.value);
+
   stopAutoRefresh();
   isSelectingAll.value = true;
   if (allSelected.value) {
     selectedItems.value = [];
   } else {
-    // console.log("filteredByCollege.value:", filteredByCollege.value);
+
     selectedItems.value = filteredByCollege.value.map((item) => item.id);
   }
-  // console.log("selectedItems.value:", selectedItems.value);
+
   startAutoRefresh();
   isSelectingAll.value = false;
 };
@@ -1187,7 +1186,7 @@ const deleteItems = async () => {
       });
     }
 
-    // console.log(`${selectedItems.value.length} items deleted successfully`);
+ 
 
     selectedItems.value = [];
     await fetchListItems();
@@ -1321,9 +1320,7 @@ const paginatedListItems = computed(() => {
 });
 
 const filteredByCollege = computed(() => {
-  // console.log("filteredByCollege computed");
-  // console.log("selectedCollege.value:", selectedCollege.value);
-  // console.log("paginatedListItems.value:", paginatedListItems.value);
+
   if (!selectedCollege.value) {
     return paginatedListItems.value;
   }
@@ -1333,7 +1330,7 @@ const filteredByCollege = computed(() => {
   const filtered = paginatedListItems.value.filter(
     (item) => item.college === selectedCollege.value,
   );
-  // console.log("filtered:", filtered);
+
   return filtered;
 });
 
@@ -1404,9 +1401,6 @@ const sortedLogs = computed(() => {
   });
 });
 
-watch(listItems, (val) => {
-  // console.log("listItems updated:", val);
-});
 
 watch(selectedCollege, () => {
   selectedItems.value = [];

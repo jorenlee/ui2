@@ -634,9 +634,6 @@ const createSchedule = async () => {
   }
 
   const payload = formToPayload(form.value);
-  console.log("📤 Sending payload:", payload);
-  console.log("📍 Endpoint:", endpoint.value);
-
   // Safety check: ensure time array is not empty
   if (!payload.time || payload.time.length === 0) {
     toast.value = { show: true, message: "No times selected", type: "error" };
@@ -646,16 +643,12 @@ const createSchedule = async () => {
   isSubmitting.value = true;
   try {
     const url = `${endpoint.value}/api/library/schedule/booking/create/`;
-    console.log("🔗 Full URL:", url);
 
     const response = await $fetch(url, {
       method: "POST",
       body: payload,
       headers: { "Content-Type": "application/json" },
     });
-
-    console.log("✅ Create response:", response);
-
     // Success: clear form, close modal, refresh calendar
     closeModal();
     await fetchSchedules();
@@ -693,9 +686,6 @@ const updateSchedule = async () => {
     };
     return;
   }
-
-  console.log("Updating schedule Date:", form.value.date);
-
   // Get ALL existing schedules for this date
   const clickedDate = moment(form.value.date).format("MM-DD-YYYY");
   const existingSchedules = schedules.value.filter(
@@ -741,9 +731,6 @@ const updateSchedule = async () => {
     payload.time = Array.from(timeMap.values());
   }
 
-  console.log("📤 Sending payload:", payload);
-  console.log("📍 Endpoint:", endpoint.value);
-
   // Safety check: ensure time array is not empty
   if (!payload.time || payload.time.length === 0) {
     toast.value = { show: true, message: "No times selected", type: "error" };
@@ -753,16 +740,11 @@ const updateSchedule = async () => {
   isSubmitting.value = true;
   try {
     const url = `${endpoint.value}/api/library/schedule/booking/create/`;
-    console.log("🔗 Full URL:", url);
-
     const response = await $fetch(url, {
       method: "POST",
       body: payload,
       headers: { "Content-Type": "application/json" },
     });
-
-    console.log("✅ Create response:", response);
-
     // Success: clear form, close modal, refresh calendar
     closeModal();
     await fetchSchedules();
@@ -1098,9 +1080,6 @@ const removeTimeSlot = async (slotToRemove) => {
       time: updatedTimeObjects.length > 0 ? updatedTimeObjects : [],
       updated_at: new Date().toISOString(),
     };
-
-    console.log("📤 Removing slot payload:", payload);
-
     // Use create endpoint to replace all schedules for this date
     const response = await $fetch(
       `${endpoint.value}/api/library/schedule/booking/create/`,
@@ -1110,8 +1089,6 @@ const removeTimeSlot = async (slotToRemove) => {
         headers: { "Content-Type": "application/json" },
       },
     );
-
-    console.log("✅ Slot removal response:", response);
 
     // Update local state
     quickRemoveSlots.value = updatedTimes;

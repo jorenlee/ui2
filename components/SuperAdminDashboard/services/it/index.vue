@@ -641,13 +641,6 @@ watch(
             (log, index) =>
               index > newLogs.indexOf(lastLog) && log.status === "Completed",
           );
-
-          // Only add if not already added (prevent duplicates)
-          if (completedLogsAfterTransfer.length === 0) {
-            console.log(
-              "✅ Auto-adding Completed status for transferred ticket",
-            );
-          }
         }
       }
     }

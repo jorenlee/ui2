@@ -47,7 +47,7 @@ const evaluationStatic = ref({
   }
 })
 
-// console.log(enrollee)
+
 
 let evaluationData = ref({
   tracking_id: enrollee.tracking_id,
@@ -510,7 +510,7 @@ const editStatus = async () => {
     method: "PUT",
     body: enrollee,
   }).then((response) => {
-    // console.log("response", response);
+
   })
 }
 
@@ -522,13 +522,10 @@ const submitFunc = async () => {
       body: evaluationData.value,
     }
   ).then((response) => {
-    // console.log(response);
-    // router.push("/enrollment/tracking/");
     evaluationFormTab.value = false
     doneEvaluationFormTab.value = true
     editStatus()
   })
-  // console.log('evaluationData', evaluationData)
 }
 
 </script>

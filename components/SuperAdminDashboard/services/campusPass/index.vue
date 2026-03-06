@@ -79,9 +79,6 @@ const deleteItems = async () => {
         },
       });
     }
-
-    console.log(`${selectedItems.value.length} items deleted successfully`);
-
     // Clear selection and refresh
     selectedItems.value = [];
     await fetchListItems();
@@ -174,9 +171,6 @@ const checkAndRemoveDuplicates = async () => {
 
     // If any duplicates were removed, refresh the list quietly
     if (duplicates.length > 0) {
-      console.log(
-        `🧹 Removed ${duplicates.length} duplicate campus pass entries`,
-      );
       await fetchListItemsQuietly();
     }
   } catch (error) {
@@ -348,8 +342,6 @@ const editStatus = async (id) => {
     method: "PUT",
     body: selectedItem.value,
   }).then((response) => {
-    console.log("response", response);
-
     if (selectedItem.value.approval_status === "approved") {
       submitAppointmentToGmailApproved();
     }
@@ -380,7 +372,6 @@ const submitAppointmentToGmailApproved = async () => {
       purpose: selectedItem.value.purpose,
     },
   }).then(async (response) => {
-    console.log(response);
     await fetchListItems();
   });
 };
@@ -401,7 +392,6 @@ const submitAppointmentToGmailDeclined = async () => {
       purpose: selectedItem.value.purpose,
     },
   }).then(async (response) => {
-    console.log(response);
     await fetchListItems();
   });
 };
@@ -422,7 +412,6 @@ const submitAppointmentToGmailForRevision = async () => {
       purpose: selectedItem.value.purpose,
     },
   }).then(async (response) => {
-    console.log(response);
     await fetchListItems();
   });
 };

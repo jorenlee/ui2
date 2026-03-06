@@ -64,7 +64,6 @@ const authorizedRegistrarAdmin = ref(false);
 
 onMounted(async () => {
   const enrollments = await $fetch(endpoint.value + "/api/enrollment/list/").catch((error) => error.data)
-  // console.log(enrollments)
   if (
     userStore.user.isAuthenticated &&
     ( userStore.user.email === emailCBARegistrar.value ||
@@ -139,7 +138,6 @@ onMounted(async () => {
     }
   } else {
     router.push("/");
-    // console.log(enrollments.value);
   }
 });
 
@@ -147,20 +145,16 @@ onMounted(async () => {
 const toggleDeleteBtn = (id) => {
   toggleConfirmDelete.value = !toggleConfirmDelete.value;
   idToBeDeleted.value = id;
-  // console.log(id);
 };
 
 const deleteEnrollment = async () => {
   await $fetch(endpoint.value + "/api/enrollment/" + idToBeDeleted.value + "/delete/", {
     method: "DELETE",
     headers: {
-      Authorization: userStore.user.token,
       "Content-Type": "application/json",
-      // 'Access-Control-Allow-Origin': 'lsu.edu.ph',
     },
   })
     .then(async (response) => {
-      // console.log("response", response);
       router.go();
       toggleConfirmDelete.value = !toggleConfirmDelete.value;
     })

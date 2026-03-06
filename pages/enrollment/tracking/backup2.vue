@@ -75,8 +75,6 @@
        enrolleesDataContinuing.value = await $fetch(endpoint.value + "/api/admissions-second-sem-dev/list/", {
          method: "GET",
        }).then((response) => {
-         // console.log("response", response);
-         // console.log(response.length)
          response.filter(function(params) {
            if (searchBtnContinuing.value === params.tracking_id) {
             //  stepsContinuing.value = params.enrollment_tracking_status
@@ -85,8 +83,6 @@
              sorryNoResultsFoundContinuing.value = false;
              trackingListContinuing.value = true;
              enrolleesDataOneFetchContinuing.value = params
-             console.log(enrolleesDataOneFetchContinuing.value)
-            //  console.log(enrolleesData.value)
            } else {
              sorryNoResultsFoundContinuing.value = true;
              setTimeout(() => {
@@ -97,7 +93,6 @@
          })
        }).catch((err) => {
          err.data
-         console.log(err.data)
          spinnerContinuing.value = false;
          trackingListContinuing.value = false;
        })
@@ -116,8 +111,6 @@
        enrolleesDataTransferee.value = await $fetch(endpoint.value + "/api/admissions-second-sem-dev/transferee/list/", {
          method: "GET",
        }).then((response) => {
-         // console.log("response", response);
-         // console.log(response.length)
          response.filter(function(params) {
            if (searchBtnTransferee.value === params.tracking_id) {
              stepsTransferee.value = params.enrollment_tracking_status
@@ -126,7 +119,6 @@
              sorryNoResultsFoundTransferee.value = false;
              trackingListTransferee.value = true;
              enrolleesDataOneFetchTransferee.value = params
-             // console.log(enrolleesData.value)
            } else {
              sorryNoResultsFoundTransferee.value = true;
              setTimeout(() => {
@@ -137,7 +129,6 @@
          })
        }).catch((err) => {
          err.data
-         // console.log(err.data)
          spinneTransferee.value = false;
          trackingListTransferee.value = false;
        })
@@ -159,8 +150,6 @@
        enrolleesDataSecondDegreeHolder.value = await $fetch(endpoint.value + "/api/admissions-second-sem-dev/second-degree-holder/list/", {
          method: "GET",
        }).then((response) => {
-         // console.log("response", response);
-         // console.log(response.length)
          response.filter(function(params) {
            if (searchBtnSecondDegreeHolder.value === params.tracking_id) {
              stepsSecondDegreeHolder.value = params.enrollment_tracking_status
@@ -169,7 +158,6 @@
              sorryNoResultsFoundSecondDegreeHolder.value = false;
              trackingListSecondDegreeHolder.value = true;
              enrolleesDataOneFetchSecondDegreeHolder.value = params
-             // console.log(enrolleesData.value)
            } else {
              sorryNoResultsFoundSecondDegreeHolder.value = true;
              setTimeout(() => {
@@ -180,7 +168,6 @@
          })
        }).catch((err) => {
          err.data
-         // console.log(err.data)
          spinneSecondDegreeHolder.value = false;
          trackingListSecondDegreeHolder.value = false;
        })
@@ -199,8 +186,7 @@
        enrolleesDataNewFirstYear.value = await $fetch(endpoint.value + "/api/admissions-second-sem-dev/new-student/list/", {
          method: "GET",
        }).then((response) => {
-         // console.log("response", response);
-         // console.log(response.length)
+  
          response.filter(function(params) {
            if (searchBtnNewFirstYear.value === params.tracking_id) {
              stepsNewFirstYear.value = params.enrollment_tracking_status
@@ -209,7 +195,7 @@
              sorryNoResultsFoundNewFirstYear.value = false;
              trackingListNewFirstYear.value = true;
              enrolleesDataOneFetchNewFirstYear.value = params
-             // console.log(enrolleesData.value)
+      
            } else {
              sorryNoResultsFoundNewFirstYear.value = true;
              setTimeout(() => {
@@ -220,7 +206,7 @@
          })
        }).catch((err) => {
          err.data
-         // console.log(err.data)
+    
          spinnerNewFirstYear.value = false;
          trackingListNewFirstYear.value = false;
        })

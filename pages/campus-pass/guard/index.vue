@@ -22,7 +22,6 @@ const fetchListItems = async () => {
       (await $fetch(endpoint.value + "/api/campus-pass/list").catch(
         (error) => error.data
       )) || []; // Ensure it's an array or empty array
-    // console.log(allData.value)
   } catch (error) {
     console.error("Error fetching list items:", error);
     // Handle error appropriately
@@ -49,15 +48,12 @@ const btnToggleListsName = async (id) => {
   selectedItem.value = await $fetch(
     endpoint.value + "/api/campus-pass/" + id + "/"
   ).catch((error) => error.data);
-  // console.log(id);
-  // console.log(selectedItem.value);
   toggleListsName.value = !toggleListsName.value;
   currentIdSelected.value = id;
   searchResults.value = selectedItem.value.name_list;
 };
 
 const requestChangeStatus = async (id) => {
-  console.log(id);
   editStatus(id);
 };
 
@@ -65,8 +61,6 @@ const editStatus = async (id) => {
   await $fetch(endpoint.value + "/api/campus-pass/" + id + "/edit/", {
     method: "PUT",
     body: selectedItem.value,
-  }).then(async (response) => {
-    console.log("response", response);
   });
 };
 
@@ -75,12 +69,10 @@ let searchQueryInternal = ref("");
 
 let filteredItems;
 const filteredListItems = computed(() => {
-  // filteredItems = Array.isArray(listItems.value) ? [...listItems.value] : [];
 
   listItems.value = allData.value.filter(
     (item) => item.approval_status === "approved"
   );
-  // console.log('all approved', listItems.value)
 
   filteredItems = listItems.value;
 
@@ -98,10 +90,6 @@ const filteredListItems = computed(() => {
       }
       return false;
     });
-    // filteredItems = filteredItems.filter(
-    //   (item) =>
-    //     item.incharge_lastname === searchQuery.value
-    // );
   } else {
     filteredItems = Array.isArray(listItems.value) ? [...listItems.value] : [];
   }

@@ -37,12 +37,10 @@ const goToCreate = () => {
 }
 
 const submitFunc = async () => {
-  console.log("submitForm");
   await $fetch(endpoint.value + "/api/procurements/" + route.params.id + "/edit/", {
     method: "PUT",
     body: procurements,
   }).then((response) => {
-    console.log("response", response);
     router.push({ path: "/procurement/dashboard" });
   })
 }

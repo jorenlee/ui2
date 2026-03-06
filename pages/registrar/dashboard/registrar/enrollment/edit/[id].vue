@@ -16,20 +16,6 @@ const emailRegistrar = ref(userStore.user.registrarEmail);
 const developerEmail = ref(userStore.user.developerEmail);
 const testEmail = ref(userStore.user.testEmail);
 
-onMounted(() => {
-  if (
-    userStore.user.isAuthenticated &&
-    (userStore.user.email === emailRegistrar.value ||
-      userStore.user.email === developerEmail.value ||
-      userStore.user.email === testEmail.value)
-  ) {
-    // router.push("/registrar/enrollment/edit/" + route.params.id);
-    // console.log(enrollment);
-  } else {
-    router.push("/");
-  }
-});
-
 let id = ref(enrollment.value.id);
 let enrollmentId = ref(enrollment.value.enrollmentId);
 let studentId = ref(enrollment.value.studentId);
@@ -121,20 +107,15 @@ function handleChangeReceipt(e) {
   fileTitleReceipt.value = e.target.files[0].lastModified;
   const storageRef = storageReference(storage, "receipt/" + fileTitleReceipt.value);
   uploadTaskReceipt.value = uploadBytesResumable(storageRef, e.target.files[0]);
-
-  // console.log(e.target.files[0].lastModified);
   uploadTaskReceipt.value.on(
     "state_changed",
     (snapshot) => {
       // Get task progressprogressReceipt, including the number of bytes uploaded and the total number of bytes to be uploaded
       progressReceipt.value = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-      // console.log("Upload is " + progressprogressReceipt.value + "% done");
       switch (snapshot.state) {
         case "pausedReceipt":
-          // console.log("Upload is paused");
           break;
         case "running":
-          // console.log("Upload is running");
           break;
       }
     },
@@ -142,7 +123,6 @@ function handleChangeReceipt(e) {
     () => {
       // Upload completed successfully, now we can get the download URL
       getDownloadURL(uploadTaskReceipt.value.snapshot.ref).then((downloadURL) => {
-        // console.log("File available at", downloadURL);
         proofOfPayment.value = downloadURL;
         bannerImagePreviewReceipt.value = downloadURL;
       });
@@ -169,20 +149,10 @@ const sendEmailCredentials = () => {
 };
 
 const submitForm = async () => {
-  // console.log("submitForm");
-
   await $fetch(endpoint.value + "/api/enrollment/" + id.value + "/edit/", {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    // body: {},
-  })
-    .then((response) => {
-      // console.log("response", response);
-      // router.push({ path: "/registrar/enrollment" });
-    });
-
+    headers: {"Content-Type": "application/json",},
+  });
 }
 
 const submitCredentialsToGmail = async () => {
@@ -198,9 +168,7 @@ const submitCredentialsToGmail = async () => {
     headers: {
       "Content-Type": "application/json",
     },
-    // body: {},
-  })
-    .then((response) => { });
+  });
 };
 </script>
 <template>

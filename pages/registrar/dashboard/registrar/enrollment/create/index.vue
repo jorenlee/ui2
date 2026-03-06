@@ -113,8 +113,6 @@ let filteredCourseMajor = computed(() =>
 const uploadedFile = (e) => {
   documentData.value = e.target.files[0];
   imagePreview.value = URL.createObjectURL(documentData.value);
-  // console.log(e.target.files[0]);
-  // documents.value = "https://lsufullstack.onrender.com/media/files/images/" + e.target.files[0].name;
   documents.value = "http://127.0.0.1:8000/media/files/images/" + e.target.files[0].name;
 };
 
@@ -131,7 +129,6 @@ const saveFile = async () => {
   axios
     .post(endpoint.value + "/api/enrollment/image/list/images/", formData, axiosConfig)
     .then((response) => {
-      // console.log(response);
       upload_status.value = "success";
     })
     .catch(() => {
@@ -151,27 +148,16 @@ const submitEnrollmentToGmail = async () => {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-    },
-    // body: {},
+    }
   })
-    .then((response) => { })
-    .catch((error) => {
-      // console.log(error);
-    });
 };
 
 const submitForm = async () => {
-  // console.log("submitForm");
   await $fetch(endpoint.value + "/api/enrollment/create/", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    // body: {},
-  })
-  .then((response) => {
-    // console.log("response", response);
-    // router.push({ path: "/registrar/enrollment" });
   })
 }
 </script>

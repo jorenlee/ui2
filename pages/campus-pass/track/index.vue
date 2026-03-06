@@ -23,13 +23,6 @@ const getData = () => {
         if (params.tracking_id === trackingID) {
           return params.tracking_id === trackingID;
         }
-        // else {
-        //   notFoundAlert.value = true;
-        //   console.log('Not Found!')
-        //   setTimeout(() => {
-        //     notFoundAlert.value = false
-        //   }, 5000)
-        // }
       });
     }
   }, 500);

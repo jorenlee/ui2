@@ -13,11 +13,7 @@ const handleOnSuccess = async (event) => {
       console.error("No email found in response:", userInfo);
       return;
     }
-
     userStore.setToken(event.credential, userInfo.email);
-    console.log("CCC User info:", userInfo);
-
-    // ✅ Redirect to CCC Dashboard
     router.push("/ccc/dashboard");
   } catch (error) {
     console.error("Login error:", error);

@@ -284,8 +284,6 @@ const postAPI = async () => {
 
     formDisplay.value = false;
     thankYouDisplay.value = true;
-
-    console.log("Form submitted:", info.value);
     await submitOERFormToGmail();
   } catch (error) {
     console.error("Submission error:", error);
@@ -305,7 +303,6 @@ const submitOERFormToGmail = async () => {
         body: info.value,
       }
     );
-    console.log("Notification sent:", response);
   } catch (error) {
     console.error("Notification error:", error);
   }

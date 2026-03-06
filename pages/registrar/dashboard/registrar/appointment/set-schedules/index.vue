@@ -34,29 +34,9 @@ const emailRegistrar = ref(userStore.user.registrarEmail);
 const developerEmail = ref(userStore.user.developerEmail);
 const testEmail = ref(userStore.user.testEmail);
 
-onMounted(() => {
-  if (
-    userStore.user.isAuthenticated &&
-    (
-      userStore.user.email === emailRegistrar.value ||
-      userStore.user.email === developerEmail.value ||
-      userStore.user.email === testEmail.value
-    )
-  ) {
-    // router.push("/registrar/appointment/set-schedules");
-  } else {
-    router.push("/");
-  }
-  // console.log("schedulesLists", schedulesLists);
-  // console.log("schedulesListsData", schedulesListsData);
-  // listAvailableDates();
-  providersSelection("CAS / CON");
-});
-
 
 let providersSelection = (department) => {
   highlightedDates.value = [];
-  // console.log(department)
   setTimeout(() => {
     schedulesListsData.filter(function (params) {
       if (department === params.provider) {
@@ -98,7 +78,6 @@ const deleteSchedule = async () => {
     },
   })
     .then(async (response) => {
-      // console.log("response", response);
       router.go();
       toggleConfirmDelete.value = !toggleConfirmDelete.value;
     })

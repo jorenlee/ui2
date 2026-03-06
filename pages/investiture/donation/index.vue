@@ -45,8 +45,6 @@
     eTargetFiles.value = e.target.files[0];
     imagePreview.value = URL.createObjectURL(eTargetFiles.value);
     donationInfo.value.receipt_url = imagePath.value + '' + e.target.files[0].name
-
-    console.log(donationInfo.value.receipt_url)
   }
 
 
@@ -96,7 +94,6 @@
   const okInfo = () => {
     donationForm.value = false
     receiptBox.value = true
-    // console.log(donationInfo.value)
   }
 
   const submitDonation = () => {
@@ -202,12 +199,7 @@
     axios
     .post(endpoint.value + "/api/investiture/file/list/files/", formData, axiosConfig)
     .then((response) => {
-      console.log(response);
-      // 2nd to Load
       addNewDonationEntry()
-    })
-    .catch(error => {
-      console.log(error.response.data.error)
     })
   }
 
@@ -217,7 +209,6 @@
     donationForm.value = false
     receiptBox.value = false
     thankYouMessage.value = true
-    // console.log(donationInfo.value)
     if(donationInfo.value.payment_method === 'bank transfer') {
       donationInfo.value.usher_id = 'N/A' 
     }
@@ -244,10 +235,6 @@
       },
       body: donationInfo.value,
     }).then((response) => {
-      //console.log(donationInfo.value)
-      console.log(response);
-      //console.log(response.errors);
-      //Last to Load
       notifyEmail()
     })
   }
@@ -259,10 +246,6 @@
         "Content-Type": "application/json"
       },
       body: donationInfo.value,
-    }).then((response) => {
-      //console.log(donationInfo.value)
-      console.log(response);
-      //console.log(response.errors);
     })
   }
 </script>

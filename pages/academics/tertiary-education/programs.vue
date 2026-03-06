@@ -1,8 +1,6 @@
 <script setup>
 import tertiaryJSON from "./tertiary.json";
 const tertiary = ref(tertiaryJSON.tertiary);
-
-// console.log("tertiary", tertiary._rawValue[0].under_grad[0].list[0].programs[0].abbr);
 </script>
 
 <template>

@@ -16,16 +16,16 @@ const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
 const { data: appointment } = await useFetch(
-  endpoint.value + "/api/appointments/" + route.params.id + "/"
+  endpoint.value + "/api/appointments/" + route.params.id + "/",
 );
 
 const tracksLists = await $fetch(
-  endpoint.value + "/api/appointments/tracking/list/"
+  endpoint.value + "/api/appointments/tracking/list/",
 ).catch((error) => error.data);
 
-const schedulesListsData = await $fetch(endpoint.value + "/api/schedules/list/").catch(
-  (error) => error.data
-);
+const schedulesListsData = await $fetch(
+  endpoint.value + "/api/schedules/list/",
+).catch((error) => error.data);
 
 let service = ref(appointment.value.service);
 let provider = ref(appointment.value.provider);
@@ -56,7 +56,7 @@ let created_by_name = ref("Registrars Admin");
 let created_by_email = ref(userStore.user.email);
 
 let bannerImagePreview = ref(
-  "https://upload.wikimedia.org/wikipedia/en/b/b0/LSU-Ozamiz_Seal.png"
+  "https://upload.wikimedia.org/wikipedia/en/b/b0/LSU-Ozamiz_Seal.png",
 );
 
 let errors = ref([]);
@@ -85,8 +85,6 @@ onMounted(() => {
       userStore.user.email === testEmail.value)
   ) {
     listAvailableDates();
-    // console.log("appointment", appointment);
-    // router.push("/registrar/appointment/edit/" + route.params.id);
     schedulesListsData.filter(function (params) {
       if (params.date === appointment.value.date) {
         id.value = params.id;
@@ -108,7 +106,6 @@ let listAvailableDates = () => {
 
 let listAvailableDatesInEachProvider = (department) => {
   highlightedDates.value = [];
-  // console.log(department);
   setTimeout(() => {
     schedulesListsData.filter(function (params) {
       if (department === params.provider) {
@@ -122,7 +119,6 @@ let listAvailableDatesInEachProvider = (department) => {
   });
 };
 
-
 // to select date
 const setDate = (value) => {
   time.value = timeOld.value;
@@ -135,32 +131,23 @@ const setDate = (value) => {
       providerList.value = params.provider;
     }
   });
-  // console.log(id.value);
 };
 
 const editSchedule = async () => {
-  // console.log("updated");
   if (timeList.value.length > 1) {
     _.pull(timeList.value, time.value);
     await $fetch(endpoint.value + "/api/schedules/" + id.value + "/edit/", {
       method: "PUT",
-      // headers: {
-      //   "Content-Type": "application/json",
-      // },
       body: {
         provider: providerList.value,
         date: date.value,
         time: timeList.value,
       },
-    })
-      .then((response) => {
-        // console.log("response", response);
-      })
+    });
   }
 };
 
 const submitTracking = async () => {
-  // console.log("submitTracking");
   errors.value = [];
   if (
     referencecode.value == "" &&
@@ -182,50 +169,44 @@ const submitTracking = async () => {
         time: tracking_time.value,
         description: tracking_description.value,
       },
-    })
-      .then((response) => {
-        // console.log("response", response);
-        router.go();
-      })
+    }).then((response) => {
+      router.go();
+    });
   }
 };
 
 const submitForm = async () => {
-  // console.log("submitForm");
   errors.value = [];
   editSchedule();
-
-  // console.log("submitForm edited");
-  await $fetch(endpoint.value + "/api/appointments/" + route.params.id + "/edit/", {
-    method: "PUT",
-    body: {
-      service: service.value,
-      provider: provider.value,
-      referencecode: referencecode.value,
-      date: date.value,
-      time: time.value,
-      firstname: firstname.value,
-      lastname: lastname.value,
-      email: email.value,
-      contactnumber: contactnumber.value,
-      address: address.value,
-      city: city.value,
-      zipcode: zipcode.value,
-      notes: notes.value,
-      banner_image: banner_image.value,
-      successful_request: successful_request.value,
-      appointment_confirm: appointment_confirm.value,
-      payment: payment.value,
-      request_delivered: request_delivered.value,
-      updated_at: updated_at.value,
-      created_by_name: created_by_name.value,
-      created_by_email: created_by_email.value,
+  await $fetch(
+    endpoint.value + "/api/appointments/" + route.params.id + "/edit/",
+    {
+      method: "PUT",
+      body: {
+        service: service.value,
+        provider: provider.value,
+        referencecode: referencecode.value,
+        date: date.value,
+        time: time.value,
+        firstname: firstname.value,
+        lastname: lastname.value,
+        email: email.value,
+        contactnumber: contactnumber.value,
+        address: address.value,
+        city: city.value,
+        zipcode: zipcode.value,
+        notes: notes.value,
+        banner_image: banner_image.value,
+        successful_request: successful_request.value,
+        appointment_confirm: appointment_confirm.value,
+        payment: payment.value,
+        request_delivered: request_delivered.value,
+        updated_at: updated_at.value,
+        created_by_name: created_by_name.value,
+        created_by_email: created_by_email.value,
+      },
     },
-  })
-    .then((response) => {
-      // console.log("response", response);
-      // router.push({ path: "/registrar/appointment" });
-    })
+  );
 };
 </script>
 
@@ -242,7 +223,10 @@ const submitForm = async () => {
         <div class="bg-green-800">
           <div class="flex mx-auto justify-between py-2 px-3.5">
             <div class="flex items-center text-white gap-5">
-              <div @click="toggleSideBarMenu = !toggleSideBarMenu" class="w-10 px-1.5">
+              <div
+                @click="toggleSideBarMenu = !toggleSideBarMenu"
+                class="w-10 px-1.5"
+              >
                 <i
                   class="fa text-3xl text-white"
                   :class="toggleSideBarMenu ? 'fa-caret-left' : 'fa-bars'"
@@ -256,7 +240,6 @@ const submitForm = async () => {
                 </h1>
               </div>
             </div>
-          
           </div>
         </div>
 
@@ -286,9 +269,15 @@ const submitForm = async () => {
                             <option value="Good Moral">
                               Certificate of Good Moral Character
                             </option>
-                            <option value="Honorable">Honorable Dismissal</option>
-                            <option value="TOR">Transcipt of Records Application</option>
-                            <option value="OTHERS">Other Certificates Application</option>
+                            <option value="Honorable">
+                              Honorable Dismissal
+                            </option>
+                            <option value="TOR">
+                              Transcipt of Records Application
+                            </option>
+                            <option value="OTHERS">
+                              Other Certificates Application
+                            </option>
                           </optgroup>
 
                           <optgroup label="SAO Office">
@@ -323,7 +312,9 @@ const submitForm = async () => {
                                 :value="p.registrarsAssign"
                                 v-model="provider"
                                 @click="
-                                  listAvailableDatesInEachProvider(p.registrarsAssign)
+                                  listAvailableDatesInEachProvider(
+                                    p.registrarsAssign,
+                                  )
                                 "
                               />
                               <label
@@ -338,7 +329,9 @@ const submitForm = async () => {
                         </div>
                       </div>
                       <div class="pb-3">
-                        <h1 class="text-center mb-3 font-bold lasalle-green-text">
+                        <h1
+                          class="text-center mb-3 font-bold lasalle-green-text"
+                        >
                           Calendar
                         </h1>
                         <div class="w-fit mx-auto">
@@ -369,7 +362,9 @@ const submitForm = async () => {
                         <div class="w-full">
                           <div class="">
                             <div class="">
-                              <div class="h-60 w-10/12 mx-auto px-5 py-2 mt-1 rounded-md">
+                              <div
+                                class="h-60 w-10/12 mx-auto px-5 py-2 mt-1 rounded-md"
+                              >
                                 <ul class="">
                                   <li
                                     class="mb-3 lg:flex justify-center font-bold"
@@ -429,7 +424,9 @@ const submitForm = async () => {
                             <h1 class="mb-3 font-bold lasalle-green-text">
                               Primary Information
                             </h1>
-                            <div class="lg:grid lg:grid-cols-2 grid-cols-1 gap-3">
+                            <div
+                              class="lg:grid lg:grid-cols-2 grid-cols-1 gap-3"
+                            >
                               <input
                                 id="firstname"
                                 name="firstname"
@@ -474,7 +471,9 @@ const submitForm = async () => {
                                 placeholder="Address"
                                 v-model="address"
                               />
-                              <div class="lg:grid lg:grid-cols-2 grid-cols-1 gap-3">
+                              <div
+                                class="lg:grid lg:grid-cols-2 grid-cols-1 gap-3"
+                              >
                                 <input
                                   id="city"
                                   name="city"
@@ -614,7 +613,10 @@ const submitForm = async () => {
           </div>
 
           <div class="w-10/12 mx-auto">
-            <form v-on:submit.prevent="submitTracking" class="lg:flex items-center">
+            <form
+              v-on:submit.prevent="submitTracking"
+              class="lg:flex items-center"
+            >
               <input
                 id="tracking_description"
                 name="tracking_description"
@@ -673,7 +675,7 @@ const submitForm = async () => {
       </div>
     </div>
 
-    <DashboardFooter/>
+    <DashboardFooter />
   </div>
 </template>
 <style scoped>
