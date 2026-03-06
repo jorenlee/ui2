@@ -22,7 +22,6 @@ const requireAllFields = ref(false);
 const isSubmitting = ref(false);
 
 const documentTypeList = ref([
-  "All",
   "Form or Template",
   "Manual",
   "MOA or MOU",

@@ -84,7 +84,6 @@ const searchQuery = ref("");
 const dateSortOrder = ref("newest");
 
 const documentTypeList = ref([
-  "All",
   "Form or Template",
   "Manual",
   "MOA or MOU",
