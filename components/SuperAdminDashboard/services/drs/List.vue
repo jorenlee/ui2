@@ -11,7 +11,7 @@ const { user } = useAuth();
 const drsAdminEmails = [
   "meredith.embuscado@lsu.edu.ph",
   "macristina.llauder@lsu.edu.ph",
-  "jorenlee.luna@lsu.edu.ph",
+ // "jorenlee.luna@lsu.edu.ph",
 ];
 
 const drsAdmins = computed(() => {
@@ -733,8 +733,8 @@ const submitDRSFormToGmailRMO = async () => {
                       </div>
 
                       <div
-                        class="w-6/12 py-1"
-                        :class="drsAdmins ? 'text-center' : 'text-right px-1'"
+                        class="w-6/12 py-1 text-center"
+                     
                       >
                         Action
                       </div>
@@ -805,7 +805,11 @@ const submitDRSFormToGmailRMO = async () => {
                                   {{ b.originating_office }}
                                 </div>
                               </div>
-                              <div class="flex gap-x-2" @click.stop>
+                              <div
+                                v-if="b.originating_email === user?.email || drsAdminEmails.includes(user?.email)"
+                                class="flex gap-x-2"
+                                @click.stop
+                              >
                                 <button
                                   class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-colors"
                                   @click="goToEdit(b.id)"
@@ -963,19 +967,7 @@ const submitDRSFormToGmailRMO = async () => {
                               </div>
                             </div>
 
-                            <div class="w-6/12 flex items-center justify-end"   v-if="!drsAdmins">
-                              <button
-                              
-                                class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105 h-fit"
-                                @click="goToEdit(b.id)"
-                                title="Edit"
-                              >
-                                <i class="fa fa-eye" aria-hidden="true"></i>
-                              </button>
-                            </div>
-
                             <div
-                              v-if="drsAdmins"
                               class="w-6/12 flex items-center justify-end px-4"
                               @click.stop
                             >
@@ -1011,23 +1003,25 @@ const submitDRSFormToGmailRMO = async () => {
                                   <i class="fab fa-google-drive"></i>
                                 </button>
 
-                                <button
-                                  class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
-                                  @click="goToEdit(b.id)"
-                                  title="Edit"
-                                >
-                                  <i
-                                    class="fa fa-pencil"
-                                    aria-hidden="true"
-                                  ></i>
-                                </button>
-                                <button
-                                  class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
-                                  @click="toggleDeleteBtn(b.id)"
-                                  title="Delete"
-                                >
-                                  <i class="fa fa-trash" aria-hidden="true"></i>
-                                </button>
+                                <template v-if="b.originating_email === user?.email || drsAdminEmails.includes(user?.email)">
+                                  <button
+                                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                    @click="goToEdit(b.id)"
+                                    title="Edit"
+                                  >
+                                    <i
+                                      class="fa fa-pencil"
+                                      aria-hidden="true"
+                                    ></i>
+                                  </button>
+                                  <button
+                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                    @click="toggleDeleteBtn(b.id)"
+                                    title="Delete"
+                                  >
+                                    <i class="fa fa-trash" aria-hidden="true"></i>
+                                  </button>
+                                </template>
                               </div>
                             </div>
                           </div>
