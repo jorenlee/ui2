@@ -2194,7 +2194,6 @@ const submitDRSFormToGmailRMO = async () => {
                                 placeholder="Document Code"
                                 v-model="filteredItems.document_code"
                                 required
-                                :disabled="!drsAdmins"
                               />
                             </div>
 
@@ -2249,7 +2248,6 @@ const submitDRSFormToGmailRMO = async () => {
                                 "
                                 placeholder="Other Comment and Remarks"
                                 v-model="filteredItems.other_comments_remarks"
-                                :disabled="!drsAdmins"
                               />
                             </div>
                           </div>
