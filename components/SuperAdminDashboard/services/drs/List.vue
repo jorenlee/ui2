@@ -786,8 +786,8 @@ const submitDRSFormToGmailRMO = async () => {
                         >
                           <!-- Mobile: Card Layout -->
                           <div class="lg:hidden space-y-2">
-                            <div class="flex justify-between items-start">
-                              <div class="flex-1">
+                            <div class="lg:flex lg:justify-between items-start">
+                              <div class="lg:flex-1">
                                 <div
                                   class="text-xs uppercase font-semibold mb-1"
                                   :class="
@@ -805,27 +805,55 @@ const submitDRSFormToGmailRMO = async () => {
                                   {{ b.originating_office }}
                                 </div>
                               </div>
-                              <div
-                                v-if="b.originating_email === user?.email || drsAdminEmails.includes(user?.email)"
-                                class="flex gap-x-2"
-                                @click.stop
-                              >
-                                <button
-                                  class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-colors"
+                                   <template v-if="b.originating_email === user?.email || drsAdminEmails.includes(user?.email)">
+                                     <button
+                                  v-if="b.other_comments_remarks"
+                                  class="mr-3 bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
                                   @click="goToEdit(b.id)"
+                                  title="Records Manager Comment"
                                 >
                                   <i
-                                    class="fa fa-pencil"
+                                    class="fa fa-comment"
                                     aria-hidden="true"
                                   ></i>
                                 </button>
-                                <button
-                                  class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-colors"
-                                  @click="toggleDeleteBtn(b.id)"
+
+                                <a
+                                  v-if="b.document_attachment"
+                                  :href="b.document_attachment"
+                                  target="_blank"
+                                  class="mr-3 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105 inline-flex items-center gap-1.5"
+                                  title="Open in Google Drive"
                                 >
-                                  <i class="fa fa-trash" aria-hidden="true"></i>
+                                  <i class="fab fa-google-drive"></i>
+                                  <i class="fa fa-external-link text-xs"></i>
+                                </a>
+                                <button
+                                  v-else
+                                  class="mr-3 bg-gray-400 text-white px-3 py-1.5 rounded-md cursor-not-allowed opacity-50"
+                                  disabled
+                                  title="No document attached"
+                                >
+                                  <i class="fab fa-google-drive"></i>
                                 </button>
-                              </div>
+                                  <button
+                                    class="mr-3 w-14 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                    @click="goToEdit(b.id)"
+                                    title="Edit"
+                                  >
+                                    <i
+                                      class="fa fa-pencil"
+                                      aria-hidden="true"
+                                    ></i>
+                                  </button>
+                                  <button
+                                    class="mr-3 w-14 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                    @click="toggleDeleteBtn(b.id)"
+                                    title="Delete"
+                                  >
+                                    <i class="fa fa-trash" aria-hidden="true"></i>
+                                  </button>
+                                </template>
                             </div>
 
                             <div>
@@ -971,7 +999,7 @@ const submitDRSFormToGmailRMO = async () => {
                             </div>
 
                             <div
-                              class="w-6/12 flex items-center justify-end px-4"
+                              class="w-2/12 flex items-center justify-end"
                               @click.stop
                             >
                               <div class="gap-x-2 space-y-2">
