@@ -733,7 +733,7 @@ const submitDRSFormToGmailRMO = async () => {
                       </div>
 
                       <div
-                        class="w-6/12 py-1 text-center"
+                        class="w-2/12 py-1 text-center"
                      
                       >
                         Action
@@ -913,8 +913,9 @@ const submitDRSFormToGmailRMO = async () => {
 
                           <!-- Desktop: Table Row Layout -->
                           <div class="hidden lg:contents">
-                            <div class="w-full px-2">
-                              <div
+                            <div class="w-full flex items-center px-2">
+                            <div> 
+  <div
                                 class="text-sm tracking-tighter whitespace-nowrap"
                               >
                                 {{ b.originating_office }}
@@ -925,6 +926,8 @@ const submitDRSFormToGmailRMO = async () => {
                               <div>
                                 {{ b.originating_email }}
                               </div>
+
+                            </div>
                             </div>
 
                             <div class="w-full flex items-center px-2">
@@ -971,8 +974,11 @@ const submitDRSFormToGmailRMO = async () => {
                               class="w-6/12 flex items-center justify-end px-4"
                               @click.stop
                             >
-                              <div class="flex gap-x-2">
-                                <button
+                              <div class="gap-x-2 space-y-2">
+                             
+
+                                <template v-if="b.originating_email === user?.email || drsAdminEmails.includes(user?.email)">
+                                     <button
                                   v-if="b.other_comments_remarks"
                                   class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
                                   @click="goToEdit(b.id)"
@@ -988,7 +994,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   v-if="b.document_attachment"
                                   :href="b.document_attachment"
                                   target="_blank"
-                                  class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105 inline-flex items-center gap-1.5"
+                                  class="block bg-blue-500 hover:bg-blue-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105 inline-flex items-center gap-1.5"
                                   title="Open in Google Drive"
                                 >
                                   <i class="fab fa-google-drive"></i>
@@ -996,16 +1002,14 @@ const submitDRSFormToGmailRMO = async () => {
                                 </a>
                                 <button
                                   v-else
-                                  class="bg-gray-400 text-white px-3 py-1.5 rounded-md cursor-not-allowed opacity-50"
+                                  class="block bg-gray-400 text-white px-3 py-1.5 rounded-md cursor-not-allowed opacity-50"
                                   disabled
                                   title="No document attached"
                                 >
                                   <i class="fab fa-google-drive"></i>
                                 </button>
-
-                                <template v-if="b.originating_email === user?.email || drsAdminEmails.includes(user?.email)">
                                   <button
-                                    class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                    class="block w-14 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
                                     @click="goToEdit(b.id)"
                                     title="Edit"
                                   >
@@ -1015,7 +1019,7 @@ const submitDRSFormToGmailRMO = async () => {
                                     ></i>
                                   </button>
                                   <button
-                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                    class="block w-14 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
                                     @click="toggleDeleteBtn(b.id)"
                                     title="Delete"
                                   >
