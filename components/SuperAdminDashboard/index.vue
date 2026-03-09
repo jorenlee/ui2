@@ -1,64 +1,84 @@
 <script setup>
-import { ref, computed, watch, onMounted, resolveComponent } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import userRolesConfig from "@/user-roles-config.json";
 
 const router = useRouter();
 const route = useRoute();
+
+const config = useRuntimeConfig();
+const endpoint = config.public.apiUrl;
+
+// ---------------- AUTH ----------------
 const { user, isLoggedIn, logout, setAuth, init } = useAuth();
 
-// ---------------- PROCESS ROLES FROM JSON ----------------
-const superAdminEmails = userRolesConfig.userRoles
-  .filter((user) => user.roles.includes("superAdmin"))
-  .map((user) => user.email);
-
-const npccMenuEmails = userRolesConfig.userRoles
-  .filter((user) => user.roles.includes("npccMenu"))
-  .map((user) => user.email);
-
-const ochAdminEmails = userRolesConfig.userRoles
-  .filter((user) => user.roles.includes("ochAdmin"))
-  .map((user) => user.email);
-
-const contentWritersEmails = userRolesConfig.userRoles
-  .filter((user) => user.roles.includes("contentWriter"))
-  .map((user) => user.email);
-
-const hrMenuEmails = userRolesConfig.userRoles
-  .filter((user) => user.roles.includes("hrMenu"))
-  .map((user) => user.email);
-
-const libraryMenuEmails = userRolesConfig.userRoles
-  .filter((user) => user.roles.includes("libraryMenu"))
-  .map((user) => user.email);
-
-const registrarMenuEmails = userRolesConfig.userRoles
-  .filter((user) => user.roles.includes("registrarMenu"))
-  .map((user) => user.email);
-
-const campusPassAdminEmails = userRolesConfig.userRoles
-  .filter((user) => user.roles.includes("campusPassAdmin"))
-  .map((user) => user.email);
-
-// ---------------- AUTH & COMPUTED ----------------
-const isUserAuthenticated = computed(() => isLoggedIn.value);
-
-const rolesByEmail = computed(() => ({
-  superAdmin: superAdminEmails,
-  hr: hrMenuEmails,
-  library: libraryMenuEmails,
-  contentWriter: contentWritersEmails,
-  och: ochAdminEmails,
-  npcc: npccMenuEmails,
-  registrar: registrarMenuEmails,
-  campusPass: campusPassAdminEmails,
-}));
-
-// ---------------- DARK MODE ----------------
+const rolePermissions = ref([]);
 const darkMode = ref(false);
 
+// ---------------- AUTH CHECK ----------------
+const isUserAuthenticated = computed(() => isLoggedIn.value);
+
+// ---------------- FETCH ROLE PERMISSIONS ----------------
+const fetchRolePermissions = async () => {
+  try {
+    rolePermissions.value = await $fetch(endpoint + "/cits/role-permissions/list/");
+  } catch (error) {
+    console.error("Error loading role permissions:", error);
+  }
+};
+
+// ---------------- BUILD ROLE MAP ----------------
+const rolesByEmail = computed(() => {
+  const roles = {
+    npccMenu: [],
+    ochAdmin: [],
+    contentWriter: [],
+    hrMenu: [],
+    libraryMenu: [],
+    registrarMenu: [],
+    campusPassAdmin: [],
+    drsAdmin: [],
+    superAdminPermission: [],
+  };
+
+  rolePermissions.value.forEach((item) => {
+    item.role_filter_permissions?.forEach((role) => {
+      if (roles[role]) {
+        roles[role].push(item.email);
+      }
+    });
+  });
+
+  return roles;
+});
+
+// ---------------- DERIVED EMAIL LISTS ----------------
+const campusPassAdminEmails = computed(() => rolesByEmail.value.campusPassAdmin);
+const contentWritersEmails = computed(() => rolesByEmail.value.contentWriter);
+const hrMenuEmails = computed(() => rolesByEmail.value.hrMenu);
+const libraryMenuEmails = computed(() => rolesByEmail.value.libraryMenu);
+const npccMenuEmails = computed(() => rolesByEmail.value.npccMenu);
+const ochAdminEmails = computed(() => rolesByEmail.value.ochAdmin);
+const registrarMenuEmails = computed(() => rolesByEmail.value.registrarMenu);
+const superAdminPermissionEmails = computed(() => rolesByEmail.value.superAdminRolePermissions);
+
+// ---------------- CURRENT USER ROLES ----------------
+const userRoles = computed(() => {
+  if (!user.value?.email) return [];
+  const record = rolePermissions.value.find(r => r.email === user.value.email);
+  return record?.role_filter_permissions || [];
+});
+
+// ---------------- MAIN USER ROLE ----------------
+const userRole = computed(() => {
+  if (userRoles.value.includes("Super Admin")) return "Super Admin";
+  if (userRoles.value.length > 0) return userRoles.value[0];
+  return null;
+});
+
+// ---------------- DARK MODE ----------------
 const toggleDarkMode = () => {
   darkMode.value = !darkMode.value;
+
   if (process.client) {
     localStorage.setItem("theme", darkMode.value ? "dark" : "light");
     document.documentElement.classList.add("theme-transition");
@@ -68,7 +88,25 @@ const toggleDarkMode = () => {
   }
 };
 
-onMounted(() => {
+// ---------------- PAGE META ----------------
+definePageMeta({
+  middleware: "cms-auth",
+});
+
+// ---------------- HANDLE TOKEN FROM URL ----------------
+onMounted(async () => {
+  await init();
+
+  const token = route.query.token;
+  if (token && typeof token === "string") {
+    setAuth(token);
+    router.replace("/dashboard");
+  }
+
+  if (!isLoggedIn.value) router.replace("/login");
+
+  await fetchRolePermissions();
+
   if (process.client) {
     const storedTheme = localStorage.getItem("theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -76,169 +114,18 @@ onMounted(() => {
   }
 });
 
-// ---------------- HANDLE TOKEN FROM URL ----------------
-onMounted(() => {
-  init();
-  const token = route.query.token;
-
-  if (token && typeof token === "string") {
-    setAuth(token);
-    router.replace("/dashboard");
-  } else if (!isLoggedIn.value) {
-    router.replace("/login");
-  }
-});
-
-// ---------------- STATE ----------------
-definePageMeta({ middleware: "cms-auth" });
-
-const currentView = ref("Menu");
-const openGroups = ref([
-  "Content Management",
-  "Human Resource",
-  "Library Management",
-  "Office of The Chancellor",
-  "NPCC IT Services",
-  "University Registrar",
-  "Campus Pass",
-  "Document Reviewer System",
-  "IT Services Feedback",
-  "Commission on Election",
-  "External Links",
-  "General Services Office",
-  "Animo Run",
-  "Safety and Security Center",
-  "Lasalle Alumni Association",
-]);
-
-// Public menu groups accessible to all authenticated users
-const publicMenuGroups = [
-  "IT Services Feedback",
-  "Animo Run",
-  "External Links",
-  "Lasalle Alumni Association",
-];
-
-// LSU-only menu groups (only @lsu.edu.ph domain)
-const lsuOnlyMenuGroups = [
-  "Commission on Election",
-  "General Services Office",
-  "Document Reviewer System",
-  "Safety and Security Center",
-];
-
-const userRole = computed(() => {
+const filteredMenuList = computed(() => {
+  const role = userRole.value;
   const email = user.value?.email;
-  if (!email) return null;
 
-  for (const [role, emails] of Object.entries(rolesByEmail.value)) {
-    if (emails.includes(email)) return role;
-  }
-  return null;
+  return subMenuList.filter(menu => {
+    if (publicMenuGroups.includes(menu.group)) return true;
+    if (lsuOnlyMenuGroups.includes(menu.group)) return email?.endsWith("@lsu.edu.ph");
+    if (!role) return false;
+    return role === "Super Admin" || !menu.allowedEmails || menu.allowedEmails.includes(email);
+  });
 });
 
-// ---------------- METHODS ----------------
-const toggleGroup = (groupName) => {
-  const index = openGroups.value.indexOf(groupName);
-  index > -1
-    ? openGroups.value.splice(index, 1)
-    : openGroups.value.push(groupName);
-};
-
-const logOut = () => {
-  logout();
-};
-
-const handleContentSubmitted = () => {
-  currentView.value = "list";
-};
-
-// ---------------- VIEW CONFIGURATION ----------------
-const currentViewConfig = computed(() => {
-  const config = {
-    form: {
-      component: resolveComponent("SuperAdminDashboardCmsForm"),
-      class: "p-4 pb-52",
-      props: { onContentSubmitted: handleContentSubmitted },
-    },
-    list: {
-      component: resolveComponent("SuperAdminDashboardCmsList"),
-      class: "p-4 pb-32",
-    },
-    appointments: {
-      component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"),
-      class: "pb-32",
-    },
-    books: {
-      component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"),
-      class: "pb-32",
-    },
-    schedules: {
-      component: resolveComponent(
-        "SuperAdminDashboardServicesLibrarySchedules",
-      ),
-      class: "pb-24",
-    },
-    hrJobVacancyList: { component: resolveComponent("ComingSoon"), class: "" },
-    hrRaffle: {
-      component: resolveComponent("SuperAdminDashboardServicesHrRaffle"),
-      class: "p-4 pb-32",
-    },
-    universityCalendar: {
-      component: resolveComponent("SuperAdminDashboardChancellorOffice"),
-      class: "p-4 pb-32",
-    },
-    npcc: {
-      component: resolveComponent("SuperAdminDashboardServicesIt"),
-      class: "px-2 pb-32",
-    },
-    registrar: {
-      component: resolveComponent("SuperAdminDashboardServicesRegistrar"),
-      class: "pb-32",
-    },
-    campusPass: {
-      component: resolveComponent("SuperAdminDashboardServicesCampusPass"),
-      class: "pb-32",
-    },
-    drsList: {
-      component: resolveComponent("SuperAdminDashboardServicesDrsList"),
-      class: "pb-32",
-    },
-    drsForm: {
-      component: resolveComponent("SuperAdminDashboardServicesDrsForm"),
-      class: "pb-20",
-    },
-    ITServicesFeedback: {
-      component: resolveComponent("UniversityPortalITServicesList"),
-      class: "pb-32",
-    },
-    BorrowOfficeKeys: { component: resolveComponent("ComingSoon"), class: "" },
-    VehicleReservation: {
-      component: resolveComponent("ComingSoon"),
-      class: "",
-    },
-    VenueReservation: { component: resolveComponent("ComingSoon"), class: "" },
-    LSUCommissionOnElectionVoting: {
-      component: resolveComponent("ComingSoon"),
-      class: "",
-    },
-    LSUCommissionOnElectionResults: {
-      component: resolveComponent("ComingSoon"),
-      class: "",
-    },
-    AnimoRunStatus: { component: resolveComponent("ComingSoon"), class: "" },
-    AnimoRunRegistration: {
-      component: resolveComponent("ComingSoon"),
-      class: "",
-    },
-  };
-  return config[currentView.value];
-});
-
-// ---------------- LIFECYCLE ----------------
-onMounted(() => {
-  if (!isLoggedIn.value) router.replace("/login");
-});
 
 // ---------------- MENU ----------------
 const subMenuList = [
@@ -437,7 +324,6 @@ const subMenuList = [
       },
     ],
   },
-
   {
     group: "External Links",
     items: [
@@ -449,6 +335,29 @@ const subMenuList = [
       },
     ],
   },
+  {
+    group: "Lasalle Alumni Association",
+    items: [
+      {
+        label: "Lasalle Alumni Association",
+        icon: "fa-graduation-cap",
+        type: "link",
+        view: "https://lasallealumni.ph/",
+      },
+    ],
+  },
+  {
+    group: "Super Admin",
+    allowedEmails: superAdminPermissionEmails,
+    items: [
+      {
+        label: "Role Permissions",
+        icon: "fa-user-shield",
+        type: "button",
+        view: "RolePermissions",
+      },
+    ],
+  },
 ];
 
 const menuList = [
@@ -457,31 +366,145 @@ const menuList = [
   { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
 ];
 
-const filteredMenuList = computed(() => {
-  const role = userRole.value;
-  const email = user.value?.email;
+const currentView = ref("Menu");
+const openGroups = ref([
+  "Content Management",
+  "Human Resource",
+  "Library Management",
+  "Office of The Chancellor",
+  "NPCC IT Services",
+  "University Registrar",
+  "Campus Pass",
+  "Document Reviewer System",
+  "IT Services Feedback",
+  "Commission on Election",
+  "External Links",
+  "General Services Office",
+  "Animo Run",
+  "Safety and Security Center",
+  "Lasalle Alumni Association",
+  "Super Admin",
+]);
 
-  return subMenuList.filter((menu) => {
-    // Allow public menu groups for all authenticated users
-    if (publicMenuGroups.includes(menu.group)) {
-      return true;
-    }
+const logOut = () => {
+  logout();
+};
 
-    // LSU-only menu groups (only @lsu.edu.ph domain)
-    if (lsuOnlyMenuGroups.includes(menu.group)) {
-      return email?.endsWith("@lsu.edu.ph");
-    }
 
-    // For non-public groups, check role and email permissions
-    if (!role) return false;
-
-    return (
-      role === "superAdmin" ||
-      !menu.allowedEmails ||
-      menu.allowedEmails.includes(email)
-    );
-  });
+// ---------------- VIEW CONFIGURATION ----------------
+const currentViewConfig = computed(() => {
+  const config = {
+    form: {
+      component: resolveComponent("SuperAdminDashboardCmsForm"),
+      class: "p-4 pb-52",
+      props: { onContentSubmitted: handleContentSubmitted },
+    },
+    list: {
+      component: resolveComponent("SuperAdminDashboardCmsList"),
+      class: "p-4 pb-32",
+    },
+    appointments: {
+      component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"),
+      class: "pb-32",
+    },
+    books: {
+      component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"),
+      class: "pb-32",
+    },
+    schedules: {
+      component: resolveComponent(
+        "SuperAdminDashboardServicesLibrarySchedules",
+      ),
+      class: "pb-24",
+    },
+    hrJobVacancyList: { component: resolveComponent("ComingSoon"), class: "" },
+    hrRaffle: {
+      component: resolveComponent("SuperAdminDashboardServicesHrRaffle"),
+      class: "p-4 pb-32",
+    },
+    universityCalendar: {
+      component: resolveComponent("SuperAdminDashboardChancellorOffice"),
+      class: "p-4 pb-32",
+    },
+    npcc: {
+      component: resolveComponent("SuperAdminDashboardServicesIt"),
+      class: "px-2 pb-32",
+    },
+    registrar: {
+      component: resolveComponent("SuperAdminDashboardServicesRegistrar"),
+      class: "pb-32",
+    },
+    campusPass: {
+      component: resolveComponent("SuperAdminDashboardServicesCampusPass"),
+      class: "pb-32",
+    },
+    drsList: {
+      component: resolveComponent("SuperAdminDashboardServicesDrsList"),
+      class: "pb-32",
+    },
+    drsForm: {
+      component: resolveComponent("SuperAdminDashboardServicesDrsForm"),
+      class: "pb-20",
+    },
+    ITServicesFeedback: {
+      component: resolveComponent("UniversityPortalITServicesList"),
+      class: "pb-32",
+    },
+    RolePermissions: {
+      component: resolveComponent("SuperAdminDashboardRolePermissions"),
+      class: "pb-32",
+    },
+    BorrowOfficeKeys: { component: resolveComponent("ComingSoon"), class: "" },
+    VehicleReservation: {
+      component: resolveComponent("ComingSoon"),
+      class: "",
+    },
+    VenueReservation: { component: resolveComponent("ComingSoon"), class: "" },
+    LSUCommissionOnElectionVoting: {
+      component: resolveComponent("ComingSoon"),
+      class: "",
+    },
+    LSUCommissionOnElectionResults: {
+      component: resolveComponent("ComingSoon"),
+      class: "",
+    },
+    AnimoRunStatus: { component: resolveComponent("ComingSoon"), class: "" },
+    AnimoRunRegistration: {
+      component: resolveComponent("ComingSoon"),
+      class: "",
+    },
+  };
+  return config[currentView.value];
 });
+
+
+// Public menu groups accessible to all authenticated users
+const publicMenuGroups = [
+  "IT Services Feedback",
+  "Animo Run",
+  "External Links",
+  "Lasalle Alumni Association",
+];
+
+// LSU-only menu groups (only @lsu.edu.ph domain)
+const lsuOnlyMenuGroups = [
+  "Commission on Election",
+  "General Services Office",
+  "Document Reviewer System",
+  "Safety and Security Center",
+];
+
+// ---------------- METHODS ----------------
+const toggleGroup = (groupName) => {
+  const index = openGroups.value.indexOf(groupName);
+  index > -1
+    ? openGroups.value.splice(index, 1)
+    : openGroups.value.push(groupName);
+};
+
+const handleContentSubmitted = () => {
+  currentView.value = "list";
+};
 
 const navigateTo = (url) => router.push(url);
 const handleMenuClick = (menu) => {
@@ -497,9 +520,7 @@ const handleMenuClick = (menu) => {
 </script>
 
 <template>
-  <div
-    :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-600'"
-  >
+  <div :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-600'">
     <!-- LOGOUT CONFIRMATION -->
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->
@@ -515,6 +536,13 @@ const handleMenuClick = (menu) => {
             />
           </div>
         </div>
+        <SuperAdminDashboardNavigation
+          :darkMode="darkMode"
+          :menuList="menuList"
+          :currentView="currentView"
+          :toggleGroup="toggleGroup"
+          @menu-click="handleMenuClick"
+        />
         <div v-if="currentView === 'Menu'" class="lg:px-6 px-3 pt-2 pb-80">
           <SuperAdminDashboardWelcome :darkMode="darkMode" />
           <SuperAdminDashboardMenuList
@@ -539,13 +567,6 @@ const handleMenuClick = (menu) => {
             @cancel="currentView = 'Menu'"
           />
         </div>
-        <SuperAdminDashboardNavigation
-          :darkMode="darkMode"
-          :menuList="menuList"
-          :currentView="currentView"
-          :toggleGroup="toggleGroup"
-          @menu-click="handleMenuClick"
-        />
       </div>
     </div>
   </div>

@@ -29,6 +29,7 @@ const documentTypeList = ref([
   "Portfolio",
   "Procedure",
   "Records",
+  "Reports",
   "Work Instructions",
 ]);
 

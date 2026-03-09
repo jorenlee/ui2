@@ -1,38 +1,6 @@
 {
   "userRoles": [
     {
-      "email": "npc@lsu.edu.ph",
-      "roles": ["superAdmin"]
-    },
-    {
-      "email": "jorenlee.luna@lsu.edu.ph",
-      "roles": ["superAdmin"]
-    },
-    {
-      "email": "michaeljohn.puertogalera@lsu.edu.ph",
-      "roles": ["superAdmin"]
-    },
-    {
-      "email": "jason.yap@lsu.edu.ph",
-      "roles": ["superAdmin"]
-    },
-    {
-      "email": "johny14_gonzaga@lsu.edu.ph",
-      "roles": ["npccMenu"]
-    },
-    {
-      "email": "rommel.rosal@lsu.edu.ph",
-      "roles": ["npccMenu"]
-    },
-    {
-      "email": "denzelroy.suarez@lsu.edu.ph",
-      "roles": ["npccMenu"]
-    },
-    {
-      "email": "giovanni.morales@lsu.edu.ph",
-      "roles": ["npccMenu"]
-    },
-    {
       "email": "och@lsu.edu.ph",
       "roles": ["ochAdmin"]
     },

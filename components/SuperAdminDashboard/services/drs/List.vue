@@ -11,7 +11,7 @@ const { user } = useAuth();
 const drsAdminEmails = [
   "meredith.embuscado@lsu.edu.ph",
   "macristina.llauder@lsu.edu.ph",
-  // "jorenlee.luna@lsu.edu.ph",
+  "jorenlee.luna@lsu.edu.ph",
 ];
 
 const drsAdmins = computed(() => {
@@ -91,6 +91,7 @@ const documentTypeList = ref([
   "Portfolio",
   "Procedure",
   "Records",
+  "Reports",
   "Work Instructions",
 ]);
 
@@ -122,7 +123,6 @@ const setPagination = (itemCount) => {
 
 // Admin emails list
 // const adminEmails = [
-//   superAdminEmail.value,
 //   "president@lsu.edu.ph",
 //   "rey.mejias@lsu.edu.ph",
 //   "meredith.embuscado@lsu.edu.ph",
