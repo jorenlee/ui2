@@ -1,23 +1,33 @@
-
 <script setup>
 import { ref, onMounted, computed } from "vue";
 
+// Props
 const props = defineProps({ darkMode: Boolean });
 
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
+// Data
 const listItems = ref([]);
 const isLoading = ref(false);
 const showForm = ref(false);
 const editingItem = ref(null);
 const searchQuery = ref("");
 
+// DELETE MODAL
+const confirmDeleteModal = ref(false);
+const deleteId = ref(null);
+
+// Toasts
+const toasts = ref([]);
+
+// Form Data
 const formData = ref({
   email: "",
   role_filter_permissions: [],
 });
 
+// Available Roles
 const availableRoles = [
   { value: "Super Admin", label: "Super Admin" },
   { value: "NPCC Menu", label: "NPCC Menu" },
@@ -30,33 +40,36 @@ const availableRoles = [
   { value: "DRS Admin", label: "DRS Admin" },
 ];
 
+// ------------------ Fetch List ------------------
 const fetchList = async () => {
   isLoading.value = true;
   try {
     listItems.value = await $fetch(
-      endpoint.value + "/api/cits/role-permissions/list/"
+      endpoint.value + "/api/cits/role-permissions/list/",
     );
   } catch (error) {
-    console.error("Error fetching role permissions:", error);
+    showToast("Error fetching role permissions", "error");
+    console.error(error);
   } finally {
     isLoading.value = false;
   }
 };
 
+// ------------------ Filtered List ------------------
 const filteredList = computed(() => {
   if (!searchQuery.value.trim()) return listItems.value;
 
   const query = searchQuery.value.toLowerCase();
-
   return listItems.value.filter(
     (item) =>
       item.email?.toLowerCase().includes(query) ||
       item.role_filter_permissions?.some((role) =>
-        role.toLowerCase().includes(query)
-      )
+        role.toLowerCase().includes(query),
+      ),
   );
 });
 
+// ------------------ Format Date ------------------
 const formatDate = (date) => {
   if (!date) return "-";
   return new Date(date).toLocaleString("en-US", {
@@ -68,95 +81,120 @@ const formatDate = (date) => {
   });
 };
 
+// ------------------ Open Form ------------------
 const openForm = (item = null) => {
   if (item) {
     editingItem.value = item;
-
     formData.value = {
       email: item.email,
       role_filter_permissions: [...item.role_filter_permissions],
     };
   } else {
     editingItem.value = null;
-
     formData.value = {
       email: "",
       role_filter_permissions: [],
     };
   }
-
   showForm.value = true;
 };
 
+// ------------------ Close Form ------------------
 const closeForm = () => {
   showForm.value = false;
   editingItem.value = null;
-
   formData.value = {
     email: "",
     role_filter_permissions: [],
   };
 };
 
+// ------------------ Toggle Role ------------------
 const toggleRole = (role) => {
   const index = formData.value.role_filter_permissions.indexOf(role);
-
-  if (index > -1) {
-    formData.value.role_filter_permissions.splice(index, 1);
-  } else {
-    formData.value.role_filter_permissions.push(role);
-  }
+  if (index > -1) formData.value.role_filter_permissions.splice(index, 1);
+  else formData.value.role_filter_permissions.push(role);
 };
 
+// ------------------ Submit Form ------------------
 const submitForm = async () => {
-  isLoading.value = true;
+  if (!formData.value.email.trim()) {
+    showToast("Email cannot be empty", "warning");
+    return;
+  }
 
+  isLoading.value = true;
   try {
     if (editingItem.value) {
       await $fetch(
         endpoint.value +
           `/api/cits/role-permissions/${editingItem.value.id}/edit/`,
-        {
-          method: "PUT",
-          body: formData.value,
-        }
+        { method: "PUT", body: formData.value },
       );
+      showToast("Role permission updated successfully", "success");
     } else {
       await $fetch(endpoint.value + "/api/cits/role-permissions/create/", {
         method: "POST",
         body: formData.value,
       });
+      showToast("Role permission created successfully", "success");
     }
 
     await fetchList();
     closeForm();
   } catch (error) {
-    console.error("Error saving role permission:", error);
+    console.error(error);
+    showToast("Error saving role permission", "error");
   } finally {
     isLoading.value = false;
   }
 };
 
-const deleteItem = async (id) => {
-  if (!confirm("Are you sure you want to delete this role permission?"))
-    return;
+// ------------------ Open Delete Modal ------------------
+const deleteItem = (id) => {
+  deleteId.value = id;
+  confirmDeleteModal.value = true;
+};
+
+// ------------------ Cancel Delete ------------------
+const cancelDelete = () => {
+  confirmDeleteModal.value = false;
+  deleteId.value = null;
+};
+
+// ------------------ Confirm Delete ------------------
+const performDelete = async () => {
+  if (!deleteId.value) return;
 
   isLoading.value = true;
-
   try {
     await $fetch(
-      endpoint.value + `/api/cits/role-permissions/${id}/delete/`,
+      endpoint.value + `/api/cits/role-permissions/${deleteId.value}/delete/`,
       {
         method: "DELETE",
-      }
+      },
     );
 
     await fetchList();
+    showToast("Role permission deleted", "success");
   } catch (error) {
-    console.error("Error deleting role permission:", error);
+    console.error(error);
+    showToast("Error deleting role permission", "error");
   } finally {
+    confirmDeleteModal.value = false;
+    deleteId.value = null;
     isLoading.value = false;
   }
+};
+
+// ------------------ Toast Helper ------------------
+const showToast = (message, type = "info", duration = 3000) => {
+  const id = Date.now() + Math.random();
+  toasts.value.push({ id, message, type });
+
+  setTimeout(() => {
+    toasts.value = toasts.value.filter((t) => t.id !== id);
+  }, duration);
 };
 
 onMounted(fetchList);
@@ -164,64 +202,42 @@ onMounted(fetchList);
 
 <template>
   <div
-    class="p-6"
+    class="p-4 sm:p-6 min-h-screen"
     :class="darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-900'"
   >
-    <!-- Header -->
-    <div
-      class="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
-    >
+    <!-- HEADER -->
+    <div class="mb-6 flex justify-between items-center">
       <div>
-        <h1
-          class="text-3xl font-bold"
-          :class="darkMode ? 'text-green-400' : 'text-green-700'"
-        >
+        <h1 class="text-3xl font-bold text-green-700">
           Role Permissions Management
         </h1>
-
-        <p
-          class="text-sm mt-1"
-          :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
-        >
-          Manage user roles and permissions
-        </p>
+        <p class="text-gray-600 text-sm">Manage user roles and permissions</p>
       </div>
 
       <button
         @click="openForm()"
         class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold flex items-center gap-2 shadow-lg"
       >
-        <i class="fa fa-plus"></i>
-        Add New Role
+        <i class="fa fa-plus"></i> Add
       </button>
     </div>
 
-    <!-- Search -->
-    <div class="mb-6">
-      <div class="relative max-w-md">
-        <i
-          class="fa fa-search absolute left-4 top-1/2 transform -translate-y-1/2"
-          :class="darkMode ? 'text-gray-500' : 'text-gray-400'"
-        ></i>
-
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search by email or role..."
-          class="w-full pl-11 pr-4 py-3 rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-          :class="
-            darkMode
-              ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-500'
-              : 'bg-white border-gray-200 text-gray-900 placeholder-gray-400'
-          "
-        />
-      </div>
+    <!-- SEARCH -->
+    <div class="mb-6 max-w-md relative">
+      <i
+        class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+      ></i>
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search by email or role..."
+        class="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200"
+      />
     </div>
 
-    <!-- Header Row -->
+    <!-- TABLE HEADER -->
     <div
-      class="grid grid-cols-12 font-semibold px-6 py-3 rounded-xl mb-3"
-      :class="darkMode ? 'bg-gray-800 text-gray-300' : 'bg-gray-200 text-gray-700'"
+      class="lg:grid grid-cols-12 text-sm font-semibold px-6 py-3 rounded-xl mb-2 bg-gray-200"
     >
       <div class="col-span-3">Email</div>
       <div class="col-span-4">Roles</div>
@@ -229,14 +245,12 @@ onMounted(fetchList);
       <div class="col-span-2 text-right">Actions</div>
     </div>
 
-    <!-- Role Rows -->
+    <!-- ROWS -->
     <div class="space-y-3">
-
       <div
         v-for="item in filteredList"
         :key="item.id"
-        class="grid grid-cols-12 items-center px-6 py-4 rounded-xl shadow-sm hover:shadow-md transition"
-        :class="darkMode ? 'bg-gray-800' : 'bg-white'"
+        class="lg:grid grid-cols-12 gap-4 items-center px-6 py-4 bg-white rounded-xl shadow-sm hover:shadow-md"
       >
         <div class="col-span-3 font-medium break-all">
           {{ item.email }}
@@ -253,52 +267,34 @@ onMounted(fetchList);
         </div>
 
         <div class="col-span-3 text-sm space-y-1">
-          <div>
-            <span class="font-semibold">Created:</span>
-            {{ formatDate(item.created_at) }}
-          </div>
-
-          <div>
-            <span class="font-semibold">Updated:</span>
-            {{ formatDate(item.updated_at) }}
-          </div>
+          <div><b>Created:</b> {{ formatDate(item.created_at) }}</div>
+          <div><b>Updated:</b> {{ formatDate(item.updated_at) }}</div>
         </div>
 
         <div class="col-span-2 flex justify-end gap-2">
           <button
             @click="openForm(item)"
-            class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+            class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-1"
           >
-            <i class="fa fa-edit mr-1"></i> Edit
+            <i class="fa fa-edit"></i> Edit
           </button>
 
           <button
             @click="deleteItem(item.id)"
-            class="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg"
+            class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center gap-1"
           >
-            <i class="fa fa-trash mr-1"></i> Delete
+            <i class="fa fa-trash"></i> Delete
           </button>
         </div>
       </div>
-
-      <div
-        v-if="filteredList.length === 0"
-        class="text-center py-12 rounded-xl"
-        :class="darkMode ? 'bg-gray-800 text-gray-400' : 'bg-white text-gray-500'"
-      >
-        No role permissions found
-      </div>
     </div>
 
-    <!-- Modal -->
+    <!-- CREATE / EDIT MODAL -->
     <div
       v-if="showForm"
       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
     >
-      <div
-        class="w-full max-w-lg p-6 rounded-xl"
-        :class="darkMode ? 'bg-gray-800' : 'bg-white'"
-      >
+      <div class="bg-white w-full max-w-lg p-6 rounded-xl">
         <h2 class="text-xl font-bold mb-4">
           {{ editingItem ? "Edit Role Permission" : "Create Role Permission" }}
         </h2>
@@ -318,11 +314,13 @@ onMounted(fetchList);
               <label
                 v-for="role in availableRoles"
                 :key="role.value"
-                class="flex items-center gap-2"
+                class="lg:flex items-center gap-2"
               >
                 <input
                   type="checkbox"
-                  :checked="formData.role_filter_permissions.includes(role.value)"
+                  :checked="
+                    formData.role_filter_permissions.includes(role.value)
+                  "
                   @change="toggleRole(role.value)"
                 />
                 {{ role.label }}
@@ -331,7 +329,7 @@ onMounted(fetchList);
           </div>
         </div>
 
-        <div class="flex justify-end gap-3 mt-6">
+        <div class="flex justify-end gap-2 mt-6">
           <button
             @click="closeForm"
             class="px-4 py-2 bg-gray-500 text-white rounded"
@@ -346,6 +344,57 @@ onMounted(fetchList);
             Save
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- DELETE CONFIRM MODAL -->
+    <div
+      v-if="confirmDeleteModal"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
+      <div class="bg-white p-6 rounded-xl max-w-md w-full">
+        <h2 class="text-lg font-bold text-red-600 mb-3 flex items-center gap-2">
+          <i class="fa fa-exclamation-triangle"></i>
+          Confirm Delete
+        </h2>
+
+        <p class="text-sm mb-6">
+          Are you sure you want to delete this role permission? This action
+          cannot be undone.
+        </p>
+
+        <div class="flex justify-end gap-3">
+          <button
+            @click="cancelDelete"
+            class="px-4 py-2 bg-gray-500 text-white rounded"
+          >
+            Cancel
+          </button>
+
+          <button
+            @click="performDelete"
+            class="px-4 py-2 bg-red-600 text-white rounded"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOASTS -->
+    <div class="fixed bottom-4 right-4 flex flex-col gap-2 z-50 max-w-sm">
+      <div
+        v-for="toast in toasts"
+        :key="toast.id"
+        :class="{
+          'bg-green-600 text-white': toast.type === 'success',
+          'bg-red-600 text-white': toast.type === 'error',
+          'bg-yellow-500 text-white': toast.type === 'warning',
+          'bg-gray-600 text-white': toast.type === 'info',
+        }"
+        class="px-4 py-2 rounded shadow-lg"
+      >
+        {{ toast.message }}
       </div>
     </div>
   </div>
