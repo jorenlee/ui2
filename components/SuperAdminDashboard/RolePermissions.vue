@@ -34,7 +34,7 @@ const fetchList = async () => {
   isLoading.value = true;
   try {
     listItems.value = await $fetch(
-      endpoint.value + "/cits/role-permissions/list/"
+      endpoint.value + "/api/cits/role-permissions/list/"
     );
   } catch (error) {
     console.error("Error fetching role permissions:", error);
@@ -115,14 +115,14 @@ const submitForm = async () => {
     if (editingItem.value) {
       await $fetch(
         endpoint.value +
-          `/cits/role-permissions/${editingItem.value.id}/edit/`,
+          `/api/cits/role-permissions/${editingItem.value.id}/edit/`,
         {
           method: "PUT",
           body: formData.value,
         }
       );
     } else {
-      await $fetch(endpoint.value + "/cits/role-permissions/create/", {
+      await $fetch(endpoint.value + "/api/cits/role-permissions/create/", {
         method: "POST",
         body: formData.value,
       });
@@ -145,7 +145,7 @@ const deleteItem = async (id) => {
 
   try {
     await $fetch(
-      endpoint.value + `/cits/role-permissions/${id}/delete/`,
+      endpoint.value + `/api/cits/role-permissions/${id}/delete/`,
       {
         method: "DELETE",
       }

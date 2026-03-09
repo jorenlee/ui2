@@ -20,7 +20,7 @@ const isUserAuthenticated = computed(() => isLoggedIn.value);
 // ---------------- FETCH ROLE PERMISSIONS ----------------
 const fetchRolePermissions = async () => {
   try {
-    rolePermissions.value = await $fetch(endpoint + "/cits/role-permissions/list/");
+    rolePermissions.value = await $fetch(endpoint + "/api/cits/role-permissions/list/");
   } catch (error) {
     console.error("Error loading role permissions:", error);
   }
