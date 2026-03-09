@@ -2,17 +2,32 @@
 import { ref, computed, onMounted, onUnmounted, reactive, watch } from "vue";
 import moment from "moment";
 import itServiceConfig from "@/it-service-config.json";
-import userRolesConfig from "@/user-roles-config.json";
 
 const props = defineProps({
   darkMode: Boolean,
 });
 
 const { user, init } = useAuth();
+const rolePermissions = ref([]);
 
-onMounted(() => {
+onMounted(async () => {
   init();
+
+  // ✅ CHECK UNRATED TICKETS HERE
+  if (user.value?.email) {
+    unratedTickets.value = await checkForUnratedTickets(
+      user.value.email,
+      npccMenuEmails.value
+    );
+  }
+
+  await fetchRolePermissions();
+
+  fetchRequests();
+  startRealtimeUpdates();
 });
+
+const unratedTickets = ref(0);
 
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
@@ -110,11 +125,6 @@ const stopRealtimeUpdates = () => {
     realtimeInterval = null;
   }
 };
-
-onMounted(() => {
-  fetchRequests();
-  startRealtimeUpdates();
-});
 
 onUnmounted(() => {
   stopRealtimeUpdates();
@@ -750,14 +760,44 @@ const normalizeOffice = () => {
       customOffice.value || "Other";
 };
 
-// Check if user has unrated tickets (ANY status - pending, in progress, completed, etc.)
-const checkForUnratedTickets = async (email) => {
-  // Exception for npccMenu users - skip rating requirement
-  // Get all emails with npccMenu role from user-roles-config.json
-  const npccMenuEmails = userRolesConfig.userRoles
-    .filter((user) => user.roles.includes("npccMenu"))
-    .map((user) => user.email.toLowerCase());
+// ---------------- FETCH ROLE PERMISSIONS ----------------
+const fetchRolePermissions = async () => {
+  try {
+    rolePermissions.value = await $fetch(endpoint + "/api/cits/role-permissions/list/");
+  } catch (error) {
+    console.error("Error loading role permissions:", error);
+  }
+};
 
+// ---------------- BUILD ROLE MAP ----------------
+const rolesByEmail = computed(() => {
+  const roles = {
+    npccMenu: [],
+    ochAdmin: [],
+    contentWriter: [],
+    hrMenu: [],
+    libraryMenu: [],
+    registrarMenu: [],
+    campusPassAdmin: [],
+    drsAdmin: [],
+    superAdminPermission: [],
+  };
+
+  rolePermissions.value.forEach((item) => {
+    item.role_filter_permissions?.forEach((role) => {
+      if (roles[role]) {
+        roles[role].push(item.email);
+      }
+    });
+  });
+
+  return roles;
+});
+
+
+const npccMenuEmails = computed(() => rolesByEmail.value.npccMenu);
+const checkForUnratedTickets = async (email, npccMenuEmails = []) => {
+  // Exception for npccMenu users - skip rating requirement
   if (email && npccMenuEmails.includes(email.toLowerCase())) {
     return false;
   }
@@ -768,21 +808,21 @@ const checkForUnratedTickets = async (email) => {
     if (res && Array.isArray(res)) {
       // Filter tickets for this user
       const userTickets = res.filter(
-        (ticket) => ticket.requestor_lsu_email === email,
+        (ticket) => ticket.requestor_lsu_email === email
       );
 
-      // Check if ANY ticket (regardless of status) is missing rating or feedback
+      // Check if ANY ticket is missing rating or feedback
       const unratedTickets = userTickets.filter((ticket) => {
         const hasNoRating =
           !ticket.evaluation_feedback_client_star_rating ||
           ticket.evaluation_feedback_client_star_rating === "" ||
           ticket.evaluation_feedback_client_star_rating === null;
+
         const hasNoFeedback =
           !ticket.evaluation_feedback_client_comment ||
           ticket.evaluation_feedback_client_comment === "" ||
           ticket.evaluation_feedback_client_comment === null;
 
-        // Consider a ticket unrated if it's missing BOTH rating AND feedback
         return hasNoRating && hasNoFeedback;
       });
 
@@ -792,7 +832,6 @@ const checkForUnratedTickets = async (email) => {
     return false;
   } catch (error) {
     console.error("Error checking for unrated tickets:", error);
-    // If there's an error, allow submission to proceed
     return false;
   }
 };

@@ -25,6 +25,7 @@ const toasts = ref([]);
 const formData = ref({
   email: "",
   role_filter_permissions: [],
+  updated_at: "",
 });
 
 // Available Roles
@@ -123,28 +124,39 @@ const submitForm = async () => {
     return;
   }
 
+  // Refresh updated_at in realtime and convert to simple string
+  formData.value.updated_at = new Date().toString();
+
   isLoading.value = true;
+
   try {
     if (editingItem.value) {
       await $fetch(
         endpoint.value +
           `/api/cits/role-permissions/${editingItem.value.id}/edit/`,
-        { method: "PUT", body: formData.value },
+        {
+          method: "PUT",
+          body: formData.value,
+        }
       );
+
       showToast("Role permission updated successfully", "success");
     } else {
       await $fetch(endpoint.value + "/api/cits/role-permissions/create/", {
         method: "POST",
         body: formData.value,
       });
+
       showToast("Role permission created successfully", "success");
     }
 
     await fetchList();
     closeForm();
+
   } catch (error) {
     console.error(error);
     showToast("Error saving role permission", "error");
+
   } finally {
     isLoading.value = false;
   }
