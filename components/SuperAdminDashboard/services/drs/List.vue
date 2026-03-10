@@ -12,6 +12,8 @@ const drsAdminEmails = [
   "meredith.embuscado@lsu.edu.ph",
   "macristina.llauder@lsu.edu.ph",
   "jorenlee.luna@lsu.edu.ph",
+  "michaeljohn.puertogalera@lsu.edu.ph",
+  "recordsmanagement@lsu.edu.ph",
 ];
 
 const drsAdmins = computed(() => {
@@ -732,7 +734,7 @@ const submitDRSFormToGmailRMO = async () => {
                         <i v-else class="fa fa-sort ml-1"></i>
                       </div>
 
-                      <div class="w-2/12 py-1 text-center">Action</div>
+                      <div class="w-1/12 pr-4 py-1 pl-16 text-center">Action</div>
                     </div>
 
                     <div v-if="isLoading" class="text-center">
@@ -785,17 +787,27 @@ const submitDRSFormToGmailRMO = async () => {
                               <div class="lg:flex-1 mb-2">
                                 <div
                                   class="text-xs uppercase font-semibold mb-1"
-                                  :class="darkMode ? 'text-white' : 'text-gray-900'">
+                                  :class="
+                                    darkMode ? 'text-white' : 'text-gray-900'
+                                  "
+                                >
                                   Office
                                 </div>
                                 <div
                                   class="font-medium text-sm"
-                                  :class="darkMode ? 'text-white' : 'text-gray-900'">
+                                  :class="
+                                    darkMode ? 'text-white' : 'text-gray-900'
+                                  "
+                                >
                                   {{ b.originating_office }}
                                 </div>
                               </div>
                               <template
-                                v-if="b.originating_email === user?.email || drsAdminEmails.includes(user?.email)">
+                                v-if="
+                                  b.originating_email === user?.email ||
+                                  drsAdminEmails.includes(user?.email)
+                                "
+                              >
                                 <button
                                   v-if="b.other_comments_remarks"
                                   class="mr-3 bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
@@ -991,16 +1003,26 @@ const submitDRSFormToGmailRMO = async () => {
                               class="w-2/12 flex items-center justify-end"
                               @click.stop
                             >
-                              <div class="gap-x-2 space-y-2">
+                              <div class="gap-x-2 space-y-2" :class="drsAdminEmails.includes(user?.email) ? 'py-2':''">
                                 <template
                                   v-if="
                                     b.originating_email === user?.email ||
                                     drsAdminEmails.includes(user?.email)
                                   "
                                 >
+                                  <a
+                                    v-if="b.document_attachment"
+                                    :href="b.document_attachment"
+                                    target="_blank"
+                                    class="block bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-md transition-all transform hover:scale-105 items-center gap-2"
+                                    title="Open in Google Drive"
+                                  >
+                                    <i class="fab fa-google-drive mr-2"></i>
+                                    <i class="fa fa-external-link text-xs"></i>
+                                  </a>
                                   <button
                                     v-if="b.other_comments_remarks"
-                                    class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                    class="block w-14 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-md transition-all transform hover:scale-105"
                                     @click="goToEdit(b.id)"
                                     title="Records Manager Comment"
                                   >
@@ -1010,18 +1032,8 @@ const submitDRSFormToGmailRMO = async () => {
                                     ></i>
                                   </button>
 
-                                  <a
-                                    v-if="b.document_attachment"
-                                    :href="b.document_attachment"
-                                    target="_blank"
-                                    class="block bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md transition-all transform hover:scale-105 inline-flex items-center gap-1.5"
-                                    title="Open in Google Drive"
-                                  >
-                                    <i class="fab fa-google-drive"></i>
-                                    <i class="fa fa-external-link text-xs"></i>
-                                  </a>
                                   <button
-                                    class="block w-14 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                    class="block w-14 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded-md transition-all transform hover:scale-105"
                                     @click="goToEdit(b.id)"
                                     title="Edit"
                                   >
@@ -1031,7 +1043,7 @@ const submitDRSFormToGmailRMO = async () => {
                                     ></i>
                                   </button>
                                   <button
-                                    class="block w-14 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-md transition-all transform hover:scale-105"
+                                    class="block w-14 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-md transition-all transform hover:scale-105"
                                     @click="toggleDeleteBtn(b.id)"
                                     title="Delete"
                                   >

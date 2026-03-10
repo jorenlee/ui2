@@ -2,7 +2,6 @@
 import _ from "lodash";
 import "./css/main.css";
 import moment from "moment";
-import { ref, computed } from "vue";
 import headOfficeJSON from "./head_office.json";
 
 /* ================= AUTH ================= */
@@ -164,387 +163,377 @@ const notifyEmail = async () => {
 </script>
 <template>
   <div>
-  
-      <div
-      v-if="formDisplay"
-        class="header bg-gradient-to-b from-[#fefefe] via-[#fefefe] to-[#bce3c2]"
-      >
-        <div class="lg:w-6/12 w-11/12 mx-auto bg-white my-20">
-          <form v-on:submit.prevent="submitForm" class="">
-            <div class="border-2 border-green-700 shadow-lg my-3">
-              <div class="">
-                <h2
-                  class="lg:text-base text-sm px-3 uppercase py-1.5 font-bold bg-green-900 text-white text-center tracking-wide"
-                >
-                  Document Review Sheet Form
-                  <!-- <span class="font-light text-xs bg-green-900 text-white block">
-                    {{ info.document_code }}</span> -->
-                </h2>
-                <!-- <div class="w-fit mx-auto text-xs mt-4 px-4 font-montserrat tracking-tight"> DRS No. <span class="border-b px-1">{{ info.tracking_id }}</span></div> -->
-                <div class="lg:p-5 px-2 pt-3 pb-2 gap-3">
-                  <div class="w-full lg:mb-0 mb-5">
-                    <div class="w-full gap-3">
-                      <div class="gap-3 w-full">
-                        <div class="gap-3 lg:mb-2 shadow py-2 px-2">
-                          <div class="lg:gap-x-2 gap-x-1 w-full">
-                            <div class="lg:flex items-center w-full mb-2">
-                              <label
-                                class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                              >
-                                <div class="w-fit lg:ml-auto pr-5">
-                                  Reference Document
-                                  <span class="text-red-600 font-normal text-sm"
-                                    >*</span
-                                  >
-                                </div>
-                              </label>
-
-                              <div
-                                class="w-full flex items-center gap-x-1 bg-white border-b-2 border-green-700 shadow-lg rounded-sm h-fit"
-                              >
-                                <img
-                                  src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/Google_Drive.png"
-                                  class="h-5 w-5 ml-2"
-                                />
-                                <input
-                                  type="url"
-                                  class="px-1 w-full border-t-0 border-x-0 border-green-700 text-xs py-2"
-                                  placeholder="Google Drink Link"
-                                  v-model="info.document_attachment"
-                                  required
-                                />
+    <div v-if="formDisplay"
+      class="header bg-gradient-to-b from-[#fefefe] via-[#fefefe] to-[#bce3c2]">
+      <div class="lg:w-6/12 w-11/12 mx-auto bg-white my-20">
+        <form v-on:submit.prevent="submitForm" class="">
+          <div class="border-2 border-green-700 shadow-lg my-3">
+            <div class="">
+              <h2
+                class="lg:text-base text-sm px-3 uppercase py-1.5 font-bold bg-green-900 text-white text-center tracking-wide"
+              >
+                Document Review Sheet Form
+                <!-- <span class="font-light text-xs bg-green-900 text-white block">
+                  {{ info.document_code }}</span> -->
+              </h2>
+              <!-- <div class="w-fit mx-auto text-xs mt-4 px-4 font-montserrat tracking-tight"> DRS No. <span class="border-b px-1">{{ info.tracking_id }}</span></div> -->
+              <div class="lg:p-5 px-2 pt-3 pb-2 gap-3">
+                <div class="w-full lg:mb-0 mb-5">
+                  <div class="w-full gap-3">
+                    <div class="gap-3 w-full">
+                      <div class="gap-3 lg:mb-2 shadow py-2 px-2">
+                        <div class="lg:gap-x-2 gap-x-1 w-full">
+                          <div class="lg:flex items-center w-full mb-2">
+                            <label
+                              class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
+                            >
+                              <div class="w-fit lg:ml-auto pr-5">
+                                Reference Document
+                                <span class="text-red-600 font-normal text-sm"
+                                  >*</span
+                                >
                               </div>
-                            </div>
+                            </label>
 
-                            <div class="lg:flex items-center w-full mb-2">
-                              <label
-                                class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                              >
-                                <div class="w-fit lg:ml-auto pr-5">
-                                  Document Title
-                                  <span class="text-red-600 font-normal text-sm"
-                                    >*</span
-                                  >
-                                </div>
-                              </label>
-                              <div class="w-full">
-                                <input
-                                  type="text"
-                                  class="px-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                  placeholder="Document Title"
-                                  v-model="info.document_title"
-                                  required
-                                />
+                            <div
+                              class="w-full flex items-center gap-x-1 bg-white border-b-2 border-green-700 shadow-lg rounded-sm h-fit"
+                            >
+                              <img
+                                src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/Google_Drive.png"
+                                class="h-5 w-5 ml-2"
+                              />
+                              <input
+                                type="url"
+                                class="px-1 w-full border-t-0 border-x-0 border-green-700 text-xs py-2"
+                                placeholder="Google Drink Link"
+                                v-model="info.document_attachment"
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div class="lg:flex items-center w-full mb-2">
+                            <label
+                              class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
+                            >
+                              <div class="w-fit lg:ml-auto pr-5">
+                                Document Title
+                                <span class="text-red-600 font-normal text-sm"
+                                  >*</span
+                                >
                               </div>
+                            </label>
+                            <div class="w-full">
+                              <input
+                                type="text"
+                                class="px-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
+                                placeholder="Document Title"
+                                v-model="info.document_title"
+                                required
+                              />
                             </div>
+                          </div>
 
-                            <div class="lg:flex items-center w-full mb-2">
-                              <label
-                                class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
+                          <div class="lg:flex items-center w-full mb-2">
+                            <label
+                              class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
+                            >
+                              <div class="w-fit lg:ml-auto pr-5">
+                                Head Office Reviewer
+                                <span class="text-red-600 font-normal text-sm"
+                                  >*</span
+                                >
+                              </div>
+                            </label>
+                            <div class="w-full">
+                              <select
+                                v-model="info.originating_office"
+                                class="px-1 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
+                                required
+                                @change="updateReviewedByName"
                               >
-                                <div class="w-fit lg:ml-auto pr-5">
+                                <option
+                                  value="Head Office Reviewer"
+                                  disabled
+                                  selected
+                                >
                                   Head Office Reviewer
-                                  <span class="text-red-600 font-normal text-sm"
-                                    >*</span
-                                  >
-                                </div>
-                              </label>
-                              <div class="w-full">
-                                <select
-                                  v-model="info.originating_office"
-                                  class="px-1 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                  required
-                                  @change="updateReviewedByName"
+                                </option>
+                                <option
+                                  :value="j.designation"
+                                  v-for="(j, i) in headOffice"
+                                  :key="i"
                                 >
-                                  <option
-                                    value="Head Office Reviewer"
-                                    disabled
-                                    selected
-                                  >
-                                    Head Office Reviewer
-                                  </option>
-                                  <option
-                                    :value="j.designation"
-                                    v-for="(j, i) in headOffice"
-                                    :key="i"
-                                  >
-                                    {{ j.officeAbbr }} | {{ j.designation }}
-                                  </option>
-                                </select>
-                              </div>
+                                  {{ j.officeAbbr }} | {{ j.designation }}
+                                </option>
+                              </select>
                             </div>
+                          </div>
 
 
 
-                            <div class="lg:flex items-center w-full mb-2">
-                              <label
-                                class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
+                          <div class="lg:flex items-center w-full mb-2">
+                            <label
+                              class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
+                            >
+                              <div class="w-fit lg:ml-auto pr-5">
+                                Document Type
+                                <span
+                                  class="text-red-600 font-normal text-sm lg:ml-1"
+                                  >*</span
+                                >
+                              </div>
+                            </label>
+                            <div class="w-full">
+                              <select
+                                v-model="info.document_type"
+                                class="px-1 lg:w-5/12 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
+                                required
                               >
-                                <div class="w-fit lg:ml-auto pr-5">
+                                <option
+                                  value="Document Type"
+                                  disabled
+                                  selected
+                                >
                                   Document Type
-                                  <span
-                                    class="text-red-600 font-normal text-sm lg:ml-1"
-                                    >*</span
-                                  >
-                                </div>
-                              </label>
-                              <div class="w-full">
-                                <select
-                                  v-model="info.document_type"
-                                  class="px-1 lg:w-5/12 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                  required
+                                </option>
+                                <option
+                                  :value="j"
+                                  v-for="(j, i) in documentTypeList"
+                                  :key="i"
                                 >
-                                  <option
-                                    value="Document Type"
-                                    disabled
-                                    selected
-                                  >
-                                    Document Type
-                                  </option>
-                                  <option
-                                    :value="j"
-                                    v-for="(j, i) in documentTypeList"
-                                    :key="i"
-                                  >
-                                    {{ j }}
-                                  </option>
-                                </select>
-                              </div>
+                                  {{ j }}
+                                </option>
+                              </select>
                             </div>
-                            <div class="lg:flex items-center w-full mb-2">
-                              <label
-                                class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                              >
-                                <div class="w-fit lg:ml-auto pr-5">
-                                  Status
-                                  <span
-                                    class="text-red-600 font-normal text-sm lg:ml-1"
-                                    >*</span
-                                  >
-                                </div>
-                              </label>
-                              <div class="w-full">
-                                <div
-                                  class="flex lg:w-fit lg:px-0 shadow bg-white border-green-700 border-b-2"
+                          </div>
+                          <div class="lg:flex items-center w-full mb-2">
+                            <label
+                              class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
+                            >
+                              <div class="w-fit lg:ml-auto pr-5">
+                                Status
+                                <span
+                                  class="text-red-600 font-normal text-sm lg:ml-1"
+                                  >*</span
                                 >
-                                  <div
-                                    class="lg:shadow-lg px-1 text-black text-xs items-center flex"
+                              </div>
+                            </label>
+                            <div class="w-full">
+                              <div
+                                class="flex lg:w-fit lg:px-0 shadow bg-white border-green-700 border-b-2"
+                              >
+                                <div
+                                  class="lg:shadow-lg px-1 text-black text-xs items-center flex"
+                                >
+                                  <span>
+                                    <input
+                                      type="radio"
+                                      value="New"
+                                      v-model="info.status"
+                                      @change="changeStatus()"
+                                      class="mr-1"
+                                      id="New"
+                                      ref="fileInput"
+                                    />
+                                  </span>
+                                  <label class="ml-1 py-2" for="New">
+                                    <span class="font-bold">New</span>
+                                  </label>
+                                </div>
+                                <div
+                                  class="flex items-center text-xs whitespace-nowrap lg:shadow-lg px-1"
+                                >
+                                  <label
+                                    class="ml-1 flex items-center w-full text-black text-xs"
+                                    for="ForRevision"
                                   >
-                                    <span>
+                                    <span class="mr-1">
                                       <input
                                         type="radio"
-                                        value="New"
+                                        value="For Revision"
                                         v-model="info.status"
                                         @change="changeStatus()"
-                                        class="mr-1"
-                                        id="New"
-                                        ref="fileInput"
+                                        class=""
+                                        id="ForRevision"
                                       />
                                     </span>
-                                    <label class="ml-1 py-2" for="New">
-                                      <span class="font-bold">New</span>
-                                    </label>
-                                  </div>
-                                  <div
-                                    class="flex items-center text-xs whitespace-nowrap lg:shadow-lg px-1"
-                                  >
-                                    <label
-                                      class="ml-1 flex items-center w-full text-black text-xs"
-                                      for="ForRevision"
+                                    <span class="font-bold mr-1"
+                                      >For Revision</span
                                     >
-                                      <span class="mr-1">
-                                        <input
-                                          type="radio"
-                                          value="For Revision"
-                                          v-model="info.status"
-                                          @change="changeStatus()"
-                                          class=""
-                                          id="ForRevision"
-                                        />
-                                      </span>
-                                      <span class="font-bold mr-1"
-                                        >For Revision</span
-                                      >
-                                      <span
-                                        class="font-bold mr-2"
-                                        :class="
-                                          forRevisionInput ? '' : 'hidden'
-                                        "
-                                        >No.
-                                      </span>
-                                      <input
-                                        :class="
-                                          forRevisionInput ? '' : 'hidden'
-                                        "
-                                        type="text"
-                                        class="px-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg py-1 rounded-sm text-xs"
-                                        placeholder="Revision Number"
-                                        v-model="info.revision_number"
-                                        ref="fileInput"
-                                      />
-                                    </label>
-                                  </div>
+                                    <span
+                                      class="font-bold mr-2"
+                                      :class="
+                                        forRevisionInput ? '' : 'hidden'
+                                      "
+                                      >No.
+                                    </span>
+                                    <input
+                                      :class="
+                                        forRevisionInput ? '' : 'hidden'
+                                      "
+                                      type="text"
+                                      class="px-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg py-1 rounded-sm text-xs"
+                                      placeholder="Revision Number"
+                                      v-model="info.revision_number"
+                                      ref="fileInput"
+                                    />
+                                  </label>
                                 </div>
                               </div>
                             </div>
-                            <div class="w-full mb-2 hidden">
-                              <label
-                                class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                              >
-                                <div class="w-fit lg:ml-auto pr-5">
-                                  Originating Email
-                                  <span class="text-red-600 font-normal text-sm"
-                                    >*</span
-                                  >
-                                </div>
-                              </label>
-                              <div class="w-full">
-                                <input
-                                  :disabled="true"
-                                  type="email"
-                                  id="email"
-                                  class="px-2 lg:w-8/12 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                  placeholder="e.g. user.name@lsu.edu.ph"
-                                  v-model="info.originating_email"
-                                  required
-                                  title="Please enter a valid LSU email address (e.g., user.name@lsu.edu.ph)"
-                                />
-
-                                <!-- pattern="^[a-zA-Z0-9._-]+@lsu\.edu\.ph$" -->
-                                <p
-                                  v-if="invalidLSUEmail"
-                                  class="text-xs text-red-700 mt-2 px-1"
+                          </div>
+                          <div class="w-full mb-2 hidden">
+                            <label
+                              class="lg:text-xs text-[10px] text-black pb-2 font-bold whitespace-nowrap lg:w-6/12"
+                            >
+                              <div class="w-fit lg:ml-auto pr-5">
+                                Originating Email
+                                <span class="text-red-600 font-normal text-sm"
+                                  >*</span
                                 >
-                                  Invalid LSU email address.
-                                </p>
                               </div>
+                            </label>
+                            <div class="w-full">
+                              <input
+                                :disabled="true"
+                                type="email"
+                                id="email"
+                                class="px-2 lg:w-8/12 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
+                                placeholder="e.g. user.name@lsu.edu.ph"
+                                v-model="info.originating_email"
+                                required
+                                title="Please enter a valid LSU email address (e.g., user.name@lsu.edu.ph)"
+                              />
+
+                              <!-- pattern="^[a-zA-Z0-9._-]+@lsu\.edu\.ph$" -->
+                              <p
+                                v-if="invalidLSUEmail"
+                                class="text-xs text-red-700 mt-2 px-1"
+                              >
+                                Invalid LSU email address.
+                              </p>
                             </div>
                           </div>
                         </div>
-                        <div class="w-fit mx-auto my-5 hidden">
-                          <div class="text-center flex">
-                            <input
-                              type="text"
-                              class="px-1 w-full rounded-sm h-8 text-xs text-right"
-                              placeholder="First Name"
-                              v-model="info.originating_firstname"
-                              required
-                            />
-                            <!-- <input type="text" class="px-1 w-full 
-                        rounded-sm  h-8 text-xs" placeholder="First Name" 
-                          v-model="info.originating_middlename" required /> -->
-                            <input
-                              type="text"
-                              class="px-1 w-full rounded-sm h-8 text-xs"
-                              placeholder="Last Name"
-                              v-model="info.originating_lastname"
-                              required
-                            />
-                          </div>
-                          <div
-                            class="border-t-2 border-black text-center text-xs py-1"
-                          >
-                            Originator’s Printed Name (E-Signature)
-                          </div>
+                      </div>
+                      <div class="w-fit mx-auto my-5 hidden">
+                        <div class="text-center flex">
+                          <input
+                            type="text"
+                            class="px-1 w-full rounded-sm h-8 text-xs text-right"
+                            placeholder="First Name"
+                            v-model="info.originating_firstname"
+                            required
+                          />
+                          <!-- <input type="text" class="px-1 w-full 
+                      rounded-sm  h-8 text-xs" placeholder="First Name" 
+                        v-model="info.originating_middlename" required /> -->
+                          <input
+                            type="text"
+                            class="px-1 w-full rounded-sm h-8 text-xs"
+                            placeholder="Last Name"
+                            v-model="info.originating_lastname"
+                            required
+                          />
+                        </div>
+                        <div
+                          class="border-t-2 border-black text-center text-xs py-1"
+                        >
+                          Originator’s Printed Name (E-Signature)
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div
-                  v-if="requireAllFields"
-                  class="my-10 w-11/12 mx-auto text-white bg-red-800 text-center py-2 px-5 block lg:text-sm text-xs"
+              </div>
+              <div
+                v-if="requireAllFields"
+                class="my-10 w-11/12 mx-auto text-white bg-red-800 text-center py-2 px-5 block lg:text-sm text-xs"
+              >
+                All fields are required!
+              </div>
+              <div class="pb-5 lg:px-5 px-3 mb-1">
+                <button
+                  :disabled="isSubmitting"
+                  class="px-10 lg:rounded-lg rounded-md bg-green-900 text-white font-bold py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-green-900 hover:text-green-900 lg:text-sm text-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  All fields are required!
-                </div>
-                <div class="pb-5 lg:px-5 px-3 mb-1">
-                  <button
-                    :disabled="isSubmitting"
-                    class="px-10 lg:rounded-lg rounded-md bg-green-900 text-white font-bold py-1.5 lg:w-fit w-full mx-auto block uppercase hover:bg-white border-2 border-green-900 hover:text-green-900 lg:text-sm text-xs disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    <i v-if="!isSubmitting" class="fa fa-paper-plane mr-2" aria-hidden="true"></i>
-                    <i v-if="isSubmitting" class="fa fa-spinner fa-spin mr-2" aria-hidden="true"></i>
-                    {{ isSubmitting ? 'Submitting...' : 'Submit' }}
-                  </button>
-                </div>
+                  <i v-if="!isSubmitting" class="fa fa-paper-plane mr-2" aria-hidden="true"></i>
+                  <i v-if="isSubmitting" class="fa fa-spinner fa-spin mr-2" aria-hidden="true"></i>
+                  {{ isSubmitting ? 'Submitting...' : 'Submit' }}
+                </button>
               </div>
             </div>
-          </form>
-        </div>
-        <!--Waves Container-->
-        <div>
-          <svg
-            class="waves"
-            xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            viewBox="0 24 150 28"
-            preserveAspectRatio="none"
-            shape-rendering="auto"
-          >
-            <defs>
-              <path
-                id="gentle-wave"
-                d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z"
-              />
-            </defs>
-            <g class="parallax">
-              <use
-                xlink:href="#gentle-wave"
-                x="48"
-                y="0"
-                fill="rgba(255,255,255,0.7"
-              />
-              <use
-                xlink:href="#gentle-wave"
-                x="48"
-                y="3"
-                fill="rgba(255,255,255,0.5)"
-              />
-              <use
-                xlink:href="#gentle-wave"
-                x="48"
-                y="5"
-                fill="rgba(255,255,255,0.3)"
-              />
-              <use xlink:href="#gentle-wave" x="48" y="7" fill="#fff" />
-            </g>
-          </svg>
-        </div>
-        <!--Waves end-->
+          </div>
+        </form>
       </div>
-  
-      <!-- v-if="thankYouDisplay"  -->
- 
-      <div
-      v-if="thankYouDisplay" 
-        class="flex items-center min-h-[630px]"
-      >
-       <div class="lg:w-fit lg:mx-auto w-full  lg:h-4/6 gap-10  bg-white lg:px-14 px-3 py-1 lg:my-10 shadow-lg lg:rounded-7xl">
-
-         <div>
-          <img
-            src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/check-mark-icon-isolated-on-white-background-vector-26464923.jpg"
-            class="lg:w-44 w-20 mx-auto"
-          />
-        </div>
-        <div
-          class="text-xl text-green-900 text-center w-fit mx-auto lg:py-10 py-5"
+      <!--Waves Container-->
+      <div>
+        <svg
+          class="waves"
+          xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          viewBox="0 24 150 28"
+          preserveAspectRatio="none"
+          shape-rendering="auto"
         >
-          <h1 class="font-bold text-3xl">Thanks for submitting!</h1>
-          <p class="font-light pt-3 pb-10">Your request has been sent!</p>
-          <p class="font-light text-xs italic mb-10">
-            Please check your email.
-          </p>
-          <a
-            href="https://lsu.edu.ph/drs"
-            class="bg-green-800 text-white rounded-3xl py-1.5 px-10 lg:mb-0 mb-5 mx-auto w-fit lg:block hidden text-sm uppercase"
-          >
-            <i class="fa fa-arrow-circle-left mr-4"></i> Document Review Sheet
-          </a>
-        </div>
-       </div>
+          <defs>
+            <path
+              id="gentle-wave"
+              d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z"
+            />
+          </defs>
+          <g class="parallax">
+            <use
+              xlink:href="#gentle-wave"
+              x="48"
+              y="0"
+              fill="rgba(255,255,255,0.7"
+            />
+            <use
+              xlink:href="#gentle-wave"
+              x="48"
+              y="3"
+              fill="rgba(255,255,255,0.5)"
+            />
+            <use
+              xlink:href="#gentle-wave"
+              x="48"
+              y="5"
+              fill="rgba(255,255,255,0.3)"
+            />
+            <use xlink:href="#gentle-wave" x="48" y="7" fill="#fff" />
+          </g>
+        </svg>
       </div>
-  
+      <!--Waves end-->
+    </div>
+    <div v-if="thankYouDisplay" class="flex items-center min-h-[630px]">
+      <div class="lg:w-fit lg:mx-auto w-full  lg:h-4/6 gap-10  bg-white lg:px-14 px-3 py-1 lg:my-10 shadow-lg lg:rounded-7xl">
+
+        <div>
+        <img
+          src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/check-mark-icon-isolated-on-white-background-vector-26464923.jpg"
+          class="lg:w-44 w-20 mx-auto"
+        />
+      </div>
+      <div
+        class="text-xl text-green-900 text-center w-fit mx-auto lg:py-10 py-5"
+      >
+        <h1 class="font-bold text-3xl">Thanks for submitting!</h1>
+        <p class="font-light pt-3 pb-10">Your request has been sent!</p>
+        <p class="font-light text-xs italic mb-10">
+          Please check your email.
+        </p>
+        <a
+          href="https://lsu.edu.ph/drs"
+          class="bg-green-800 text-white rounded-3xl py-1.5 px-10 lg:mb-0 mb-5 mx-auto w-fit lg:block hidden text-sm uppercase"
+        >
+          <i class="fa fa-arrow-circle-left mr-4"></i> Document Review Sheet
+        </a>
+      </div>
+      </div>
+    </div>
   </div>
 </template>
 <style scoped>
