@@ -8,399 +8,13 @@ const route = useRoute();
 const config = useRuntimeConfig();
 const endpoint = config.public.apiUrl;
 
-// ---------------- AUTH ----------------
 const { user, isLoggedIn, logout, setAuth, init } = useAuth();
 
+// ---------------- STATE ----------------
 const rolePermissions = ref([]);
 const darkMode = ref(false);
-
-// ---------------- AUTH CHECK ----------------
-const isUserAuthenticated = computed(() => isLoggedIn.value);
-
-// ---------------- FETCH ROLE PERMISSIONS ----------------
-const fetchRolePermissions = async () => {
-  try {
-    rolePermissions.value = await $fetch(
-      endpoint + "/api/cits/role-permissions/list/",
-    );
-  } catch (error) {
-    console.error("Error loading role permissions:", error);
-  }
-};
-
-// ---------------- BUILD ROLE MAP ----------------
-const rolesByEmail = computed(() => {
-  const roles = {
-    "Super Admin": [],
-    "NPCC Menu": [],
-    "OCH Admin": [],
-    "Content Writer": [],
-    "HR Menu": [],
-    "Library Menu": [],
-    "Registrar Menu": [],
-    "Campus Pass Admin": [],
-    "DRS Admin": [],
-  };
-
-  rolePermissions.value.forEach((item) => {
-    const permissions = item.role_filter_permissions || [];
-
-    permissions.forEach((role) => {
-      if (roles[role]) {
-        roles[role].push(item.email);
-      }
-    });
-  });
-
-  return roles;
-});
-// ---------------- DERIVED EMAIL LISTS ----------------
-const campusPassAdminEmails = computed(
-  () => rolesByEmail.value["Campus Pass Admin"]
-);
-
-const contentWritersEmails = computed(
-  () => rolesByEmail.value["Content Writer"]
-);
-
-const hrMenuEmails = computed(
-  () => rolesByEmail.value["HR Menu"]
-);
-
-const libraryMenuEmails = computed(
-  () => rolesByEmail.value["Library Menu"]
-);
-
-const npccMenuEmails = computed(
-  () => rolesByEmail.value["NPCC Menu"]
-);
-
-const ochAdminEmails = computed(
-  () => rolesByEmail.value["OCH Admin"]
-);
-
-const registrarMenuEmails = computed(
-  () => rolesByEmail.value["Registrar Menu"]
-);
-
-const superAdminPermissionEmails = computed(
-  () => rolesByEmail.value["Super Admin"]
-);
-
-// ---------------- CURRENT USER ROLES ----------------
-const userRoles = computed(() => {
-  if (!user.value?.email) return [];
-  const record = rolePermissions.value.find(
-    (r) => r.email === user.value.email,
-  );
-  return record?.role_filter_permissions || [];
-});
-
-// ---------------- MAIN USER ROLE ----------------
-const userRole = computed(() => {
-  if (userRoles.value.includes("Super Admin")) return "Super Admin";
-  if (userRoles.value.length > 0) return userRoles.value[0];
-  return null;
-});
-
-// ---------------- DARK MODE ----------------
-const toggleDarkMode = () => {
-  darkMode.value = !darkMode.value;
-
-  if (process.client) {
-    localStorage.setItem("theme", darkMode.value ? "dark" : "light");
-    document.documentElement.classList.add("theme-transition");
-    setTimeout(() => {
-      document.documentElement.classList.remove("theme-transition");
-    }, 300);
-  }
-};
-
-// ---------------- PAGE META ----------------
-definePageMeta({
-  middleware: "cms-auth",
-});
-
-// ---------------- HANDLE TOKEN FROM URL ----------------
-onMounted(async () => {
-  await init();
-
-  const token = route.query.token;
-  if (token && typeof token === "string") {
-    setAuth(token);
-    router.replace("/dashboard");
-  }
-
-  if (!isLoggedIn.value) router.replace("/login");
-
-  await fetchRolePermissions();
-
-  if (process.client) {
-    const storedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    darkMode.value = storedTheme === "dark" || (!storedTheme && prefersDark);
-  }
-});
-
-const filteredMenuList = computed(() => {
-  const role = userRole.value;
-  const email = user.value?.email;
-
-  return subMenuList.filter((menu) => {
-    if (publicMenuGroups.includes(menu.group)) return true;
-    if (lsuOnlyMenuGroups.includes(menu.group))
-      return email?.endsWith("@lsu.edu.ph");
-    if (!role) return false;
-    return (
-      role === "Super Admin" ||
-      !menu.allowedEmails ||
-      menu.allowedEmails.includes(email)
-    );
-  });
-});
-
-// ---------------- MENU ----------------
-const subMenuList = [
-  {
-    group: "Animo Run",
-    items: [
-      {
-        label: "Registration",
-        icon: "fa-running",
-        type: "button",
-        view: "AnimoRunRegistration",
-      },
-      {
-        label: "Status Checking",
-        icon: "fa-list",
-        type: "button",
-        view: "AnimoRunStatus",
-      },
-    ],
-  },
-  {
-    group: "Campus Pass",
-    allowedEmails: campusPassAdminEmails,
-    items: [
-      {
-        label: "Campus Pass Management",
-        icon: "fa-id-card",
-        type: "button",
-        view: "campusPass",
-      },
-    ],
-  },
-  {
-    group: "Commission on Election",
-    items: [
-      {
-        label: "Student Election Results",
-        icon: "fa-check",
-        type: "button",
-        view: "LSUCommissionOnElectionResults",
-      },
-      {
-        label: "Student Election Voting",
-        icon: "fa-list",
-        type: "button",
-        view: "LSUCommissionOnElectionVoting",
-      },
-    ],
-  },
-  {
-    group: "Content Management",
-    allowedEmails: contentWritersEmails,
-    items: [
-      { label: "Content Form", icon: "fa-list", type: "button", view: "form" },
-      {
-        label: "All Contents Lists",
-        icon: "fa-list-alt",
-        type: "button",
-        view: "list",
-      },
-    ],
-  },
-  {
-    group: "Document Reviewer System",
-    items: [
-      {
-        label: "DRS List",
-        icon: "fa-list",
-        type: "button",
-        view: "drsList",
-      },
-      {
-        label: "DRS Form",
-        icon: "fa-file-alt",
-        type: "button",
-        view: "drsForm",
-      },
-    ],
-  },
-  {
-    group: "General Services Office",
-    items: [
-      {
-        label: "Venue Reservation",
-        icon: "fa-building",
-        type: "button",
-        view: "VenueReservation",
-      },
-      {
-        label: "Vehicle Reservation",
-        icon: "fa-car",
-        type: "button",
-        view: "VehicleReservation",
-      },
-    ],
-  },
-  {
-    group: "Human Resource",
-    allowedEmails: hrMenuEmails,
-    items: [
-      {
-        label: "Human Resource Analytics",
-        icon: "fa-list-alt",
-        type: "button",
-        view: "hrJobVacancyList",
-      },
-      // {
-      //   label: "Raffle Draw",
-      //   icon: "fa-list-alt",
-      //   type: "button",
-      //   view: "hrRaffle",
-      // },
-    ],
-  },
-
-  {
-    group: "IT Services Feedback",
-    items: [
-      {
-        label: "IT Services Feedback",
-        icon: "fa-list",
-        type: "button",
-        view: "ITServicesFeedback",
-      },
-    ],
-  },
-  {
-    group: "Library Management",
-    allowedEmails: libraryMenuEmails,
-    items: [
-      {
-        label: "Appointment Lists",
-        icon: "fa-list-alt",
-        type: "button",
-        view: "appointments",
-      },
-      {
-        label: "Available Books",
-        icon: "fa-book",
-        type: "button",
-        view: "books",
-      },
-      {
-        label: "Set Schedules",
-        icon: "fa-calendar",
-        type: "button",
-        view: "schedules",
-      },
-    ],
-  },
-  {
-    group: "NPCC IT Services",
-    allowedEmails: npccMenuEmails,
-    items: [
-      {
-        label: "NPCC Management",
-        icon: "fa-cogs",
-        type: "button",
-        view: "npcc",
-      },
-    ],
-  },
-
-  {
-    group: "Office of The Chancellor",
-    allowedEmails: ochAdminEmails,
-    items: [
-      {
-        label: "University Calendar",
-        icon: "fa-calendar",
-        type: "button",
-        view: "universityCalendar",
-      },
-    ],
-  },
-  {
-    group: "Safety and Security Center",
-    items: [
-      {
-        label: "Borrow Office Keys",
-        icon: "fa-key",
-        type: "button",
-        view: "BorrowOfficeKeys",
-      },
-    ],
-  },
-  {
-    group: "University Registrar",
-    allowedEmails: registrarMenuEmails,
-    items: [
-      {
-        label: "University Registrar",
-        icon: "fa-university",
-        type: "button",
-        view: "registrar",
-      },
-    ],
-  },
-  {
-    group: "External Links",
-    items: [
-      {
-        label: "LSU Home Page",
-        icon: "fa-home",
-        type: "link",
-        view: "https://lsu.edu.ph",
-      },
-    ],
-  },
-  {
-    group: "Lasalle Alumni Association",
-    items: [
-      {
-        label: "Lasalle Alumni Association",
-        icon: "fa-graduation-cap",
-        type: "link",
-        view: "https://lasallealumni.ph/",
-      },
-    ],
-  },
-  {
-    group: "Super Admin",
-    allowedEmails: superAdminPermissionEmails,
-    items: [
-      {
-        label: "Role Permissions",
-        icon: "fa-user-shield",
-        type: "button",
-        view: "RolePermissions",
-      },
-    ],
-  },
-];
-
-const menuList = [
-  { label: "Menu", icon: "fa-bars", type: "button", view: "Menu" },
-  { label: "Settings", icon: "fa-cog", type: "button", view: "Settings" },
-  { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
-];
-
 const currentView = ref("Menu");
+
 const openGroups = ref([
   "Content Management",
   "Human Resource",
@@ -420,97 +34,80 @@ const openGroups = ref([
   "Super Admin",
 ]);
 
-const logOut = () => {
-  logout();
+// ---------------- API ----------------
+const api = (url) => $fetch(`${endpoint}${url}`);
+
+// ---------------- FETCH ROLE PERMISSIONS ----------------
+const fetchRolePermissions = async () => {
+  try {
+    rolePermissions.value = await api("/api/cits/role-permissions/list/");
+  } catch (err) {
+    console.error("Role permission error:", err);
+  }
 };
 
-// ---------------- VIEW CONFIGURATION ----------------
-const currentViewConfig = computed(() => {
-  const config = {
-    form: {
-      component: resolveComponent("SuperAdminDashboardCmsForm"),
-      class: "p-4 pb-52",
-      props: { onContentSubmitted: handleContentSubmitted },
-    },
-    list: {
-      component: resolveComponent("SuperAdminDashboardCmsList"),
-      class: "p-4 pb-32",
-    },
-    appointments: {
-      component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"),
-      class: "pb-32",
-    },
-    books: {
-      component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"),
-      class: "pb-32",
-    },
-    schedules: {
-      component: resolveComponent(
-        "SuperAdminDashboardServicesLibrarySchedules",
-      ),
-      class: "pb-24",
-    },
-    hrJobVacancyList: { component: resolveComponent("ComingSoon"), class: "" },
-    hrRaffle: {
-      component: resolveComponent("SuperAdminDashboardServicesHrRaffle"),
-      class: "p-4 pb-32",
-    },
-    universityCalendar: {
-      component: resolveComponent("SuperAdminDashboardChancellorOffice"),
-      class: "p-4 pb-32",
-    },
-    npcc: {
-      component: resolveComponent("SuperAdminDashboardServicesIt"),
-      class: "px-2 pb-32",
-    },
-    registrar: {
-      component: resolveComponent("SuperAdminDashboardServicesRegistrar"),
-      class: "pb-32",
-    },
-    campusPass: {
-      component: resolveComponent("SuperAdminDashboardServicesCampusPass"),
-      class: "pb-32",
-    },
-    drsList: {
-      component: resolveComponent("SuperAdminDashboardServicesDrsList"),
-      class: "pb-32",
-    },
-    drsForm: {
-      component: resolveComponent("SuperAdminDashboardServicesDrsForm"),
-      class: "pb-20",
-    },
-    ITServicesFeedback: {
-      component: resolveComponent("UniversityPortalITServicesList"),
-      class: "pb-32",
-    },
-    RolePermissions: {
-      component: resolveComponent("SuperAdminDashboardRolePermissions"),
-      class: "pb-32",
-    },
-    BorrowOfficeKeys: { component: resolveComponent("ComingSoon"), class: "" },
-    VehicleReservation: {
-      component: resolveComponent("ComingSoon"),
-      class: "",
-    },
-    VenueReservation: { component: resolveComponent("ComingSoon"), class: "" },
-    LSUCommissionOnElectionVoting: {
-      component: resolveComponent("ComingSoon"),
-      class: "",
-    },
-    LSUCommissionOnElectionResults: {
-      component: resolveComponent("ComingSoon"),
-      class: "",
-    },
-    AnimoRunStatus: { component: resolveComponent("ComingSoon"), class: "" },
-    AnimoRunRegistration: {
-      component: resolveComponent("ComingSoon"),
-      class: "",
-    },
-  };
-  return config[currentView.value];
+// ---------------- USER ROLES ----------------
+const userRoles = computed(() => {
+  if (!user.value?.email) return [];
+
+  return (
+    rolePermissions.value.find((r) => r.email === user.value.email)
+      ?.role_filter_permissions || []
+  );
 });
 
-// Public menu groups accessible to all authenticated users
+const userRole = computed(() => {
+  if (userRoles.value.includes("Super Admin")) return "Super Admin";
+  return userRoles.value[0] || null;
+});
+
+// ---------------- AUTH ----------------
+const isUserAuthenticated = computed(() => isLoggedIn.value);
+
+// ---------------- DARK MODE ----------------
+const toggleDarkMode = () => {
+  darkMode.value = !darkMode.value;
+
+  if (process.client) {
+    localStorage.setItem("theme", darkMode.value ? "dark" : "light");
+    document.documentElement.classList.add("theme-transition");
+
+    setTimeout(() => {
+      document.documentElement.classList.remove("theme-transition");
+    }, 300);
+  }
+};
+
+// ---------------- PAGE META ----------------
+definePageMeta({
+  middleware: "cms-auth",
+});
+
+// ---------------- MOUNT ----------------
+onMounted(async () => {
+  await init();
+
+  const token = route.query.token;
+  if (token) {
+    setAuth(token);
+    router.replace("/dashboard");
+  }
+
+  if (!isLoggedIn.value) router.replace("/login");
+
+  await fetchRolePermissions();
+
+  if (process.client) {
+    const stored = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+
+    darkMode.value = stored === "dark" || (!stored && prefersDark);
+  }
+});
+
+// ---------------- MENU PERMISSION ----------------
 const publicMenuGroups = [
   "IT Services Feedback",
   "Animo Run",
@@ -518,7 +115,6 @@ const publicMenuGroups = [
   "Lasalle Alumni Association",
 ];
 
-// LSU-only menu groups (only @lsu.edu.ph domain)
 const lsuOnlyMenuGroups = [
   "Commission on Election",
   "General Services Office",
@@ -526,29 +122,207 @@ const lsuOnlyMenuGroups = [
   "Safety and Security Center",
 ];
 
-// ---------------- METHODS ----------------
-const toggleGroup = (groupName) => {
-  const index = openGroups.value.indexOf(groupName);
-  index > -1
-    ? openGroups.value.splice(index, 1)
-    : openGroups.value.push(groupName);
-};
+// ---------------- MENU FILTER ----------------
+const filteredMenuList = computed(() => {
+  const roles = userRoles.value;
+  const email = user.value?.email;
 
-const handleContentSubmitted = () => {
-  currentView.value = "list";
-};
-
-const navigateTo = (url) => router.push(url);
-const handleMenuClick = (menu) => {
-  if (menu.type === "button") {
-    currentView.value = menu.view;
-  } else if (menu.type === "link") {
-    // Open external link in new tab
-    window.open(menu.view, "_blank");
-  } else {
-    navigateTo(menu.to);
+  // ✅ SUPER ADMIN → SEE EVERYTHING
+  if (roles.includes("Super Admin")) {
+    return subMenuList;
   }
+
+  return subMenuList.filter((menu) => {
+
+    // Public menus
+    if (publicMenuGroups.includes(menu.group)) return true;
+
+    // LSU only menus
+    if (lsuOnlyMenuGroups.includes(menu.group)) {
+      return email?.endsWith("@lsu.edu.ph");
+    }
+
+    // No role restriction
+    if (!menu.allowedRole) return true;
+
+    // Check user roles
+    return roles.includes(menu.allowedRole);
+  });
+});
+
+// ---------------- MENU ----------------
+const subMenuList = [
+  {
+    group: "Animo Run",
+    items: [
+      { label: "Registration", icon: "fa-running", type: "button", view: "AnimoRunRegistration" },
+      { label: "Status Checking", icon: "fa-list", type: "button", view: "AnimoRunStatus" },
+    ],
+  },
+
+  {
+    group: "Campus Pass",
+    allowedRole: "Campus Pass Admin",
+    items: [
+      { label: "Campus Pass Management", icon: "fa-id-card", type: "button", view: "campusPass" },
+    ],
+  },
+
+  {
+    group: "Commission on Election",
+    items: [
+      { label: "Student Election Results", icon: "fa-check", type: "button", view: "coeResults" },
+      { label: "Student Election Voting", icon: "fa-list", type: "button", view: "coeVoting" },
+    ],
+  },
+
+  {
+    group: "Content Management",
+    allowedRole: "Content Writer",
+    items: [
+      { label: "Content Form", icon: "fa-list", type: "button", view: "form" },
+      { label: "All Contents Lists", icon: "fa-list-alt", type: "button", view: "list" },
+    ],
+  },
+
+  {
+    group: "Document Reviewer System",
+    allowedRole: "DRS Admin",
+    items: [
+      { label: "DRS List", icon: "fa-list", type: "button", view: "drsList" },
+      { label: "DRS Form", icon: "fa-file", type: "button", view: "drsForm" },
+    ],
+  },
+
+  {
+    group: "General Services Office",
+    items: [
+      { label: "Venue Reservation", icon: "fa-building", type: "button", view: "venueReservation" },
+      { label: "Vehicle Reservation", icon: "fa-car", type: "button", view: "vehicleReservation" },
+    ],
+  },
+
+  {
+    group: "Human Resource",
+    allowedRole: "HR Menu",
+    items: [
+      { label: "Human Resource Analytics", icon: "fa-list-alt", type: "button", view: "hrJobVacancyList" },
+    ],
+  },
+
+  {
+    group: "IT Services Feedback",
+    items: [
+      { label: "IT Services Feedback", icon: "fa-list", type: "button", view: "ITServicesFeedback" },
+    ],
+  },
+
+  {
+    group: "Library Management",
+    allowedRole: "Library Menu",
+    items: [
+      { label: "Appointment Lists", icon: "fa-list-alt", type: "button", view: "appointments" },
+      { label: "Available Books", icon: "fa-book", type: "button", view: "books" },
+      { label: "Set Schedules", icon: "fa-calendar", type: "button", view: "schedules" },
+    ],
+  },
+
+  {
+    group: "NPCC IT Services",
+    allowedRole: "NPCC Menu",
+    items: [
+      { label: "NPCC Management", icon: "fa-cogs", type: "button", view: "npcc" },
+    ],
+  },
+
+  {
+    group: "Office of The Chancellor",
+    allowedRole: "OCH Admin",
+    items: [
+      { label: "University Calendar", icon: "fa-calendar", type: "button", view: "universityCalendar" },
+    ],
+  },
+
+  {
+    group: "Safety and Security Center",
+    items: [
+      { label: "Borrow Office Keys", icon: "fa-key", type: "button", view: "borrowKeys" },
+    ],
+  },
+
+  {
+    group: "University Registrar",
+    allowedRole: "Registrar Menu",
+    items: [
+      { label: "University Registrar", icon: "fa-university", type: "button", view: "registrar" },
+    ],
+  },
+
+  {
+    group: "Lasalle Alumni Association",
+    items: [
+      { label: "Lasalle Alumni Association", icon: "fa-graduation-cap", type: "button", view: "alumni" },
+    ],
+  },
+
+  {
+    group: "Super Admin",
+    allowedRole: "Super Admin",
+    items: [
+      { label: "Role Permissions", icon: "fa-user-shield", type: "button", view: "RolePermissions" },
+    ],
+  },
+
+  {
+    group: "External Links",
+    items: [
+      { label: "LSU Home Page", icon: "fa-home", type: "link", view: "https://lsu.edu.ph" },
+    ],
+  },
+];
+
+// ---------------- TOP MENU ----------------
+const menuList = [
+  { label: "Menu", icon: "fa-bars", type: "button", view: "Menu" },
+  { label: "Settings", icon: "fa-cog", type: "button", view: "Settings" },
+  { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
+];
+
+// ---------------- VIEW CONFIG ----------------
+const currentViewConfig = computed(() => {
+  const views = {
+    form: { component: resolveComponent("SuperAdminDashboardCmsForm"), class: "p-4 pb-52", props: { onContentSubmitted: handleContentSubmitted } },
+    list: { component: resolveComponent("SuperAdminDashboardCmsList"), class: "p-4 pb-32" },
+    appointments: { component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"), class: "pb-32" },
+    books: { component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"), class: "pb-32" },
+    schedules: { component: resolveComponent("SuperAdminDashboardServicesLibrarySchedules"), class: "pb-24" },
+    universityCalendar: { component: resolveComponent("SuperAdminDashboardChancellorOffice"), class: "p-4 pb-32" },
+    npcc: { component: resolveComponent("SuperAdminDashboardServicesIt"), class: "px-2 pb-32" },
+    registrar: { component: resolveComponent("SuperAdminDashboardServicesRegistrar"), class: "pb-32" },
+    campusPass: { component: resolveComponent("SuperAdminDashboardServicesCampusPass"), class: "pb-32" },
+    drsList: { component: resolveComponent("SuperAdminDashboardServicesDrsList"), class: "pb-32" },
+    drsForm: { component: resolveComponent("SuperAdminDashboardServicesDrsForm"), class: "pb-20" },
+    ITServicesFeedback: { component: resolveComponent("UniversityPortalITServicesList"), class: "pb-32" },
+    RolePermissions: { component: resolveComponent("SuperAdminDashboardRolePermissions"), class: "pb-32" },
+  };
+
+  return views[currentView.value];
+});
+
+// ---------------- ACTIONS ----------------
+const toggleGroup = (group) => {
+  const i = openGroups.value.indexOf(group);
+  i > -1 ? openGroups.value.splice(i, 1) : openGroups.value.push(group);
 };
+
+const handleContentSubmitted = () => (currentView.value = "list");
+
+const handleMenuClick = (menu) => {
+  if (menu.type === "button") currentView.value = menu.view;
+  else if (menu.type === "link") window.open(menu.view, "_blank");
+};
+
+const logOut = () => logout();
 </script>
 
 <template>

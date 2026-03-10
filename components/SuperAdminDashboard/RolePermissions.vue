@@ -1,207 +1,176 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 
-// Props
+// ---------------- CONFIG ----------------
 const props = defineProps({ darkMode: Boolean });
-
 const config = useRuntimeConfig();
-const endpoint = ref(config.public.apiUrl);
+const endpoint = config.public.apiUrl;
 
-// Data
+// ---------------- STATE ----------------
 const listItems = ref([]);
 const isLoading = ref(false);
 const showForm = ref(false);
 const editingItem = ref(null);
 const searchQuery = ref("");
 
-// DELETE MODAL
 const confirmDeleteModal = ref(false);
 const deleteId = ref(null);
 
-// Toasts
 const toasts = ref([]);
 
-// Form Data
-const formData = ref({
+const defaultForm = {
   email: "",
   role_filter_permissions: [],
   updated_at: "",
-});
+};
 
-// Available Roles
+const formData = ref({ ...defaultForm });
+
+// ---------------- ROLES ----------------
 const availableRoles = [
-  { value: "Super Admin", label: "Super Admin" },
-  { value: "NPCC Menu", label: "NPCC Menu" },
-  { value: "OCH Admin", label: "OCH Admin" },
-  { value: "Content Writer", label: "Content Writer" },
-  { value: "HR Menu", label: "HR Menu" },
-  { value: "Library Menu", label: "Library Menu" },
-  { value: "Registrar Menu", label: "Registrar Menu" },
-  { value: "Campus Pass Admin", label: "Campus Pass Admin" },
-  { value: "DRS Admin", label: "DRS Admin" },
-];
+  "Super Admin",
+  "NPCC Menu",
+  "OCH Admin",
+  "Content Writer",
+  "HR Menu",
+  "Library Menu",
+  "Registrar Menu",
+  "Campus Pass Admin",
+  "DRS Admin",
+].map((r) => ({ value: r, label: r }));
 
-// ------------------ Fetch List ------------------
+// ---------------- FETCH ----------------
 const fetchList = async () => {
   isLoading.value = true;
   try {
     listItems.value = await $fetch(
-      endpoint.value + "/api/cits/role-permissions/list/",
+      `${endpoint}/api/cits/role-permissions/list/`,
     );
-  } catch (error) {
+  } catch (e) {
     showToast("Error fetching role permissions", "error");
-    console.error(error);
   } finally {
     isLoading.value = false;
   }
 };
 
-// ------------------ Filtered List ------------------
+// ---------------- FILTER ----------------
 const filteredList = computed(() => {
-  if (!searchQuery.value.trim()) return listItems.value;
+  const q = searchQuery.value.toLowerCase().trim();
+  if (!q) return listItems.value;
 
-  const query = searchQuery.value.toLowerCase();
   return listItems.value.filter(
-    (item) =>
-      item.email?.toLowerCase().includes(query) ||
-      item.role_filter_permissions?.some((role) =>
-        role.toLowerCase().includes(query),
-      ),
+    (i) =>
+      i.email?.toLowerCase().includes(q) ||
+      i.role_filter_permissions?.some((r) => r.toLowerCase().includes(q)),
   );
 });
 
-// ------------------ Format Date ------------------
-const formatDate = (date) => {
-  if (!date) return "-";
-  return new Date(date).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+// ---------------- HELPERS ----------------
+const resetForm = () => {
+  formData.value = { ...defaultForm };
+  editingItem.value = null;
 };
 
-// ------------------ Open Form ------------------
+const formatDate = (d) =>
+  d
+    ? new Date(d).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "-";
+
+// ---------------- FORM ----------------
 const openForm = (item = null) => {
-  if (item) {
-    editingItem.value = item;
-    formData.value = {
-      email: item.email,
-      role_filter_permissions: [...item.role_filter_permissions],
-    };
-  } else {
-    editingItem.value = null;
-    formData.value = {
-      email: "",
-      role_filter_permissions: [],
-    };
-  }
+  editingItem.value = item;
+  formData.value = item
+    ? { email: item.email, role_filter_permissions: [...item.role_filter_permissions] }
+    : { ...defaultForm };
+
   showForm.value = true;
 };
 
-// ------------------ Close Form ------------------
 const closeForm = () => {
   showForm.value = false;
-  editingItem.value = null;
-  formData.value = {
-    email: "",
-    role_filter_permissions: [],
-  };
+  resetForm();
 };
 
-// ------------------ Toggle Role ------------------
+// ---------------- ROLE TOGGLE ----------------
 const toggleRole = (role) => {
-  const index = formData.value.role_filter_permissions.indexOf(role);
-  if (index > -1) formData.value.role_filter_permissions.splice(index, 1);
-  else formData.value.role_filter_permissions.push(role);
+  const roles = formData.value.role_filter_permissions;
+  roles.includes(role)
+    ? (formData.value.role_filter_permissions = roles.filter((r) => r !== role))
+    : roles.push(role);
 };
 
-// ------------------ Submit Form ------------------
+// ---------------- SAVE ----------------
 const submitForm = async () => {
-  if (!formData.value.email.trim()) {
-    showToast("Email cannot be empty", "warning");
-    return;
-  }
+  if (!formData.value.email.trim())
+    return showToast("Email cannot be empty", "warning");
 
-  // Refresh updated_at in realtime and convert to simple string
   formData.value.updated_at = new Date().toString();
-
   isLoading.value = true;
 
+  const url = editingItem.value
+    ? `${endpoint}/api/cits/role-permissions/${editingItem.value.id}/edit/`
+    : `${endpoint}/api/cits/role-permissions/create/`;
+
+  const method = editingItem.value ? "PUT" : "POST";
+
   try {
-    if (editingItem.value) {
-      await $fetch(
-        endpoint.value +
-          `/api/cits/role-permissions/${editingItem.value.id}/edit/`,
-        {
-          method: "PUT",
-          body: formData.value,
-        }
-      );
+    await $fetch(url, { method, body: formData.value });
 
-      showToast("Role permission updated successfully", "success");
-    } else {
-      await $fetch(endpoint.value + "/api/cits/role-permissions/create/", {
-        method: "POST",
-        body: formData.value,
-      });
-
-      showToast("Role permission created successfully", "success");
-    }
+    showToast(
+      `Role permission ${editingItem.value ? "updated" : "created"} successfully`,
+      "success",
+    );
 
     await fetchList();
     closeForm();
-
-  } catch (error) {
-    console.error(error);
+  } catch (e) {
     showToast("Error saving role permission", "error");
-
   } finally {
     isLoading.value = false;
   }
 };
 
-// ------------------ Open Delete Modal ------------------
+// ---------------- DELETE ----------------
 const deleteItem = (id) => {
   deleteId.value = id;
   confirmDeleteModal.value = true;
 };
 
-// ------------------ Cancel Delete ------------------
 const cancelDelete = () => {
   confirmDeleteModal.value = false;
   deleteId.value = null;
 };
 
-// ------------------ Confirm Delete ------------------
 const performDelete = async () => {
   if (!deleteId.value) return;
 
   isLoading.value = true;
+
   try {
     await $fetch(
-      endpoint.value + `/api/cits/role-permissions/${deleteId.value}/delete/`,
-      {
-        method: "DELETE",
-      },
+      `${endpoint}/api/cits/role-permissions/${deleteId.value}/delete/`,
+      { method: "DELETE" },
     );
 
     await fetchList();
     showToast("Role permission deleted", "success");
-  } catch (error) {
-    console.error(error);
+  } catch {
     showToast("Error deleting role permission", "error");
   } finally {
-    confirmDeleteModal.value = false;
-    deleteId.value = null;
+    cancelDelete();
     isLoading.value = false;
   }
 };
 
-// ------------------ Toast Helper ------------------
+// ---------------- TOAST ----------------
 const showToast = (message, type = "info", duration = 3000) => {
-  const id = Date.now() + Math.random();
+  const id = Date.now();
   toasts.value.push({ id, message, type });
 
   setTimeout(() => {
