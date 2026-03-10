@@ -17,21 +17,21 @@ const currentView = ref("Menu");
 
 const openGroups = ref([
   "Content Management",
-  "Human Resource",
   "Library Management",
-  "Office of The Chancellor",
   "NPCC IT Services",
   "University Registrar",
   "Campus Pass",
   "Document Reviewer System",
   "IT Services Feedback",
-  "Commission on Election",
-  "External Links",
-  "General Services Office",
-  "Animo Run",
   "Safety and Security Center",
-  "Lasalle Alumni Association",
-  "Super Admin",
+  // "Human Resource",
+  // "Office of The Chancellor",
+  // "Commission on Election",
+  // "External Links",
+  // "General Services Office",
+  // "Lasalle Alumni Association",
+  // "Animo Run",
+  // "Super Admin",
 ]);
 
 // ---------------- API ----------------

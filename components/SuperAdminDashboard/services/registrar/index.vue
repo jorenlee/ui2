@@ -1508,6 +1508,7 @@ const hasEmptyFeeName = computed(() => {
             >
               <!-- College Name -->
               <div
+                class="whitespace-nowrap tracking-tight"
                 :class="
                   darkMode
                     ? 'font-semibold text-[10px] text-gray-100 text-center'
