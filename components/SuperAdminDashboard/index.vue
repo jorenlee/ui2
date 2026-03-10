@@ -20,7 +20,9 @@ const isUserAuthenticated = computed(() => isLoggedIn.value);
 // ---------------- FETCH ROLE PERMISSIONS ----------------
 const fetchRolePermissions = async () => {
   try {
-    rolePermissions.value = await $fetch(endpoint + "/api/cits/role-permissions/list/");
+    rolePermissions.value = await $fetch(
+      endpoint + "/api/cits/role-permissions/list/",
+    );
   } catch (error) {
     console.error("Error loading role permissions:", error);
   }
@@ -29,19 +31,21 @@ const fetchRolePermissions = async () => {
 // ---------------- BUILD ROLE MAP ----------------
 const rolesByEmail = computed(() => {
   const roles = {
-    npccMenu: [],
-    ochAdmin: [],
-    contentWriter: [],
-    hrMenu: [],
-    libraryMenu: [],
-    registrarMenu: [],
-    campusPassAdmin: [],
-    drsAdmin: [],
-    superAdminPermission: [],
+    "Super Admin": [],
+    "NPCC Menu": [],
+    "OCH Admin": [],
+    "Content Writer": [],
+    "HR Menu": [],
+    "Library Menu": [],
+    "Registrar Menu": [],
+    "Campus Pass Admin": [],
+    "DRS Admin": [],
   };
 
   rolePermissions.value.forEach((item) => {
-    item.role_filter_permissions?.forEach((role) => {
+    const permissions = item.role_filter_permissions || [];
+
+    permissions.forEach((role) => {
       if (roles[role]) {
         roles[role].push(item.email);
       }
@@ -50,21 +54,45 @@ const rolesByEmail = computed(() => {
 
   return roles;
 });
-
 // ---------------- DERIVED EMAIL LISTS ----------------
-const campusPassAdminEmails = computed(() => rolesByEmail.value.campusPassAdmin);
-const contentWritersEmails = computed(() => rolesByEmail.value.contentWriter);
-const hrMenuEmails = computed(() => rolesByEmail.value.hrMenu);
-const libraryMenuEmails = computed(() => rolesByEmail.value.libraryMenu);
-const npccMenuEmails = computed(() => rolesByEmail.value.npccMenu);
-const ochAdminEmails = computed(() => rolesByEmail.value.ochAdmin);
-const registrarMenuEmails = computed(() => rolesByEmail.value.registrarMenu);
-const superAdminPermissionEmails = computed(() => rolesByEmail.value.superAdminRolePermissions);
+const campusPassAdminEmails = computed(
+  () => rolesByEmail.value["Campus Pass Admin"]
+);
+
+const contentWritersEmails = computed(
+  () => rolesByEmail.value["Content Writer"]
+);
+
+const hrMenuEmails = computed(
+  () => rolesByEmail.value["HR Menu"]
+);
+
+const libraryMenuEmails = computed(
+  () => rolesByEmail.value["Library Menu"]
+);
+
+const npccMenuEmails = computed(
+  () => rolesByEmail.value["NPCC Menu"]
+);
+
+const ochAdminEmails = computed(
+  () => rolesByEmail.value["OCH Admin"]
+);
+
+const registrarMenuEmails = computed(
+  () => rolesByEmail.value["Registrar Menu"]
+);
+
+const superAdminPermissionEmails = computed(
+  () => rolesByEmail.value["Super Admin"]
+);
 
 // ---------------- CURRENT USER ROLES ----------------
 const userRoles = computed(() => {
   if (!user.value?.email) return [];
-  const record = rolePermissions.value.find(r => r.email === user.value.email);
+  const record = rolePermissions.value.find(
+    (r) => r.email === user.value.email,
+  );
   return record?.role_filter_permissions || [];
 });
 
@@ -109,7 +137,9 @@ onMounted(async () => {
 
   if (process.client) {
     const storedTheme = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)",
+    ).matches;
     darkMode.value = storedTheme === "dark" || (!storedTheme && prefersDark);
   }
 });
@@ -118,14 +148,18 @@ const filteredMenuList = computed(() => {
   const role = userRole.value;
   const email = user.value?.email;
 
-  return subMenuList.filter(menu => {
+  return subMenuList.filter((menu) => {
     if (publicMenuGroups.includes(menu.group)) return true;
-    if (lsuOnlyMenuGroups.includes(menu.group)) return email?.endsWith("@lsu.edu.ph");
+    if (lsuOnlyMenuGroups.includes(menu.group))
+      return email?.endsWith("@lsu.edu.ph");
     if (!role) return false;
-    return role === "Super Admin" || !menu.allowedEmails || menu.allowedEmails.includes(email);
+    return (
+      role === "Super Admin" ||
+      !menu.allowedEmails ||
+      menu.allowedEmails.includes(email)
+    );
   });
 });
-
 
 // ---------------- MENU ----------------
 const subMenuList = [
@@ -390,7 +424,6 @@ const logOut = () => {
   logout();
 };
 
-
 // ---------------- VIEW CONFIGURATION ----------------
 const currentViewConfig = computed(() => {
   const config = {
@@ -477,7 +510,6 @@ const currentViewConfig = computed(() => {
   return config[currentView.value];
 });
 
-
 // Public menu groups accessible to all authenticated users
 const publicMenuGroups = [
   "IT Services Feedback",
@@ -520,7 +552,9 @@ const handleMenuClick = (menu) => {
 </script>
 
 <template>
-  <div :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-600'">
+  <div
+    :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-600'"
+  >
     <!-- LOGOUT CONFIRMATION -->
     <div v-if="isUserAuthenticated">
       <!-- MAIN CONTENT -->
