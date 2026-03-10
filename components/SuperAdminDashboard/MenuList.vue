@@ -16,7 +16,7 @@
       <template v-if="menu.group">
         <!-- Group Header with Gradient Background -->
         <button
-          class="w-full flex flex-col items-center justify-center p-2 text-center font-semibold transition-all relative overflow-hidden"
+          class="w-full flex font-semibold transition-all relative overflow-hidden px-3"
           :class="
             darkMode
               ? 'text-gray-200 hover:text-green-400'
@@ -34,26 +34,31 @@
             "
           ></div>
 
-          <!-- Icon with Modern Design -->
-          <div
-            class="relative w-20 h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 group-hover:scale-110 transition-transform duration-300 mb-3 shadow-lg"
-          >
-            <i class="fa fa-folder-open text-2xl text-white"></i>
+          <div class="flex items-center">
+            <!-- Icon with Modern Design -->
+             <!-- bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg -->
+            <div
+              class="relative w-10 h-10 flex items-center justify-center rounded-2xl  group-hover:scale-110 transition-transform duration-300 "
+            >
+              <i class="fa fa-folder-open text-xl text-green-700"></i>
+            </div>
+
+            <!-- Group Name -->
+            <div class="relative text-xs truncate w-full pr-1">
+              {{ menu.group }}
+            </div>
+
+            <!-- Chevron Indicator -->
+            <div>
+              <i
+                class="relative fa fa-chevron-down text-xs transition-transform duration-300"
+                :class="[
+                  { 'rotate-180': openGroups.includes(menu.group) },
+                  darkMode ? 'text-gray-500' : 'text-gray-400',
+                ]"
+              ></i>
+            </div>
           </div>
-
-          <!-- Group Name -->
-          <span class="relative text-sm font-bold truncate w-full px-2">{{
-            menu.group
-          }}</span>
-
-          <!-- Chevron Indicator -->
-          <i
-            class="relative fa fa-chevron-down mt-2 text-xs transition-transform duration-300"
-            :class="[
-              { 'rotate-180': openGroups.includes(menu.group) },
-              darkMode ? 'text-gray-500' : 'text-gray-400',
-            ]"
-          ></i>
         </button>
 
         <!-- Expandable Menu Items -->
@@ -67,11 +72,11 @@
                 : 'border-gray-100 bg-gray-50'
             "
           >
-            <ul class="space-y-1 p-1">
+            <ul class="">
               <li
                 v-for="item in menu.items"
                 :key="item.label"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all cursor-pointer group/item"
+                class="flex items-center gap-3 px-3 py-1 rounded-lg text-xs transition-all cursor-pointer group/item"
                 :class="[
                   currentView === item.view
                     ? 'bg-green-500 text-white shadow-md'
@@ -82,7 +87,7 @@
                 @click="handleMenuClick(item)"
               >
                 <div
-                  class="min-w-10 max-w-10 h-10 flex items-center justify-center rounded-lg transition-colors"
+                  class="px-2 flex items-center justify-center rounded-lg transition-colors"
                   :class="
                     currentView === item.view
                       ? 'bg-white/20'
@@ -185,5 +190,4 @@ const handleMenuClick = (menu) => {
 };
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
