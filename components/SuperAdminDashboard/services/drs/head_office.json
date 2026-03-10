@@ -1,50 +1,43 @@
 [    
     {
-        "officeAbbr": "OPR",
-        "designation": "University President",
         "name": "Br. Rey Erezare Mejias FSC",
+        "designation": "University President",
+        "office_lsu_email": "president@lsu.edu.ph",
         "offices": "Office of the President",
-        "office_lsu_email": "president@lsu.edu.ph"
+        "officeAbbr": "OPR"
     },
     {
-        "officeAbbr": "OPR",
+        "name": "Mr. Israel Gallogo",
         "designation": "Executive Assistant to the President",
-        "name": "Mr. Israel Gallogo",
+        "office_lsu_email": "president@lsu.edu.ph",
         "offices": "Office of the President",
-        "office_lsu_email": "president@lsu.edu.ph"
+        "officeAbbr": "OPR"
     },
     {
-        "officeAbbr": "OPR",
+        "name": "Mr. Israel Gallogo",
         "designation": "Data Privacy Officer",
-        "name": "Mr. Israel Gallogo",
+        "office_lsu_email": "dpco@lsu.edu.ph",
         "offices": "Office of the President",
-        "office_lsu_email": "dpco@lsu.edu.ph"
+        "officeAbbr": "OPR"
     },
     {
+        "name": "Mr. Michael John Puertogalera",
         "officeAbbr": "OPR",
         "designation": "Director, Network, Programs and Computerization",
-        "name": "Mr. Michael John Puertogalera",
         "offices": "Office of the President",
         "office_lsu_email": "michaeljohn.puertogalera@lsu.edu.ph"
     },
     {
-        "officeAbbr": "OPR",
-        "designation": "Director, Corporate and Executive Management Office",
         "name": "Ms. Meredith Embuscado",
+        "officeAbbr": "OPR",
+        "designation": "Director, Corporate and Executive Management Center",
         "offices": "Office of the President",
         "office_lsu_email": "cemc@lsu.edu.ph"
     },
     {
         "officeAbbr": "OPR",
-        "designation": "Officer, Institutional Quality Assurance and Monitoring",
-        "name": "Ms. Meredith Embuscado",
-        "offices": "Office of the President",
-        "office_lsu_email": "cemc@lsu.edu.ph"
-    },
-    {
-        "officeAbbr": "OPR",
-        "designation": "Officer, Risk Management",
-        "name": "Ms. Meredith Embuscado",
+        "designation": "Officer, Quality Assurance and Risk Management",
+        "name": "Ms. Maria Cristina Llauder",
         "offices": "Office of the President",
         "office_lsu_email": "cemc@lsu.edu.ph"
     },
@@ -57,7 +50,7 @@
     },
     {
         "officeAbbr": "VPSS",
-        "designation": "Director, Marketing and Communications",
+        "designation": "Director, Marketing and Communications Center",
         "name": "Br. Alexander Ervin Diaz FSC",
         "offices": "Vice-President For Planning & Strategic Services",
         "office_lsu_email": "alexander.diaz@lsu.edu.ph"
@@ -65,44 +58,44 @@
     {
         "officeAbbr": "VPSS",
         "designation": "Director, Human Resource Development",
-        "name": "Mr. Raymundo Dolor",
+        "name": "Dr. Daryl Quinco",
         "offices": "Vice-President For Planning & Strategic Services",
-        "office_lsu_email": "raymundo.dolor@lsu.edu.ph"
+        "office_lsu_email": "quincodf@lsu.edu.ph"
     },
     {
         "officeAbbr": "VPSS",
         "designation": "Officer, Institutional Learning",
-        "name": "Mr. Raymundo Dolor",
+        "name": "Ms. Naiza Amba",
         "offices": "Vice-President For Planning & Strategic Services",
-        "office_lsu_email": "raymundo.dolor@lsu.edu.ph"
+        "office_lsu_email": "naiza.amba@lsu.edu.ph"
     },
     {
         "officeAbbr": "VPSS",
         "designation": "Officer, Procurement",
-        "name": "Mr. Raymundo Dolor",
+        "name": "Ms. Margeaux Labuga",
         "offices": "Vice-President For Planning & Strategic Services",
-        "office_lsu_email": "raymundo.dolor@lsu.edu.ph"
+        "office_lsu_email": "margeaux.labuga@lsu.edu.ph"
     },
     {
         "officeAbbr": "VPLM",
         "designation": "Vice-President, Lasallian Mission",
         "name": "Mr. Carl Vincent Codera",
-        "offices": "Vice-President For Lasallian Mission Services",
-        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+        "offices": "Vice-President For Lasallian Mission",
+        "office_lsu_email": "carlvicodera@lsu.edu.ph"
     },
     {
         "officeAbbr": "VPLM",
         "designation": "Director, Students Activities",
-        "name": "Mr. Carl Vincent Codera",
+        "name": "Mr. Ted Nudgent Tac-an",
         "offices": "Vice-President For Lasallian Mission Services",
         "office_lsu_email": "lasallianmission@lsu.edu.ph"
     },
     {
         "officeAbbr": "VPLM",
         "designation": "Officer, Leadership Formation and Empowerment",
-        "name": "Mr. Carl Vincent Codera",
+        "name": "Mr. Dean Eust'l Lopez",
         "offices": "Vice-President For Lasallian Mission Services",
-        "office_lsu_email": "lasallianmission@lsu.edu.ph"
+        "office_lsu_email": "dean.lopez@lsu.edu.ph"
     },
     {
         "officeAbbr": "VPLM",

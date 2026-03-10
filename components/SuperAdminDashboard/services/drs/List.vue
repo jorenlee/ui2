@@ -973,7 +973,7 @@ const submitDRSFormToGmailRMO = async () => {
                                   <span
                                     v-if="
                                       b.document_code !==
-                                      'To Be Assigned By RMO'
+                                      'For Review'
                                     "
                                     :class="
                                       darkMode ? 'text-white' : 'text-gray-900'
