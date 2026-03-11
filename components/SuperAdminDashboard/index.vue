@@ -21,7 +21,7 @@ const openGroups = ref([
   "NPCC IT Services",
   "University Registrar",
   "Campus Pass",
-  "Document Reviewer System",
+  "Document Reviewer",
   "IT Services Feedback",
   "Safety and Security Center",
   // "Human Resource",
@@ -118,7 +118,7 @@ const publicMenuGroups = [
 const lsuOnlyMenuGroups = [
   "Commission on Election",
   "General Services Office",
-  "Document Reviewer System",
+  "Document Reviewer",
   "Safety and Security Center",
 ];
 
@@ -186,7 +186,7 @@ const subMenuList = [
   },
 
   {
-    group: "Document Reviewer System",
+    group: "Document Reviewer",
     allowedRole: "DRS Admin",
     items: [
       { label: "DRS List", icon: "fa-list", type: "button", view: "drsList" },
