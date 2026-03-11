@@ -155,8 +155,8 @@ const subMenuList = [
   {
     group: "Animo Run",
     items: [
-      { label: "Registration", icon: "fa-running", type: "button", view: "AnimoRunRegistration" },
-      { label: "Status Checking", icon: "fa-list", type: "button", view: "AnimoRunStatus" },
+      { label: "Registration", icon: "fa-running", type: "button", view: "ViewAnimoRunRegistration" },
+      { label: "Status Checking", icon: "fa-list", type: "button", view: "ViewAnimoRunStatus" },
     ],
   },
 
@@ -164,15 +164,15 @@ const subMenuList = [
     group: "Campus Pass",
     allowedRole: "Campus Pass Admin",
     items: [
-      { label: "Campus Pass Management", icon: "fa-id-card", type: "button", view: "campusPass" },
+      { label: "Campus Pass Management", icon: "fa-id-card", type: "button", view: "ViewCampusPassRequests" },
     ],
   },
 
   {
     group: "Commission on Election",
     items: [
-      { label: "Student Election Results", icon: "fa-check", type: "button", view: "coeResults" },
-      { label: "Student Election Voting", icon: "fa-list", type: "button", view: "coeVoting" },
+      { label: "Student Election Results", icon: "fa-check", type: "button", view: "ViewCOEResults" },
+      { label: "Student Election Voting", icon: "fa-list", type: "button", view: "ViewCOEVoting" },
     ],
   },
 
@@ -180,99 +180,87 @@ const subMenuList = [
     group: "Content Management",
     allowedRole: "Content Writer",
     items: [
-      { label: "Content Form", icon: "fa-list", type: "button", view: "form" },
-      { label: "All Contents Lists", icon: "fa-list-alt", type: "button", view: "list" },
+      { label: "Content Form", icon: "fa-list", type: "button", view: "ViewContentForm" },
+      { label: "All Contents Lists", icon: "fa-list-alt", type: "button", view: "ViewContentList" },
     ],
   },
-
   {
     group: "Document Reviewer",
     allowedRole: "DRS Admin",
     items: [
-      { label: "DRS List", icon: "fa-list", type: "button", view: "drsList" },
-      { label: "DRS Form", icon: "fa-file", type: "button", view: "drsForm" },
+      { label: "DRS List", icon: "fa-list", type: "button", view: "ViewDRSList" },
+      { label: "DRS Form", icon: "fa-file", type: "button", view: "ViewDRSForm" },
     ],
   },
-
   {
     group: "General Services Office",
     items: [
-      { label: "Venue Reservation", icon: "fa-building", type: "button", view: "venueReservation" },
-      { label: "Vehicle Reservation", icon: "fa-car", type: "button", view: "vehicleReservation" },
+      { label: "Venue Reservation", icon: "fa-building", type: "button", view: "ViewVenueReservation" },
+      { label: "Vehicle Reservation", icon: "fa-car", type: "button", view: "ViewVehicleReservation" },
     ],
   },
-
   {
     group: "Human Resource",
     allowedRole: "HR Menu",
     items: [
-      { label: "Human Resource Analytics", icon: "fa-list-alt", type: "button", view: "hrJobVacancyList" },
+      { label: "Human Resource Analytics", icon: "fa-list-alt", type: "button", view: "ViewHRJobVacancyList" },
     ],
   },
-
   {
     group: "IT Services Feedback",
     items: [
-      { label: "IT Services Feedback", icon: "fa-list", type: "button", view: "ITServicesFeedback" },
+      { label: "IT Services Feedback", icon: "fa-list", type: "button", view: "ViewITServicesFeedback" },
     ],
   },
-
   {
     group: "Library Management",
     allowedRole: "Library Menu",
     items: [
-      { label: "Appointment Lists", icon: "fa-list-alt", type: "button", view: "appointments" },
-      { label: "Available Books", icon: "fa-book", type: "button", view: "books" },
-      { label: "Set Schedules", icon: "fa-calendar", type: "button", view: "schedules" },
+      { label: "Appointment Lists", icon: "fa-list-alt", type: "button", view: "ViewLibraryAppointments" },
+      { label: "Available Books", icon: "fa-book", type: "button", view: "ViewLibraryBooks" },
+      { label: "Set Schedules", icon: "fa-calendar", type: "button", view: "ViewLibrarySchedules" },
     ],
   },
-
   {
     group: "NPCC IT Services",
     allowedRole: "NPCC Menu",
     items: [
-      { label: "NPCC Management", icon: "fa-cogs", type: "button", view: "npcc" },
+      { label: "NPCC Management", icon: "fa-cogs", type: "button", view: "ViewITTicketsRequests" },
     ],
   },
-
   {
     group: "Office of The Chancellor",
     allowedRole: "OCH Admin",
     items: [
-      { label: "University Calendar", icon: "fa-calendar", type: "button", view: "universityCalendar" },
+      { label: "University Calendar", icon: "fa-calendar", type: "button", view: "ViewUniversityCalendar" },
     ],
   },
-
   {
     group: "Safety and Security Center",
     items: [
-      { label: "Borrow Office Keys", icon: "fa-key", type: "button", view: "borrowKeys" },
+      { label: "Borrow Office Keys", icon: "fa-key", type: "button", view: "ViewBorrowKeys" },
     ],
   },
-
   {
     group: "University Registrar",
     allowedRole: "Registrar Menu",
     items: [
-      { label: "University Registrar", icon: "fa-university", type: "button", view: "registrar" },
+      { label: "University Registrar", icon: "fa-university", type: "button", view: "ViewRegistrarAppointments" },
     ],
   },
-
   {
     group: "Lasalle Alumni Association",
     items: [
-      { label: "Lasalle Alumni Association", icon: "fa-graduation-cap", type: "button", view: "alumni" },
+      { label: "Lasalle Alumni Association", icon: "fa-graduation-cap", type: "button", view: "ViewAlumni" },
     ],
   },
-
   {
     group: "Super Admin",
     allowedRole: "Super Admin",
     items: [
-      { label: "Role Permissions", icon: "fa-user-shield", type: "button", view: "RolePermissions" },
+      { label: "Role Permissions", icon: "fa-user-shield", type: "button", view: "ViewRolePermissions" },
     ],
   },
-
   {
     group: "External Links",
     items: [
@@ -291,19 +279,28 @@ const menuList = [
 // ---------------- VIEW CONFIG ----------------
 const currentViewConfig = computed(() => {
   const views = {
-    form: { component: resolveComponent("SuperAdminDashboardCmsForm"), class: "p-4 pb-52", props: { onContentSubmitted: handleContentSubmitted } },
-    list: { component: resolveComponent("SuperAdminDashboardCmsList"), class: "p-4 pb-32" },
-    appointments: { component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"), class: "pb-32" },
-    books: { component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"), class: "pb-32" },
-    schedules: { component: resolveComponent("SuperAdminDashboardServicesLibrarySchedules"), class: "pb-24" },
-    universityCalendar: { component: resolveComponent("SuperAdminDashboardChancellorOffice"), class: "p-4 pb-32" },
-    npcc: { component: resolveComponent("SuperAdminDashboardServicesIt"), class: "px-2 pb-32" },
-    registrar: { component: resolveComponent("SuperAdminDashboardServicesRegistrar"), class: "pb-32" },
-    campusPass: { component: resolveComponent("SuperAdminDashboardServicesCampusPass"), class: "pb-32" },
-    drsList: { component: resolveComponent("SuperAdminDashboardServicesDrsList"), class: "pb-32" },
-    drsForm: { component: resolveComponent("SuperAdminDashboardServicesDrsForm"), class: "pb-20" },
-    ITServicesFeedback: { component: resolveComponent("UniversityPortalITServicesList"), class: "pb-32" },
-    RolePermissions: { component: resolveComponent("SuperAdminDashboardRolePermissions"), class: "pb-32" },
+    ViewContentForm: { component: resolveComponent("SuperAdminDashboardCmsForm"), class: "p-4 pb-52", props: { onContentSubmitted: handleContentSubmitted } },
+    ViewContentList: { component: resolveComponent("SuperAdminDashboardCmsList"), class: "p-4 pb-32" },
+    ViewLibraryAppointments: { component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"), class: "pb-32" },
+    ViewLibraryBooks: { component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"), class: "pb-32" },
+    ViewLibrarySchedules: { component: resolveComponent("SuperAdminDashboardServicesLibrarySchedules"), class: "pb-24" },
+    ViewUniversityCalendar: { component: resolveComponent("SuperAdminDashboardChancellorOffice"), class: "p-4 pb-32" },
+    ViewITTicketsRequests: { component: resolveComponent("SuperAdminDashboardServicesIt"), class: "px-2 pb-32" },
+    ViewRegistrarAppointments: { component: resolveComponent("SuperAdminDashboardServicesRegistrar"), class: "pb-32" },
+    ViewCampusPassRequests: { component: resolveComponent("SuperAdminDashboardServicesCampusPass"), class: "pb-32" },
+    ViewDRSList: { component: resolveComponent("SuperAdminDashboardServicesDrsList"), class: "pb-32" },
+    ViewDRSForm: { component: resolveComponent("SuperAdminDashboardServicesDrsForm"), class: "pb-20" },
+    ViewITServicesFeedback: { component: resolveComponent("UniversityPortalITServicesList"), class: "pb-32" },
+    ViewRolePermissions: { component: resolveComponent("SuperAdminDashboardRolePermissions"), class: "pb-32" },
+    ViewAnimoRunRegistration: { component: resolveComponent("ComingSoon")},
+    ViewAnimoRunStatus: { component: resolveComponent("ComingSoon")},
+    ViewCOEResults: { component: resolveComponent("ComingSoon")},
+    ViewCOEVoting: { component: resolveComponent("ComingSoon")},
+    ViewVenueReservation: { component: resolveComponent("ComingSoon")},
+    ViewVehicleReservation: { component: resolveComponent("ComingSoon")},
+    ViewHRJobVacancyList: { component: resolveComponent("ComingSoon")},
+    ViewBorrowKeys: { component: resolveComponent("ComingSoon")},
+    ViewAlumni: { component: resolveComponent("ComingSoon")},
   };
 
   return views[currentView.value];
