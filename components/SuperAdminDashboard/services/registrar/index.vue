@@ -10,12 +10,6 @@ const props = defineProps({
 
 const { user } = useAuth();
 
-// const cardClass = computed(() =>
-//   props.darkMode
-//     ? "bg-gray-800 border border-gray-700"
-//     : "bg-white text-green-900 "
-// );
-
 const listItems = ref([]);
 let tableDisplay = ref(true);
 let toggleSideBarMenu = ref(false);
@@ -740,15 +734,14 @@ onMounted(async () => {
   const email = user.value?.email;
 
   const emailToCollegeMap = {
-    "ccsea.registrar@lsu.edu.ph":
-      "Arts and Sciences, Engineering, Architecture, Computer Studies",
+    "ccsea.registrar@lsu.edu.ph": "Arts and Sciences, Engineering, Architecture, Computer Studies",
     "cba.registrar@lsu.edu.ph": "Business, Commerce, Accountancy",
     "cte.registrar@lsu.edu.ph": "Education / Graduate Studies",
     "onlinerequest@lsu.edu.ph": "Nursing / Tourism and Hospitality Management",
     "ccje.registrar@lsu.edu.ph": "Criminology / BS Psychology",
   };
 
-  const fullAccessEmails = ["registrar@lsu.edu.ph", "jorenlee.luna@lsu.edu.ph", "jason.yap@lsu.edu.ph"];
+  const fullAccessEmails = ["registrar@lsu.edu.ph"];
 
   const authorizedEmails = [
     ...fullAccessEmails,
@@ -1284,9 +1277,7 @@ const sortColleges = (column) => {
 
 const getEmailsForCollege = (college) => {
   const emailToCollegeMap = {
-    "ccsea.registrar@lsu.edu.ph":
-      "Arts and Sciences, Engineering, Architecture, Computer Studies",
-    "jorenlee.luna@lsu.edu.ph": "Business, Commerce, Accountancy",
+    "ccsea.registrar@lsu.edu.ph": "Arts and Sciences, Engineering, Architecture, Computer Studies",
     "cba.registrar@lsu.edu.ph": "Business, Commerce, Accountancy",
     "cte.registrar@lsu.edu.ph": "Education / Graduate Studies",
     "onlinerequest@lsu.edu.ph": "Nursing / Tourism and Hospitality Management",

@@ -6,7 +6,7 @@
     <div
       v-for="menu in filteredMenuList"
       :key="menu.label || menu.group"
-      class="rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer group border overflow-hidden"
+      class=" hover:shadow-xl transition-all duration-300 cursor-pointer group overflow-hidden"
       :class="
         darkMode
           ? 'bg-gray-800 border-gray-700 hover:border-green-500'
@@ -87,11 +87,11 @@
                 @click="handleMenuClick(item)"
               >
                 <div
-                  class="px-2 flex items-center justify-center rounded-lg transition-colors"
+                  class="px-2 flex items-center justify-left rounded-lg transition-colors"
                   :class="
                     currentView === item.view
                       ? 'bg-white/20'
-                      : 'bg-green-100 group-hover/item:bg-green-200'
+                      : 'group-hover/item:bg-green-200'
                   "
                 >
                   <i
