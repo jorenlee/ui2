@@ -24,7 +24,7 @@ const openGroups = ref([
   "Document Reviewer",
   "IT Services Feedback",
   "Safety and Security Center",
-  // "Human Resource",
+  "Human Resource",
   // "Office of The Chancellor",
   // "Commission on Election",
   // "External Links",
@@ -203,7 +203,7 @@ const subMenuList = [
     group: "Human Resource",
     allowedRole: "HR Menu",
     items: [
-      { label: "Human Resource Analytics", icon: "fa-list-alt", type: "button", view: "ViewHRJobVacancyList" },
+      { label: "Current Employed Admins", icon: "fa-list-alt", type: "button", view: "ViewCurrentEmployedAdmins" },
     ],
   },
   {
@@ -301,6 +301,7 @@ const currentViewConfig = computed(() => {
     ViewHRJobVacancyList: { component: resolveComponent("ComingSoon")},
     ViewBorrowKeys: { component: resolveComponent("ComingSoon")},
     ViewAlumni: { component: resolveComponent("ComingSoon")},
+    ViewCurrentEmployedAdmins: { component: resolveComponent("SuperAdminDashboardServicesHrEmployedAdmins"), class: "pb-32"},
   };
 
   return views[currentView.value];
@@ -326,13 +327,9 @@ const logOut = () => logout();
   <div
     :class="darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-gray-600'"
   >
-    <!-- LOGOUT CONFIRMATION -->
     <div v-if="isUserAuthenticated">
-      <!-- MAIN CONTENT -->
       <div class="w-full">
-        <!-- CONTENT AREA -->
         <div class="overflow-y-auto">
-          <!-- Dynamic Component Rendering -->
           <div v-if="currentViewConfig" :class="currentViewConfig.class">
             <component
               :is="currentViewConfig.component"
@@ -378,7 +375,6 @@ const logOut = () => logout();
 </template>
 
 <style scoped>
-/* Smooth Theme Transition */
 :global(.theme-transition),
 :global(.theme-transition *) {
   transition:

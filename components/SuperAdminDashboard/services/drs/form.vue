@@ -2,16 +2,12 @@
 import _ from "lodash";
 import "./css/main.css";
 import moment from "moment";
-import headOfficeJSON from "./head_office.json";
 
-/* ================= AUTH ================= */
-const { user, init } = useAuth();
 
-onMounted(() => { init();});
+const headOffice = ref([]);
 
-const headOffice = ref(headOfficeJSON);
 const config = useRuntimeConfig();
-const endpoint = ref(config.public.apiUrl);
+const endpoint = config.public.apiUrl;
 const formDisplay = ref(true);
 const thankYouDisplay = ref(false);
 const submitCounter = ref(1);
@@ -19,6 +15,54 @@ const dateToday = moment().format("MMMM DD, YYYY h:mm:ss A");
 const digitsNum = ref(0);
 const requireAllFields = ref(false);
 const isSubmitting = ref(false);
+
+
+/* ================= AUTH ================= */
+const { user, init } = useAuth();
+
+onMounted(() => {
+  init();
+  fetchHeadOffice();
+});
+
+
+// ---------------- FETCH ----------------
+const fetchHeadOffice = async () => {
+  try {
+    headOffice.value = await $fetch(`${endpoint}/api/cits/lsu-offices/list/`);
+  } catch (e) {
+    showToast("Error fetching Head Office", "error");
+  }
+};
+
+const rankDesignation = (designation) => {
+  const d = designation.toLowerCase();
+
+  if (d.includes("president") && !d.includes("vice")) return 1;
+  if (d.includes("executive assistant")) return 2;
+  if (d.includes("chancellor") && !d.includes("vice")) return 3;
+  if (d.includes("vice-president")) return 4;
+  if (d.includes("vice president")) return 4;
+  if (d.includes("vice chancellor")) return 5;
+  if (d.includes("assistant vice chancellor")) return 6;
+  if (d.includes("director")) return 7;
+  if (d.includes("registrar") || d.includes("controller") || d.includes("manager")) return 8;
+  if (d.includes("dean")) return 9;
+  if (d.includes("principal") && !d.includes("vice")) return 10;
+  if (d.includes("vice principal")) return 11;
+  if (d.includes("coordinator")) return 12;
+  if (d.includes("officer")) return 13;
+  if (d.includes("analyst")) return 14;
+
+  return 99;
+};
+
+const sortedHeadOffice = computed(() => {
+  return [...headOffice.value].sort((a, b) => {
+    return rankDesignation(a.designation) - rankDesignation(b.designation);
+  });
+});
+
 
 const documentTypeList = ref([
   "Form or Template",
@@ -261,10 +305,10 @@ const notifyEmail = async () => {
                                 </option>
                                 <option
                                   :value="j.designation"
-                                  v-for="(j, i) in headOffice"
+                                  v-for="(j, i) in sortedHeadOffice"
                                   :key="i"
                                 >
-                                  {{ j.officeAbbr }} | {{ j.designation }}
+                                  {{ j.office_abbr }} | {{ j.designation }}
                                 </option>
                               </select>
                             </div>
