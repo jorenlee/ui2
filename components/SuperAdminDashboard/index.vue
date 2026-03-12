@@ -25,13 +25,13 @@ const openGroups = ref([
   "IT Services Feedback",
   "Safety and Security Center",
   "Human Resource",
-  // "Office of The Chancellor",
-  // "Commission on Election",
-  // "External Links",
-  // "General Services Office",
-  // "Lasalle Alumni Association",
-  // "Animo Run",
-  // "Super Admin",
+  "Office of The Chancellor",
+  "Commission on Election",
+  "External Links",
+  "General Services Office",
+  "Lasalle Alumni Association",
+  "Animo Run",
+  "Super Admin",
 ]);
 
 // ---------------- API ----------------
@@ -156,7 +156,7 @@ const subMenuList = [
     group: "Animo Run",
     items: [
       { label: "Registration", icon: "fa-running", type: "button", view: "ViewAnimoRunRegistration" },
-      { label: "Status Checking", icon: "fa-list", type: "button", view: "ViewAnimoRunStatus" },
+      { label: "Status Checking", icon: "fa-list", type: "button", view: "ViewAnimoRunList" },
     ],
   },
 
@@ -195,8 +195,10 @@ const subMenuList = [
   {
     group: "General Services Office",
     items: [
-      { label: "Venue Reservation", icon: "fa-building", type: "button", view: "ViewVenueReservation" },
-      { label: "Vehicle Reservation", icon: "fa-car", type: "button", view: "ViewVehicleReservation" },
+      { label: "Facilities Reservation Form", icon: "fa-building", type: "button", view: "ViewGSOFacilitiesReservationForm" },
+      { label: "Facilities Reservation List", icon: "fa-list", type: "button", view: "ViewGSOFacilitiesReservationList" },
+      { label: "Vehicle Reservation Form", icon: "fa-car", type: "button", view: "ViewGSOVehicleReservationForm" },
+      { label: "Vehicle Reservation List", icon: "fa-list", type: "button", view: "ViewGSOVehicleReservationList" },
     ],
   },
   {
@@ -292,8 +294,8 @@ const currentViewConfig = computed(() => {
     ViewDRSForm: { component: resolveComponent("SuperAdminDashboardServicesDrsForm"), class: "pb-20" },
     ViewITServicesFeedback: { component: resolveComponent("UniversityPortalITServicesList"), class: "pb-32" },
     ViewRolePermissions: { component: resolveComponent("SuperAdminDashboardRolePermissions"), class: "pb-32" },
-    ViewAnimoRunRegistration: { component: resolveComponent("ComingSoon")},
-    ViewAnimoRunStatus: { component: resolveComponent("ComingSoon")},
+    ViewAnimoRunRegistration: { component: resolveComponent("AnimoRunRegistration"), class: "pb-32" },
+    ViewAnimoRunList: { component: resolveComponent("AnimoRunList"), class: "pb-32" },
     ViewCOEResults: { component: resolveComponent("ComingSoon")},
     ViewCOEVoting: { component: resolveComponent("ComingSoon")},
     ViewVenueReservation: { component: resolveComponent("ComingSoon")},
@@ -302,6 +304,10 @@ const currentViewConfig = computed(() => {
     ViewBorrowKeys: { component: resolveComponent("ComingSoon")},
     ViewAlumni: { component: resolveComponent("ComingSoon")},
     ViewCurrentEmployedAdmins: { component: resolveComponent("SuperAdminDashboardServicesHrEmployedAdmins"), class: "pb-32"},
+    ViewGSOFacilitiesReservationForm: { component: resolveComponent("GSOFacilitiesReservationForm"), class: "pb-32"},
+    ViewGSOFacilitiesReservationList: { component: resolveComponent("GSOFacilitiesReservationForm"), class: "pb-32"},
+    ViewGSOVehicleReservationForm: { component: resolveComponent("GSOVehicleReservationForm"), class: "pb-32"},
+    ViewGSOVehicleReservationList: { component: resolveComponent("GSOVehicleReservationForm"), class: "pb-32"},
   };
 
   return views[currentView.value];
