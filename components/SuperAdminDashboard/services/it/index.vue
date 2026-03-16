@@ -797,8 +797,9 @@ const rolesByEmail = computed(() => {
 
 const npccMenuEmails = computed(() => rolesByEmail.value.npccMenu);
 const checkForUnratedTickets = async (email, npccMenuEmails = []) => {
-  // Exception for npccMenu users - skip rating requirement
-  if (email && npccMenuEmails.includes(email.toLowerCase())) {
+  // Exception for npccMenu users and specific emails - skip rating requirement
+  const exemptEmails = ['dev@lsu.edu.ph', 'npc@lsu.edu.ph'];
+  if (email && (npccMenuEmails.includes(email.toLowerCase()) || exemptEmails.includes(email.toLowerCase()))) {
     return false;
   }
 
