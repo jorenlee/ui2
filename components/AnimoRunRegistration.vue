@@ -1,13 +1,21 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 
 const config = useRuntimeConfig();
 const endpoint = config.public.apiUrl;
 
-const number_of_participants_per_group = ref(0);
-
+const number_of_participants_per_group = ref(1);
 const form_type = ref("Individual");
 
+watch(
+  form_type,
+  (newValue) => {
+    if (newValue === "Individual") {
+      number_of_participants_per_group.value = 1;
+    }
+  },
+  { immediate: true }
+);
 const form = ref({
   run_category: "",
 
@@ -70,7 +78,7 @@ const redirectStripe = async () => {
   <div class="">
     <div class="my-10 w-11/12 mx-auto bg-white shadow-2xl rounded-2xl">
       <!-- HEADER -->
-      <div class="p-8 text-center shadow mb-10">
+      <div class="p-8 text-center shadow mb-2">
         <!-- Logo -->
         <div class="mx-auto w-24 sm:w-32 mb-4">
           <img
@@ -93,45 +101,40 @@ const redirectStripe = async () => {
         </p>
       </div>
 
-      <div class="w-full p-5 bg-white shadow-md space-y-6">
-        <h2 class="text-2xl font-semibold text-gray-800 w-full text-center">
-            Select Form Type
+      <div class="flex items-center w-full p-5 bg-white shadow-md">
+        <h2 class="text-2xl font-semibold text-green-800 whitespace-nowrap text-center pr-10">
+          Select as
         </h2>
 
         <!-- Radio Options -->
         <div class="gap-4 w-full">
-          <div class="w-full flex">
-            <div
-              class="w-full border rounded-lg cursor-pointer hover:bg-gray-50 transition"
-            >
-              <div class="w-fit">
-                <label class="flex items-center gap-3 p-4">
-                  <input
-                    type="radio"
-                    name="form_type"
-                    value="Individual"
-                    v-model="form_type"
-                    class="w-5 h-5 accent-indigo-600"
-                  />
-                  <span class="text-gray-700 font-medium">Individual</span>
-                </label>
-              </div>
-            </div>
-
-            <div
+          <div class="lg:flex gap-x-5">
+            <label
               class="flex w-full border rounded-lg cursor-pointer hover:bg-gray-50 transition"
             >
-              <div class="flex items-center w-fit">
-                <label class="flex items-center gap-3 p-4">
-                  <input
-                    type="radio"
-                    name="form_type"
-                    value="Group"
-                    v-model="form_type"
-                    class="w-5 h-5 accent-indigo-600"
-                  />
-                </label>
+              <div class="flex items-center gap-3 p-4">
+                <input
+                  type="radio"
+                  name="form_type"
+                  value="Individual"
+                  v-model="form_type"
+                  class="w-5 h-5 accent-indigo-600"
+                />
+                <span class="text-gray-700 font-medium">Individual</span>
+              </div>
+            </label>
 
+            <label
+              class="flex w-full border rounded-lg cursor-pointer hover:bg-gray-50 transition"
+            >
+              <div class="flex items-center gap-3 p-4">
+                <input
+                  type="radio"
+                  name="form_type"
+                  value="Group"
+                  v-model="form_type"
+                  class="w-5 h-5 accent-indigo-600"
+                />
                 <span class="text-gray-700 font-medium">Group</span>
               </div>
 
@@ -140,45 +143,44 @@ const redirectStripe = async () => {
                   v-if="form_type === 'Group'"
                   class="flex items-center w-fit mx-auto"
                 >
-                  <label class="block text-sm text-gray-600 mr-3"
-                    >Participants:</label
-                  >
+                  <label class="block text-sm text-gray-600 mr-3">
+                    Participants:
+                  </label>
+
                   <input
                     type="number"
                     min="1"
                     v-model="number_of_participants_per_group"
                     placeholder="0"
-                    class="mt-1 w-10 text-center border rounded-lg px-0.5 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    class="mt-1 w-20 text-center border rounded-lg px-1 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
                 </div>
               </div>
-            </div>
+            </label>
           </div>
 
-          <div class="w-full flex justify-center my-5">
-            <!-- Generate Button -->
+          <!-- <div class="w-full flex justify-center my-5">
+      
             <button
               @click="generateForms"
               class="w-fit mx-auto px-5 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition"
             >
               <i class="fa fa-list mr-3"></i> Generate Fillout Form
             </button>
-          </div>
+          </div> -->
         </div>
       </div>
 
       <div class="p-5">
-
-
-        <div v-for="i in number_of_participants_per_group">
-          <div>
-            <p class="text-center flex py-2 font-bold w-full justify-center">
+        <div v-for="i in number_of_participants_per_group" class="shadow-lg px-5 pt-5 pb-5 border-y-4 border-green-700">
+          <div v-if="form_type === 'Group'">
+            <p class="text-center flex font-bold w-full justify-center">
               Form #{{ i }}
             </p>
           </div>
           <!-- RUN CATEGORY -->
           <div class="mb-12">
-            <h2 class="section-title">Run Category</h2>
+            <h2 class="section-title mt-2">Run Category</h2>
 
             <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div
@@ -214,7 +216,7 @@ const redirectStripe = async () => {
 
             <div class="space-y-6">
               <!-- HEU -->
-              <div class="card">
+              <div class="card flex">
                 <label class="radio-label">
                   <input
                     type="radio"
@@ -251,7 +253,7 @@ const redirectStripe = async () => {
               </div>
 
               <!-- BEU -->
-              <div class="card">
+              <div class="card flex">
                 <label class="radio-label">
                   <input
                     type="radio"
@@ -287,7 +289,7 @@ const redirectStripe = async () => {
               </div>
 
               <!-- PARTNERS -->
-              <div class="card">
+              <div class="card flex">
                 <label class="radio-label">
                   <input
                     type="radio"
@@ -311,7 +313,7 @@ const redirectStripe = async () => {
               </div>
 
               <!-- ALUMNI -->
-              <div class="card">
+              <div class="card flex">
                 <label class="radio-label">
                   <input
                     type="radio"
@@ -335,7 +337,7 @@ const redirectStripe = async () => {
               </div>
 
               <!-- NON LSU -->
-              <div class="card">
+              <div class="card flex">
                 <label class="radio-label">
                   <input
                     type="radio"
@@ -483,6 +485,10 @@ const redirectStripe = async () => {
             </div>
           </div>
 
+          <div>
+            Add-ons
+          </div>
+
           <!-- PAYMENT SUMMARY -->
 
           <div class="payment-box">
@@ -534,17 +540,9 @@ const redirectStripe = async () => {
 
               <div class="mt-4 flex flex-col gap-2">
                 <label class="text-gray-800 font-semibold">
-                  Upload Salary Deduction Confirmation Slip
+                 Wait For The Admin to Confirm , you will receive a 2 emails, submission email then completed registration.
                 </label>
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.png"
-                  @change="handleFileUpload"
-                  class="border border-gray-300 rounded-xl px-4 py-3 cursor-pointer text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                />
-                <p v-if="uploadedFileName" class="text-sm text-gray-500 mt-1">
-                  Uploaded: {{ uploadedFileName }}
-                </p>
+                
               </div>
             </div>
 

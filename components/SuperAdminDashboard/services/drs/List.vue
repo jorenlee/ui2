@@ -97,6 +97,9 @@ const documentTypeList = ref([
   "Work Instructions",
 ]);
 
+// Document type filter state
+const selectedDocTypes = ref([]);
+
 // Auto-refresh interval
 let refreshInterval = null;
 
@@ -153,6 +156,14 @@ const fetchListItems = async () => {
     approvedLength.value = listItems.value.filter(
       (item) => item.approved_by_action === "Approved",
     ).length;
+
+    // Calculate document type counts
+    documentTypeCounts.value = {};
+    documentTypeList.value.forEach(type => {
+      documentTypeCounts.value[type] = listItems.value.filter(
+        item => item.document_type === type
+      ).length;
+    });
 
     filteredItems = Array.isArray(listItems.value) ? [...listItems.value] : [];
 
@@ -213,6 +224,9 @@ let approvedLength = ref(0);
 let unitOfficeSelectedTotalLength = ref(0);
 let documentTypeSelectedTotalLength = ref(0);
 let statusSelectedTotalLength = ref(0);
+
+// Document type counts
+const documentTypeCounts = ref({});
 
 const isLoading = ref(true); // Add loading state
 
@@ -305,6 +319,13 @@ const filteredListItems = computed(() => {
     }
   }
 
+  // Apply document type filter
+  if (selectedDocTypes.value.length > 0) {
+    filteredItems = filteredItems.filter((item) =>
+      selectedDocTypes.value.includes(item.document_type)
+    );
+  }
+
   // Apply universal search filter
   if (searchQuery.value && searchQuery.value.trim() !== "") {
     const query = searchQuery.value.toLowerCase().trim();
@@ -394,6 +415,15 @@ const actionChecked = () => {
     } else if (conditionalElement?.checked) {
       filteredActions[actions[actionKey]] = conditionalElement.value;
     }
+  }
+};
+
+const toggleDocTypeFilter = (docType) => {
+  const index = selectedDocTypes.value.indexOf(docType);
+  if (index > -1) {
+    selectedDocTypes.value.splice(index, 1);
+  } else {
+    selectedDocTypes.value.push(docType);
   }
 };
 
@@ -502,7 +532,7 @@ const submitDRSFormToGmailRMO = async () => {
         <div v-if="!displayUpdateForm">
           <div class="p-2">
             <div v-show="tableDisplay">
-              <div class="lg:flex items-center gap-x-3 pb-5">
+              <div class="lg:flex items-center gap-x-3 mb-2">
                 <div class="flex items-center gap-x-2">
                   <div
                     class="flex items-center font-bold text-sm lg:text-base"
@@ -681,6 +711,37 @@ const submitDRSFormToGmailRMO = async () => {
                     <span class="">CSV</span>
                   </button>
                 </div>
+              </div>
+
+              <!-- Document Type Filters -->
+              <div v-if="drsAdmins" class="mt-4 flex flex-wrap gap-2 justify-center text-center mb-2">
+                <button
+                  v-for="docType in documentTypeList"
+                  :key="docType"
+                  @click="toggleDocTypeFilter(docType)"
+                  class="px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2"
+                  :class="
+                    selectedDocTypes.includes(docType)
+                      ? 'bg-green-600 text-white shadow-lg'
+                      : darkMode
+                        ? 'bg-gray-700 text-gray-300 border border-gray-600 hover:border-green-500'
+                        : 'bg-white text-gray-700 border border-gray-300 hover:border-green-500'
+                  "
+                >
+                  <span>{{ docType }}</span>
+                  <span
+                    class="px-2 py-0.5 rounded-full text-xs font-bold"
+                    :class="
+                      selectedDocTypes.includes(docType)
+                        ? 'bg-white text-green-600'
+                        : darkMode
+                          ? 'bg-green-600 text-gray-200'
+                          : 'bg-green-200 text-green-900'
+                    "
+                  >
+                    {{ documentTypeCounts[docType] || 0 }}
+                  </span>
+                </button>
               </div>
 
               <div class="relative">
