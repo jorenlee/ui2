@@ -569,7 +569,7 @@ const redirectStripe = async () => {
                   @click="redirectStripe"
                   class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl text-lg font-semibold transition"
                 >
-                  Proceed to Payment (Stripe)
+                  Proceed to Payment
                 </button>
               </div>
             </div>
