@@ -40,11 +40,11 @@
       <div class="w-full">
         <div class="lg:bg-white bg-green-900 lg:pb-10 pb-7 lg:text-green-800 text-white">
           <p class=" lg:w-10/12 w-10/12 mx-auto lg:text-base text-xs lg:pt-8 pt-5 pb-5 text-center tracking-tighter">La Salle University - Ozamiz upholds the Republic Act No. 10173 known as "Data Privacy Act of 2012" which declares the policy of the State to protect the fundamental human right of privacy while ensuring free flow of information to promote innovation and growth. </p>
-          <div class="bg-yellow-300 lg:h-1 h-0.5 lg:w-6/12 w-9/12 mx-auto"></div>
-          <h1 class="lg:text-4xl text-center lg:w-10/12 w-8/12 mx-auto  font-semibold lg:pt-8 pt-5 lg:pb-5 pb-3 tracking-widest">NPC Certificate of Registration and Seal</h1>
-          <div class="lg:flex items-center lg:w-10/12 w-11/12 mx-auto border bg-white border-green-950 shadow-lg">
-            <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/RegistrationCert2026.jpg" class="lg:w-8/12 lg:border-r-4 mx-auto lg:border-b-0 border-b-4" />
-            <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/DPODPS2026.png" class="lg:w-[280px] w-[150px] mx-auto px-5 lg:my-0 my-3" />
+          <div class="bg-yellow-300 lg:h-1 h-0.5 lg:w-6/12 w-9/12 mx-auto mb-5"></div>
+          <h1 class="lg:text-4xl text-center lg:w-10/12 w-8/12 mx-auto  font-semibold tracking-widest">NPC Certificate of Registration and Seal</h1>
+          <div class="lg:flex items-center mx-auto lg:px-10 lg:pt-10 pt-5">
+            <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/RegistrationCert2026.jpg" class="" />
+            <!-- <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/DPODPS2026.png" class="lg:w-[280px] w-[150px] mx-auto px-5 lg:my-0 my-3" /> -->
           </div>
         </div>
       </div>

@@ -29,7 +29,7 @@
             <p class="lg:text-4xl md:text-xl font-extrabold lg:tracking-wide">
               LSU DATA PRIVACY
             </p>
-            <p class="lg:mt-4 text-sm md:text-base leading-relaxed lg:text-justify">
+            <p class="lg:mt-4 lg:text-sm text-xs leading-relaxed lg:text-justify">
               La Salle University Ozamiz, Inc. upholds the Republic Act No.
               10173 known as "Data Privacy Act of 2012" which declares the
               policy of the State to protect the fundamental human right of
@@ -40,7 +40,7 @@
 
           <h2 class="lg:text-2xl md:text-xl font-bold lg:mb-4">DATA WE PROCESS</h2>
 
-          <p class="text-sm md:text-base lg:text-justify">
+          <p class="lg:text-sm text-xs lg:text-justify">
             Depending on the type of service you will require or the type of
             engagement you will have with us, the data we process may include,
             but are not limited to: your name, age, address, contact number,
