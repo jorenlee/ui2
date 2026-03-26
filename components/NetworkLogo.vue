@@ -49,7 +49,7 @@ const sections = [
         title: "Accreditation",
       },
       {
-        src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/NPCSeal.png",
+        src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/DPODPS2026.png",
         href: "https://privacy.gov.ph/",
         title: "Accreditation",
       },

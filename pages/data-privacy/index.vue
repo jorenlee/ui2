@@ -43,18 +43,18 @@
           <div class="bg-yellow-300 lg:h-1 h-0.5 lg:w-6/12 w-9/12 mx-auto"></div>
           <h1 class="lg:text-4xl text-center lg:w-10/12 w-8/12 mx-auto  font-semibold lg:pt-8 pt-5 lg:pb-5 pb-3 tracking-widest">NPC Certificate of Registration and Seal</h1>
           <div class="lg:flex items-center lg:w-10/12 w-11/12 mx-auto border bg-white border-green-950 shadow-lg">
-            <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/NPCCert.png" class="lg:w-8/12 lg:border-r-4 mx-auto lg:border-b-0 border-b-4" />
-            <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/NPCSeal.png" class="lg:w-[250px] w-[150px] mx-auto px-5 lg:my-0 my-3" />
+            <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/RegistrationCert2026.jpg" class="lg:w-8/12 lg:border-r-4 mx-auto lg:border-b-0 border-b-4" />
+            <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/DPODPS2026.png" class="lg:w-[280px] w-[150px] mx-auto px-5 lg:my-0 my-3" />
           </div>
         </div>
       </div>
-      <div class="lg:w-4/12  bg-green-950">
+      <div class="lg:w-4/12 pb-5  bg-green-950">
         <div class="">
           <div class="w-11/12 mx-auto lg:py-10 py-5">
             <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/lsu-corporate-logo-white.png" class="lg:w-5/12 w-4/12 mx-auto" />
           </div>
         </div>
-        <div class=" lg:pb-10 pb-5">
+        <div class="">
           <ul class=" gap-10 w-10/12 mx-auto">
             <li v-for="(j,i) in info" :key="i">
               <a :href="j.link" target="_blank" class="w-full flex items-center cursor-pointer lg:mb-5 mb-3 rounded-full text-green-950 hover:text-white bg-white hover:bg-green-800 lg:py-2 py-1 px-3 hover:font-bold">
@@ -69,6 +69,9 @@
           </ul>
         </div>
       </div>
+    </div>
+    <div>
+      <DataProcessDPO/>
     </div>
     <Footer />
   </div>
