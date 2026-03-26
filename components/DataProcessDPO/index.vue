@@ -5,7 +5,7 @@
       <!-- Content -->
       <div class="lg:flex items-start gap-x-20">
         <!-- Left Image Card -->
-        <div class="bg-white rounded-3xl flex justify-center lg:w-3/12 w-full">
+        <div class="bg-white rounded-3xl flex justify-center lg:w-3/12 w-full lg:px-5">
           <img
             src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/DPODPS2026.png"
             alt="DPO/DPS Certificate"
