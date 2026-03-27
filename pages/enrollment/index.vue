@@ -193,7 +193,7 @@ const scrollToStep = async (id) => {
           :ref="(el) => (stepRefs[3] = el)"
           class="bg-white rounded-xl shadow-md px-5 py-2 transition-all duration-300 border"
           :class="
-            activeStep === 3
+            activeStep === 3.1
               ? 'border-green-700 scale-[1.02] shadow-lg ring-2 ring-green-200'
               : 'border-transparent opacity-80'
           "
@@ -228,7 +228,7 @@ const scrollToStep = async (id) => {
           :ref="(el) => (stepRefs[4] = el)"
           class="bg-white rounded-xl shadow-md px-5 py-2 transition-all duration-300 border"
           :class="
-            activeStep === 4
+            activeStep === 3.2
               ? 'border-green-700 scale-[1.02] shadow-lg ring-2 ring-green-200'
               : 'border-transparent opacity-80'
           "
