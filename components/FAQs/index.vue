@@ -59,7 +59,7 @@
     <div class="mt-6 lg:p-4 p-2 border rounded-lg bg-gray-50">
       <h3 class="font-medium">Contact Email for Concerns:</h3>
       <p class="lg:text-sm text-xs text-gray-700 mt-2">
-        For further inquiries, please reach out to the Registrar’s Office at
+        For further inquiries, please reach out to the Registrar’s Office located at Saint Columban Building Ground Floor Beside Accounting Office or email
         <a href="mailto:registrar@lsu.edu.ph" class="underline">
           registrar@lsu.edu.ph</a
         >.

@@ -31,20 +31,20 @@ const faqs = ref([
 
   // LSU ACCOUNTS
   {
-    q: "How do I retrieve or reset my LSU Canvas account email?",
-    a: "Visit lsu.instructure.com/login/canvas and click on FORGOT PASSWORD.",
+    q: "How do I retrieve or reset my LSU Canvas account?",
+    a: "Visit lsu.instructure.com/login/canvas and click on FORGOT PASSWORD. Contact npc@lsu.edu.ph for concerns.",
     open: false,
     category: "lsuAccounts",
   },
   {
     q: "How do I retrieve or reset my LSU Gmail account?",
-    a: "Go to gmail.com, enter your LSU email address, and click FORGOT PASSWORD.",
+    a: "Go to gmail.com, enter your LSU email address, and click FORGOT PASSWORD. Contact npc@lsu.edu.ph for concerns.",
     open: false,
     category: "lsuAccounts",
   },
   {
     q: "How do I retrieve or reset my LSU Student Portal account for MY.LSU?",
-    a: "Visit the Registrar's Office to request a new password. If you have forgotten your password more than once, a PHP 50 fee will be charged to avoid negligence. Pay the fee at the Accounting Office.",
+    a: "Visit the Registrar's Office to request a new password. If you have forgotten your password more than once, a PHP 50 fee will be charged to avoid negligence. Pay the fee at the Accounting Office. Contact registrar@lsu.edu.ph for concerns.",
     open: false,
     category: "lsuAccounts",
   },
@@ -180,16 +180,6 @@ const toggle = (faq) => {
               {{ faq.a }}
             </div>
           </div>
-        </div>
-
-        <div class="mt-6 lg:p-4 p-2 border rounded-lg bg-gray-50">
-          <h3 class="font-medium">Contact / Support</h3>
-          <p class="lg:text-sm text-xs text-gray-700 mt-2">
-            For concerns, email
-            <a href="mailto:registrar@lsu.edu.ph" class="underline"
-              >registrar@lsu.edu.ph</a
-            >.
-          </p>
         </div>
       </section>
     </div>
