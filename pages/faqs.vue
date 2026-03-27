@@ -230,15 +230,7 @@ const toggle = (faq) => {
           </div>
         </div>
 
-        <div class="mt-6 lg:p-4 p-2 border rounded-lg bg-gray-50">
-          <h3 class="font-medium">Contact / Support</h3>
-          <p class="lg:text-sm text-xs text-gray-700 mt-2">
-            For concerns, email
-            <a href="mailto:registrar@lsu.edu.ph" class="underline"
-              >registrar@lsu.edu.ph</a
-            >.
-          </p>
-        </div>
+      
       </section>
     </div>
 
@@ -297,6 +289,10 @@ const toggle = (faq) => {
             Email registrar:
             <a href="mailto:registrar@lsu.edu.ph" class="underline"
               >registrar@lsu.edu.ph</a
+            ><br />
+              Email NPCC / CITS for IT Services concerns:
+            <a href="mailto:registrar@lsu.edu.ph" class="underline"
+              >npc@lsu.edu.ph</a
             ><br />
             Email admissions (enrollment/status):
             <a href="mailto:admissions@lsu.edu.ph" class="underline"
