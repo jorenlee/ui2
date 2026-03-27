@@ -1,27 +1,7 @@
 <script setup>
-const router = useRouter();
 const paymentMethodImage = ref(false);
 const toggleVarAdmissions = ref(false);
 const toggleVarPayment = ref(false);
-const handleOnError = (error) => {
-  console.error("Google Login Error:", error);
-};
-const handleOnSuccess = async (event) => {
-  try {
-    const userInfo = event.claims;
-
-    if (!userInfo?.email) {
-      console.error("No email found in response:", userInfo);
-      return;
-    }
-
-    userStore.setToken(event.credential, userInfo.email);
-
-    router.push("/enrollment/portal");
-  } catch (error) {
-    console.error("Login error:", error);
-  }
-};
 </script>
 <template>
   <div class="bg-gray-50">
@@ -55,14 +35,6 @@ const handleOnSuccess = async (event) => {
                   <a href="/enrollment" class="mr-1"> Enrollment </a>
                 </li>
               </ul>
-              <ul class="flex text-green-800 capitalize text-xs">
-                <li>
-                  <a href="/login" class="mr-1 flex items-center">
-                    <i class="fa fa-user mr-2" aria-hidden="true"></i> Admin
-                    Login
-                  </a>
-                </li>
-              </ul>
             </div>
           </div>
         </div>
@@ -88,16 +60,6 @@ const handleOnSuccess = async (event) => {
                   <span class="w-full uppercase">Admissions</span>
                 </span>
                 <div class="lg:py-2.5 py-2 block relative text-center">
-                  <!-- /admissions/form -->
-                  <!-- <div class="lg:mb-0 mb-1">
-                  <a href="/admissions/form" class="font-bold w-full
-                  justify-center cursor-pointer bg-white text-green-800 hover:uppercase hover:underline">
-                  <i class="fa fa-external-link mr-1" aria-hidden="true"></i>
-                  ONLINE: Admissions Form </a>
-                  <button @click="toggleVarAdmissions = !toggleVarAdmissions" class="mt-2.5 ml-2 h-fit w-fit rounded-full">
-                    <i class="fa text-green-900 text-[17px] border-2 border-green-400 p-0 rounded-full leading-0" :class="toggleVarAdmissions ? 'fa-info-circle' : 'fa-info-circle'"></i>
-                  </button>
-                 </div> -->
                   <div v-if="toggleVarAdmissions">
                     <p class="text-green-800 text-xs w-11/12 mx-auto">
                       For New Enrollees Submit Hard Copy Documents
@@ -107,6 +69,10 @@ const handleOnSuccess = async (event) => {
                     </p>
                   </div>
                 </div>
+
+                <span class="text-green-800 font-semibold">
+                  Check Automate MY.LSU for Online Enrollment</span
+                >
               </li>
               <li class="w-full lg:mb-5 mb-2 border bg-white">
                 <span
@@ -186,11 +152,6 @@ const handleOnSuccess = async (event) => {
                   <span class="font-bold mx-1">LSU Gmail and Credentials</span
                   >Creation
                 </p>
-                <!-- <div class="text-red-700 lg:text-sm text-sm font-bold bg-red-50 lg:px-5 px-3 lg:py-14 py-3 border-0 lg:border-y-4 border-y-2 border-red-800">
-                <p class="lg:mb-10 mb-4 lg:text-sm text-xs"> For the Final Step, the LSU ASC Team will <span class="font-bold">Validate</span> all the information and activate your LSU Gmail.
-                </p>
-                  <p class="lg:text-sm text-xs">All students are required to complete their detailed student profile; otherwise, they will be deactivated.</p>
-                </div> -->
               </li>
             </ul>
           </div>
@@ -206,20 +167,6 @@ const handleOnSuccess = async (event) => {
             </h1>
           </a>
         </div>
-        <!-- <div class="lg:mb-0 mb-5">
-          <a href="/admissions/form" class="rounded-lg lg:py-6 py-3 px-5 my-auto h-fit   mx-auto shadow-xl bg-white text-green-800  hover:bg-green-800 hover:text-white
-                  lg:text-sm text-xs font-bold flex lg:whitespace-nowrap justify-center">
-            <i class="fa fa-user-plus mr-5 text-3xl" aria-hidden="true"></i>
-            <h1 class="my-auto whitespace-nowrap lg:text-lg text-sm">Admissions Form</h1>
-          </a>
-        </div> -->
-        <!-- <div class="lg:mb-0 mb-5">
-          <a href="/enrollment/tracking" class="rounded-lg lg:py-6 py-3  px-5 my-auto justify-center h-fit 
-                  mx-auto shadow-xl bg-white text-green-800 hover:bg-green-800 hover:text-white lg:text-sm text-xs font-bold flex ">
-            <i class="fa fa-tasks mr-5 text-3xl" aria-hidden="true"></i>
-            <h1 class="my-auto lg:text-lg text-sm whitespace-nowrap">Enrollment Tracking</h1>
-          </a>
-        </div> -->
       </div>
       <div
         class="w-11/12 mx-auto text-center mb-4 py-5 px-2 shadow-lg text-green-800 lg:text-sm text-xs mt-3 font-bold border-t"
@@ -228,9 +175,6 @@ const handleOnSuccess = async (event) => {
         Office, SJ Building Ground Floor LSU Campus. Monday to Friday 8am to 5pm
         and Saturday 8am to 12nn. Thank you!
       </div>
-      <!-- <div class="font-bold text-white bg-green-900 lg:text-lg text-center py-2 w-11/12 mx-auto leading-tight text-sm px-5 my-5">
-          The Online Admission Form is until August 16, 2024.
-        </div> -->
     </div>
     <Footer />
   </div>

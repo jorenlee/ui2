@@ -58,29 +58,23 @@ const backToDetailsBtn = () => {
 };
 
 const verifyCode = () => {
+  const validCodes = [
+    "AIU000", "AIU102", "AIU203", "AIU304", "AIU405",
+    "AIU506", "AIU607", "AIU708", "AIU809", "AIU910", "AIU110"
+  ];
+
   final_usherettes_code.value = usherettes_code.value;
-  if (
-    (final_usherettes_code.value === "AIU000" ||
-      final_usherettes_code.value === "AIU102" ||
-      final_usherettes_code.value === "AIU203" ||
-      final_usherettes_code.value === "AIU304" ||
-      final_usherettes_code.value === "AIU405" ||
-      final_usherettes_code.value === "AIU506" ||
-      final_usherettes_code.value === "AIU607" ||
-      final_usherettes_code.value === "AIU708" ||
-      final_usherettes_code.value === "AIU809" ||
-      final_usherettes_code.value === "AIU910" ||
-      final_usherettes_code.value === "AIU110") &&
-    final_usherettes_code.value.length === 6
-  ) {
-    cashDetailsBox.value = true;
-    codeDoesNotExists.value = false;
-    usherettes_codeInputBox.value = false;
-  } else {
+
+  const isValid =
+    validCodes.includes(final_usherettes_code.value) &&
+    final_usherettes_code.value.length === 6;
+
+  cashDetailsBox.value = isValid;
+  codeDoesNotExists.value = !isValid;
+  usherettes_codeInputBox.value = false;
+
+  if (!isValid) {
     final_usherettes_code.value = "";
-    usherettes_codeInputBox.value = false;
-    cashDetailsBox.value = false;
-    codeDoesNotExists.value = true;
   }
 };
 
@@ -242,12 +236,9 @@ const addNewDonationEntry = async () => {
 const notifyEmail = async () => {
   await $fetch(endpoint.value + "/api/investiture/notify-email/", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: {"Content-Type": "application/json",},
     body: donationInfo.value,
-  }).then((response) => {
-  });
+  })
 };
 </script>
 <template>

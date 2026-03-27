@@ -1,15 +1,12 @@
 <script setup>
   import volumesJSON from "../research/volumes.json";
+  const volumes = ref(volumesJSON.volumes);
   const config = useRuntimeConfig();
   const endpoint = ref(config.public.apiUrl);
-  const volumes = ref(volumesJSON.volumes);
-
   const downloadFile = ref(0);
-
   onMounted(async() => {
     downloadFile.value = await $fetch(endpoint.value + "/api/cits/lsu-download-file/list/").catch((error) => error.data) || 0;
   })
-
 </script>
 
 <template>
@@ -39,5 +36,3 @@
     <Footer />
   </div>
 </template>
-
-<style scoped></style>

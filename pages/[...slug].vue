@@ -1,96 +1,33 @@
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted } from 'vue'
 
-// Automatically redirect to landing page
+// Keep UI visible, then redirect
 onMounted(() => {
-  // Immediate redirect for catch-all routes
-  navigateTo('/', { replace: true });
-});
+  setTimeout(() => {
+    navigateTo('/', { replace: true })
+  }, 1500) // adjust delay if needed
+})
 </script>
 
 <template>
-  <div class="redirect-container">
-    <div class="content">
+  <div class="flex items-center justify-center min-h-screen bg-white text-center p-8">
+    <div class="bg-white w-full max-w-lg p-8 md:p-12 rounded-2xl shadow-xl">
+      <!-- Logo -->
       <img
         src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/lsu-logotype-green.png"
         alt="La Salle University"
-        class="logo"
+        class="w-[200px] md:w-[250px] mx-auto mb-8 animate-fadeIn"
       />
-      <div class="spinner">
+
+      <!-- Spinner (UNCHANGED - Font Awesome) -->
+      <div class="text-[2.5rem] md:text-[3rem] text-[#1a5f3a] mb-6">
         <i class="fa fa-spinner fa-spin"></i>
       </div>
-      <p class="redirect-text">Redirecting to homepage...</p>
+
+      <!-- Text -->
+      <p class="text-base md:text-lg font-medium text-[#1a5f3a]">
+        Redirecting to homepage...
+      </p>
     </div>
   </div>
 </template>
-
-<style scoped>
-.redirect-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  text-align: center;
-  font-family: 'Montserrat', sans-serif;
-  padding: 2rem;
-}
-
-.content {
-  background: white;
-  padding: 3rem 2rem;
-  border-radius: 1rem;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-  max-width: 500px;
-  width: 100%;
-}
-
-.logo {
-  width: 250px;
-  margin-bottom: 2rem;
-  animation: fadeIn 0.5s ease-in;
-}
-
-.spinner {
-  font-size: 3rem;
-  color: #1a5f3a;
-  margin-bottom: 1.5rem;
-}
-
-.redirect-text {
-  font-size: 1.1rem;
-  color: #1a5f3a;
-  font-weight: 500;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@media (max-width: 768px) {
-  .logo {
-    width: 200px;
-  }
-
-  .spinner {
-    font-size: 2.5rem;
-  }
-
-  .redirect-text {
-    font-size: 1rem;
-  }
-
-  .content {
-    padding: 2rem 1.5rem;
-  }
-}
-</style>
-
