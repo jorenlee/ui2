@@ -1,184 +1,269 @@
 <script setup>
-const paymentMethodImage = ref(false);
-const toggleVarAdmissions = ref(false);
-const toggleVarPayment = ref(false);
+import { ref, nextTick } from "vue";
+
+// Active step
+const activeStep = ref(1);
+
+// Step references (for scroll)
+const stepRefs = ref({});
+
+// Steps data
+const steps = [
+  { id: 1, title: "Admissions", icon: "fa-user" },
+  { id: 2, title: "Advising", icon: "fa-users" },
+  { id: 3.1, title: "Payment and Verification", icon: "fa-credit-card" },
+  { id: 3.2, title: "Creation of Accounts", icon: "far fa-address-card" },
+];
+
+// Scroll + activate
+const scrollToStep = async (id) => {
+  activeStep.value = id;
+  await nextTick();
+  stepRefs.value[id]?.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+  });
+};
 </script>
+
 <template>
-  <div class="bg-gray-50">
+  <div class="bg-gray-50 min-h-screen">
     <Header />
-    <div class="">
-      <div class="">
-        <div class="relative">
-          <img
-            src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/about.jpg"
-            class="align-top w-full h-auto lg:object-fill lg:block hidden"
-          />
-          <img
-            src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/enrollment/enrollmentbg-mobile-lower-size.png"
-            class="align-top w-full min-h-40 pt-12 lg:hidden block"
-          />
-          <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
-            <h1
-              class="lg:block hidden font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto"
+
+    <!-- Breadcrumb -->
+    <Breadcrumb
+      :breadcrumbItems="[{ label: 'Enrollment', url: '/enrollment' }]"
+    />
+
+    <!-- Title -->
+    <div class="text-center my-6">
+      <h2 class="text-2xl lg:text-3xl font-bold text-green-900">
+        Enrollment Steps
+      </h2>
+      <div class="w-16 h-1 bg-green-700 mx-auto mt-2 rounded-full"></div>
+      <p class="text-green-800 mt-2 lg:text-sm text-xs px-5">
+        Admissions and Scholarships Office, SJ Building Ground Floor LSU Campus.
+        Office hours: Monday to Friday 8am to 5pm, Saturday 8am to 12nn
+      </p>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="w-11/12 mx-auto mt-10 lg:flex gap-10">
+      <!-- ✅ STEPPER -->
+      <div class="lg:w-3/12">
+        <div class="bg-white rounded-xl shadow-md p-6 sticky top-10">
+          <div class="relative lg:w-full w-fit mx-auto">
+            <!-- vertical line -->
+            <div
+              class="absolute left-[22px] top-2 bottom-2 w-[2px] bg-green-200"
+            ></div>
+
+            <div
+              v-for="step in steps"
+              :key="step.id"
+              @click="scrollToStep(step.id)"
+              class="flex items-center gap-4 mb-8 cursor-pointer group"
             >
-              Enrollment
-            </h1>
-          </div>
-          <div class="pt-2.5 pb-3 shadow-lg">
-            <div class="w-11/12 mx-auto flex justify-between">
-              <ul class="flex lasalle-green-text capitalize text-xs">
-                <li>
-                  <a href="/" class="mr-1"> Home </a>
-                </li>
-                <li>
-                  <i class="fas fa-caret-right mr-1"></i>
-                  <a href="/enrollment" class="mr-1"> Enrollment </a>
-                </li>
-              </ul>
+              <!-- circle -->
+              <div
+                class="z-10 flex items-center justify-center w-11 h-11 rounded-full border-2 transition-all duration-300 pt-1"
+                :class="
+                  activeStep === step.id
+                    ? 'bg-green-700 border-green-700 text-white shadow-md scale-110'
+                    : activeStep > step.id
+                      ? 'bg-green-600 border-green-600 text-white'
+                      : 'bg-white border-green-300 text-green-700 group-hover:border-green-500'
+                "
+              >
+                <i :class="['fa', step.icon]"></i>
+              </div>
+
+              <!-- text -->
+              <div>
+                <p class="text-[11px] text-gray-400 uppercase">
+                  Step {{ step.id }}
+                </p>
+                <p
+                  class="font-semibold text-sm"
+                  :class="
+                    activeStep === step.id
+                      ? 'text-green-800'
+                      : 'text-gray-500 group-hover:text-green-700'
+                  "
+                >
+                  {{ step.title }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div
-        class="lg:flex lg:w-11/12 mx-auto lg:mt-2 text-center justify-center lg:pb-5 gap-10 tracking-tight"
-      >
-        <div class="lg:w-full shadow-lg pb-5 lg:border-t-0 border-t-2">
-          <div class="w-11/12 mx-auto text-center mb-5">
-            <p
-              class="font-bold text-green-900 lg:text-3xl text-lg lg:mb-10 mb-2 lg:mt-7 mt-3"
-            >
-              Enrollment Steps
-            </p>
-            <ul
-              class="w-full lg:grid grid-cols-2 gap-x-3 justify-between lg:text-sm text-xs"
-            >
-              <li class="w-full lg:mb-5 mb-2 border bg-white">
-                <span
-                  class="justify-evenly flex lg:bg-green-800 bg-green-600 text-white py-1 font-bold"
-                >
-                  <span class="w-full">Step 1:</span>
-                  <span class="w-full uppercase">Admissions</span>
-                </span>
-                <div class="lg:py-2.5 py-2 block relative text-center">
-                  <div v-if="toggleVarAdmissions">
-                    <p class="text-green-800 text-xs w-11/12 mx-auto">
-                      For New Enrollees Submit Hard Copy Documents
-                    </p>
-                    <p class="text-green-800 text-xs w-11/12 mx-auto">
-                      at Admissions and Scholarships Center Office
-                    </p>
-                  </div>
-                </div>
 
-                <span class="text-green-800 font-semibold">
-                  Check Automate MY.LSU for Online Enrollment</span
-                >
-              </li>
-              <li class="w-full lg:mb-5 mb-2 border bg-white">
-                <span
-                  class="justify-between flex text-white lg:bg-green-800 bg-green-700 py-1 font-bold"
-                >
-                  <span class="w-full">Step 2:</span>
-                  <span class="w-full uppercase">Advising</span>
-                </span>
-                <div class="lg:py-3 pt-3.5 pb-2">
-                  <p
-                    class="bg-white text-green-800 w-full flex justify-center lg:py-0"
-                  >
-                    <span class="font-bold">ONSITE</span> : Visit SJ Building
-                    LSU Campus
-                  </p>
-                  <p
-                    class="text-green-800 bg-white lg:pb-0 pb-2 justify-center"
-                  >
-                    <span class="mr-1">or College Departments for</span>
-                    <span class="font-bold">Course Subjects</span>
-                  </p>
-                </div>
-              </li>
-              <li class="w-full mb-5 border bg-white">
-                <span
-                  class="justify-between flex text-white lg:bg-green-800 bg-green-800 py-1 font-bold"
-                >
-                  <span class="w-full">Step 3:</span>
-                  <span class="w-full uppercase">Payment</span>
-                </span>
-                <p
-                  class="bg-white text-green-800 lg:py-4 py-2 border-b w-full justify-center"
-                >
-                  <span class="font-bold">ONSITE:</span> Accounting Office or
-                  <br />
-                  <span class="font-bold">ONLINE: </span> Payment Methods
-                  <button
-                    @click="toggleVarPayment = !toggleVarPayment"
-                    class="mt-1 ml-2 h-fit w-fit rounded-full"
-                  >
-                    <i
-                      class="fa text-green-900 text-[17px] border-2 border-green-400 p-0 rounded-full leading-0"
-                      :class="
-                        toggleVarPayment ? 'fa-info-circle' : 'fa-info-circle'
-                      "
-                    ></i>
-                  </button>
-                </p>
-                <div v-if="toggleVarPayment">
-                  <div @click="paymentMethodImage = !paymentMethodImage">
-                    <img
-                      src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/PaymentMethods.jpg"
-                      class="hover:border-4 hover:rounded-lg border-green-800"
-                    />
-                  </div>
-                </div>
-              </li>
-              <li class="w-full lg:mb-5 mb-2 border bg-white">
-                <span
-                  class="justify-between flex text-white lg:bg-green-800 bg-green-900 py-1 font-bold"
-                >
-                  <span class="w-full">Step 4:</span>
-                  <span class="w-full uppercase">Validation</span>
-                </span>
-                <p
-                  class="ml-1 text-green-800 lg:pt-5 pt-2 lg:flex block justify-center"
-                >
-                  <span class="font-bold lg:flex block mr-1"
-                    >ONSITE: Certificate of Registration</span
-                  >
-                  <span class="block">at Registrar's Office</span>
-                </p>
-                <p
-                  class="justify-center text-green-800 lg:pb-3 pb-2 lg:flex block"
-                >
-                  <span class="lg:flex block">and NPCC Office for</span>
-                  <span class="font-bold mx-1">LSU Gmail and Credentials</span
-                  >Creation
-                </p>
-              </li>
-            </ul>
-          </div>
-        </div>
-        <div class="lg:mt-5 mt-10 w-11/12 lg:w-auto mx-auto">
+        <!-- Realtime Class Schedule -->
+        <div class="my-5 flex justify-center">
           <a
             href="https://my.lsu.edu.ph/class_offered_stat_open.jsp"
-            class="rounded-lg lg:py-6 py-3 px-5 my-auto justify-center h-fit mx-auto shadow-xl bg-white text-green-800 hover:bg-green-800 hover:text-white lg:text-sm text-xs font-bold flex lg:whitespace-nowrap"
+            class="flex items-center gap-3 bg-white px-6 py-4 rounded-xl shadow-md text-green-800 font-semibold hover:bg-green-800 hover:text-white transition"
           >
-            <i class="fa fa-list mr-5 text-3xl" aria-hidden="true"></i>
-            <h1 class="my-auto whitespace-nowrap lg:text-lg text-sm">
-              Realtime Class Schedule
-            </h1>
+            <i class="fa fa-list text-xl"></i>
+            Realtime Class Schedule
           </a>
         </div>
       </div>
-      <div
-        class="w-11/12 mx-auto text-center mb-4 py-5 px-2 shadow-lg text-green-800 lg:text-sm text-xs mt-3 font-bold border-t"
-      >
-        If you have any concerns please visit Admissions and Scholarships
-        Office, SJ Building Ground Floor LSU Campus. Monday to Friday 8am to 5pm
-        and Saturday 8am to 12nn. Thank you!
+
+      <!-- ✅ CONTENT (ALL STEPS VISIBLE) -->
+      <div class="w-full space-y-2">
+        <!-- STEP 1 -->
+        <div
+          :ref="(el) => (stepRefs[1] = el)"
+          class="bg-white rounded-xl shadow-md px-5 py-2 transition-all duration-300 border"
+          :class="
+            activeStep === 1
+              ? 'border-green-700 scale-[1.02] shadow-lg ring-2 ring-green-200'
+              : 'border-transparent opacity-80'
+          "
+        >
+          <div class="flex items-center gap-3 mb-4">
+            <div
+              class="bg-green-700 text-white w-6 h-6 flex items-center justify-center rounded-full font-bold"
+            >
+              1
+            </div>
+            <h3 class="text-xs text-green-900">Admissions</h3>
+          </div>
+
+          <div class="lg:flex items-center text-green-900 justify-between lg:text-sm text-xs">
+            <div class="flex items-center gap-3">
+              <div class="bg-green-100 p-2 rounded-full">
+                <i class="fa fa-file text-green-600"></i>
+              </div>
+              <p>For <span class="font-bold text-yellow-600">NEW STUDENTS and TRANSFEREES</span> Submit Hard Copy Documents at Admissions Office</p>
+            </div>
+
+    
+            <div class="flex items-center gap-3">
+              <div class="bg-green-100 p-2 rounded-full">
+                <i class="fa fa-users text-green-600"></i>
+              </div>
+              <p>
+                Check
+                <a href="/mylsu" class="underline font-medium">MY.LSU</a> for
+                Online Enrollment for Continuing
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2 -->
+        <div
+          :ref="(el) => (stepRefs[2] = el)"
+          class="bg-white rounded-xl shadow-md px-5 py-2 transition-all duration-300 border"
+          :class="
+            activeStep === 2
+              ? 'border-green-700 scale-[1.02] shadow-lg ring-2 ring-green-200'
+              : 'border-transparent opacity-80'
+          "
+        >
+          <div class="flex items-center gap-3 mb-4">
+            <div
+              class="bg-green-700 text-white w-6 h-6 flex items-center justify-center rounded-full font-bold"
+            >
+              2
+            </div>
+            <h3 class="text-xs text-green-900">Advising</h3>
+          </div>
+
+          <div class="flex items-center gap-3 text-green-900 lg:text-sm text-xs">
+            <div class="bg-green-100 p-2 rounded-full">
+              <svg
+                class="w-5 h-5 text-green-700"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="7" r="4" />
+                <path d="M5.5 21a6.5 6.5 0 0113 0" />
+              </svg>
+            </div>
+            <p>Visit Saint Joseph Building or College Departments for Subjects</p>
+          </div>
+        </div>
+
+        <!-- STEP 3 -->
+        <div
+          :ref="(el) => (stepRefs[3] = el)"
+          class="bg-white rounded-xl shadow-md px-5 py-2 transition-all duration-300 border"
+          :class="
+            activeStep === 3
+              ? 'border-green-700 scale-[1.02] shadow-lg ring-2 ring-green-200'
+              : 'border-transparent opacity-80'
+          "
+        >
+          <div class="flex items-center gap-3 mb-4">
+            <div
+              class="bg-green-700 text-white w-12 h-6 flex items-center justify-center rounded-full font-bold"
+            >
+              3.1
+            </div>
+            <h3 class="text-xs text-green-900">Payment and Verification</h3>
+          </div>
+
+          <div class="flex items-center gap-3 text-green-900 lg:text-sm text-xs">
+            <div class="bg-green-100 p-2 rounded-full">
+              <svg
+                class="w-5 h-5 text-green-700"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="2" y="5" width="20" height="14" rx="2" />
+                <path d="M2 10h20" />
+              </svg>
+            </div>
+            <p>Proceed to Accounting Office Saint Columban Building</p>
+          </div>
+        </div>
+
+        <!-- STEP 4 -->
+        <div
+          :ref="(el) => (stepRefs[4] = el)"
+          class="bg-white rounded-xl shadow-md px-5 py-2 transition-all duration-300 border"
+          :class="
+            activeStep === 4
+              ? 'border-green-700 scale-[1.02] shadow-lg ring-2 ring-green-200'
+              : 'border-transparent opacity-80'
+          "
+        >
+          <div class="flex items-center gap-3 mb-4">
+            <div
+              class="bg-green-700 text-white w-12 h-6 flex items-center justify-center rounded-full font-bold"
+            >
+              3.2
+            </div>
+            <h3 class="text-xs text-green-900">Creation of Accounts : <span class="font-bold text-yellow-600">NEW STUDENTS and TRANSFEREES</span></h3>
+          </div>
+
+          <div class="flex items-center gap-3 text-green-900 lg:text-sm text-xs">
+            <div class="bg-green-100 p-2 rounded-full">
+              <svg
+                class="w-5 h-5 text-green-700"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <p>Claim the COR in Registrar Office or Via Automate Online and proceed to the NPCC Office for the LSU accounts : 2nd Floor La Salle Building.</p>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Footer -->
     <Footer />
   </div>
 </template>
+
 <style scoped>
 .bg-green-10 {
   background: #003613;
