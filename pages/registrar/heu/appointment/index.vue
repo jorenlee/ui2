@@ -5,7 +5,7 @@ import { ref, computed, watch } from "vue";
 import axios from "axios";
 
 const showPrivacyPolicy = ref(false);
-const togglePrivacyPolicy = () => { showPrivacyPolicy.value = !showPrivacyPolicy.value;};
+const togglePrivacyPolicy = () => { showPrivacyPolicy.value = !showPrivacyPolicy.value; };
 const thankYouDisplay = ref(false);
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
@@ -366,7 +366,7 @@ const postAPI = async () => {
 
     await $fetch(endpoint.value + "/api/registrar/create/", {
       method: "POST",
-      headers: {"Content-Type": "application/json",},
+      headers: { "Content-Type": "application/json", },
       body: info.value,
     })
       .then((response) => {
@@ -572,7 +572,7 @@ const uploadFilesFront = async () => {
       }
     );
     uploadStatusFront.value = "Upload successful!";
-  
+
 
     // Handle both array and single object responses
     if (Array.isArray(response.data)) {
@@ -725,12 +725,8 @@ const uploadFilesCredential = async () => {
     <div class="">
       <div class="relative">
         <div class="bg-green-700 lg:h-[200px] h-[130px]">
-          <div
-            class="lg:pt-10 absolute top-1/2 transform -translate-y-1/2 w-full"
-          >
-            <p
-              class="font-bold uppercase text-white lg:text-2xl text-sm w-11/12 mx-auto"
-            >
+          <div class="lg:pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
+            <p class="font-bold uppercase text-white lg:text-2xl text-sm w-11/12 mx-auto">
               REGISTRAR
             </p>
             <p class="text-xs w-11/12 mx-auto text-white">
@@ -741,50 +737,36 @@ const uploadFilesCredential = async () => {
 
         <div class="shadow-lg text-green-700">
           <div class="lg:flex justify-between border-b border-gray-200 lg:pl-5">
-            <div
-              class="flex items-center capitalize text-xs lg:border-b-0 border-b lg:px-0 px-1.5 py-2"
-            >
+            <div class="flex items-center capitalize text-xs lg:border-b-0 border-b lg:px-0 px-1.5 py-2">
               <div>
-                <a href="/registrar" class="mr-2 hover:underline lg:h-10"
-                  >Home</a
-                >
+                <a href="/registrar" class="mr-2 hover:underline lg:h-10">Home</a>
               </div>
               <div>
                 <i class="fas fa-caret-right"></i>
-                <a
-                  href="/registrar/heu/appointment"
-                  class="mx-2 hover:underline lg:h-10"
-                  >HEU Appointment</a
-                >
+                <a href="/registrar/heu/appointment" class="mx-2 hover:underline lg:h-10">HEU Appointment</a>
               </div>
             </div>
-          
+
           </div>
         </div>
       </div>
     </div>
     <div v-if="formDisplay" class="">
-      <div
-        class="header bg-gradient-to-b from-[#fefefe] via-[#fefefe] to-[#bce3c2] lg:pt-5 pt-1"
-      >
+      <div class="header bg-gradient-to-b from-[#fefefe] via-[#fefefe] to-[#bce3c2] lg:pt-5 pt-1">
         <div class="lg:w-11/12 w-11/12 mx-auto bg-white">
           <!-- <form v-on:submit.prevent="submitForm" class=""> -->
           <div>
             <div class="border-2 border-green-700 shadow-lg my-3">
               <div class="">
                 <div class="bg-green-900 text-white">
-                  <h2
-                    class="lg:text-base text-sm px-3 uppercase py-1.5 font-bold text-center tracking-wide"
-                  >
-                    Request Appointment Form
+                  <h2 class="lg:text-base text-sm px-3 uppercase py-1.5 font-bold text-center tracking-wide">
+                    Document Request Form
 
                     <!-- <span class="font-light text-xs bg-green-900 text-white block">
                       {{ info.document_code }}</span> -->
                   </h2>
 
-                  <p
-                    class="text-white text-[11px] text-center py-1 bg-green-950 lg:px-1 px-3"
-                  >
+                  <p class="text-white text-[11px] text-center py-1 bg-green-950 lg:px-1 px-3">
                     Graduates can request documents online through this form,
                     avoiding in-person appointments at LSU.
                   </p>
@@ -800,129 +782,78 @@ const uploadFilesCredential = async () => {
                             <div class="lg:flex gap-x-2">
                               <div class="w-full mb-2">
                                 <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">
                                     Fullname
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </div>
                                 </label>
                                 <div class="w-full flex lg:gap-x-2 gap-x-1">
-                                  <input
-                                    type="text"
+                                  <input type="text"
                                     class="lg:px-2 px-1 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                    placeholder="First Name"
-                                    v-model="info.firstname"
-                                    required
-                                  />
-                                  <input
-                                    type="text"
+                                    placeholder="First Name" v-model="info.firstname" required />
+                                  <input type="text"
                                     class="lg:px-2 px-1 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                    placeholder="Middle Name"
-                                    v-model="info.middlename"
-                                    required
-                                  />
-                                  <input
-                                    type="text"
+                                    placeholder="Middle Name" v-model="info.middlename" required />
+                                  <input type="text"
                                     class="lg:px-2 px-1 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                    placeholder="Last Name"
-                                    v-model="info.lastname"
-                                    required
-                                  />
+                                    placeholder="Last Name" v-model="info.lastname" required />
                                 </div>
                               </div>
 
                               <div class="lg:w-fit w-full mb-2">
                                 <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">
                                     Date of Birth
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </div>
                                 </label>
                                 <div
-                                  class="w-full flex items-center gap-x-1 bg-white border-b-2 border-green-700 shadow-lg rounded-sm h-fit"
-                                >
-                                  <input
-                                    type="date"
+                                  class="w-full flex items-center gap-x-1 bg-white border-b-2 border-green-700 shadow-lg rounded-sm h-fit">
+                                  <input type="date"
                                     class="px-1 w-full border-t-0 border-x-0 border-green-700 lg:h-[34px] h-8 text-xs"
-                                    placeholder="Date of Birth"
-                                    :min="minBirthDate"
-                                    :max="maxBirthDate"
-                                    v-model="info.birthdate"
-                                    required
-                                  />
+                                    placeholder="Date of Birth" :min="minBirthDate" :max="maxBirthDate"
+                                    v-model="info.birthdate" required />
                                 </div>
                               </div>
 
 
                               <div class="lg:w-9/12 w-full mb-2">
                                 <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">
                                     Mother's Full Maiden Name
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </div>
                                 </label>
                                 <div
-                                  class="w-full flex items-center gap-x-1 bg-white border-b-2 border-green-700 shadow-lg rounded-sm h-fit"
-                                >
-                                  <input
-                                    type="text"
+                                  class="w-full flex items-center gap-x-1 bg-white border-b-2 border-green-700 shadow-lg rounded-sm h-fit">
+                                  <input type="text"
                                     class="px-2 w-full border-t-0 border-x-0 border-green-700 lg:h-9 h-8 text-xs py-2"
-                                    placeholder="Mother's Full Maiden Name"
-                                    v-model="info.mother_maiden_name"
-                                    required
-                                  />
+                                    placeholder="Mother's Full Maiden Name" v-model="info.mother_maiden_name"
+                                    required />
                                 </div>
                               </div>
 
                               <div class="lg:w-6/12 w-full mb-2">
                                 <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">
                                     Contact Number
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </div>
                                 </label>
                                 <div
-                                  class="w-full flex items-center gap-x-1 bg-white border-b-2 border-green-700 shadow-lg rounded-sm h-fit"
-                                >
-                                  <input
-                                    type="tel"
-                                    inputmode="tel"
-                                    autocomplete="tel"
+                                  class="w-full flex items-center gap-x-1 bg-white border-b-2 border-green-700 shadow-lg rounded-sm h-fit">
+                                  <input type="tel" inputmode="tel" autocomplete="tel"
                                     class="px-2 w-full border-t-0 border-x-0 border-green-700 lg:h-9 h-8 text-xs py-2"
-                                    placeholder="e.g. +639210689089"
-                                    v-model="info.contact_number"
-                                    @focus="onContactFocus"
-                                    @input="onContactInput"
-                                    @keydown="onContactKeydown"
-                                    pattern="^(\+63|\+65)[0-9]{9,10}$"
-                                    maxlength="13"
-                                    title="Please enter a valid phone number with country code +63 or +65"
-                                    required
-                                  />
+                                    placeholder="e.g. +639210689089" v-model="info.contact_number"
+                                    @focus="onContactFocus" @input="onContactInput" @keydown="onContactKeydown"
+                                    pattern="^(\+63|\+65)[0-9]{9,10}$" maxlength="13"
+                                    title="Please enter a valid phone number with country code +63 or +65" required />
                                 </div>
-                                <p
-                                  v-if="invalidContactNumber"
-                                  class="text-xs text-red-700 mt-2 px-1"
-                                >
+                                <p v-if="invalidContactNumber" class="text-xs text-red-700 mt-2 px-1">
                                   Please enter a valid phone number with country
                                   code +63
                                 </p>
@@ -930,94 +861,55 @@ const uploadFilesCredential = async () => {
 
                               <div class="lg:w-10/12 w-full mb-2">
                                 <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">
                                     Email
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </div>
                                 </label>
 
                                 <div
-                                  class="w-full flex items-center gap-x-1 bg-white border-b-2 border-green-700 shadow-lg rounded-sm h-fit"
-                                >
-                                  <input
-                                    type="email"
+                                  class="w-full flex items-center gap-x-1 bg-white border-b-2 border-green-700 shadow-lg rounded-sm h-fit">
+                                  <input type="email"
                                     class="px-2 w-full border-t-0 border-x-0 border-green-700 lg:h-9 h-8 text-xs py-2"
-                                    placeholder="e.g. user.name@gmail.com"
-                                    v-model="info.email"
-                                    required
-                                    title="Please enter a valid Email Address"
-                                  />
+                                    placeholder="e.g. user.name@gmail.com" v-model="info.email" required
+                                    title="Please enter a valid Email Address" />
                                 </div>
-                                <p
-                                  v-if="invalidEmail"
-                                  class="text-xs text-red-700 mt-2 px-1"
-                                >
+                                <p v-if="invalidEmail" class="text-xs text-red-700 mt-2 px-1">
                                   Only Valid email addresses are accepted.
                                 </p>
                               </div>
                             </div>
 
                             <div class="lg:flex gap-x-2">
-                              
+
                               <div class="lg:w-fit mb-2">
                                 <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">
                                     Did you graduate in ICC/LSU?
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </div>
                                 </label>
                                 <div class="w-full">
                                   <div
-                                    class="flex px-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                  >
+                                    class="flex px-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs">
                                     <div class="w-fit mx-auto flex">
-                                      <div
-                                        class="flex gap-x-2 items-center w-[70px] justify-center"
-                                      >
+                                      <div class="flex gap-x-2 items-center w-[70px] justify-center">
                                         <span>
-                                          <input
-                                            type="radio"
-                                            value="yes"
-                                            v-model="info.alumni"
-                                            class="mr-1"
-                                            required
-                                            id="yes"
-                                          />
+                                          <input type="radio" value="yes" v-model="info.alumni" class="mr-1" required
+                                            id="yes" />
                                         </span>
-                                        <label
-                                          class="lg:text-sm text-xs hover:font-bold"
-                                          for="yes"
-                                        >
+                                        <label class="lg:text-sm text-xs hover:font-bold" for="yes">
                                           Yes
                                         </label>
                                       </div>
-                                      <div
-                                        class="flex gap-x-2 items-center w-[70px] justify-center"
-                                      >
+                                      <div class="flex gap-x-2 items-center w-[70px] justify-center">
                                         <span>
-                                          <input
-                                            type="radio"
-                                            value="no"
-                                            v-model="info.alumni"
-                                            class="mr-1"
-                                            required
-                                            id="no"
-                                          />
+                                          <input type="radio" value="no" v-model="info.alumni" class="mr-1" required
+                                            id="no" />
                                         </span>
-                                        <label
-                                          class="lg:text-sm text-xs hover:font-bold"
-                                          for="no"
-                                        >
+                                        <label class="lg:text-sm text-xs hover:font-bold" for="no">
                                           No
                                         </label>
                                       </div>
@@ -1026,36 +918,26 @@ const uploadFilesCredential = async () => {
                                 </div>
                               </div>
 
-                                     <div class="lg:w-fit mb-2">
+                              <div class="lg:w-fit mb-2">
                                 <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">
                                     Year Graduated or Last Attended
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </div>
                                 </label>
                                 <div class="w-full">
                                   <select
                                     class="px-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                    required
-                                    v-model="info.year_graduated_last_attended"
-                                  >
+                                    required v-model="info.year_graduated_last_attended">
                                     <option value="" disabled selected>
                                       Select Year
                                     </option>
-                                    <option
-                                      v-for="year in _.range(
-                                        moment().year(),
-                                        1930,
-                                        -1
-                                      )"
-                                      :key="year"
-                                      :value="year"
-                                    >
+                                    <option v-for="year in _.range(
+                                      moment().year(),
+                                      1930,
+                                      -1
+                                    )" :key="year" :value="year">
                                       {{ year }}
                                     </option>
                                   </select>
@@ -1065,30 +947,20 @@ const uploadFilesCredential = async () => {
 
                               <div class="w-full mb-2">
                                 <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">
                                     College
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </div>
                                 </label>
                                 <div class="w-full">
-                                  <select
-                                    v-model="info.college"
+                                  <select v-model="info.college"
                                     class="px-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                    required
-                                  >
+                                    required>
                                     <option value="" disabled selected>
                                       Choose
                                     </option>
-                                    <option
-                                      v-for="(college, index) in collegeList"
-                                      :key="index"
-                                      :value="college"
-                                    >
+                                    <option v-for="(college, index) in collegeList" :key="index" :value="college">
                                       {{ college }}
                                     </option>
                                   </select>
@@ -1097,28 +969,20 @@ const uploadFilesCredential = async () => {
 
                               <div class="w-full mb-2">
                                 <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">
                                     Course
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </div>
                                 </label>
                                 <div>
-                                  <input
-                                    type="text"
+                                  <input type="text"
                                     class="px-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                    placeholder="Course"
-                                    v-model="info.course"
-                                    required
-                                  />
+                                    placeholder="Course" v-model="info.course" required />
                                 </div>
                               </div>
 
-                       
+
                             </div>
 
                             <div class="lg:flex gap-x-2"></div>
@@ -1126,137 +990,94 @@ const uploadFilesCredential = async () => {
                             <div class="lg:flex gap-x-2">
                               <div class="w-full mb-2">
                                 <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">
                                     Type of Document Requests
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </div>
                                 </label>
                                 <div
-                                  class="w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm p-2"
-                                >
+                                  class="w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm p-2">
                                   <div class="lg:space-y-3.5">
-                                    <div
-                                      v-for="(
-                                        document, index
-                                      ) in documentRequestOptions"
-                                      :key="index"
-                                      class="flex items-center justify-between"
-                                    >
+                                    <div v-for="(
+document, index
+                                      ) in documentRequestOptions" :key="index"
+                                      class="flex items-center justify-between">
                                       <div class="flex items-center">
-                                        <input
-                                          type="checkbox"
-                                          :id="'doc_' + index"
-                                          :value="document"
-                                          v-model="info.detail_fees_type_document_requests"
-                                          class="mr-2"
-                                        />
-                                        <label
-                                          :for="'doc_' + index"
-                                          class="text-xs"
-                                          >{{ document.fee_name }}</label
-                                        >
+                                        <input type="checkbox" :id="'doc_' + index" :value="document"
+                                          v-model="info.detail_fees_type_document_requests" class="mr-2" />
+                                        <label :for="'doc_' + index" class="text-xs">{{ document.fee_name }}</label>
                                       </div>
-                                     
+
                                     </div>
 
                                     <div class="flex items-center">
-                                      <input
-                                        type="checkbox"
-                                        id="other_doc"
-                                        value="other"
-                                        v-model="showOtherDocumentField"
-                                        class="mr-2"
-                                      />
-                                      <label for="other_doc" class="text-xs"
-                                        >Other:</label
-                                      >
+                                      <input type="checkbox" id="other_doc" value="other"
+                                        v-model="showOtherDocumentField" class="mr-2" />
+                                      <label for="other_doc" class="text-xs">Other:</label>
 
-                                      <input
-                                        v-if="showOtherDocumentField"
-                                        type="text"
-                                        v-model="otherDocumentRequest"
+                                      <input v-if="showOtherDocumentField" type="text" v-model="otherDocumentRequest"
                                         class="ml-2 px-2 py-1 border-b border-green-700 bg-transparent text-xs w-full"
-                                        placeholder="Please specify"
-                                      />
+                                        placeholder="Please specify" />
                                     </div>
                                   </div>
 
-                                  <p
-                                    v-if="documentRequestError"
-                                    class="text-xs text-red-700 mt-2"
-                                  >
+                                  <p v-if="documentRequestError" class="text-xs text-red-700 mt-2">
                                     Please select at least one document type
                                   </p>
                                 </div>
                               </div>
 
-                              
-                           <div class="w-full mb-2">
- <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
+
+                              <div class="w-full mb-2">
+                                <label
+                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
                                   <div class="">Upload Government-Issued Valid ID For Verification <span
-                                        class="text-red-600 font-normal text-sm"
-                                        >*</span
-                                      ></div>
+                                      class="text-red-600 font-normal text-sm">*</span></div>
                                 </label>
                                 <div class="w-full">
-                                 
 
 
 
 
 
 
-                              <!-- File Size Error Toast -->
-                              <transition name="toast">
-                                <div
-                                  v-if="showFileSizeToast"
-                                  class="fixed inset-0 flex items-center justify-center px-5 z-50 bg-black/50"
-                                >
-                                  <div
-                                    class="bg-red-600 text-white px-2 py-4 rounded-lg shadow-2xl border-2 border-red-700 animate-shake"
-                                  >
-                                    <div class="flex items-start gap-3">
-                                      <div class="flex-shrink-0">
-                                        <i
-                                          class="fa fa-exclamation-triangle text-2xl"
-                                        ></i>
+
+                                  <!-- File Size Error Toast -->
+                                  <transition name="toast">
+                                    <div v-if="showFileSizeToast"
+                                      class="fixed inset-0 flex items-center justify-center px-5 z-50 bg-black/50">
+                                      <div
+                                        class="bg-red-600 text-white px-2 py-4 rounded-lg shadow-2xl border-2 border-red-700 animate-shake">
+                                        <div class="flex items-start gap-3">
+                                          <div class="flex-shrink-0">
+                                            <i class="fa fa-exclamation-triangle text-2xl"></i>
+                                          </div>
+                                          <div class="flex-1">
+                                            <h4 class="font-bold mb-1">
+                                              File Size Limit Exceeded
+                                            </h4>
+                                            <p class="text-[8px]">
+                                              {{ fileSizeError }}
+                                            </p>
+                                            <p class="text-xs mt-2 opacity-90">
+                                              <i class="fa fa-info-circle mr-1"></i>
+                                              Maximum file size for Government IDs
+                                              is 5MB
+                                            </p>
+                                          </div>
+                                          <button @click="showFileSizeToast = false"
+                                            class="flex-shrink-0 text-white hover:text-red-200 transition-colors">
+                                            <i class="fa fa-times text-xl"></i>
+                                          </button>
+                                        </div>
                                       </div>
-                                      <div class="flex-1">
-                                        <h4 class="font-bold mb-1">
-                                          File Size Limit Exceeded
-                                        </h4>
-                                        <p class="text-[8px]">
-                                          {{ fileSizeError }}
-                                        </p>
-                                        <p class="text-xs mt-2 opacity-90">
-                                          <i class="fa fa-info-circle mr-1"></i>
-                                          Maximum file size for Government IDs
-                                          is 5MB
-                                        </p>
-                                      </div>
-                                      <button
-                                        @click="showFileSizeToast = false"
-                                        class="flex-shrink-0 text-white hover:text-red-200 transition-colors"
-                                      >
-                                        <i class="fa fa-times text-xl"></i>
-                                      </button>
                                     </div>
-                                  </div>
-                                </div>
-                              </transition>
+                                  </transition>
 
-                              <div
-                                class=""
-                              >
-                                <!-- Government ID (Front) -->
-                                <!-- <div class="w-full mb-2">
+                                  <div class="">
+                                    <!-- Government ID (Front) -->
+                                    <!-- <div class="w-full mb-2">
                                   <label
                                     class="lg:text-xs text-[10px] text-green-800 pb-2 font-bold whitespace-nowrap lg:w-6/12"
                                   >
@@ -1308,8 +1129,8 @@ const uploadFilesCredential = async () => {
                                     </div>
                                   </div>
                                 </div> -->
-                                <!-- Government ID (Back) -->
-                                <!-- <div class="w-full mb-2">
+                                    <!-- Government ID (Back) -->
+                                    <!-- <div class="w-full mb-2">
                                   <label
                                     class="lg:text-xs text-[10px] text-green-800 pb-2 font-bold whitespace-nowrap lg:w-6/12"
                                   >
@@ -1362,187 +1183,161 @@ const uploadFilesCredential = async () => {
                                   </div>
                                 </div> -->
 
+                                    <div class="w-full mb-2">
+
+                                      <p class="text-xs mb-1 tracking-tight font-semibold text-gray-700">
+                                        Select multiple files for any additional documents.
+                                      </p>
+                                      <p class="text-[10px] mb-2 text-gray-600 flex items-start gap-1">
+                                        <i class="fa fa-info-circle text-blue-600 mt-0.5"></i>
+                                        <span>
+                                          <span class="font-semibold">Allowed formats:</span> JPG, JPEG, PNG, PDF only.
+                                          <span class="font-semibold">Maximum size:</span> 5MB per file.
+                                        </span>
+                                      </p>
+                                      <div class="w-full">
+                                        <input type="file"
+                                          class="lg:px-2 py-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
+                                          @change="handleFileUploadCredential" id="file-upload-credential" multiple
+                                          accept=".jpg,.jpeg,.png,.pdf" />
+
+                                        <!-- Upload Status -->
+                                        <div v-if="uploadStatusCredential" class="mt-2 text-xs">
+                                          <div
+                                            :class="uploadStatusCredential.includes('successful') ? 'text-green-600' : uploadStatusCredential.includes('failed') ? 'text-red-600' : 'text-blue-600'"
+                                            class="flex items-center gap-2">
+                                            <i class="fa fa-spinner fa-spin"
+                                              v-if="uploadStatusCredential.includes('Uploading')"></i>
+                                            <i class="fa fa-check-circle"
+                                              v-else-if="uploadStatusCredential.includes('successful')"></i>
+                                            <i class="fa fa-exclamation-circle"
+                                              v-else-if="uploadStatusCredential.includes('failed')"></i>
+                                            {{ uploadStatusCredential }}
+                                          </div>
+                                        </div>
+
+                                        <!-- Uploaded Files Display -->
+                                        <div v-if="uploadedFilesCredential && uploadedFilesCredential.length > 0"
+                                          class="mt-3 space-y-2">
+                                          <div class="text-xs font-semibold text-green-700 mb-2">
+                                            <i class="fa fa-check-circle mr-1"></i>Uploaded Files ({{
+                                            uploadedFilesCredential.length }}):
+                                          </div>
+                                          <div v-for="(file, index) in uploadedFilesCredential" :key="file.url"
+                                            class="bg-green-50 border border-green-200 rounded px-3 py-2">
+                                            <div class="flex items-center justify-between gap-3">
+                                              <div class="flex items-center gap-2 flex-1 min-w-0">
+                                                <img
+                                                  v-if="file.url && (file.url.includes('jpg') || file.url.includes('jpeg') || file.url.includes('png'))"
+                                                  :src="file.url" alt="Uploaded Credential"
+                                                  class="w-12 h-12 object-cover rounded border border-gray-300" />
+                                                <i v-else class="fa fa-file-pdf-o text-green-600 text-2xl"></i>
+                                                <div class="flex-1 min-w-0">
+                                                  <div class="text-xs font-semibold text-gray-800 truncate">
+                                                    {{ file.name || 'Document' }}
+                                                  </div>
+                                                  <div class="text-xs text-gray-600">
+                                                    {{ file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : 'Size
+                                                    unknown' }}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <div class="flex items-center gap-2">
+                                                <a v-if="file.url" :href="file.url" target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors flex items-center gap-1"
+                                                  title="View file">
+                                                  <i class="fa fa-eye"></i>
+                                                  <span class="hidden sm:inline">View</span>
+                                                </a>
+                                                <button @click="removeUploadedFileCredential(index)"
+                                                  class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors flex items-center gap-1"
+                                                  title="Remove file">
+                                                  <i class="fa fa-trash"></i>
+                                                  <span class="hidden sm:inline">Remove</span>
+                                                </button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        <!-- Selected Files Preview (Before Upload) -->
+                                        <div v-if="selectedFilesCredential && selectedFilesCredential.length > 0"
+                                          class="mt-3 space-y-2">
+                                          <div class="text-xs font-semibold text-gray-700 mb-2">
+                                            <i class="fa fa-clock-o mr-1"></i>Selected Files ({{
+                                            selectedFilesCredential.length }}):
+                                          </div>
+                                          <div v-for="(file, index) in selectedFilesCredential" :key="file.name + index"
+                                            class="bg-blue-50 border border-blue-200 rounded px-3 py-2">
+                                            <div class="flex items-center justify-between gap-3">
+                                              <div class="flex items-center gap-2 flex-1 min-w-0">
+                                                <i class="fa fa-file-o text-blue-600 text-lg"></i>
+                                                <div class="flex-1 min-w-0">
+                                                  <div class="text-xs font-semibold text-gray-800 truncate">
+                                                    {{ file.name }}
+                                                  </div>
+                                                  <div class="text-xs text-gray-600">
+                                                    {{ (file.size / 1024 / 1024).toFixed(2) }} MB
+                                                  </div>
+                                                </div>
+                                              </div>
+                                              <div class="flex items-center gap-2">
+                                                <button @click="viewFile(file)"
+                                                  class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors flex items-center gap-1"
+                                                  title="View file">
+                                                  <i class="fa fa-eye"></i>
+                                                  <span class="hidden sm:inline">View</span>
+                                                </button>
+                                                <button @click="removeFileCredential(index)"
+                                                  class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors flex items-center gap-1"
+                                                  title="Remove file">
+                                                  <i class="fa fa-trash"></i>
+                                                  <span class="hidden sm:inline">Remove</span>
+                                                </button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+
+
+
+
+
+
+                                  </div>
+
+
+
+
+                                </div>
+
+
                                 <div class="w-full mb-2">
-
-                                  <p class="text-xs mb-1 tracking-tight font-semibold text-gray-700">
-                                    Select multiple files for any additional documents.
-                                  </p>
-                                  <p class="text-[10px] mb-2 text-gray-600 flex items-start gap-1">
-                                    <i class="fa fa-info-circle text-blue-600 mt-0.5"></i>
-                                    <span>
-                                      <span class="font-semibold">Allowed formats:</span> JPG, JPEG, PNG, PDF only.
-                                      <span class="font-semibold">Maximum size:</span> 5MB per file.
-                                    </span>
-                                  </p>
+                                  <label
+                                    class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12">
+                                    <div class="">Purpose</div>
+                                  </label>
                                   <div class="w-full">
-                                    <input
-                                      type="file"
-                                      class="lg:px-2 py-2 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs"
-                                      @change="handleFileUploadCredential"
-                                      id="file-upload-credential"
-                                      multiple
-                                      accept=".jpg,.jpeg,.png,.pdf"
-                                    />
-
-                                    <!-- Upload Status -->
-                                    <div v-if="uploadStatusCredential" class="mt-2 text-xs">
-                                      <div
-                                        :class="uploadStatusCredential.includes('successful') ? 'text-green-600' : uploadStatusCredential.includes('failed') ? 'text-red-600' : 'text-blue-600'"
-                                        class="flex items-center gap-2"
-                                      >
-                                        <i class="fa fa-spinner fa-spin" v-if="uploadStatusCredential.includes('Uploading')"></i>
-                                        <i class="fa fa-check-circle" v-else-if="uploadStatusCredential.includes('successful')"></i>
-                                        <i class="fa fa-exclamation-circle" v-else-if="uploadStatusCredential.includes('failed')"></i>
-                                        {{ uploadStatusCredential }}
-                                      </div>
-                                    </div>
-
-                                    <!-- Uploaded Files Display -->
-                                    <div
-                                      v-if="uploadedFilesCredential && uploadedFilesCredential.length > 0"
-                                      class="mt-3 space-y-2"
-                                    >
-                                      <div class="text-xs font-semibold text-green-700 mb-2">
-                                        <i class="fa fa-check-circle mr-1"></i>Uploaded Files ({{ uploadedFilesCredential.length }}):
-                                      </div>
-                                      <div
-                                        v-for="(file, index) in uploadedFilesCredential"
-                                        :key="file.url"
-                                        class="bg-green-50 border border-green-200 rounded px-3 py-2"
-                                      >
-                                        <div class="flex items-center justify-between gap-3">
-                                          <div class="flex items-center gap-2 flex-1 min-w-0">
-                                            <img
-                                              v-if="file.url && (file.url.includes('jpg') || file.url.includes('jpeg') || file.url.includes('png'))"
-                                              :src="file.url"
-                                              alt="Uploaded Credential"
-                                              class="w-12 h-12 object-cover rounded border border-gray-300"
-                                            />
-                                            <i v-else class="fa fa-file-pdf-o text-green-600 text-2xl"></i>
-                                            <div class="flex-1 min-w-0">
-                                              <div class="text-xs font-semibold text-gray-800 truncate">
-                                                {{ file.name || 'Document' }}
-                                              </div>
-                                              <div class="text-xs text-gray-600">
-                                                {{ file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : 'Size unknown' }}
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div class="flex items-center gap-2">
-                                            <a
-                                              v-if="file.url"
-                                              :href="file.url"
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors flex items-center gap-1"
-                                              title="View file"
-                                            >
-                                              <i class="fa fa-eye"></i>
-                                              <span class="hidden sm:inline">View</span>
-                                            </a>
-                                            <button
-                                              @click="removeUploadedFileCredential(index)"
-                                              class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors flex items-center gap-1"
-                                              title="Remove file"
-                                            >
-                                              <i class="fa fa-trash"></i>
-                                              <span class="hidden sm:inline">Remove</span>
-                                            </button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <!-- Selected Files Preview (Before Upload) -->
-                                    <div
-                                      v-if="selectedFilesCredential && selectedFilesCredential.length > 0"
-                                      class="mt-3 space-y-2"
-                                    >
-                                      <div class="text-xs font-semibold text-gray-700 mb-2">
-                                        <i class="fa fa-clock-o mr-1"></i>Selected Files ({{ selectedFilesCredential.length }}):
-                                      </div>
-                                      <div
-                                        v-for="(file, index) in selectedFilesCredential"
-                                        :key="file.name + index"
-                                        class="bg-blue-50 border border-blue-200 rounded px-3 py-2"
-                                      >
-                                        <div class="flex items-center justify-between gap-3">
-                                          <div class="flex items-center gap-2 flex-1 min-w-0">
-                                            <i class="fa fa-file-o text-blue-600 text-lg"></i>
-                                            <div class="flex-1 min-w-0">
-                                              <div class="text-xs font-semibold text-gray-800 truncate">
-                                                {{ file.name }}
-                                              </div>
-                                              <div class="text-xs text-gray-600">
-                                                {{ (file.size / 1024 / 1024).toFixed(2) }} MB
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div class="flex items-center gap-2">
-                                            <button
-                                              @click="viewFile(file)"
-                                              class="px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs transition-colors flex items-center gap-1"
-                                              title="View file"
-                                            >
-                                              <i class="fa fa-eye"></i>
-                                              <span class="hidden sm:inline">View</span>
-                                            </button>
-                                            <button
-                                              @click="removeFileCredential(index)"
-                                              class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-xs transition-colors flex items-center gap-1"
-                                              title="Remove file"
-                                            >
-                                              <i class="fa fa-trash"></i>
-                                              <span class="hidden sm:inline">Remove</span>
-                                            </button>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
+                                    <textarea
+                                      class="px-2 py-2 box-border w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm text-xs"
+                                      placeholder="Purpose" v-model="info.details" rows="2" cols="50"></textarea>
                                   </div>
                                 </div>
-
-
-
-
-
-                                
                               </div>
 
 
 
-                                  
-                                </div>
-
-
-                                         <div class="w-full mb-2">
-                                <label
-                                  class="lg:text-xs text-[10px] text-green-950 pb-2 font-bold whitespace-nowrap lg:w-6/12"
-                                >
-                                  <div class="">Purpose</div>
-                                </label>
-                                <div class="w-full">
-                                  <textarea
-                                    class="px-2 py-2 box-border w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm text-xs"
-                                    placeholder="Purpose"
-                                    v-model="info.details"
-                                    rows="2"
-                                    cols="50"
-                                  ></textarea>
-                                </div>
-                              </div>
-                           </div>
 
 
 
 
 
-
-                  
-                           
                             </div>
 
-                        
+
 
                             <!-- <div
                               v-if="requireIDS"
@@ -1558,18 +1353,13 @@ const uploadFilesCredential = async () => {
                               Government ID (Back) is required
                             </div> -->
 
-                            <div
-                              v-if="requireAllFieldsNotif"
-                              class="text-red-600 text-xs mt-1"
-                            >
+                            <div v-if="requireAllFieldsNotif" class="text-red-600 text-xs mt-1">
                               Required all Fields
                             </div>
 
                             <div class="">
-                              <div
-                                @click="togglePrivacyPolicy"
-                                class="text-green-800 px-2 py-1 bg-gray-50 font-bold text-center text-sm cursor-pointer transition-colors"
-                              >
+                              <div @click="togglePrivacyPolicy"
+                                class="text-green-800 px-2 py-1 bg-gray-50 font-bold text-center text-sm cursor-pointer transition-colors">
                                 <p>
                                   PRIVACY POLICY
                                   <span class="text-xs ml-1">{{
@@ -1578,19 +1368,14 @@ const uploadFilesCredential = async () => {
                                 </p>
                               </div>
 
-                              <div
-                                v-if="showPrivacyPolicy"
-                                class="border border-gray-300 lg:p-4 p-2 bg-white text-xs"
-                              >
+                              <div v-if="showPrivacyPolicy" class="border border-gray-300 lg:p-4 p-2 bg-white text-xs">
                                 <p class="font-bold text-green-900 mb-2">
                                   PRIVACY NOTICE
                                 </p>
                                 <p class="mb-2">
                                   At the
-                                  <span class="text-green-800 font-semibold"
-                                    >La Salle University Registrar's
-                                    Office</span
-                                  >, we are committed to protecting the privacy
+                                  <span class="text-green-800 font-semibold">La Salle University Registrar's
+                                    Office</span>, we are committed to protecting the privacy
                                   and security of your personal information.
                                   This Privacy Notice explains how we collect,
                                   use, disclose, and protect your information
@@ -1605,56 +1390,43 @@ const uploadFilesCredential = async () => {
                                   information necessary for providing our
                                   services, including but not limited to:
                                 </p>
-                                <ol
-                                  class="list-decimal lg:ml-6 ml-3 mb-3 space-y-1"
-                                >
+                                <ol class="list-decimal lg:ml-6 ml-3 mb-3 space-y-1">
                                   <li>
-                                    <span class="font-semibold"
-                                      >Contact Information:</span
-                                    >
+                                    <span class="font-semibold">Contact Information:</span>
                                     Name, address, email address, phone number,
                                     and other contact details
                                   </li>
                                   <li>
-                                    <span class="font-semibold"
-                                      >Identification Information:
+                                    <span class="font-semibold">Identification Information:
                                     </span>
                                     Student ID number, government-issued
                                     identification details,
                                   </li>
                                   <li>
-                                    <span class="font-semibold"
-                                      >Academic Information:</span
-                                    >
+                                    <span class="font-semibold">Academic Information:</span>
                                     Course enrollment, grades, academic
                                     progress, and transcripts.
                                   </li>
                                   <li>
-                                    <span class="font-semibold"
-                                      >Co-curricular Information:</span
-                                    >
+                                    <span class="font-semibold">Co-curricular Information:</span>
                                     Service learnings, outreach activities,
                                     Field Trips, Internship or apprenticeship
                                     compliance.
                                   </li>
                                   <li>
-                                    <span class="font-semibold"
-                                      >Financial Information:
+                                    <span class="font-semibold">Financial Information:
                                     </span>
                                     Payment details, financial aid information,
                                     promissory notes.
                                   </li>
                                   <li>
-                                    <span class="font-semibold"
-                                      >Pictures and Videos
+                                    <span class="font-semibold">Pictures and Videos
                                     </span>
                                     of activities you participate in, via
                                     official documentation of such activities.
                                   </li>
                                   <li>
-                                    <span class="font-semibold"
-                                      >Other Information:</span
-                                    >
+                                    <span class="font-semibold">Other Information:</span>
                                     Any additional information you provide to us
                                     in the course of our interactions.
                                   </li>
@@ -1667,9 +1439,7 @@ const uploadFilesCredential = async () => {
                                   We use the information we collect for the
                                   following purposes:
                                 </p>
-                                <ol
-                                  class="list-decimal lg:ml-6 ml-3 mb-3 space-y-1"
-                                >
+                                <ol class="list-decimal lg:ml-6 ml-3 mb-3 space-y-1">
                                   <li>
                                     Providing Registrar services, including
                                     enrollment, course registration, and
@@ -1712,9 +1482,7 @@ const uploadFilesCredential = async () => {
                                   We may disclose your personal information in
                                   the following circumstances:
                                 </p>
-                                <ol
-                                  class="list-decimal lg:ml-6 ml-3 mb-3 space-y-1"
-                                >
+                                <ol class="list-decimal lg:ml-6 ml-3 mb-3 space-y-1">
                                   <li>
                                     To authorized personnel within La Salle
                                     University who require access to fulfill
@@ -1768,52 +1536,33 @@ const uploadFilesCredential = async () => {
                                   complaints about our Privacy Notice or our
                                   handling of your personal information, please
                                   contact us at
-                                  <span class="text-blue-600"
-                                    >registrar@lsu.edu.ph</span
-                                  >
+                                  <span class="text-blue-600">registrar@lsu.edu.ph</span>
                                 </p>
                               </div>
 
-                              <div
-                                class="border border-gray-300 lg:p-4 p-2 bg-white text-xs"
-                                :class="{ 'border-t-0': showPrivacyPolicy }"
-                              >
+                              <div class="border border-gray-300 lg:p-4 p-2 bg-white text-xs"
+                                :class="{ 'border-t-0': showPrivacyPolicy }">
                                 <div class="flex items-center">
                                   <p for="privacy_agreement" class="text-xs">
                                     By checking the box below, you agree with
                                     the
 
-                                    <span
-                                      @click="togglePrivacyPolicy"
-                                      class="hover:uppercase cursor-pointer underline text-blue-800"
-                                    >
+                                    <span @click="togglePrivacyPolicy"
+                                      class="hover:uppercase cursor-pointer underline text-blue-800">
                                       Privacy Policy
                                     </span>
 
-                                    <span
-                                      class="text-red-600 font-normal text-sm"
-                                      >*</span
-                                    >
+                                    <span class="text-red-600 font-normal text-sm">*</span>
                                   </p>
                                 </div>
                                 <div class="flex items-center gap-x-1">
                                   <span>
-                                    <input
-                                      type="checkbox"
-                                      id="privacy_agreement"
-                                      v-model="info.data_privacy"
-                                      class="mt-1"
-                                      required
-                                      value="I agree"
-                                    />
+                                    <input type="checkbox" id="privacy_agreement" v-model="info.data_privacy"
+                                      class="mt-1" required value="I agree" />
                                   </span>
                                   <span>
-                                    <label
-                                      for="privacy_agreement"
-                                      :class="
-                                        info.data_privacy ? 'font-bold' : ''
-                                      "
-                                    >
+                                    <label for="privacy_agreement" :class="info.data_privacy ? 'font-bold' : ''
+                                      ">
                                       I agree
                                     </label>
                                   </span>
@@ -1826,28 +1575,19 @@ const uploadFilesCredential = async () => {
                     </div>
                   </div>
                 </div>
-                <div
-                  v-if="requireAllFields"
-                  class="my-10 w-11/12 mx-auto text-white bg-red-800 text-center py-2 px-5 block lg:text-sm text-xs"
-                >
+                <div v-if="requireAllFields"
+                  class="my-10 w-11/12 mx-auto text-white bg-red-800 text-center py-2 px-5 block lg:text-sm text-xs">
                   All fields are required!
                 </div>
 
                 <div class="pb-5 lg:px-5 px-3 mb-1">
-                  <div
-                    @click.prevent="submitForm"
-                    :disabled="!isFormValid || isUploading || isSubmitting"
+                  <div @click.prevent="submitForm" :disabled="!isFormValid || isUploading || isSubmitting"
                     class="px-10 lg:rounded-lg rounded-md text-center font-bold py-1.5 lg:w-fit w-full mx-auto block uppercase border-2 hover:bg-white hover:text-green-900 lg:text-sm text-xs justify-center shadow-xl"
-                    :class="
-                      !isFormValid || isUploading || isSubmitting
+                    :class="!isFormValid || isUploading || isSubmitting
                         ? 'bg-[#0d6d28] text-white border-[#0d6d28] cursor-not-allowed'
                         : 'bg-green-900 text-white  border-[#10561c] cursor-pointer'
-                    "
-                  >
-                    <span
-                      v-if="isSubmitting || isUploading"
-                      class="justify-center"
-                    >
+                      ">
+                    <span v-if="isSubmitting || isUploading" class="justify-center">
                       <i class="fa fa-spinner fa-spin mr-2"></i>
                       {{ isUploading ? "Uploading..." : "Submitting..." }}
                     </span>
@@ -1863,39 +1603,15 @@ const uploadFilesCredential = async () => {
         </div>
         <!--Waves Container-->
         <div>
-          <svg
-            class="waves"
-            xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            viewBox="0 24 150 28"
-            preserveAspectRatio="none"
-            shape-rendering="auto"
-          >
+          <svg class="waves" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+            viewBox="0 24 150 28" preserveAspectRatio="none" shape-rendering="auto">
             <defs>
-              <path
-                id="gentle-wave"
-                d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z"
-              />
+              <path id="gentle-wave" d="M-160 44c30 0 58-18 88-18s 58 18 88 18 58-18 88-18 58 18 88 18 v44h-352z" />
             </defs>
             <g class="parallax">
-              <use
-                xlink:href="#gentle-wave"
-                x="48"
-                y="0"
-                fill="rgba(255,255,255,0.7"
-              />
-              <use
-                xlink:href="#gentle-wave"
-                x="48"
-                y="3"
-                fill="rgba(255,255,255,0.5)"
-              />
-              <use
-                xlink:href="#gentle-wave"
-                x="48"
-                y="5"
-                fill="rgba(255,255,255,0.3)"
-              />
+              <use xlink:href="#gentle-wave" x="48" y="0" fill="rgba(255,255,255,0.7" />
+              <use xlink:href="#gentle-wave" x="48" y="3" fill="rgba(255,255,255,0.5)" />
+              <use xlink:href="#gentle-wave" x="48" y="5" fill="rgba(255,255,255,0.3)" />
               <use xlink:href="#gentle-wave" x="48" y="7" fill="#fff" />
             </g>
           </svg>
@@ -1904,27 +1620,20 @@ const uploadFilesCredential = async () => {
       </div>
     </div>
     <div v-if="thankYouDisplay" class="">
-      <div
-        class="lg:flex gap-10 lg:rounded-4xl bg-white lg:px-14 px-3 py-1 lg:w-fit w-full mx-auto lg:my-10 shadow-sm"
-      >
+      <div class="lg:flex gap-10 lg:rounded-4xl bg-white lg:px-14 px-3 py-1 lg:w-fit w-full mx-auto lg:my-10 shadow-sm">
         <div class="flex items-center">
           <img
             src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/check-mark-icon-isolated-on-white-background-vector-26464923.jpg"
-            class="lg:w-44 w-20 mx-auto lg:mt-0 mt-14"
-          />
+            class="lg:w-44 w-20 mx-auto lg:mt-0 mt-14" />
         </div>
-        <div
-          class="text-xl text-green-900 text-center w-fit mx-auto lg:py-20 py-5"
-        >
+        <div class="text-xl text-green-900 text-center w-fit mx-auto lg:py-20 py-5">
           <h1 class="font-bold text-3xl">Thanks for submitting!</h1>
           <p class="font-light pt-3 pb-10">Your request has been sent!</p>
           <p class="font-light text-xs italic mb-10">
             Please check your email.
           </p>
-          <a
-            href="https://lsu.edu.ph/registrar"
-            class="bg-green-800 text-white rounded-3xl py-1.5 px-10 lg:mb-0 mb-5 mx-auto w-fit lg:block hidden text-sm uppercase"
-          >
+          <a href="https://lsu.edu.ph/registrar"
+            class="bg-green-800 text-white rounded-3xl py-1.5 px-10 lg:mb-0 mb-5 mx-auto w-fit lg:block hidden text-sm uppercase">
             <i class="fa fa-arrow-circle-left mr-4"></i> Registrar
           </a>
         </div>
@@ -1953,26 +1662,26 @@ input[type="radio"] {
 }
 
 /* Animation */
-.parallax > use {
+.parallax>use {
   animation: move-forever 25s cubic-bezier(0.55, 0.5, 0.45, 0.5) infinite;
 }
 
-.parallax > use:nth-child(1) {
+.parallax>use:nth-child(1) {
   animation-delay: -2s;
   animation-duration: 7s;
 }
 
-.parallax > use:nth-child(2) {
+.parallax>use:nth-child(2) {
   animation-delay: -3s;
   animation-duration: 10s;
 }
 
-.parallax > use:nth-child(3) {
+.parallax>use:nth-child(3) {
   animation-delay: -4s;
   animation-duration: 13s;
 }
 
-.parallax > use:nth-child(4) {
+.parallax>use:nth-child(4) {
   animation-delay: -5s;
   animation-duration: 20s;
 }
@@ -2020,10 +1729,12 @@ input[type="radio"] {
 }
 
 @keyframes shake {
+
   0%,
   100% {
     transform: translateX(0);
   }
+
   10%,
   30%,
   50%,
@@ -2031,6 +1742,7 @@ input[type="radio"] {
   90% {
     transform: translateX(-5px);
   }
+
   20%,
   40%,
   60%,

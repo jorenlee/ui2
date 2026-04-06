@@ -9,7 +9,6 @@
           src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
           class="align-top w-full h-36 object-none lg:hidden block"
         />
-        <div></div>
         <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
           <h2
           class="font-bold uppercase text-white lg:text-xl text-sm w-11/12 mx-auto lg:my-12 my-6"
