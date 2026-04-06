@@ -1237,8 +1237,7 @@ document, index
                                                     {{ file.name || 'Document' }}
                                                   </div>
                                                   <div class="text-xs text-gray-600">
-                                                    {{ file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : 'Size
-                                                    unknown' }}
+                                                    {{ file.size ? (file.size / 1024 / 1024).toFixed(2) + ' MB' : 'Size unknown' }}
                                                   </div>
                                                 </div>
                                               </div>
