@@ -217,7 +217,7 @@ const desktopNav = [
       isScrolled ? 'bg-white/90 backdrop-blur-md shadow-lg' : 'bg-white'
     "
   >
-    <div class="container mx-auto lg:px-4 px-2">
+    <div class="px-3">
       <div class="flex justify-between items-center">
         <!-- Logo + Search -->
         <div class="flex items-center gap-4">
@@ -229,7 +229,6 @@ const desktopNav = [
               alt="La Salle University"
             />
           </a>
-
           <!-- Search Button -->
           <button
             @click="openSearchModal"
