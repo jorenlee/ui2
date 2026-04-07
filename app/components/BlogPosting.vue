@@ -296,20 +296,20 @@ onMounted(async () => {
           >
             <a :href="'news-updates/' + j.id" class="block">
               <!-- Image Section -->
-              <div class="relative lg:h-48 overflow-hidden">
+              <div class="relative overflow-hidden">
                 <img
                   v-if="j.files && j.files.length > 0"
                   :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
-                  class="w-full lg:h-full h-[100px] object-cover transition-transform duration-300 hover:scale-110"
+                  class="w-full lg:h-[300px] h-[100px] object-cover transition-transform duration-300 hover:scale-110"
                   alt="News thumbnail"
                 />
                 <div
                   v-else
-                  class="w-full lg:h-full h-[100px] bg-gray-200 flex items-center justify-center"
+                  class="w-full lg:h-[300px] h-[100px] bg-gray-200 flex items-center justify-center"
                 >
                   <img
                     src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png"
-                    class="w-full lg:h-full h-[100px] object-cover"
+                    class="w-full lg:h-[300px] h-[100px] object-cover"
                     alt="Default thumbnail"
                   />
                 </div>
