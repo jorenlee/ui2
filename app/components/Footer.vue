@@ -58,7 +58,7 @@ const quickLinks = [
   <div class="text-center justify-center">
     <GoogleAdsense />
     <UniversityFeedbackWidget />
-    <footer
+    <div
       class="lg:mt-5 w-full text-white relative border-t-8 border-green-800 bg-[url('https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/footer.jpg')] bg-cover bg-center"
     >
       <div class="bg-green-900/55">
@@ -164,6 +164,6 @@ const quickLinks = [
           </a>
         </div>
       </div>
-    </footer>
+    </div>
   </div>
 </template>

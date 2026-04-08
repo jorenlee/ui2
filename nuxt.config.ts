@@ -15,12 +15,12 @@ export default defineNuxtConfig({
         },
         {
           rel: "stylesheet",
-          href: "/css/flickity.min.css",
+          href: "https://unpkg.com/flickity@2.3.0/dist/flickity.min.css",
         },
       ],
       script: [
         {
-          src: "/js/flickity.pkgd.min.js"
+          src: "https://unpkg.com/flickity@2.3.0/dist/flickity.pkgd.min.js"
         },
       ]
     },
