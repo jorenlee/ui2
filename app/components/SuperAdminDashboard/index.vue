@@ -78,11 +78,6 @@ const toggleDarkMode = () => {
   }
 };
 
-// ---------------- PAGE META ----------------
-definePageMeta({
-  middleware: "cms-auth",
-});
-
 // ---------------- MOUNT ----------------
 onMounted(async () => {
   await init();
@@ -340,6 +335,7 @@ const logOut = () => logout();
             <component
               :is="currentViewConfig.component"
               :darkMode="darkMode"
+              :rolePermissions="rolePermissions"
               v-bind="currentViewConfig.props || {}"
             />
           </div>

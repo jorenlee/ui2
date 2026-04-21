@@ -2,7 +2,10 @@
 import { ref, onMounted, computed } from "vue";
 
 // ---------------- CONFIG ----------------
-const props = defineProps({ darkMode: Boolean });
+const props = defineProps({
+  darkMode: Boolean,
+  rolePermissions: Array,
+});
 const config = useRuntimeConfig();
 const endpoint = config.public.apiUrl;
 
@@ -181,7 +184,14 @@ const showToast = (message, type = "info", duration = 3000) => {
   }, duration);
 };
 
-onMounted(fetchList);
+// ---------------- MOUNT ----------------
+onMounted(async () => {
+  if (props.rolePermissions && props.rolePermissions.length > 0) {
+    listItems.value = props.rolePermissions;
+  } else {
+    await fetchList();
+  }
+});
 </script>
 
 <template>

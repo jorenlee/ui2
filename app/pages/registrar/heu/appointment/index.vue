@@ -192,7 +192,7 @@ const uploadFiles = async () => {
     fd.append("file", file);
   });
 
-  const res = await $fetch(`${endpoint}/api/registrar/upload/`, {
+  const res = await $fetch(`${endpoint}/api/registrar/v3/upload/`, {
     method: "POST",
     body: fd,
   });
@@ -258,7 +258,7 @@ const submitForm = async () => {
       ...uploadedFiles.value,
     ];
 
-    const res = await $fetch(`${endpoint}/api/registrar/create/`, {
+    const res = await $fetch(`${endpoint}/api/registrar/v3/create/`, {
       method: "POST",
       body: info.value,
     });
@@ -280,7 +280,7 @@ const submitForm = async () => {
   <div class="bg-gray-50">
     <Header />
     <div class="bg-green-700 lg:h-[200px] h-[130px]">
-      <p class="font-bold uppercase text-white lg:text-2xl text-sm w-11/12 mx-auto pt-28">
+      <p class="font-bold uppercase text-white lg:text-2xl text-sm w-11/12 mx-auto lg:pt-28 pt-20">
         REGISTRAR
       </p>
       <p class="text-xs w-11/12 mx-auto text-white">

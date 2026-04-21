@@ -5,6 +5,7 @@ import itServiceConfig from "@/it-service-config.json";
 
 const props = defineProps({
   darkMode: Boolean,
+  rolePermissions: Array,
 });
 
 const { user, init } = useAuth();
@@ -13,6 +14,12 @@ const rolePermissions = ref([]);
 onMounted(async () => {
   init();
 
+  if (props.rolePermissions && props.rolePermissions.length > 0) {
+    rolePermissions.value = props.rolePermissions;
+  } else {
+    await fetchRolePermissions();
+  }
+
   // ✅ CHECK UNRATED TICKETS HERE
   if (user.value?.email) {
     unratedTickets.value = await checkForUnratedTickets(
@@ -20,8 +27,6 @@ onMounted(async () => {
       npccMenuEmails.value
     );
   }
-
-  await fetchRolePermissions();
 
   fetchRequests();
   startRealtimeUpdates();
