@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!-- <DocumentRequestForm/> -->
-    <UpdatingPage/>
+    <DocumentRequestForm/>
+    <!-- <UpdatingPage/> -->
   </div>
 </template>
