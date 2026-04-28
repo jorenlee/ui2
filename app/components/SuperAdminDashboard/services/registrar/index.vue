@@ -615,6 +615,7 @@ const closePaymentModal = () => {
 const openPersonalInfoModal = (item) => {
   closeAllModals();
   currentPersonalInfo.value = item;
+  currentItem.value = item; // Fix: also set currentItem so verifiedConfirm receives the correct item
   showPersonalInfoModal.value = true;
   isModalOpen.value = true;
   newFollowUpMessage.value = ""; // Clear the message input when opening modal
@@ -1489,15 +1490,19 @@ const hasEmptyFeeName = computed(() => {
                     </div>
 
                     <!-- Chat Communication Modal -->
-                    <SuperAdminDashboardServicesRegistrarChatCommunicationModal v-if="showChatModal"
-                      :currentItem="currentItem" :showChatModal="showChatModal" @closeChatModal="closeChatModal"
+                    <SuperAdminDashboardServicesRegistrarChatCommunicationModal v-if="showChatCommunicationModal"
+                      :currentItem="currentItem" :showChatModal="showChatCommunicationModal"
+                      @closeChatModal="closeChatCommunicationModal"
+                      v-model="newFollowUpMessage"
                       :darkMode="darkMode" @sendFollowUpMessage="sendFollowUpMessage"
+                      :getCleanUrl="getCleanUrl"
                       @openImageModal="openImageModal" />
 
 
                     <!-- Personal Info Modal -->
                     <SuperAdminDashboardServicesRegistrarPersonalInfoModal
                       :showPersonalInfoModal="showPersonalInfoModal" :currentItem="currentItem" :darkMode="darkMode"
+                      :isVerifying="isVerifying"
                       @verifiedConfirm="verifiedConfirm" @closePersonalInfoModal="closePersonalInfoModal" />
 
 
@@ -1540,7 +1545,7 @@ const hasEmptyFeeName = computed(() => {
                     <!-- Delete Confirmation Modal -->
                     <SuperAdminDashboardServicesRegistrarDeleteConfirmationModal v-if="toggleConfirmDelete"
                       :toggleConfirmDelete="toggleConfirmDelete" :selectedItems="selectedItems" :isDeleting="isDeleting"
-                      :deleteItems="deleteItems" :cancelDelete="cancelDelete" />
+                      @deleteItems="deleteItems" @cancelDelete="cancelDelete" />
                   </div>
 
                   <!-- Status Logs Modal -->
