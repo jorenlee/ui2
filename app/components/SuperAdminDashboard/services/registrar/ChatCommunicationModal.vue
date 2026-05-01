@@ -27,11 +27,7 @@
                 (currentItem?.additional_documents &&
                     currentItem.additional_documents.length > 0 &&
                     currentItem.additional_documents[0].name !==
-                    'N/A') ||
-                (currentItem?.valid_id_front &&
-                    currentItem.valid_id_front.length > 0) ||
-                (currentItem?.valid_id_back &&
-                    currentItem.valid_id_back.length > 0)
+                    'N/A')
             " class="p-4 border-b-2" :class="darkMode
                 ? 'bg-gray-900 border-gray-700'
                 : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'

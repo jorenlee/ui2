@@ -1451,10 +1451,14 @@ const hasEmptyFeeName = computed(() => {
               </div>
               <div class="">
                 <div class="appointment-lists mx-auto text-xs">
-                  <SuperAdminDashboardServicesRegistrarLoading v-if="isLoading" />
+                  <!-- Loading Overlay -->
+                  
+                      <SuperAdminDashboardServicesRegistrarLoading v-if="isLoading"/>
+                    
+              
 
-                  <div v-else>
-                    <div class="gap-4" v-if="paginatedListItems.length > 0">
+                  <div v-else-if="paginatedListItems.length > 0">
+                    <div class="gap-4">
                       <div class="flex items-center h-auto shadow lg:mb-0 mb-3 border-gray-200"
                         v-for="(b, i) in filteredByCollege" :key="i">
                         <div class="w-fit flex px-2" v-if="collegeFilterList">
@@ -1488,65 +1492,71 @@ const hasEmptyFeeName = computed(() => {
 
                       </div>
                     </div>
-
-                    <!-- Chat Communication Modal -->
-                    <SuperAdminDashboardServicesRegistrarChatCommunicationModal v-if="showChatCommunicationModal"
-                      :currentItem="currentItem" :showChatModal="showChatCommunicationModal"
-                      @closeChatModal="closeChatCommunicationModal"
-                      v-model="newFollowUpMessage"
-                      :darkMode="darkMode" @sendFollowUpMessage="sendFollowUpMessage"
-                      :getCleanUrl="getCleanUrl"
-                      @openImageModal="openImageModal" />
-
-
-                    <!-- Personal Info Modal -->
-                    <SuperAdminDashboardServicesRegistrarPersonalInfoModal
-                      :showPersonalInfoModal="showPersonalInfoModal" :currentItem="currentItem" :darkMode="darkMode"
-                      :isVerifying="isVerifying"
-                      @verifiedConfirm="verifiedConfirm" @closePersonalInfoModal="closePersonalInfoModal" />
-
-
-                    <!-- Payment Details Modal -->
-                    <SuperAdminDashboardServicesRegistrarPaymentDetailsModal v-if="showPaymentModal"
-                      :showPaymentModal="showPaymentModal" :currentItemInfo="currentItemInfo" :currentItem="currentItem"
-                      :darkMode="darkMode" @closePaymentModal="closePaymentModal" :addDetailFee="addDetailFee"
-                      :removeDetailFee="removeDetailFee" :sendEmailDetailFee="sendEmailDetailFee"
-                      :hasEmptyFeeName="hasEmptyFeeName" :isSendingPayment="isSendingPayment"
-                      :showSuccessMessage="showSuccessMessage" :closeSuccessToast="closeSuccessToast"
-                      :closeErrorMessage="closeErrorMessage" :verifyErrorMessage="verifyErrorMessage"
-                      :verifySuccessMessage="verifySuccessMessage" :isVerifying="isVerifying"
-                      :sendEmailConfirmationVerified="sendEmailConfirmationVerified" :verifiedConfirm="verifiedConfirm"
-                      :sendFollowUpMessage="sendFollowUpMessage" :newFollowUpMessage="newFollowUpMessage" />
-
-
-                    <!-- Document Preparation Modal -->
-                    <SuperAdminDashboardServicesRegistrarDocumentPreparationModal :showPrepDocModal="showPrepDocModal"
-                      :currentItem="currentItem" :darkMode="darkMode" @closePrepDocModal="closePrepDocModal"
-                      @confirmPrepDoc="confirmPrepDoc" :isConfirming="isConfirming" />
-
-                    <!-- Releasing Documents Modal -->
-                    <SuperAdminDashboardServicesRegistrarReleasingDocumentsModal
-                      :showReleasingDocModal="showReleasingDocModal" :currentItem="currentItem" :darkMode="darkMode"
-                      @closeReleasingDocModal="closeReleasingDocModal" @confirmReleasingDoc="confirmReleasingDoc"
-                      :isConfirming="isConfirming" />
-
-                    <!-- Transaction Closed Modal -->
-                    <SuperAdminDashboardServicesRegistrarTransactionClosedModal
-                      :showTransactionClosedModal="showTransactionClosedModal" :currentItem="currentItem"
-                      :darkMode="darkMode" @closeTransactionClosedModal="closeTransactionClosedModal"
-                      @confirmTransactionClosed="confirmTransactionClosed" :isConfirming="isConfirming" />
-
-                    <!-- Show Image Modal -->
-                    <SuperAdminDashboardServicesRegistrarShowImageModal v-if="showImageModal" :currentItem="currentItem"
-                      :showImageModal="showImageModal" @closeImageModal="closeImageModal"
-                      @openImageModal="openImageModal" :getCleanUrl="getCleanUrl"
-                      :currentModalImage="currentModalImage" />
-
-                    <!-- Delete Confirmation Modal -->
-                    <SuperAdminDashboardServicesRegistrarDeleteConfirmationModal v-if="toggleConfirmDelete"
-                      :toggleConfirmDelete="toggleConfirmDelete" :selectedItems="selectedItems" :isDeleting="isDeleting"
-                      @deleteItems="deleteItems" @cancelDelete="cancelDelete" />
                   </div>
+
+                  <!-- Empty State -->
+                  <div v-else class="text-center py-12">
+                    <p class="text-lg font-medium" :class="props.darkMode ? 'text-gray-400' : 'text-gray-600'">
+                      No items found!
+                    </p>
+                  </div>
+
+                  <!-- Chat Communication Modal -->
+                  <SuperAdminDashboardServicesRegistrarChatCommunicationModal v-if="showChatCommunicationModal"
+                    :currentItem="currentItem" :showChatModal="showChatCommunicationModal"
+                    @closeChatModal="closeChatCommunicationModal"
+                    v-model="newFollowUpMessage"
+                    :darkMode="darkMode" @sendFollowUpMessage="sendFollowUpMessage"
+                    :getCleanUrl="getCleanUrl"
+                    @openImageModal="openImageModal" />
+
+
+                  <!-- Personal Info Modal -->
+                  <SuperAdminDashboardServicesRegistrarPersonalInfoModal
+                    :showPersonalInfoModal="showPersonalInfoModal" :currentItem="currentItem" :darkMode="darkMode"
+                    :isVerifying="isVerifying"
+                    @verifiedConfirm="verifiedConfirm" @closePersonalInfoModal="closePersonalInfoModal" />
+
+
+                  <!-- Payment Details Modal -->
+                  <SuperAdminDashboardServicesRegistrarPaymentDetailsModal v-if="showPaymentModal"
+                    :showPaymentModal="showPaymentModal" :currentItemInfo="currentItemInfo" :currentItem="currentItem"
+                    :darkMode="darkMode" @closePaymentModal="closePaymentModal" :addDetailFee="addDetailFee"
+                    :removeDetailFee="removeDetailFee" :sendEmailDetailFee="sendEmailDetailFee"
+                    :hasEmptyFeeName="hasEmptyFeeName" :isSendingPayment="isSendingPayment"
+                    :showSuccessMessage="showSuccessMessage" :closeSuccessToast="closeSuccessToast"
+                    :closeErrorMessage="closeErrorMessage" :verifyErrorMessage="verifyErrorMessage"
+                    :verifySuccessMessage="verifySuccessMessage" :isVerifying="isVerifying"
+                    :sendEmailConfirmationVerified="sendEmailConfirmationVerified" :verifiedConfirm="verifiedConfirm"
+                    :sendFollowUpMessage="sendFollowUpMessage" :newFollowUpMessage="newFollowUpMessage" />
+
+                  <!-- Document Preparation Modal -->
+                  <SuperAdminDashboardServicesRegistrarDocumentPreparationModal :showPrepDocModal="showPrepDocModal"
+                    :currentItem="currentItem" :darkMode="darkMode" @closePrepDocModal="closePrepDocModal"
+                    @confirmPrepDoc="confirmPrepDoc" :isConfirming="isConfirming" />
+
+                  <!-- Releasing Documents Modal -->
+                  <SuperAdminDashboardServicesRegistrarReleasingDocumentsModal
+                    :showReleasingDocModal="showReleasingDocModal" :currentItem="currentItem" :darkMode="darkMode"
+                    @closeReleasingDocModal="closeReleasingDocModal" @confirmReleasingDoc="confirmReleasingDoc"
+                    :isConfirming="isConfirming" />
+
+                  <!-- Transaction Closed Modal -->
+                  <SuperAdminDashboardServicesRegistrarTransactionClosedModal
+                    :showTransactionClosedModal="showTransactionClosedModal" :currentItem="currentItem"
+                    :darkMode="darkMode" @closeTransactionClosedModal="closeTransactionClosedModal"
+                    @confirmTransactionClosed="confirmTransactionClosed" :isConfirming="isConfirming" />
+
+                  <!-- Show Image Modal -->
+                  <SuperAdminDashboardServicesRegistrarShowImageModal v-if="showImageModal" :currentItem="currentItem"
+                    :showImageModal="showImageModal" @closeImageModal="closeImageModal"
+                    @openImageModal="openImageModal" :getCleanUrl="getCleanUrl"
+                    :currentModalImage="currentModalImage" />
+
+                  <!-- Delete Confirmation Modal -->
+                  <SuperAdminDashboardServicesRegistrarDeleteConfirmationModal v-if="toggleConfirmDelete"
+                    :toggleConfirmDelete="toggleConfirmDelete" :selectedItems="selectedItems" :isDeleting="isDeleting"
+                    @deleteItems="deleteItems" @cancelDelete="cancelDelete" />
 
                   <!-- Status Logs Modal -->
                   <SuperAdminDashboardServicesRegistrarStatusLogsModal v-if="showLogsModal"
@@ -1558,9 +1568,6 @@ const hasEmptyFeeName = computed(() => {
                     v-model:currentPage="currentPage" :totalPages="totalPages" :visiblePages="visiblePages"
                     :darkMode="darkMode" />
 
-                  <div v-else-if="!isLoading" class="text-center my-5">
-                    No items found!
-                  </div>
                 </div>
               </div>
             </div>
