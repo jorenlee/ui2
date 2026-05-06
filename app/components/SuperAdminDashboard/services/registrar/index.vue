@@ -1145,7 +1145,9 @@ const selectAllItems = () => {
   if (allSelected.value) {
     selectedItems.value = [];
   } else {
-    selectedItems.value = filteredByCollege.value.map((item) => item.id);
+    selectedItems.value = filteredByCollege.value
+      .map((item) => item.tracking_id)
+      .filter(Boolean);
   }
 
   startAutoRefresh();
@@ -1168,13 +1170,17 @@ const deleteItems = async () => {
 
   try {
     isDeleting.value = true;
-    for (const id of selectedItems.value) {
-      await $fetch(endpoint.value + "/api/registrar/v3/" + id + "/delete/", {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
+    for (const trackingId of selectedItems.value) {
+      if (!trackingId) continue;
+      await $fetch(
+        endpoint.value + "/api/registrar/v3/delete/" + trackingId + "/",
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
     }
 
     selectedItems.value = [];
@@ -1463,7 +1469,7 @@ const hasEmptyFeeName = computed(() => {
                         v-for="(b, i) in filteredByCollege" :key="i">
                         <div class="w-fit flex px-2" v-if="collegeFilterList">
                           <div class="">
-                            <input type="checkbox" :value="b.id" v-model="selectedItems"
+                            <input type="checkbox" :value="b.tracking_id" v-model="selectedItems"
                               class="accent-[#6f0000] cursor-pointer w-4 h-4" />
                           </div>
                         </div>

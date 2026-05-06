@@ -124,13 +124,6 @@
                         t._12_hour_format_from + ' - ' + t._12_hour_format_to
                       "
                       v-model="form.times"
-                      :disabled="
-                        !isEditing &&
-                        form.times.length >= 1 &&
-                        !form.times.includes(
-                          t._12_hour_format_from + ' - ' + t._12_hour_format_to,
-                        )
-                      "
                     />
                     <span class="pl-2"
                       >{{ t._12_hour_format_from }} -
@@ -544,12 +537,10 @@ const toggleSelectAll = () => {
     // Deselect all
     form.value.times = [];
   } else {
-    // Select only first time slot (limit to 1)
-    if (timeOptions.value.length > 0) {
-      form.value.times = [
-        `${timeOptions.value[0]._12_hour_format_from} - ${timeOptions.value[0]._12_hour_format_to}`,
-      ];
-    }
+    // Select all available time slots
+    form.value.times = timeOptions.value.map(
+      (t) => `${t._12_hour_format_from} - ${t._12_hour_format_to}`,
+    );
   }
   selectAll.value = isAllSelected.value;
 };

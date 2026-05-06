@@ -8,20 +8,15 @@
         <Banner />
         <img
           src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
-          class="align-top w-full h-36 object-none lg:hidden block"
-        />
+          class="align-top w-full h-36 object-none lg:hidden block" />
         <div></div>
         <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
-          <h1
-            class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto"
-          >
-            Metau: LSU OER <span class="text-[10px] capitalize font-light">Powered By NPCC</span>
+          <h1 class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto">
+            Metau: LSU OER
           </h1>
         </div>
         <div class="pt-2.5 pb-3 shadow-lg">
-          <ul
-            class="flex lasalle-green-text capitalize w-11/12 mx-auto text-xs"
-          >
+          <ul class="flex lasalle-green-text capitalize w-11/12 mx-auto text-xs">
             <li>
               <a href="/" class="mr-1"> Home </a>
             </li>
@@ -34,99 +29,67 @@
       </div>
     </div>
 
-    <div class="font-montserrat bg-gray-50">
-      <section
-        class="relative bg-gradient-to-r from-green-700 via-green-600 to-green-800 text-white"
-      >
-        <div class="px-6 flex flex-col lg:flex-row items-center gap-10">
-          <div
-            class="w-full items-center lg:items-start text-center lg:text-left z-10 py-2 rounded-lg hero-banner-content-with-bg"
-          >
-            <div class="w-9/12 mx-auto py-6">
-              <h1 class="text-xl font-extrabold mt-14 mb-4">
-                Welcome to <span class="text-yellow-300">Metau</span>
-              </h1>
-              <p
-                class="text-sm opacity-90 leading-relaxed mt-[150px] mb-8 w-8/12"
-              >
-                LSU’s Open Educational Resource platform — fostering
-                collaboration, inclusivity, and lifelong learning through free,
-                high-quality materials.
-              </p>
-              <div class="mt-8 mb-8 w-fit ml-auto mr-0">
-                <a
-                  href="/oer/submission"
-                  class="inline-flex items-center gap-3 bg-white text-green-800 font-bold px-8 py-1 rounded-xl shadow hover:bg-green-100 transition"
-                >
-                  <i class="fa fa-upload text-lg"></i> Contribute Now
-                </a>
+    <div class="font-montserrat bg-gray-50 mt-5">
+      <section class="relative text-white">
+        <div class="flex">
+          <div class="w-full lg:w-8/12">
+            <div
+              class="w-10/12 mx-auto items-center text-center lg:text-left z-10 py-2 hero-banner-content-with-bg bg-green-700 rounded-3xl">
+              <div class="py-6">
+                <h1 class="text-xl font-extrabold mt-14 mb-4 w-fit mx-auto px-5 py-1 bg-green-500/50 rounded-full">
+                  Welcome to <span class="text-yellow-300">Metau</span>
+                </h1>
+                <p
+                  class="text-sm opacity-90 leading-relaxed mt-[200px] mx-auto mb-8 w-8/12 bg-green-500/20 px-8 py-2 rounded-lg text-center">
+                  LSU’s Open Educational Resource platform, fostering
+                  collaboration, inclusivity, and lifelong learning through free,
+                  high-quality materials.
+                </p>
+                <div class="mt-8 w-fit mx-auto">
+                  <a href="/dashboard"
+                    class="inline-flex items-center justify-center gap-3 bg-white text-green-800 font-bold px-10 py-3 rounded-xl shadow hover:bg-green-100 transition px-10 whitespace-nowrap text-center">
+                    <i class="fa fa-upload text-lg"></i> Contribute Now
+                  </a>
+                </div>
               </div>
             </div>
           </div>
-
-          <div class="w-full mt-8 gap-4">
-            <div class="w-9/12 mx-auto py-6">
-              <!-- <div class="flex flex-col gap-4 w-full mb-10">
-                <input
-                  type="text"
-                  placeholder="What are you looking for?"
-                  class="px-4 py-2 rounded-lg text-gray-800 focus:outline-none w-full"
-                />
-                <select
-                  class="px-4 py-2 rounded-lg text-gray-800 focus:outline-none w-full"
-                >
-                  <option>Subject</option>
-                </select>
-                <select
-                  class="px-4 py-2 rounded-lg text-gray-800 focus:outline-none w-full"
-                >
-                  <option>Education Level</option>
-                </select>
-                <select
-                  class="px-4 py-2 rounded-lg text-gray-800 focus:outline-none w-full"
-                >
-                  <option>Standard</option>
-                </select>
-              </div> -->
-              <button
-                class="bg-green-800 text-white font-bold px-6 py-2 rounded-lg shadow hover:bg-green-900 transition w-full"
-              >
-                Coming Soon
-              </button>
-              
+          <div class="w-full">
+            <!-- About Section -->
+            <div class="mr-10 py-12 bg-white rounded-2xl pl-16 pr-14">
+              <h2>
+                <span class="text-green-700 text-2xl block text-left mb-6 font-bold border-l-4 border-green-700 pl-3">
+                  About Metau: LSU OER
+                </span>
+              </h2>
+              <p class="mb-3 text-gray-700 leading-relaxed">
+                La Salle University’s <span class="font-bold">Open Educational Resources (OER)</span> initiative,
+                branded as <span class="font-semibold">Metau</span>, a Subanen word
+                meaning “knowledgeable”, advances our commitment to making quality
+                education accessible to all. Guided by Strategic Intent 1, Goal 1.1.2,
+                Metau provides a platform for faculty, students, and partners to
+                create and share free, high-quality learning materials that benefit
+                local, national, and global communities.
+              </p>
+              <p class="mb-3 text-gray-700 leading-relaxed">
+                Anchored on the UNESCO Recommendation on OER (2019) and aligned with
+                the UN Sustainable Development Goals, especially
+              </p>
+              <ul class="text-black mb-3 ml-5">
+                <li>   <span class="font-semibold">SDG 4</span> (Quality Education),</li>
+                <li> <span class="font-semibold">SDG 10</span> (Reduced Inequalities), and</li>
+                <li>  <span class="font-semibold">SDG 17</span> (Partnerships for the
+                Goals) </li>
+              </ul>
+              <p class="mb-3 text-gray-700 leading-relaxed">Metau fosters inclusivity, collaboration, and lifelong
+                learning. </p>
+               <p class="mb-3 text-gray-700 leading-relaxed">By contributing to Metau, the LSU community joins a global
+                movement of open knowledge that empowers learners and strengthens
+                education for all.</p>
             </div>
           </div>
         </div>
-      </section>
-
-      <!-- About Section -->
-      <div class="w-11/12 mx-auto my-10 bg-white shadow-lg rounded-2xl p-8">
-        <h2>
-          <span
-            class="text-green-700 text-2xl block text-left mb-6 font-bold border-l-4 border-green-700 pl-3"
-          >
-            About Metau: LSU OER
-          </span>
-        </h2>
-        <p class="mb-5 text-gray-700 leading-relaxed">
-          La Salle University’s Open Educational Resources (OER) initiative,
-          branded as <span class="font-semibold">Metau</span>—a Subanen word
-          meaning “knowledgeable”—advances our commitment to making quality
-          education accessible to all. Guided by Strategic Intent 1, Goal 1.1.2,
-          Metau provides a platform for faculty, students, and partners to
-          create and share free, high-quality learning materials that benefit
-          local, national, and global communities.
-        </p>
-        <p class="mb-3 text-gray-700 leading-relaxed">
-          Anchored on the UNESCO Recommendation on OER (2019) and aligned with
-          the UN Sustainable Development Goals—especially SDG 4 (Quality
-          Education), SDG 10 (Reduced Inequalities), and SDG 17 (Partnerships
-          for the Goals)—Metau fosters inclusivity, collaboration, and lifelong
-          learning. By contributing to Metau, the LSU community joins a global
-          movement of open knowledge that empowers learners and strengthens
-          education for all.
-        </p>
-      </div>
+      </section>  
     </div>
 
     <Footer />

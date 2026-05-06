@@ -1,3 +1,4 @@
+
 <script setup>
 import moment from "moment";
 import { ref, computed } from "vue";
@@ -6,8 +7,9 @@ import _ from "lodash";
 const governmentIDFile = ref(null);
 
 const handleGovernmentIDUpload = (e) => {
-  const file = e.target.files[0];
-  governmentIDFile.value = file || null;
+  const files = Array.from(e.target.files || []);
+  governmentIDFile.value = files[0] || null;
+  selectedFiles.value = files;
 };
 
 const config = useRuntimeConfig();
@@ -196,7 +198,6 @@ const uploadFiles = async () => {
     url: f.url,
     timestamp: moment().format("MMMM DD, YYYY h:mm:ss A"),
   }));
-
   info.value.additional_documents = uploadedFiles.value;
 };
 

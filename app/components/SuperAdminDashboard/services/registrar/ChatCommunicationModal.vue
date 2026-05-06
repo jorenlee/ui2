@@ -155,7 +155,7 @@
                                         ? 'bg-gray-700 border border-gray-600 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm'
                                         : 'bg-white border border-blue-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm'
                                 ">
-                                <p :class="msg.sender === 'Registrar'
+                                <p class="whitespace-pre-wrap" :class="msg.sender === 'Registrar'
                                         ? 'text-sm text-white'
                                         : darkMode
                                             ? 'text-sm text-gray-200'

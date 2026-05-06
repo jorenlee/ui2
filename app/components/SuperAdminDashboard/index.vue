@@ -17,22 +17,39 @@ const currentView = ref("Menu");
 
 const openGroups = ref([
   "Content Management",
-  "Library Management",
-  "NPCC IT Services",
-  "University Registrar",
-  "Campus Pass",
-  "Document Reviewer",
-  "IT Services Feedback",
-  "Safety and Security Center",
-  "Human Resource",
-  "Office of The Chancellor",
-  "Commission on Election",
-  "External Links",
-  "General Services Office",
-  "Lasalle Alumni Association",
-  "Animo Run",
-  "Super Admin",
+  "Open Educational Resources",
+  // "Library Management",
+  // "NPCC IT Services",
+  // "University Registrar",
+  // "Campus Pass",
+  // "Document Reviewer",
+  // "IT Services Feedback",
+  // "Safety and Security Center",
+  // "Human Resource",
+  // "Office of The Chancellor",
+  // "Commission on Election",
+  // "External Links",
+  // "General Services Office",
+  // "Lasalle Alumni Association",
+  // "Animo Run",
+  // "Super Admin",
 ]);
+
+// ---------------- MENU PERMISSION ----------------
+const publicMenuGroups = [
+  "IT Services Feedback",
+  "Animo Run",
+  "External Links",
+  "Lasalle Alumni Association",
+];
+
+const lsuOnlyMenuGroups = [
+  "Commission on Election",
+  "General Services Office",
+  "Document Reviewer",
+  "Safety and Security Center",
+];
+
 
 // ---------------- API ----------------
 const api = (url) => $fetch(`${endpoint}${url}`);
@@ -101,21 +118,6 @@ onMounted(async () => {
     darkMode.value = stored === "dark" || (!stored && prefersDark);
   }
 });
-
-// ---------------- MENU PERMISSION ----------------
-const publicMenuGroups = [
-  "IT Services Feedback",
-  "Animo Run",
-  "External Links",
-  "Lasalle Alumni Association",
-];
-
-const lsuOnlyMenuGroups = [
-  "Commission on Election",
-  "General Services Office",
-  "Document Reviewer",
-  "Safety and Security Center",
-];
 
 // ---------------- MENU FILTER ----------------
 const filteredMenuList = computed(() => {
@@ -210,6 +212,12 @@ const subMenuList = [
     ],
   },
   {
+    group: "Lasalle Alumni Association",
+    items: [
+      { label: "Lasalle Alumni Association", icon: "fa-graduation-cap", type: "button", view: "ViewAlumni" },
+    ],
+  },
+  {
     group: "Library Management",
     allowedRole: "Library Menu",
     items: [
@@ -233,6 +241,13 @@ const subMenuList = [
     ],
   },
   {
+    group: "Open Educational Resources",
+    items: [
+      { label: "OER Form", icon: "fa-book", type: "button", view: "ViewOERForm" },
+      { label: "OER List", icon: "fa-book-open", type: "button", view: "ViewOERList" },
+    ],
+  },
+  {
     group: "Safety and Security Center",
     items: [
       { label: "Borrow Office Keys", icon: "fa-key", type: "button", view: "ViewBorrowKeys" },
@@ -243,12 +258,6 @@ const subMenuList = [
     allowedRole: "Registrar Menu",
     items: [
       { label: "University Registrar", icon: "fa-university", type: "button", view: "ViewRegistrarAppointments" },
-    ],
-  },
-  {
-    group: "Lasalle Alumni Association",
-    items: [
-      { label: "Lasalle Alumni Association", icon: "fa-graduation-cap", type: "button", view: "ViewAlumni" },
     ],
   },
   {
@@ -276,8 +285,8 @@ const menuList = [
 // ---------------- VIEW CONFIG ----------------
 const currentViewConfig = computed(() => {
   const views = {
-    ViewContentForm: { component: resolveComponent("SuperAdminDashboardCmsForm"), class: "p-4 pb-52", props: { onContentSubmitted: handleContentSubmitted } },
-    ViewContentList: { component: resolveComponent("SuperAdminDashboardCmsList"), class: "p-4 pb-32" },
+    ViewContentForm: { component: resolveComponent("SuperAdminDashboardCMSForm"), class: "p-4 pb-52", props: { onContentSubmitted: handleContentSubmitted } },
+    ViewContentList: { component: resolveComponent("SuperAdminDashboardCMSList"), class: "p-4 pb-32" },
     ViewLibraryAppointments: { component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"), class: "pb-32" },
     ViewLibraryBooks: { component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"), class: "pb-32" },
     ViewLibrarySchedules: { component: resolveComponent("SuperAdminDashboardServicesLibrarySchedules"), class: "pb-24" },
@@ -303,6 +312,8 @@ const currentViewConfig = computed(() => {
     ViewGSOFacilitiesReservationList: { component: resolveComponent("GSOFacilitiesReservationForm"), class: "pb-32"},
     ViewGSOVehicleReservationForm: { component: resolveComponent("GSOVehicleReservationForm"), class: "pb-32"},
     ViewGSOVehicleReservationList: { component: resolveComponent("GSOVehicleReservationForm"), class: "pb-32"},
+    ViewOERForm: { component: resolveComponent("SuperAdminDashboardServicesOERForm"), class: "pb-32"},
+    ViewOERList: { component: resolveComponent("SuperAdminDashboardServicesOERList"), class: "pb-32"},
   };
 
   return views[currentView.value];
