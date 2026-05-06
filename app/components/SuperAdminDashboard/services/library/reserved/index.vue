@@ -144,26 +144,33 @@ const goToBack = () => {
    UPDATE STATUS
 ========================= */
 const editStatus = async () => {
+  loadingState.value = true;
   const payload = toRaw({
     ...library.value,
     updated_at: new Date().toISOString(),
   });
 
-  await $fetch(
-    `${endpoint.value}/api/library/booking/${library.value.id}/edit/`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: payload,
-    }
-  );
+  try {
+    await $fetch(
+      `${endpoint.value}/api/library/booking/${library.value.id}/edit/`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }
+    );
 
-  await fetchBookingData();
-  submitToGmail();
-  goToBack();
+    await submitToGmail();
+    await fetchBookingData();
+  } catch (error) {
+    console.error("Failed to update status or send email", error);
+  } finally {
+    loadingState.value = false;
+    goToBack();
+  }
 };
 
-const submitToGmail = debounce(async () => {
+const submitToGmail = async () => {
   await $fetch(
     `${endpoint.value}/api/library/submit-status-to-gmail/${library.value.id}/`,
     {
@@ -175,7 +182,7 @@ const submitToGmail = debounce(async () => {
       },
     }
   );
-});
+};
 
 /* =========================
    MODAL
