@@ -263,13 +263,13 @@ onMounted(async () => {
       <!-- Carousel Container -->
       <div
         v-else-if="highlightedNews.length"
-        class="relative lg:w-11/12 w-9/12 mx-auto lg:px-0 px-2"
+        class="lg:px-10 px-2"
       >
         <!-- Left Arrow -->
         <button
           v-if="canGoPrev"
           @click="prevSlide"
-          class="absolute top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 -left-10"
+          class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 left-3"
           aria-label="Previous slide"
         >
           <i class="fas fa-chevron-left text-xl"></i>
@@ -279,7 +279,7 @@ onMounted(async () => {
         <button
           v-if="canGoNext"
           @click="nextSlide"
-          class="absolute top-1/2 -translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center shadow-xl transition-all duration-300 hover:scale-110 -right-10"
+          class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 right-3"
           aria-label="Next slide"
         >
           <i class="fas fa-chevron-right text-xl"></i>
