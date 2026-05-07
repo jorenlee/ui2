@@ -419,12 +419,12 @@ const menuList = [
 const currentViewConfig = computed(() => {
   const views = {
     ViewContentForm: {
-      component: resolveComponent("SuperAdminDashboardCMSForm"),
+      component: resolveComponent("SuperAdminDashboardServicesCMSForm"),
       class: "p-4 pb-52",
       props: { onContentSubmitted: handleContentSubmitted },
     },
     ViewContentList: {
-      component: resolveComponent("SuperAdminDashboardCMSList"),
+      component: resolveComponent("SuperAdminDashboardServicesCMSList"),
       class: "p-4 pb-32",
     },
     ViewLibraryAppointments: {
@@ -442,7 +442,9 @@ const currentViewConfig = computed(() => {
       class: "pb-24",
     },
     ViewUniversityCalendar: {
-      component: resolveComponent("SuperAdminDashboardChancellorOffice"),
+      component: resolveComponent(
+        "SuperAdminDashboardServicesChancellorOffice",
+      ),
       class: "p-4 pb-32",
     },
     ViewITTicketsRequests: {
