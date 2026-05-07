@@ -18,21 +18,21 @@ const currentView = ref("Menu");
 const openGroups = ref([
   "Content Management",
   "Open Educational Resources",
-  // "Library Management",
-  // "NPCC IT Services",
-  // "University Registrar",
-  // "Campus Pass",
-  // "Document Reviewer",
-  // "IT Services Feedback",
-  // "Safety and Security Center",
-  // "Human Resource",
-  // "Office of The Chancellor",
-  // "Commission on Election",
-  // "External Links",
-  // "General Services Office",
-  // "Lasalle Alumni Association",
-  // "Animo Run",
-  // "Super Admin",
+  "Library Management",
+  "NPCC IT Services",
+  "University Registrar",
+  "Campus Pass",
+  "Document Reviewer",
+  "IT Services Feedback",
+  "Safety and Security Center",
+  "Human Resource",
+  "Office of The Chancellor",
+  "Commission on Election",
+  "External Links",
+  "General Services Office",
+  "Lasalle Alumni Association",
+  "Animo Run",
+  "Super Admin",
 ]);
 
 // ---------------- MENU PERMISSION ----------------
@@ -49,7 +49,6 @@ const lsuOnlyMenuGroups = [
   "Document Reviewer",
   "Safety and Security Center",
 ];
-
 
 // ---------------- API ----------------
 const api = (url) => $fetch(`${endpoint}${url}`);
@@ -112,7 +111,7 @@ onMounted(async () => {
   if (process.client) {
     const stored = localStorage.getItem("theme");
     const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
+      "(prefers-color-scheme: dark)",
     ).matches;
 
     darkMode.value = stored === "dark" || (!stored && prefersDark);
@@ -130,7 +129,6 @@ const filteredMenuList = computed(() => {
   }
 
   return subMenuList.filter((menu) => {
-
     // Public menus
     if (publicMenuGroups.includes(menu.group)) return true;
 
@@ -152,8 +150,18 @@ const subMenuList = [
   {
     group: "Animo Run",
     items: [
-      { label: "Registration", icon: "fa-running", type: "button", view: "ViewAnimoRunRegistration" },
-      { label: "Status Checking", icon: "fa-list", type: "button", view: "ViewAnimoRunList" },
+      {
+        label: "Registration",
+        icon: "fa-running",
+        type: "button",
+        view: "ViewAnimoRunRegistration",
+      },
+      {
+        label: "Status Checking",
+        icon: "fa-list",
+        type: "button",
+        view: "ViewAnimoRunList",
+      },
     ],
   },
 
@@ -161,15 +169,30 @@ const subMenuList = [
     group: "Campus Pass",
     allowedRole: "Campus Pass Admin",
     items: [
-      { label: "Campus Pass Management", icon: "fa-id-card", type: "button", view: "ViewCampusPassRequests" },
+      {
+        label: "Campus Pass Management",
+        icon: "fa-id-card",
+        type: "button",
+        view: "ViewCampusPassRequests",
+      },
     ],
   },
 
   {
     group: "Commission on Election",
     items: [
-      { label: "Student Election Results", icon: "fa-check", type: "button", view: "ViewCOEResults" },
-      { label: "Student Election Voting", icon: "fa-list", type: "button", view: "ViewCOEVoting" },
+      {
+        label: "Student Election Results",
+        icon: "fa-check",
+        type: "button",
+        view: "ViewCOEResults",
+      },
+      {
+        label: "Student Election Voting",
+        icon: "fa-list",
+        type: "button",
+        view: "ViewCOEVoting",
+      },
     ],
   },
 
@@ -177,100 +200,210 @@ const subMenuList = [
     group: "Content Management",
     allowedRole: "Content Writer",
     items: [
-      { label: "Content Form", icon: "fa-list", type: "button", view: "ViewContentForm" },
-      { label: "All Contents Lists", icon: "fa-list-alt", type: "button", view: "ViewContentList" },
+      {
+        label: "Content Form",
+        icon: "fa-list",
+        type: "button",
+        view: "ViewContentForm",
+      },
+      {
+        label: "All Contents Lists",
+        icon: "fa-list-alt",
+        type: "button",
+        view: "ViewContentList",
+      },
     ],
   },
   {
     group: "Document Reviewer",
     allowedRole: "DRS Admin",
     items: [
-      { label: "DRS List", icon: "fa-list", type: "button", view: "ViewDRSList" },
-      { label: "DRS Form", icon: "fa-file", type: "button", view: "ViewDRSForm" },
+      {
+        label: "DRS List",
+        icon: "fa-list",
+        type: "button",
+        view: "ViewDRSList",
+      },
+      {
+        label: "DRS Form",
+        icon: "fa-file",
+        type: "button",
+        view: "ViewDRSForm",
+      },
     ],
   },
   {
     group: "General Services Office",
     items: [
-      { label: "Facilities Reservation Form", icon: "fa-building", type: "button", view: "ViewGSOFacilitiesReservationForm" },
-      { label: "Facilities Reservation List", icon: "fa-list", type: "button", view: "ViewGSOFacilitiesReservationList" },
-      { label: "Vehicle Reservation Form", icon: "fa-car", type: "button", view: "ViewGSOVehicleReservationForm" },
-      { label: "Vehicle Reservation List", icon: "fa-list", type: "button", view: "ViewGSOVehicleReservationList" },
+      {
+        label: "Facilities Reservation Form",
+        icon: "fa-building",
+        type: "button",
+        view: "ViewGSOFacilitiesReservationForm",
+      },
+      {
+        label: "Facilities Reservation List",
+        icon: "fa-list",
+        type: "button",
+        view: "ViewGSOFacilitiesReservationList",
+      },
+      {
+        label: "Vehicle Reservation Form",
+        icon: "fa-car",
+        type: "button",
+        view: "ViewGSOVehicleReservationForm",
+      },
+      {
+        label: "Vehicle Reservation List",
+        icon: "fa-list",
+        type: "button",
+        view: "ViewGSOVehicleReservationList",
+      },
     ],
   },
   {
     group: "Human Resource",
     allowedRole: "HR Menu",
     items: [
-      { label: "Current Employed Admins", icon: "fa-list-alt", type: "button", view: "ViewCurrentEmployedAdmins" },
+      {
+        label: "Current Employed Admins",
+        icon: "fa-list-alt",
+        type: "button",
+        view: "ViewCurrentEmployedAdmins",
+      },
     ],
   },
   {
     group: "IT Services Feedback",
     items: [
-      { label: "IT Services Feedback", icon: "fa-list", type: "button", view: "ViewITServicesFeedback" },
+      {
+        label: "IT Services Feedback",
+        icon: "fa-list",
+        type: "button",
+        view: "ViewITServicesFeedback",
+      },
     ],
   },
   {
     group: "Lasalle Alumni Association",
     items: [
-      { label: "Lasalle Alumni Association", icon: "fa-graduation-cap", type: "button", view: "ViewAlumni" },
+      {
+        label: "Lasalle Alumni Association",
+        icon: "fa-graduation-cap",
+        type: "button",
+        view: "ViewAlumni",
+      },
     ],
   },
   {
     group: "Library Management",
     allowedRole: "Library Menu",
     items: [
-      { label: "Appointment Lists", icon: "fa-list-alt", type: "button", view: "ViewLibraryAppointments" },
-      { label: "Available Books", icon: "fa-book", type: "button", view: "ViewLibraryBooks" },
-      { label: "Set Schedules", icon: "fa-calendar", type: "button", view: "ViewLibrarySchedules" },
+      {
+        label: "Appointment Lists",
+        icon: "fa-list-alt",
+        type: "button",
+        view: "ViewLibraryAppointments",
+      },
+      {
+        label: "Available Books",
+        icon: "fa-book",
+        type: "button",
+        view: "ViewLibraryBooks",
+      },
+      {
+        label: "Set Schedules",
+        icon: "fa-calendar",
+        type: "button",
+        view: "ViewLibrarySchedules",
+      },
     ],
   },
   {
     group: "NPCC IT Services",
     allowedRole: "NPCC Menu",
     items: [
-      { label: "NPCC Management", icon: "fa-cogs", type: "button", view: "ViewITTicketsRequests" },
+      {
+        label: "NPCC Management",
+        icon: "fa-cogs",
+        type: "button",
+        view: "ViewITTicketsRequests",
+      },
     ],
   },
   {
     group: "Office of The Chancellor",
     allowedRole: "OCH Admin",
     items: [
-      { label: "University Calendar", icon: "fa-calendar", type: "button", view: "ViewUniversityCalendar" },
+      {
+        label: "University Calendar",
+        icon: "fa-calendar",
+        type: "button",
+        view: "ViewUniversityCalendar",
+      },
     ],
   },
   {
     group: "Open Educational Resources",
     items: [
-      { label: "OER Form", icon: "fa-book", type: "button", view: "ViewOERForm" },
-      { label: "OER List", icon: "fa-book-open", type: "button", view: "ViewOERList" },
+      {
+        label: "OER Form",
+        icon: "fa-book",
+        type: "button",
+        view: "ViewOERForm",
+      },
+      {
+        label: "OER List",
+        icon: "fa-book-open",
+        type: "button",
+        view: "ViewOERList",
+      },
     ],
   },
   {
     group: "Safety and Security Center",
     items: [
-      { label: "Borrow Office Keys", icon: "fa-key", type: "button", view: "ViewBorrowKeys" },
+      {
+        label: "Borrow Office Keys",
+        icon: "fa-key",
+        type: "button",
+        view: "ViewBorrowKeys",
+      },
     ],
   },
   {
     group: "University Registrar",
     allowedRole: "Registrar Menu",
     items: [
-      { label: "University Registrar", icon: "fa-university", type: "button", view: "ViewRegistrarAppointments" },
+      {
+        label: "University Registrar",
+        icon: "fa-university",
+        type: "button",
+        view: "ViewRegistrarAppointments",
+      },
     ],
   },
   {
     group: "Super Admin",
     allowedRole: "Super Admin",
     items: [
-      { label: "Role Permissions", icon: "fa-user-shield", type: "button", view: "ViewRolePermissions" },
+      {
+        label: "Role Permissions",
+        icon: "fa-user-shield",
+        type: "button",
+        view: "ViewRolePermissions",
+      },
     ],
   },
   {
     group: "External Links",
     items: [
-      { label: "LSU Home Page", icon: "fa-home", type: "link", view: "https://lsu.edu.ph" },
+      {
+        label: "LSU Home Page",
+        icon: "fa-home",
+        type: "link",
+        view: "https://lsu.edu.ph",
+      },
     ],
   },
 ];
@@ -285,35 +418,106 @@ const menuList = [
 // ---------------- VIEW CONFIG ----------------
 const currentViewConfig = computed(() => {
   const views = {
-    ViewContentForm: { component: resolveComponent("SuperAdminDashboardCMSForm"), class: "p-4 pb-52", props: { onContentSubmitted: handleContentSubmitted } },
-    ViewContentList: { component: resolveComponent("SuperAdminDashboardCMSList"), class: "p-4 pb-32" },
-    ViewLibraryAppointments: { component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"), class: "pb-32" },
-    ViewLibraryBooks: { component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"), class: "pb-32" },
-    ViewLibrarySchedules: { component: resolveComponent("SuperAdminDashboardServicesLibrarySchedules"), class: "pb-24" },
-    ViewUniversityCalendar: { component: resolveComponent("SuperAdminDashboardChancellorOffice"), class: "p-4 pb-32" },
-    ViewITTicketsRequests: { component: resolveComponent("SuperAdminDashboardServicesIt"), class: "px-2 pb-32" },
-    ViewRegistrarAppointments: { component: resolveComponent("SuperAdminDashboardServicesRegistrar"), class: "pb-32" },
-    ViewCampusPassRequests: { component: resolveComponent("SuperAdminDashboardServicesCampusPass"), class: "pb-32" },
-    ViewDRSList: { component: resolveComponent("SuperAdminDashboardServicesDrsList"), class: "pb-32" },
-    ViewDRSForm: { component: resolveComponent("SuperAdminDashboardServicesDrsForm"), class: "pb-20" },
-    ViewITServicesFeedback: { component: resolveComponent("UniversityPortalITServicesList"), class: "pb-32" },
-    ViewRolePermissions: { component: resolveComponent("SuperAdminDashboardRolePermissions"), class: "pb-32" },
-    ViewAnimoRunRegistration: { component: resolveComponent("AnimoRunRegistration"), class: "pb-32" },
-    ViewAnimoRunList: { component: resolveComponent("AnimoRunList"), class: "pb-32" },
-    ViewCOEResults: { component: resolveComponent("ComingSoon")},
-    ViewCOEVoting: { component: resolveComponent("ComingSoon")},
-    ViewVenueReservation: { component: resolveComponent("ComingSoon")},
-    ViewVehicleReservation: { component: resolveComponent("ComingSoon")},
-    ViewHRJobVacancyList: { component: resolveComponent("ComingSoon")},
-    ViewBorrowKeys: { component: resolveComponent("ComingSoon")},
-    ViewAlumni: { component: resolveComponent("ComingSoon")},
-    ViewCurrentEmployedAdmins: { component: resolveComponent("SuperAdminDashboardServicesHrEmployedAdmins"), class: "pb-32"},
-    ViewGSOFacilitiesReservationForm: { component: resolveComponent("GSOFacilitiesReservationForm"), class: "pb-32"},
-    ViewGSOFacilitiesReservationList: { component: resolveComponent("GSOFacilitiesReservationForm"), class: "pb-32"},
-    ViewGSOVehicleReservationForm: { component: resolveComponent("GSOVehicleReservationForm"), class: "pb-32"},
-    ViewGSOVehicleReservationList: { component: resolveComponent("GSOVehicleReservationForm"), class: "pb-32"},
-    ViewOERForm: { component: resolveComponent("SuperAdminDashboardServicesOERForm"), class: "pb-32"},
-    ViewOERList: { component: resolveComponent("SuperAdminDashboardServicesOERList"), class: "pb-32"},
+    ViewContentForm: {
+      component: resolveComponent("SuperAdminDashboardCMSForm"),
+      class: "p-4 pb-52",
+      props: { onContentSubmitted: handleContentSubmitted },
+    },
+    ViewContentList: {
+      component: resolveComponent("SuperAdminDashboardCMSList"),
+      class: "p-4 pb-32",
+    },
+    ViewLibraryAppointments: {
+      component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"),
+      class: "pb-32",
+    },
+    ViewLibraryBooks: {
+      component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"),
+      class: "pb-32",
+    },
+    ViewLibrarySchedules: {
+      component: resolveComponent(
+        "SuperAdminDashboardServicesLibrarySchedules",
+      ),
+      class: "pb-24",
+    },
+    ViewUniversityCalendar: {
+      component: resolveComponent("SuperAdminDashboardChancellorOffice"),
+      class: "p-4 pb-32",
+    },
+    ViewITTicketsRequests: {
+      component: resolveComponent("SuperAdminDashboardServicesIt"),
+      class: "px-2 pb-32",
+    },
+    ViewRegistrarAppointments: {
+      component: resolveComponent("SuperAdminDashboardServicesRegistrar"),
+      class: "pb-32",
+    },
+    ViewCampusPassRequests: {
+      component: resolveComponent("SuperAdminDashboardServicesCampusPass"),
+      class: "pb-32",
+    },
+    ViewDRSList: {
+      component: resolveComponent("SuperAdminDashboardServicesDrsList"),
+      class: "pb-32",
+    },
+    ViewDRSForm: {
+      component: resolveComponent("SuperAdminDashboardServicesDrsForm"),
+      class: "pb-20",
+    },
+    ViewITServicesFeedback: {
+      component: resolveComponent("UniversityPortalITServicesList"),
+      class: "pb-32",
+    },
+    ViewRolePermissions: {
+      component: resolveComponent("SuperAdminDashboardRolePermissions"),
+      class: "pb-32",
+    },
+    ViewAnimoRunRegistration: {
+      component: resolveComponent("AnimoRunRegistration"),
+      class: "pb-32",
+    },
+    ViewAnimoRunList: {
+      component: resolveComponent("AnimoRunList"),
+      class: "pb-32",
+    },
+    ViewCOEResults: { component: resolveComponent("ComingSoon") },
+    ViewCOEVoting: { component: resolveComponent("ComingSoon") },
+    ViewVenueReservation: { component: resolveComponent("ComingSoon") },
+    ViewVehicleReservation: { component: resolveComponent("ComingSoon") },
+    ViewHRJobVacancyList: { component: resolveComponent("ComingSoon") },
+    ViewBorrowKeys: { component: resolveComponent("ComingSoon") },
+    ViewAlumni: { component: resolveComponent("ComingSoon") },
+    ViewCurrentEmployedAdmins: {
+      component: resolveComponent(
+        "SuperAdminDashboardServicesHrEmployedAdmins",
+      ),
+      class: "pb-32",
+    },
+    ViewGSOFacilitiesReservationForm: {
+      component: resolveComponent("GSOFacilitiesReservationForm"),
+      class: "pb-32",
+    },
+    ViewGSOFacilitiesReservationList: {
+      component: resolveComponent("GSOFacilitiesReservationForm"),
+      class: "pb-32",
+    },
+    ViewGSOVehicleReservationForm: {
+      component: resolveComponent("GSOVehicleReservationForm"),
+      class: "pb-32",
+    },
+    ViewGSOVehicleReservationList: {
+      component: resolveComponent("GSOVehicleReservationForm"),
+      class: "pb-32",
+    },
+    ViewOERForm: {
+      component: resolveComponent("SuperAdminDashboardServicesOERForm"),
+      class: "pb-32",
+    },
+    ViewOERList: {
+      component: resolveComponent("SuperAdminDashboardServicesOERList"),
+      class: "pb-32",
+    },
   };
 
   return views[currentView.value];
