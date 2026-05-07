@@ -1458,10 +1458,10 @@ const hasEmptyFeeName = computed(() => {
               <div class="">
                 <div class="appointment-lists mx-auto text-xs">
                   <!-- Loading Overlay -->
-                  
-                      <SuperAdminDashboardServicesRegistrarLoading v-if="isLoading"/>
-                    
-              
+
+                  <SuperAdminDashboardServicesLoading v-if="isLoading" />
+
+
 
                   <div v-else-if="paginatedListItems.length > 0">
                     <div class="gap-4">
@@ -1478,11 +1478,10 @@ const hasEmptyFeeName = computed(() => {
                         <SuperAdminDashboardServicesRegistrarList :b="b" :i="i" :darkMode="darkMode"
                           :verificationStatuses="verificationStatuses" :paymentStatuses="paymentStatuses"
                           :prepDocStatuses="prepDocStatuses" :releasingDocStatuses="releasingDocStatuses"
-                          :transactionClosedStatuses="transactionClosedStatuses"
-                          :selectedItems="selectedItems" :statusFilter="statusFilter"
-                          :paginatedListItems="paginatedListItems" :filteredByCollege="filteredByCollege"
-                          :collegeFilterList="collegeFilterList" :isLoading="isLoading"
-                          :showChatCommunicationModal="showChatCommunicationModal"
+                          :transactionClosedStatuses="transactionClosedStatuses" :selectedItems="selectedItems"
+                          :statusFilter="statusFilter" :paginatedListItems="paginatedListItems"
+                          :filteredByCollege="filteredByCollege" :collegeFilterList="collegeFilterList"
+                          :isLoading="isLoading" :showChatCommunicationModal="showChatCommunicationModal"
                           :showPersonalInfoModal="showPersonalInfoModal" :showPaymentModal="showPaymentModal"
                           :showPrepDocModal="showPrepDocModal" :showReleasingDocModal="showReleasingDocModal"
                           :showLogsModal="showLogsModal" :currentItem="currentItem" :isConfirming="isConfirming"
@@ -1510,17 +1509,14 @@ const hasEmptyFeeName = computed(() => {
                   <!-- Chat Communication Modal -->
                   <SuperAdminDashboardServicesRegistrarChatCommunicationModal v-if="showChatCommunicationModal"
                     :currentItem="currentItem" :showChatModal="showChatCommunicationModal"
-                    @closeChatModal="closeChatCommunicationModal"
-                    v-model="newFollowUpMessage"
-                    :darkMode="darkMode" @sendFollowUpMessage="sendFollowUpMessage"
-                    :getCleanUrl="getCleanUrl"
+                    @closeChatModal="closeChatCommunicationModal" v-model="newFollowUpMessage" :darkMode="darkMode"
+                    @sendFollowUpMessage="sendFollowUpMessage" :getCleanUrl="getCleanUrl"
                     @openImageModal="openImageModal" />
 
 
                   <!-- Personal Info Modal -->
-                  <SuperAdminDashboardServicesRegistrarPersonalInfoModal
-                    :showPersonalInfoModal="showPersonalInfoModal" :currentItem="currentItem" :darkMode="darkMode"
-                    :isVerifying="isVerifying"
+                  <SuperAdminDashboardServicesRegistrarPersonalInfoModal :showPersonalInfoModal="showPersonalInfoModal"
+                    :currentItem="currentItem" :darkMode="darkMode" :isVerifying="isVerifying"
                     @verifiedConfirm="verifiedConfirm" @closePersonalInfoModal="closePersonalInfoModal" />
 
 
@@ -1555,9 +1551,8 @@ const hasEmptyFeeName = computed(() => {
 
                   <!-- Show Image Modal -->
                   <SuperAdminDashboardServicesRegistrarShowImageModal v-if="showImageModal" :currentItem="currentItem"
-                    :showImageModal="showImageModal" @closeImageModal="closeImageModal"
-                    @openImageModal="openImageModal" :getCleanUrl="getCleanUrl"
-                    :currentModalImage="currentModalImage" />
+                    :showImageModal="showImageModal" @closeImageModal="closeImageModal" @openImageModal="openImageModal"
+                    :getCleanUrl="getCleanUrl" :currentModalImage="currentModalImage" />
 
                   <!-- Delete Confirmation Modal -->
                   <SuperAdminDashboardServicesRegistrarDeleteConfirmationModal v-if="toggleConfirmDelete"

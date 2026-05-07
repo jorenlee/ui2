@@ -201,13 +201,7 @@ const subMenuList = [
     allowedRole: "Content Writer",
     items: [
       {
-        label: "Content Form",
-        icon: "fa-list",
-        type: "button",
-        view: "ViewContentForm",
-      },
-      {
-        label: "All Contents Lists",
+        label: "Add Contents Lists",
         icon: "fa-list-alt",
         type: "button",
         view: "ViewContentList",
@@ -418,11 +412,6 @@ const menuList = [
 // ---------------- VIEW CONFIG ----------------
 const currentViewConfig = computed(() => {
   const views = {
-    ViewContentForm: {
-      component: resolveComponent("SuperAdminDashboardServicesCMSForm"),
-      class: "p-4 pb-52",
-      props: { onContentSubmitted: handleContentSubmitted },
-    },
     ViewContentList: {
       component: resolveComponent("SuperAdminDashboardServicesCMSList"),
       class: "p-4 pb-32",
