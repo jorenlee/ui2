@@ -48,7 +48,9 @@ onBeforeUnmount(() => {
       <BlogPosting />
       <SDG />
       <div class="bg-[#031d03] text-white">
-        <p class="text-center text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg lg:py-5 py-2">
+        <p
+          class="text-center text-white lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg lg:py-5 py-2"
+        >
           Announcements
         </p>
         <Slider />
@@ -69,7 +71,8 @@ onBeforeUnmount(() => {
       enter-to-class="opacity-100 scale-100 translate-y-0"
       leave-active-class="transition-all duration-200 ease-in"
       leave-from-class="opacity-100 scale-100 translate-y-0"
-      leave-to-class="opacity-0 scale-75 translate-y-4">
+      leave-to-class="opacity-0 scale-75 translate-y-4"
+    >
       <button
         v-show="showScrollButton"
         @click="scrollToTop"
