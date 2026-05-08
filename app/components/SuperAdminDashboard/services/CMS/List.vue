@@ -726,6 +726,55 @@ const submitEdit = async () => {
   }
 };
 
+const handlePaste = (e) => {
+  e.preventDefault();
+  const html = e.clipboardData.getData('text/html');
+  const text = e.clipboardData.getData('text/plain');
+  
+  if (html) {
+    // Basic conversion of common block elements to newlines
+    let processed = html
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n');
+    
+    // Strip other tags
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = processed;
+    processed = tempDiv.textContent || tempDiv.innerText || "";
+    
+    // Clean up excessive newlines (more than 2)
+    processed = processed.replace(/\n{3,}/g, '\n\n').trim();
+    
+    insertTextAtCursor(processed);
+  } else {
+    insertTextAtCursor(text);
+  }
+};
+
+const insertTextAtCursor = (text) => {
+  const textarea = document.querySelector('textarea[v-model="editContent.descriptions"]');
+  if (!textarea) {
+    editContent.value.descriptions += text;
+    return;
+  }
+  
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const currentText = editContent.value.descriptions;
+  
+  editContent.value.descriptions = 
+    currentText.substring(0, start) + 
+    text + 
+    currentText.substring(end);
+    
+  // Restore cursor position after Vue update
+  nextTick(() => {
+    textarea.selectionStart = textarea.selectionEnd = start + text.length;
+    textarea.focus();
+  });
+};
+
 // Add file upload functions
 const handleFileSelect = async (e) => {
   const files = e.target.files;
@@ -1518,7 +1567,9 @@ const toPublish = () => {
                       <label class="block text-sm font-medium mb-1"
                         :class="darkMode ? 'text-gray-300' : 'text-gray-700'">Description</label>
                       <textarea v-model="editContent.descriptions" rows="10"
-                        class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm whitespace-pre-wrap"
+                        @paste="handlePaste"
+                        class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                        style="white-space: pre-wrap;"
                         :class="darkMode
                           ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
                           : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'" required></textarea>

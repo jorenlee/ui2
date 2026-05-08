@@ -643,6 +643,55 @@ const handleFileSelect = async (e) => {
   e.target.value = "";
 };
 
+const handlePaste = (e) => {
+  e.preventDefault();
+  const html = e.clipboardData.getData('text/html');
+  const text = e.clipboardData.getData('text/plain');
+  
+  if (html) {
+    // Basic conversion of common block elements to newlines
+    let processed = html
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<br\s*\/?>/gi, '\n');
+    
+    // Strip other tags
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = processed;
+    processed = tempDiv.textContent || tempDiv.innerText || "";
+    
+    // Clean up excessive newlines (more than 2)
+    processed = processed.replace(/\n{3,}/g, '\n\n').trim();
+    
+    insertTextAtCursor(processed);
+  } else {
+    insertTextAtCursor(text);
+  }
+};
+
+const insertTextAtCursor = (text) => {
+  const textarea = document.querySelector('textarea[v-model="content.descriptions"]');
+  if (!textarea) {
+    content.value.descriptions += text;
+    return;
+  }
+  
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const currentText = content.value.descriptions;
+  
+  content.value.descriptions = 
+    currentText.substring(0, start) + 
+    text + 
+    currentText.substring(end);
+    
+  // Restore cursor position after Vue update
+  nextTick(() => {
+    textarea.selectionStart = textarea.selectionEnd = start + text.length;
+    textarea.focus();
+  });
+};
+
 // ============ SUBMIT CONTENT ============
 const submitting = ref(false);
 const submitMessage = ref("");
@@ -870,7 +919,9 @@ const displayToast = (message, type = "success", duration = 3000) => {
               </label>
               <textarea
                 v-model="content.descriptions"
+                @paste="handlePaste"
                 class="w-full border rounded-lg px-4 py-2 h-80 focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y"
+                style="white-space: pre-wrap;"
                 :class="darkMode
                   ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
