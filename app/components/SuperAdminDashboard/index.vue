@@ -201,7 +201,7 @@ const subMenuList = [
     allowedRole: "Content Writer",
     items: [
       {
-        label: "Add Contents Lists",
+        label: "Add More Contents",
         icon: "fa-list-alt",
         type: "button",
         view: "ViewContentList",

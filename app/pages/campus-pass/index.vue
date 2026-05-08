@@ -574,35 +574,32 @@ const submitAppointmentToGmail = async () => {
                             class="lg:block w-full lg:shadow-none border-green-500"
                           >
                             <label
-                              class="lg:text-xs text-[10px] text-gray-900 lg:block pb-1.5 lg:w-auto w-6/12 whitespace-nowrap lg:mr-0 mr-3 font-bold"
+                              class="lg:text-xs text-[10px] text-gray-900 lg:block lg:w-auto w-6/12 whitespace-nowrap lg:mr-0 mr-3 font-bold"
                             >
                               <i
                                 class="text-md mr-1 ml-1 fa fa-calendar text-green-800"
                               ></i>
-                              Schedule
-                              <span class="text-[10px] font-light"
-                                >(Double Click if 1 Day Only)</span
-                              ><span class="text-red-600 text-sm ml-1">*</span>
+                              Access Date/s<span
+                                class="text-red-600 font-normal text-sm lg:ml-1"
+                                >*</span>
                             </label>
-                            <div class="w-full shadow-lg border-gray-200">
+                            <div class="w-full shadow-lg">
                               <!-- <input type="date" class="px-2 py-2.5 w-full border-b-2 border-t-0 border-x-0 border-green-700 shadow-lg rounded-sm lg:h-9 h-8 text-xs" v-model="info.date" /> -->
                               <!-- @update:model-value="setDate(dateDisplay)" -->
                               <div class="border-b-2 border-green-700">
-<VueDatePicker
-  v-model="datePicked"
-  :enable-time-picker="false"
-  name="schedule"
-  :multi-dates="true"
-  auto-apply
-  week-start="0"
-  :disabled-dates="disabledDates"
-  :min-date="next3Days"
-  :day-class="dayClass"
-  @update:model-value="setDate"
-/>
-
-</div>
-
+                                <VueDatePicker
+                                  v-model="datePicked"
+                                  :enable-time-picker="false"
+                                  name="schedule"
+                                  :multi-dates="true"
+                                  auto-apply
+                                  week-start="0"
+                                  :disabled-dates="disabledDates"
+                                  :min-date="next3Days"
+                                  :day-class="dayClass"
+                                  @update:model-value="setDate"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1042,6 +1039,11 @@ input[type="radio"] {
   background-color: #14532d !important; /* darker green */
 }
 
-
+.dp__input {
+  border: none !important;
+  border-color: transparent !important;
+  border-bottom: 2px solid #16a34a !important; /* green-600 */
+  border-radius: 0 !important;
+}
 
 </style>
