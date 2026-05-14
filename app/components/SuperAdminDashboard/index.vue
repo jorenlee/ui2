@@ -177,25 +177,35 @@ const subMenuList = [
       },
     ],
   },
-
-  {
+{
     group: "Commission on Election",
     items: [
+      {
+        label: "Add Candidates",
+        icon: "fa-address-card",
+        type: "button",
+        view: "ViewAddCandidates",
+      },
+      {
+        label: "List of Current Enrolled Students",
+        icon: "fa-users",
+        type: "button",
+        view: "ViewCurrentEnrolledStudents",
+      },
       {
         label: "Student Election Results",
         icon: "fa-check",
         type: "button",
-        view: "ViewCOEResults",
+        view: "ViewStudentElectionResults",
       },
       {
         label: "Student Election Voting",
         icon: "fa-list",
         type: "button",
-        view: "ViewCOEVoting",
+        view: "ViewStudentElectionVoting",
       },
     ],
   },
-
   {
     group: "Content Management",
     allowedRole: "Content Writer",
@@ -472,8 +482,10 @@ const currentViewConfig = computed(() => {
       component: resolveComponent("AnimoRunList"),
       class: "pb-32",
     },
-    ViewCOEResults: { component: resolveComponent("ComingSoon") },
-    ViewCOEVoting: { component: resolveComponent("ComingSoon") },
+    ViewAddCandidates: { component: resolveComponent("ComingSoon") },
+    ViewCurrentEnrolledStudents: { component: resolveComponent("ComingSoon") },
+    ViewStudentElectionResults: { component: resolveComponent("ComingSoon") },
+    ViewStudentElectionVoting: { component: resolveComponent("ComingSoon") },
     ViewVenueReservation: { component: resolveComponent("ComingSoon") },
     ViewVehicleReservation: { component: resolveComponent("ComingSoon") },
     ViewHRJobVacancyList: { component: resolveComponent("ComingSoon") },

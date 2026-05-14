@@ -51,9 +51,9 @@
         </div>
 
         <!-- Launch Date -->
-        <p class="text-white/80 mt-6 text-sm">
+        <!-- <p class="text-white/80 mt-6 text-sm">
           Launching on <strong>April 1, 2026</strong>
-        </p>
+        </p> -->
 
         <!-- Footer -->
         <p class="text-white lg:mt-10 mt-5 text-sm animate-fade-in delay-500">
