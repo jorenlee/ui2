@@ -87,28 +87,28 @@ const currentHour = computed(() => {
 <template>
   <div class="mb-6">
     <!-- HEADER -->
-    <div class="relative overflow-hidden rounded-3xl shadow-2xl lg:py-3 lg:px-10 px-5 p-6 mb-4" :class="[
+    <div class="relative overflow-hidden lg:rounded-3xl shadow-2xl lg:py-3 lg:px-10 px-4 py-2 mb-4" :class="[
       darkMode ? 'bg-green-950 text-white' : 'bg-green-600 text-white',
     ]">
-      <div class="flex relative z-10 lg:flex items-center justify-between gap-8">
-        <div class="w-full lg:w-4/12 flex items-center gap-4">
+      <div class="relative z-10 flex items-center justify-between gap-8">
+        <div class="w-full lg:w-4/12 flex items-center gap-4 lg:mb-0 mb-3">
           <!-- Greeting -->
           <div>
-            <h1 class="text-2xl lg:text-4xl font-bold mb-1">
+            <h1 class="text-xl lg:text-4xl font-bold mb-1">
               {{ currentHour }} 👋
             </h1>
-            <p class="text-white/90 text-sm lg:text-base">
+            <p class="text-white/90 text-xs lg:text-base">
               Welcome back to your dashboard
             </p>
           </div>
         </div>
         <!-- CLOCK -->
-        <div class="w-full">
-          <div class="flex items-center gap-2 text-white/80 w-fit mx-auto mb-2">
+        <div class="w-full lg:flex hidden">
+          <div class="flex items-center gap-2 text-white/80 w-fit lg:mx-auto lg:mb-2">
             <i class="fa fa-calendar text-sm"></i>
             <span class="text-xs lg:text-sm">{{ currentDate }}</span>
           </div>
-          <div class="bg-white/15 backdrop-blur-xl rounded-2xl py-1 px-5 border border-white/20 w-fit mx-auto">
+          <div class="lg:bg-white/15 backdrop-blur-xl rounded-2xl py-1 lg:px-5 lg:border border-white/20 w-fit lg:mx-auto lgmb-0 mb-2">
             <div class="flex items-center gap-4">
               <i class="fa fa-clock text-2xl"></i>
               <p class="text-xl font-bold font-mono">

@@ -501,7 +501,7 @@ const logOut = () => logout();
           :toggleGroup="toggleGroup"
           @menu-click="handleMenuClick"
         />
-        <div v-if="currentView === 'Menu'" class="lg:px-6 px-3 pt-2 pb-80">
+        <div v-if="currentView === 'Menu'" class="lg:px-2 pb-80">
           <SuperAdminDashboardWelcome :darkMode="darkMode" />
           <SuperAdminDashboardMenuList
             :filteredMenuList="filteredMenuList"
