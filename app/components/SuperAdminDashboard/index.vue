@@ -159,20 +159,7 @@ const subMenuList = [
       },
     ],
   },
-
   {
-    group: "Campus Pass",
-    allowedRole: "Campus Pass Admin",
-    items: [
-      {
-        label: "Campus Pass Management",
-        icon: "fa-id-card",
-        type: "button",
-        view: "ViewCampusPassRequests",
-      },
-    ],
-  },
-{
     group: "Commission on Election",
     items: [
       {
@@ -375,6 +362,12 @@ const subMenuList = [
     group: "Safety and Security Center",
     items: [
       {
+        label: "Campus Pass Management",
+        icon: "fa-id-card",
+        type: "button",
+        view: "ViewCampusPassRequests",
+      },
+      {
         label: "Borrow Office Keys",
         icon: "fa-key",
         type: "button",
@@ -442,7 +435,7 @@ const currentViewConfig = computed(() => {
     ViewBookProfiling: {component: resolveComponent("ComingSoon"),class: "pb-24",},
     ViewOnlineDatabaseUsageTracking: {component: resolveComponent("ComingSoon"),class: "pb-24",},
     ViewUniversityCalendar: {component: resolveComponent("SuperAdminDashboardServicesChancellorOffice"),class: "p-4 pb-32",},
-    ViewITTicketsRequests: {component: resolveComponent("SuperAdminDashboardServicesIt"),class: "px-2 pb-32",},
+    ViewITTicketsRequests: {component: resolveComponent("SuperAdminDashboardServicesIT"),class: "px-2 pb-32",},
     ViewRegistrarAppointments: {component: resolveComponent("SuperAdminDashboardServicesRegistrar"),class: "pb-32",},
     ViewCampusPassRequests: {component: resolveComponent("SuperAdminDashboardServicesCampusPass"),class: "pb-32",},
     ViewDRSList: {component: resolveComponent("SuperAdminDashboardServicesDRSList"),class: "pb-32",},
