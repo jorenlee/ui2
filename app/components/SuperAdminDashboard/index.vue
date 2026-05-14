@@ -72,11 +72,6 @@ const userRoles = computed(() => {
   );
 });
 
-const userRole = computed(() => {
-  if (userRoles.value.includes("Super Admin")) return "Super Admin";
-  return userRoles.value[0] || null;
-});
-
 // ---------------- AUTH ----------------
 const isUserAuthenticated = computed(() => isLoggedIn.value);
 
@@ -397,6 +392,12 @@ const subMenuList = [
         type: "button",
         view: "ViewRegistrarAppointments",
       },
+      {
+        label: "Current Enrolled Students",
+        icon: "fa-users",
+        type: "button",
+        view: "ViewCurrentEnrolledStudents",
+      },
     ],
   },
   {
@@ -434,66 +435,22 @@ const menuList = [
 // ---------------- VIEW CONFIG ----------------
 const currentViewConfig = computed(() => {
   const views = {
-    ViewContentList: {
-      component: resolveComponent("SuperAdminDashboardServicesCMSList"),
-      class: "p-4 pb-32",
-    },
-    ViewLibraryAppointments: {
-      component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"),
-      class: "pb-32",
-    },
-    ViewLibraryBooks: {
-      component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"),
-      class: "pb-32",
-    },
-    ViewLibrarySchedules: {
-      component: resolveComponent(
-        "SuperAdminDashboardServicesLibrarySchedules",
-      ),
-      class: "pb-24",
-    },
-    ViewUniversityCalendar: {
-      component: resolveComponent(
-        "SuperAdminDashboardServicesChancellorOffice",
-      ),
-      class: "p-4 pb-32",
-    },
-    ViewITTicketsRequests: {
-      component: resolveComponent("SuperAdminDashboardServicesIt"),
-      class: "px-2 pb-32",
-    },
-    ViewRegistrarAppointments: {
-      component: resolveComponent("SuperAdminDashboardServicesRegistrar"),
-      class: "pb-32",
-    },
-    ViewCampusPassRequests: {
-      component: resolveComponent("SuperAdminDashboardServicesCampusPass"),
-      class: "pb-32",
-    },
-    ViewDRSList: {
-      component: resolveComponent("SuperAdminDashboardServicesDrsList"),
-      class: "pb-32",
-    },
-    ViewDRSForm: {
-      component: resolveComponent("SuperAdminDashboardServicesDrsForm"),
-      class: "pb-20",
-    },
-    ViewITServicesFeedback: {
-      component: resolveComponent("UniversityPortalITServicesList"),
-      class: "pb-32",
-    },
-    ViewRolePermissions: {
-      component: resolveComponent("SuperAdminDashboardRolePermissions"),
-      class: "pb-32",
-    },
-    ViewAnimoRunRegistration: {
-      component: resolveComponent("AnimoRunRegistration"),
-      class: "pb-32",
-    },
-    ViewAnimoRunList: {
-      component: resolveComponent("AnimoRunList"),
-      class: "pb-32",
-    },
+    ViewContentList: {component: resolveComponent("SuperAdminDashboardServicesCMSList"),class: "p-4 pb-32",},
+    ViewLibraryAppointments: {component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"),class: "pb-32",},
+    ViewLibraryBooks: {component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"),class: "pb-32",},
+    ViewLibrarySchedules: {component: resolveComponent("SuperAdminDashboardServicesLibrarySchedules"),class: "pb-24",},
+    ViewBookProfiling: {component: resolveComponent("ComingSoon"),class: "pb-24",},
+    ViewOnlineDatabaseUsageTracking: {component: resolveComponent("ComingSoon"),class: "pb-24",},
+    ViewUniversityCalendar: {component: resolveComponent("SuperAdminDashboardServicesChancellorOffice"),class: "p-4 pb-32",},
+    ViewITTicketsRequests: {component: resolveComponent("SuperAdminDashboardServicesIt"),class: "px-2 pb-32",},
+    ViewRegistrarAppointments: {component: resolveComponent("SuperAdminDashboardServicesRegistrar"),class: "pb-32",},
+    ViewCampusPassRequests: {component: resolveComponent("SuperAdminDashboardServicesCampusPass"),class: "pb-32",},
+    ViewDRSList: {component: resolveComponent("SuperAdminDashboardServicesDRSList"),class: "pb-32",},
+    ViewDRSForm: {component: resolveComponent("SuperAdminDashboardServicesDRSForm"),class: "pb-20",},
+    ViewITServicesFeedback: {component: resolveComponent("UniversityPortalITServicesList"),class: "pb-32",},
+    ViewRolePermissions: {component: resolveComponent("SuperAdminDashboardRolePermissions"),class: "pb-32",},
+    ViewAnimoRunRegistration: {component: resolveComponent("AnimoRunRegistration"),class: "pb-32",},
+    ViewAnimoRunList: {component: resolveComponent("AnimoRunList"),class: "pb-32",},
     ViewAddCandidates: { component: resolveComponent("ComingSoon") },
     ViewCurrentEnrolledStudents: { component: resolveComponent("ComingSoon") },
     ViewStudentElectionResults: { component: resolveComponent("ComingSoon") },
@@ -503,38 +460,14 @@ const currentViewConfig = computed(() => {
     ViewHRJobVacancyList: { component: resolveComponent("ComingSoon") },
     ViewBorrowKeys: { component: resolveComponent("ComingSoon") },
     ViewAlumni: { component: resolveComponent("ComingSoon") },
-    ViewCurrentEmployedAdmins: {
-      component: resolveComponent(
-        "SuperAdminDashboardServicesHrEmployedAdmins",
-      ),
-      class: "pb-32",
-    },
-    ViewGSOFacilitiesReservationForm: {
-      component: resolveComponent("GSOFacilitiesReservationForm"),
-      class: "pb-32",
-    },
-    ViewGSOFacilitiesReservationList: {
-      component: resolveComponent("GSOFacilitiesReservationForm"),
-      class: "pb-32",
-    },
-    ViewGSOVehicleReservationForm: {
-      component: resolveComponent("GSOVehicleReservationForm"),
-      class: "pb-32",
-    },
-    ViewGSOVehicleReservationList: {
-      component: resolveComponent("GSOVehicleReservationForm"),
-      class: "pb-32",
-    },
-    ViewOERForm: {
-      component: resolveComponent("SuperAdminDashboardServicesOERForm"),
-      class: "pb-32",
-    },
-    ViewOERList: {
-      component: resolveComponent("SuperAdminDashboardServicesOERList"),
-      class: "pb-32",
-    },
+    ViewCurrentEmployedAdmins: {component: resolveComponent("SuperAdminDashboardServicesHREmployedAdmins",), class: "pb-32",},
+    ViewGSOFacilitiesReservationForm: { component: resolveComponent("GSOFacilitiesReservationForm"), class: "pb-32",},
+    ViewGSOFacilitiesReservationList: { component: resolveComponent("GSOFacilitiesReservationList"),class: "pb-32",},
+    ViewGSOVehicleReservationForm: { component: resolveComponent("GSOVehicleReservationForm"),class: "pb-32",},
+    ViewGSOVehicleReservationList: { component: resolveComponent("GSOVehicleReservationList"),class: "pb-32",},
+    ViewOERForm: { component: resolveComponent("SuperAdminDashboardServicesOERForm"),class: "pb-32",},
+    ViewOERList: {component: resolveComponent("SuperAdminDashboardServicesOERList"),class: "pb-32",},
   };
-
   return views[currentView.value];
 });
 
@@ -543,8 +476,6 @@ const toggleGroup = (group) => {
   const i = openGroups.value.indexOf(group);
   i > -1 ? openGroups.value.splice(i, 1) : openGroups.value.push(group);
 };
-
-const handleContentSubmitted = () => (currentView.value = "list");
 
 const handleMenuClick = (menu) => {
   if (menu.type === "button") currentView.value = menu.view;
