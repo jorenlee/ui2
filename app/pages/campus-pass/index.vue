@@ -294,20 +294,6 @@ const submitAppointmentToGmail = async () => {
                 <a href="/campus-pass" class="mr-1"> Campus Pass Form </a>
               </li>
             </ul>
-            <ul class="flex hover:text-green-800 text-white">
-              <li class="px-3 h-full flex items-center capitalize text-xs">
-                <a href="/login" class="flex items-center">
-                  <!-- <span class="">Admin Login</span> -->
-                </a>
-              </li>
-              <li
-                class="hover:bg-green-800 bg-white hover:text-white text-green-800 px-3 h-full flex items-center capitalize text-xs"
-              >
-                <a href="/login" class="flex items-center">
-                  <i class="fa fa-user" aria-hidden="true"></i>
-                </a>
-              </li>
-            </ul>
           </div>
         </div>
       </div>
