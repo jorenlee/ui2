@@ -1,15 +1,12 @@
 <script setup>
-import { onMounted, ref, computed, watch, onBeforeUnmount } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import _ from "lodash";
-import moment from "moment";
 
 // Define props
 const props = defineProps({
   darkMode: { type: Boolean, default: false }
 });
 
-const router = useRouter();
-const route = useRoute();
 const { user, init } = useAuth();
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
@@ -23,24 +20,13 @@ const addMore = () => {
   addMoreToggle.value = !addMoreToggle.value;
 };
 
-const listItems = ref([]);
-let deleteIDItem = ref();
 let tableDisplay = ref(true);
-let toggleSideBarMenu = ref(false);
-let toggleConfirmDelete = ref(false);
-
 const selectedItem = ref(null);
-const toggleListsName = ref(false);
-const displayListName = ref([]);
 
-const isQuietFetching = ref(false);
-let refreshTimer = null;
-const refreshIntervalMs = 1000;
 
 const info = ref([]);
 const loading = ref(true);
 const errorMsg = ref("");
-const isLoading = ref(false);
 const display = ref("desktop");
 
 const sdgOptions = ref([
@@ -169,6 +155,7 @@ const authorsList = ref([
   "Basic Education Unit",
   "Educational Technology Center",
   "Higher Education Unit",
+  "Human Resources Management",
   "Marketing and Communications Center",
   "Network Programs and Computerization Center",
   "Student Affairs Center",
@@ -515,6 +502,23 @@ const handleDrop = (e, dropIndex) => {
 const handleDragEnd = () => {
   draggedIndex.value = null;
   dragOverIndex.value = null;
+};
+
+const sortFilesByName = () => {
+  const getNum = (s) => {
+    const m = s.match(/\d+/);
+    return m ? parseInt(m[0], 10) : Infinity;
+  };
+
+  editContent.value.files = [...editContent.value.files].sort((a, b) => {
+    const strA = a || "";
+    const strB = b || "";
+    const numA = getNum(strA);
+    const numB = getNum(strB);
+
+    if (numA !== numB) return numA - numB;
+    return strA.localeCompare(strB, undefined, { numeric: true, sensitivity: "base" });
+  });
 };
 
 // Add method to update filters based on checkbox selection
@@ -871,6 +875,14 @@ const itemsPerPage = 20;
 const maxVisiblePages = 4;
 const searchQuery = ref("");
 const selectedFilter = ref("");
+const sortBy = ref("latest");
+
+const sortOptions = [
+  { value: "latest", label: "Latest" },
+  { value: "oldest", label: "Oldest" },
+  { value: "title_asc", label: "Name (A-Z)" },
+  { value: "title_desc", label: "Name (Z-A)" },
+];
 
 // Filter options
 const filterOptions = [
@@ -904,6 +916,22 @@ const filteredInfo = computed(() => {
     );
   }
 
+  // Sorting logic
+  if (sortBy.value === "title_asc") {
+    filtered.sort((a, b) => 
+      (a.title || "").localeCompare(b.title || "", undefined, { numeric: true, sensitivity: "base" })
+    );
+  } else if (sortBy.value === "title_desc") {
+    filtered.sort((a, b) => 
+      (b.title || "").localeCompare(a.title || "", undefined, { numeric: true, sensitivity: "base" })
+    );
+  } else if (sortBy.value === "latest") {
+    filtered.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    filtered.reverse();
+  } else if (sortBy.value === "oldest") {
+    filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+  }
+
   return filtered;
 });
 
@@ -930,8 +958,8 @@ const visiblePages = computed(() => {
   return pages;
 });
 
-// Reset page when search/filter changes
-watch([searchQuery, selectedFilter], () => {
+// Reset page when search/filter/sort changes
+watch([searchQuery, selectedFilter, sortBy], () => {
   currentPage.value = 1;
 });
 
@@ -966,71 +994,21 @@ const getSdgBadges = (item) => {
       });
     }
   }
-
   return badges;
 };
 
 const superAdminEmails = [
-  // "jorenleeluna24@gmail.com",
   "npc@lsu.edu.ph",
   "michaeljohn.puertogalera@lsu.edu.ph",
   "jason.yap@lsu.edu.ph",
-  // "jorenlee.luna@lsu.edu.ph"
 ];
 
-const canVerify = (contributorEmail) => {
-  return directHeadEmails.some(
-    (d) =>
-      d.directHeadEmail === user.value?.email &&
-      d.contributorEmail.includes(contributorEmail),
-  );
-};
-
-const mccEmails = ["mcc@lsu.edu.ph"];
-
-const npccEmails = ["npcc@lsu.edu.ph"];
-
-const directHeadEmails = [
-  {
-    department: "NPCC",
-    directHeadEmail: "jorenlee.luna@lsu.edu.ph",
-    contributorEmail: [
-      // "jorenleeluna24@gmail.com",
-      "michaeljohn.puertogalera@lsu.edu.ph",
-    ],
-  },
-];
-
-const btnVerify = ref(false);
-const btnApprove = ref(false);
-const btnPublish = ref(false);
-
-const isVerified = ref(false);
-const isApproved = ref(false);
-const isPublished = ref(false);
-
-const toVerify = () => {
-  isVerified.value = true;
-};
-const toApprove = () => {
-  isVerified.value = true;
-  isApproved.value = true;
-};
-const toPublish = () => {
-  isVerified.value = true;
-  isApproved.value = true;
-  isPublished.value = true;
-};
 </script>
 <template>
   <div>
     <div class="flex flex-1 w-full">
       <div class="w-full">
         <!-- Main Content with Footer -->
-
-
-
-
         <div class="w-full min-h-screen flex flex-col" v-if="!addMoreToggle">
           <div class="flex-1 flex flex-col lg:flex-row">
             <!-- Content List Section -->
@@ -1108,6 +1086,16 @@ const toPublish = () => {
                           : 'bg-white border-gray-300 text-gray-900'">
                         <option v-for="option in filterOptions" :key="option.value" :value="option.value">
                           {{ option.label }}
+                        </option>
+                      </select>
+
+                      <select v-model="sortBy"
+                        class="flex-1 lg:flex-none px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                        :class="darkMode
+                          ? 'bg-gray-700 border-gray-600 text-gray-200'
+                          : 'bg-white border-gray-300 text-gray-900'">
+                        <option v-for="option in sortOptions" :key="option.value" :value="option.value">
+                          Sort: {{ option.label }}
                         </option>
                       </select>
 
@@ -1631,9 +1619,20 @@ const toPublish = () => {
                       <!-- Current Files with Preview -->
                       <div v-if="editContent.files && editContent.files.length > 0" class="space-y-2">
                         <div class="flex items-center justify-between mb-2">
-                          <h4 class="text-xs font-medium" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-                            Current Files ({{ editContent.files.length }})
-                          </h4>
+                          <div class="flex items-center gap-4">
+                            <h4 class="text-xs font-medium" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+                              Current Files ({{ editContent.files.length }})
+                            </h4>
+                            <button
+                              type="button"
+                              @click="sortFilesByName"
+                              v-if="editContent.files.length > 1"
+                              class="text-[10px] px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors flex items-center gap-1 shadow-sm uppercase font-bold"
+                            >
+                              <i class="fa fa-sort-alpha-down"></i>
+                              Sort by Name
+                            </button>
+                          </div>
                           <p class="text-xs flex items-center gap-1"
                             :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                             <i class="fa fa-arrows-alt text-green-600"></i>

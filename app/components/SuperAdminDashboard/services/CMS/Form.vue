@@ -275,6 +275,7 @@ const authorsList = ref([
   "Basic Education Unit",
   "Educational Technology Center",
   "Higher Education Unit",
+  "Human Resources Management",
   "Marketing and Communications Center",
   "Network Programs and Computerization Center",
   "Student Affairs Center",
@@ -558,6 +559,24 @@ const handleDrop = (e, dropIndex) => {
 const handleDragEnd = () => {
   draggedIndex.value = null;
   dragOverIndex.value = null;
+};
+
+// Sort files prioritizing the first number found in the name
+const sortFilesByName = () => {
+  const getNum = (s) => {
+    const m = s.match(/\d+/);
+    return m ? parseInt(m[0], 10) : Infinity;
+  };
+
+  selectedFiles.value = [...selectedFiles.value].sort((a, b) => {
+    const nameA = a.name || "";
+    const nameB = b.name || "";
+    const numA = getNum(nameA);
+    const numB = getNum(nameB);
+
+    if (numA !== numB) return numA - numB;
+    return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: "base" });
+  });
 };
 
 // ---------------- FILE UPLOAD ----------------
@@ -1264,10 +1283,21 @@ const displayToast = (message, type = "success", duration = 3000) => {
               <!-- File Previews -->
               <div v-if="selectedFiles.length > 0" class="mt-6">
                 <div class="flex items-center justify-between mb-4">
-                  <h3 class="text-sm font-semibold"
-                    :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-                    Uploaded Files ({{ selectedFiles.length }})
-                  </h3>
+                  <div class="flex items-center gap-4">
+                    <h3 class="text-sm font-semibold"
+                      :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+                      Uploaded Files ({{ selectedFiles.length }})
+                    </h3>
+                    <button
+                      type="button"
+                      @click="sortFilesByName"
+                      v-if="selectedFiles.length > 1"
+                      class="text-[10px] px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors flex items-center gap-1 shadow-sm uppercase font-bold"
+                    >
+                      <i class="fa fa-sort-alpha-down"></i>
+                      Sort by Name
+                    </button>
+                  </div>
                   <p class="text-xs flex items-center gap-2"
                     :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
                     <i class="fa fa-arrows-alt text-green-600"></i>
