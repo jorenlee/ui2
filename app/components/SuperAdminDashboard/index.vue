@@ -321,6 +321,18 @@ const subMenuList = [
         type: "button",
         view: "ViewLibrarySchedules",
       },
+      {
+        label: "Book Profiling",
+        icon: "fa-book-open",
+        type: "button",
+        view: "ViewBookProfiling",
+      },
+      {
+        label: "Online Database Usage Tracking",
+        icon: "fa-database",
+        type: "button",
+        view: "ViewOnlineDatabaseUsageTracking",
+      },
     ],
   },
   {

@@ -18,6 +18,13 @@ onMounted(() => {
 const addMoreToggle = ref(false);
 const addMore = () => {
   addMoreToggle.value = !addMoreToggle.value;
+  scrollToTop();
+};
+
+const scrollToTop = () => {
+  if (process.client) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 };
 
 let tableDisplay = ref(true);
@@ -582,6 +589,7 @@ onMounted(async () => {
 const handleFormSubmitted = async () => {
   addMoreToggle.value = false;
   await fetchList(true); // Silent refresh
+  scrollToTop();
 };
 
 const openEditModal = async (item) => {
@@ -697,6 +705,7 @@ const closeEditModal = () => {
     is_approved: false,
     is_published: false,
   };
+  scrollToTop();
 };
 
 const addLink = () => {
@@ -722,6 +731,7 @@ const submitEdit = async () => {
 
     showToast("✅ Content updated successfully!", "success");
     closeEditModal();
+    scrollToTop();
   } catch (error) {
     console.error("Error updating content:", error);
     showToast("❌ Failed to update content", "error");
@@ -927,7 +937,6 @@ const filteredInfo = computed(() => {
     );
   } else if (sortBy.value === "latest") {
     filtered.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-    filtered.reverse();
   } else if (sortBy.value === "oldest") {
     filtered.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
   }

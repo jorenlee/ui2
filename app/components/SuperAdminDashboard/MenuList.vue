@@ -34,24 +34,25 @@
             "
           ></div>
 
-          <div class="flex items-center">
-            <!-- Icon with Modern Design -->
-             <!-- bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg -->
-            <div
-              class="relative w-10 h-10 flex items-center justify-center rounded-2xl  group-hover:scale-110 transition-transform duration-300 "
-            >
-              <i class="fa fa-folder-open text-xl text-green-700"></i>
-            </div>
+          <div class="flex items-center w-full justify-between py-1">
+            <div class="flex items-center gap-3">
+              <!-- Icon with Modern Design -->
+              <div
+                class="relative w-10 h-10 flex items-center justify-center rounded-2xl group-hover:scale-110 transition-transform duration-300"
+              >
+                <i class="fa fa-folder-open text-xl text-green-700"></i>
+              </div>
 
-            <!-- Group Name -->
-            <div class="relative text-xs truncate w-full pr-1">
-              {{ menu.group }}
+              <!-- Group Name -->
+              <div class="relative text-xs font-semibold truncate">
+                {{ menu.group }}
+              </div>
             </div>
 
             <!-- Chevron Indicator -->
-            <div>
+            <div class="pr-2">
               <i
-                class="relative fa fa-chevron-down text-xs transition-transform duration-300"
+                class="relative fa fa-chevron-down text-[10px] transition-transform duration-300"
                 :class="[
                   { 'rotate-180': openGroups.includes(menu.group) },
                   darkMode ? 'text-gray-500' : 'text-gray-400',
@@ -87,7 +88,7 @@
                 @click="handleMenuClick(item)"
               >
                 <div
-                  class="px-2 flex items-center justify-left rounded-lg transition-colors"
+                  class="w-10 h-8 flex items-center justify-center rounded-lg transition-colors"
                   :class="
                     currentView === item.view
                       ? 'bg-white/20'
