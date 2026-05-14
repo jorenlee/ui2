@@ -21,7 +21,6 @@ const props = defineProps({
 const listItems = ref([]);
 let deleteIDItem = ref();
 let tableDisplay = ref(true);
-let toggleSideBarMenu = ref(false);
 let toggleConfirmDelete = ref(false);
 
 const selectedItem = ref(null);
@@ -31,6 +30,20 @@ const displayListName = ref([]);
 const isQuietFetching = ref(false);
 let refreshTimer = null;
 const refreshIntervalMs = 5000; // Optimized: Changed from 1s to 5s for better performance
+
+// Success Modal State
+const showSuccessModal = ref(false);
+const modalMessage = ref("");
+const isUpdating = ref(false);
+
+const triggerSuccessModal = (message) => {
+  modalMessage.value = message;
+  showSuccessModal.value = true;
+  // Automatically close after 5 seconds
+  setTimeout(() => {
+    showSuccessModal.value = false;
+  }, 5000);
+};
 
 // Add multiple selection state
 const selectedItems = ref([]);
@@ -328,91 +341,66 @@ watch(
 );
 
 const requestChangeStatus = async (id, status, purpose, remarks) => {
-  selectedItem.value = await $fetch(
-    endpoint.value + "/api/campus-pass/" + id + "/",
-  ).catch((error) => error.data);
-  selectedItem.value.approval_status = status;
-  selectedItem.value.purpose = purpose;
-  selectedItem.value.remarks = remarks;
-  editStatus(id);
+  if (isUpdating.value) return;
+  try {
+    isUpdating.value = true;
+    selectedItem.value = await $fetch(
+      endpoint.value + "/api/campus-pass/" + id + "/",
+    ).catch((error) => error.data);
+    selectedItem.value.approval_status = status;
+    selectedItem.value.purpose = purpose;
+    selectedItem.value.remarks = remarks;
+    await editStatus(id);
+  } catch (error) {
+    console.error("Error in requestChangeStatus:", error);
+    isUpdating.value = false;
+  }
 };
 
 const editStatus = async (id) => {
-  await $fetch(endpoint.value + "/api/campus-pass/" + id + "/edit/", {
-    method: "PUT",
-    body: selectedItem.value,
-  }).then((response) => {
-    if (selectedItem.value.approval_status === "approved") {
-      submitAppointmentToGmailApproved();
-    }
-
-    if (selectedItem.value.approval_status === "declined") {
-      submitAppointmentToGmailDeclined();
-    }
-
-    if (selectedItem.value.approval_status === "for revision") {
-      submitAppointmentToGmailForRevision();
-    }
-  });
+  try {
+    await $fetch(endpoint.value + "/api/campus-pass/" + id + "/edit/", {
+      method: "PUT",
+      body: selectedItem.value,
+    });
+    await notifyViaGmail(selectedItem.value.approval_status);
+  } catch (error) {
+    console.error("Error in editStatus:", error);
+  } finally {
+    isUpdating.value = false;
+  }
 };
 
-const submitAppointmentToGmailApproved = async () => {
-  await $fetch(endpoint.value + "/api/campus-pass/to-gmail-approved/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: {
-      incharge_firstname: selectedItem.value.incharge_firstname,
-      incharge_contact_email: selectedItem.value.incharge_contact_email,
-      schedule: selectedItem.value.schedule,
-      approval_status: selectedItem.value.approval_status,
-      remarks: selectedItem.value.remarks,
-      tracking_id: selectedItem.value.tracking_id,
-      purpose: selectedItem.value.purpose,
-    },
-  }).then(async (response) => {
-    await fetchListItems();
-  });
-};
+const notifyViaGmail = async (status) => {
+  const statusMap = {
+    approved: { slug: "approved", msg: "Approved" },
+    declined: { slug: "declined", msg: "Declined" },
+    "for revision": { slug: "for-revision", msg: "requested revision" },
+  };
 
-const submitAppointmentToGmailDeclined = async () => {
-  await $fetch(endpoint.value + "/api/campus-pass/to-gmail-declined/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: {
-      incharge_firstname: selectedItem.value.incharge_firstname,
-      incharge_contact_email: selectedItem.value.incharge_contact_email,
-      schedule: selectedItem.value.schedule,
-      approval_status: selectedItem.value.approval_status,
-      remarks: selectedItem.value.remarks,
-      tracking_id: selectedItem.value.tracking_id,
-      purpose: selectedItem.value.purpose,
-    },
-  }).then(async (response) => {
-    await fetchListItems();
-  });
-};
+  const config = statusMap[status];
+  if (!config) return;
 
-const submitAppointmentToGmailForRevision = async () => {
-  await $fetch(endpoint.value + "/api/campus-pass/to-gmail-for-revision/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  await $fetch(
+    `${endpoint.value}/api/campus-pass/to-gmail-${config.slug}/`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: {
+        incharge_firstname: selectedItem.value.incharge_firstname,
+        incharge_contact_email: selectedItem.value.incharge_contact_email,
+        schedule: selectedItem.value.schedule,
+        approval_status: selectedItem.value.approval_status,
+        remarks: selectedItem.value.remarks,
+        tracking_id: selectedItem.value.tracking_id,
+        purpose: selectedItem.value.purpose,
+      },
     },
-    body: {
-      incharge_firstname: selectedItem.value.incharge_firstname,
-      incharge_contact_email: selectedItem.value.incharge_contact_email,
-      schedule: selectedItem.value.schedule,
-      approval_status: selectedItem.value.approval_status,
-      remarks: selectedItem.value.remarks,
-      tracking_id: selectedItem.value.tracking_id,
-      purpose: selectedItem.value.purpose,
-    },
-  }).then(async (response) => {
+  ).then(async () => {
     await fetchListItems();
+    triggerSuccessModal(
+      `Successfully ${config.msg} and notified ${selectedItem.value.incharge_firstname} via Email!`,
+    );
   });
 };
 
@@ -1106,9 +1094,7 @@ const visiblePages = computed(() => {
                               <div class="flex items-center">
                                 <!-- Attendees & Documents Section -->
                                 <div class="space-y-1">
-                                  <div
-                                  class="lg:w-5/12 w-full mb-3 lg:mb-0 lg:pl-2"
-                                >
+                                  <div class="lg:w-5/12 w-full mb-3 lg:mb-0 lg:pl-2">
                                   <div class="w-full">
                                     <div
                                       class="flex items-center justify-between gap-x-10 px-2 rounded transition-colors"
@@ -1197,8 +1183,10 @@ const visiblePages = computed(() => {
                                   <div class="flex gap-1 w-full">
                                     <select
                                       v-model="b.approval_status"
+                                      :disabled="isUpdating"
                                       class="w-[200px] border-2 rounded-lg px-3 py-1 text-sm font-semibold capitalize focus:outline-none focus:ring-2 focus:ring-green-500 transition-all"
                                       :class="{
+                                        'opacity-50 cursor-not-allowed': isUpdating,
                                         'border-red-500 bg-red-50 text-red-700':
                                           b.approval_status === 'declined',
                                         'border-gray-500 bg-gray-50 text-gray-700':
@@ -1230,35 +1218,122 @@ const visiblePages = computed(() => {
                           </div>
                         </div>
                       </div>
-
+                      <!-- Improved Delete Confirmation Modal -->
                       <div
-                        v-show="toggleConfirmDelete"
-                        class="h-screen w-full px-5 shadow-2xl absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center"
-                        :class="darkMode ? 'bg-[#000000a3]' : 'bg-[#ffffffa3]'"
+                        v-if="toggleConfirmDelete"
+                        class="fixed inset-0 z-[120] flex items-center justify-center px-4 transition-all duration-300"
                       >
+                        <!-- Backdrop with Blur -->
                         <div
-                          class="my-[10%] w-fit mx-auto px-10 py-3 rounded-lg shadow-2xl"
+                          class="absolute inset-0 bg-black/60 backdrop-blur-md"
+                          @click="toggleDeleteBtn"
+                        ></div>
+
+                        <!-- Modal Content -->
+                        <div
+                          class="relative w-full max-w-md transform transition-all animate-in fade-in zoom-in duration-300 shadow-2xl rounded-3xl overflow-hidden"
                           :class="
                             darkMode
-                              ? 'bg-gray-800 text-gray-200'
+                              ? 'bg-gray-900 text-white border border-gray-800'
                               : 'bg-white text-gray-900'
                           "
                         >
-                          <div class="my-6">
-                            Are you sure you want to Delete?
-                          </div>
-                          <div class="flex gap-5 mx-auto w-fit my-5">
-                            <span
-                              class="bg-green-900 text-white px-3 py-1 rounded-lg cursor-pointer"
-                              @click="deleteItem"
-                              >Yes</span
+                          <!-- Top Decorative Bar (Warning Red) -->
+                          <div class="h-2 bg-red-600"></div>
+
+                          <div class="p-8">
+                            <!-- Icon & Header -->
+                            <div
+                              class="flex flex-col items-center text-center mb-8"
                             >
-                            <span
-                              class="bg-red-900 text-white px-3 py-1 rounded-lg cursor-pointer"
-                              @click="toggleDeleteBtn"
-                              >Cancel</span
-                            >
+                              <div
+                                class="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-4 animate-pulse"
+                                :class="
+                                  darkMode ? 'bg-red-900/30' : 'bg-red-100'
+                                "
+                              >
+                                <i
+                                  class="fa fa-trash-alt text-4xl text-red-600"
+                                ></i>
+                              </div>
+                              <h2
+                                class="text-2xl font-black mb-2 uppercase tracking-tight"
+                              >
+                                Confirm Deletion
+                              </h2>
+                              <p
+                                class="text-sm opacity-60 leading-relaxed max-w-[280px]"
+                              >
+                                Are you sure you want to permanently delete this
+                                request? This action cannot be undone.
+                              </p>
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="grid grid-cols-2 gap-4">
+                              <button
+                                @click="toggleDeleteBtn"
+                                class="py-3.5 px-6 rounded-2xl font-bold transition-all border-2 active:scale-95"
+                                :class="
+                                  darkMode
+                                    ? 'border-gray-700 hover:bg-gray-800 text-gray-300'
+                                    : 'border-gray-200 hover:bg-gray-50 text-gray-600'
+                                "
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                @click="deleteItem"
+                                class="py-3.5 px-6 rounded-2xl font-bold bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-600/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+                              >
+                                <i class="fa fa-trash"></i>
+                                Delete Now
+                              </button>
+                            </div>
                           </div>
+                        </div>
+                      </div>
+
+                      <!-- Success Notification Modal -->
+                      <div
+                        v-if="showSuccessModal"
+                        class="fixed inset-0 z-[100] flex items-center justify-center px-4 pointer-events-none"
+                      >
+                        <div
+                          class="rounded-2xl shadow-2xl p-6 flex items-center gap-4 border-l-8 border-green-500 transform transition-all duration-500 ease-out translate-y-0 opacity-100 pointer-events-auto"
+                          :class="
+                            darkMode
+                              ? 'bg-gray-800 text-white'
+                              : 'bg-white text-gray-900'
+                          "
+                          style="min-width: 320px; max-width: 450px"
+                        >
+                          <div
+                            class="flex-shrink-0 bg-green-100 p-3 rounded-full"
+                            :class="darkMode ? 'bg-green-900/30' : 'bg-green-100'"
+                          >
+                            <i
+                              class="fa fa-check-circle text-3xl text-green-600"
+                              :class="
+                                darkMode ? 'text-green-400' : 'text-green-600'
+                              "
+                            ></i>
+                          </div>
+                          <div class="flex-1 text-left">
+                            <h3 class="text-lg font-bold mb-1">Success!</h3>
+                            <p class="text-sm opacity-90">{{ modalMessage }}</p>
+                          </div>
+                          <button
+                            @click="showSuccessModal = false"
+                            class="ml-2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                            :class="
+                              darkMode
+                                ? 'hover:bg-gray-700'
+                                : 'hover:bg-gray-100'
+                            "
+                          >
+                            <i class="fa fa-times text-gray-400"></i>
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -1374,6 +1449,42 @@ const visiblePages = computed(() => {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div
+      v-if="isUpdating"
+      class="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 backdrop-blur-sm transition-all duration-300"
+    >
+      <div
+        class="p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4 transform transition-all animate-in fade-in zoom-in duration-300"
+        :class="darkMode ? 'bg-gray-800' : 'bg-white'"
+      >
+        <div class="relative w-16 h-16">
+          <div
+            class="absolute inset-0 border-4 rounded-full"
+            :class="darkMode ? 'border-green-900' : 'border-green-100'"
+          ></div>
+          <div
+            class="absolute inset-0 border-4 border-t-transparent rounded-full animate-spin"
+            :class="darkMode ? 'border-green-400' : 'border-green-600'"
+          ></div>
+        </div>
+        <div class="text-center">
+          <p
+            class="text-lg font-bold"
+            :class="darkMode ? 'text-white' : 'text-gray-900'"
+          >
+            Processing Update
+          </p>
+          <p
+            class="text-sm"
+            :class="darkMode ? 'text-gray-400' : 'text-gray-500'"
+          >
+            Please wait while we notify the user via email...
+          </p>
         </div>
       </div>
     </div>
