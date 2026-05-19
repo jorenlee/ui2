@@ -1,8 +1,18 @@
 <script setup>
 import { onMounted } from 'vue'
 
+const route = useRoute()
+
 // Keep UI visible, then redirect
 onMounted(() => {
+  const isAdsTxt = route.path === '/ads.txt' || (route.params.slug && route.params.slug.includes('ads.txt'))
+
+  if (isAdsTxt) {
+    // Force a full browser navigation to get the raw text file from the server
+    window.location.replace('/ads.txt')
+    return
+  }
+
   setTimeout(() => {
     navigateTo('/', { replace: true })
   }, 1500) // adjust delay if needed
