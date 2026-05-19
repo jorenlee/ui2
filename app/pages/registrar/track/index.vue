@@ -12,7 +12,7 @@ const uploadStatus = ref({}); // { [tracking_id]: { ok: boolean, msg: string } }
 
 onMounted(async () => {
   try {
-    const result = await $fetch(endpoint.value + "/api/registrar/list");
+    const result = await $fetch(endpoint.value + "/api/registrar/v3/list");
     listItems.value = removeDuplicates(result || []);
   } catch (error) {
     console.error("Fetch error:", error);
@@ -130,14 +130,14 @@ const submitResponseDetails = async (item) => {
       additional_response_details: updatedMessages,
     };
 
-    await $fetch(`${endpoint.value}/api/registrar/${item.id}/edit/`, {
+    await $fetch(`${endpoint.value}/api/registrar/v3/${item.id}/edit/`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: updatedItem,
     });
 
     // Send status update email notification
-    await $fetch(`${endpoint.value}/api/registrar/status/update/`, {
+    await $fetch(`${endpoint.value}/api/registrar/v3/status/update/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: {
@@ -205,7 +205,7 @@ const handleAttachmentUpload = async (event, item) => {
       formData.append("file", file);
 
       const uploadResponse = await $fetch(
-        endpoint.value + "/api/registrar/upload/",
+        endpoint.value + "/api/registrar/v3/upload/",
         {
           method: "POST",
           body: formData,
@@ -240,7 +240,7 @@ const handleAttachmentUpload = async (event, item) => {
       additional_documents: mergedDocs,
     };
 
-    await $fetch(`${endpoint.value}/api/registrar/${item.id}/edit/`, {
+    await $fetch(`${endpoint.value}/api/registrar/v3/${item.id}/edit/`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: updatedItem,
