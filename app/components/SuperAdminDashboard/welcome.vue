@@ -103,8 +103,8 @@ const currentHour = computed(() => {
           </div>
         </div>
         <!-- CLOCK -->
-        <div class="w-full lg:flex hidden">
-          <div class="flex items-center gap-2 text-white/80 w-fit lg:mx-auto lg:mb-2">
+        <div class="w-full lg:block hidden">
+          <div class="flex items-center gap-2 text-white/80 w-fit lg:mx-auto lg:my-2">
             <i class="fa fa-calendar text-sm"></i>
             <span class="text-xs lg:text-sm">{{ currentDate }}</span>
           </div>

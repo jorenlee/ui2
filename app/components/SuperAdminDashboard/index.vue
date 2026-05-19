@@ -117,13 +117,29 @@ onMounted(async () => {
 const filteredMenuList = computed(() => {
   const roles = userRoles.value;
   const email = user.value?.email;
+  const electionAdmins = ["jorenlee.luna@lsu.edu.ph", "dev@lsu.edu.ph"];
 
-  // ✅ SUPER ADMIN → SEE EVERYTHING
+  const processMenu = (menuList) => {
+    return menuList.map(menu => {
+      let items = menu.items;
+      if (menu.group === "Commission on Election") {
+        items = menu.items.filter(item => {
+          if (item.view === "ViewAddCandidates" || item.view === "ViewCurrentEnrolledStudents") {
+            return electionAdmins.includes(email);
+          }
+          return true;
+        });
+      }
+      return { ...menu, items };
+    }).filter(menu => menu.items.length > 0);
+  };
+
+  // ✅ SUPER ADMIN → SEE EVERYTHING (but still filter election items by email)
   if (roles.includes("Super Admin")) {
-    return subMenuList;
+    return processMenu(subMenuList);
   }
 
-  return subMenuList.filter((menu) => {
+  const roleFiltered = subMenuList.filter((menu) => {
     // Public menus
     if (publicMenuGroups.includes(menu.group)) return true;
 
@@ -138,6 +154,8 @@ const filteredMenuList = computed(() => {
     // Check user roles
     return roles.includes(menu.allowedRole);
   });
+
+  return processMenu(roleFiltered);
 });
 
 // ---------------- MENU ----------------
@@ -444,10 +462,10 @@ const currentViewConfig = computed(() => {
     ViewRolePermissions: {component: resolveComponent("SuperAdminDashboardRolePermissions"),class: "pb-32",},
     ViewAnimoRunRegistration: {component: resolveComponent("AnimoRunRegistration"),class: "pb-32",},
     ViewAnimoRunList: {component: resolveComponent("AnimoRunList"),class: "pb-32",},
-    ViewAddCandidates: { component: resolveComponent("ComingSoon") },
-    ViewCurrentEnrolledStudents: { component: resolveComponent("ComingSoon") },
-    ViewStudentElectionResults: { component: resolveComponent("ComingSoon") },
-    ViewStudentElectionVoting: { component: resolveComponent("ComingSoon") },
+    ViewAddCandidates: { component: resolveComponent("StudentElectionAddCandidates"), class: "pb-32 p-10" },
+    ViewCurrentEnrolledStudents: { component: resolveComponent("StudentElectionListEnrolledStudents"), class: "pb-32 p-10" },
+    ViewStudentElectionResults: { component: resolveComponent("StudentElectionResults"), class: "pb-32 p-10" },
+    ViewStudentElectionVoting: { component: resolveComponent("StudentElectionVoting"), class: "pb-32 p-10" },
     ViewVenueReservation: { component: resolveComponent("ComingSoon") },
     ViewVehicleReservation: { component: resolveComponent("ComingSoon") },
     ViewHRJobVacancyList: { component: resolveComponent("ComingSoon") },

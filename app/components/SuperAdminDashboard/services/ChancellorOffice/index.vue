@@ -47,11 +47,12 @@ const props = defineProps({
 const baseCalendarUrl =
   "https://calendar.google.com/calendar/embed?height=600&wkst=1&ctz=Asia%2FManila&showPrint=0&src=Y2FsZW5kYXJAbHN1LmVkdS5waA&src=ZW4ucGhpbGlwcGluZXMjaG9saWRheUBncm91cC52LmNhbGVuZGFyLmdvb2dsZS5jb20&color=%23039be5&color=%230b8043";
 
-const iframeSrc = ref(`${baseCalendarUrl}&t=${Date.now()}`);
+const iframeSrc = ref(baseCalendarUrl);
 
 let interval;
 
 onMounted(() => {
+  iframeSrc.value = `${baseCalendarUrl}&t=${Date.now()}`;
   interval = setInterval(() => {
     iframeSrc.value = `${baseCalendarUrl}&t=${Date.now()}`;
   }, 60000); // reload every 1 minute

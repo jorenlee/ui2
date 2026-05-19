@@ -31,6 +31,7 @@ const isEditingOrViewing = ref(false);
 const loadingState = ref(false);
 const library = ref({});
 const showSuccessModal = ref(false);
+const confirmModal = ref(false);
 
 /* =========================
    AUTO REFRESH

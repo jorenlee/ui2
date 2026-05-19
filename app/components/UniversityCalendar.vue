@@ -54,11 +54,12 @@ const baseCalendarUrl =
   "&color=%230b8043" +
   "&mode=MONTH"; // month view only
 
-const iframeSrc = ref(`${baseCalendarUrl}&t=${Date.now()}`);
+const iframeSrc = ref(baseCalendarUrl);
 
 let interval;
 
 onMounted(() => {
+  iframeSrc.value = `${baseCalendarUrl}&t=${Date.now()}`;
   interval = setInterval(() => {
     iframeSrc.value = `${baseCalendarUrl}&t=${Date.now()}`;
   }, 60000); // reload every 1 minute
