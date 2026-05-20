@@ -114,6 +114,21 @@ const approvalVerified = ref(false);
 const approvalApproved = ref(false);
 const approvalPublished = ref(false);
 
+const localApprovalStatus = computed({
+  get: () => approvalPublished.value ? 'Published' : 'Unpublished',
+  set: (val) => {
+    if (val === 'Published') {
+      approvalVerified.value = true;
+      approvalApproved.value = true;
+      approvalPublished.value = true;
+    } else {
+      approvalVerified.value = false;
+      approvalApproved.value = false;
+      approvalPublished.value = false;
+    }
+  }
+});
+
 // Add these variables to your script setup
 const selectedFiles = ref([]);
 const uploadingFiles = ref(false);
@@ -1502,61 +1517,37 @@ const superAdminEmails = [
                     </div>
 
 
-                    <!-- Approval Level Status Filter -->
+                    <!-- Approval Status -->
                     <div>
-                      <label class="block text-xs font-semibold mb-3 uppercase"
-                        :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Approval Level Status Filter</label>
-                      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 border rounded-lg p-4" :class="darkMode
-                        ? 'bg-gray-900/50 border-gray-700'
-                        : 'bg-gray-50 border-gray-200'">
-                        <!-- Verified -->
-                        <div class="flex items-center px-2 rounded transition"
-                          :class="darkMode ? 'hover:bg-gray-800' : 'hover:bg-white'">
-                          <input type="checkbox" id="approval-verified" v-model="approvalVerified"
-                            class="mr-3 w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded cursor-pointer" />
-                          <label for="approval-verified" class="text-sm cursor-pointer flex items-center flex-1"
-                            :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-                            <span class="text-xs font-medium">Verified</span>
-                          </label>
-                        </div>
-
-                        <!-- Approved -->
-                        <div class="flex items-center px-2 rounded transition" :class="[
-                          darkMode ? 'hover:bg-gray-800' : 'hover:bg-white',
-                          { 'opacity-50': !approvalVerified }
-                        ]">
-                          <input type="checkbox" id="approval-approved" v-model="approvalApproved"
-                            :disabled="!approvalVerified"
-                            class="mr-3 w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer disabled:cursor-not-allowed" />
-                          <label for="approval-approved" class="text-sm cursor-pointer flex items-center flex-1" :class="[
-                            darkMode ? 'text-gray-300' : 'text-gray-700',
-                            { 'cursor-not-allowed': !approvalVerified }
-                          ]">
-                            <span class="text-xs font-medium">Approved</span>
-                          </label>
-                        </div>
+                      <label class="block text-xs font-semibold mb-3 uppercase tracking-wider"
+                        :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Approval Status</label>
+                      <div class="flex p-1.5 rounded-xl border transition-all duration-300" 
+                        :class="darkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-200'">
+                        
+                        <!-- Unpublished -->
+                        <label class="flex-1 relative cursor-pointer group">
+                          <input type="radio" value="Unpublished" v-model="localApprovalStatus" class="sr-only" />
+                          <div class="flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-300"
+                            :class="localApprovalStatus === 'Unpublished' 
+                              ? (darkMode ? 'bg-gray-700 text-white shadow-lg' : 'bg-white text-gray-800 shadow-md border border-gray-100') 
+                              : (darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600')">
+                            <i class="fa fa-eye-slash" :class="localApprovalStatus === 'Unpublished' ? 'text-orange-400' : ''"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-tight">Unpublished</span>
+                          </div>
+                        </label>
 
                         <!-- Published -->
-                        <div class="flex items-center px-2 rounded transition" :class="[
-                          darkMode ? 'hover:bg-gray-800' : 'hover:bg-white',
-                          { 'opacity-50': !approvalApproved || !approvalVerified }
-                        ]">
-                          <input type="checkbox" id="approval-published" v-model="approvalPublished"
-                            :disabled="!approvalApproved || !approvalVerified"
-                            class="mr-3 w-4 h-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded cursor-pointer disabled:cursor-not-allowed" />
-                          <label for="approval-published" class="text-sm cursor-pointer flex items-center flex-1"
-                            :class="[
-                              darkMode ? 'text-gray-300' : 'text-gray-700',
-                              { 'cursor-not-allowed': !approvalApproved || !approvalVerified }
-                            ]">
-                            <span class="text-xs font-medium">Published</span>
-                          </label>
-                        </div>
+                        <label class="flex-1 relative cursor-pointer group">
+                          <input type="radio" value="Published" v-model="localApprovalStatus" class="sr-only" />
+                          <div class="flex items-center justify-center gap-2 py-2.5 rounded-lg transition-all duration-300"
+                            :class="localApprovalStatus === 'Published' 
+                              ? (darkMode ? 'bg-green-600 text-white shadow-lg' : 'bg-green-600 text-white shadow-md') 
+                              : (darkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600')">
+                            <i class="fa fa-globe"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-tight">Published</span>
+                          </div>
+                        </label>
                       </div>
-                      <p class="text-xs mt-2" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
-                        <i class="fa fa-info-circle mr-1"></i>
-                        Must be verified before approved, and approved before published
-                      </p>
                     </div>
 
                     <!-- Description -->
