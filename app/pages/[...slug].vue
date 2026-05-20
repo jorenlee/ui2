@@ -1,15 +1,25 @@
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 
 const route = useRoute()
 
+const isExcluded = computed(() => {
+  return route.path === '/ads.txt' || 
+         route.path === '/sitemap.xml' || 
+         (route.params.slug && (route.params.slug.includes('ads.txt') || route.params.slug.includes('sitemap.xml')))
+})
+
 // Keep UI visible, then redirect
 onMounted(() => {
-  const isAdsTxt = route.path === '/ads.txt' || (route.params.slug && route.params.slug.includes('ads.txt'))
-
-  if (isAdsTxt) {
-    // Force a full browser navigation to get the raw text file from the server
-    window.location.replace('/ads.txt')
+  if (isExcluded.value) {
+    // If we're on an excluded path (like sitemap.xml) and the server didn't handle it,
+    // we force a browser reload to let the server route take over.
+    // We only do this if we haven't already tried to reload.
+    if (!window.location.search.includes('reloaded=true')) {
+      const url = new URL(window.location.href)
+      url.searchParams.set('reloaded', 'true')
+      window.location.replace(url.href)
+    }
     return
   }
 
@@ -20,7 +30,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-white text-center p-8">
+  <div v-if="!isExcluded" class="flex items-center justify-center min-h-screen bg-white text-center p-8">
     <div class="bg-white w-full max-w-lg p-8 md:p-12 rounded-2xl shadow-xl">
       <!-- Logo -->
       <img
@@ -39,5 +49,8 @@ onMounted(() => {
         Redirecting to homepage...
       </p>
     </div>
+  </div>
+  <div v-else>
+    <!-- Hidden or minimal view for sitemap/ads while redirecting -->
   </div>
 </template>
