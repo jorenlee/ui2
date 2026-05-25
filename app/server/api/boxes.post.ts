@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   try {
     fs.writeFileSync(filePath, JSON.stringify(body, null, 2), 'utf-8');
     return { success: true, message: 'Boxes saved successfully.' };
-  } catch (err) {
+  } catch (err: any) {
     return { success: false, message: err.message };
   }
 });
