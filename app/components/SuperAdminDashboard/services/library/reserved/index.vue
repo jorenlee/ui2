@@ -438,7 +438,7 @@ onBeforeUnmount(() => {
                   <label class="text-xs font-bold opacity-70">Update Status To:</label>
                   <div class="grid grid-cols-2 gap-2">
                     <button 
-                      v-for="s in ['pending', 'reserved', 'received', 'returned']"
+                      v-for="s in ['reserved', 'received', 'returned']"
                       :key="s"
                       @click="library.status = s; btnShowModal()"
                       class="px-2 py-3 rounded-xl border-2 text-[10px] font-bold uppercase transition-all"
