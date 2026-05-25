@@ -263,23 +263,21 @@ onBeforeUnmount(() => {
                    <p :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
                      {{ d.firstname }} {{ d.lastname }}
                    </p>
-                      <button
-                        @click="goToEdit(d.id)"
-                        class="w-full py-0.5 rounded-sm flex items-center justify-between px-3 text-white border hover:bg-white"
-                        :class="{
-                          'bg-red-700 hover:text-red-700 hover:border-red-700':
-                            d.status === 'pending',
-                          'bg-yellow-500 hover:text-yellow-500 hover:border-yellow-500':
-                            d.status === 'reserved',
-                          'bg-green-900 hover:text-green-900 hover:border-green-900':
-                            d.status === 'received',
-                          'bg-blue-300 hover:text-blue-300 hover:border-blue-300':
-                            d.status === 'returned',
-                        }"
-                      >
-                        <span>Go To Details</span>
-                        <i class="fa fa-chevron-circle-right"></i>
-                      </button>
+                        <button
+                          @click="goToEdit(d.id)"
+                          class="w-full py-0.5 rounded-sm flex items-center justify-between px-3 text-white border hover:bg-white"
+                          :class="{
+                            'bg-red-700 hover:text-red-700 hover:border-red-700':
+                              d.status === 'pending',
+                            'bg-yellow-500 hover:text-yellow-500 hover:border-yellow-500':
+                              d.status === 'reserved',
+                            'bg-green-900 hover:text-green-900 hover:border-green-900':
+                              d.status === 'received',
+                          }"
+                        >
+                          <span>Go To Details</span>
+                          <i class="fa fa-chevron-circle-right"></i>
+                        </button>
                     </div>
                   </li>
                 </ul>
@@ -420,16 +418,18 @@ onBeforeUnmount(() => {
                     'bg-red-50 text-red-700': library.status === 'pending',
                     'bg-yellow-50 text-yellow-700': library.status === 'reserved',
                     'bg-green-50 text-green-800': library.status === 'received',
-                    'bg-blue-50 text-blue-700': library.status === 'returned',
                   }">
                   <span class="w-2 h-2 rounded-full animate-pulse" 
                     :class="{
                       'bg-red-500': library.status === 'pending',
                       'bg-yellow-500': library.status === 'reserved',
                       'bg-green-600': library.status === 'received',
-                      'bg-blue-500': library.status === 'returned',
                     }"></span>
-                  {{ library.status }}
+                  {{ 
+                    library.status === 'pending' ? 'processing' : 
+                    library.status === 'reserved' ? 'ready for pick up' : 
+                    library.status === 'received' ? 'returned' : library.status
+                  }}
                 </div>
               </div>
 
@@ -438,17 +438,21 @@ onBeforeUnmount(() => {
                   <label class="text-xs font-bold opacity-70">Update Status To:</label>
                   <div class="grid grid-cols-2 gap-2">
                     <button 
-                      v-for="s in ['reserved', 'received', 'returned']"
-                      :key="s"
-                      @click="library.status = s; btnShowModal()"
+                      v-for="s in [
+                        { val: 'pending', label: 'processing' },
+                        { val: 'reserved', label: 'ready for pick up' },
+                        { val: 'received', label: 'returned' }
+                      ]"
+                      :key="s.val"
+                      @click="library.status = s.val; btnShowModal()"
                       class="px-2 py-3 rounded-xl border-2 text-[10px] font-bold uppercase transition-all"
                       :class="[
-                        library.status === s 
+                        library.status === s.val 
                           ? 'border-green-600 bg-green-50 text-green-700 dark:bg-green-900/20 shadow-inner' 
                           : 'border-transparent bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-700 opacity-60'
                       ]"
                     >
-                      {{ s }}
+                      {{ s.label }}
                     </button>
                   </div>
                 </div>
@@ -499,7 +503,13 @@ onBeforeUnmount(() => {
               </div>
               <h3 class="text-2xl font-black text-gray-900 dark:text-white mb-3">Update Status?</h3>
               <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 leading-relaxed">
-                You are about to change the status to <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded font-black uppercase text-xs">{{ library.status }}</span>.
+                You are about to change the status to <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400 rounded font-black uppercase text-xs">
+                  {{ 
+                    library.status === 'pending' ? 'processing' : 
+                    library.status === 'reserved' ? 'ready for pick up' : 
+                    library.status === 'received' ? 'returned' : library.status
+                  }}
+                </span>.
                 <br/>This will trigger an automated email notification.
               </p>
               
