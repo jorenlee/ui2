@@ -35,7 +35,7 @@
                     :class="darkMode ? 'text-gray-200' : 'text-gray-700'"
                 >
                     <i class="fa fa-paperclip text-green-500"></i>
-                    Attached Documents
+                    Attached Documents <span class="text-xs font-normal text-gray-500">(Click to View File)</span>
                 </div>
 
                 <div class="flex gap-3 overflow-x-auto pb-2">
@@ -62,10 +62,11 @@
                             <div
                                 v-else
                                 class="w-full h-20 flex flex-col items-center justify-center cursor-pointer"
-                                :class="darkMode ? 'bg-gray-800' : 'bg-green-700'"
+                                :class="darkMode ? 'bg-gray-800' : ''"
                                 @click="openDocumentViewer(file.url)"
                             >
-                      <p class="font-bold text-center text-white p-2">      Click to View File</p>
+                            <img src="https://cdn-icons-png.flaticon.com/512/4726/4726010.png"/>
+                    
                                 <i
                                     v-if="isPdf(file.url, file.name)"
                                     class="fa fa-file-pdf-o text-3xl text-red-600"
