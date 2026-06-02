@@ -65,7 +65,7 @@
                                 :class="darkMode ? 'bg-gray-800' : ''"
                                 @click="openDocumentViewer(file.url)"
                             >
-                            <img src="https://cdn-icons-png.flaticon.com/512/4726/4726010.png"/>
+                            <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/PDF.png"/>
                     
                                 <i
                                     v-if="isPdf(file.url, file.name)"
