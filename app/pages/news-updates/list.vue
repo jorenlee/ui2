@@ -553,7 +553,7 @@ const visiblePages = computed(() => {
           <!-- News Cards -->
           <div
             v-if="paginatedInfo.length"
-            class="grid lg:grid-cols-4 grid-cols-1 gap-6"
+            class="grid lg:grid-cols-5 grid-cols-1 gap-6"
           >
             <div
               v-for="(j, i) in paginatedInfo"
@@ -562,20 +562,20 @@ const visiblePages = computed(() => {
             >
               <a :href="'/news-updates/' + j.id" class="block">
                 <!-- Image Section -->
-                <div class="relative h-48 overflow-hidden">
+                <div class="relative h-[300px] overflow-hidden">
                   <img
                     v-if="j.files && j.files.length > 0"
                     :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
-                    class="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                    class="w-full h-[300px] object-cover transition-transform duration-300 hover:scale-110"
                     alt="News thumbnail"
                   />
                   <div
                     v-else
-                    class="w-full h-full bg-gray-200 flex items-center justify-center"
+                    class="w-full h-[300px] bg-gray-200 flex items-center justify-center"
                   >
                     <img
                       src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png"
-                      class="w-full h-full object-cover"
+                      class="w-full h-auto object-cover"
                       alt="Default thumbnail"
                     />
                   </div>

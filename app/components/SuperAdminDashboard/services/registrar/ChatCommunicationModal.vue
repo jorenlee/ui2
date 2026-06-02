@@ -23,76 +23,77 @@
             </div>
 
             <!-- Pinned Documents Section -->
-            <div v-if="
-                (currentItem?.additional_documents &&
-                    currentItem.additional_documents.length > 0 &&
-                    currentItem.additional_documents[0].name !==
-                    'N/A')
-            " class="p-4 border-b-2" :class="darkMode
-                ? 'bg-gray-900 border-gray-700'
-                : 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'
-                ">
-                <div class="text-xs font-bold uppercase mb-3 flex items-center gap-2" :class="darkMode ? 'text-gray-200' : 'text-gray-700'
-                    ">
-                    <i class="fa fa-thumb-tack text-green-500"></i>
+            <!-- ATTACHED DOCUMENTS -->
+            <div
+                v-if="hasDocuments"
+                class="p-4 border-b"
+                :class="darkMode
+                    ? 'bg-gray-900 border-gray-700'
+                    : 'bg-gray-50 border-gray-200'"
+            >
+                <div class="text-xs font-bold mb-3 flex items-center gap-2"
+                    :class="darkMode ? 'text-gray-200' : 'text-gray-700'"
+                >
                     <i class="fa fa-paperclip text-green-500"></i>
-                    <span>Attached Documents</span>
+                    Attached Documents
                 </div>
 
                 <div class="flex gap-3 overflow-x-auto pb-2">
-                    <div v-if="
-                        currentItem?.additional_documents &&
-                        currentItem.additional_documents.length >
-                        0 &&
-                        currentItem.additional_documents[0].name !==
-                        'N/A'
-                    " v-for="(file, index) in currentItem.additional_documents" :key="'doc-' + index"
-                        class="flex-shrink-0">
-                        <div :class="[
-                            'rounded-xl w-20 hover:shadow-lg transition-all hover:scale-105',
-                            file.url !== 'N/A'
-                                ? darkMode
-                                    ? 'bg-gray-800 border-2 border-gray-600'
-                                    : 'bg-white border-2 border-blue-300'
-                                : '',
-                        ]">
-                            <img v-if="
-                                file.url &&
-                                (file.url.includes('jpg') ||
-                                    file.url.includes('jpeg') ||
-                                    file.url.includes('png'))
-                            " :src="getCleanUrl(file.url)" alt="Document"
-                                class="w-full h-20 object-cover rounded-lg border cursor-pointer" :class="darkMode
-                                        ? 'border-gray-600'
-                                        : 'border-gray-300'
-                                    " @click="$emit('openImageModal', file.url)" />
+                    <div
+                        v-for="(file, index) in currentItem.additional_documents"
+                        :key="'doc-' + index"
+                        class="flex-shrink-0"
+                    >
+                        <div
+                            class="rounded-xl w-20 hover:shadow-lg transition-all hover:scale-105 overflow-hidden border"
+                            :class="darkMode
+                                ? 'bg-gray-800 border-gray-600'
+                                : 'bg-white border-gray-200'"
+                        >
+                            <!-- IMAGE -->
+                            <img
+                                v-if="isImage(file.url)"
+                                :src="cleanUrl(file.url)"
+                                class="w-full h-20 object-cover cursor-pointer"
+                                @click="$emit('openImageModal', cleanUrl(file.url))"
+                            />
 
-                            <div v-else class="w-full h-20 rounded-lg flex items-center justify-center mb-2" :class="darkMode ? 'bg-gray-800' : 'bg-blue-100'
-                                ">
-                                <i class="fa fa-file-pdf-o text-3xl" :class="darkMode
-                                        ? 'text-red-500'
-                                        : 'text-red-600'
-                                    " v-if="
-                                        file.name &&
-                                        file.name.includes('.pdf')
-                                    "></i>
-                                <i class="fa fa-file-word-o text-3xl" :class="darkMode
-                                        ? 'text-blue-400'
-                                        : 'text-blue-600'
-                                    " v-else-if="
-                                        file.name &&
-                                        (file.name.includes('.doc') ||
-                                            file.name.includes('.docx'))
-                                    "></i>
-                                <i class="fa fa-file-o text-3xl" :class="darkMode
-                                        ? 'text-gray-400'
-                                        : 'text-gray-600'
-                                    "></i>
+                            <!-- FILE -->
+                            <div
+                                v-else
+                                class="w-full h-20 flex flex-col items-center justify-center cursor-pointer"
+                                :class="darkMode ? 'bg-gray-800' : 'bg-green-700'"
+                                @click="openDocumentViewer(file.url)"
+                            >
+                      <p class="font-bold text-center text-white p-2">      Click to View File</p>
+                                <i
+                                    v-if="isPdf(file.url, file.name)"
+                                    class="fa fa-file-pdf-o text-3xl text-red-600"
+                                ></i>
+
+                                <i
+                                    v-else-if="isDoc(file.name)"
+                                    class="fa fa-file-word-o text-3xl text-blue-600"
+                                ></i>
+
+                                <i
+                                    v-else
+                                    class="fa fa-file-o text-3xl text-gray-500"
+                                ></i>
                             </div>
+
+                            <!-- FILENAME -->
+                            <!-- <div class="text-[9px] text-center truncate px-1"
+                                :class="darkMode ? 'text-gray-300' : 'text-gray-600'"
+                            >
+                                {{ getFileName(file.url) }}
+                            </div> -->
                         </div>
                     </div>
                 </div>
             </div>
+
+    
 
             <!-- Chat Messages -->
             <div class="flex-1 p-5 space-y-4 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-thumb]:bg-green-600 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-green-700"
@@ -220,19 +221,145 @@
                 </button>
             </div>
         </div>
+
+
+
+        <!-- DOCUMENT VIEWER MODAL -->
+    <div
+        v-if="showDocumentViewer"
+        class="fixed inset-0 z-[999] bg-black/80 flex items-center justify-center p-4"
+        @click="closeDocumentViewer"
+    >
+        <div
+            class="w-full max-w-6xl h-[90vh] bg-white rounded-xl overflow-hidden flex flex-col"
+            @click.stop
+        >
+            <div class="flex justify-between items-center p-3 border-b">
+                <span class="truncate font-medium">
+                    {{ documentName }}
+                </span>
+
+                <div class="flex gap-2">
+                    <a
+                        :href="documentUrl"
+                        target="_blank"
+                        class="bg-green-600 text-white px-3 py-1 rounded"
+                    >
+                        Download
+                    </a>
+
+                    <button
+                        @click="closeDocumentViewer"
+                        class="bg-red-600 text-white px-3 py-1 rounded"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 bg-gray-100">
+                <iframe
+                    v-if="isPdfFile(documentUrl)"
+                    :src="documentUrl"
+                    class="w-full h-full"
+                ></iframe>
+
+                <iframe
+                    v-else
+                    :src="getOfficeViewerUrl(documentUrl)"
+                    class="w-full h-full"
+                ></iframe>
+            </div>
+        </div>
+    </div>
     </div>
 </template>
 
 <script setup>
+import { ref, computed } from 'vue'
+
 const props = defineProps({
     currentItem: Object,
     showChatModal: Boolean,
-    modelValue: String, // mapped to newFollowUpMessage
-    getCleanUrl: Function,
+    modelValue: String,
     darkMode: Boolean,
-});
+})
 
-const emit = defineEmits(['closeChatModal', 'sendFollowUpMessage', 'openImageModal', 'update:modelValue']);
+const emit = defineEmits([
+    'closeChatModal',
+    'sendFollowUpMessage',
+    'openImageModal',
+    'update:modelValue',
+])
+
+/* -------------------------
+   CLEAN URL (REMOVE ?SIGNATURE)
+-------------------------- */
+const cleanUrl = (url) => {
+    if (!url) return ''
+    return url.split('?')[0]
+}
+
+/* -------------------------
+   FILE HELPERS
+-------------------------- */
+const getFileName = (url) => {
+    return cleanUrl(url).split('/').pop() || 'Document'
+}
+
+const isImage = (url) => {
+    const u = cleanUrl(url).toLowerCase()
+    return ['.jpg', '.jpeg', '.png', '.webp'].some(ext => u.includes(ext))
+}
+
+const isPdf = (url, name = '') => {
+    const u = cleanUrl(url).toLowerCase()
+    return u.endsWith('.pdf') || name?.toLowerCase().includes('.pdf')
+}
+
+const isDoc = (name = '') => {
+    return name?.toLowerCase().includes('.doc')
+}
+
+/* -------------------------
+   DOCUMENT VIEWER
+-------------------------- */
+const showDocumentViewer = ref(false)
+const documentUrl = ref('')
+const documentName = ref('')
+
+const openDocumentViewer = (url) => {
+    if (!url || url === 'N/A') return
+
+    documentUrl.value = cleanUrl(url)
+    documentName.value = getFileName(url)
+    showDocumentViewer.value = true
+}
+
+const closeDocumentViewer = () => {
+    showDocumentViewer.value = false
+    documentUrl.value = ''
+    documentName.value = ''
+}
+
+const isPdfFile = (url) => {
+    return cleanUrl(url).toLowerCase().endsWith('.pdf')
+}
+
+const getOfficeViewerUrl = (url) => {
+    return `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`
+}
+
+/* -------------------------
+   DOCUMENT CHECK
+-------------------------- */
+const hasDocuments = computed(() => {
+    return (
+        props.currentItem?.additional_documents &&
+        props.currentItem.additional_documents.length > 0 &&
+        props.currentItem.additional_documents[0].name !== 'N/A'
+    )
+})
 </script>
 
 <style scoped>
