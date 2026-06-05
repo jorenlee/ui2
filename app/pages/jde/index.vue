@@ -130,11 +130,17 @@
                   </div>
                 </div>
 
-                <h2 class="text-gray-900 font-bold text-xl mb-1">Secure Access</h2>
-                <p class="text-gray-400 text-sm mb-8">Enter your 6-digit PIN to continue</p>
+               <h2 class="text-gray-900 font-bold text-xl mb-1">Secure Access</h2>
+                <p class="text-gray-400 text-sm mb-2">Enter your 6-digit PIN to continue</p>
+                
+                <!-- Exam Details Mini Card -->
+                <div class="bg-green-50 rounded-xl px-4 py-3 mb-8 border border-green-100">
+                  <p class="text-xs text-green-600 font-semibold uppercase tracking-wider mb-1">Exam Date & Time</p>
+                  <p class="text-sm font-bold text-gray-800">June 6, 2026 • 8:30 AM - 12:00 NN</p>
+                </div>
 
                 <!-- PIN Inputs -->
-                <div class="flex gap-2.5 justify-center mb-3">
+                <div class="flex gap-3 justify-center mb-6">
                   <input
                     v-for="(digit, i) in pinDigits"
                     :key="i"
@@ -142,7 +148,7 @@
                     type="password"
                     maxlength="1"
                     inputmode="numeric"
-                    class="w-11 h-14 text-center text-2xl font-bold text-gray-800 bg-gray-50 border-2 rounded-xl outline-none transition-all duration-200"
+                    class="w-12 h-16 text-center text-2xl font-bold text-gray-800 bg-gray-50 border-2 rounded-xl outline-none transition-all duration-200"
                     :class="showError
                       ? 'border-red-400 bg-red-50 animate-shake'
                       : 'border-gray-200 focus:border-green-600 focus:bg-white focus:shadow-md'"
@@ -152,7 +158,6 @@
                     @paste="onPaste($event)"
                   />
                 </div>
-                
 
                 <p v-if="showError" class="text-red-500 text-xs font-medium mt-2 mb-0">Incorrect PIN. Please try again.</p>
 
@@ -184,7 +189,7 @@ import { ref, reactive, onMounted, nextTick, computed } from 'vue'
 
 const authenticated = ref(false)
 const pinDigits = reactive(['', '', '', '', '', ''])
-const pinRefs = []
+const pinRefs = reactive([])
 const showError = ref(false)
 
 const CORRECT_PIN = '060626'
