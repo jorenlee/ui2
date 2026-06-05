@@ -228,7 +228,7 @@
         <div class="flex items-center gap-4">
           <div>
             <h1 class="text-lg font-black uppercase tracking-wider">LSU Juris Doctor Admission Test</h1>
-            <p class="text-xs text-green-200">Examinee: <span class="font-bold text-white uppercase">{{ fullname }}</span></p>
+            <p class="text-xs text-green-200">Examinee: <span class="font-bold text-white">{{ fullname }}</span></p>
           </div>
           <span class="hidden md:inline px-3 py-1 bg-black/20 text-green-300 font-bold rounded-full text-xs border border-green-800">
             <span class="w-2 h-2 rounded-full bg-red-500 animate-ping inline-block mr-1"></span> Proctoring Active

@@ -182,6 +182,11 @@
 <script setup>
 import { ref, reactive, onMounted, nextTick, computed } from 'vue'
 
+const authenticated = ref(false)
+const pinDigits = reactive(['', '', '', '', '', ''])
+const pinRefs = []
+const showError = ref(false)
+
 const CORRECT_PIN = '060626'
 const availableScheduleDateAndTime = 'June 6, 2026 from 07:00AM to 12:00 NN (PHT)'
 
