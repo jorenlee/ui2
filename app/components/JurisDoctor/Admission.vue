@@ -122,19 +122,69 @@
             </div>
 
             <!-- Data Privacy -->
-            <details class="mt-4 text-xs text-gray-500">
+            <details class="mt-4 text-xs text-gray-600">
               <summary class="font-bold cursor-pointer text-green-700 uppercase">Data Privacy Notice, Consent, and Confidentiality Disclaimer</summary>
-              <div class="mt-2 space-y-2">
-                <p><strong>La Salle University Ozamiz, Inc.</strong> At the Juris Doctor's Office, we are committed to protecting the privacy and security of your personal information.</p>
-                <p><strong>INFORMATION WE COLLECT</strong> — Contact information, identification details, academic information, financial information, and other information you provide.</p>
-                <p><strong>HOW WE USE YOUR INFORMATION</strong> — For providing Juris Doctor services, communication, financial processing, service improvement, and legal compliance.</p>
-                <p><strong>DATA SECURITY</strong> — We implement appropriate technical and organizational measures to protect your personal information.</p>
-                <p><strong>CONTACT US</strong> — <a href="mailto:dpco@lsu.edu.ph" class="text-[#006B3F] underline">dpco@lsu.edu.ph</a></p>
+              <div class="mt-3 space-y-3 text-xs leading-relaxed">
+                <p><strong>La Salle University Ozamiz, Inc.</strong> At the Juris Doctor's Office, we are committed to protecting the privacy and security of your personal information. This Privacy Notice explains how we collect, use, disclose, and protect your information when you interact with our office.</p>
+                
+                <div>
+                  <p class="font-bold text-gray-800 mb-2">INFORMATION WE COLLECT</p>
+                  <p>We collect various types of personal information necessary for providing our services, including but not limited to:</p>
+                  <ul class="list-disc list-inside space-y-1 ml-2">
+                    <li>Contact information: Name, address, email address, phone number, and other contact details</li>
+                    <li>Identification information: Student ID number, government-issued identification details</li>
+                    <li>Academic information: Course enrollment, grades, academic progress, and transcripts</li>
+                    <li>Co-curricular information: Service learnings, outreach activities, Field Trips, Internship or apprenticeship compliance</li>
+                    <li>Financial information: Payment details, financial aid information, promissory notes</li>
+                    <li>Pictures and videos of activities you participate in, via official documentation of such activities</li>
+                    <li>Other information: Any additional information you provide to us in the course of our interactions</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p class="font-bold text-gray-800 mb-2">HOW WE COLLECT YOUR INFORMATION</p>
+                  <p>We use the information we collect for the following purposes:</p>
+                  <ul class="list-disc list-inside space-y-1 ml-2">
+                    <li>Providing Juris Doctor services, including enrollment, course registration, and academic records management</li>
+                    <li>Communicating with you regarding administrative matters, such as changes to policies or procedures</li>
+                    <li>Processing financial transactions related to your academic activities</li>
+                    <li>Analyzing and improving our services, systems, and operations</li>
+                    <li>Complying with legal obligations and regulatory requirements</li>
+                    <li>Soliciting your participation in research and non-commercial surveys sanctioned by the University</li>
+                    <li>Sharing of grades between academic administrators and offices for evaluation of student performance</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p class="font-bold text-gray-800 mb-2">DISCLOSURE OF YOUR INFORMATION</p>
+                  <p>We may disclose your personal information in the following circumstances:</p>
+                  <ul class="list-disc list-inside space-y-1 ml-2">
+                    <li>To authorized personnel within La Salle University who require access to fulfil their duties</li>
+                    <li>To educational institutions or organizations as required to facilitate academic processes (e.g., transcript requests, enrollment verification)</li>
+                    <li>To third-party service providers who assist us in carrying out our functions and services</li>
+                    <li>When required by law or legal process, such as in response to a subpoena or court order</li>
+                    <li>In emergencies or situations involving the health or safety of individuals</li>
+                    <li>To government agencies for legitimate planning purposes directly related to education and student welfare</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <p class="font-bold text-gray-800 mb-2">DATA SECURITY</p>
+                  <p>We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, disclosure, alteration, or destruction.</p>
+                </div>
+
+                <div>
+                  <p class="font-bold text-gray-800 mb-2">CONTACT US</p>
+                  <p>If you have any questions, concerns, or complaints about our Privacy Notice or our handling of your personal information, please contact us at <a href="mailto:dpco@lsu.edu.ph" class="text-[#006B3F] underline font-bold">doco@lsu.edu.ph</a>.</p>
+                </div>
+
+                <p class="font-bold text-gray-800 pt-2 border-t">By proceeding, you agree to the mentioned statements above.</p>
+             
+             
               </div>
             </details>
 
-            <p class="text-xs text-gray-600 mt-2"><strong>By proceeding, you agree to the mentioned statements above.</strong></p>
-
+          
             <label class="flex items-center gap-3 cursor-pointer pt-2 select-none">
               <input
                 type="checkbox"
@@ -142,7 +192,7 @@
                 class="w-5 h-5 text-[#006B3F] border-gray-300 rounded focus:ring-[#006B3F]"
               />
               <span class="text-xs text-gray-600 font-medium leading-snug">
-                I confirm that I have read the directions, agree to the proctoring rules, and am ready to start the exam.
+                I confirm that I have read the directions, data privacy disclaimer, agree to the proctoring rules, and am ready to start the exam.
               </span>
             </label>
           </div>
@@ -492,7 +542,7 @@
           </h1>
           <div class="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
             Your exam session for the
-            <strong class="text-gray-800 font-semibold">La Salle University Juris Doctor Admission Test</strong>
+          <p>  <strong class="text-gray-800 font-semibold">La Salle University Juris Doctor Admission Test</strong></p>
             has been successfully recorded.
           </div>
         </div>
