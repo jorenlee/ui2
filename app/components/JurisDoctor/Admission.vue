@@ -206,6 +206,14 @@
             <span v-if="questions.length === 0"><i class="fas fa-spinner animate-spin mr-2"></i>Loading questions…</span>
             <span v-else><i class="fas fa-expand mr-2"></i>Start Examination &amp; Enter Fullscreen</span>
           </button>
+
+          <!-- New Questionnaire Button -->
+          <button
+            @click="resetForm"
+            class="w-full mt-3 py-4 bg-gray-600 hover:bg-gray-700 text-white font-bold text-base rounded-xl transition duration-150 uppercase tracking-wider shadow-lg shadow-gray-700/20"
+          >
+            <i class="fas fa-plus mr-2"></i>New Questionnaire
+          </button>
         </div>
       </div>
     </div>
@@ -1017,6 +1025,23 @@ const resumeExam = async () => {
   try { await enterFullscreen() } catch (e) {}
 }
 
+const resetForm = () => {
+  isExamStarted.value = false
+  isExamSubmitted.value = false
+  fullname.value = ''
+  email.value = ''
+  contactNumber.value = ''
+  acceptGuidelines.value = false
+  Object.keys(answers).forEach(key => delete answers[key])
+  essayResponse.value = ''
+  selectedEssayQuestionId.value = null
+  activeCategory.value = questions.value.length > 0 ? questions.value[0].category : ''
+  timeLeft.value = EXAM_DURATION
+  tabSwitchWarnings.value = 0
+  clearSession()
+  showToaster('Form reset. Ready for new exam attempt.', 'success', 3000)
+}
+
 // ─── Fullscreen helpers ────────────────────────────────────────────────────
 const enterFullscreen = async () => {
   const el = document.documentElement
@@ -1167,13 +1192,13 @@ const submitExam = async (autoSubmit = false) => {
   }
 
   const payload = {
-    exam_id: 1,
+    examinee_id: examineeId.value,
     fullname: fullname.value,
     email: email.value,
     contact_number: contactNumber.value,
-    examinee_id: examineeId.value,
+
     // Ensure all keys are strings to match Django's str(question.id) lookup
-    answers: Object.fromEntries(
+    submitted_answers: Object.fromEntries(
       Object.entries(answers).map(([k, v]) => [String(k), v])
     ),
     essay_prompt: essayPromptText,
