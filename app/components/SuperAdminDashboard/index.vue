@@ -33,6 +33,8 @@ const openGroups = ref([
   "Lasalle Alumni Association",
   "Animo Run",
   "Super Admin",
+  "Juris Doctor Admin",
+  "Juris Doctor Examinee",
 ]);
 
 // ---------------- MENU PERMISSION ----------------
@@ -434,6 +436,28 @@ const subMenuList = [
       },
     ],
   },
+  {
+    group: "Juris Doctor Admin",
+    items: [
+      {
+        label: "Admission Test Management",
+        icon: "fa-list-alt",
+        type: "button",
+        view: "ViewJurisDoctorAdmissionTestManagement",
+      },
+    ],
+  },
+  {
+    group: "Juris Doctor Examinee",
+    items: [
+      {
+        label: "Admission Test",
+        icon: "fa-list-alt",
+        type: "button",
+        view: "ViewJurisDoctorAdmissionTest",
+      },
+    ],
+  },
 ];
 
 // ---------------- TOP MENU ----------------
@@ -478,7 +502,11 @@ const currentViewConfig = computed(() => {
     ViewGSOVehicleReservationList: { component: resolveComponent("GSOVehicleReservationList"),class: "pb-32",},
     ViewOERForm: { component: resolveComponent("SuperAdminDashboardServicesOERForm"),class: "pb-32",},
     ViewOERList: {component: resolveComponent("SuperAdminDashboardServicesOERList"),class: "pb-32",},
+    ViewJurisDoctorAdmissionTestManagement: { component: resolveComponent("JurisDoctorAdmin"), class: "pb-32", },
+    ViewJurisDoctorAdmissionTest: { component: resolveComponent("JurisDoctorAdmission"), class: "pb-32", },
   };
+
+
   return views[currentView.value];
 });
 
