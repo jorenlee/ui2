@@ -115,7 +115,7 @@
                   </svg>
                 </div>
                 <h2 class="text-gray-800 font-bold text-lg mb-2">Access Unavailable</h2>
-                <p class="text-gray-400 text-sm leading-relaxed">This page is only available on<br/><span class="font-semibold text-gray-600">June 5–6, 2026 from 5:00 PM (PHT)</span>.</p>
+                <p class="text-gray-400 text-sm leading-relaxed">This page is only available on<br/><span class="font-semibold text-gray-600">{{ availableScheduleDateAndTime }}</span>.</p>
               </div>
 
               <!-- PIN Entry -->
@@ -152,6 +152,7 @@
                     @paste="onPaste($event)"
                   />
                 </div>
+                
 
                 <p v-if="showError" class="text-red-500 text-xs font-medium mt-2 mb-0">Incorrect PIN. Please try again.</p>
 
@@ -179,29 +180,39 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick, computed } from 'vue'
 
-const CORRECT_PIN = '123456'
+const CORRECT_PIN = '060626'
+const availableScheduleDateAndTime = 'June 6, 2026 from 07:00AM to 12:00 NN (PHT)'
 
-const authenticated = ref(false)
-const pinDigits = reactive(['', '', '', '', '', ''])
-const pinRefs = reactive([])
-const showError = ref(false)
-const isAvailable = ref(false)
-
-function checkAvailability() {
+const isAvailable = computed(() => {
   const now = new Date()
+
   const year = now.getFullYear()
-  const month = now.getMonth()
+  const month = now.getMonth() // June = 5
   const day = now.getDate()
   const hour = now.getHours()
+  const minute = now.getMinutes()
 
-  if (year === 2026 && month === 5 && (day === 5 || day === 6) && hour >= 17) {
-    isAvailable.value = true
-  } else {
-    isAvailable.value = false
+  console.log('Availability check -', { year, month, day, hour, minute })
+
+  // Available only on June 6, 2026 from 07:00 AM to 12:00 PM
+  if (
+    year === 2026 &&
+    month === 5 &&
+    day === 6 &&
+    (
+      (hour >= 7 && hour < 12) ||
+      (hour === 12 && minute === 0)
+    )
+  ) {
+    return true
   }
-}
+
+  return false
+})
+
+// NOTE: isAvailable is a computed — do not write to it directly.
 
 function onPinInput(event, index) {
   const val = event.target.value.replace(/\D/g, '')
@@ -247,7 +258,6 @@ function checkPin() {
 }
 
 onMounted(() => {
-  checkAvailability()
   if (isAvailable.value) {
     nextTick(() => pinRefs[0]?.focus())
   }

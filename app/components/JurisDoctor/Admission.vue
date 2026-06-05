@@ -179,15 +179,74 @@
           </span>
         </div>
 
-        <div class="flex items-center gap-4">
-   
-          <!-- Timer -->
-          <div 
-            class="px-4 py-1.5 rounded-lg font-mono text-lg font-black flex items-center gap-2"
-            :class="timeLeft < 600 ? 'bg-red-700 text-white animate-pulse border border-red-500' : 'bg-black/20 text-white border border-green-700'"
-          >
-            <i class="fas fa-clock"></i> {{ formatTime(timeLeft) }}
+        <div class="flex items-center gap-3">
+          <!-- Auto-save indicator -->
+          <span v-if="lastSavedAt" class="hidden md:inline-flex items-center gap-1.5 text-[10px] font-bold text-green-200 bg-black/20 px-2.5 py-1 rounded-full border border-green-800">
+            <i class="fas fa-cloud-arrow-up text-green-300"></i>
+            Saved {{ lastSavedAt }}
+          </span>
+
+          <!-- Timer (double-click to adjust for testing) -->
+          <div class="relative">
+            <div 
+              @dblclick="showTimerAdjust = !showTimerAdjust"
+              class="px-4 py-1.5 rounded-lg font-mono text-lg font-black flex items-center gap-2 cursor-pointer select-none"
+              :class="timeLeft < 600 ? 'bg-red-700 text-white animate-pulse border border-red-500' : 'bg-black/20 text-white border border-green-700'"
+              title="Double-click to adjust timer"
+            >
+              <i class="fas fa-clock"></i> {{ formatTime(timeLeft) }}
+            </div>
+
+            <!-- Timer Adjust Popover (testing) -->
+            <div 
+              v-if="showTimerAdjust"
+              class="absolute top-full right-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 p-4 z-50 w-64"
+              @click.stop
+            >
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-black text-gray-700 uppercase tracking-wider">⏱ Adjust Timer</span>
+                <button @click="showTimerAdjust = false" class="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+              </div>
+
+              <!-- Preset buttons -->
+              <div class="grid grid-cols-3 gap-1.5 mb-3">
+                <button v-for="preset in timerPresets" :key="preset.seconds"
+                  @click="timeLeft = preset.seconds; showTimerAdjust = false"
+                  class="py-1.5 rounded-lg text-[11px] font-bold transition border"
+                  :class="timeLeft === preset.seconds 
+                    ? 'bg-[#006B3F] text-white border-[#006B3F]' 
+                    : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'"
+                >{{ preset.label }}</button>
+              </div>
+
+              <!-- Custom input -->
+              <div class="flex gap-2 items-center">
+                <input 
+                  type="number" 
+                  v-model.number="customTimerSeconds"
+                  placeholder="Seconds"
+                  min="1"
+                  class="flex-1 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#006B3F]"
+                />
+                <button 
+                  @click="if (customTimerSeconds > 0) { timeLeft = customTimerSeconds; showTimerAdjust = false }"
+                  class="px-3 py-2 rounded-lg bg-[#006B3F] text-white text-xs font-bold hover:bg-green-700 transition shrink-0"
+                >Set</button>
+              </div>
+
+              <p class="text-[10px] text-gray-400 mt-2 leading-snug">Double-click timer to toggle this panel.</p>
+            </div>
           </div>
+
+          <!-- Pause Button -->
+          <button
+            @click="pauseExam"
+            class="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-xs font-bold transition"
+            title="Pause & Save"
+          >
+            <i class="fas fa-pause"></i>
+            <span class="hidden md:inline">Pause</span>
+          </button>
         </div>
       </div>
 
@@ -238,6 +297,7 @@
               </span>
             </button>
           </nav>
+
         </aside>
 
         <!-- Main Content Area -->
@@ -263,13 +323,38 @@
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
 
             <!-- Category Title Header -->
-            <div class="bg-gradient-to-r from-[#006B3F]/5 to-transparent border-b border-gray-100 px-6 md:px-8 py-5">
-              <span class="text-[10px] font-extrabold tracking-widest text-[#006B3F] uppercase bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
-                ● Active Section
-              </span>
-              <h2 class="text-lg md:text-xl font-black text-gray-800 mt-2 tracking-wide leading-tight">
-                {{ activeCategory }}
-              </h2>
+            <div class="relative overflow-hidden border-b border-gray-100 bg-gradient-to-br from-[#006B3F]/8 via-white to-emerald-50/30">
+              <!-- Decorative blobs -->
+              <div class="absolute -top-6 -right-6 w-32 h-32 bg-[#006B3F]/5 rounded-full blur-2xl pointer-events-none"></div>
+              <div class="absolute bottom-0 left-1/3 w-20 h-20 bg-emerald-100/40 rounded-full blur-xl pointer-events-none"></div>
+
+              <div class="relative px-6 md:px-8 py-6">
+                <!-- Badge row -->
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="inline-flex items-center gap-1.5 text-[10px] font-black tracking-[0.15em] text-[#006B3F] uppercase bg-green-50 px-3 py-1 rounded-full border border-green-200 shadow-sm">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#006B3F] animate-pulse inline-block"></span>
+                    Active Section
+                  </span>
+                </div>
+
+                <!-- Category Title -->
+                <h2 class="text-sm font-black text-gray-900 leading-tight tracking-wide mb-3">
+                  {{ activeCategory }}
+                </h2>
+
+                <!-- Description box -->
+                <div
+                  v-if="currentDescription"
+                  class="flex gap-3 items-start bg-white/80 border border-[#006B3F]/15 rounded-xl px-4 py-3 shadow-sm backdrop-blur-sm"
+                >
+                  <div class="w-6 h-6 rounded-lg bg-[#006B3F]/10 flex items-center justify-center shrink-0 mt-0.5">
+                    <i class="fas fa-circle-info text-[#006B3F] text-xs"></i>
+                  </div>
+                  <p class="text-sm text-gray-600 leading-relaxed">
+                    {{ currentDescription }}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div class="p-6 md:p-8">
@@ -324,68 +409,119 @@
 
             <!-- 2.2 MULTIPLE CHOICE QUESTIONS (Parts 1-5) -->
             <div v-else class="space-y-10">
-              <div 
-                v-for="(question, index) in activeQuestions" 
-                :key="question.id"
-                class="pb-10 border-b border-gray-100 last:border-0 last:pb-0"
-              >
-                <!-- Passage (if applicable) -->
-                <div v-if="question.passage" class="bg-gray-50 border-l-4 border-[#006B3F] rounded-r-xl p-5 mb-6 font-serif text-gray-700 leading-relaxed italic text-sm">
+              <!-- Group questions by passage: each passage shown before its own questions -->
+              <template v-for="group in passageGroups" :key="group.passage || 'no-passage'">
+                <!-- Reading Passage (only shown if this group has a passage) -->
+                <div v-if="group.passage" class="bg-gray-50 border-l-4 border-[#006B3F] rounded-r-xl p-5 mb-6 font-serif text-gray-700 leading-relaxed italic text-sm">
                   <div class="font-bold text-xs uppercase tracking-wider text-[#006B3F] not-italic mb-2 flex items-center gap-1.5 font-sans">
                     <i class="fas fa-book-open"></i> Reading Passage
                   </div>
-                  {{ question.passage }}
+                  {{ group.passage }}
                 </div>
 
-                <!-- Question Number + Text -->
-                <div class="mb-5">
-                  <div class="flex items-center gap-2 mb-2">
-                    <span class="inline-flex items-center gap-1.5 bg-[#006B3F] text-white text-[10px] font-black px-2.5 py-1 rounded-full select-none uppercase tracking-widest">
-                      Item #{{ questions.findIndex(q => q.id === question.id) + 1 }}
-                    </span>
+                <!-- Questions belonging to this passage group -->
+                <div 
+                  v-for="question in group.questions" 
+                  :key="question.id"
+                  class="pb-10 border-b border-gray-100 last:border-0 last:pb-0"
+                >
+
+                  <!-- Question Number + Text -->
+                  <div class="mb-5">
+                    <div class="flex items-center gap-2 mb-2">
+                      <span class="inline-flex items-center gap-1.5 bg-[#006B3F] text-white text-[10px] font-black px-2.5 py-1 rounded-full select-none uppercase tracking-widest">
+                        Item #{{ questions.findIndex(q => q.id === question.id) + 1 }}
+                      </span>
+                    </div>
+                    <p class="font-bold text-gray-800 text-sm md:text-base leading-relaxed select-none">
+                      {{ question.question }}
+                    </p>
                   </div>
-                  <p class="font-bold text-gray-800 text-sm md:text-base leading-relaxed select-none">
-                    {{ question.question }}
-                  </p>
-                </div>
 
-                <!-- Options Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <label
-                    v-for="option in question.options"
-                    :key="option"
-                    class="flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all duration-150 select-none"
-                    :class="answers[question.id] === option
-                      ? 'border-[#006B3F] bg-green-50 shadow-sm'
-                      : 'border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300'"
-                  >
-                    <input
-                      type="radio"
-                      :name="'q_' + question.id"
-                      :value="option"
-                      v-model="answers[question.id]"
-                      class="w-4 h-4 text-[#006B3F] border-gray-300 focus:ring-[#006B3F] shrink-0 mt-0.5"
-                    />
-                    <span
-                      class="text-sm leading-snug break-words flex-1"
-                      :class="answers[question.id] === option ? 'text-[#006B3F] font-semibold' : 'text-gray-700 font-medium'"
-                    >{{ option }}</span>
-                  </label>
+                  <!-- Options Grid -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <label
+                      v-for="option in question.options"
+                      :key="option"
+                      class="flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all duration-150 select-none"
+                      :class="answers[question.id] === option
+                        ? 'border-[#006B3F] bg-green-50 shadow-sm'
+                        : 'border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300'"
+                    >
+                      <input
+                        type="radio"
+                        :name="'q_' + question.id"
+                        :value="option"
+                        v-model="answers[question.id]"
+                        class="w-4 h-4 text-[#006B3F] border-gray-300 focus:ring-[#006B3F] shrink-0 mt-0.5"
+                      />
+                      <span
+                        class="text-sm leading-snug break-words flex-1"
+                        :class="answers[question.id] === option ? 'text-[#006B3F] font-semibold' : 'text-gray-700 font-medium'"
+                      >{{ option }}</span>
+                    </label>
+                  </div>
                 </div>
-              </div>
+              </template>
             </div>
 
             <!-- Form Nav Controls -->
             <div class="flex items-center justify-between mt-10 pt-6 border-t border-gray-100">
               <!-- Confirmation Modal -->
-              <div v-if="showConfirmSubmit" class="fixed inset-0 flex items-center justify-center bg-black/60 z-50">
-                <div class="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
-                  <h2 class="text-lg font-bold text-gray-800 mb-4">Confirm Submission</h2>
-                  <p class="text-gray-700 mb-6">Are you sure you want to submit your answers? You can review them before finalizing.</p>
-                  <div class="flex justify-end gap-3">
-                    <button @click="showConfirmSubmit = false" class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50">Back</button>
-                    <button @click="submitExam(false)" class="px-4 py-2 rounded-lg bg-[#006B3F] hover:bg-green-700 text-white">Submit</button>
+              <div v-if="showConfirmSubmit" class="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-sm z-50 p-4">
+                <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100">
+
+                  <!-- Modal Header -->
+                  <div class="bg-gradient-to-br from-[#006B3F] to-emerald-700 px-6 pt-7 pb-8 text-white text-center relative overflow-hidden">
+                    <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
+                    <div class="relative">
+                      <div class="w-14 h-14 bg-white/15 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/20">
+                        <i class="fas fa-paper-plane text-xl text-white"></i>
+                      </div>
+                      <h2 class="text-lg font-black tracking-wide">Submit Examination?</h2>
+                      <p class="text-green-100 text-xs mt-1 font-medium">This action cannot be undone once confirmed.</p>
+                    </div>
                   </div>
+
+                  <!-- Modal Body -->
+                  <div class="px-6 py-5 space-y-4">
+                    <!-- Stats row -->
+                    <div class="grid grid-cols-2 gap-3">
+                      <div class="bg-gray-50 rounded-xl px-4 py-3 text-center border border-gray-100">
+                        <div class="text-2xl font-black text-[#006B3F]">{{ answersCount }}</div>
+                        <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mt-0.5">Answered</div>
+                      </div>
+                      <div class="bg-gray-50 rounded-xl px-4 py-3 text-center border border-gray-100">
+                        <div class="text-2xl font-black text-gray-400">{{ questions.filter(q => !q.is_essay).length - Object.keys(answers).filter(k => answers[k]).length }}</div>
+                        <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wide mt-0.5">Unanswered</div>
+                      </div>
+                    </div>
+
+                    <!-- Warning note -->
+                    <div class="flex gap-2.5 items-start bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                      <i class="fas fa-triangle-exclamation text-amber-500 text-sm mt-0.5 shrink-0"></i>
+                      <p class="text-xs text-amber-800 leading-relaxed font-medium">
+                        Once submitted, your answers are final and <strong>cannot be changed</strong>. Please review all sections before proceeding.
+                      </p>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3 pt-1">
+                      <button
+                        @click="showConfirmSubmit = false"
+                        class="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-700 text-sm font-bold hover:bg-gray-50 hover:border-gray-300 transition"
+                      >
+                        <i class="fas fa-arrow-left mr-1.5 text-xs"></i> Go Back
+                      </button>
+                      <button
+                        @click="submitExam(false)"
+                        class="flex-1 py-3 rounded-xl bg-[#006B3F] hover:bg-emerald-700 text-white text-sm font-black transition shadow-lg shadow-green-800/20 uppercase tracking-wide"
+                      >
+                        <i class="fas fa-check mr-1.5 text-xs"></i> Submit
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
               </div>
               <button 
@@ -422,18 +558,26 @@
     <!-- 3. POST-SUBMISSION / SUCCESS VIEW -->
     <div v-if="isExamSubmitted" class="flex-grow flex items-center justify-center p-4 py-12">
       <div class="max-w-2xl w-full bg-white rounded-2xl shadow-xl overflow-hidden text-center p-8 md:p-12 border border-gray-100 space-y-6">
-        <div class="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto text-[#006B3F] border-2 border-green-200">
-          <i class="fas fa-check text-4xl animate-bounce"></i>
+        
+        <!-- Success Icon with Glowing Accent -->
+        <div class="relative w-20 h-20 mx-auto mb-2">
+          <div class="absolute inset-0 rounded-full bg-green-100 blur-md opacity-60"></div>
+          <div class="relative w-20 h-20 rounded-full bg-gradient-to-br from-green-600 to-[#006B3F] flex items-center justify-center border-4 border-white shadow-lg">
+            <i class="fas fa-check text-white text-3xl"></i>
+          </div>
         </div>
 
-        <div class="space-y-2">
-          <p class="text-xs font-extrabold uppercase tracking-widest text-gray-400">Submission Confirmed</p>
-          <h1 class="text-3xl font-black text-gray-800">Congratulations, <span class="capitalize">{{ fullname }}</span>!</h1>
-          <p class="text-sm text-gray-600 max-w-md mx-auto leading-relaxed">
-            You have successfully completed and submitted!
+        <div class="space-y-3">
+          <p class="text-[10px] font-extrabold uppercase tracking-widest text-[#006B3F] bg-green-50 px-3 py-1 rounded-full w-fit mx-auto border border-green-200">Submission Confirmed</p>
+          <h1 class="text-2xl md:text-3xl font-extrabold text-gray-900 tracking-tight leading-tight">
+            Thank you for submitting,<br />
+            <span class="text-[#006B3F] block mt-1 font-black capitalize">{{ fullname }}</span>
+          </h1>
+          <p class="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
+            Your exam session for the <p>
+              <strong class="text-gray-800 font-semibold">La Salle University Juris Doctor Admission Test</strong>
+            </p> has been successfully recorded.
           </p>
-          <p class="font-bold">La Salle University Juris Doctor Admission Test</p>
-
         </div>
 
         <div>
@@ -532,13 +676,64 @@
         </button>
       </div>
     </div>
-    <!-- (Omitted content for brevity as per instructions) -->
+
+    <!-- PAUSE MODAL -->
+    <div
+      v-if="isPaused && isExamStarted"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+    >
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 text-center">
+        <!-- Header -->
+        <div class="bg-gradient-to-br from-[#006B3F] to-emerald-700 px-6 pt-8 pb-10 text-white relative overflow-hidden">
+          <div class="absolute inset-0 bg-black/10 pointer-events-none"></div>
+          <div class="relative">
+            <div class="w-16 h-16 bg-white/15 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/20">
+              <i class="fas fa-pause text-2xl text-white"></i>
+            </div>
+            <h2 class="text-xl font-black tracking-wide">Exam Paused</h2>
+            <p class="text-green-100 text-xs mt-1">Timer is stopped. Your progress is saved.</p>
+          </div>
+        </div>
+        <!-- Body -->
+        <div class="px-6 py-6 space-y-4">
+          <!-- Saved info -->
+          <div class="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+            <i class="fas fa-cloud-check text-[#006B3F] text-lg shrink-0"></i>
+            <div class="text-left">
+              <p class="text-xs font-black text-gray-800">Progress Auto-Saved</p>
+              <p class="text-[11px] text-gray-500 mt-0.5">{{ answersCount }} answer(s) saved locally. Your session will be restored if you reload.</p>
+            </div>
+          </div>
+
+          <!-- Time remaining -->
+          <div class="bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Time Remaining</p>
+            <p class="font-mono text-2xl font-black text-gray-800 mt-0.5">{{ formatTime(timeLeft) }}</p>
+          </div>
+
+          <!-- Warning -->
+          <div class="flex gap-2 items-start bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-left">
+            <i class="fas fa-triangle-exclamation text-amber-500 text-xs mt-0.5 shrink-0"></i>
+            <p class="text-xs text-amber-800 font-medium leading-relaxed">The exam timer is paused. You must re-enter fullscreen to resume.</p>
+          </div>
+
+          <button
+            @click="resumeExam"
+            class="w-full py-3.5 rounded-xl bg-[#006B3F] hover:bg-emerald-700 text-white font-black text-sm transition shadow-lg shadow-green-800/20 uppercase tracking-wide"
+          >
+            <i class="fas fa-play mr-2"></i> Resume Exam
+          </button>
+        </div>
+      </div>
+    </div>
 
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+
+const SAVE_KEY = 'jde_exam_session'
 
   // Toast state and helper
   const toaster = ref({ message: '', type: 'warning', show: false })
@@ -573,8 +768,109 @@ const examineeId = ref('JDE'+Date.now())
 const contactNumber = ref('')
 
 const activeCategory = ref('')
+
+const categoryDescriptions = [
+  {
+    category: 'Verbal Ability & Structural Literacy',
+    description: 'Directions: Identify grammatical errors, choose the correct syntactic options, or recognize structural flaws in sentence mechanics. Select only one answer for each item.'
+  },
+  {
+    category: 'Advanced Vocabulary & Analytical Analogies',
+    description: 'Directions: Choose the option that best completes the sentence context, matches synonyms/antonyms, or fulfills the logical structural relationships in the verbal analogies.'
+  },
+  {
+    category: 'Analytical & Logical Reasoning',
+    description: 'Directions: Analyze the structural logic of arguments, formal syllogisms, linear sequencing puzzles, and arguments tracking critical assumptions, strengthening elements, or logical fallacies.'
+  },
+  {
+    category: 'Quantitative Reasoning',
+    description: 'Directions: Solve numerical and quantitative problems involving arithmetic, algebra, ratios, percentages, data interpretation, and applied mathematics. Select only one answer for each item.'
+  },
+  {
+    category: 'Reading Comprehension',
+    description: 'Directions: Read the legal passages carefully and answer the questions that follow. Passages cover jurisprudence and the philosophy of law, constitutional law and judicial interpretation, and technology, AI, and intellectual property law.'
+  },
+  {
+    category: 'Essay Questions & Legal Analysis',
+    description: 'Directions: Select one (1) of the following prompts and write a well-structured, coherent essay. Your response will be evaluated on your ability to construct a logical argument, synthesize relevant viewpoints, maintain structural clarity, and demonstrate analytical depth. (Target length: 300–500 words).'
+  }
+]
+
+const currentDescription = computed(() => {
+  const item = categoryDescriptions.find(
+    item => item.category === activeCategory.value
+  )
+
+  return item?.description || ''
+})
+
+
 const timer = ref(null)
-const timeLeft = ref(14400) // 4 hours in seconds (14,400s)
+const timeLeft = ref(14400) // SET TO 10 SECONDS FOR TESTING (production: 14400)
+const isPaused = ref(false)
+const lastSavedAt = ref('')
+
+// Timer adjuster (for testing)
+const showTimerAdjust = ref(false)
+const customTimerSeconds = ref(60)
+const timerPresets = [
+  { label: '30s', seconds: 30 },
+  { label: '5 min', seconds: 300 },
+  { label: '10 min', seconds: 600 },
+  { label: '30 min', seconds: 1800 },
+  { label: '1 hr', seconds: 3600 },
+  { label: '4 hr', seconds: 14400 },
+]
+
+// ── AUTO-SAVE helpers ──────────────────────────────────────────────────────
+const saveSession = () => {
+  if (!isExamStarted.value || isExamSubmitted.value) return
+  const session = {
+    fullname: fullname.value,
+    email: email.value,
+    contactNumber: contactNumber.value,
+    examineeId: examineeId.value,
+    answers: { ...answers },
+    essayResponse: essayResponse.value,
+    selectedEssayQuestionId: selectedEssayQuestionId.value,
+    timeLeft: timeLeft.value,
+    activeCategory: activeCategory.value,
+    savedAt: Date.now()
+  }
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(session))
+    const now = new Date()
+    lastSavedAt.value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  } catch (e) {
+    console.warn('Auto-save failed', e)
+  }
+}
+
+const clearSession = () => {
+  try { localStorage.removeItem(SAVE_KEY) } catch (e) {}
+}
+
+const restoreSession = () => {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY)
+    if (!raw) return false
+    const s = JSON.parse(raw)
+    // Only restore if saved less than 6 hours ago
+    if (Date.now() - s.savedAt > 6 * 3600 * 1000) { clearSession(); return false }
+    fullname.value = s.fullname || ''
+    email.value = s.email || ''
+    contactNumber.value = s.contactNumber || ''
+    examineeId.value = s.examineeId || ('JDE' + Date.now())
+    Object.assign(answers, s.answers || {})
+    essayResponse.value = s.essayResponse || ''
+    selectedEssayQuestionId.value = s.selectedEssayQuestionId || null
+    timeLeft.value = s.timeLeft ?? 14400
+    activeCategory.value = s.activeCategory || ''
+    return true
+  } catch (e) {
+    return false
+  }
+}
 
 const tabSwitchWarnings = ref(0)
 const showTabWarning = ref(false)
@@ -608,6 +904,40 @@ const activeQuestions = computed(() => {
   return questions.value.filter(q => q.category === activeCategory.value)
 })
 
+// Unique passages for the active category (avoids repeating the same passage per question)
+const uniquePassages = computed(() => {
+  const seen = new Set()
+  return activeQuestions.value
+    .filter(q => q.passage)
+    .map(q => q.passage)
+    .filter(p => {
+      if (seen.has(p)) return false
+      seen.add(p)
+      return true
+    })
+})
+
+// Groups questions by passage so each passage is shown immediately before its own questions
+const passageGroups = computed(() => {
+  const groups = []
+  const seenPassages = new Map() // passage text -> group index
+
+  activeQuestions.value.forEach(q => {
+    const passage = q.passage || null
+    const key = passage || '__no_passage__'
+
+    if (seenPassages.has(key)) {
+      groups[seenPassages.get(key)].questions.push(q)
+    } else {
+      const newIndex = groups.length
+      seenPassages.set(key, newIndex)
+      groups.push({ passage, questions: [q] })
+    }
+  })
+
+  return groups
+})
+
 // Progress metrics count
 const answersCount = computed(() => {
   const mcCount = Object.keys(answers).filter(k => answers[k] !== undefined && answers[k] !== '').length
@@ -630,12 +960,35 @@ const getCategoryProgress = (cat) => {
   }
 }
 
-// Fetch questions on mount
+// Auto-save watchers — fire on every answer or essay change
+watch(answers, saveSession, { deep: true })
+watch(essayResponse, saveSession)
+watch(timeLeft, (v) => {
+  if (v <= 0) {
+    if (isExamStarted.value && !isExamSubmitted.value) {
+      submitReason.value = 'timer'
+      submitExam(true)
+    }
+  } else if (v % 30 === 0) {
+    saveSession()
+  }
+})
+
+// Fetch questions on mount, then try to restore session
 onMounted(async () => {
   try {
     const res = await $fetch(`${config.public.apiUrl}/api/jurisdoctor/questions/1/`)
     questions.value = res || []
-    if (categories.value.length > 0) {
+
+    // Try restoring a saved session
+    const restored = restoreSession()
+    if (restored && fullname.value) {
+      // Session found — set active category from saved or first
+      if (!activeCategory.value || !categories.value.includes(activeCategory.value)) {
+        activeCategory.value = categories.value[0] || ''
+      }
+      showToaster('📂 Previous session restored! Your answers have been reloaded.', 'success', 5000)
+    } else if (categories.value.length > 0) {
       activeCategory.value = categories.value[0]
     }
   } catch (error) {
@@ -659,10 +1012,12 @@ const startExam = async () => {
    showGuidelines.value = true
 
   isExamStarted.value = true
-  examineeId.value = 'JDE' + Date.now()
+  if (!examineeId.value || examineeId.value === 'JDE') examineeId.value = 'JDE' + Date.now()
   isExamSubmitted.value = false
+  isPaused.value = false
   submitReason.value = 'manual'
-  timeLeft.value = 14400
+  // Only reset timer if starting fresh (not restoring)
+  if (timeLeft.value === 14400) timeLeft.value = 14400
   tabSwitchWarnings.value = 0
   showTabWarning.value = false
   showFullscreenWarning.value = false
@@ -680,9 +1035,13 @@ const startExam = async () => {
     selectedEssayQuestionId.value = essayQs[0].id
   }
 
+  // Save session immediately on start
+  saveSession()
+
   // Start countdown timer
   if (timer.value) clearInterval(timer.value)
   timer.value = setInterval(() => {
+    if (isPaused.value) return
     if (timeLeft.value > 0) {
       timeLeft.value--
     } else {
@@ -693,6 +1052,19 @@ const startExam = async () => {
 
   // Start Proctoring listeners
   startProctoring()
+}
+
+// ── PAUSE / RESUME ─────────────────────────────────────────────────────────
+const pauseExam = () => {
+  isPaused.value = true
+  saveSession()
+  showToaster('Exam paused. Your progress has been saved.', 'success', 3000)
+}
+
+const resumeExam = async () => {
+  isPaused.value = false
+  // Re-enter fullscreen
+  try { await enterFullscreen() } catch (e) {}
 }
 
 const enterFullscreen = async () => {
@@ -868,65 +1240,70 @@ const resetTestState = () => {
   }
 }
 
-// Submit examination results
+// Submit examination results (with one automatic retry on 5xx)
 const submitExam = async (autoSubmit = false) => {
-  if (showConfirmSubmit.value) {
-    showConfirmSubmit.value = false;
-  }
-  // Existing loading state activation
+  if (showConfirmSubmit.value) showConfirmSubmit.value = false
+  isPaused.value = false
   isSubmitting.value = true
 
   // Clear timers & proctoring
-  if (timer.value) {
-    clearInterval(timer.value)
-    timer.value = null
-  }
-  if (fullscreenWarningTimer.value) {
-    clearInterval(fullscreenWarningTimer.value)
-    fullscreenWarningTimer.value = null
-  }
-
+  if (timer.value) { clearInterval(timer.value); timer.value = null }
+  if (fullscreenWarningTimer.value) { clearInterval(fullscreenWarningTimer.value); fullscreenWarningTimer.value = null }
   stopProctoring()
 
   // Exit fullscreen securely
   if (document.fullscreenElement || document.webkitFullscreenElement) {
-    try {
-      await document.exitFullscreen()
-    } catch (e) {
-      console.warn("Error exiting fullscreen: ", e)
-    }
+    try { await document.exitFullscreen() } catch (e) { console.warn("Error exiting fullscreen", e) }
   }
 
   let essayPromptText = ''
   if (selectedEssayQuestionId.value) {
     const q = questions.value.find(q => q.id === selectedEssayQuestionId.value)
-    if (q) {
-      essayPromptText = q.question
-    }
+    if (q) essayPromptText = q.question
   }
 
+  const payload = {
+    exam_id: 1,
+    fullname: fullname.value,
+    email: email.value,
+    contact_number: contactNumber.value,
+    examinee_id: examineeId.value,
+    answers: { ...answers },
+    essay_prompt: essayPromptText,
+    essay_response: essayResponse.value
+  }
+
+  const doSubmit = () => $fetch(`${config.public.apiUrl}/api/jurisdoctor/submit/`, {
+    method: 'POST',
+    body: payload
+  })
+
   try {
-    const payload = {
-      exam_id: 1,
-      fullname: fullname.value,
-      email: email.value,
-      answers: { ...answers },
-      essay_prompt: essayPromptText,
-      essay_response: essayResponse.value
-    }
-
-    await $fetch(`${config.public.apiUrl}/api/jurisdoctor/submit/`, {
-      method: 'POST',
-      body: payload
-    })
-
+    // First attempt
+    await doSubmit()
     isExamSubmitted.value = true
     isExamStarted.value = false
-  } catch (error) {
-    console.error("Submission failed", error)
-    showToaster("Error occurred during submission. Your session status is saved on the server. Please contact an admin.", "error")
+    clearSession() // clear localStorage on success
+  } catch (firstError) {
+    console.warn('First submission attempt failed, retrying in 3s...', firstError)
+    showToaster('Submission error — retrying automatically in 3 seconds...', 'warning', 3500)
+    await new Promise(r => setTimeout(r, 3000))
+    try {
+      await doSubmit()
+      isExamSubmitted.value = true
+      isExamStarted.value = false
+      clearSession()
+    } catch (retryError) {
+      console.error('Retry also failed', retryError)
+      // Save one last time so answers are not lost
+      saveSession()
+      showToaster(
+        '⚠️ Submission failed after retry. Your answers are saved locally. Please screenshot this page and contact an admin immediately.',
+        'error',
+        10000
+      )
+    }
   } finally {
-    // Reset loading state after submission completes (success or error)
     isSubmitting.value = false
   }
 }
