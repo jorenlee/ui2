@@ -1198,7 +1198,7 @@ const submitExam = async (autoSubmit = false) => {
     contact_number: contactNumber.value,
 
     // Ensure all keys are strings to match Django's str(question.id) lookup
-    submitted_answers: Object.fromEntries(
+    answers: Object.fromEntries(
       Object.entries(answers).map(([k, v]) => [String(k), v])
     ),
     essay_prompt: essayPromptText,

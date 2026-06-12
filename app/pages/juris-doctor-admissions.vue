@@ -192,7 +192,7 @@ const pinDigits = reactive(['', '', '', '', '', ''])
 const pinRefs = reactive([])
 const showError = ref(false)
 
-const CORRECT_PIN = '060626'
+const CORRECT_PIN = '000000'
 const availableScheduleDateAndTime = 'June 6, 2026 from 07:00AM to 12:00 NN (PHT)'
 
 const isAvailable = computed(() => {
