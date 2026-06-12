@@ -64,8 +64,8 @@
                   </div>
                   <div>
                     <p class="text-xs text-green-600 font-semibold uppercase tracking-wider mb-0.5">Date & Time</p>
-                    <p class="text-gray-800 text-sm font-bold">June 6, 2026 (Saturday)</p>
-                    <p class="text-gray-600 text-sm">8:30 AM to 12:00 NN</p>
+                    <p class="text-gray-800 text-sm font-bold">June 13, 2026 (Saturday)</p>
+                    <p class="text-gray-600 text-sm">8:30 AM</p>
                   </div>
                 </div>
 
@@ -108,7 +108,7 @@
             <div class="p-10 flex flex-col items-center justify-center h-full min-h-80">
 
               <!-- Unavailable state -->
-              <div v-if="!isAvailable" class="text-center">
+              <!-- <div v-if="!isAvailable" class="text-center">
                 <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-5">
                   <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
@@ -116,12 +116,12 @@
                 </div>
                 <h2 class="text-gray-800 font-bold text-lg mb-2">Access Unavailable</h2>
                 <p class="text-gray-400 text-sm leading-relaxed">This page is only available on<br/><span class="font-semibold text-gray-600">{{ availableScheduleDateAndTime }}</span>.</p>
-              </div>
+              </div> -->
 
               <!-- PIN Entry -->
               <div class="text-center w-full">
                 <!-- Lock icon with green glow -->
-                <!-- <div class="relative w-16 h-16 mx-auto mb-6">
+                <div class="relative w-16 h-16 mx-auto mb-6">
                   <div class="absolute inset-0 rounded-2xl bg-green-100 blur-md opacity-60"></div>
                   <div class="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center shadow-lg">
                     <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
@@ -132,15 +132,15 @@
 
                <h2 class="text-gray-900 font-bold text-xl mb-1">Secure Access</h2>
                 <p class="text-gray-400 text-sm mb-2">Enter your 6-digit PIN to continue</p>
-                 -->
+                 
                 <!-- Exam Details Mini Card -->
                 <!-- <div class="bg-green-50 rounded-xl px-4 py-3 mb-8 border border-green-100">
                   <p class="text-xs text-green-600 font-semibold uppercase tracking-wider mb-1">Exam Date & Time</p>
-                  <p class="text-sm font-bold text-gray-800">June 6, 2026 • 8:30 AM - 12:00 NN</p>
+                  <p class="text-sm font-bold text-gray-800">June 13, 2026 • 8:30 AM</p>
                 </div> -->
 
                 <!-- PIN Inputs -->
-                <!-- <div class="flex gap-3 justify-center mb-6">
+                <div class="flex gap-3 justify-center mb-6">
                   <input
                     v-for="(digit, i) in pinDigits"
                     :key="i"
@@ -161,7 +161,7 @@
 
                 <p v-if="showError" class="text-red-500 text-xs font-medium mt-2 mb-0">Incorrect PIN. Please try again.</p>
 
-                <p class="text-gray-300 text-xs mt-8">Protected by La Salle University</p> -->
+                <p class="text-gray-300 text-xs mt-8">Protected by La Salle University</p>
               </div>
 
             </div>
