@@ -171,7 +171,7 @@
       </main>
 
       <!-- Footer -->
-      <footer class="bg-white border-t border-gray-100 py-4 px-6 text-center">
+      <footer class="bg-white border-t border-gray-100 py-4 px-6 text-center font-bold">
         <p class="text-xs tracking-wide text-green-800">© 2026 La Salle University Ozamiz, Inc.<br/>Powered by Network, Programs and Computerization Center (NPCC)</p>
       </footer>
       
@@ -193,7 +193,7 @@ const pinRefs = reactive([])
 const showError = ref(false)
 
 const CORRECT_PIN = '000000'
-const availableScheduleDateAndTime = 'June 6, 2026 from 07:00AM to 12:00 NN (PHT)'
+// const availableScheduleDateAndTime = 'June 6, 2026 from 07:00AM to 12:00 NN (PHT)'
 
 const isAvailable = computed(() => {
   const now = new Date()
@@ -204,7 +204,7 @@ const isAvailable = computed(() => {
   const hour = now.getHours()
   const minute = now.getMinutes()
 
-  console.log('Availability check -', { year, month, day, hour, minute })
+  // console.log('Availability check -', { year, month, day, hour, minute })
 
   // Available only on June 6, 2026 from 07:00 AM to 12:00 PM
   if (

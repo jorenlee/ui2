@@ -316,8 +316,13 @@
             <span class="text-xs font-extrabold uppercase tracking-widest text-gray-400">Exam Sections</span>
             <div class="mt-2">
               <div class="flex items-center justify-between text-xs text-gray-500 font-bold mb-1">
-                <span>Progress</span>
-                <span>{{ answersCount }} of {{ questions.length }} items</span>
+                <span>Overall Progress</span>
+                <span>{{ answersCount }} of 201
+                  <!-- {{ questions.length }} -->
+                  Answered</span>
+                  <span class="mt-1.5 text-[10px] text-gray-400 font-medium">
+              {{ questions.length > 0 ? Math.round(answersCount / questions.length * 100) : 0 }}% complete
+            </span>
               </div>
               <div class="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
                 <div
@@ -327,6 +332,24 @@
               </div>
             </div>
           </div>
+
+          
+          <!-- Overall Progress Bar -->
+          <!-- <div class="mb-4 bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-extrabold text-gray-500 uppercase tracking-widest">Overall Progress</span>
+              <span class="text-xs font-black text-[#006B3F]">{{ answersCount }} / {{ questions.length }} answered</span>
+            </div>
+            <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
+              <div
+                class="bg-[#006B3F] h-2.5 rounded-full transition-all duration-500"
+                :style="{ width: questions.length > 0 ? (answersCount / questions.length * 100) + '%' : '0%' }"
+              ></div>
+            </div>
+            <div class="mt-1.5 text-[10px] text-gray-400 font-medium">
+              {{ questions.length > 0 ? Math.round(answersCount / questions.length * 100) : 0 }}% complete
+            </div>
+          </div> -->
 
           <nav class="flex-grow overflow-y-auto p-2 space-y-1">
             <button
@@ -352,22 +375,6 @@
         <!-- Main Content Area -->
         <main class="flex-grow p-4 md:p-6 overflow-y-auto w-full">
 
-          <!-- Overall Progress Bar -->
-          <div class="mb-4 bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-xs font-extrabold text-gray-500 uppercase tracking-widest">Overall Progress</span>
-              <span class="text-xs font-black text-[#006B3F]">{{ answersCount }} / {{ questions.length }} answered</span>
-            </div>
-            <div class="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-              <div
-                class="bg-[#006B3F] h-2.5 rounded-full transition-all duration-500"
-                :style="{ width: questions.length > 0 ? (answersCount / questions.length * 100) + '%' : '0%' }"
-              ></div>
-            </div>
-            <div class="mt-1.5 text-[10px] text-gray-400 font-medium">
-              {{ questions.length > 0 ? Math.round(answersCount / questions.length * 100) : 0 }}% complete
-            </div>
-          </div>
 
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
 
@@ -454,16 +461,17 @@
                     {{ group.passage }}
                   </div>
 
-                  <!-- Questions -->
+                  <!-- Questions Item -->
                   <div
-                    v-for="question in group.questions"
+                    v-for="(question, i) in group.questions"
                     :key="question.id"
                     class="pb-10 border-b border-gray-100 last:border-0 last:pb-0"
                   >
                     <div class="mb-5">
                       <div class="flex items-center gap-2 mb-2">
                         <span class="inline-flex items-center gap-1.5 bg-[#006B3F] text-white text-[10px] font-black px-2.5 py-1 rounded-full select-none uppercase tracking-widest">
-                          Item #{{ questions.findIndex(q => q.id === question.id) + 1 }}
+                           #{{ i + 1 }}
+                          <!-- {{ questions.findIndex(q => q.id === question.id) + 1 }} -->
                         </span>
                       </div>
                       <p class="font-bold text-gray-800 text-sm md:text-base leading-relaxed select-none">
@@ -1205,7 +1213,7 @@ const submitExam = async (autoSubmit = false) => {
     essay_response: essayResponse.value,
   }
 
-  console.log('Submission payload:', payload)
+  // console.log('Submission payload:', payload)
 
   const doSubmit = () => $fetch(`${config.public.apiUrl}/api/jurisdoctor/submit/`, {
     method: 'POST',
@@ -1219,7 +1227,7 @@ const submitExam = async (autoSubmit = false) => {
     clearSession()
   } catch (firstError) {
     console.warn('First submission attempt failed, retrying in 3s…', firstError)
-    console.log('Payload that failed:', payload)
+    // console.log('Payload that failed:', payload)
     showToaster('Submission error — retrying in 3 seconds…', 'warning', 3500)
     await new Promise(r => setTimeout(r, 3000))
     try {
