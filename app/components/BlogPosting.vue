@@ -13,7 +13,7 @@ const endpoint = ref(config.public.apiUrl);
 
 // Carousel state
 const currentSlide = ref(0);
-const itemsPerSlide = ref(4); // Default for desktop
+const itemsPerSlide = ref(5); // Default for desktop
 
 const highlightedNews = computed(() => {
   const excludedFilters = [
@@ -207,7 +207,7 @@ onMounted(async () => {
     display.value = "mobile";
     itemsPerSlide.value = 2; // Show 2 items on mobile
   } else {
-    itemsPerSlide.value = 4; // Show 4 items on desktop
+    itemsPerSlide.value = 5; // Show 5 items on desktop
   }
 });
 </script>
@@ -221,7 +221,7 @@ onMounted(async () => {
     <!-- style="
         background-image: url('https://lsu-media-styles.sgp1.digitaloceanspaces.com/481668685_1139543031299171_4009940609016510904_n.jpg');
       " -->
-    <div class="absolute inset-0 bg-[#fffafadf]"></div>
+    <!-- <div class="absolute inset-0 bg-[#fffafadf]"></div> -->
     <!-- Dark overlay -->
 
     <!-- Content -->
@@ -263,13 +263,13 @@ onMounted(async () => {
       <!-- Carousel Container -->
       <div
         v-else-if="highlightedNews.length"
-        class="lg:px-10 px-2"
+        class="px-2"
       >
         <!-- Left Arrow -->
         <button
           v-if="canGoPrev"
           @click="prevSlide"
-          class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 left-3"
+          class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 left-0"
           aria-label="Previous slide"
         >
           <i class="fas fa-chevron-left text-xl"></i>
@@ -279,7 +279,7 @@ onMounted(async () => {
         <button
           v-if="canGoNext"
           @click="nextSlide"
-          class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 right-3"
+          class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 right-0"
           aria-label="Next slide"
         >
           <i class="fas fa-chevron-right text-xl"></i>
@@ -287,12 +287,12 @@ onMounted(async () => {
 
         <!-- News Grid -->
         <div
-          class="grid lg:grid-cols-4 grid-cols-1 lg:gap-3 gap-2 transition-all duration-500"
+          class="grid lg:grid-cols-5 grid-cols-1 lg:gap-3 gap-2 transition-all duration-500"
         >
           <div
             v-for="(j, i) in visibleNews"
             :key="j.id || i"
-            class="bg-white border-2 rounded-lg border-green-50 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
+            class="bg-white border-2 border-green-50 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
           >
             <a :href="'news-updates/' + j.id" class="block">
               <!-- Image Section -->
