@@ -134,13 +134,13 @@
                 <p class="text-gray-400 text-sm mb-2">Enter your 6-digit PIN to continue</p>
                  
                 <!-- Exam Details Mini Card -->
-                <!-- <div class="bg-green-50 rounded-xl px-4 py-3 mb-8 border border-green-100">
+                <div class="bg-green-50 rounded-xl px-4 py-3 mb-8 border border-green-100">
                   <p class="text-xs text-green-600 font-semibold uppercase tracking-wider mb-1">Exam Date & Time</p>
-                  <p class="text-sm font-bold text-gray-800">June 13, 2026 • 8:30 AM</p>
-                </div> -->
+                  <p class="text-sm font-bold text-gray-800">June 13, 2026 • 8:30 AM - 12:00 NN</p>
+                </div>
 
                 <!-- PIN Inputs -->
-                <div class="flex gap-3 justify-center mb-6">
+                <!-- <div class="flex gap-3 justify-center mb-6">
                   <input
                     v-for="(digit, i) in pinDigits"
                     :key="i"
@@ -157,7 +157,7 @@
                     @keydown="onPinKeydown($event, i)"
                     @paste="onPaste($event)"
                   />
-                </div>
+                </div> -->
 
                 <p v-if="showError" class="text-red-500 text-xs font-medium mt-2 mb-0">Incorrect PIN. Please try again.</p>
 
