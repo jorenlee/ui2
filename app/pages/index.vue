@@ -42,7 +42,7 @@ onBeforeUnmount(() => {
           class="lg:pt-3 pt-14 mx-auto w-full"
         /> -->
         <img
-          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/Graduation2026-125.png"
+          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/Graduation2026-125-20thAnniv.png"
           class="lg:pt-3 pt-14 mx-auto w-full"
         />
       </div>
