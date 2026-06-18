@@ -69,11 +69,14 @@ const quickLinks = [
             <div class="w-full lg:w-8/12 text-center lg:text-left">
               <!-- Logo -->
               <div class="mb-3">
-                <a href="https://lsu.edu.ph" class="inline-block">
+                <a href="https://lsu.edu.ph" class="lg:flex items-center gap-x-6">
+
+<img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/20th%20Anniversary%20Emerald%20Logos-20260618T012425Z-3-001/20th%20Anniversary%20Emerald%20Logos/Emerald%20with%20Theme%20-%20White.png" class="w-20 flex mx-auto lg:mx-0 mb-2 lg:mb-0"/>
+
                   <img
                     src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/lsu-w-h.png"
                     alt="LSU"
-                    class="w-11/12 sm:w-3/12 md:w-6/12 lg:w-4/12 mx-auto lg:mx-0 transition-transform duration-300 hover:scale-105"
+                    class="w-11/12 sm:w-3/12 md:w-6/12 lg:w-4/12 h-fit mx-auto lg:mx-0 transition-transform duration-300 hover:scale-105 lg:mb-0 mb-5"
                   />
                 </a>
               </div>
