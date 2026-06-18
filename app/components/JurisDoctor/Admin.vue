@@ -1,5 +1,15 @@
 <template>
   <div class="px-5 py-2">
+    <!-- Toaster Notification -->
+    <div
+      v-if="toast.show"
+      class="fixed top-5 right-5 z-[100] px-6 py-4 rounded-xl shadow-lg font-bold flex items-center gap-3 transition-all duration-300 transform"
+      :class="toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-[#006B3F] text-white'"
+    >
+      <i :class="toast.type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle'"></i>
+      {{ toast.message }}
+    </div>
+
     <div class="space-y-8">
       <!-- Dashboard Header -->
       <div
@@ -931,6 +941,19 @@
 <script setup>
 import { ref, onMounted, computed, onBeforeUnmount, watch } from "vue";
 
+const toast = ref({
+  show: false,
+  message: "",
+  type: "success"
+});
+
+const showToast = (message, type = "success") => {
+  toast.value = { show: true, message, type };
+  setTimeout(() => {
+    toast.value.show = false;
+  }, 3000);
+};
+
 const selectedFile = ref(null);
 const uploading = ref(false);
 const errorMessage = ref("");
@@ -1212,7 +1235,7 @@ const submitGradeAndNotify = async () => {
   if (!selectedAttempt.value) return;
 
   if (inputEssayScore.value < 0 || inputEssayScore.value > 100) {
-    alert("Essay score must be between 0 and 100.");
+    showToast("Essay score must be between 0 and 100.", "error");
     return;
   }
 
@@ -1236,13 +1259,14 @@ const submitGradeAndNotify = async () => {
     }
 
     if (success || res.success) {
-      alert(
+      showToast(
         `Email results notification sent successfully to ${selectedAttempt.value.email}!`,
+        "success"
       );
       closeGradeModal();
       await fetchAttempts();
     } else {
-      alert(res.error || "Failed to update candidate results score.");
+      showToast(res.error || "Failed to update candidate results score.", "error");
     }
   } catch (err) {
     // Retry path without trailing double-slash if routing failed
@@ -1258,8 +1282,9 @@ const submitGradeAndNotify = async () => {
         },
       );
       if (res.success) {
-        alert(
+        showToast(
           `Email results notification sent successfully to ${selectedAttempt.value.email}!`,
+          "success"
         );
         closeGradeModal();
         await fetchAttempts();
@@ -1270,8 +1295,9 @@ const submitGradeAndNotify = async () => {
     }
 
     console.error("Score notification failed:", err);
-    alert(
+    showToast(
       "An error occurred while dispatching the results notification email.",
+      "error"
     );
   } finally {
     grading.value = false;
@@ -1295,14 +1321,14 @@ const deleteAttempt = async (attemptId, fullName) => {
       },
     );
     if (res.success) {
-      alert("Exam attempt deleted successfully.");
+      showToast("Exam attempt deleted successfully.", "success");
       await fetchAttempts();
     } else {
-      alert(res.error || "Failed to delete exam attempt.");
+      showToast(res.error || "Failed to delete exam attempt.", "error");
     }
   } catch (err) {
     console.error("Delete attempt error:", err);
-    alert("An error occurred while deleting the exam attempt.");
+    showToast("An error occurred while deleting the exam attempt.", "error");
   }
 };
 
@@ -1343,12 +1369,14 @@ const deleteSelectedAttempts = async () => {
     }
 
     if (failedCount === 0) {
-      alert(
+      showToast(
         `Successfully deleted all ${deletedCount} selected exam attempt(s).`,
+        "success"
       );
     } else {
-      alert(
+      showToast(
         `Deleted ${deletedCount} attempt(s) successfully. Failed to delete ${failedCount} attempt(s).`,
+        "error"
       );
     }
 
@@ -1356,7 +1384,7 @@ const deleteSelectedAttempts = async () => {
     await fetchAttempts();
   } catch (err) {
     console.error("Bulk delete error:", err);
-    alert("An error occurred during bulk deletion.");
+    showToast("An error occurred during bulk deletion.", "error");
   } finally {
     loadingAttempts.value = false;
   }
@@ -1379,14 +1407,14 @@ const clearAllQuestions = async () => {
       },
     );
     if (res.success) {
-      alert("All questions cleared successfully.");
+      showToast("All questions cleared successfully.", "success");
       await fetchQuestions();
     } else {
-      alert(res.error || "Failed to clear questions.");
+      showToast(res.error || "Failed to clear questions.", "error");
     }
   } catch (err) {
     console.error("Clear questions error:", err);
-    alert("An error occurred while clearing questions.");
+    showToast("An error occurred while clearing questions.", "error");
   }
 };
 
@@ -1405,11 +1433,11 @@ const deleteQuestion = async (questionId, itemNum) => {
     if (res.success) {
       await fetchQuestions();
     } else {
-      alert(res.error || "Failed to delete question.");
+      showToast(res.error || "Failed to delete question.", "error");
     }
   } catch (err) {
     console.error("Delete question error:", err);
-    alert("An error occurred while deleting the question.");
+    showToast("An error occurred while deleting the question.", "error");
   }
 };
 
