@@ -19,7 +19,7 @@
 
       <!-- Main Body -->
       <main class="flex-1 flex items-center justify-center px-4 p-12">
-        <div class="w-7/12 flex flex-col lg:flex-row gap-6 items-stretch">
+        <div class="lg:w-7/12 w-full flex flex-col lg:flex-row gap-6 items-stretch">
 
           <!-- LEFT: Announcement Card -->
           <div class="w-full flex-1 relative bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-100">
