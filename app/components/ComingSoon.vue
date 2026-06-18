@@ -1,5 +1,5 @@
 <template>
-  <div class="relative min-h-screen flex lg:items-center justify-center overflow-hidden bg-gradient-to-br from-green-600 via-green-500 to-emerald-600 lg:pt-3">
+  <div class="relative min-h-screen flex lg:items-center justify-center overflow-hidden lg:pt-3">
 
     <div class="lg:-mt-28">
 
@@ -13,50 +13,29 @@
         <!-- Logo/Icon -->
         <div class="flex justify-center lg:mb-6">
           <div class="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center animate-pulse">
-            <i class="fa-solid fa-gear text-white text-4xl animate-spin"></i>
+            <i class="fa-solid fa-gear text-green-800 text-4xl animate-spin"></i>
           </div>
         </div>
 
         <!-- Title -->
-        <h1 class="lg:text-5xl text-3xl font-extrabold text-white drop-shadow-lg animate-slide-up">
+        <h1 class="lg:text-5xl text-3xl font-extrabold text-green-800 drop-shadow-lg animate-slide-up">
           Coming Soon
         </h1>
 
         <!-- Subtitle -->
-        <p class="text-white/80 lg:mt-4 mt-2 lg:text-lg animate-slide-up delay-200 tracking-tighter whitespace-nowrap">
+        <p class="text-green-800/80 lg:mt-4 mt-2 lg:text-lg animate-slide-up delay-200 tracking-tighter whitespace-nowrap">
           We're building something amazing for you.
         </p>
 
-        <!-- Countdown -->
-        <div class="grid lg:grid-cols-4 grid-cols-2 gap-4 mt-8 text-white animate-slide-up delay-300">
-          <div class="border bg-[#ffffff2d] rounded-xl px-3 py-4">
-            <p class="text-3xl font-bold">{{ days }}</p>
-            <p class="text-sm opacity-70">Days</p>
-          </div>
-
-          <div class="border bg-[#ffffff2d] rounded-xl px-3 py-4"">
-            <p class="text-3xl font-bold">{{ hours }}</p>
-            <p class="text-sm opacity-70">Hours</p>
-          </div>
-
-          <div class="border bg-[#ffffff2d] rounded-xl px-3 py-4"">
-            <p class="text-3xl font-bold">{{ minutes }}</p>
-            <p class="text-sm opacity-70">Minutes</p>
-          </div>
-
-          <div class="border bg-[#ffffff2d] rounded-xl px-3 py-4"">
-            <p class="text-3xl font-bold">{{ seconds }}</p>
-            <p class="text-sm opacity-70">Seconds</p>
-          </div>
-        </div>
+ 
 
         <!-- Launch Date -->
-        <!-- <p class="text-white/80 mt-6 text-sm">
+        <!-- <p class="text-green-800/80 mt-6 text-sm">
           Launching on <strong>April 1, 2026</strong>
         </p> -->
 
         <!-- Footer -->
-        <p class="text-white lg:mt-10 mt-5 text-sm animate-fade-in delay-500">
+        <p class="text-green-800 lg:mt-10 mt-5 text-sm animate-fade-in delay-500">
           © {{ new Date().getFullYear() }} LSU Central
         </p>
 

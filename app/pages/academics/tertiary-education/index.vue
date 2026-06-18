@@ -14,7 +14,7 @@ const schoolToggle = (a, b) => {
 <template>
   <div class="bg-gray-50">
     <Header />
-    <div class="">
+    <!-- <div class="">
       <div class="relative">
          <Banner />
         <img
@@ -80,14 +80,7 @@ const schoolToggle = (a, b) => {
                       class="bg-white border-b-2 flex"
                       @click="a.active = !a.active"
                     >
-                      <!-- <div class="lg:w-full h-auto border border-white">
-                        <img
-                          :src="`https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/colleges/${a.logo}.png`"
-                          class="mx-auto w-44 h-auto mt-5 flex items-center"
-                          :alt="a.logo"
-                        />
-                        <h1 class="bg-green-900 py-1 px-5 text-white text-xl">{{a.abbr}}</h1>
-                      </div> -->
+                  
                       <i
                         class="fa text-gray-700 text-sm lg:px-5 px-3 flex items-center"
                         :class="a.active ? 'fa-caret-up' : 'fa-caret-down'"
@@ -124,7 +117,7 @@ const schoolToggle = (a, b) => {
                             v-for="(p, i) in a.programs"
                             :key="i"
                           >
-                            <!-- href="/academics/tertiary-education/programs" -->
+                           
                             <a
                              
                               class="hover:font-bold hover:text-green-900 block"
@@ -150,7 +143,7 @@ const schoolToggle = (a, b) => {
                       @click="a.active = !a.active"
                     >
                       <div class="lg:w-full  px-2">
-                        <!-- :src="`https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/colleges/${a.logo}.png`" -->
+                       
                         <img
                           :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/colleges/gradschool2025.jpg`"
                           class="mx-auto w-44 h-auto mt-5 flex items-center"
@@ -174,18 +167,7 @@ const schoolToggle = (a, b) => {
                       
                       class="lg:flex bg-white border border-gray-200 w-full text-left"
                     >
-                      <!-- <div class=" lg:p-5">
-                        <i
-                          class="lg:block hidden fa text-green-700 text-3xl"
-                          :class="a.active ? 'fa-caret-left' : 'fa-caret-right'"
-                          @click="a.active = !a.active"
-                        ></i>
-                        <i
-                          class="lg:hidden block fa text-green-700 text-3xl"
-                          :class="a.active ? 'fa-caret-up' : 'fa-caret-down'"
-                          @click="a.active = !a.active"
-                        ></i>
-                      </div> -->
+                     
                       <div
                         class="w-full accordion-body lg:pt-4 px-5"
                       >
@@ -201,12 +183,7 @@ const schoolToggle = (a, b) => {
                             :key="i"
                           >
                             <h1 class="my-3 font-bold">{{ c.title }}</h1>
-                            <!-- <a
-                              href="/academics/tertiary-education/programs"
-                              class="hover:font-bold hover:text-green-900 mb-3"
-                              >{{ c.abbr }}
-                              </a
-                            > -->
+                          
                             <ul class="mb-3">
                               <li
                                 class="lg:text-sm text-xs"
@@ -234,7 +211,8 @@ const schoolToggle = (a, b) => {
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
+    <ComingSoon />
     <Footer />
   </div>
 </template>
