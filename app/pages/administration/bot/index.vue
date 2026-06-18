@@ -83,7 +83,7 @@ onBeforeUnmount(() => {
           >
             Administration
             <span class="lg:text-base text-xs lg:mt-5 ml-5">
-              A.Y. 2025-2026
+              A.Y. 2026-2027
             </span>
           </h1>
         </div>

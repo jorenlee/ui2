@@ -20,7 +20,7 @@ const administrators = ref(administratorsJSON.administrators);
         <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
           <h1 class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto">
             Administration
-            <span class="lg:text-base text-xs lg:mt-5 ml-5">A.Y. 2025-2026</span>
+            <span class="lg:text-base text-xs lg:mt-5 ml-5">A.Y. 2026-2027</span>
           </h1>
         </div>
         <div class="pt-2.5 pb-3 shadow-lg">
