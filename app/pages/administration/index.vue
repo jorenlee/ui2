@@ -131,7 +131,7 @@ function handleMouseLeave() {
         <img
           ref="image"
           id="zoom-image"
-          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/FEB52026-2526.png"
+          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSUOrgChartAY2627.png"
           class="lg:p-5 p-1 zoom-hover"
           alt="LSU Organizational Chart"
         />
