@@ -68,7 +68,7 @@ const administrators = ref(administratorsJSON.administrators);
                 <li>
                   <a
                     href="/administration"
-                    class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer bg-gray-300"
+                      class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
                   >
                     <i class="fa fa-chevron-circle-right mr-2"></i>
                     Organizational Chart
@@ -77,7 +77,7 @@ const administrators = ref(administratorsJSON.administrators);
                 <li>
                   <a
                     href="/administration/bot"
-                    class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
+                      class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
                   >
                     <i class="fa fa-chevron-circle-right mr-2"></i>
                     Board of Trustees and Officers
@@ -86,7 +86,7 @@ const administrators = ref(administratorsJSON.administrators);
                 <li>
                   <a
                     href="/administration/op-ovp"
-                    class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-xs cursor-pointer text-green-800 hover:text-white"
+                      class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
                   >
                     <i class="fa fa-chevron-circle-right mr-2"></i>
                     President and Vice Presidents
@@ -95,7 +95,7 @@ const administrators = ref(administratorsJSON.administrators);
                 <li>
                   <a
                     href="/administration/oc-cd"
-                    class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
+                      class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
                   >
                     <i class="fa fa-chevron-circle-right mr-2"></i>
                     Chancellor and Deans

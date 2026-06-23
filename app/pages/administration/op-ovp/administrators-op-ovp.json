@@ -155,38 +155,38 @@
       "headOffice": true,
       "admins": [
         {
-          "officeAbbr": "VPaDS",
-          "designationAbbr": "VPaDS",
+          "officeAbbr": "VPADS",
+          "designationAbbr": "VPADS",
           "designation": "Vice-President for Administrative Services",
           "name": "Engr. Flordeliza Cabang"
         },
         {
-          "officeAbbr": "VPaDS",
-          "designationAbbr": "VPaDS",
+          "officeAbbr": "VPADS",
+          "designationAbbr": "VPADS",
           "designation": "Farm Manager",
           "name": "Dr. Reggie Macahilo"
         },
         {
-          "officeAbbr": "VPaDS",
-          "designationAbbr": "VPaDS",
+          "officeAbbr": "VPADS",
+          "designationAbbr": "VPADS",
           "designation": "Campus Development Officer",
           "name": "Arch. Marife Bayhon"
         },
         {
-          "officeAbbr": "VPaDS",
+          "officeAbbr": "VPADS",
           "designationAbbr": "GSC",
           "designation": "Director, General Services Center",
           "name": "Mr. Cristopher Noronio"
         },
         {
-          "officeAbbr": "VPaDS",
+          "officeAbbr": "VPADS",
           "designationAbbr": "SSEC",
           "designation": "Director, Safety, Security, and Environment",
           "name": "Engr. Esmael Larubis"
         },
         {
-          "officeAbbr": "VPaDS",
-          "designationAbbr": "VPaDS",
+          "officeAbbr": "VPADS",
+          "designationAbbr": "VPADS",
           "designation": "Officer, Health Services Center",
           "name": "Ms. Maria Diva Dagandara"
         }
