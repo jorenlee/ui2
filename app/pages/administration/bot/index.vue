@@ -6,6 +6,19 @@ const info = ref([]);
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
+const breadcrumbs = ref([
+  { label: "Home", url: "/" },
+  { label: "Administration", url: "/administration" },
+  { label: "Board of Trustees", url: "/administration" },
+]);
+
+const sidebarLinks = ref([
+  { label: "Organizational Chart", url: "/administration" },
+  { label: "Board of Trustees and Officers", url: "/administration/bot" },
+  { label: "President and Vice Presidents", url: "/administration/op-ovp" },
+  { label: "Chancellor and Deans", url: "/administration/oc-cd" },
+]);
+
 let intervalId = null;
 
 /* ======================================
@@ -92,16 +105,9 @@ onBeforeUnmount(() => {
           <ul
             class="flex lasalle-green-text capitalize w-11/12 mx-auto text-xs"
           >
-            <li>
-              <a href="/" class="mr-1"> Home </a>
-            </li>
-            <li>
-              <i class="fas fa-caret-right mr-1"></i>
-              <a href="/administration" class="mr-1"> Administration </a>
-            </li>
-            <li>
-              <i class="fas fa-caret-right mr-1"></i>
-              <a href="/administration" class="mr-1"> Board of Trustees </a>
+            <li v-for="(item, index) in breadcrumbs" :key="index">
+              <i v-if="index > 0" class="fas fa-caret-right mr-1"></i>
+              <a :href="item.url" class="mr-1"> {{ item.label }} </a>
             </li>
           </ul>
         </div>
@@ -119,50 +125,21 @@ onBeforeUnmount(() => {
               LSU Administration
             </span>
             <ul>
-              <li>
+              <li v-for="(link, index) in sidebarLinks" :key="index">
                 <a
-                  href="/administration"
-                   class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
+                  :href="link.url"
+                  class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
                 >
                   <i class="fa fa-chevron-circle-right mr-2"></i>
-                  Organizational Chart
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/administration/bot"
-                    class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
-                >
-                  <i class="fa fa-chevron-circle-right mr-2"></i>
-                  Board of Trustees and Officers
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/administration/op-ovp"
-                    class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
-                >
-                  <i class="fa fa-chevron-circle-right mr-2"></i>
-                  President and Vice Presidents
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/administration/oc-cd"
-                    class="whitespace-nowrap pr-2 items-center green-800-white px-2 py-1 font-bold flex border-b pl-5 hover:bg-green-800 text-green-800 hover:text-white text-xs cursor-pointer"
-                >
-                  <i class="fa fa-chevron-circle-right mr-2"></i>
-                  Chancellor and Deans
+                  {{ link.label }}
                 </a>
               </li>
             </ul>
           </li>
         </ul>
       </div>
-
       <div
-        class="lg:w-9/12 my-8 bg-white border border-green-100 rounded-xl shadow-sm p-6"
-      >
+        class="lg:w-9/12 my-8 bg-white border border-green-100 rounded-xl shadow-sm p-6">
         <!-- HEADER -->
         <div class="mb-6">
           <h2
@@ -174,12 +151,10 @@ onBeforeUnmount(() => {
             Leadership and governance of the institution
           </p>
         </div>
-
         <!-- LOADING -->
         <div v-if="loading" class="text-center py-14 text-gray-500 text-sm">
           Loading Board of Trustees…
         </div>
-
         <!-- ERROR -->
         <div
           v-else-if="errorMsg"
@@ -187,7 +162,6 @@ onBeforeUnmount(() => {
         >
           {{ errorMsg }}
         </div>
-
         <!-- GRID -->
         <div
           v-else
@@ -202,7 +176,7 @@ onBeforeUnmount(() => {
             <div class="relative w-full h-56 overflow-hidden bg-gray-50">
               <img
                 :src="member.links?.[0] || 'https://via.placeholder.com/300'"
-                class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out mt-5"
+                class="w-full h-full object-contain transform group-hover:scale-105 transition-transform duration-700 ease-out"
                 alt="Board of Trustee"
               />
               <div
@@ -228,56 +202,8 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
-
-        <!-- GROUP PHOTOS SECTION -->
-        <div class="mt-20 grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16 items-start">
-          
-          <!-- Current BOT -->
-          <div class="flex flex-col items-center">
-            <div class="mb-6 flex flex-col items-center text-center">
-              <h3 class="text-green-900 font-bold uppercase text-sm tracking-[0.2em]">
-                Current Board of Trustees
-              </h3>
-              <div class="mt-2 h-[2px] w-12 bg-green-600 rounded-full"></div>
-            </div>
-            
-            <div class="w-full group bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-2xl border border-gray-100 transition-all duration-500">
-              <div class="relative overflow-hidden w-full bg-gray-50">
-                <img 
-                  src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/BOTNew.jpg" 
-                  alt="Current Board of Trustees" 
-                  class="w-full h-auto object-cover transform group-hover:scale-[1.03] transition-transform duration-700 ease-out" 
-                />
-                <div class="absolute inset-0 bg-green-900/0 group-hover:bg-green-900/5 transition-colors duration-500 pointer-events-none"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Former BOT -->
-          <div class="flex flex-col items-center">
-            <div class="mb-6 flex flex-col items-center text-center">
-              <h3 class="text-gray-500 font-semibold uppercase text-sm tracking-[0.2em]">
-                Former Board of Trustees
-              </h3>
-              <div class="mt-2 h-[2px] w-12 bg-gray-300 rounded-full"></div>
-            </div>
-            
-            <div class="w-full group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all duration-500">
-              <div class="relative overflow-hidden w-full bg-gray-50">
-                <img 
-                  src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/BOTFormer.jpg" 
-                  alt="Former Board of Trustees" 
-                  class="w-full h-auto object-cover transform group-hover:scale-[1.03] transition-transform duration-700 ease-out filter" 
-                />
-                <div class="absolute inset-0 bg-gray-900/0 group-hover:bg-gray-900/5 transition-colors duration-500 pointer-events-none"></div>
-              </div>
-            </div>
-          </div>
-
-        </div>
       </div>
     </div>
-
     <Footer />
   </div>
 </template>

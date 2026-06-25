@@ -1,6 +1,5 @@
 <script setup>
 import administratorsJSON from "./administrators-op-ovp.json";
-
 const administrators = ref(administratorsJSON.administrators);
 </script>
 
@@ -48,12 +47,6 @@ const administrators = ref(administratorsJSON.administrators);
         </div>
       </div>
     </div>
-
-    <!-- <div>
-      <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/LSUOrganizationalChart.png" 
-      class="lg:w-8/12 w-11/12 mx-auto my-5"/>
-    </div> -->
-
     <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
       <div class="shadow lg:w-3/12 my-5 bg-white">
         <div>
@@ -110,12 +103,6 @@ const administrators = ref(administratorsJSON.administrators);
         class="justify-center lg:w-10/12 mx-auto lg:my-5 my-3 overflow-x-auto"
       >
         <div class="text-sm text-left text-gray-500 shadow-3xl">
-          <!-- <div
-          class="2xl:text-base lg:text-sm uppercase py-1 text-green-800 bg-white shadow-lg border-2 border-green-900 font-bold 2xl:py-1 lg:px-6 px-2 whitespace-nowrap text-center"
-        >
-          Designation
-        </div> -->
-
           <div>
             <div
               class="lg:border-none border"
@@ -180,21 +167,3 @@ const administrators = ref(administratorsJSON.administrators);
     <Footer />
   </div>
 </template>
-
-<style scoped>
-/* a {
-    border: 1px solid #969696;
-    border-bottom: none;
-  }
-  a:hover {
-    border: 1px solid #969696;
-    border-bottom: none;
-    background: #00cc00;
-    color: #000;
-  }
-  a.active {
-    background: #005e00;
-    color: white !important;
-    border-color: none !important;
-  } */
-</style>

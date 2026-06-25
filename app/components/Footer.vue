@@ -81,7 +81,7 @@ const quickLinks = [
 
               <!-- Address -->
               <p class="text-xs text-green-100 w-8/12 mx-auto lg:mx-0 mb-2">
-                Valconcha St., Aguada, Ozamiz City, Misamis Occidental,
+                La Salle St. Aguada, Ozamiz City, Misamis Occidental,
                 Philippines 7200
               </p>
 

@@ -298,7 +298,7 @@
           <li class="font-bold">Via post</li>
           <li>LSU Office of the President,</li>
           <li>La Salle University,</li>
-          <li>Valconcha St., Aguada</li>
+          <li>La Salle St., Aguada</li>
           <li>Ozamiz City 7200</li>
         </ul>
         <ul class="lg:text-sm text-xs text-green-800 mb-8">
