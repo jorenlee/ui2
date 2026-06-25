@@ -1058,10 +1058,11 @@ const sortOptions = [
 // Filter options
 const filterOptions = [
   { value: "", label: "All Contents" },
-  { value: "news highlight", label: "news highlight" },
+  { value: "news highlight", label: "News Highlight" },
   { value: "news", label: "News" },
   { value: "events", label: "Events" },
   { value: "announcements", label: "Announcements" },
+  { value: "programs", label: "Programs" },
 ];
 
 // Filtered and paginated data
@@ -1393,6 +1394,10 @@ const superAdminEmails = [
                         <i class="fa fa-user mr-2" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Authors
                       </span>
 
+                      <span class="flex items-center w-24">
+                        <i class="fa fa-image mr-2" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Image
+                      </span>
+
                       <span class="flex items-center w-full">
                         <i class="fa fa-file-text mr-2" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Title
                       </span>
@@ -1467,6 +1472,15 @@ const superAdminEmails = [
                               {{ j.logs?.[0]?.personnel_email || '' }}</span>
                           </div>
 
+                          <div class="flex items-center justify-center w-24 px-2">
+                            <template v-if="j.files?.find(isImageFile)">
+                              <img :src="getFileUrl(j.files.find(isImageFile))" class="w-16 h-12 object-cover rounded shadow-sm border" :class="darkMode ? 'border-gray-700' : 'border-gray-200'" @error="handleImageError($event, j.files.find(isImageFile))" />
+                            </template>
+                            <div v-else class="w-16 h-12 flex items-center justify-center rounded border" :class="darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'">
+                              <i class="fa fa-image text-xl" :class="darkMode ? 'text-gray-600' : 'text-gray-300'"></i>
+                            </div>
+                          </div>
+
                           <div class="flex items-center w-full px-2">
                             <div>
                               <span class="flex items-center" :class="darkMode ? 'text-gray-200' : 'text-gray-800'">{{
@@ -1511,8 +1525,16 @@ const superAdminEmails = [
                       selectedItem = j;
                     openEditModal(j);
                     ">
-                      <div class="flex justify-between items-start mb-2">
-                        <div class="flex-1">
+                      <div class="flex justify-between items-start mb-2 gap-3">
+                        <div class="flex-shrink-0 w-20 h-16">
+                          <template v-if="j.files?.find(isImageFile)">
+                            <img :src="getFileUrl(j.files.find(isImageFile))" class="w-full h-full object-cover rounded border" :class="darkMode ? 'border-gray-700' : 'border-gray-200'" @error="handleImageError($event, j.files.find(isImageFile))" />
+                          </template>
+                          <div v-else class="w-full h-full flex items-center justify-center rounded border" :class="darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'">
+                            <i class="fa fa-image text-xl" :class="darkMode ? 'text-gray-600' : 'text-gray-300'"></i>
+                          </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
                           <h3 class="font-medium text-sm mb-1 line-clamp-2"
                             :class="darkMode ? 'text-gray-200' : 'text-gray-900'">
                             {{ j.title }}
@@ -1536,7 +1558,7 @@ const superAdminEmails = [
                           <p class="text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">{{ j.authors }}</p>
                         </div>
                         <button @click.stop="openEditModal(j)"
-                          class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs ml-2">
+                          class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs flex-shrink-0">
                           <i class="fa fa-edit"></i>
                         </button>
                       </div>
