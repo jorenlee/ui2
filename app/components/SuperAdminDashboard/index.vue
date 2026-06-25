@@ -495,7 +495,7 @@ const currentViewConfig = computed(() => {
     ViewHRJobVacancyList: { component: resolveComponent("ComingSoon") },
     ViewBorrowKeys: { component: resolveComponent("ComingSoon") },
     ViewAlumni: { component: resolveComponent("ComingSoon") },
-    ViewCurrentEmployedAdmins: {component: resolveComponent("SuperAdminDashboardServicesHREmployedAdmins",), class: "pb-32",},
+    ViewCurrentEmployedAdmins: {component: resolveComponent("SuperAdminDashboardServicesHumanResourceEmployedAdmins",), class: "pb-32",},
     ViewGSOFacilitiesReservationForm: { component: resolveComponent("GSOFacilitiesReservationForm"), class: "pb-32",},
     ViewGSOFacilitiesReservationList: { component: resolveComponent("GSOFacilitiesReservationList"),class: "pb-32",},
     ViewGSOVehicleReservationForm: { component: resolveComponent("GSOVehicleReservationForm"),class: "pb-32",},
