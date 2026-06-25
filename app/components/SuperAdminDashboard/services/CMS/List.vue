@@ -2,9 +2,9 @@
 import { onMounted, ref, computed, watch } from "vue";
 import _ from "lodash";
 
-// Define props
 const props = defineProps({
-  darkMode: { type: Boolean, default: false }
+  darkMode: { type: Boolean, default: false },
+  rolePermissions: { type: Array, default: () => [] }
 });
 
 const { user, init } = useAuth();
@@ -88,6 +88,152 @@ const toast = ref({ show: false, message: "", type: "success" });
 const showToast = (message, type = "success") => {
   toast.value = { show: true, message, type };
   setTimeout(() => (toast.value.show = false), 3000);
+};
+
+// CSV Upload Modal
+const showCsvModal = ref(false);
+const csvFile = ref(null);
+const isCsvDragOver = ref(false);
+
+const handleCsvSelect = (event) => {
+  const file = event.target.files[0];
+  if (file) {
+    csvFile.value = file;
+  }
+};
+
+const handleCsvDrop = (event) => {
+  isCsvDragOver.value = false;
+  const file = event.dataTransfer.files[0];
+  if (file && file.name.toLowerCase().endsWith('.csv')) {
+    csvFile.value = file;
+  } else {
+    showToast("Please upload a valid CSV file.", "error");
+  }
+};
+
+const downloadCsvTemplate = () => {
+  const headers = "content_id,title,authors,descriptions,filters,date";
+  const row = "sample_id,Sample Title,John Doe,This is a description.,SDG1,2023-10-27";
+  const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + row;
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", "cms_template.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+const uploadingCsv = ref(false);
+
+const parseCSV = (str) => {
+  const arr = [];
+  let quote = false;
+  let row = 0, col = 0, c = 0;
+  for (; c < str.length; c++) {
+    let cc = str[c], nc = str[c+1];
+    arr[row] = arr[row] || [];
+    arr[row][col] = arr[row][col] || '';
+
+    if (cc == '"' && quote && nc == '"') { arr[row][col] += cc; ++c; continue; }
+    if (cc == '"') { quote = !quote; continue; }
+    if (cc == ',' && !quote) { ++col; continue; }
+    if (cc == '\r' && nc == '\n' && !quote) { ++row; col = 0; ++c; continue; }
+    if (cc == '\n' && !quote) { ++row; col = 0; continue; }
+    if (cc == '\r' && !quote) { ++row; col = 0; continue; }
+
+    arr[row][col] += cc;
+  }
+  return arr;
+};
+
+const uploadCsv = () => {
+  if (!csvFile.value) {
+    showToast("Please select a CSV file first.", "error");
+    return;
+  }
+
+  uploadingCsv.value = true;
+  const reader = new FileReader();
+  
+  reader.onload = async (e) => {
+    try {
+      const text = e.target.result;
+      const data = parseCSV(text);
+      
+      if (data.length < 2) {
+        showToast("CSV file is empty or only contains headers.", "error");
+        uploadingCsv.value = false;
+        return;
+      }
+
+      const headers = data[0].map(h => h.trim().toLowerCase());
+      
+      if (!headers.includes('title')) {
+        showToast("Invalid CSV format. Missing 'title' column.", "error");
+        uploadingCsv.value = false;
+        return;
+      }
+
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (row.length === 0 || (row.length === 1 && !row[0])) continue; // skip empty rows
+        
+        const payload = {};
+        headers.forEach((header, index) => {
+          if (header) {
+            payload[header] = row[index] || "";
+          }
+        });
+
+        // Add user info to payload if applicable to match form logic
+        if (user.value?.email) {
+          payload.personnel = user.value.email;
+        }
+
+        try {
+          await $fetch(`${endpoint.value}/api/cms/content/create/`, {
+            method: "POST",
+            body: payload,
+          });
+          successCount++;
+        } catch (error) {
+          console.error("Error creating from CSV row:", error);
+          failCount++;
+        }
+      }
+
+      if (successCount > 0) {
+        showToast(`Successfully imported ${successCount} items. ${failCount > 0 ? `Failed: ${failCount}` : ''}`, "success");
+        await fetchList(true); // refresh the list
+        showCsvModal.value = false;
+        csvFile.value = null;
+      } else {
+        showToast(`Failed to import items.`, "error");
+      }
+    } catch (err) {
+      console.error("Error parsing CSV:", err);
+      showToast("Error processing CSV file.", "error");
+    } finally {
+      uploadingCsv.value = false;
+    }
+  };
+  
+  reader.onerror = () => {
+    showToast("Error reading the file.", "error");
+    uploadingCsv.value = false;
+  };
+  
+  reader.readAsText(csvFile.value);
+};
+
+const closeCsvModal = () => {
+  showCsvModal.value = false;
+  csvFile.value = null;
 };
 
 // Edit modal
@@ -968,6 +1114,66 @@ const paginatedInfo = computed(() => {
   return filteredInfo.value.slice(start, start + itemsPerPage);
 });
 
+const selectedForDelete = ref([]);
+
+const selectAll = computed({
+  get: () => {
+    if (paginatedInfo.value && paginatedInfo.value.length > 0) {
+      return paginatedInfo.value.every((item) => selectedForDelete.value.includes(item.id));
+    }
+    return false;
+  },
+  set: (val) => {
+    if (val) {
+      const newSelections = [...selectedForDelete.value];
+      paginatedInfo.value.forEach((item) => {
+        if (!newSelections.includes(item.id)) {
+          newSelections.push(item.id);
+        }
+      });
+      selectedForDelete.value = newSelections;
+    } else {
+      const currentIds = paginatedInfo.value.map(item => item.id);
+      selectedForDelete.value = selectedForDelete.value.filter(id => !currentIds.includes(id));
+    }
+  }
+});
+
+const showDeleteModal = ref(false);
+const deleteLoading = ref(false);
+
+const confirmBulkDelete = () => {
+  if (selectedForDelete.value.length === 0) return;
+  showDeleteModal.value = true;
+};
+
+const executeBulkDelete = async () => {
+  deleteLoading.value = true;
+  try {
+    for (const id of selectedForDelete.value) {
+      await $fetch(`${endpoint.value}/api/cms/content/${id}/delete/`, {
+        method: "DELETE",
+      });
+    }
+    
+    // Refresh the list
+    await fetchList(true);
+    
+    showToast(`✅ Successfully deleted ${selectedForDelete.value.length} items.`, "success");
+    selectedForDelete.value = [];
+    showDeleteModal.value = false;
+  } catch (error) {
+    console.error("Error deleting items:", error);
+    showToast("❌ Failed to delete items", "error");
+  } finally {
+    deleteLoading.value = false;
+  }
+};
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false;
+};
+
 const visiblePages = computed(() => {
   const pages = [];
   const start = Math.max(
@@ -1084,14 +1290,20 @@ const superAdminEmails = [
 
                   <div class="flex flex-col lg:flex-row items-center gap-3 w-full h-fit">
 
-                    <div>
+                    <div class="flex gap-2">
                       <button @click="addMore" v-if="!addMoreToggle"
                         class="whitespace-nowrap px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-white font-bold uppercase rounded-lg">
                         <i class="fa fa-plus mr-2"></i> Add More
                       </button>
-
+                      <button @click="showCsvModal = true" v-if="!addMoreToggle"
+                        class="whitespace-nowrap px-5 py-2 bg-blue-500 hover:bg-blue-400 text-white font-bold uppercase rounded-lg flex items-center">
+                        <i class="fa fa-upload mr-2"></i> CSV Upload
+                      </button>
+                      <button @click="confirmBulkDelete" v-if="selectedForDelete.length > 0"
+                        class="whitespace-nowrap px-5 py-2 bg-red-500 hover:bg-red-400 text-white font-bold uppercase rounded-lg flex items-center transition-all duration-300">
+                        <i class="fa fa-trash mr-2"></i> Delete Selected ({{ selectedForDelete.length }})
+                      </button>
                     </div>
-
 
 
                     <div class="relative w-full">
@@ -1169,6 +1381,9 @@ const superAdminEmails = [
                     <div class="lg:flex gap-4 px-3 py-2 font-semibold border-b text-sm" :class="darkMode
                       ? 'bg-gray-900/50 text-gray-300 border-gray-700'
                       : 'bg-gray-50 text-gray-700 border-gray-200'">
+                      <span class="flex items-center w-8 justify-center">
+                        <input type="checkbox" v-model="selectAll" class="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer" />
+                      </span>
                       <span class="flex items-center w-20">
                         <i class="fa fa-check-circle mr-2"
                           :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Status
@@ -1206,6 +1421,9 @@ const superAdminEmails = [
                             : '',
                           darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
                         ]" class="lg:flex gap-4 px-3 py-1 transition-colors cursor-pointer">
+                          <div class="flex items-center justify-center w-8">
+                            <input type="checkbox" :value="j.id" v-model="selectedForDelete" @click.stop class="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer" />
+                          </div>
                           <div class="flex flex-col gap-1 items-center justify-center w-20 py-2">
                             <!-- Status States - Show only the highest status achieved -->
 
@@ -1246,7 +1464,7 @@ const superAdminEmails = [
                             <span class="block"> {{ j.authors }}</span>
 
                             <span class="block">
-                              {{ j.logs[0].personnel_email }}</span>
+                              {{ j.logs?.[0]?.personnel_email || '' }}</span>
                           </div>
 
                           <div class="flex items-center w-full px-2">
@@ -1789,6 +2007,119 @@ const superAdminEmails = [
       </div>
     </div>
   </ClientOnly>
+
+  <!-- CSV Upload Modal -->
+  <div v-if="showCsvModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click="closeCsvModal">
+    <div class="w-full max-w-md rounded-lg shadow-lg overflow-hidden flex flex-col"
+      :class="darkMode ? 'bg-gray-800' : 'bg-white'" @click.stop>
+      <div class="flex justify-between items-center p-4 border-b"
+        :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
+        <h2 class="text-lg font-bold" :class="darkMode ? 'text-gray-200' : 'text-gray-800'">
+          CSV Upload
+        </h2>
+        <button @click="closeCsvModal" class="p-1"
+          :class="darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'">
+          <i class="fa fa-times text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <div class="flex justify-center mb-4">
+          <button @click="downloadCsvTemplate"
+            class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg flex items-center gap-2 text-sm font-medium w-full justify-center transition-colors">
+            <i class="fa fa-download"></i> Download CSV Template
+          </button>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-2" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+            Upload CSV File
+          </label>
+          <div class="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-all duration-300 relative"
+            @dragover.prevent="isCsvDragOver = true"
+            @dragleave.prevent="isCsvDragOver = false"
+            @drop.prevent="handleCsvDrop"
+            :class="[
+              darkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-50',
+              isCsvDragOver ? (darkMode ? 'border-indigo-500 bg-indigo-900/30' : 'border-indigo-500 bg-indigo-50') : ''
+            ]">
+            
+            <div v-if="isCsvDragOver" class="absolute inset-0 flex items-center justify-center rounded-lg bg-indigo-500/10 pointer-events-none z-10 border-2 border-indigo-500 border-dashed">
+              <span class="text-indigo-600 font-bold text-lg" :class="darkMode ? 'text-indigo-400' : ''">Drop file here</span>
+            </div>
+
+            <i class="fa fa-cloud-upload text-3xl mb-2 transition-colors" 
+              :class="[
+                darkMode ? 'text-gray-400' : 'text-gray-500',
+                isCsvDragOver ? (darkMode ? 'text-indigo-400' : 'text-indigo-500') : ''
+              ]"></i>
+            <input type="file" accept=".csv" @change="handleCsvSelect" class="hidden" id="csv-upload" />
+            <label for="csv-upload"
+              class="cursor-pointer px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded text-sm font-medium transition-colors z-20"
+              :class="darkMode ? 'bg-gray-600 hover:bg-gray-500 text-white' : ''">
+              Browse File
+            </label>
+            <p class="mt-2 text-xs text-center z-20" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+              {{ csvFile ? csvFile.name : 'No file selected' }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end p-4 border-t gap-2"
+        :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
+        <button @click="closeCsvModal"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          :class="darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
+          Cancel
+        </button>
+        <button @click="uploadCsv" :disabled="!csvFile || uploadingCsv"
+          class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors">
+          <i v-if="uploadingCsv" class="fa fa-spinner fa-spin"></i>
+          <i v-else class="fa fa-upload"></i>
+          {{ uploadingCsv ? "Uploading..." : "Upload" }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" @click="closeDeleteModal">
+    <div class="w-full max-w-md rounded-lg shadow-lg overflow-hidden flex flex-col"
+      :class="darkMode ? 'bg-gray-800' : 'bg-white'" @click.stop>
+      <div class="flex justify-between items-center p-4 border-b"
+        :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
+        <h2 class="text-lg font-bold flex items-center text-red-500">
+          <i class="fa fa-exclamation-triangle mr-2"></i> Confirm Deletion
+        </h2>
+        <button @click="closeDeleteModal" class="p-1" :disabled="deleteLoading"
+          :class="darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'">
+          <i class="fa fa-times text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-6">
+        <p :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+          Are you sure you want to delete <strong>{{ selectedForDelete.length }}</strong> selected item(s)? This action cannot be undone.
+        </p>
+      </div>
+
+      <div class="flex justify-end p-4 border-t gap-2"
+        :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
+        <button @click="closeDeleteModal" :disabled="deleteLoading"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          :class="darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
+          Cancel
+        </button>
+        <button @click="executeBulkDelete" :disabled="deleteLoading"
+          class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors">
+          <i v-if="deleteLoading" class="fa fa-spinner fa-spin"></i>
+          <i v-else class="fa fa-trash"></i>
+          {{ deleteLoading ? "Deleting..." : "Delete" }}
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast Notification -->
   <div v-if="toast.show" :class="[

@@ -172,9 +172,9 @@ const convertToFacebookEmbed = (url) => {
   try {
     const reelMatch = url.match(/\/reel\/(\d+)/);
     if (reelMatch) {
-      return `https://www.facebook.com/plugins/video.php?height=476&href=${encodeURIComponent(
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(
         url
-      )}&show_text=false&width=267&t=0`;
+      )}&show_text=false&t=0`;
     }
   } catch (error) {
     console.error("Error converting Facebook URL:", error);
@@ -617,7 +617,7 @@ const prevImage = () => {
             Video List
           </h2>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
             <!-- Combined Video Files and Links with numbering -->
             <div
               v-for="(video, index) in getAllVideos()"
@@ -632,13 +632,13 @@ const prevImage = () => {
               </div>
 
               <!-- Video Content -->
-              <div class="relative">
+              <div class="relative bg-black w-full aspect-video flex justify-center items-center rounded-lg overflow-hidden">
                 <!-- Video Files -->
-                <div v-if="video.type === 'file'" class="relative">
+                <div v-if="video.type === 'file'" class="w-full h-full">
                   <video
                     :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${video.content}`"
                     controls
-                    class="w-full h-48 object-cover"
+                    class="w-full h-full object-contain"
                     :poster="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${video.content}`"
                   >
                     Your browser does not support the video tag.
@@ -646,10 +646,10 @@ const prevImage = () => {
                 </div>
 
                 <!-- YouTube Videos -->
-                <div v-else-if="video.type === 'youtube'" class="relative">
+                <div v-else-if="video.type === 'youtube'" class="w-full h-full">
                   <iframe
                     :src="convertToYouTubeEmbed(video.content)"
-                    class="w-full h-48"
+                    class="w-full h-full"
                     frameborder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowfullscreen
@@ -657,10 +657,10 @@ const prevImage = () => {
                 </div>
 
                 <!-- Facebook Reels -->
-                <div v-else-if="video.type === 'facebook'" class="relative">
+                <div v-else-if="video.type === 'facebook'" class="w-full h-full">
                   <iframe
                     :src="convertToFacebookEmbed(video.content)"
-                    class="w-full h-48"
+                    class="w-full h-full"
                     frameborder="0"
                     scrolling="no"
                     allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
