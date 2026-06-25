@@ -39,7 +39,8 @@
       "acadOffice": true,
       "admins": [
         { "officeAbbr": "CTE", "designationAbbr": "CTE", "designation": "Dean, College of Teacher Education | Coordinator, BSED Programs", "name": "Dr. Jackjun Caupayan" },
-        { "officeAbbr": "CTE", "designationAbbr": "CTE", "designation": "Coordinator, BEED Programs and PE", "name": "Mr. Manuel Jr. Padayogdog" }
+        { "officeAbbr": "CTE", "designationAbbr": "CTE", "designation": "Coordinator, BEED Programs", "name": "Dr. Glenna Tac-an" },
+        { "officeAbbr": "CTE", "designationAbbr": "CTE", "designation": "Coordinator, Physical Education and Sports Management Program", "name": "Mr. Manuel Jr. Padayogdog" }
       ]
     },
     {

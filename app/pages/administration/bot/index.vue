@@ -196,37 +196,84 @@ onBeforeUnmount(() => {
           <div
             v-for="(member, index) in botMembers"
             :key="index"
-            class="group bg-white border-4 border-green-50 rounded-xl overflow-hidden shadow-xl hover:shadow-md transition duration-300"
+            class="group bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 flex flex-col h-full"
           >
             <!-- IMAGE -->
-            <div class="relative overflow-hidden pt-7">
+            <div class="relative w-full h-56 overflow-hidden bg-gray-50">
               <img
                 :src="member.links?.[0] || 'https://via.placeholder.com/300'"
-                class="w-full h-full object-cover transform group-hover:scale-105 transition duration-500"
+                class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out mt-5"
                 alt="Board of Trustee"
               />
               <div
-                class="absolute inset-0 bg-green-900/0 group-hover:bg-green-900/10 transition"
+                class="absolute inset-0 bg-green-900/0 group-hover:bg-green-900/5 transition-colors duration-500"
               ></div>
             </div>
 
             <!-- INFO -->
-            <div class="p-4 text-center">
+            <div class="px-1 py-5 text-center mt-auto flex flex-col items-center bg-white relative z-10">
               <h3
-                class="font-bold text-sm text-green-900 uppercase leading-tight"
+                class="font-bold text-sm text-green-900 uppercase tracking-wider leading-snug"
               >
                 {{ member.title }}
               </h3>
-              <p class="text-xs text-gray-600 mt-1">
+              <p class="text-xs text-gray-500 leading-relaxed">
                 {{ member.descriptions }}
               </p>
 
               <!-- ACCENT LINE -->
               <div
-                class="mt-3 h-0.5 w-10 mx-auto bg-green-600 rounded-full"
+                class="mt-1 h-[2px] w-8 mx-auto bg-green-700 rounded-full transition-all duration-300 group-hover:w-12 group-hover:bg-green-600"
               ></div>
             </div>
           </div>
+        </div>
+
+        <!-- GROUP PHOTOS SECTION -->
+        <div class="mt-20 grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16 items-start">
+          
+          <!-- Current BOT -->
+          <div class="flex flex-col items-center">
+            <div class="mb-6 flex flex-col items-center text-center">
+              <h3 class="text-green-900 font-bold uppercase text-sm tracking-[0.2em]">
+                Current Board of Trustees
+              </h3>
+              <div class="mt-2 h-[2px] w-12 bg-green-600 rounded-full"></div>
+            </div>
+            
+            <div class="w-full group bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-2xl border border-gray-100 transition-all duration-500">
+              <div class="relative overflow-hidden w-full bg-gray-50">
+                <img 
+                  src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/BOTNew.jpg" 
+                  alt="Current Board of Trustees" 
+                  class="w-full h-auto object-cover transform group-hover:scale-[1.03] transition-transform duration-700 ease-out" 
+                />
+                <div class="absolute inset-0 bg-green-900/0 group-hover:bg-green-900/5 transition-colors duration-500 pointer-events-none"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Former BOT -->
+          <div class="flex flex-col items-center">
+            <div class="mb-6 flex flex-col items-center text-center">
+              <h3 class="text-gray-500 font-semibold uppercase text-sm tracking-[0.2em]">
+                Former Board of Trustees
+              </h3>
+              <div class="mt-2 h-[2px] w-12 bg-gray-300 rounded-full"></div>
+            </div>
+            
+            <div class="w-full group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all duration-500">
+              <div class="relative overflow-hidden w-full bg-gray-50">
+                <img 
+                  src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/BOTFormer.jpg" 
+                  alt="Former Board of Trustees" 
+                  class="w-full h-auto object-cover transform group-hover:scale-[1.03] transition-transform duration-700 ease-out filter" 
+                />
+                <div class="absolute inset-0 bg-gray-900/0 group-hover:bg-gray-900/5 transition-colors duration-500 pointer-events-none"></div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
