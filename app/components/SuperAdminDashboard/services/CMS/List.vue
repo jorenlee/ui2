@@ -1373,143 +1373,168 @@ const superAdminEmails = [
                     </div>
                   </div>
                 </div>
-
                 <!-- Content Table/Cards -->
-                <div class="shadow-lg rounded-lg" :class="darkMode ? 'bg-gray-800' : 'bg-white'">
+                <div class="shadow-lg rounded-lg overflow-x-hidden" :class="darkMode ? 'bg-gray-800' : 'bg-white'">
                   <!-- Desktop Table View -->
-                  <div class="hidden lg:block">
-                    <!-- Table Header -->
-                    <div class="lg:flex gap-4 px-3 py-2 font-semibold border-b text-sm" :class="darkMode
-                      ? 'bg-gray-900/50 text-gray-300 border-gray-700'
-                      : 'bg-gray-50 text-gray-700 border-gray-200'">
-                      <span class="flex items-center w-8 justify-center">
-                        <input type="checkbox" v-model="selectAll" class="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer" />
-                      </span>
-                      <span class="flex items-center w-20">
-                        <i class="fa fa-check-circle mr-2"
-                          :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Status
-                      </span>
+                  <div class="hidden lg:block overflow-x-hidden">
+                    <!-- Desktop Table -->
+                    <table class="w-full table-fixed">
+                      <colgroup>
+                        <col style="width:32px" />   <!-- checkbox -->
+                        <col style="width:60px" />   <!-- status -->
+                        <col style="width:76px" />   <!-- image -->
+                        <col style="width:18%" />    <!-- authors -->
+                        <col style="width:22%" />    <!-- title -->
+                        <col />                      <!-- description (flex-1) -->
+                        <col style="width:48px" />   <!-- actions -->
+                      </colgroup>
+                      <!-- Header -->
+                      <thead>
+                        <tr class="border-b text-xs font-semibold" :class="darkMode
+                          ? 'bg-gray-900/50 text-gray-300 border-gray-700'
+                          : 'bg-gray-50 text-gray-600 border-gray-200'">
+                          <th class="px-2 py-2 text-center">
+                            <input type="checkbox" v-model="selectAll" class="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer" />
+                          </th>
+                          <th class="px-1 py-2 text-left">
+                            <span class="flex items-center gap-1">
+                              <i class="fa fa-check-circle" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Status
+                            </span>
+                          </th>
+                          <th class="px-1 py-2 text-left">
+                            <span class="flex items-center gap-1">
+                              <i class="fa fa-image" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Image
+                            </span>
+                          </th>
+                          <th class="px-2 py-2 text-left">
+                            <span class="flex items-center gap-1">
+                              <i class="fa fa-user" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Authors
+                            </span>
+                          </th>
+                          <th class="px-2 py-2 text-left">
+                            <span class="flex items-center gap-1">
+                              <i class="fa fa-file-text" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Title
+                            </span>
+                          </th>
+                          <th class="px-2 py-2 text-left">
+                            <span class="flex items-center gap-1">
+                              <i class="fa fa-align-left" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Description
+                            </span>
+                          </th>
+                          <th class="px-1 py-2 text-center">
+                            <i class="fa fa-cogs" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>
+                          </th>
+                        </tr>
+                      </thead>
+                      <!-- Loading -->
+                      <tbody v-if="loading">
+                        <tr><td colspan="7"><SuperAdminDashboardServicesLoading /></td></tr>
+                      </tbody>
+                      <!-- Body -->
+                      <tbody v-else class="divide-y text-xs" :class="darkMode ? 'divide-gray-700' : 'divide-gray-200'">
+                        <tr
+                          v-for="j in paginatedInfo"
+                          :key="j.id"
+                          @click="selectedItem = j"
+                          class="transition-colors cursor-pointer"
+                          :class="[
+                            selectedItem?.id === j.id
+                              ? (darkMode ? 'bg-blue-900/30' : 'bg-blue-50')
+                              : (darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'),
+                            selectedItem?.id === j.id ? 'border-l-2 border-blue-500' : ''
+                          ]"
+                        >
+                          <!-- Checkbox -->
+                          <td class="px-2 py-2 text-center align-middle">
+                            <input type="checkbox" :value="j.id" v-model="selectedForDelete" @click.stop
+                              class="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer" />
+                          </td>
 
-                      <span class="flex items-center lg:w-3/12 w-full">
-                        <i class="fa fa-user mr-2" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Authors
-                      </span>
-
-                      <span class="flex items-center w-24">
-                        <i class="fa fa-image mr-2" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Image
-                      </span>
-
-                      <span class="flex items-center w-full">
-                        <i class="fa fa-file-text mr-2" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Title
-                      </span>
-
-                      <span class="flex items-center justify-end w-fit">
-                        <i class="fa fa-cogs mr-2" :class="darkMode ? 'text-gray-400' : 'text-gray-500'"></i>Actions
-                      </span>
-                    </div>
-
-                    <SuperAdminDashboardServicesLoading v-if="loading" />
-
-                    <!-- Table Body -->
-                    <div v-else class="divide-y text-sm" :class="darkMode ? 'divide-gray-700' : 'divide-gray-200'">
-                      <div v-for="j in paginatedInfo" :key="j.id" @click="selectedItem = j">
-                        <!-- v-if="
-                            j.logs?.[0]?.personnel_email &&
-                            (canVerify(j.logs[0].personnel_email) ||
-                              superAdminEmails.includes(user.value?.email) ||
-                              user.value?.email ===
-                                j.logs[0].personnel_email)
-                          " -->
-
-                        <div :class="[
-                          selectedItem?.id === j.id
-                            ? (darkMode ? 'bg-blue-900/30 border-l-4 border-blue-500' : 'bg-blue-50 border-l-4 border-blue-500')
-                            : '',
-                          darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
-                        ]" class="lg:flex gap-4 px-3 py-1 transition-colors cursor-pointer">
-                          <div class="flex items-center justify-center w-8">
-                            <input type="checkbox" :value="j.id" v-model="selectedForDelete" @click.stop class="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer" />
-                          </div>
-                          <div class="flex flex-col gap-1 items-center justify-center w-20 py-2">
-                            <!-- Status States - Show only the highest status achieved -->
-
-                            <!-- Published - Green Circle (Highest Priority) -->
-                            <div v-if="j.is_published || (j.filters && j.filters.toLowerCase().includes('published'))"
-                              class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center shadow-md"
-                              title="Published">
-                              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-
-                            <!-- Approved - Blue Circle (Medium Priority) -->
-                            <div
-                              v-else-if="j.is_approved || (j.filters && j.filters.toLowerCase().includes('approved'))"
-                              class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center shadow-md"
-                              title="Approved">
-                              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </div>
-
-                            <!-- Verified - Yellow Circle (Lowest Priority) -->
-                            <div
-                              v-else-if="j.is_verified || (j.filters && j.filters.toLowerCase().includes('verified'))"
-                              class="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center shadow-md"
-                              title="Verified">
-                              <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </div>
-                          </div>
-                          <div class="truncate lg:w-3/12 w-full px-2"
-                            :class="darkMode ? 'text-gray-200' : 'text-gray-600'">
-                            <span class="block"> {{ j.authors }}</span>
-
-                            <span class="block">
-                              {{ j.logs?.[0]?.personnel_email || '' }}</span>
-                          </div>
-
-                          <div class="flex items-center justify-center w-24 px-2">
-                            <template v-if="j.files?.find(isImageFile)">
-                              <img :src="getFileUrl(j.files.find(isImageFile))" class="w-16 h-12 object-cover rounded shadow-sm border" :class="darkMode ? 'border-gray-700' : 'border-gray-200'" @error="handleImageError($event, j.files.find(isImageFile))" />
-                            </template>
-                            <div v-else class="w-16 h-12 flex items-center justify-center rounded border" :class="darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'">
-                              <i class="fa fa-image text-xl" :class="darkMode ? 'text-gray-600' : 'text-gray-300'"></i>
-                            </div>
-                          </div>
-
-                          <div class="flex items-center w-full px-2">
-                            <div>
-                              <span class="flex items-center" :class="darkMode ? 'text-gray-200' : 'text-gray-800'">{{
-                                j.title
-                              }}</span>
-                              <!-- SDG Badges -->
-                              <div v-if="getSdgBadges(j).length" class="mt-1">
-                                <div class="flex flex-wrap gap-1">
-                                  <div v-for="badge in getSdgBadges(j)" :key="badge.number"
-                                    class="inline-flex items-center">
-                                    <span
-                                      class="inline-flex items-center w-5 h-5 justify-center rounded font-bold text-white shadow-sm text-[10px]"
-                                      :style="{ backgroundColor: badge.color }">
-                                      {{ badge.number }}
-                                    </span>
-                                  </div>
-                                </div>
+                          <!-- Status -->
+                          <td class="px-1 py-2 align-middle">
+                            <div class="flex justify-center">
+                              <!-- Published -->
+                              <div v-if="j.is_published || (j.filters && j.filters.toLowerCase().includes('published'))"
+                                class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center shadow-sm" title="Published">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                              <!-- Approved -->
+                              <div v-else-if="j.is_approved || (j.filters && j.filters.toLowerCase().includes('approved'))"
+                                class="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center shadow-sm" title="Approved">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <!-- Verified -->
+                              <div v-else-if="j.is_verified || (j.filters && j.filters.toLowerCase().includes('verified'))"
+                                class="w-7 h-7 rounded-full bg-yellow-400 flex items-center justify-center shadow-sm" title="Verified">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <!-- Unverified -->
+                              <div v-else class="w-7 h-7 rounded-full bg-gray-300 flex items-center justify-center shadow-sm" title="Unverified">
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
                               </div>
                             </div>
-                          </div>
-                          <span class="flex justify-end">
+                          </td>
+
+                          <!-- Image -->
+                          <td class="px-1 py-1.5 align-middle">
+                            <div class="flex justify-center">
+                              <img v-if="j.files?.find(isImageFile)"
+                                :src="getFileUrl(j.files.find(isImageFile))"
+                                class="w-14 h-9 object-cover rounded border"
+                                :class="darkMode ? 'border-gray-700' : 'border-gray-200'"
+                                @error="handleImageError($event, j.files.find(isImageFile))" />
+                              <div v-else class="w-14 h-9 flex items-center justify-center rounded border"
+                                :class="darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-200'">
+                                <i class="fa fa-image" :class="darkMode ? 'text-gray-600' : 'text-gray-300'"></i>
+                              </div>
+                            </div>
+                          </td>
+
+                          <!-- Authors -->
+                          <td class="px-2 py-2 align-middle max-w-0">
+                            <p class="truncate font-medium" :class="darkMode ? 'text-gray-200' : 'text-gray-700'">{{ j.authors || '—' }}</p>
+                            <p class="truncate opacity-50 text-[10px]" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">{{ j.logs?.[0]?.personnel_email || '' }}</p>
+                          </td>
+
+                          <!-- Title -->
+                          <td class="px-2 py-2 align-middle max-w-0">
+                            <p class="truncate font-semibold" :class="darkMode ? 'text-gray-100' : 'text-gray-800'">{{ j.title }}</p>
+                            <!-- SDG Badges -->
+                            <div v-if="getSdgBadges(j).length" class="flex flex-wrap gap-0.5 mt-0.5">
+                              <span v-for="badge in getSdgBadges(j)" :key="badge.number"
+                                class="inline-flex items-center justify-center w-4 h-4 rounded font-bold text-white text-[9px]"
+                                :style="{ backgroundColor: badge.color }">
+                                {{ badge.number }}
+                              </span>
+                            </div>
+                          </td>
+
+                          <!-- Description -->
+                          <td class="px-2 py-2 align-middle max-w-0">
+                            <p class="text-[11px] line-clamp-2 leading-relaxed" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+                              {{ j.descriptions || '—' }}
+                            </p>
+                          </td>
+
+                          <!-- Actions -->
+                          <td class="px-1 py-2 align-middle text-center">
                             <button @click.stop="openEditModal(j)"
-                              class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded transition-colors flex items-center gap-1">
-                              <i class="fa fa-edit text-xl"></i>
+                              class="bg-yellow-500 hover:bg-yellow-400 active:bg-yellow-600 text-white w-8 h-8 rounded-lg transition-colors flex items-center justify-center mx-auto shadow-sm"
+                              title="Edit">
+                              <i class="fa fa-edit text-sm"></i>
                             </button>
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
 
                   <SuperAdminDashboardServicesLoading v-if="loading" />
