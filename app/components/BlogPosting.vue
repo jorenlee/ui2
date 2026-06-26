@@ -230,6 +230,7 @@ onMounted(async () => {
         <div class="lg:mb-8 mb-3 w-fit mx-auto">
           <!-- Title -->
           <h2
+            id="news-and-updates-title"
             class="text-left text-green-800 lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg"
           >
             News and Updates

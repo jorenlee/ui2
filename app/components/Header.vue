@@ -212,9 +212,9 @@ const desktopNav = [
 
 <template>
   <div
-    class="fixed z-50 w-full font-montserrat border-b-4 border-green-800 transition-all duration-300"
+    class=" z-50 w-full font-montserrat border-b-4 border-green-800 transition-all duration-300"
     :class="
-      isScrolled ? 'bg-white/90 backdrop-blur-md shadow-lg' : 'bg-white'
+      isScrolled ? 'bg-white/90 backdrop-blur-md shadow-lg fixed' : 'bg-white'
     "
   >
     <div class="px-3">

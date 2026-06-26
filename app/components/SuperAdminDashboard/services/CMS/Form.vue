@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
+import { ref, onMounted, computed, watch, nextTick } from "vue";
 import moment from "moment";
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
@@ -701,6 +701,11 @@ const handlePaste = (e) => {
   } else {
     insertTextAtCursor(text);
   }
+
+  // Trigger auto detect after DOM update so content.descriptions is populated
+  nextTick(() => {
+    runAutoDetect();
+  });
 };
 
 const insertTextAtCursor = (text) => {
@@ -725,6 +730,148 @@ const insertTextAtCursor = (text) => {
     textarea.focus();
   });
 };
+
+// Auto-detect SDGs, Page Filters, Content Types, and Authors from title & description
+const runAutoDetect = () => {
+  const titleText = content.value.title || "";
+  const descText = content.value.descriptions || "";
+  const text = (titleText + " " + descText).toLowerCase();
+
+  let detectedAny = false;
+
+  // 1. SDGs
+  const sdgKeywords = {
+    sdg1: ["sdg 1", "sdg1", "no poverty"],
+    sdg2: ["sdg 2", "sdg2", "zero hunger"],
+    sdg3: ["sdg 3", "sdg3", "good health", "well-being", "well being"],
+    sdg4: ["sdg 4", "sdg4", "quality education"],
+    sdg5: ["sdg 5", "sdg5", "gender equality"],
+    sdg6: ["sdg 6", "sdg6", "clean water", "sanitation"],
+    sdg7: ["sdg 7", "sdg7", "affordable energy", "clean energy"],
+    sdg8: ["sdg 8", "sdg8", "decent work", "economic growth"],
+    sdg9: ["sdg 9", "sdg9", "industry innovation", "infrastructure"],
+    sdg10: ["sdg 10", "sdg10", "reduced inequalities", "reduced inequality"],
+    sdg11: ["sdg 11", "sdg11", "sustainable cities", "sustainable communities"],
+    sdg12: ["sdg 12", "sdg12", "responsible consumption", "responsible production"],
+    sdg13: ["sdg 13", "sdg13", "climate action"],
+    sdg14: ["sdg 14", "sdg14", "life below water"],
+    sdg15: ["sdg 15", "sdg15", "life on land"],
+    sdg16: ["sdg 16", "sdg16", "peace and justice", "strong institutions"],
+    sdg17: ["sdg 17", "sdg17", "partnerships for the goals", "partnerships"],
+  };
+
+  const newSDGs = [...selectedSDGs.value];
+  let sdgUpdated = false;
+  for (const [key, keywords] of Object.entries(sdgKeywords)) {
+    const hasMatch = keywords.some(keyword => {
+      const escaped = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(`\\b${escaped}\\b`, "i");
+      return regex.test(text);
+    });
+    if (hasMatch && !newSDGs.includes(key)) {
+      newSDGs.push(key);
+      sdgUpdated = true;
+    }
+  }
+  if (sdgUpdated) {
+    selectedSDGs.value = newSDGs;
+    updateFilters();
+    detectedAny = true;
+  }
+
+  // 2. Page Filters
+  const pageKeywords = {
+    "BOT": ["bot", "board of trustees"],
+    "Programs": ["programs", "program"],
+    "Organizational Chart": ["organizational chart", "org chart"],
+    "College": ["college", "colleges"],
+    "OER": ["oer", "open educational resources"],
+  };
+
+  const newPages = [...selectedPageFilters.value];
+  let pageUpdated = false;
+  for (const [key, keywords] of Object.entries(pageKeywords)) {
+    const hasMatch = keywords.some(keyword => {
+      const escaped = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(`\\b${escaped}\\b`, "i");
+      return regex.test(text);
+    });
+    if (hasMatch && !newPages.includes(key)) {
+      newPages.push(key);
+      pageUpdated = true;
+    }
+  }
+  if (pageUpdated) {
+    selectedPageFilters.value = newPages;
+    updatePageFilters();
+    detectedAny = true;
+  }
+
+  // 3. Content Types
+  const contentTypeKeywords = {
+    "News Highlights": ["news highlights", "news highlight"],
+    "News": ["news"],
+    "Events": ["events", "event"],
+    "Announcements": ["announcements", "announcement"],
+  };
+
+  const newContentTypes = [...selectedContentTypes.value];
+  let contentUpdated = false;
+  for (const [key, keywords] of Object.entries(contentTypeKeywords)) {
+    const hasMatch = keywords.some(keyword => {
+      const escaped = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(`\\b${escaped}\\b`, "i");
+      return regex.test(text);
+    });
+    if (hasMatch && !newContentTypes.includes(key)) {
+      newContentTypes.push(key);
+      contentUpdated = true;
+    }
+  }
+  if (contentUpdated) {
+    selectedContentTypes.value = newContentTypes;
+    updateContentTypes();
+    detectedAny = true;
+  }
+
+  // 4. Authors
+  const authorKeywords = {
+    "Arts and Culture Center": ["arts and culture center", "arts and culture"],
+    "Basic Education Unit": ["basic education unit", "basic education", "beu"],
+    "Educational Technology Center": ["educational technology center", "educational technology", "etc"],
+    "Higher Education Unit": ["higher education unit", "higher education", "heu"],
+    "Human Resources Management": ["human resources management", "human resources", "hrm", "hr"],
+    "Marketing and Communications Center": ["marketing and communications center", "marketing and communications", "mcc"],
+    "Network Programs and Computerization Center": ["network programs and computerization center", "network programs", "npcc"],
+    "Student Affairs Center": ["student affairs center", "student affairs", "sac"],
+    "Tingog Campus Press": ["tingog campus press", "tingog"],
+    "University Student Government": ["university student government", "usg"],
+  };
+
+  const newAuthors = [...selectedAuthors.value];
+  let authorUpdated = false;
+  for (const [key, keywords] of Object.entries(authorKeywords)) {
+    const hasMatch = keywords.some(keyword => {
+      const escaped = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      const regex = new RegExp(`\\b${escaped}\\b`, "i");
+      return regex.test(text);
+    });
+    if (hasMatch && !newAuthors.includes(key)) {
+      newAuthors.push(key);
+      authorUpdated = true;
+    }
+  }
+  if (authorUpdated) {
+    selectedAuthors.value = newAuthors;
+    updateAuthors();
+    detectedAny = true;
+  }
+
+  if (detectedAny) {
+    displayToast("✨ Filters auto-detected from content!", "success", 2000);
+  }
+};
+
 
 // ============ SUBMIT CONTENT ============
 const submitting = ref(false);
@@ -886,6 +1033,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
               </label>
               <input
                 v-model="content.title"
+                @blur="runAutoDetect"
                 type="text"
                 class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
                 :class="darkMode
@@ -954,6 +1102,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
               <textarea
                 v-model="content.descriptions"
                 @paste="handlePaste"
+                @blur="runAutoDetect"
                 class="w-full border rounded-lg px-4 py-2 h-80 focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y"
                 style="white-space: pre-wrap;"
                 :class="darkMode

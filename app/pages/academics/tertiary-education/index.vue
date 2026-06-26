@@ -6,355 +6,236 @@ const underGrad = ref(true);
 const gradStud = ref(false);
 
 const schoolToggle = (a, b) => {
-  underGrad.value = a
-  gradStud.value = b
-}
-
+  underGrad.value = a;
+  gradStud.value = b;
+};
 </script>
+
 <template>
   <div class="bg-gray-50">
     <Header />
-    <div class="">
-      <div class="relative">
-         <Banner />
-        <img
-          src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
-          class="align-top w-full h-36 object-none lg:hidden block"
-        />
-        <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
-          <h1
-            class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto"
-          >
-            Tertiary Education
-          </h1>
-        </div>
-        <div class="shadow-lg whitespace-nowrap">
-          <ul
-            class="flex items-center h-10 lg:overflow-hidden overflow-x-scroll lasalle-green-text capitalize w-11/12 mx-auto text-xs">
-            <li>
-              <a href="/" class="mr-1"> Home </a>
-            </li>
-            <li>
-              <i class="fas fa-caret-right mr-1"></i>
-              <a  href="/academics/tertiary-education" class="mr-1"> Academics </a>
-            </li>
-            <li>
-              <i class="fas fa-caret-right mr-1"></i>
-              <a  href="/academics/tertiary-education" class="hover:underline mr-1"> Tertiary Education </a>
-            </li>
-            <li>
-              <i class="fas fa-caret-right mr-1"></i>
-              <a  href="/academics/tertiary-education" class="flex-wrap capitalize mr-1"> degree programs </a>
-            </li>
-          </ul>
-        </div>
+
+    <!-- ── HERO BANNER ── -->
+    <div class="relative overflow-hidden">
+      <Banner />
+      <img
+        src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
+        class="hidden max-lg:block w-full h-36 object-none align-top" />
+      <div class="absolute inset-0 flex items-center px-[5%] pointer-events-none">
+        <h1 class="uppercase text-white text-lg lg:text-2xl tracking-[0.18em] pointer-events-auto">
+          Tertiary Education
+        </h1>
       </div>
     </div>
-    <div class="">
-      <div class="text-center">
-        <div class="lg:flex gap-10 w-11/12 mx-auto lg:mt-10 mt-3">
-          <div class="lg:w-3/12 w-full h-fit lg:mt-0 mt-5 mb-3">
-            <div v-for="(t, i) in tertiary" class="" :key="i">
-              <div v-for="(tu, i) in t.under_grad" class="mb-2 bg-white border-l-4 border-green-900" :key="i" @click="schoolToggle(true, false)">
-                <div class="lg:text-sm text-xs py-2 text-center hover:bg-green-900 hover:text-white cursor-pointer">
-                  <span class="tracking-widest">
-                    {{ tu.title }}
-                  </span>
-                </div>
-              </div>
-              <div v-for="(tu, i) in t.grad_stud" :key="i" class="bg-white border-l-4 border-green-900" @click="schoolToggle(false, true)">
-                <div class="lg:text-sm text-xs py-2 text-center hover:bg-green-900 hover:text-white cursor-pointer">
-                  <span class="tracking-widest">
-                    {{ tu.title }}
-                  </span>
-                </div>
-              </div>
+
+    <!-- ── BREADCRUMB ── -->
+    <nav class="bg-white border-b border-gray-200 px-[5%]">
+      <ul
+        class="flex items-center flex-wrap gap-x-1.5 h-10 text-[0.72rem] text-gray-500 overflow-x-auto whitespace-nowrap list-none m-0 p-0">
+        <li class="flex items-center gap-1.5">
+          <a href="/" class="text-green-900 no-underline capitalize hover:underline">Home</a>
+        </li>
+        <li class="flex items-center gap-1.5">
+          <i class="fas fa-chevron-right text-[0.6rem] text-gray-400"></i>
+          <a href="/academics/tertiary-education"
+            class="text-green-900 no-underline capitalize hover:underline">Academics</a>
+        </li>
+        <li class="flex items-center gap-1.5">
+          <i class="fas fa-chevron-right text-[0.6rem] text-gray-400"></i>
+          <a href="/academics/tertiary-education"
+            class="text-green-900 no-underline capitalize hover:underline">Tertiary Education</a>
+        </li>
+        <li class="flex items-center gap-1.5">
+          <i class="fas fa-chevron-right text-[0.6rem] text-gray-400"></i>
+          <span class="capitalize text-gray-400">Degree Programs</span>
+        </li>
+      </ul>
+    </nav>
+
+    <!-- ── MAIN CONTENT ── -->
+    <div class="max-w-[1280px] mx-auto px-[5%] pt-10 pb-16">
+      <div class="grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6 lg:gap-10 items-start">
+
+        <!-- LEFT SIDEBAR NAV -->
+        <aside class="sticky top-6">
+          <div class="text-[0.65rem] font-bold tracking-[0.2em] text-gray-400 mb-3 pl-4">BROWSE BY</div>
+          <div v-for="(t, i) in tertiary" :key="i">
+            <!-- Undergrad tab -->
+            <div v-for="(tu, j) in t.under_grad" :key="'u' + j"
+              class="flex items-center gap-2.5 py-3 px-4 mb-1 bg-white border border-gray-200 cursor-pointer transition-all duration-150"
+              :class="underGrad
+                ? 'border-l-[3px] border-l-green-900'
+                : 'border-l-[3px] border-l-transparent hover:border-l-green-700 hover:bg-green-50'"
+              @click="schoolToggle(true, false)">
+              <span class="w-[5px] h-[5px] shrink-0 transition-colors duration-150"
+                :class="underGrad ? 'bg-green-900' : 'bg-gray-300'"></span>
+              <span class="text-xs font-semibold tracking-wide uppercase transition-colors duration-150"
+                :class="underGrad ? 'text-green-900' : 'text-gray-600'">{{ tu.title }}</span>
+            </div>
+            <!-- Graduate tab -->
+            <div v-for="(tu, j) in t.grad_stud" :key="'g' + j"
+              class="flex items-center gap-2.5 py-3 px-4 mb-1 bg-white border border-gray-200 cursor-pointer transition-all duration-150"
+              :class="gradStud
+                ? 'border-l-[3px] border-l-green-900'
+                : 'border-l-[3px] border-l-transparent hover:border-l-green-700 hover:bg-green-50'"
+              @click="schoolToggle(false, true)">
+              <span class="w-[5px] h-[5px] shrink-0 transition-colors duration-150"
+                :class="gradStud ? 'bg-green-900' : 'bg-gray-300'"></span>
+              <span class="text-xs font-semibold tracking-wide uppercase transition-colors duration-150"
+                :class="gradStud ? 'text-green-900' : 'text-gray-600'">{{ tu.title }}</span>
             </div>
           </div>
-          <div class="lg:w-9/12 w-full">
-            <div v-for="(t, i) in tertiary" class="" :key="i">
-              <div v-for="(tu, i) in t.under_grad" class="lg:mb-10" :key="i" v-show="underGrad">
-                <div class="accordion mb-5">
-                  <div v-for="(a, i) in tu.list" :key="i" class="mb-1">
-                    <div
-                      class="bg-white border-b-2 flex"
-                      @click="a.active = !a.active"
-                    >
-                  
-                      <i
-                        class="fa text-gray-700 text-sm lg:px-5 px-3 flex items-center"
-                        :class="a.active ? 'fa-caret-up' : 'fa-caret-down'"
-                        @click="a.active = !a.active"
-                      ></i>
-                      <h2 class="accordion-header mb-0">
-                        <button
-                          class="items-center w-full px-2 bg-white rounded-none transition focus:outline-none justify-between mx-auto"
-                          type="button"
-                        >
-  
-                          <h1 class="font-bold text-green-900 text-xs py-2 flex items-center text-left">
-                          
-                          <img :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/colleges/${a.logo}`"
-                            class="w-5 mr-5 rounded-full" />
+        </aside>
 
+        <!-- RIGHT CONTENT AREA -->
+        <main>
+          <div v-for="(t, i) in tertiary" :key="i">
 
-                          {{ a.title }} {{a.abbr}}
-                          </h1>
-                        </button>
-                      </h2>
+            <!-- ── UNDERGRADUATE ── -->
+            <div v-for="(tu, j) in t.under_grad" :key="'ug' + j" v-show="underGrad" class="mb-8">
+              <!-- Section heading -->
+              <div class="flex items-center gap-4 mb-5">
+                <span class="block w-7 h-0.5 bg-green-900 shrink-0"></span>
+                <span class="text-[0.7rem] font-bold tracking-[0.2em] uppercase text-green-900">{{ tu.title }}</span>
+              </div>
+
+              <!-- Accordion list -->
+              <div class="flex flex-col gap-0.5">
+                <div v-for="(a, k) in tu.list" :key="k"
+                  class="bg-white border border-gray-200 transition-all duration-150" :class="a.active
+                    ? 'border-l-[3px] border-l-green-900'
+                    : 'border-l-[3px] border-l-transparent hover:border-l-green-900'">
+                  <!-- Card Header -->
+                  <div class="flex items-center justify-between py-3.5 px-4 cursor-pointer gap-4"
+                    @click="a.active = !a.active">
+                    <div class="flex items-baseline gap-3 min-w-0">
+                      <span
+                        class="text-[0.65rem] font-bold tracking-wider text-green-900 font-mono whitespace-nowrap bg-green-50 px-1.5 py-0.5 border border-green-200 shrink-0">{{
+                          a.abbr }}</span>
+                      <span class="text-[0.82rem] font-semibold text-gray-900 text-left leading-snug">{{ a.title
+                      }}</span>
                     </div>
-                    <div
-                      v-if="a.active"
-                      class="bg-white border border-gray-200"
-                    >
-                      <a class="accordion-body py-4 px-5 text-left"  
-                      
-                        :href="`/academics/tertiary-education/${a.link}`"
-                      >
-                        <ul class="lg:pl-20 pl-2">
-                          <li
-                            class="lg:text-sm text-xs hover:font-bold"
-                            v-for="(p, i) in a.programs"
-                            :key="i"
-                          >
-                           
-                            <a
-                             
-                              class="hover:font-bold hover:text-green-900 block"
-                              >{{ p.title }}</a
-                            >
-                          </li>
-                        </ul>
-                      </a>
+                    <div class="text-green-900 text-xs shrink-0 w-5 text-center">
+                      <i class="fas" :class="a.active ? 'fa-minus' : 'fa-plus'"></i>
                     </div>
+                  </div>
+
+                  <!-- Card Body -->
+                  <div v-if="a.active" class="border-t border-gray-100 bg-gray-50 px-5 py-4">
+                    <a :href="`/academics/tertiary-education/${a.link}`" class="block no-underline">
+                      <ul class="list-none m-0 p-0 pl-2 border-l-2 border-gray-200">
+                        <li v-for="(p, l) in a.programs" :key="l"
+                          class="flex items-baseline gap-2 py-1 border-b border-dashed border-gray-200 last:border-b-0 group">
+                          <span class="text-green-900 text-xs shrink-0 font-bold">—</span>
+                          <span
+                            class="text-[0.78rem] text-gray-800 transition-colors duration-100 group-hover:text-green-900 group-hover:font-semibold">{{
+                              p.title }}</span>
+                        </li>
+                      </ul>
+                    </a>
                   </div>
                 </div>
               </div>
-              <div v-for="(tu, i) in t.grad_stud" :key="i" class="lg:mb-6 mb-5" v-show="gradStud">
-                <div class="accordion">
-                  <div
-                    v-for="(a, i) in tu.list"
-                    :key="i"
-                    class="lg:flex"
-                  >
-                    <div
-                      class=" bg-white lg:w-[500px] h-screen border"
-                      :class="a.active ? '' : 'mx-auto'"
-                      @click="a.active = !a.active"
-                    >
-                      <div class="lg:w-full  px-2">
-                       
-                        <img
-                          :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/colleges/gradschool2025.jpg`"
-                          class="mx-auto w-44 h-auto mt-5 flex items-center"
-                          :alt="a.logo"
-                        />
-                      </div>
-                      <h2 class="accordion-header mb-0">
-                        <button
-                          class="items-center w-full px-5 bg-white  rounded-none transition focus:outline-none justify-between mx-auto"
-                          type="button"
-                        >
-                          <h1
-                            class="font-bold text-green-900 text-xs flex items-center justify-center whitespace-nowrap"
-                          >
-                            {{ a.title }}
-                          </h1>
-                        </button>
-                      </h2>
-                    </div>
-                    <div
-                      
-                      class="lg:flex bg-white border border-gray-200 w-full text-left"
-                    >
-                     
+            </div>
+
+            <!-- ── GRADUATE STUDIES ── -->
+            <div v-for="(tu, j) in t.grad_stud" :key="'gs' + j" v-show="gradStud" class="mb-8">
+              <!-- Section heading -->
+              <div class="flex items-center gap-4 mb-5">
+                <span class="block w-7 h-0.5 bg-green-900 shrink-0"></span>
+                <span class="text-[0.7rem] font-bold tracking-[0.2em] uppercase text-green-900">{{ tu.title }}</span>
+              </div>
+
+              <div v-for="(a, k) in tu.list" :key="k"
+                class="bg-white border border-gray-200 border-l-[3px] border-l-green-900 mb-1">
+                <!-- Grad Card Identity Panel -->
+                <div
+                  class="flex items-center gap-5 py-4 px-5 cursor-pointer border-b border-gray-100 transition-colors duration-150 hover:bg-green-50/30"
+                  @click="a.active = !a.active">
+                  <img
+                    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/colleges/gradschool2025.jpg"
+                    class="w-12 h-auto shrink-0" :alt="a.logo" />
+                  <div class="flex-1 text-[0.82rem] font-bold text-green-900 uppercase tracking-wide">{{ a.title }}
+                  </div>
+                  <div class="text-[0.68rem] text-gray-400 flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas text-green-900" :class="a.active ? 'fa-minus' : 'fa-plus'"></i>
+                    {{ a.active ? 'Collapse' : 'View Programs' }}
+                  </div>
+                </div>
+
+                <!-- Grad Card Programs -->
+                <div v-if="a.active" class="p-5 bg-gray-50">
+                  <a href="/academics/tertiary-education/programs"
+                    class="block text-[0.78rem] font-bold uppercase tracking-wider text-green-900 no-underline hover:underline mb-4 pb-2 border-b border-gray-200">{{
+                      a.title }}</a>
+
+                  <ul class="list-none p-0 m-0">
+                    <li v-for="(c, l) in a.category" :key="l" class="mb-4">
                       <div
-                        class="w-full accordion-body lg:pt-4 px-5"
-                      >
-                        <a
-                          href="/academics/tertiary-education/programs"
-                          class="font-bold hover:text-green-900 hover:text-lg lg:mb-3 uppercase"
-                          >{{ a.title }}</a
-                        >
-                        <ul>
-                          <li
-                            class="lg:text-base text-xs"
-                            v-for="(c, i) in a.category"
-                            :key="i"
-                          >
-                            <h1 class="my-3 font-bold">{{ c.title }}</h1>
-                          
-                            <ul class="mb-3">
-                              <li
-                                class="lg:text-sm text-xs"
-                                v-for="(p, i) in c.programs"
-                                :key="i"
-                              >
-                                <a>
-                                  <div class="hover:font-bold hover:text-green-900 lg:ml-5"> 
-                                    {{ p.title }}
-                                  </div>
-                                  <div class="hover:font-bold hover:text-green-900 lg:ml-10" v-for="(j,i) in p.major" :key="i"> 
-                                    <span v-if="j !== ''">-</span>{{ j }}
-                                  </div>
-                                </a>
-                              </li>
-                            </ul>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
+                        class="text-[0.72rem] font-bold tracking-widest uppercase text-gray-500 mb-2 pl-3 border-l-2 border-green-900">
+                        {{ c.title }}</div>
+                      <ul class="list-none p-0 m-0">
+                        <li v-for="(p, m) in c.programs" :key="m" class="py-0.5 pl-5 group">
+                          <div
+                            class="text-[0.78rem] text-gray-800 transition-colors duration-100 group-hover:text-green-900 group-hover:font-semibold">
+                            {{ p.title }}</div>
+                          <div v-for="(j, n) in p.major" :key="n" class="text-[0.72rem] text-gray-500 pl-3">
+                            <span v-if="j !== ''">&#8212; {{ j }}</span>
+                          </div>
+                        </li>
+                      </ul>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
+
           </div>
-        </div>
+        </main>
       </div>
     </div>
-    <!-- Coming Soon Section -->
-    <div class="coming-soon-section">
-      <div class="coming-soon-inner">
-        <div class="coming-soon-icon">
-          <i class="fas fa-graduation-cap"></i>
-        </div>
-        <h2 class="coming-soon-title">More Courses Coming Soon</h2>
-        <p class="coming-soon-subtitle">
-          We are continuously expanding our academic offerings. Stay tuned for exciting new programs and courses designed to prepare you for the future.
+
+    <!-- ── COMING SOON ── -->
+    <section class="cs-section bg-[#0f2413] py-20 px-[5%] text-center relative overflow-hidden">
+      <div class="relative z-10 max-w-[640px] mx-auto">
+        <div class="text-[0.65rem] font-bold tracking-[0.3em] text-green-500 mb-3">UPCOMING</div>
+        <h2 class="text-2xl lg:text-3xl font-extrabold text-white tracking-wide uppercase mb-5">More Courses Coming Soon
+        </h2>
+        <div class="w-10 h-0.5 bg-green-500 mx-auto mb-6"></div>
+        <p class="text-sm text-white/65 leading-relaxed mb-8">
+          We are continuously expanding our academic offerings. Stay tuned for
+          exciting new programs and courses designed to prepare you for the future.
         </p>
-        <div class="coming-soon-divider">
-          <span></span>
-          <i class="fas fa-star"></i>
-          <span></span>
+        <div class="flex flex-wrap justify-center gap-2 mb-7">
+          <span
+            class="border border-white/25 text-white/85 px-3.5 py-1 text-[0.72rem] font-semibold tracking-wider uppercase cursor-default transition-all duration-200 hover:bg-green-500/10 hover:border-green-500">Graduate
+            Programs</span>
+          <span
+            class="border border-white/25 text-white/85 px-3.5 py-1 text-[0.72rem] font-semibold tracking-wider uppercase cursor-default transition-all duration-200 hover:bg-green-500/10 hover:border-green-500">Professional
+            Courses</span>
+          <span
+            class="border border-white/25 text-white/85 px-3.5 py-1 text-[0.72rem] font-semibold tracking-wider uppercase cursor-default transition-all duration-200 hover:bg-green-500/10 hover:border-green-500">Certifications</span>
         </div>
-        <div class="coming-soon-badges">
-          <span class="badge">Graduate Programs</span>
-          <span class="badge">Professional Courses</span>
-          <span class="badge">Certifications</span>
-        </div>
-        <p class="coming-soon-note">
-          <i class="fas fa-bell"></i> Check back regularly for updates on new course offerings.
+        <p class="text-xs text-white/40">
+          <i class="fas fa-bell text-yellow-400 mr-1"></i>&nbsp; Check back regularly for updates.
         </p>
       </div>
-    </div>
-    <!-- <ComingSoon /> -->
+    </section>
+
     <Footer />
   </div>
 </template>
 
 <style scoped>
-.coming-soon-section {
-  background: linear-gradient(135deg, #1a3c1f 0%, #2d6a35 50%, #1a3c1f 100%);
-  padding: 80px 20px;
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-}
-
-.coming-soon-section::before {
+/* Pseudo-element grid overlay — the only thing Tailwind can't handle inline */
+.cs-section::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, transparent 60%);
-  animation: shimmer 6s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  50% { transform: translate(10px, -10px) rotate(3deg); }
-}
-
-.coming-soon-inner {
-  position: relative;
-  z-index: 1;
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.coming-soon-icon {
-  font-size: 3.5rem;
-  color: rgba(255, 255, 255, 0.25);
-  margin-bottom: 20px;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.coming-soon-title {
-  font-size: 2rem;
-  font-weight: 800;
-  color: #ffffff;
-  letter-spacing: 1px;
-  margin-bottom: 16px;
-  text-transform: uppercase;
-}
-
-.coming-soon-subtitle {
-  font-size: 1rem;
-  color: rgba(255, 255, 255, 0.75);
-  line-height: 1.8;
-  margin-bottom: 30px;
-}
-
-.coming-soon-divider {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  margin-bottom: 28px;
-}
-
-.coming-soon-divider span {
-  height: 1px;
-  width: 80px;
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.coming-soon-divider i {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
-}
-
-.coming-soon-badges {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 28px;
-}
-
-.badge {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-  padding: 6px 18px;
-  border-radius: 999px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  transition: background 0.3s ease, transform 0.2s ease;
-  cursor: default;
-}
-
-.badge:hover {
-  background: rgba(255, 255, 255, 0.22);
-  transform: translateY(-2px);
-}
-
-.coming-soon-note {
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.55);
-  margin-top: 10px;
-}
-
-.coming-soon-note i {
-  margin-right: 6px;
-  color: #ffd700;
+  inset: 0;
+  background: repeating-linear-gradient(90deg,
+      transparent,
+      transparent 59px,
+      rgba(255, 255, 255, 0.02) 60px);
+  pointer-events: none;
 }
 </style>
