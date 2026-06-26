@@ -14,7 +14,7 @@ const schoolToggle = (a, b) => {
 <template>
   <div class="bg-gray-50">
     <Header />
-    <!-- <div class="">
+    <div class="">
       <div class="relative">
          <Banner />
         <img
@@ -211,10 +211,150 @@ const schoolToggle = (a, b) => {
           </div>
         </div>
       </div>
-    </div> -->
-    <ComingSoon />
+    </div>
+    <!-- Coming Soon Section -->
+    <div class="coming-soon-section">
+      <div class="coming-soon-inner">
+        <div class="coming-soon-icon">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+        <h2 class="coming-soon-title">More Courses Coming Soon</h2>
+        <p class="coming-soon-subtitle">
+          We are continuously expanding our academic offerings. Stay tuned for exciting new programs and courses designed to prepare you for the future.
+        </p>
+        <div class="coming-soon-divider">
+          <span></span>
+          <i class="fas fa-star"></i>
+          <span></span>
+        </div>
+        <div class="coming-soon-badges">
+          <span class="badge">Graduate Programs</span>
+          <span class="badge">Professional Courses</span>
+          <span class="badge">Certifications</span>
+        </div>
+        <p class="coming-soon-note">
+          <i class="fas fa-bell"></i> Check back regularly for updates on new course offerings.
+        </p>
+      </div>
+    </div>
+    <!-- <ComingSoon /> -->
     <Footer />
   </div>
 </template>
 
-<style></style>
+<style scoped>
+.coming-soon-section {
+  background: linear-gradient(135deg, #1a3c1f 0%, #2d6a35 50%, #1a3c1f 100%);
+  padding: 80px 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.coming-soon-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.05) 0%, transparent 60%);
+  animation: shimmer 6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(10px, -10px) rotate(3deg); }
+}
+
+.coming-soon-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.coming-soon-icon {
+  font-size: 3.5rem;
+  color: rgba(255, 255, 255, 0.25);
+  margin-bottom: 20px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+.coming-soon-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1px;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+}
+
+.coming-soon-subtitle {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.8;
+  margin-bottom: 30px;
+}
+
+.coming-soon-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.coming-soon-divider span {
+  height: 1px;
+  width: 80px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.coming-soon-divider i {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
+}
+
+.coming-soon-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  padding: 6px 18px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: background 0.3s ease, transform 0.2s ease;
+  cursor: default;
+}
+
+.badge:hover {
+  background: rgba(255, 255, 255, 0.22);
+  transform: translateY(-2px);
+}
+
+.coming-soon-note {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 10px;
+}
+
+.coming-soon-note i {
+  margin-right: 6px;
+  color: #ffd700;
+}
+</style>
