@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, computed, watch, nextTick } from "vue";
 import moment from "moment";
+import { MdEditor } from 'md-editor-v3';
+import 'md-editor-v3/lib/style.css';
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
@@ -679,27 +681,26 @@ const handleFileSelect = async (e) => {
 
 const handlePaste = (e) => {
   e.preventDefault();
-  const html = e.clipboardData.getData('text/html');
-  const text = e.clipboardData.getData('text/plain');
   
-  if (html) {
-    // Basic conversion of common block elements to newlines
-    let processed = html
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<\/div>/gi, '\n')
-      .replace(/<br\s*\/?>/gi, '\n');
-    
-    // Strip other tags
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = processed;
-    processed = tempDiv.textContent || tempDiv.innerText || "";
-    
-    // Clean up excessive newlines (more than 2)
-    processed = processed.replace(/\n{3,}/g, '\n\n').trim();
-    
+  // Get plain text from clipboard (automatically removes font styles/HTML)
+  let text = e.clipboardData.getData('text/plain');
+  
+  if (text) {
+    // Reformat text to fill the whole area:
+    // 1. Normalize line endings
+    // 2. Preserve paragraphs (2 or more newlines) by replacing them with a temporary marker
+    // 3. Replace single newlines (hard wraps) with spaces so text fills the textarea width
+    // 4. Restore paragraphs as double newlines
+    // 5. Clean up excessive spaces
+    let processed = text
+      .replace(/\r\n/g, '\n')
+      .replace(/\n{2,}/g, '__PARAGRAPH_BREAK__')
+      .replace(/\n/g, ' ')
+      .replace(/__PARAGRAPH_BREAK__/g, '\n\n')
+      .replace(/[ \t]{2,}/g, ' ')
+      .trim();
+      
     insertTextAtCursor(processed);
-  } else {
-    insertTextAtCursor(text);
   }
 
   // Trigger auto detect after DOM update so content.descriptions is populated
@@ -1099,17 +1100,13 @@ const displayToast = (message, type = "success", duration = 3000) => {
                 Description
                 <span class="text-red-500">*</span>
               </label>
-              <textarea
+              <MdEditor
                 v-model="content.descriptions"
-                @paste="handlePaste"
-                @blur="runAutoDetect"
-                class="w-full border rounded-lg px-4 py-2 h-80 focus:ring-2 focus:ring-green-500 focus:border-transparent transition resize-y"
-                style="white-space: pre-wrap;"
-                :class="darkMode
-                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
-                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
-                placeholder="Provide a detailed description of the content"
-              ></textarea>
+                :theme="darkMode ? 'dark' : 'light'"
+                @onBlur="runAutoDetect"
+                language="en-US"
+                style="height: 320px;"
+              />
             </div>
 
             <!-- FILTERS & SDGs -->

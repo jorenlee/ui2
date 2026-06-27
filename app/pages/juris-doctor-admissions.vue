@@ -18,7 +18,7 @@
       </header>
       <!-- Main Body -->
       <main class="flex-1 flex items-center justify-center px-4 p-12">
-        <div class="lg:w-7/12 w-full flex flex-col lg:flex-row gap-6 items-stretch">
+        <div class="lg:w-6/12 w-full flex flex-col lg:flex-row gap-6 items-stretch">
 
           <!-- LEFT: Announcement Card -->
           <div class="w-full flex-1 relative bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-100">
@@ -34,14 +34,15 @@
             <div class="relative pt-10 lg:pt-14 pb-5 flex flex-col h-full">
               <!-- Badge -->
               <div
-                class="inline-flex items-center gap-2 bg-green-50 border border-green-100 rounded-full px-4 py-1.5 mb-8 self-start mx-auto">
+                class="inline-flex items-center gap-2 bg-green-50 border border-green-100 rounded-full px-4 py-1.5 mb-2 self-start mx-auto">
                 <span class="w-1.5 h-1.5 rounded-full bg-green-600"></span>
                 <span class="text-green-700 text-xs font-bold tracking-widest uppercase">Juris Doctor Program</span>
               </div>
 
               <!-- Title -->
               <div class="mb-8 text-center">
-                <h1 class="font-black uppercase leading-none text-gray-900 mb-2"
+               <div class="lg:flex items-center justify-center">
+                 <h1 class="font-black uppercase leading-none text-gray-900 mb-2 lg:pr-3"
                   style="font-size: clamp(2.5rem, 5vw, 4rem); letter-spacing: -0.02em;">
                   Admission
                 </h1>
@@ -49,6 +50,7 @@
                   style="font-size: clamp(2.5rem, 5vw, 4rem); letter-spacing: -0.02em; -webkit-text-stroke: 2px #166534; color: transparent;">
                   Test
                 </h1>
+               </div>
                 <div class="flex items-center justify-center gap-3 mt-4">
                   <div class="h-1 w-16 bg-green-700 rounded-full"></div>
                   <div class="h-1 w-6 bg-green-300 rounded-full"></div>
@@ -81,7 +83,7 @@
                 </div> -->
 
                 <!-- PIN Inputs -->
-                <div class="flex gap-3 justify-center mb-6">
+                <div class="flex gap-3 justify-center">
                   <input v-for="(digit, i) in pinDigits" :key="i" :ref="el => { if (el) pinRefs[i] = el }"
                     type="password" maxlength="1" inputmode="numeric"
                     class="w-12 h-16 text-center text-2xl font-bold text-gray-800 bg-gray-50 border-2 rounded-xl outline-none transition-all duration-200"

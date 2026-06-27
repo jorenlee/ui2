@@ -133,7 +133,12 @@ const submitForm = async () => {
   let listItems =
     (await $fetch(endpoint.value + "/api/drs/list").catch(
       (error) => error.data,
-    )) || 0;
+    )) || [];
+    
+  if (!Array.isArray(listItems)) {
+    listItems = [];
+  }
+  
   if (listItems.length === 0) {
     info.value.tracking_id = "DRS-" + moment().year() + "-001";
     postAPI();
