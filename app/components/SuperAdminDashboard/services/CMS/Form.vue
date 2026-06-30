@@ -8,7 +8,8 @@ const endpoint = ref(config.public.apiUrl);
 
 // Define props
 const props = defineProps({
-  darkMode: { type: Boolean, default: false }
+  darkMode: { type: Boolean, default: false },
+  editData: { type: Object, default: null }
 });
 
 // Define emit for parent
@@ -382,27 +383,6 @@ const updateAuthors = () => {
   // Don't call updateAuthorFilters() - authors should not be added to filters
 };
 
-// Initialize selectedAuthors from content.authors on mount
-onMounted(() => {
-  if (content.value.authors) {
-    const typed = content.value.authors
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const authorsMap = authorsList.value.reduce((acc, label) => {
-      acc[normalize(label)] = label;
-      return acc;
-    }, {});
-    const mapped = typed.map((a) => authorsMap[normalize(a)] || a);
-    const uniqMapped = sanitizeList(mapped);
-    // Normalize stored authors using canonical labels where available
-    content.value.authors = uniqMapped.join(", ");
-    selectedAuthors.value = uniqMapped.filter((a) =>
-      authorsList.value.includes(a)
-    );
-    // Don't call updateAuthorFilters() - authors should not be added to filters
-  }
-});
 
 // Keep selectedAuthors in sync when user manually edits the authors text field.
 // Note: We don't update selectedAuthors here to avoid conflicts with checkbox selections
@@ -448,6 +428,123 @@ const extractFileNameFromUrl = (url) => {
 const selectedFiles = ref([]);
 const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB for images
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB for PDFs and other files
+
+// helper for detectTypeFromName
+const detectTypeFromName = (filename) => {
+  const ext = "." + filename.split(".").pop().toLowerCase();
+  if ([".jpeg", ".jpg", ".png", ".gif", ".webp"].includes(ext)) return "image";
+  if ([".mp4", ".avi", ".mov"].includes(ext)) return "video";
+  if ([".pdf"].includes(ext)) return "pdf";
+  return "other";
+};
+
+// Initialize from editData if provided (placed AFTER selectedFiles so immediate watcher can access it)
+watch(() => props.editData, (newVal) => {
+  if (newVal) {
+    content.value = {
+      id: newVal.id,
+      content_id: newVal.content_id || "CMS" + moment().valueOf(),
+      title: newVal.title || "",
+      authors: newVal.authors || "",
+      filters: newVal.filters || "",
+      descriptions: newVal.descriptions || "",
+      date: newVal.date || "",
+      links: newVal.links && newVal.links.length ? [...newVal.links] : [""],
+      files: [], // handled below
+      is_verified: newVal.is_verified || false,
+      is_approved: newVal.is_approved || false,
+      is_published: newVal.is_published || false,
+      logs: newVal.logs || [
+        {
+          personnel_fullname: user.value?.name || "",
+          personnel_designation: user.value?.email || "",
+          personnel_email: user.value?.email || "",
+          remarks_title: "N/A",
+          remarks_description: "N/A",
+          timestamp: moment().valueOf(),
+        },
+      ],
+    };
+
+    // Handle files
+    if (newVal.files && newVal.files.length > 0) {
+      selectedFiles.value = newVal.files.map(filename => ({
+        name: filename,
+        type: detectTypeFromName(filename),
+        preview: `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${filename}`,
+        uploaded: true,
+        uploading: false,
+        error: null,
+        uploadedUrl: filename
+      }));
+    } else {
+      selectedFiles.value = [];
+    }
+
+    const filters = (newVal.filters || "").toLowerCase();
+    approvalVerified.value = newVal.is_verified || filters.includes("verified");
+    approvalApproved.value = newVal.is_approved || filters.includes("approved");
+    approvalPublished.value = newVal.is_published || filters.includes("published");
+
+    if (newVal.authors) {
+      const typed = newVal.authors.split(",").map((s) => s.trim()).filter(Boolean);
+      const authorsMap = authorsList.value.reduce((acc, label) => {
+        acc[normalize(label)] = label;
+        return acc;
+      }, {});
+      const mapped = typed.map((a) => authorsMap[normalize(a)] || a);
+      const uniqMapped = sanitizeList(mapped);
+      content.value.authors = uniqMapped.join(", ");
+      selectedAuthors.value = uniqMapped.filter((a) => authorsList.value.includes(a));
+    } else {
+      selectedAuthors.value = [];
+    }
+
+    if (newVal.filters) {
+      const lowerFilters = newVal.filters.toLowerCase();
+      selectedSDGs.value = sdgOptions.value
+        .filter((sdg) => {
+          const sdgNum = sdg.value.replace("sdg", "");
+          const patterns = [
+            `\\bsdg${sdgNum}\\b`, `\\bsdg ${sdgNum}\\b`, `\\bsdg-${sdgNum}\\b`, `\\bsdg_${sdgNum}\\b`,
+            `\\bgoal ${sdgNum}\\b`, `\\bgoal${sdgNum}\\b`, `\\bsdg${sdgNum.toString().padStart(2, "0")}\\b`
+          ];
+          return patterns.some(pattern => new RegExp(pattern, "i").test(lowerFilters));
+        })
+        .map(sdg => sdg.value);
+
+      selectedPageFilters.value = pageFiltersList.value.filter(pageFilter => lowerFilters.includes(pageFilter.toLowerCase()));
+      selectedContentTypes.value = contentTypeList.value.filter(contentType => lowerFilters.includes(contentType.toLowerCase()));
+    } else {
+      selectedSDGs.value = [];
+      selectedPageFilters.value = [];
+      selectedContentTypes.value = [];
+    }
+  } else {
+    // Inline reset (cannot call resetForm() here — it's declared later as a const)
+    content.value = {
+      content_id: "CMS" + Date.now(),
+      title: "",
+      authors: "",
+      filters: "",
+      descriptions: "",
+      date: "",
+      links: [""],
+      is_verified: false,
+      is_approved: false,
+      is_published: false,
+    };
+    selectedFiles.value = [];
+    selectedSDGs.value = [];
+    selectedAuthors.value = [];
+    selectedPageFilters.value = [];
+    selectedContentTypes.value = [];
+    approvalVerified.value = false;
+    approvalApproved.value = false;
+    approvalPublished.value = false;
+  }
+}, { immediate: true });
+
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -710,7 +807,7 @@ const handlePaste = (e) => {
 };
 
 const insertTextAtCursor = (text) => {
-  const textarea = document.querySelector('textarea[v-model="content.descriptions"]');
+  const textarea = document.querySelector('.md-editor textarea') || document.querySelector('textarea[v-model="content.descriptions"]');
   if (!textarea) {
     content.value.descriptions += text;
     return;
@@ -718,7 +815,7 @@ const insertTextAtCursor = (text) => {
   
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
-  const currentText = content.value.descriptions;
+  const currentText = content.value.descriptions || "";
   
   content.value.descriptions = 
     currentText.substring(0, start) + 
@@ -899,8 +996,13 @@ const submitContent = async () => {
       .filter((fileObj) => fileObj.uploaded && fileObj.uploadedUrl)
       .map((fileObj) => fileObj.uploadedUrl);
 
-    const response = await $fetch(`${endpoint.value}/api/cms/content/create/`, {
-      method: "POST",
+    const method = props.editData && props.editData.id ? "PUT" : "POST";
+    const url = props.editData && props.editData.id 
+      ? `${endpoint.value}/api/cms/content/${props.editData.id}/` 
+      : `${endpoint.value}/api/cms/content/create/`;
+
+    const response = await $fetch(url, {
+      method: method,
       body: {
         ...content.value,
         links: content.value.links.filter((l) => l && l.trim()),
@@ -1021,7 +1123,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
           :class="darkMode ? 'bg-gray-800' : 'bg-white'">
           <h1 class="text-xl font-bold mb-8"
             :class="darkMode ? 'text-gray-200' : 'text-gray-800'">
-            Create New Content
+            {{ editData ? 'Edit Content' : 'Create New Content' }}
           </h1>
 
           <div class="w-full space-y-6">
@@ -1100,13 +1202,15 @@ const displayToast = (message, type = "success", duration = 3000) => {
                 Description
                 <span class="text-red-500">*</span>
               </label>
-              <MdEditor
-                v-model="content.descriptions"
-                :theme="darkMode ? 'dark' : 'light'"
-                @onBlur="runAutoDetect"
-                language="en-US"
-                style="height: 320px;"
-              />
+              <div @paste.capture="handlePaste">
+                <MdEditor
+                  v-model="content.descriptions"
+                  :theme="darkMode ? 'dark' : 'light'"
+                  @onBlur="runAutoDetect"
+                  language="en-US"
+                  style="height: 320px;"
+                />
+              </div>
             </div>
 
             <!-- FILTERS & SDGs -->
@@ -1498,7 +1602,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
                       </p>
                       <p class="text-xs mt-1"
                         :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
-                        {{ formatFileSize(fileObj.file.size) }}
+                        {{ fileObj.file ? formatFileSize(fileObj.file.size) : '' }}
                       </p>
                     </div>
 
@@ -1553,7 +1657,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
                 class="flex-1 bg-green-800 hover:bg-green-900 disabled:bg-gray-400 text-white py-3 rounded-lg text-base font-bold transition-colors flex items-center justify-center"
               >
                 <i v-if="submitting" class="fa fa-spinner fa-spin mr-2"></i>
-                {{ submitting ? "Saving..." : "Submit Content" }}
+                {{ submitting ? "Saving..." : (editData ? "Update Content" : "Submit Content") }}
               </button>
               <button
                 @click="resetForm"
@@ -1624,5 +1728,21 @@ const displayToast = (message, type = "success", duration = 3000) => {
 
 .cursor-move:active {
   cursor: grabbing;
+}
+
+/* Styling MdEditor for Arial standard text and full width wrap */
+:deep(.md-editor),
+:deep(.md-editor-content),
+:deep(.md-editor-content textarea),
+:deep(.md-editor-preview),
+:deep(.md-editor-html) {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+:deep(.md-editor-content textarea) {
+  white-space: pre-wrap !important;
+  word-wrap: break-word !important;
 }
 </style>

@@ -185,6 +185,7 @@ const desktopNav = [
     href: "#",
     children: [
       { label: "Campus Pass", href: "/campus-pass" },
+      { label: "Safety and Security", href: "/safety-security" },
       { label: "Registrar", href: "/registrar" },
       { label: "Procurement", href: "/procurement" },
       { label: "Library", href: "/library" },
@@ -192,7 +193,7 @@ const desktopNav = [
       { label: "Human Resource", href: "/hr" },
       { label: "Document Reviewer", href: "/drs" },
       { label: "News and Updates", href: "/news-updates" },
-        { label: "IT Services", href: "/npcc" },
+      { label: "IT Services", href: "/npcc" },
     ],
   },
   {

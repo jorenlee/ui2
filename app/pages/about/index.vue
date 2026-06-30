@@ -24,20 +24,15 @@
         <Banner />
         <img
           src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
-          class="align-top w-full h-36 object-none lg:hidden block"
-        />
+          class="align-top w-full h-36 object-none lg:hidden block" />
         <div></div>
         <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
-          <h1
-            class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto"
-          >
+          <h1 class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto">
             About
           </h1>
         </div>
         <div class="pt-2.5 pb-3 shadow-lg">
-          <ul
-            class="flex lasalle-green-text capitalize w-11/12 mx-auto text-xs"
-          >
+          <ul class="flex lasalle-green-text capitalize w-11/12 mx-auto text-xs">
             <li>
               <a href="/" class="mr-1"> Home </a>
             </li>
@@ -57,9 +52,7 @@
       <div class="justify-center lg:w-10/12 mx-auto lg:my-5 my-3">
         <div>
           <div class="text-left mx-auto">
-            <p
-              class="lg:mt-7 mt-4 mb-8 text-xs lg:w-8/12 mx-auto w-11/12 lg:text-center"
-            >
+            <p class="lg:mt-7 mt-4 mb-8 text-xs lg:w-8/12 mx-auto w-11/12 lg:text-center">
               La Salle University – Ozamiz is a recognized Catholic university
               established by the Brothers of the Christian Schools. Inspired by
               the charism of St. John Baptist De La Salle, the university
@@ -71,9 +64,7 @@
           <div class="block mx-auto lg:w-11/12">
             <div class="lg:flex lg:gap-10 lg:w-full w-11/12 mx-auto">
               <div class="w-full mb-12">
-                <div
-                  class="font-bold lg:text-xl text-lg mb-3 text-center lasalle-green"
-                >
+                <div class="font-bold lg:text-xl text-lg mb-3 text-center lasalle-green">
                   <span class="text-white px-2 py-1 tracking-widest">
                     Vision
                   </span>
@@ -91,9 +82,7 @@
               </div>
 
               <div class="w-full mb-12">
-                <div
-                  class="font-bold lg:text-xl text-lg mb-3 text-center lasalle-green"
-                >
+                <div class="font-bold lg:text-xl text-lg mb-3 text-center lasalle-green">
                   <span class="text-white px-2 py-1 tracking-widest">
                     Mission
                   </span>
@@ -103,7 +92,8 @@
                     To create a learner-centered environment focused on (a)
                     application of knowledge from various disciplines to address
                     real world problems; (b) community-building skills; and (c)
-                    nurturing passion and sense of vocation;
+                    nurturing passion and sense of vocat
+                    ion;
                   </p>
                   <p class="text-left text-xs mb-4">
                     To cultivate a dynamic university community committed to
@@ -128,5 +118,3 @@
     <Footer />
   </div>
 </template>
-
-<style scoped></style>

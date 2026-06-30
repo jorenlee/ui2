@@ -32,6 +32,9 @@
           </ul>
         </div>
       </div>
+      <div>
+        Commission on Election
+      </div>
       <div class="w-11/12 mx-auto pt-10 font-bold text-green-800 text-center mb-3">
         Facebook Pages
       </div>
