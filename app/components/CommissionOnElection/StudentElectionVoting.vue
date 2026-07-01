@@ -682,7 +682,7 @@ const usgCandidatesGrouped = computed(() => {
   if (!currentVoter.value) return groups;
 
   candidates.value.forEach((c) => {
-    if (c.category && c.category.toLowerCase() === "all colleges") {
+    if (c.category && (c.category.toLowerCase() === "all colleges" || c.category.toUpperCase() === "LSU-USG")) {
       if (!groups[c.title_position]) {
         groups[c.title_position] = [];
       }

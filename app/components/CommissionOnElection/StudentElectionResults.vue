@@ -47,7 +47,7 @@
           <div class="flex justify-between items-baseline mb-1">
             <span :class="[
               'text-4xl font-black tracking-tight',
-              c.category && c.category.toLowerCase() === 'all colleges' ? 'text-green-600' : 'text-emerald-600'
+              c.category && (c.category.toLowerCase() === 'all colleges' || c.category.toUpperCase() === 'LSU-USG') ? 'text-green-600' : 'text-emerald-600'
             ]">
               {{ getCandidateVoteStats(c).percentString }}%
             </span>
@@ -60,7 +60,7 @@
           <div class="w-full bg-slate-200/70 h-3 rounded-full overflow-hidden mb-2">
             <div :class="[
               'h-full rounded-full transition-all duration-500 ease-out',
-              c.category && c.category.toLowerCase() === 'all colleges' ? 'bg-green-600' : 'bg-emerald-600'
+              c.category && (c.category.toLowerCase() === 'all colleges' || c.category.toUpperCase() === 'LSU-USG') ? 'bg-green-600' : 'bg-emerald-600'
             ]" :style="{ width: `${getCandidateVoteStats(c).percent}%` }"></div>
           </div>
           
@@ -128,7 +128,7 @@ const getCandidateVoteStats = (c) => {
   let total = 0;
   let label = '';
   
-  if (c.category && c.category.toLowerCase() === 'all colleges') {
+  if (c.category && (c.category.toLowerCase() === 'all colleges' || c.category.toUpperCase() === 'LSU-USG')) {
     total = voterStats.value.total_voters || 0;
     label = `of ${total} total registered students`;
   } else {

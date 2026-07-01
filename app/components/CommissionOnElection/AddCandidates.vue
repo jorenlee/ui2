@@ -80,13 +80,9 @@
             <select v-model="candidateForm.college" required
                     class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg cursor-pointer">
               <option value="" disabled>Select a college...</option>
-              <option value="CAS">College of Arts and Sciences CAS</option>
-              <option value="CBA">College of Business and Accountancy CBA</option>
-              <option value="CCJE">College of Criminal Justice Education CCJE</option>
-              <option value="CCSEA">College of Computer Studies, Engineering, and Architecture CCSEA</option>
-              <option value="CON">College of Nursing CON</option>
-              <option value="CTE">College of Teacher Education CTE</option>
-              <option value="CTHM">College of Tourism and Hospitality Management CTHM</option>
+              <option v-for="college in colleges" :key="college.value" :value="college.value">
+                {{ college.label }}
+              </option>
             </select>
           </div>
           <div class="relative">
@@ -96,14 +92,8 @@
           </div>
           <div class="relative">
             <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Category <span class="text-red-500">*</span></label>
-            <select v-model="candidateForm.category" required
-                    class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg cursor-pointer">
-              <option value="all colleges">All Colleges (USG)</option>
-              <option value="SC-CCSEA">SC-CCSEA</option>
-              <option value="SC-CON">SC-CON</option>
-              <option value="SC-CBA">SC-CBA</option>
-              <option value="SC-CAS">SC-CAS</option>
-            </select>
+            <input v-model="candidateForm.category" type="text" required placeholder="e.g. LSU-USG, SC-CCSEA, ABO-JPIA"
+                   class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors placeholder-slate-300 font-medium text-lg">
           </div>
           <div class="relative">
             <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Title / Position <span class="text-red-500">*</span></label>
@@ -198,6 +188,17 @@ const candidates = ref([]);
 const showAddCandidate = ref(false);
 const csvFile = ref(null);
 
+
+const colleges = [
+  { value: 'CAS', label: 'College of Arts and Sciences CAS' },
+  { value: 'CBA', label: 'College of Business and Accountancy CBA' },
+  { value: 'CCJE', label: 'College of Criminal Justice Education CCJE' },
+  { value: 'CCSEA', label: 'College of Computer Studies, Engineering, and Architecture CCSEA' },
+  { value: 'CON', label: 'College of Nursing CON' },
+  { value: 'CTE', label: 'College of Teacher Education CTE' },
+  { value: 'CTHM', label: 'College of Tourism and Hospitality Management CTHM' }
+];
+
 const toast = ref({ show: false, type: '', message: '' });
 const showToast = (message, type = 'error') => {
   toast.value = { show: true, type, message };
@@ -210,7 +211,7 @@ const candidateForm = ref({
   lsu_id_number: '',
   college: '',
   program: '',
-  category: 'all colleges',
+  category: '',
   title_position: '',
   student_candidate_profile_desc: '',
   student_candidate_profile_image: ''
@@ -269,9 +270,21 @@ const submitCandidate = async () => {
     if (res.ok) {
       await fetchCandidates();
       showAddCandidate.value = false;
-      candidateForm.value = { lsu_email: '', student_name: '', lsu_id_number: '', college: '', program: '', category: 'all colleges', title_position: '', student_candidate_profile_desc: '', student_candidate_profile_image: '' };
+      candidateForm.value = { lsu_email: '', student_name: '', lsu_id_number: '', college: '', program: '', category: '', title_position: '', student_candidate_profile_desc: '', student_candidate_profile_image: '' };
       profileImageFile.value = null;
       showToast('Candidate added successfully!', 'success');
+    } else {
+      const errorText = await res.text();
+      console.error('Failed to add candidate response:', errorText);
+      try {
+        const errorJson = JSON.parse(errorText);
+        const errorMsg = Object.entries(errorJson)
+          .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
+          .join(' | ');
+        showToast(errorMsg || 'Failed to add candidate.', 'error');
+      } catch {
+        showToast(errorText || 'Failed to add candidate.', 'error');
+      }
     }
   } catch (err) {
     showToast('Failed to add candidate.', 'error');
