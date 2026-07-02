@@ -126,24 +126,14 @@ onMounted(async () => {
 const filteredMenuList = computed(() => {
   const roles = userRoles.value;
   const email = user.value?.email;
-  const electionAdmins = ["jorenlee.luna@lsu.edu.ph"];
 
+  // No per-item filtering needed: all 4 Commission on Election items are
+  // shown to every user who has been granted the "Commission on Election" role.
   const processMenu = (menuList) => {
-    return menuList.map(menu => {
-      let items = menu.items;
-      if (menu.group === "Commission on Election") {
-        items = menu.items.filter(item => {
-          if (item.view === "ViewAddCandidates" || item.view === "ViewCurrentEnrolledStudents") {
-            return electionAdmins.includes(email);
-          }
-          return true;
-        });
-      }
-      return { ...menu, items };
-    }).filter(menu => menu.items.length > 0);
+    return menuList.filter(menu => menu.items.length > 0);
   };
 
-  // ✅ SUPER ADMIN → SEE EVERYTHING (but still filter election items by email)
+  // ✅ SUPER ADMIN → SEE EVERYTHING
   if (roles.includes("Super Admin")) {
     return processMenu(subMenuList);
   }
