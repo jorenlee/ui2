@@ -355,6 +355,7 @@
                     type="checkbox"
                     :value="c.id"
                     v-model="selectedCandidates"
+                    @change="clearAbstain('usg', position)"
                     class="hidden"
                   />
 
@@ -399,6 +400,49 @@
                     </p>
                   </div>
                 </label>
+
+                <!-- Abstain option -->
+                <button
+                  type="button"
+                  @click="toggleAbstain('usg', position, group)"
+                  :class="[
+                    'relative flex flex-col items-center justify-center p-5 border-2 border-dashed rounded-2xl transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm',
+                    isAbstained('usg', position)
+                      ? 'border-slate-500 bg-slate-100 shadow-md ring-4 ring-slate-400/10'
+                      : 'border-slate-300 hover:border-slate-400 hover:shadow-md',
+                  ]"
+                >
+                  <div class="relative w-full aspect-square mb-4 rounded-full overflow-hidden shadow-inner bg-slate-100 flex items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 11-12.728 0M12 3v9" />
+                    </svg>
+
+                    <div
+                      :class="[
+                        'absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 shadow-md z-10',
+                        isAbstained('usg', position)
+                          ? 'border-slate-500 bg-slate-500 text-white scale-110'
+                          : 'border-slate-300 bg-white text-transparent',
+                      ]"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="w-full flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-200/70 px-3 py-1 rounded-full mb-2">
+                      {{ position }}
+                    </span>
+                    <h5 class="font-extrabold text-slate-700 text-base leading-tight mb-1">
+                      Abstain
+                    </h5>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Skip this position
+                    </p>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -445,6 +489,7 @@
                     type="checkbox"
                     :value="c.id"
                     v-model="selectedCandidates"
+                    @change="clearAbstain('local', position)"
                     class="hidden"
                   />
 
@@ -489,6 +534,49 @@
                     </p>
                   </div>
                 </label>
+
+                <!-- Abstain option -->
+                <button
+                  type="button"
+                  @click="toggleAbstain('local', position, group)"
+                  :class="[
+                    'relative flex flex-col items-center justify-center p-5 border-2 border-dashed rounded-2xl transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm',
+                    isAbstained('local', position)
+                      ? 'border-slate-500 bg-slate-100 shadow-md ring-4 ring-slate-400/10'
+                      : 'border-slate-300 hover:border-slate-400 hover:shadow-md',
+                  ]"
+                >
+                  <div class="relative w-full aspect-square mb-4 rounded-full overflow-hidden shadow-inner bg-slate-100 flex items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 11-12.728 0M12 3v9" />
+                    </svg>
+
+                    <div
+                      :class="[
+                        'absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 shadow-md z-10',
+                        isAbstained('local', position)
+                          ? 'border-slate-500 bg-slate-500 text-white scale-110'
+                          : 'border-slate-300 bg-white text-transparent',
+                      ]"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="w-full flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-200/70 px-3 py-1 rounded-full mb-2">
+                      {{ position }}
+                    </span>
+                    <h5 class="font-extrabold text-slate-700 text-base leading-tight mb-1">
+                      Abstain
+                    </h5>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Skip this position
+                    </p>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -535,6 +623,7 @@
                     type="checkbox"
                     :value="c.id"
                     v-model="selectedCandidates"
+                    @change="clearAbstain('abo', position)"
                     class="hidden"
                   />
 
@@ -579,6 +668,49 @@
                     </p>
                   </div>
                 </label>
+
+                <!-- Abstain option -->
+                <button
+                  type="button"
+                  @click="toggleAbstain('abo', position, group)"
+                  :class="[
+                    'relative flex flex-col items-center justify-center p-5 border-2 border-dashed rounded-2xl transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm',
+                    isAbstained('abo', position)
+                      ? 'border-slate-500 bg-slate-100 shadow-md ring-4 ring-slate-400/10'
+                      : 'border-slate-300 hover:border-slate-400 hover:shadow-md',
+                  ]"
+                >
+                  <div class="relative w-full aspect-square mb-4 rounded-full overflow-hidden shadow-inner bg-slate-100 flex items-center justify-center shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 11-12.728 0M12 3v9" />
+                    </svg>
+
+                    <div
+                      :class="[
+                        'absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 shadow-md z-10',
+                        isAbstained('abo', position)
+                          ? 'border-slate-500 bg-slate-500 text-white scale-110'
+                          : 'border-slate-300 bg-white text-transparent',
+                      ]"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="w-full flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-200/70 px-3 py-1 rounded-full mb-2">
+                      {{ position }}
+                    </span>
+                    <h5 class="font-extrabold text-slate-700 text-base leading-tight mb-1">
+                      Abstain
+                    </h5>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      Skip this position
+                    </p>
+                  </div>
+                </button>
               </div>
             </div>
           </div>
@@ -678,7 +810,85 @@ const emailInput = ref("");
 const currentVoter = ref(null);
 const selectedCandidates = ref([]);
 
+// Tracks which position groups the voter has explicitly chosen to abstain
+// from. Keyed by "section::position" (e.g. "usg::President") so that the
+// same position title in different tabs (USG / Local / ABO) doesn't collide.
+const abstainedGroups = ref(new Set());
+
+const getGroupKey = (section, position) => `${section}::${position}`;
+
+const isAbstained = (section, position) =>
+  abstainedGroups.value.has(getGroupKey(section, position));
+
+// Toggles abstain for a position group. Choosing to abstain clears any
+// candidates already selected within that same group, since abstaining
+// and voting for a candidate in the same position are mutually exclusive.
+const toggleAbstain = (section, position, group) => {
+  const key = getGroupKey(section, position);
+  const next = new Set(abstainedGroups.value);
+  if (next.has(key)) {
+    next.delete(key);
+  } else {
+    next.add(key);
+    const idsInGroup = new Set(group.map((c) => c.id));
+    selectedCandidates.value = selectedCandidates.value.filter(
+      (id) => !idsInGroup.has(id),
+    );
+  }
+  abstainedGroups.value = next;
+};
+
+// Selecting an actual candidate in a group should clear any abstain flag
+// previously set for that same position.
+const clearAbstain = (section, position) => {
+  const key = getGroupKey(section, position);
+  if (abstainedGroups.value.has(key)) {
+    const next = new Set(abstainedGroups.value);
+    next.delete(key);
+    abstainedGroups.value = next;
+  }
+};
+
 const activeSection = ref("usg");
+
+// Ranks a USG/ABO position title: President first, Vice President (or VP)
+// second, board/general members last, everything else in between — using
+// a substring match so wording variations (e.g. "ABO President",
+// "ABO VP", "ABO Member") still sort correctly.
+const getUsgAboRank = (position) => {
+  const p = position.trim().toLowerCase();
+  if (p.includes("member")) return 99;
+  if (p.includes("vice president") || /\bvp\b/.test(p)) return 1;
+  if (p.includes("president")) return 0;
+  return 50;
+};
+
+// Ranks an SC (Local College Council) position title: plain Governor
+// first, Governor/Vice Governor for Internal Affairs next, then External
+// Affairs, then Board Member(s) last. Matches by keyword rather than exact
+// string so titles like "Governor for Internal Affairs" or "Vice Governor -
+// External Affairs" are recognized regardless of exact phrasing.
+const getLocalRank = (position) => {
+  const p = position.trim().toLowerCase();
+  if (p.includes("board member")) return 99;
+  if (p.includes("internal")) return 1;
+  if (p.includes("external")) return 2;
+  if (p.includes("governor")) return 0;
+  return 50;
+};
+
+const sortGroupsByPosition = (groups, rankFn = getUsgAboRank) => {
+  const entries = Object.entries(groups);
+  entries.sort(([posA], [posB]) => {
+    const rankA = rankFn(posA);
+    const rankB = rankFn(posB);
+    if (rankA !== rankB) return rankA - rankB;
+    // Tiebreaker: alphabetize anything sharing the same rank (e.g.
+    // multiple board-member titles) for a stable, predictable order.
+    return posA.localeCompare(posB);
+  });
+  return Object.fromEntries(entries);
+};
 
 const getVoterABO = (voter) => {
   if (!voter) return null;
@@ -831,6 +1041,7 @@ const validateVoter = async () => {
     if (res.ok) {
       currentVoter.value = data;
       selectedCandidates.value = [];
+      abstainedGroups.value = new Set();
       showToast("Authentication successful.", "success");
 
       if (!data.has_voted && candidates.value.length === 0) {
@@ -896,7 +1107,7 @@ const usgCandidatesGrouped = computed(() => {
       groups[c.title_position].push(c);
     }
   });
-  return groups;
+  return sortGroupsByPosition(groups);
 });
 
 // Maps the voter's college to the correct SC-xxx category key.
@@ -1012,7 +1223,7 @@ const localCandidatesGrouped = computed(() => {
       groups[c.title_position].push(c);
     }
   });
-  return groups;
+  return sortGroupsByPosition(groups, getLocalRank);
 });
 
 const aboCandidatesGrouped = computed(() => {
@@ -1030,17 +1241,17 @@ const aboCandidatesGrouped = computed(() => {
       groups[c.title_position].push(c);
     }
   });
-  return groups;
+  return sortGroupsByPosition(groups);
 });
 
 const logout = () => {
   currentVoter.value = null;
   voterIdInput.value = "";
   emailInput.value = "";
+  abstainedGroups.value = new Set();
 };
 
 onMounted(() => {
   fetchCandidates();
 });
 </script>
-
