@@ -1043,3 +1043,4 @@ onMounted(() => {
   fetchCandidates();
 });
 </script>
+
