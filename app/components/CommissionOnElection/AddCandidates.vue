@@ -91,12 +91,15 @@
                        class="w-12 h-12 rounded-full object-cover border border-slate-200 shrink-0" @error="handleImageError($event, editForm.student_name)">
                   <span class="text-sm text-slate-500">Current image — pick a new file below to replace it.</span>
                 </div>
-                <input type="file" accept="image/*" @change="handleEditImageUpload" id="editProfileImageUpload" class="hidden">
+                <input type="file" accept="image/jpeg,image/jpg,image/png,.jpg,.jpeg,.png" @change="handleEditImageUpload" id="editProfileImageUpload" class="hidden">
                 <label for="editProfileImageUpload" class="w-full py-2 bg-transparent border-0 border-b-2 border-slate-300 flex items-center gap-3 cursor-pointer hover:border-green-700 transition-colors font-medium text-lg">
                   <i class="fa fa-image text-slate-400"></i>
                   <span :class="editProfileImageFile ? 'text-slate-900' : 'text-slate-300'" class="truncate">{{ editProfileImageFile ? editProfileImageFile.name : 'Click to select a new image file...' }}</span>
                 </label>
+                <p class="text-xs text-slate-400 mt-1">Accepted formats: JPG, JPEG, PNG. Max file size: 1MB.</p>
               </div>
+
+                Filename name : <div class="text-slate-900 text-[10px]">{{ editForm.student_candidate_profile_image }}</div>
               <div class="relative">
                 <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Profile Description</label>
                 <textarea v-model="editForm.student_candidate_profile_desc" rows="3" placeholder="Platform and background..."
@@ -210,11 +213,12 @@
           </div>
           <div class="relative">
             <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Profile Image</label>
-            <input type="file" accept="image/*" @change="handleImageUpload" id="profileImageUpload" class="hidden">
+            <input type="file" accept="image/jpeg,image/jpg,image/png,.jpg,.jpeg,.png" @change="handleImageUpload" id="profileImageUpload" class="hidden">
             <label for="profileImageUpload" class="w-full py-2 bg-transparent border-0 border-b-2 border-slate-300 flex items-center gap-3 cursor-pointer hover:border-green-700 transition-colors font-medium text-lg">
               <i class="fa fa-image text-slate-400"></i>
               <span :class="profileImageFile ? 'text-slate-900' : 'text-slate-300'" class="truncate">{{ profileImageFile ? profileImageFile.name : 'Click to select image file...' }}</span>
             </label>
+            <p class="text-xs text-slate-400 mt-1">Accepted formats: JPG, JPEG, PNG. Max file size: 1MB.</p>
           </div>
           <div class="relative">
             <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Profile Description</label>
@@ -327,18 +331,34 @@
     </div>
   </section>
 </template>
-
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 
 const config = useRuntimeConfig();
 const API_BASE = `${config.public.apiUrl || 'http://localhost:8000'}/api/usg`;
 
+// --- Image URL cleaning -------------------------------------------------
+//
+// Strips any trailing query string, hash, or extra path segments so only
+// the URL up through the image extension (.jpg, .jpeg, .png) is kept.
+// e.g. "https://cdn.example.com/img/abc.jpg?token=xyz&w=200"
+//      -> "https://cdn.example.com/img/abc.jpg"
+const IMAGE_EXTENSION_REGEX = /\.(jpe?g|png)/i;
+
+const cleanImageUrl = (url) => {
+  if (!url) return url;
+  const match = IMAGE_EXTENSION_REGEX.exec(url);
+  if (!match) return url; // no known extension found — leave untouched
+  const cutIndex = match.index + match[0].length;
+  return url.slice(0, cutIndex);
+};
+
 const getProfileImageUrl = (imagePath) => {
   if (!imagePath) return '';
-  if (imagePath.startsWith('http') || imagePath.startsWith('data:')) return imagePath;
+  const cleaned = cleanImageUrl(imagePath);
+  if (cleaned.startsWith('http') || cleaned.startsWith('data:')) return cleaned;
   const base = (config.public.apiUrl || 'http://localhost:8000').replace(/\/$/, '');
-  const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  const path = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
   return `${base}${path}`;
 };
 
@@ -401,6 +421,29 @@ const showToast = (message, type = 'error') => {
   setTimeout(() => { toast.value.show = false; }, 5000);
 };
 
+// --- Shared image validation -------------------------------------------
+//
+// Only JPG, JPEG, and PNG images are accepted for profile pictures.
+// `file.type` (the MIME type reported by the browser) is the primary check,
+// but some browser/OS combinations report an empty string or a generic
+// type (e.g. "application/octet-stream") for otherwise-valid image files.
+// To avoid incorrectly rejecting a genuine .png/.jpg/.jpeg file in those
+// cases, we fall back to checking the file extension whenever the MIME
+// type check is inconclusive.
+const ALLOWED_IMAGE_MIME_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
+const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png'];
+
+const isAllowedImageFile = (file) => {
+  if (!file) return false;
+
+  const type = (file.type || '').toLowerCase();
+  if (ALLOWED_IMAGE_MIME_TYPES.includes(type)) return true;
+
+  // MIME type missing or unreliable — fall back to the file extension.
+  const name = (file.name || '').toLowerCase();
+  return ALLOWED_IMAGE_EXTENSIONS.some(ext => name.endsWith(ext));
+};
+
 const candidateForm = ref({
   lsu_email: '',
   student_name: '',
@@ -417,7 +460,14 @@ const profileImageFile = ref(null);
 
 const handleImageUpload = (e) => {
   if (e.target.files && e.target.files[0]) {
-    profileImageFile.value = e.target.files[0];
+    const file = e.target.files[0];
+    if (!isAllowedImageFile(file)) {
+      showToast('Only JPG, JPEG, and PNG images are allowed.', 'error');
+      e.target.value = '';
+      profileImageFile.value = null;
+      return;
+    }
+    profileImageFile.value = file;
   }
 };
 
@@ -447,9 +497,14 @@ const fetchCandidates = async () => {
 };
 
 // Uploads a single image file to the FileUploadModel-backed endpoint and
-// returns the resulting public URL (a string), or '' if no file was given.
+// returns the resulting public URL (a string, cleaned of any query params
+// or trailing junk after the extension), or '' if no file was given.
 const uploadProfileImage = async (file) => {
   if (!file) return '';
+
+  if (!isAllowedImageFile(file)) {
+    throw new Error('Only JPG, JPEG, and PNG images are allowed.');
+  }
 
   const imageFormData = new FormData();
   imageFormData.append('file', file);
@@ -465,16 +520,17 @@ const uploadProfileImage = async (file) => {
   }
 
   const uploadData = await uploadRes.json();
-  return uploadData.url;
+  return cleanImageUrl(uploadData.url);
 };
 
 const submitCandidate = async () => {
   loading.value = true;
 
   try {
-    // Step 1: upload the image first (if one was selected) and get back a URL string.
-    // student_candidate_profile_image on the backend is a CharField, so it can only
-    // ever accept a URL string here — never the raw File object.
+    // Step 1: upload the image first (if one was selected) and get back a
+    // cleaned URL string. student_candidate_profile_image on the backend is
+    // a CharField, so it can only ever accept a URL string here — never the
+    // raw File object.
     let uploadedImageUrl = '';
     try {
       uploadedImageUrl = await uploadProfileImage(profileImageFile.value);
@@ -622,7 +678,14 @@ const editForm = ref({
 
 const handleEditImageUpload = (e) => {
   if (e.target.files && e.target.files[0]) {
-    editProfileImageFile.value = e.target.files[0];
+    const file = e.target.files[0];
+    if (!isAllowedImageFile(file)) {
+      showToast('Only JPG, JPEG, and PNG images are allowed.', 'error');
+      e.target.value = '';
+      editProfileImageFile.value = null;
+      return;
+    }
+    editProfileImageFile.value = file;
   }
 };
 
@@ -637,7 +700,10 @@ const openEditCandidate = (c) => {
     category: c.category || '',
     title_position: c.title_position || '',
     student_candidate_profile_desc: c.student_candidate_profile_desc || '',
-    student_candidate_profile_image: c.student_candidate_profile_image || ''
+    // Defensive: clean up any legacy URLs already saved in the DB with
+    // extra query params/tokens so the edit form (and its preview) shows
+    // a clean value even before the user saves again.
+    student_candidate_profile_image: cleanImageUrl(c.student_candidate_profile_image || '')
   };
   editProfileImageFile.value = null;
   showEditCandidate.value = true;
@@ -654,11 +720,12 @@ const submitEditCandidate = async () => {
   editLoading.value = true;
 
   try {
-    // If a new image was picked, upload it and use the new URL; otherwise
-    // keep whatever URL was already on the candidate (student_candidate_profile_image
-    // is a CharField on the backend, so it always needs to be a URL string, never
-    // a raw File object).
-    let imageUrl = editForm.value.student_candidate_profile_image;
+    // If a new image was picked, upload it and use the new (already-cleaned)
+    // URL; otherwise keep whatever URL was already on the candidate, cleaned
+    // defensively in case it was saved with extra params previously.
+    // student_candidate_profile_image is a CharField on the backend, so it
+    // always needs to be a URL string, never a raw File object.
+    let imageUrl = cleanImageUrl(editForm.value.student_candidate_profile_image);
     if (editProfileImageFile.value) {
       try {
         imageUrl = await uploadProfileImage(editProfileImageFile.value);
