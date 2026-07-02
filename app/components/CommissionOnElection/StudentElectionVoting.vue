@@ -27,6 +27,105 @@
       </button>
     </div>
 
+    <!-- Official Ballot Receipt Modal -->
+    <div
+      v-if="showReceiptModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-[fadeIn_0.3s_ease-out] max-h-[90vh] flex flex-col"
+      >
+        <div class="bg-[#087830] px-6 py-5 text-center text-white shrink-0">
+          <div class="text-4xl mb-1">🧾</div>
+          <h3 class="text-lg font-extrabold uppercase tracking-wide">
+            Official Ballot Receipt
+          </h3>
+          <p class="text-xs opacity-80 mt-1">Your vote has been recorded</p>
+        </div>
+
+        <div class="p-6 overflow-y-auto">
+          <div
+            class="text-sm border-b border-dashed border-slate-300 pb-4 mb-4 space-y-1"
+          >
+            <div class="flex justify-between">
+              <span class="text-slate-500">Voter</span>
+              <span class="font-bold text-slate-800">{{
+                currentVoter?.student_name
+              }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">LSU ID</span>
+              <span class="font-bold text-slate-800">{{
+                currentVoter?.lsu_id_number
+              }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Date/Time</span>
+              <span class="font-bold text-slate-800">{{
+                formatReceiptDate(receiptTimestamp)
+              }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-500">Receipt No.</span>
+              <span class="font-bold text-slate-800">{{ receiptCode }}</span>
+            </div>
+          </div>
+
+          <template
+            v-for="section in [
+              { key: 'usg', label: 'USG', rows: receiptSnapshot.usg },
+              { key: 'local', label: 'Local Council', rows: receiptSnapshot.local },
+              { key: 'abo', label: 'ABO', rows: receiptSnapshot.abo },
+            ]"
+            :key="section.key"
+          >
+            <div v-if="section.rows.length" class="mb-4">
+              <h4
+                class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2"
+              >
+                {{ section.label }}
+              </h4>
+              <div
+                v-for="(r, i) in section.rows"
+                :key="section.key + '-' + i"
+                class="flex justify-between items-center gap-3 py-1.5 border-b border-slate-100 last:border-0"
+              >
+                <span class="text-sm text-slate-600">{{ r.position }}</span>
+                <span
+                  :class="[
+                    'text-sm font-bold text-right',
+                    r.abstained ? 'text-slate-400 italic' : 'text-slate-900',
+                  ]"
+                >
+                  {{ r.abstained ? "Abstained" : r.name }}
+                </span>
+              </div>
+            </div>
+          </template>
+
+          <p
+            v-if="
+              !receiptSnapshot.usg.length &&
+              !receiptSnapshot.local.length &&
+              !receiptSnapshot.abo.length
+            "
+            class="text-center text-sm text-slate-400 py-6"
+          >
+            No ballot record found.
+          </p>
+        </div>
+
+        <div class="p-4 pt-3 border-t border-slate-100 flex gap-3 shrink-0">
+          <button
+            @click="showReceiptModal = false"
+            class="flex-1 bg-[#087830] hover:bg-[#066327] text-white py-2.5 rounded-xl font-bold text-sm transition"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Header -->
     <div class="w-full max-w-6xl mx-auto pt-5">
       <!-- Logos -->
@@ -157,10 +256,9 @@
             </div>
 
             <!-- Button -->
-                <!-- :disabled="loading || !voterIdInput.trim() || !emailInput.trim()" -->
             <button
               type="submit"
-              disabled
+              :disabled="loading || !voterIdInput.trim() || !emailInput.trim()"
               class="w-full rounded-xl bg-[#087830] hover:bg-[#066327] text-white py-3.5 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed uppercase"
             >
               <i class="fa-solid fa-vote-yea"></i>
@@ -237,6 +335,16 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="mt-10 pt-8 border-t border-slate-100">
+          <button
+            @click="openReceiptFromRecord"
+            type="button"
+            class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold text-sm transition inline-flex items-center gap-2"
+          >
+            🧾 View Official Ballot Receipt
+          </button>
         </div>
       </div>
     </div>
@@ -724,7 +832,7 @@
         <div class="text-center mt-16 pt-8 border-t border-slate-200">
           <button
             @click="castVote"
-            :disabled="loading || selectedCandidates.length === 0"
+            :disabled="loading || isBallotEmpty"
             class="bg-[#2E7D32] hover:bg-[#1B5E20] text-white px-12 py-4 font-bold text-xl shadow-xl shadow-green-700/20 transition-all hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 disabled:shadow-none disabled:cursor-not-allowed"
           >
             {{ loading ? "Submitting Votes..." : "Submit Votes" }}
@@ -850,6 +958,24 @@ const clearAbstain = (section, position) => {
   }
 };
 
+// Converts the abstainedGroups Set ("section::position" keys) into the
+// [{ section, position, category }, ...] shape the backend stores on VoterModel, so
+// abstains survive a page reload / re-login just like actual candidate
+// picks do.
+const buildAbstainedPayload = () =>
+  Array.from(abstainedGroups.value).map((key) => {
+    const [section, position] = key.split("::");
+    let category = "";
+    if (section === "usg") {
+      category = "LSU-USG";
+    } else if (section === "local") {
+      category = getVoterLocalCategory(currentVoter.value) || "";
+    } else if (section === "abo") {
+      category = getVoterABO(currentVoter.value) || "";
+    }
+    return { section, position, category };
+  });
+
 const activeSection = ref("usg");
 
 // Ranks a USG/ABO position title: President first, Vice President (or VP)
@@ -890,6 +1016,8 @@ const sortGroupsByPosition = (groups, rankFn = getUsgAboRank) => {
   });
   return Object.fromEntries(entries);
 };
+
+const ABO_CODES = ["POLISAYS", "JSWAP", "LSUPS", "PICE", "SOURCE", "SOTE", "FHARO"];
 
 const getVoterABO = (voter) => {
   if (!voter) return null;
@@ -962,12 +1090,24 @@ const getVoterABO = (voter) => {
   }
 
   // Fallback: search for direct match of ABO codes in student info
-  const abos = ["POLISAYS", "JSWAP", "LSUPS", "PICE", "SOURCE", "SOTE", "FHARO"];
-  for (const abo of abos) {
+  for (const abo of ABO_CODES) {
     if (program.toUpperCase().includes(abo) || college.toUpperCase().includes(abo)) {
       return abo;
     }
   }
+  return null;
+};
+
+// Maps a candidate's stored `category` back to the ballot tab ('usg' /
+// 'local' / 'abo') it belongs to. Used to reconstruct the receipt from the
+// voter's saved record (voted_candidates_details + abstained_positions)
+// after they log back in, since the live candidates list may not be
+// (re)loaded at that point.
+const getSectionFromCategory = (category) => {
+  const cat = (category || "").toUpperCase().trim();
+  if (cat === "ALL COLLEGES" || cat === "LSU-USG") return "usg";
+  if (cat.startsWith("SC-")) return "local";
+  if (ABO_CODES.includes(cat)) return "abo";
   return null;
 };
 
@@ -995,12 +1135,185 @@ const selectedAboCount = computed(() => {
   return selectedCandidates.value.filter((id) => aboIds.has(id)).length;
 });
 
+const isBallotEmpty = computed(() => {
+  return selectedCandidates.value.length === 0 && abstainedGroups.value.size === 0;
+});
+
 const toast = ref({ show: false, type: "", message: "" });
 const showToast = (message, type = "error") => {
   toast.value = { show: true, type, message };
   setTimeout(() => {
     toast.value.show = false;
   }, 5000);
+};
+
+// --- Official Ballot Receipt ---
+const showReceiptModal = ref(false);
+const receiptTimestamp = ref(null);
+const receiptCode = ref("");
+const receiptSnapshot = ref({ usg: [], local: [], abo: [] });
+
+const escapeHtml = (str) =>
+  String(str ?? "").replace(/[&<>"']/g, (m) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[m]);
+
+const formatReceiptDate = (date) => {
+  if (!(date instanceof Date) || isNaN(date)) return "—";
+  return date.toLocaleString();
+};
+
+const buildReceiptCode = (idNumber, dateObj) => {
+  const stamp =
+    dateObj instanceof Date && !isNaN(dateObj) ? dateObj.getTime() : Date.now();
+  return `LSU-${idNumber || "VOTER"}-${stamp.toString(36).toUpperCase()}`;
+};
+// Walks a grouped-by-position object (from the live candidates list) and
+// records either the candidate(s) picked in that position, or marks it
+// ABSTAINED if nothing was picked. Used immediately after casting a vote,
+// while selectedCandidates/abstainedGroups still hold the live selection.
+const buildSectionReceipt = (groupedCandidates) => {
+  const rows = [];
+  Object.entries(groupedCandidates).forEach(([position, group]) => {
+    const picked = group.filter((c) => selectedCandidates.value.includes(c.id));
+    if (picked.length > 0) {
+      picked.forEach((c) =>
+        rows.push({ position, name: c.student_name, abstained: false }),
+      );
+    } else {
+      rows.push({ position, name: null, abstained: true });
+    }
+  });
+  return rows;
+};
+
+// Builds the receipt right after a successful vote submission, from the
+// live ballot state. Must be called before selectedCandidates/
+// abstainedGroups could be reset elsewhere.
+const generateReceipt = () => {
+  receiptSnapshot.value = {
+    usg: buildSectionReceipt(usgCandidatesGrouped.value),
+    local: buildSectionReceipt(localCandidatesGrouped.value),
+    abo: buildSectionReceipt(aboCandidatesGrouped.value),
+  };
+  receiptTimestamp.value = new Date();
+  receiptCode.value = buildReceiptCode(
+    currentVoter.value?.lsu_id_number,
+    receiptTimestamp.value,
+  );
+  showReceiptModal.value = true;
+};
+
+// Rebuilds the receipt from the voter's saved record (voted_candidates_details
+// + abstained_positions, both persisted server-side at vote time). Used when
+// re-opening the receipt from the lock screen — e.g. after a page refresh or
+// a fresh login — when the live selection state no longer exists.
+const buildReceiptFromRecord = () => {
+  const bySection = { usg: [], local: [], abo: [] };
+
+  const votedList = currentVoter.value?.voted_candidates_details || [];
+  votedList.forEach((c) => {
+    const section = getSectionFromCategory(c.category);
+    if (!section) return;
+    bySection[section].push({
+      position: c.title_position,
+      name: c.student_name,
+      abstained: false,
+    });
+  });
+
+  const abstainedList = currentVoter.value?.abstained_positions || [];
+  abstainedList.forEach((a) => {
+    if (!bySection[a.section]) return;
+    bySection[a.section].push({
+      position: a.position,
+      name: null,
+      abstained: true,
+    });
+  });
+
+  Object.keys(bySection).forEach((key) => {
+    bySection[key].sort((a, b) => a.position.localeCompare(b.position));
+  });
+
+  receiptSnapshot.value = bySection;
+};
+
+const openReceiptFromRecord = () => {
+  buildReceiptFromRecord();
+  receiptTimestamp.value = currentVoter.value?.voted_at
+    ? new Date(currentVoter.value.voted_at)
+    : new Date();
+  receiptCode.value = buildReceiptCode(
+    currentVoter.value?.lsu_id_number,
+    receiptTimestamp.value,
+  );
+  showReceiptModal.value = true;
+};
+
+const printReceipt = () => {
+  const sectionHtml = (title, rows) => {
+    if (!rows.length) return "";
+    return `
+      <h3>${escapeHtml(title)}</h3>
+      <table><tbody>
+        ${rows
+          .map(
+            (r) => `
+          <tr>
+            <td>${escapeHtml(r.position)}</td>
+            <td>${r.abstained ? "<em>ABSTAINED</em>" : escapeHtml(r.name)}</td>
+          </tr>`,
+          )
+          .join("")}
+      </tbody></table>`;
+  };
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Official Ballot Receipt</title>
+        <style>
+          body { font-family: 'Courier New', monospace; max-width: 480px; margin: 40px auto; color: #111; }
+          h1 { text-align: center; font-size: 18px; text-transform: uppercase; margin-bottom: 4px; }
+          h2 { text-align: center; font-size: 12px; font-weight: normal; margin-top: 0; color: #555; }
+          h3 { font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #111; padding-bottom: 4px; margin-top: 24px; }
+          table { width: 100%; border-collapse: collapse; font-size: 13px; }
+          td { padding: 4px 0; }
+          td:first-child { color: #555; }
+          td:last-child { text-align: right; font-weight: bold; }
+          .meta { font-size: 12px; margin-top: 16px; border-top: 1px dashed #999; border-bottom: 1px dashed #999; padding: 8px 0; }
+          .footer { text-align: center; font-size: 11px; color: #777; margin-top: 24px; }
+        </style>
+      </head>
+      <body>
+        <h1>Official Ballot Receipt</h1>
+        <h2>La Salle University Ozamiz &mdash; Commission on Election</h2>
+        <div class="meta">
+          <div>Voter: ${escapeHtml(currentVoter.value?.student_name)}</div>
+          <div>LSU ID: ${escapeHtml(currentVoter.value?.lsu_id_number)}</div>
+          <div>Date/Time: ${escapeHtml(formatReceiptDate(receiptTimestamp.value))}</div>
+          <div>Receipt No.: ${escapeHtml(receiptCode.value)}</div>
+        </div>
+        ${sectionHtml("USG", receiptSnapshot.value.usg)}
+        ${sectionHtml("Local Council", receiptSnapshot.value.local)}
+        ${sectionHtml("ABO", receiptSnapshot.value.abo)}
+        <p class="footer">This receipt confirms your ballot was recorded.<br/>Keep for your records.</p>
+      </body>
+    </html>`;
+
+  const win = window.open("", "_blank", "width=520,height=700");
+  if (win) {
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.print();
+  }
 };
 
 const fetchCandidates = async () => {
@@ -1063,7 +1376,7 @@ const validateVoter = async () => {
 };
 
 const castVote = async () => {
-  if (selectedCandidates.value.length === 0) return;
+  if (isBallotEmpty.value) return;
   loading.value = true;
   try {
     const res = await fetch(`${API_BASE}/cast-vote/`, {
@@ -1072,16 +1385,23 @@ const castVote = async () => {
       body: JSON.stringify({
         lsu_id_number: currentVoter.value.lsu_id_number,
         candidate_ids: selectedCandidates.value,
+        abstained_positions: buildAbstainedPayload(),
       }),
     });
     if (res.ok) {
-      showToast("Vote cast successfully!", "success");
+      showToast("Vote cast successfully! A ballot receipt has been sent to your email.", "success");
       // Update local state to show lock screen
       currentVoter.value.has_voted = true;
+      currentVoter.value.voted_at = new Date().toISOString();
+      currentVoter.value.abstained_positions = buildAbstainedPayload();
       // Fetch full details of the candidates they just selected
       currentVoter.value.voted_candidates_details = candidates.value.filter(
         (c) => selectedCandidates.value.includes(c.id),
       );
+
+      // Show the official ballot receipt right away, built from the live
+      // selection (selectedCandidates/abstainedGroups are still intact).
+      generateReceipt();
 
       // Optionally emit an event to the parent to switch to the Results tab
       // window.dispatchEvent(new CustomEvent('vote-cast-success'));
@@ -1250,6 +1570,7 @@ const logout = () => {
   voterIdInput.value = "";
   emailInput.value = "";
   abstainedGroups.value = new Set();
+  showReceiptModal.value = false;
 };
 
 onMounted(() => {
