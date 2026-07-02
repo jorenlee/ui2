@@ -34,6 +34,38 @@
       </div>
     </div>
 
+    <!-- Reset Voter Confirmation Modal -->
+    <div v-if="showResetConfirm" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+            <i class="fa fa-rotate-left text-lg"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900">Reset Voter?</h3>
+        </div>
+        <p class="text-sm text-slate-600 mb-2">This will reset <span class="font-semibold text-slate-800">{{ resetTargetName }}</span>'s voting state:</p>
+        <ul class="text-sm text-slate-500 mb-6 space-y-1 list-disc list-inside">
+          <li>Set <strong>Has Voted</strong> → <span class="text-amber-600 font-semibold">No</span></li>
+          <li>Remove <strong>LSU Email</strong></li>
+          <li>Clear <strong>Voted Candidates</strong></li>
+        </ul>
+        <div class="flex justify-end gap-3">
+          <button @click="showResetConfirm = false" :disabled="resetLoading"
+                  class="px-4 py-2 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
+            Cancel
+          </button>
+          <button @click="confirmResetVoter" :disabled="resetLoading"
+                  class="px-4 py-2 rounded-lg font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2">
+            <svg v-if="resetLoading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            {{ resetLoading ? 'Resetting...' : 'Yes, Reset' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Edit Voter Modal -->
     <div v-if="showEditVoter" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
@@ -43,7 +75,7 @@
         </div>
         <div class="p-8">
           <form @submit.prevent="submitEditVoter">
-            <div class="flex flex-col gap-6 mb-8">
+            <div class="flex flex-col gap-6 mb-6">
               <div class="relative">
                 <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Student Full Name <span class="text-red-500">*</span></label>
                 <input v-model="editForm.student_name" type="text" required
@@ -75,6 +107,17 @@
                 <label for="editHasVoted" class="text-sm font-semibold text-slate-800 cursor-pointer">Has voted</label>
               </div>
             </div>
+
+            <!-- Reset for Testing section -->
+            <div class="border-t border-slate-100 pt-5 mb-6">
+              <p class="text-xs text-slate-400 uppercase tracking-wide font-bold mb-3">Testing Tools</p>
+              <button type="button" @click="openResetConfirm" :disabled="editLoading || resetLoading"
+                      class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <i class="fa fa-rotate-left"></i>
+                Reset Voter (Clear Vote, Email & Candidates)
+              </button>
+            </div>
+
             <div class="flex justify-end gap-3">
               <button type="button" @click="closeEditVoter" :disabled="editLoading"
                       class="px-5 py-2.5 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
@@ -125,8 +168,29 @@
     </div>
     <p v-if="csvFile" class="text-sm text-green-600 font-semibold mb-6 -mt-4">Selected: {{ csvFile.name }}</p>
 
+    <!-- Search Filter -->
+    <div class="mb-4">
+      <div class="relative max-w-md">
+        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
+          <i class="fa fa-search text-sm"></i>
+        </span>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search by name, ID, email, program or college…"
+          class="w-full pl-9 pr-10 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-200 bg-white text-slate-800 placeholder-slate-400 transition-colors"
+        />
+        <button v-if="searchQuery" @click="searchQuery = ''" class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+          <i class="fa fa-times text-sm"></i>
+        </button>
+      </div>
+      <p v-if="searchQuery && !votersLoading" class="text-xs text-slate-500 mt-1.5 ml-1">
+        Showing {{ filteredVoters.length }} of {{ voters.length }} voters
+      </p>
+    </div>
+
     <!-- Bulk actions bar -->
-    <div v-if="!votersLoading && voters.length" class="flex flex-wrap items-center justify-between gap-4 mb-4">
+    <div v-if="!votersLoading && filteredVoters.length" class="flex flex-wrap items-center justify-between gap-4 mb-4">
       <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 cursor-pointer select-none">
         <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
                class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
@@ -147,7 +211,7 @@
       <span class="font-medium">Loading registered voters...</span>
     </div>
 
-    <div v-else-if="voters.length" class="overflow-x-auto rounded-xl border border-slate-200">
+    <div v-else-if="filteredVoters.length" class="overflow-x-auto rounded-xl border border-slate-200">
       <table class="w-full border-collapse text-left">
         <thead>
           <tr>
@@ -164,7 +228,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="v in voters" :key="v.id"
+          <tr v-for="v in filteredVoters" :key="v.id"
               :class="['hover:bg-slate-50 transition-colors', selectedIds.includes(v.id) ? 'bg-green-50/60' : '']">
             <td class="px-6 py-4 border-b border-slate-200">
               <input type="checkbox" :checked="selectedIds.includes(v.id)" @change="toggleSelect(v.id)"
@@ -203,7 +267,16 @@
         </tbody>
       </table>
     </div>
-    <div v-else class="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+
+    <!-- No results state (search returned nothing) -->
+    <div v-else-if="!votersLoading && voters.length && searchQuery" class="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+      <div class="text-3xl mb-3">🔍</div>
+      <p class="font-semibold text-slate-700">No results for "{{ searchQuery }}"</p>
+      <p class="text-sm mt-1">Try a different name, ID number, or program.</p>
+      <button @click="searchQuery = ''" class="mt-4 text-green-600 hover:text-green-700 text-sm font-semibold underline">Clear search</button>
+    </div>
+
+    <div v-else-if="!votersLoading" class="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
       No registered voters yet. Please upload a CSV.
     </div>
   </section>
@@ -223,6 +296,9 @@ const csvFile = ref(null);
 // area can show a loading indicator instead of briefly flashing the
 // "No registered voters yet" empty state before data arrives.
 const votersLoading = ref(true);
+
+// Search filter query
+const searchQuery = ref('');
 
 const toast = ref({ show: false, type: '', message: '' });
 const showToast = (message, type = 'error') => {
@@ -256,6 +332,19 @@ const isEmailReady = (v) => {
   const hasEmail = typeof v.lsu_email === 'string' && v.lsu_email.trim().length > 0;
   return hasEmail && isVoted(v);
 };
+
+// Filtered voters based on the search query (name, ID, email, program, college)
+const filteredVoters = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) return voters.value;
+  return voters.value.filter(v =>
+    (v.student_name || '').toLowerCase().includes(q) ||
+    (v.lsu_id_number || '').toLowerCase().includes(q) ||
+    (v.lsu_email || '').toLowerCase().includes(q) ||
+    (v.program || '').toLowerCase().includes(q) ||
+    (v.college || '').toLowerCase().includes(q)
+  );
+});
 
 const handleFileUpload = (e) => {
   csvFile.value = e.target.files[0];
@@ -319,7 +408,8 @@ const showDeleteConfirm = ref(false);
 const deleting = ref(false);
 
 const isAllSelected = computed(() =>
-  voters.value.length > 0 && selectedIds.value.length === voters.value.length
+  filteredVoters.value.length > 0 && selectedIds.value.length === filteredVoters.value.length &&
+  filteredVoters.value.every(v => selectedIds.value.includes(v.id))
 );
 
 const toggleSelect = (id) => {
@@ -333,9 +423,14 @@ const toggleSelect = (id) => {
 
 const toggleSelectAll = () => {
   if (isAllSelected.value) {
-    selectedIds.value = [];
+    // Deselect only those in the current filtered view
+    const filteredIds = new Set(filteredVoters.value.map(v => v.id));
+    selectedIds.value = selectedIds.value.filter(id => !filteredIds.has(id));
   } else {
-    selectedIds.value = voters.value.map(v => v.id);
+    // Add all filtered ids that aren't already selected
+    const currentSet = new Set(selectedIds.value);
+    filteredVoters.value.forEach(v => currentSet.add(v.id));
+    selectedIds.value = [...currentSet];
   }
 };
 
@@ -450,6 +545,57 @@ const submitEditVoter = async () => {
     showToast('Failed to update voter.', 'error');
   } finally {
     editLoading.value = false;
+  }
+};
+
+// --- Reset voter (for testing) ------------------------------------------
+
+const showResetConfirm = ref(false);
+const resetLoading = ref(false);
+const resetTargetId = ref(null);
+const resetTargetName = ref('');
+
+const openResetConfirm = () => {
+  // Uses the currently-open edit modal's voter
+  resetTargetId.value = editingVoterId.value;
+  resetTargetName.value = editForm.value.student_name || 'this voter';
+  showResetConfirm.value = true;
+};
+
+const confirmResetVoter = async () => {
+  if (!resetTargetId.value) return;
+  resetLoading.value = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/voters/${resetTargetId.value}/reset/`, {
+      method: 'POST',
+    });
+
+    if (res.ok) {
+      await fetchVoters();
+      showToast(`${resetTargetName.value} has been reset successfully.`, 'success');
+      showResetConfirm.value = false;
+      // Update the edit form to reflect the reset state
+      const voter = voters.value.find(v => v.id === resetTargetId.value);
+      if (voter) {
+        editForm.value = {
+          student_name: voter.student_name || '',
+          lsu_email: voter.lsu_email || '',
+          lsu_id_number: voter.lsu_id_number || '',
+          college: voter.college || '',
+          program: voter.program || '',
+          has_voted: isVoted(voter)
+        };
+      }
+    } else {
+      const errorData = await res.json().catch(() => ({}));
+      showToast(errorData.error || 'Failed to reset voter.', 'error');
+    }
+  } catch (err) {
+    console.error('Error resetting voter:', err);
+    showToast('Failed to reset voter.', 'error');
+  } finally {
+    resetLoading.value = false;
   }
 };
 
