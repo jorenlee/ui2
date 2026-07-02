@@ -16,6 +16,80 @@
       <button @click="toast.show = false" class="ml-auto text-xl opacity-50 hover:opacity-100 leading-none">&times;</button>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6">
+        <h3 class="text-lg font-bold text-slate-900 mb-2">Delete {{ selectedIds.length }} voter{{ selectedIds.length > 1 ? 's' : '' }}?</h3>
+        <p class="text-sm text-slate-500 mb-6">This action cannot be undone.</p>
+        <div class="flex justify-end gap-3">
+          <button @click="showDeleteConfirm = false" :disabled="deleting"
+                  class="px-4 py-2 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
+            Cancel
+          </button>
+          <button @click="deleteSelectedVoters" :disabled="deleting"
+                  class="px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed">
+            {{ deleting ? 'Deleting...' : 'Delete' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Voter Modal -->
+    <div v-if="showEditVoter" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-[#2E7D32] text-white py-3 px-6 flex items-center justify-between sticky top-0">
+          <h3 class="text-sm font-bold uppercase tracking-wider">Edit Voter</h3>
+          <button @click="closeEditVoter" class="text-white/80 hover:text-white text-xl leading-none">&times;</button>
+        </div>
+        <div class="p-8">
+          <form @submit.prevent="submitEditVoter">
+            <div class="flex flex-col gap-6 mb-8">
+              <div class="relative">
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Student Full Name <span class="text-red-500">*</span></label>
+                <input v-model="editForm.student_name" type="text" required
+                       class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+              </div>
+              <div class="relative">
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">LSU Email <span class="text-red-500">*</span></label>
+                <input v-model="editForm.lsu_email" type="email" required
+                       class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+              </div>
+              <div class="relative">
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">LSU ID Number <span class="text-red-500">*</span></label>
+                <input v-model="editForm.lsu_id_number" type="text" required
+                       class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+              </div>
+              <div class="relative">
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">College <span class="text-red-500">*</span></label>
+                <input v-model="editForm.college" type="text" required
+                       class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+              </div>
+              <div class="relative">
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Program <span class="text-red-500">*</span></label>
+                <input v-model="editForm.program" type="text" required
+                       class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+              </div>
+              <div class="relative flex items-center gap-3">
+                <input v-model="editForm.has_voted" type="checkbox" id="editHasVoted"
+                       class="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+                <label for="editHasVoted" class="text-sm font-semibold text-slate-800 cursor-pointer">Has voted</label>
+              </div>
+            </div>
+            <div class="flex justify-end gap-3">
+              <button type="button" @click="closeEditVoter" :disabled="editLoading"
+                      class="px-5 py-2.5 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
+                Cancel
+              </button>
+              <button type="submit" :disabled="editLoading"
+                      class="bg-[#2E7D32] hover:bg-[#1B5E20] text-white px-6 py-2.5 rounded-lg font-bold transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed">
+                {{ editLoading ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <header class="mb-10 pb-8 border-b-2 border-slate-100">
       <div class="flex flex-col items-center justify-center w-full mb-8 gap-6">
         <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/lsu-corporate-logo-green.png" alt="LSU Logo" class="h-20 sm:h-24 object-contain drop-shadow-sm" />
@@ -51,18 +125,41 @@
     </div>
     <p v-if="csvFile" class="text-sm text-green-600 font-semibold mb-6 -mt-4">Selected: {{ csvFile.name }}</p>
 
+    <!-- Bulk actions bar -->
+    <div v-if="voters.length" class="flex flex-wrap items-center justify-between gap-4 mb-4">
+      <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 cursor-pointer select-none">
+        <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
+               class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+        Select All
+      </label>
+      <button v-if="selectedIds.length" @click="showDeleteConfirm = true" :disabled="deleting"
+              class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shrink-0">
+        <i class="fa fa-trash"></i> Delete Selected ({{ selectedIds.length }})
+      </button>
+    </div>
+
     <div v-if="voters.length" class="overflow-x-auto rounded-xl border border-slate-200">
       <table class="w-full border-collapse text-left">
         <thead>
           <tr>
+            <th class="bg-slate-50 px-6 py-4 border-b border-slate-200 w-12">
+              <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
+                     class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+            </th>
             <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Student</th>
             <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">ID Number</th>
             <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Program</th>
             <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Status</th>
+            <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="v in voters" :key="v.id" class="hover:bg-slate-50 transition-colors">
+          <tr v-for="v in voters" :key="v.id"
+              :class="['hover:bg-slate-50 transition-colors', selectedIds.includes(v.id) ? 'bg-green-50/60' : '']">
+            <td class="px-6 py-4 border-b border-slate-200">
+              <input type="checkbox" :checked="selectedIds.includes(v.id)" @change="toggleSelect(v.id)"
+                     class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+            </td>
             <td class="px-6 py-4 border-b border-slate-200">
               <div>
                 <div class="font-semibold text-slate-900">{{ v.student_name }}</div>
@@ -74,10 +171,15 @@
             <td class="px-6 py-4 border-b border-slate-200">
               <span :class="[
                 'inline-block px-3 py-1 rounded-full text-xs font-semibold',
-                v.has_voted ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-700'
+                isVoted(v) ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-700'
               ]">
-                {{ v.has_voted ? 'Voted' : 'Pending' }}
+                {{ isVoted(v) ? 'Voted' : 'Pending' }}
               </span>
+            </td>
+            <td class="px-6 py-4 border-b border-slate-200 text-right">
+              <button @click="openEditVoter(v)" class="text-slate-400 hover:text-green-600 transition-colors" title="Edit voter">
+                <i class="fa fa-pen"></i>
+              </button>
             </td>
           </tr>
         </tbody>
@@ -90,7 +192,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 
 const config = useRuntimeConfig();
 const API_BASE = `${config.public.apiUrl}/api/usg`; 
@@ -103,6 +205,25 @@ const toast = ref({ show: false, type: '', message: '' });
 const showToast = (message, type = 'error') => {
   toast.value = { show: true, type, message };
   setTimeout(() => { toast.value.show = false; }, 5000);
+};
+
+// Normalizes the "has_voted" value coming back from the API/DB into a real
+// boolean. Newly-imported voters can come through as an actual boolean
+// (true/false), but depending on how the CSV importer / serializer writes
+// the field it can also arrive as a string ("True"/"False", "1"/"0") or a
+// number (1/0). A plain `v.has_voted ? ... : ...` check treats any non-empty
+// string — including the string "False" — as truthy, which is why a brand
+// new voter with has_voted = No in the DB was showing up as "Voted" in the
+// table. This always reflects the actual DB value regardless of the type
+// it's serialized as.
+const isVoted = (v) => {
+  const val = v.has_voted;
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'number') return val === 1;
+  if (typeof val === 'string') {
+    return ['true', '1', 'yes'].includes(val.trim().toLowerCase());
+  }
+  return false;
 };
 
 const handleFileUpload = (e) => {
@@ -155,6 +276,147 @@ const uploadVoters = async () => {
     showToast('Error uploading file.', 'error');
   } finally {
     loading.value = false;
+  }
+};
+
+// --- Multi-select delete ---------------------------------------------------
+
+const selectedIds = ref([]);
+const showDeleteConfirm = ref(false);
+const deleting = ref(false);
+
+const isAllSelected = computed(() =>
+  voters.value.length > 0 && selectedIds.value.length === voters.value.length
+);
+
+const toggleSelect = (id) => {
+  const idx = selectedIds.value.indexOf(id);
+  if (idx === -1) {
+    selectedIds.value.push(id);
+  } else {
+    selectedIds.value.splice(idx, 1);
+  }
+};
+
+const toggleSelectAll = () => {
+  if (isAllSelected.value) {
+    selectedIds.value = [];
+  } else {
+    selectedIds.value = voters.value.map(v => v.id);
+  }
+};
+
+// Prunes any selected ids that no longer exist in the current voter list
+// (e.g. after a refetch), so stale ids can't linger in the selection.
+const pruneSelection = () => {
+  const validIds = new Set(voters.value.map(v => v.id));
+  selectedIds.value = selectedIds.value.filter(id => validIds.has(id));
+};
+
+const deleteSelectedVoters = async () => {
+  if (!selectedIds.value.length) return;
+  deleting.value = true;
+
+  const idsToDelete = [...selectedIds.value];
+
+  try {
+    const results = await Promise.allSettled(
+      idsToDelete.map(id =>
+        fetch(`${API_BASE}/voters/${id}/`, { method: 'DELETE' }).then(res => {
+          if (!res.ok) throw new Error(`Failed to delete voter ${id}`);
+          return id;
+        })
+      )
+    );
+
+    const succeeded = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.length - succeeded;
+
+    await fetchVoters();
+    pruneSelection();
+
+    showDeleteConfirm.value = false;
+
+    if (failed === 0) {
+      showToast(`${succeeded} voter${succeeded > 1 ? 's' : ''} deleted successfully!`, 'success');
+    } else if (succeeded === 0) {
+      showToast(`Failed to delete ${failed} voter${failed > 1 ? 's' : ''}.`, 'error');
+    } else {
+      showToast(`Deleted ${succeeded}, but ${failed} failed. Please try again.`, 'error');
+    }
+  } catch (err) {
+    console.error('Error deleting voters:', err);
+    showToast('Failed to delete selected voters.', 'error');
+  } finally {
+    deleting.value = false;
+  }
+};
+
+// --- Edit voter --------------------------------------------------------
+
+const showEditVoter = ref(false);
+const editLoading = ref(false);
+const editingVoterId = ref(null);
+const editForm = ref({
+  student_name: '',
+  lsu_email: '',
+  lsu_id_number: '',
+  college: '',
+  program: '',
+  has_voted: false
+});
+
+const openEditVoter = (v) => {
+  editingVoterId.value = v.id;
+  editForm.value = {
+    student_name: v.student_name || '',
+    lsu_email: v.lsu_email || '',
+    lsu_id_number: v.lsu_id_number || '',
+    college: v.college || '',
+    program: v.program || '',
+    has_voted: isVoted(v)
+  };
+  showEditVoter.value = true;
+};
+
+const closeEditVoter = () => {
+  showEditVoter.value = false;
+  editingVoterId.value = null;
+};
+
+const submitEditVoter = async () => {
+  if (!editingVoterId.value) return;
+  editLoading.value = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/voters/${editingVoterId.value}/`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(editForm.value)
+    });
+
+    if (res.ok) {
+      await fetchVoters();
+      showToast('Voter updated successfully!', 'success');
+      closeEditVoter();
+    } else {
+      const errorText = await res.text();
+      console.error('Failed to update voter response:', errorText);
+      try {
+        const errorJson = JSON.parse(errorText);
+        const errorMsg = Object.entries(errorJson)
+          .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
+          .join(' | ');
+        showToast(errorMsg || 'Failed to update voter.', 'error');
+      } catch {
+        showToast(errorText || 'Failed to update voter.', 'error');
+      }
+    }
+  } catch (err) {
+    console.error('Error updating voter:', err);
+    showToast('Failed to update voter.', 'error');
+  } finally {
+    editLoading.value = false;
   }
 };
 
