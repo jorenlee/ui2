@@ -138,9 +138,8 @@
           <form @submit.prevent="validateVoter">
             <!-- Email -->
             <div class="mb-6">
- 
               <input
-                :value="user?.email"
+                v-model="emailInput"
                 type="email"
                 placeholder="Enter your University Email"
                 class="w-full border-b-2 lg:text-sm text-xs shadow border-green-800 px-4 py-3 focus:border-[#087830] focus:ring-4 focus:ring-green-100 outline-none transition"
@@ -149,7 +148,6 @@
 
             <!-- LSU ID -->
             <div class="mb-8">
-      
               <input
                 v-model="voterIdInput"
                 type="text"
@@ -161,7 +159,7 @@
             <!-- Button -->
             <button
               type="submit"
-              :disabled="loading || !voterIdInput"
+              :disabled="loading || !voterIdInput.trim() || !emailInput.trim()"
               class="w-full rounded-xl bg-[#087830] hover:bg-[#066327] text-white py-3.5 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed uppercase"
             >
               <i class="fa-solid fa-vote-yea"></i>
@@ -258,243 +256,338 @@
       <div
         v-if="
           Object.keys(usgCandidatesGrouped).length > 0 ||
-          Object.keys(localCandidatesGrouped).length > 0
+          Object.keys(localCandidatesGrouped).length > 0 ||
+          Object.keys(aboCandidatesGrouped).length > 0
         "
       >
-        <!-- SECTION 1: USG BALLOT -->
-        <div v-if="Object.keys(usgCandidatesGrouped).length > 0" class="mb-16">
-          <div class="border-b-4 border-green-700 pb-2 mb-8">
-            <h3
-              class="text-2xl font-black text-slate-900 uppercase tracking-wide flex items-center gap-3"
+        <!-- TABS HEADER -->
+        <div class="flex flex-wrap justify-center border-b border-slate-200 mb-8 pb-px gap-2 sm:gap-6">
+          <button
+            @click="activeSection = 'usg'"
+            type="button"
+            :class="[
+              'px-6 py-3 font-extrabold text-base sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2',
+              activeSection === 'usg'
+                ? 'border-green-600 text-green-800'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            ]"
+          >
+            🏛️ USG
+            <span
+              v-if="selectedUsgCount > 0"
+              class="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold transition-all"
             >
+              {{ selectedUsgCount }}
+            </span>
+          </button>
+          
+          <button
+            @click="activeSection = 'local'"
+            type="button"
+            :class="[
+              'px-6 py-3 font-extrabold text-base sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2',
+              activeSection === 'local'
+                ? 'border-emerald-600 text-emerald-800'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            ]"
+          >
+            🎓 Local Council
+            <span
+              v-if="selectedLocalCount > 0"
+              class="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full font-bold transition-all"
+            >
+              {{ selectedLocalCount }}
+            </span>
+          </button>
+
+          <button
+            @click="activeSection = 'abo'"
+            type="button"
+            :class="[
+              'px-6 py-3 font-extrabold text-base sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2',
+              activeSection === 'abo'
+                ? 'border-indigo-600 text-indigo-800'
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+            ]"
+          >
+            🤝 ABO
+            <span
+              v-if="selectedAboCount > 0"
+              class="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-bold transition-all"
+            >
+              {{ selectedAboCount }}
+            </span>
+          </button>
+        </div>
+
+        <!-- USG CONTENT -->
+        <div v-if="activeSection === 'usg'" class="animate-[fadeIn_0.3s_ease-out]">
+          <div class="border-b-2 border-slate-100 pb-2 mb-6">
+            <h3 class="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
               🏛️ University Student Government
-              <span
-                class="text-sm font-bold bg-green-100 text-green-700 px-3 py-1 rounded-full normal-case tracking-normal"
-                >USG</span
-              >
             </h3>
-            <p class="text-sm text-slate-500 mt-1 font-semibold">
+            <p class="text-xs text-slate-400 mt-1 font-semibold">
               All enrolled students are eligible to vote for USG candidates.
             </p>
           </div>
 
-          <div
-            v-for="(group, position) in usgCandidatesGrouped"
-            :key="position"
-            class="mb-10"
-          >
-            <h4
-              class="text-lg font-bold text-green-800 bg-green-50/50 px-4 py-2 rounded-lg border-l-4 border-green-600 mb-6"
-            >
-              {{ position }}
-            </h4>
+          <div v-if="Object.keys(usgCandidatesGrouped).length > 0">
             <div
-              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
+              v-for="(group, position) in usgCandidatesGrouped"
+              :key="position"
+              class="mb-10"
             >
-              <label
-                v-for="c in group"
-                :key="c.id"
-                :class="[
-                  'relative flex flex-col items-center p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm overflow-hidden group',
-                  selectedCandidates.includes(c.id)
-                    ? 'border-green-600 bg-green-50/40 shadow-md ring-4 ring-green-500/10'
-                    : 'border-slate-200 hover:border-green-400 hover:shadow-md',
-                ]"
-              >
-                <input
-                  type="checkbox"
-                  :value="c.id"
-                  v-model="selectedCandidates"
-                  class="hidden"
-                />
-
-                <!-- Large Profile Section -->
-                <div
-                  class="relative w-full aspect-square mb-4 overflow-hidden shadow-inner bg-slate-100 shrink-0"
+              <h4 class="text-lg font-bold text-green-800 bg-green-50/50 px-4 py-2 rounded-lg border-l-4 border-green-600 mb-6">
+                {{ position }}
+              </h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                <label
+                  v-for="c in group"
+                  :key="c.id"
+                  :class="[
+                    'relative flex flex-col items-center p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm overflow-hidden group',
+                    selectedCandidates.includes(c.id)
+                      ? 'border-green-600 bg-green-50/40 shadow-md ring-4 ring-green-500/10'
+                      : 'border-slate-200 hover:border-green-400 hover:shadow-md',
+                  ]"
                 >
-                  <img
-                    v-if="c.student_candidate_profile_image"
-                    :src="getProfileImageUrl(c.student_candidate_profile_image)"
-                    alt="Profile"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    @error="handleImageError($event, c.student_name)"
+                  <input
+                    type="checkbox"
+                    :value="c.id"
+                    v-model="selectedCandidates"
+                    class="hidden"
                   />
-                  <div
-                    v-else
-                    class="w-full h-full bg-gradient-to-tr from-green-100 to-emerald-50 text-green-700 flex items-center justify-center font-black text-5xl"
-                  >
-                    {{ c.student_name.charAt(0) }}
-                  </div>
 
-                  <!-- Checkbox indicator overlay at top right of image -->
-                  <div
-                    :class="[
-                      'absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 shadow-md z-10',
-                      selectedCandidates.includes(c.id)
-                        ? 'border-green-600 bg-green-600 text-white scale-110'
-                        : 'border-slate-300 bg-white text-transparent',
-                    ]"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      stroke-width="3"
+                  <div class="relative w-full aspect-square mb-4 overflow-hidden shadow-inner bg-slate-100 shrink-0">
+                    <img
+                      v-if="c.student_candidate_profile_image"
+                      :src="getProfileImageUrl(c.student_candidate_profile_image)"
+                      alt="Profile"
+                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      @error="handleImageError($event, c.student_name)"
+                    />
+                    <div
+                      v-else
+                      class="w-full h-full bg-gradient-to-tr from-green-100 to-emerald-50 text-green-700 flex items-center justify-center font-black text-5xl"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  </div>
-                </div>
+                      {{ c.student_name.charAt(0) }}
+                    </div>
 
-                <!-- Text / Info Section -->
-                <div class="w-full flex flex-col items-center">
-                  <span
-                    class="text-[10px] font-bold text-green-700 uppercase tracking-widest bg-green-100/70 px-3 py-1 rounded-full mb-2"
-                  >
-                    {{ c.title_position }}
-                  </span>
-                  <h5
-                    class="font-extrabold text-slate-800 text-base leading-tight group-hover:text-green-800 transition-colors mb-1"
-                  >
-                    {{ c.student_name }}
-                  </h5>
-                  <p
-                    class="text-[10px] text-slate-400 font-bold uppercase tracking-wider"
-                  >
-                    {{ c.college
-                    }}<template v-if="c.program"> - {{ c.program }}</template>
-                  </p>
-                </div>
-              </label>
+                    <div
+                      :class="[
+                        'absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 shadow-md z-10',
+                        selectedCandidates.includes(c.id)
+                          ? 'border-green-600 bg-green-600 text-white scale-110'
+                          : 'border-slate-300 bg-white text-transparent',
+                      ]"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="w-full flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-green-700 uppercase tracking-widest bg-green-100/70 px-3 py-1 rounded-full mb-2">
+                      {{ c.title_position }}
+                    </span>
+                    <h5 class="font-extrabold text-slate-800 text-base leading-tight group-hover:text-green-800 transition-colors mb-1">
+                      {{ c.student_name }}
+                    </h5>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      {{ c.college }}<template v-if="c.program"> - {{ c.program }}</template>
+                    </p>
+                  </div>
+                </label>
+              </div>
             </div>
+          </div>
+          <div v-else class="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+            <h4 class="text-lg font-bold text-slate-600">No USG candidates available.</h4>
           </div>
         </div>
 
-        <!-- SECTION 2: LOCAL COUNCIL BALLOT -->
-        <div
-          v-if="Object.keys(localCandidatesGrouped).length > 0"
-          class="mb-16 animate-[fadeIn_0.5s_ease-out]"
-        >
-          <div class="border-b-4 border-emerald-700 pb-2 mb-8">
-            <h3
-              class="text-2xl font-black text-slate-900 uppercase tracking-wide flex items-center gap-3"
-            >
+        <!-- LOCAL COUNCIL CONTENT -->
+        <div v-if="activeSection === 'local'" class="animate-[fadeIn_0.3s_ease-out]">
+          <div class="border-b-2 border-slate-100 pb-2 mb-6">
+            <h3 class="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
               🎓 Local Student Council
-              <span
-                class="text-sm font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full normal-case tracking-normal"
-                >SC - {{ currentVoter.college }}</span
-              >
+              <span class="text-xs font-bold bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full normal-case tracking-normal">
+                {{ getVoterLocalCategory(currentVoter) }}
+              </span>
             </h3>
-            <p class="text-sm text-slate-500 mt-1 font-semibold">
-              Exclusively visible and restricted to students belonging to the
-              College of {{ currentVoter.college }}.
+            <p class="text-xs text-slate-400 mt-1 font-semibold">
+              Exclusively visible and restricted to students belonging to: {{ getVoterLocalCategory(currentVoter) }}.
             </p>
           </div>
 
-          <div
-            v-for="(group, position) in localCandidatesGrouped"
-            :key="position"
-            class="mb-10"
-          >
-            <h4
-              class="text-lg font-bold text-emerald-800 bg-emerald-50/50 px-4 py-2 rounded-lg border-l-4 border-emerald-600 mb-6"
-            >
-              {{ position }}
-            </h4>
+          <div v-if="Object.keys(localCandidatesGrouped).length > 0">
             <div
-              class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6"
+              v-for="(group, position) in localCandidatesGrouped"
+              :key="position"
+              class="mb-10"
             >
-              <label
-                v-for="c in group"
-                :key="c.id"
-                :class="[
-                  'relative flex flex-col items-center p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm overflow-hidden group',
-                  selectedCandidates.includes(c.id)
-                    ? 'border-emerald-600 bg-emerald-50/40 shadow-md ring-4 ring-emerald-500/10'
-                    : 'border-slate-200 hover:border-emerald-400 hover:shadow-md',
-                ]"
-              >
-                <input
-                  type="checkbox"
-                  :value="c.id"
-                  v-model="selectedCandidates"
-                  class="hidden"
-                />
-
-                <!-- Large Profile Section -->
-                <div
-                  class="relative w-full aspect-square mb-4 overflow-hidden shadow-inner bg-slate-100 shrink-0"
+              <h4 class="text-lg font-bold text-emerald-800 bg-emerald-50/50 px-4 py-2 rounded-lg border-l-4 border-emerald-600 mb-6">
+                {{ position }}
+              </h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                <label
+                  v-for="c in group"
+                  :key="c.id"
+                  :class="[
+                    'relative flex flex-col items-center p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm overflow-hidden group',
+                    selectedCandidates.includes(c.id)
+                      ? 'border-emerald-600 bg-emerald-50/40 shadow-md ring-4 ring-emerald-500/10'
+                      : 'border-slate-200 hover:border-emerald-400 hover:shadow-md',
+                  ]"
                 >
-                  <img
-                    v-if="c.student_candidate_profile_image"
-                    :src="getProfileImageUrl(c.student_candidate_profile_image)"
-                    alt="Profile"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    @error="handleImageError($event, c.student_name)"
+                  <input
+                    type="checkbox"
+                    :value="c.id"
+                    v-model="selectedCandidates"
+                    class="hidden"
                   />
-                  <div
-                    v-else
-                    class="w-full h-full bg-gradient-to-tr from-emerald-100 to-teal-50 text-emerald-700 flex items-center justify-center font-black text-5xl"
-                  >
-                    {{ c.student_name.charAt(0) }}
-                  </div>
 
-                  <!-- Checkbox indicator overlay at top right of image -->
-                  <div
-                    :class="[
-                      'absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 shadow-md z-10',
-                      selectedCandidates.includes(c.id)
-                        ? 'border-emerald-600 bg-emerald-600 text-white scale-110'
-                        : 'border-slate-300 bg-white text-transparent',
-                    ]"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      class="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      stroke-width="3"
+                  <div class="relative w-full aspect-square mb-4 overflow-hidden shadow-inner bg-slate-100 shrink-0">
+                    <img
+                      v-if="c.student_candidate_profile_image"
+                      :src="getProfileImageUrl(c.student_candidate_profile_image)"
+                      alt="Profile"
+                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      @error="handleImageError($event, c.student_name)"
+                    />
+                    <div
+                      v-else
+                      class="w-full h-full bg-gradient-to-tr from-emerald-100 to-teal-50 text-emerald-700 flex items-center justify-center font-black text-5xl"
                     >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  </div>
-                </div>
+                      {{ c.student_name.charAt(0) }}
+                    </div>
 
-                <!-- Text / Info Section -->
-                <div class="w-full flex flex-col items-center">
-                  <span
-                    class="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-100/70 px-3 py-1 rounded-full mb-2"
-                  >
-                    {{ c.title_position }}
-                  </span>
-                  <h5
-                    class="font-extrabold text-slate-800 text-base leading-tight group-hover:text-emerald-800 transition-colors mb-1"
-                  >
-                    {{ c.student_name }}
-                  </h5>
-                  <p
-                    class="text-[10px] text-slate-400 font-bold uppercase tracking-wider"
-                  >
-                    {{ c.college
-                    }}<template v-if="c.program"> - {{ c.program }}</template>
-                  </p>
-                </div>
-              </label>
+                    <div
+                      :class="[
+                        'absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 shadow-md z-10',
+                        selectedCandidates.includes(c.id)
+                          ? 'border-emerald-600 bg-emerald-600 text-white scale-110'
+                          : 'border-slate-300 bg-white text-transparent',
+                      ]"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="w-full flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-widest bg-emerald-100/70 px-3 py-1 rounded-full mb-2">
+                      {{ c.title_position }}
+                    </span>
+                    <h5 class="font-extrabold text-slate-800 text-base leading-tight group-hover:text-emerald-800 transition-colors mb-1">
+                      {{ c.student_name }}
+                    </h5>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      {{ c.college }}<template v-if="c.program"> - {{ c.program }}</template>
+                    </p>
+                  </div>
+                </label>
+              </div>
             </div>
+          </div>
+          <div v-else class="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+            <h4 class="text-lg font-bold text-slate-600">No Local Council candidates available for your college.</h4>
           </div>
         </div>
 
+        <!-- ABO CONTENT -->
+        <div v-if="activeSection === 'abo'" class="animate-[fadeIn_0.3s_ease-out]">
+          <div class="border-b-2 border-slate-100 pb-2 mb-6">
+            <h3 class="text-xl font-bold text-slate-800 uppercase tracking-wide flex items-center gap-2">
+              🤝 Academic Based Organization (ABO)
+              <span v-if="getVoterABO(currentVoter)" class="text-xs font-bold bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full normal-case tracking-normal">
+                {{ getVoterABO(currentVoter) }}
+              </span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-1 font-semibold">
+              Exclusively visible and restricted to students belonging to the organization: {{ getVoterABO(currentVoter) || 'Not Mapped' }}.
+            </p>
+          </div>
+
+          <div v-if="Object.keys(aboCandidatesGrouped).length > 0">
+            <div
+              v-for="(group, position) in aboCandidatesGrouped"
+              :key="position"
+              class="mb-10"
+            >
+              <h4 class="text-lg font-bold text-indigo-800 bg-indigo-50/50 px-4 py-2 rounded-lg border-l-4 border-indigo-600 mb-6">
+                {{ position }}
+              </h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+                <label
+                  v-for="c in group"
+                  :key="c.id"
+                  :class="[
+                    'relative flex flex-col items-center p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm overflow-hidden group',
+                    selectedCandidates.includes(c.id)
+                      ? 'border-indigo-600 bg-indigo-50/40 shadow-md ring-4 ring-indigo-500/10'
+                      : 'border-slate-200 hover:border-indigo-400 hover:shadow-md',
+                  ]"
+                >
+                  <input
+                    type="checkbox"
+                    :value="c.id"
+                    v-model="selectedCandidates"
+                    class="hidden"
+                  />
+
+                  <div class="relative w-full aspect-square mb-4 overflow-hidden shadow-inner bg-slate-100 shrink-0">
+                    <img
+                      v-if="c.student_candidate_profile_image"
+                      :src="getProfileImageUrl(c.student_candidate_profile_image)"
+                      alt="Profile"
+                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      @error="handleImageError($event, c.student_name)"
+                    />
+                    <div
+                      v-else
+                      class="w-full h-full bg-gradient-to-tr from-indigo-100 to-violet-50 text-indigo-700 flex items-center justify-center font-black text-5xl"
+                    >
+                      {{ c.student_name.charAt(0) }}
+                    </div>
+
+                    <div
+                      :class="[
+                        'absolute top-3 right-3 w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 shadow-md z-10',
+                        selectedCandidates.includes(c.id)
+                          ? 'border-indigo-600 bg-indigo-600 text-white scale-110'
+                          : 'border-slate-300 bg-white text-transparent',
+                      ]"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="w-full flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-indigo-700 uppercase tracking-widest bg-indigo-100/70 px-3 py-1 rounded-full mb-2">
+                      {{ c.title_position }}
+                    </span>
+                    <h5 class="font-extrabold text-slate-800 text-base leading-tight group-hover:text-indigo-800 transition-colors mb-1">
+                      {{ c.student_name }}
+                    </h5>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                      {{ c.college }}<template v-if="c.program"> - {{ c.program }}</template>
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+          <div v-else class="text-center py-12 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+            <h4 class="text-lg font-bold text-slate-600">No ABO candidates available matching your organization profile.</h4>
+          </div>
+        </div>
+
+        <!-- GLOBAL SUBMIT BUTTON -->
         <div class="text-center mt-16 pt-8 border-t border-slate-200">
           <button
             @click="castVote"
@@ -515,8 +608,8 @@
           No Candidates Available
         </h3>
         <p class="text-slate-500 mb-6">
-          There are no USG candidates or local council candidates matching your
-          college ({{ currentVoter.college }}) available at the moment.
+          There are no USG, local council, or ABO candidates matching your
+          profile available at the moment.
         </p>
         <button
           @click="logout"
@@ -556,7 +649,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 
 const config = useRuntimeConfig();
 const API_BASE = `${config.public.apiUrl || "http://localhost:8000"}/api/usg`;
@@ -581,8 +674,115 @@ const handleImageError = (e, candidateName) => {
 const loading = ref(false);
 const candidates = ref([]);
 const voterIdInput = ref("");
+const emailInput = ref("");
 const currentVoter = ref(null);
 const selectedCandidates = ref([]);
+
+const activeSection = ref("usg");
+
+const getVoterABO = (voter) => {
+  if (!voter) return null;
+  const program = (voter.program || "").toLowerCase();
+  const college = (voter.college || "").toLowerCase();
+
+  // CCSEA / BSCS / BSIT -> SOURCE
+  if (
+    program.includes("computer science") ||
+    program.includes("information technology") ||
+    program.includes("bscs") ||
+    program.includes("bsit") ||
+    program.includes("source")
+  ) {
+    return "SOURCE";
+  }
+  // BS Civil Engineering / BSCE / PICE -> PICE
+  if (
+    program.includes("civil engineering") ||
+    program.includes("bsce") ||
+    program.includes("pice")
+  ) {
+    return "PICE";
+  }
+  // Political Science / PolSci / POLISAYS -> POLISAYS
+  if (
+    program.includes("political science") ||
+    program.includes("polsci") ||
+    program.includes("polisays") ||
+    program.includes("polisay")
+  ) {
+    return "POLISAYS";
+  }
+  // Social Work / BSSW / JSWAP -> JSWAP
+  if (
+    program.includes("social work") ||
+    program.includes("bssw") ||
+    program.includes("jswap")
+  ) {
+    return "JSWAP";
+  }
+  // Psychology / Psych / LSUPS -> LSUPS
+  if (
+    program.includes("psychology") ||
+    program.includes("psych") ||
+    program.includes("lsups")
+  ) {
+    return "LSUPS";
+  }
+  // Teacher Education / SOTE -> SOTE
+  if (
+    college.includes("cte") ||
+    program.includes("education") ||
+    program.includes("bsed") ||
+    program.includes("beed") ||
+    program.includes("sote")
+  ) {
+    return "SOTE";
+  }
+  // Hospitality Management / Tourism Management / FHARO -> FHARO
+  if (
+    college.includes("cthm") ||
+    program.includes("hospitality") ||
+    program.includes("tourism") ||
+    program.includes("bshm") ||
+    program.includes("bstm") ||
+    program.includes("fharo")
+  ) {
+    return "FHARO";
+  }
+
+  // Fallback: search for direct match of ABO codes in student info
+  const abos = ["POLISAYS", "JSWAP", "LSUPS", "PICE", "SOURCE", "SOTE", "FHARO"];
+  for (const abo of abos) {
+    if (program.toUpperCase().includes(abo) || college.toUpperCase().includes(abo)) {
+      return abo;
+    }
+  }
+  return null;
+};
+
+const selectedUsgCount = computed(() => {
+  const usgIds = new Set();
+  Object.values(usgCandidatesGrouped.value).forEach((group) => {
+    group.forEach((c) => usgIds.add(c.id));
+  });
+  return selectedCandidates.value.filter((id) => usgIds.has(id)).length;
+});
+
+const selectedLocalCount = computed(() => {
+  const localIds = new Set();
+  Object.values(localCandidatesGrouped.value).forEach((group) => {
+    group.forEach((c) => localIds.add(c.id));
+  });
+  return selectedCandidates.value.filter((id) => localIds.has(id)).length;
+});
+
+const selectedAboCount = computed(() => {
+  const aboIds = new Set();
+  Object.values(aboCandidatesGrouped.value).forEach((group) => {
+    group.forEach((c) => aboIds.add(c.id));
+  });
+  return selectedCandidates.value.filter((id) => aboIds.has(id)).length;
+});
 
 const toast = ref({ show: false, type: "", message: "" });
 const showToast = (message, type = "error") => {
@@ -604,21 +804,27 @@ const fetchCandidates = async () => {
 };
 
 const validateVoter = async () => {
-  if (!voterIdInput.value || !user.value?.email) {
+  // Trim once here so a stray space typed by the voter never breaks the
+  // match against the ID NUMBER column on the registered-voters list.
+  const idNumber = voterIdInput.value.trim();
+  const email = emailInput.value.trim();
+
+  if (!idNumber || !email) {
     showToast(
-      "Missing ID or Email. Please make sure you are logged in.",
+      "Please enter both your LSU ID Number and University Email.",
       "error",
     );
     return;
   }
+
   loading.value = true;
   try {
     const res = await fetch(`${API_BASE}/validate-voter/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        lsu_id_number: voterIdInput.value,
-        lsu_email: user.value.email,
+        lsu_id_number: idNumber,
+        lsu_email: email,
       }),
     });
     const data = await res.json();
@@ -632,7 +838,8 @@ const validateVoter = async () => {
       }
     } else {
       showToast(
-        data.error || "Voter not found. Please check your ID.",
+        data.error ||
+          "We couldn't find a matching registered voter. Please check your ID number and email.",
         "error",
       );
     }
@@ -692,13 +899,131 @@ const usgCandidatesGrouped = computed(() => {
   return groups;
 });
 
+// Maps the voter's college to the correct SC-xxx category key.
+// Special case: College of Engineering and Architecture (CEA) and
+// College of Computer Studies (CCS) are merged under SC-CCSEA.
+// Special case: College of Business and College of Accountancy
+// are merged under SC-CBA.
+const getVoterLocalCategory = (voter) => {
+  if (!voter || !voter.college) return null;
+  const college = voter.college.toUpperCase().trim();
+
+  // Merged college: CCSEA — Engineering + Computer Studies
+  const ccsea = [
+    "CCSEA",
+    "COLLEGE OF COMPUTER STUDIES",
+    "COLLEGE OF ENGINEERING",
+    "COMPUTER STUDIES",
+    "ENGINEERING AND ARCHITECTURE",
+    "ENGINEERING & ARCHITECTURE",
+    "CEA",
+    "CCS",
+  ];
+  if (ccsea.some((kw) => college.includes(kw))) {
+    return "SC-CCSEA";
+  }
+
+  // Merged college: CBA — Business + Accountancy
+  const cba = [
+    "CBA",
+    "COLLEGE OF BUSINESS",
+    "COLLEGE OF ACCOUNTANCY",
+    "BUSINESS ADMINISTRATION",
+    "ACCOUNTANCY",
+  ];
+  if (cba.some((kw) => college.includes(kw))) {
+    return "SC-CBA";
+  }
+
+  // Merged college: CTHM — College / School of Tourism and Hospitality Management
+  const cthm = [
+    "CTHM",
+    "COLLEGE OF TOURISM",
+    "SCHOOL OF TOURISM",
+    "TOURISM AND HOSPITALITY",
+    "TOURISM & HOSPITALITY",
+    "HOSPITALITY MANAGEMENT",
+  ];
+  if (cthm.some((kw) => college.includes(kw))) {
+    return "SC-CTHM";
+  }
+
+  // College: CAS — College of Arts and Sciences
+  const cas = [
+    "CAS",
+    "COLLEGE OF ARTS AND SCIENCES",
+    "COLLEGE OF ARTS & SCIENCES",
+    "ARTS AND SCIENCES",
+    "ARTS & SCIENCES",
+  ];
+  if (cas.some((kw) => college.includes(kw))) {
+    return "SC-CAS";
+  }
+
+  // College: CTE — College of Teacher Education
+  const cte = [
+    "CTE",
+    "COLLEGE OF TEACHER EDUCATION",
+    "TEACHER EDUCATION",
+  ];
+  if (cte.some((kw) => college.includes(kw))) {
+    return "SC-CTE";
+  }
+
+  // College: CON — College of Nursing
+  const con = [
+    "CON",
+    "COLLEGE OF NURSING",
+    "NURSING",
+  ];
+  if (con.some((kw) => college.includes(kw))) {
+    return "SC-CON";
+  }
+
+  // College: CCJE — College of Criminal Justice Education
+  // Falls under the CAS (College of Arts and Sciences) local council.
+  const ccje = [
+    "CCJE",
+    "COLLEGE OF CRIMINAL JUSTICE",
+    "CRIMINAL JUSTICE EDUCATION",
+    "CRIMINAL JUSTICE",
+    "CRIMINOLOGY",
+  ];
+  if (ccje.some((kw) => college.includes(kw))) {
+    return "SC-CAS";
+  }
+
+  // Default: just prefix the stored college abbreviation/name
+  return `SC-${college}`;
+};
+
 const localCandidatesGrouped = computed(() => {
   const groups = {};
   if (!currentVoter.value || !currentVoter.value.college) return groups;
 
-  const targetCategory = `SC-${currentVoter.value.college.toUpperCase()}`;
+  const targetCategory = getVoterLocalCategory(currentVoter.value);
+  if (!targetCategory) return groups;
+
   candidates.value.forEach((c) => {
-    if (c.category && c.category.toUpperCase() === targetCategory) {
+    if (c.category && c.category.toUpperCase() === targetCategory.toUpperCase()) {
+      if (!groups[c.title_position]) {
+        groups[c.title_position] = [];
+      }
+      groups[c.title_position].push(c);
+    }
+  });
+  return groups;
+});
+
+const aboCandidatesGrouped = computed(() => {
+  const groups = {};
+  if (!currentVoter.value) return groups;
+
+  const targetABO = getVoterABO(currentVoter.value);
+  if (!targetABO) return groups;
+
+  candidates.value.forEach((c) => {
+    if (c.category && c.category.toUpperCase() === targetABO.toUpperCase()) {
       if (!groups[c.title_position]) {
         groups[c.title_position] = [];
       }
@@ -711,6 +1036,7 @@ const localCandidatesGrouped = computed(() => {
 const logout = () => {
   currentVoter.value = null;
   voterIdInput.value = "";
+  emailInput.value = "";
 };
 
 onMounted(() => {
