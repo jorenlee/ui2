@@ -898,13 +898,35 @@ const { user } = useAuth();
 
 const getProfileImageUrl = (imagePath) => {
   if (!imagePath) return "";
-  if (imagePath.startsWith("http") || imagePath.startsWith("data:"))
+
+  // Remove query parameters and fragments
+  imagePath = imagePath.split("?")[0].split("#")[0];
+
+  // Keep only up to .jpg, .jpeg, or .png
+  const match = imagePath.match(/^.*?\.(jpg|jpeg|png)/i);
+  if (match) {
+    imagePath = match[0];
+  }
+
+  // If already a complete URL or base64 image, return it
+  if (
+    imagePath.startsWith("http://") ||
+    imagePath.startsWith("https://") ||
+    imagePath.startsWith("data:")
+  ) {
     return imagePath;
+  }
+
+  // Build API URL for relative paths
   const base = (config.public.apiUrl || "http://localhost:8000").replace(
     /\/$/,
-    "",
+    ""
   );
-  const path = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+
+  const path = imagePath.startsWith("/")
+    ? imagePath
+    : `/${imagePath}`;
+
   return `${base}${path}`;
 };
 
@@ -1296,67 +1318,6 @@ const openReceiptFromRecord = () => {
     receiptTimestamp.value,
   );
   showReceiptModal.value = true;
-};
-
-const printReceipt = () => {
-  const sectionHtml = (title, rows) => {
-    if (!rows.length) return "";
-    return `
-      <h3>${escapeHtml(title)}</h3>
-      <table><tbody>
-        ${rows
-          .map(
-            (r) => `
-          <tr>
-            <td>${escapeHtml(r.position)}</td>
-            <td>${r.abstained ? "<em>ABSTAINED</em>" : escapeHtml(r.name)}</td>
-          </tr>`,
-          )
-          .join("")}
-      </tbody></table>`;
-  };
-
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Official Ballot Receipt</title>
-        <style>
-          body { font-family: 'Courier New', monospace; max-width: 480px; margin: 40px auto; color: #111; }
-          h1 { text-align: center; font-size: 18px; text-transform: uppercase; margin-bottom: 4px; }
-          h2 { text-align: center; font-size: 12px; font-weight: normal; margin-top: 0; color: #555; }
-          h3 { font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #111; padding-bottom: 4px; margin-top: 24px; }
-          table { width: 100%; border-collapse: collapse; font-size: 13px; }
-          td { padding: 4px 0; }
-          td:first-child { color: #555; }
-          td:last-child { text-align: right; font-weight: bold; }
-          .meta { font-size: 12px; margin-top: 16px; border-top: 1px dashed #999; border-bottom: 1px dashed #999; padding: 8px 0; }
-          .footer { text-align: center; font-size: 11px; color: #777; margin-top: 24px; }
-        </style>
-      </head>
-      <body>
-        <h1>Official Ballot Receipt</h1>
-        <h2>La Salle University Ozamiz &mdash; Commission on Election</h2>
-        <div class="meta">
-          <div>Voter: ${escapeHtml(currentVoter.value?.student_name)}</div>
-          <div>LSU ID: ${escapeHtml(currentVoter.value?.lsu_id_number)}</div>
-          <div>Date/Time: ${escapeHtml(formatReceiptDate(receiptTimestamp.value))}</div>
-          <div>Receipt No.: ${escapeHtml(receiptCode.value)}</div>
-        </div>
-        ${sectionHtml("USG", receiptSnapshot.value.usg)}
-        ${sectionHtml("Local Council", receiptSnapshot.value.local)}
-        ${sectionHtml("ABO", receiptSnapshot.value.abo)}
-        <p class="footer">This receipt confirms your ballot was recorded.<br/>Keep for your records.</p>
-      </body>
-    </html>`;
-
-  const win = window.open("", "_blank", "width=520,height=700");
-  if (win) {
-    win.document.write(html);
-    win.document.close();
-    win.focus();
-    win.print();
-  }
 };
 
 const fetchCandidates = async () => {
