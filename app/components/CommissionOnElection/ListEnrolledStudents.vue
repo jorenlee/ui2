@@ -126,7 +126,7 @@
     <p v-if="csvFile" class="text-sm text-green-600 font-semibold mb-6 -mt-4">Selected: {{ csvFile.name }}</p>
 
     <!-- Bulk actions bar -->
-    <div v-if="voters.length" class="flex flex-wrap items-center justify-between gap-4 mb-4">
+    <div v-if="!votersLoading && voters.length" class="flex flex-wrap items-center justify-between gap-4 mb-4">
       <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 cursor-pointer select-none">
         <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
                class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
@@ -138,7 +138,16 @@
       </button>
     </div>
 
-    <div v-if="voters.length" class="overflow-x-auto rounded-xl border border-slate-200">
+    <!-- Loading state -->
+    <div v-if="votersLoading" class="flex items-center justify-center gap-3 py-16 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+      <svg class="animate-spin h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      <span class="font-medium">Loading registered voters...</span>
+    </div>
+
+    <div v-else-if="voters.length" class="overflow-x-auto rounded-xl border border-slate-200">
       <table class="w-full border-collapse text-left">
         <thead>
           <tr>
@@ -150,6 +159,7 @@
             <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">ID Number</th>
             <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Program</th>
             <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Status</th>
+            <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Email Ready</th>
             <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">Actions</th>
           </tr>
         </thead>
@@ -174,6 +184,14 @@
                 isVoted(v) ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-700'
               ]">
                 {{ isVoted(v) ? 'Voted' : 'Pending' }}
+              </span>
+            </td>
+            <td class="px-6 py-4 border-b border-slate-200">
+              <span :class="[
+                'inline-block px-3 py-1 rounded-full text-xs font-semibold',
+                isEmailReady(v) ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'
+              ]" :title="isEmailReady(v) ? 'Has email on file and has voted' : 'Missing email and/or not yet voted'">
+                {{ isEmailReady(v) ? 'Ready' : 'Not Ready' }}
               </span>
             </td>
             <td class="px-6 py-4 border-b border-slate-200 text-right">
@@ -201,6 +219,11 @@ const loading = ref(false);
 const voters = ref([]);
 const csvFile = ref(null);
 
+// Tracks whether the initial voters fetch is still in flight, so the table
+// area can show a loading indicator instead of briefly flashing the
+// "No registered voters yet" empty state before data arrives.
+const votersLoading = ref(true);
+
 const toast = ref({ show: false, type: '', message: '' });
 const showToast = (message, type = 'error') => {
   toast.value = { show: true, type, message };
@@ -224,6 +247,14 @@ const isVoted = (v) => {
     return ['true', '1', 'yes'].includes(val.trim().toLowerCase());
   }
   return false;
+};
+
+// A voter is "email ready" when they both have a valid, non-empty email on
+// file AND have already voted — i.e. they're ready for a post-vote
+// confirmation email to be sent to them.
+const isEmailReady = (v) => {
+  const hasEmail = typeof v.lsu_email === 'string' && v.lsu_email.trim().length > 0;
+  return hasEmail && isVoted(v);
 };
 
 const handleFileUpload = (e) => {
@@ -250,6 +281,8 @@ const fetchVoters = async () => {
     }
   } catch (err) {
     console.error('Error fetching voters:', err);
+  } finally {
+    votersLoading.value = false;
   }
 };
 

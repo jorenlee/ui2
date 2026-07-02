@@ -30,6 +30,10 @@ const defaultForm = {
 const formData = ref({ ...defaultForm });
 
 // ---------------- ROLES ----------------
+// Every menu group in the dashboard is now default-deny: it only appears
+// for a user once the matching role below has been granted here. This list
+// must stay in sync with the `allowedRole` values used in the dashboard's
+// subMenuList, or a group can never be granted to anyone.
 const availableRoles = [
   "Super Admin",
   "NPCC Menu",
@@ -40,6 +44,16 @@ const availableRoles = [
   "Registrar Menu",
   "Campus Pass Admin",
   "DRS Admin",
+  "Animo Run",
+  "Commission on Election",
+  "External Links",
+  "General Services Office",
+  "IT Services Feedback",
+  "Lasalle Alumni Association",
+  "Open Educational Resources",
+  "Safety and Security Center",
+  "Juris Doctor Admin",
+  "Juris Doctor Examinee",
 ].map((r) => ({ value: r, label: r }));
 
 // ---------------- FETCH ----------------

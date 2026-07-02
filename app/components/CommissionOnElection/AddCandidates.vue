@@ -232,20 +232,43 @@
       </div>
     </div>
 
-    <!-- Bulk actions bar -->
-    <div v-if="candidates.length" class="flex flex-wrap items-center justify-between gap-4 mb-4">
-      <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 cursor-pointer select-none">
-        <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
-               class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
-        Select All
-      </label>
-      <button v-if="selectedIds.length" @click="showDeleteConfirm = true" :disabled="deleting"
-              class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shrink-0">
-        <i class="fa fa-trash"></i> Delete Selected ({{ selectedIds.length }})
-      </button>
+    <!-- Search + bulk actions bar -->
+    <div v-if="!candidatesLoading && candidates.length" class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+      <div class="relative w-full sm:max-w-xs">
+        <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+        <input v-model="searchQuery" type="text" placeholder="Search candidates..."
+               class="w-full pl-9 pr-9 py-2 rounded-lg border border-slate-300 focus:border-green-600 focus:ring-1 focus:ring-green-600 focus:outline-none text-sm text-slate-900 placeholder-slate-400 transition-colors">
+        <button v-if="searchQuery" @click="searchQuery = ''" type="button"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-sm leading-none">
+          &times;
+        </button>
+      </div>
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 cursor-pointer select-none">
+          <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
+                 class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+          Select All
+        </label>
+        <button v-if="selectedIds.length" @click="showDeleteConfirm = true" :disabled="deleting"
+                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shrink-0">
+          <i class="fa fa-trash"></i> Delete Selected ({{ selectedIds.length }})
+        </button>
+      </div>
+    </div>
+    <p v-if="!candidatesLoading && candidates.length && searchQuery" class="text-sm text-slate-500 mb-4 -mt-2">
+      {{ filteredCandidates.length }} result{{ filteredCandidates.length === 1 ? '' : 's' }} for "{{ searchQuery }}"
+    </p>
+
+    <!-- Loading state -->
+    <div v-if="candidatesLoading" class="flex items-center justify-center gap-3 py-16 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+      <svg class="animate-spin h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      <span class="font-medium">Loading candidates...</span>
     </div>
 
-    <div v-if="candidates.length" class="overflow-x-auto rounded-xl border border-slate-200">
+    <div v-else-if="filteredCandidates.length" class="overflow-x-auto rounded-xl border border-slate-200">
       <table class="w-full border-collapse text-left">
         <thead>
           <tr>
@@ -261,7 +284,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="c in candidates" :key="c.id"
+          <tr v-for="c in filteredCandidates" :key="c.id"
               :class="['hover:bg-slate-50 transition-colors', selectedIds.includes(c.id) ? 'bg-green-50/60' : '']">
             <td class="px-6 py-4 border-b border-slate-200">
               <input type="checkbox" :checked="selectedIds.includes(c.id)" @change="toggleSelect(c.id)"
@@ -295,6 +318,10 @@
         </tbody>
       </table>
     </div>
+    <div v-else-if="candidates.length && searchQuery" class="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+      No candidates match "{{ searchQuery }}".
+      <button @click="searchQuery = ''" type="button" class="text-green-600 hover:text-green-700 font-semibold underline ml-1">Clear search</button>
+    </div>
     <div v-else class="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
       No candidates found.
     </div>
@@ -324,6 +351,39 @@ const candidates = ref([]);
 const showAddCandidate = ref(false);
 const csvFile = ref(null);
 const csvInputRef = ref(null);
+
+// Tracks whether the initial candidates fetch is still in flight, so the
+// list area can show a loading indicator instead of briefly flashing the
+// "No candidates found" empty state before data arrives.
+const candidatesLoading = ref(true);
+
+// --- Search -----------------------------------------------------------
+
+const searchQuery = ref('');
+
+// Filters candidates client-side across the fields visible in the table
+// (name, email, position, category, college, program), case-insensitively.
+const filteredCandidates = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  if (!q) return candidates.value;
+
+  return candidates.value.filter(c => {
+    const haystack = [
+      c.student_name,
+      c.lsu_email,
+      c.lsu_id_number,
+      c.title_position,
+      c.category,
+      c.college,
+      c.program
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(q);
+  });
+});
 
 const colleges = [
   { value: 'CAS', label: 'College of Arts and Sciences CAS' },
@@ -381,6 +441,8 @@ const fetchCandidates = async () => {
     }
   } catch (err) {
     console.error('Error fetching candidates:', err);
+  } finally {
+    candidatesLoading.value = false;
   }
 };
 
@@ -468,8 +530,11 @@ const selectedIds = ref([]);
 const showDeleteConfirm = ref(false);
 const deleting = ref(false);
 
+// "Select All" operates on the currently filtered/visible set, so searching
+// then selecting all doesn't silently select candidates hidden by the search.
 const isAllSelected = computed(() =>
-  candidates.value.length > 0 && selectedIds.value.length === candidates.value.length
+  filteredCandidates.value.length > 0 &&
+  filteredCandidates.value.every(c => selectedIds.value.includes(c.id))
 );
 
 const toggleSelect = (id) => {
@@ -482,10 +547,12 @@ const toggleSelect = (id) => {
 };
 
 const toggleSelectAll = () => {
+  const visibleIds = filteredCandidates.value.map(c => c.id);
   if (isAllSelected.value) {
-    selectedIds.value = [];
+    selectedIds.value = selectedIds.value.filter(id => !visibleIds.includes(id));
   } else {
-    selectedIds.value = candidates.value.map(c => c.id);
+    const merged = new Set([...selectedIds.value, ...visibleIds]);
+    selectedIds.value = [...merged];
   }
 };
 

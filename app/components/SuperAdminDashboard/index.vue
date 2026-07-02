@@ -38,14 +38,21 @@ const openGroups = ref([
 ]);
 
 // ---------------- MENU PERMISSION ----------------
-const publicMenuGroups = [
+// Access is default-deny: every menu group below must have an `allowedRole`
+// (see subMenuList), and a user only sees it once that role has been
+// explicitly granted to their email in Role Permissions. There is no more
+// "public" menu concept and no "no allowedRole = visible to everyone"
+// fallback — nothing is shown unless it was added in Role Permissions.
+// Super Admin is the sole exception and sees every group regardless.
+
+// lsuOnlyMenuGroups is an *additional* restriction layered on top of the
+// role check below (not a grant on its own): even with the matching role,
+// these groups are hidden from non-@lsu.edu.ph accounts.
+const lsuOnlyMenuGroups = [
   "IT Services Feedback",
   "Animo Run",
   "External Links",
   "Lasalle Alumni Association",
-];
-
-const lsuOnlyMenuGroups = [
   "Commission on Election",
   "General Services Office",
   "Document Reviewer",
@@ -119,7 +126,7 @@ onMounted(async () => {
 const filteredMenuList = computed(() => {
   const roles = userRoles.value;
   const email = user.value?.email;
-  const electionAdmins = ["jorenlee.luna@lsu.edu.ph", "dev@lsu.edu.ph"];
+  const electionAdmins = ["jorenlee.luna@lsu.edu.ph"];
 
   const processMenu = (menuList) => {
     return menuList.map(menu => {
@@ -141,20 +148,19 @@ const filteredMenuList = computed(() => {
     return processMenu(subMenuList);
   }
 
+  // Default-deny: a group only shows up if its allowedRole has been granted
+  // to this user in Role Permissions. Groups that additionally require an
+  // @lsu.edu.ph account (lsuOnlyMenuGroups) still need that on top of the
+  // role grant — it's a narrowing check, not a way to bypass the role
+  // requirement.
   const roleFiltered = subMenuList.filter((menu) => {
-    // Public menus
-    if (publicMenuGroups.includes(menu.group)) return true;
+    if (!menu.allowedRole || !roles.includes(menu.allowedRole)) return false;
 
-    // LSU only menus
-    if (lsuOnlyMenuGroups.includes(menu.group)) {
-      return email?.endsWith("@lsu.edu.ph");
+    if (lsuOnlyMenuGroups.includes(menu.group) && !email?.endsWith("@lsu.edu.ph")) {
+      return false;
     }
 
-    // No role restriction
-    if (!menu.allowedRole) return true;
-
-    // Check user roles
-    return roles.includes(menu.allowedRole);
+    return true;
   });
 
   return processMenu(roleFiltered);
@@ -164,6 +170,7 @@ const filteredMenuList = computed(() => {
 const subMenuList = [
   {
     group: "Animo Run",
+    allowedRole: "Animo Run",
     items: [
       {
         label: "Registration",
@@ -181,6 +188,7 @@ const subMenuList = [
   },
   {
     group: "Commission on Election",
+    allowedRole: "Commission on Election",
     items: [
       {
         label: "Add Candidates",
@@ -240,6 +248,7 @@ const subMenuList = [
   },
   {
     group: "General Services Office",
+    allowedRole: "General Services Office",
     items: [
       {
         label: "Facilities Reservation Form",
@@ -281,6 +290,7 @@ const subMenuList = [
   },
   {
     group: "IT Services Feedback",
+    allowedRole: "IT Services Feedback",
     items: [
       {
         label: "IT Services Feedback",
@@ -292,6 +302,7 @@ const subMenuList = [
   },
   {
     group: "Lasalle Alumni Association",
+    allowedRole: "Lasalle Alumni Association",
     items: [
       {
         label: "Lasalle Alumni Association",
@@ -363,6 +374,7 @@ const subMenuList = [
   },
   {
     group: "Open Educational Resources",
+    allowedRole: "Open Educational Resources",
     items: [
       {
         label: "OER Form",
@@ -380,6 +392,7 @@ const subMenuList = [
   },
   {
     group: "Safety and Security Center",
+    allowedRole: "Safety and Security Center",
     items: [
       {
         label: "Campus Pass Management",
@@ -427,6 +440,7 @@ const subMenuList = [
   },
   {
     group: "External Links",
+    allowedRole: "External Links",
     items: [
       {
         label: "LSU Home Page",
@@ -438,6 +452,7 @@ const subMenuList = [
   },
   {
     group: "Juris Doctor Admin",
+    allowedRole: "Juris Doctor Admin",
     items: [
       {
         label: "Admission Test Management",
@@ -449,6 +464,7 @@ const subMenuList = [
   },
   {
     group: "Juris Doctor Examinee",
+    allowedRole: "Juris Doctor Examinee",
     items: [
       {
         label: "Admission Test",
