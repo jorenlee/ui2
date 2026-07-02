@@ -1017,81 +1017,124 @@ const sortGroupsByPosition = (groups, rankFn = getUsgAboRank) => {
   return Object.fromEntries(entries);
 };
 
-const ABO_CODES = ["POLISAYS", "JSWAP", "LSUPS", "PICE", "SOURCE", "SOTE", "FHARO"];
+const ABO_CODES = ["POLISAYS", "JSWAP", "LSUPS", "PICE", "SOURCE", "SOTE", "FHARO", "JPIA", "JFINEX", "JMEX"];
 
 const getVoterABO = (voter) => {
   if (!voter) return null;
-  const program = (voter.program || "").toLowerCase();
-  const college = (voter.college || "").toLowerCase();
+  const program = (voter.program || "").toUpperCase().trim();
 
-  // CCSEA / BSCS / BSIT -> SOURCE
+  // CAS — AB Political Science -> POLISAYS
   if (
-    program.includes("computer science") ||
-    program.includes("information technology") ||
-    program.includes("bscs") ||
-    program.includes("bsit") ||
-    program.includes("source")
-  ) {
-    return "SOURCE";
-  }
-  // BS Civil Engineering / BSCE / PICE -> PICE
-  if (
-    program.includes("civil engineering") ||
-    program.includes("bsce") ||
-    program.includes("pice")
-  ) {
-    return "PICE";
-  }
-  // Political Science / PolSci / POLISAYS -> POLISAYS
-  if (
-    program.includes("political science") ||
-    program.includes("polsci") ||
-    program.includes("polisays") ||
-    program.includes("polisay")
+    program === "AB-POLSC" ||
+    program === "AB POLSC" ||
+    program.includes("POLITICAL SCIENCE") ||
+    program.includes("POLISAYS") ||
+    program.includes("POLISAY")
   ) {
     return "POLISAYS";
   }
-  // Social Work / BSSW / JSWAP -> JSWAP
+
+  // CAS — BSPsych -> LSUPS
   if (
-    program.includes("social work") ||
-    program.includes("bssw") ||
-    program.includes("jswap")
-  ) {
-    return "JSWAP";
-  }
-  // Psychology / Psych / LSUPS -> LSUPS
-  if (
-    program.includes("psychology") ||
-    program.includes("psych") ||
-    program.includes("lsups")
+    program === "BSPSYCH" ||
+    program.includes("PSYCHOLOGY") ||
+    program.includes("LSUPS")
   ) {
     return "LSUPS";
   }
-  // Teacher Education / SOTE -> SOTE
+
+  // CAS — BSSW -> JSWAP
   if (
-    college.includes("cte") ||
-    program.includes("education") ||
-    program.includes("bsed") ||
-    program.includes("beed") ||
-    program.includes("sote")
+    program === "BSSW" ||
+    program.includes("SOCIAL WORK") ||
+    program.includes("JSWAP")
+  ) {
+    return "JSWAP";
+  }
+
+  // CBA — BSA / BSAIS -> JPIA
+  if (
+    program === "BSA" ||
+    program === "BSAIS" ||
+    program.includes("ACCOUNTANCY") ||
+    program.includes("ACCOUNTING INFORMATION") ||
+    program.includes("JPIA")
+  ) {
+    return "JPIA";
+  }
+
+  // CBA — BSBAFM -> JFINEX
+  if (
+    program === "BSBAFM" ||
+    program.includes("FINANCIAL MANAGEMENT") ||
+    program.includes("JFINEX")
+  ) {
+    return "JFINEX";
+  }
+
+  // CBA — BSBAMM -> JMEX
+  if (
+    program === "BSBAMM" ||
+    program.includes("MARKETING MANAGEMENT") ||
+    program.includes("JMEX")
+  ) {
+    return "JMEX";
+  }
+
+  // CCSEA — BLIS / BSCS / BSIT -> SOURCE
+  if (
+    program === "BLIS" ||
+    program === "BSCS" ||
+    program === "BSIT" ||
+    program.includes("LIBRARY") ||
+    program.includes("COMPUTER SCIENCE") ||
+    program.includes("INFORMATION TECHNOLOGY") ||
+    program.includes("SOURCE")
+  ) {
+    return "SOURCE";
+  }
+
+  // CCSEA — BSArch / BSCE / BSCpE / BSECE / BSEE / BSGE -> PICE
+  if (
+    program === "BSARCH" ||
+    program === "BSCE" ||
+    program === "BSCPE" ||
+    program === "BSECE" ||
+    program === "BSEE" ||
+    program === "BSGE" ||
+    program.includes("ARCHITECTURE") ||
+    program.includes("CIVIL ENGINEERING") ||
+    program.includes("COMPUTER ENGINEERING") ||
+    program.includes("ELECTRONICS ENGINEERING") ||
+    program.includes("ELECTRICAL ENGINEERING") ||
+    program.includes("GEODETIC ENGINEERING") ||
+    program.includes("PICE")
+  ) {
+    return "PICE";
+  }
+
+  // CTHM — BSTM -> SOTE
+  if (
+    program === "BSTM" ||
+    program.includes("TOURISM MANAGEMENT") ||
+    program.includes("SOTE")
   ) {
     return "SOTE";
   }
-  // Hospitality Management / Tourism Management / FHARO -> FHARO
+
+  // CTHM — BSHM -> FHARO
   if (
-    college.includes("cthm") ||
-    program.includes("hospitality") ||
-    program.includes("tourism") ||
-    program.includes("bshm") ||
-    program.includes("bstm") ||
-    program.includes("fharo")
+    program === "BSHM" ||
+    program.includes("HOSPITALITY MANAGEMENT") ||
+    program.includes("FHARO")
   ) {
     return "FHARO";
   }
 
-  // Fallback: search for direct match of ABO codes in student info
+  // Fallback: direct ABO code match in program/college fields
+  const college = (voter.college || "").toUpperCase().trim();
   for (const abo of ABO_CODES) {
-    if (program.toUpperCase().includes(abo) || college.toUpperCase().includes(abo)) {
+    if (program.includes(abo) || college.includes(abo)) {
       return abo;
     }
   }
@@ -1513,7 +1556,6 @@ const getVoterLocalCategory = (voter) => {
   }
 
   // College: CCJE — College of Criminal Justice Education
-  // Falls under the CAS (College of Arts and Sciences) local council.
   const ccje = [
     "CCJE",
     "COLLEGE OF CRIMINAL JUSTICE",
@@ -1522,7 +1564,7 @@ const getVoterLocalCategory = (voter) => {
     "CRIMINOLOGY",
   ];
   if (ccje.some((kw) => college.includes(kw))) {
-    return "SC-CAS";
+    return "SC-CCJE";
   }
 
   // Default: just prefix the stored college abbreviation/name
