@@ -1479,9 +1479,27 @@ const usgCandidatesGrouped = computed(() => {
 // College of Computer Studies (CCS) are merged under SC-CCSEA.
 // Special case: College of Business and College of Accountancy
 // are merged under SC-CBA.
+
+
 const getVoterLocalCategory = (voter) => {
   if (!voter || !voter.college) return null;
   const college = voter.college.toUpperCase().trim();
+  const program = (voter.program || "").toUpperCase().trim();
+
+  // College: CCJE — College of Criminal Justice Education
+  // Checks both program and college fields so BSCRIM students are routed
+  // correctly even when their stored college value is something else (e.g. CAS).
+  const ccje = [
+    "CCJE",
+    "COLLEGE OF CRIMINAL JUSTICE",
+    "CRIMINAL JUSTICE EDUCATION",
+    "CRIMINAL JUSTICE",
+    "CRIMINOLOGY",
+    "BSCRIM",
+  ];
+  if (ccje.some((kw) => program.includes(kw) || college.includes(kw))) {
+    return "SC-CCJE";
+  }
 
   // Merged college: CCSEA — Engineering + Computer Studies
   const ccsea = [
@@ -1555,17 +1573,6 @@ const getVoterLocalCategory = (voter) => {
     return "SC-CON";
   }
 
-  // College: CCJE — College of Criminal Justice Education
-  const ccje = [
-    "CCJE",
-    "COLLEGE OF CRIMINAL JUSTICE",
-    "CRIMINAL JUSTICE EDUCATION",
-    "CRIMINAL JUSTICE",
-    "CRIMINOLOGY",
-  ];
-  if (ccje.some((kw) => college.includes(kw))) {
-    return "SC-CCJE";
-  }
 
   // Default: just prefix the stored college abbreviation/name
   return `SC-${college}`;
