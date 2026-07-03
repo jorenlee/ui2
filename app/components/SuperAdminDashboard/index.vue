@@ -49,7 +49,6 @@ const openGroups = ref([
 // role check below (not a grant on its own): even with the matching role,
 // these groups are hidden from non-@lsu.edu.ph accounts.
 const lsuOnlyMenuGroups = [
-  "IT Services Feedback",
   "Animo Run",
   "External Links",
   "Lasalle Alumni Association",
@@ -145,6 +144,14 @@ const filteredMenuList = computed(() => {
   // role grant — it's a narrowing check, not a way to bypass the role
   // requirement.
   const roleFiltered = subMenuList.filter((menu) => {
+    // IT Services Feedback is open to any @gmail.com or @lsu.edu.ph account,
+    // regardless of what's set in Role Permissions.
+    if (menu.group === "IT Services Feedback") {
+      return (
+        email?.endsWith("@gmail.com") || email?.endsWith("@lsu.edu.ph")
+      );
+    }
+
     if (!menu.allowedRole || !roles.includes(menu.allowedRole)) return false;
 
     if (lsuOnlyMenuGroups.includes(menu.group) && !email?.endsWith("@lsu.edu.ph")) {

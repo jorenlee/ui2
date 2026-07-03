@@ -1,6 +1,6 @@
 <template>
   <section class="animate-[fadeIn_0.4s_ease-out] relative">
-    
+
     <!-- Toast Notification -->
     <div v-if="toast.show" :class="[
       'fixed top-6 right-6 p-4 rounded-xl shadow-2xl z-50 transform transition-all duration-300 max-w-sm w-full flex items-start gap-3 border',
@@ -13,21 +13,57 @@
         <h4 class="font-bold text-base">{{ toast.type === 'error' ? 'Error' : 'Success' }}</h4>
         <p class="text-sm opacity-90">{{ toast.message }}</p>
       </div>
-      <button @click="toast.show = false" class="ml-auto text-xl opacity-50 hover:opacity-100 leading-none">&times;</button>
+      <button @click="toast.show = false"
+        class="ml-auto text-xl opacity-50 hover:opacity-100 leading-none">&times;</button>
+    </div>
+
+    <!-- Bulk Reset Confirmation Modal -->
+    <div v-if="showBulkResetConfirm" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+            <i class="fa fa-rotate-left text-lg"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900">Reset {{ selectedIds.length }} voter{{ selectedIds.length > 1 ?
+            's' : '' }}?</h3>
+        </div>
+        <p class="text-sm text-slate-600 mb-2">This will reset the voting state for all selected voters:</p>
+        <ul class="text-sm text-slate-500 mb-6 space-y-1 list-disc list-inside">
+          <li>Set <strong>Has Voted</strong> → <span class="text-amber-600 font-semibold">No</span></li>
+          <li>Remove <strong>LSU Email</strong></li>
+          <li>Clear <strong>Voted Candidates</strong></li>
+        </ul>
+        <div class="flex justify-end gap-3">
+          <button @click="showBulkResetConfirm = false" :disabled="bulkResetting"
+            class="px-4 py-2 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
+            Cancel
+          </button>
+          <button @click="resetSelectedVoters" :disabled="bulkResetting"
+            class="px-4 py-2 rounded-lg font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2">
+            <svg v-if="bulkResetting" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+              viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            {{ bulkResetting ? 'Resetting...' : 'Yes, Reset All' }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
     <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6">
-        <h3 class="text-lg font-bold text-slate-900 mb-2">Delete {{ selectedIds.length }} voter{{ selectedIds.length > 1 ? 's' : '' }}?</h3>
+        <h3 class="text-lg font-bold text-slate-900 mb-2">Delete {{ selectedIds.length }} voter{{ selectedIds.length > 1
+          ? 's' : '' }}?</h3>
         <p class="text-sm text-slate-500 mb-6">This action cannot be undone.</p>
         <div class="flex justify-end gap-3">
           <button @click="showDeleteConfirm = false" :disabled="deleting"
-                  class="px-4 py-2 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
+            class="px-4 py-2 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
             Cancel
           </button>
           <button @click="deleteSelectedVoters" :disabled="deleting"
-                  class="px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed">
+            class="px-4 py-2 rounded-lg font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed">
             {{ deleting ? 'Deleting...' : 'Delete' }}
           </button>
         </div>
@@ -43,7 +79,8 @@
           </div>
           <h3 class="text-lg font-bold text-slate-900">Reset Voter?</h3>
         </div>
-        <p class="text-sm text-slate-600 mb-2">This will reset <span class="font-semibold text-slate-800">{{ resetTargetName }}</span>'s voting state:</p>
+        <p class="text-sm text-slate-600 mb-2">This will reset <span class="font-semibold text-slate-800">{{
+          resetTargetName }}</span>'s voting state:</p>
         <ul class="text-sm text-slate-500 mb-6 space-y-1 list-disc list-inside">
           <li>Set <strong>Has Voted</strong> → <span class="text-amber-600 font-semibold">No</span></li>
           <li>Remove <strong>LSU Email</strong></li>
@@ -51,12 +88,13 @@
         </ul>
         <div class="flex justify-end gap-3">
           <button @click="showResetConfirm = false" :disabled="resetLoading"
-                  class="px-4 py-2 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
+            class="px-4 py-2 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
             Cancel
           </button>
           <button @click="confirmResetVoter" :disabled="resetLoading"
-                  class="px-4 py-2 rounded-lg font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2">
-            <svg v-if="resetLoading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            class="px-4 py-2 rounded-lg font-semibold text-white bg-amber-500 hover:bg-amber-600 transition-colors disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2">
+            <svg v-if="resetLoading" class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none"
+              viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
             </svg>
@@ -77,33 +115,38 @@
           <form @submit.prevent="submitEditVoter">
             <div class="flex flex-col gap-6 mb-6">
               <div class="relative">
-                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Student Full Name <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Student Full Name
+                  <span class="text-red-500">*</span></label>
                 <input v-model="editForm.student_name" type="text" required
-                       class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+                  class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
               </div>
               <div class="relative">
-                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">LSU Email <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">LSU Email <span
+                    class="text-red-500">*</span></label>
                 <input v-model="editForm.lsu_email" type="email" required
-                       class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+                  class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
               </div>
               <div class="relative">
-                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">LSU ID Number <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">LSU ID Number <span
+                    class="text-red-500">*</span></label>
                 <input v-model="editForm.lsu_id_number" type="text" required
-                       class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+                  class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
               </div>
               <div class="relative">
-                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">College <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">College <span
+                    class="text-red-500">*</span></label>
                 <input v-model="editForm.college" type="text" required
-                       class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+                  class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
               </div>
               <div class="relative">
-                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Program <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Program <span
+                    class="text-red-500">*</span></label>
                 <input v-model="editForm.program" type="text" required
-                       class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+                  class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
               </div>
               <div class="relative flex items-center gap-3">
                 <input v-model="editForm.has_voted" type="checkbox" id="editHasVoted"
-                       class="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+                  class="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
                 <label for="editHasVoted" class="text-sm font-semibold text-slate-800 cursor-pointer">Has voted</label>
               </div>
             </div>
@@ -112,7 +155,7 @@
             <div class="border-t border-slate-100 pt-5 mb-6">
               <p class="text-xs text-slate-400 uppercase tracking-wide font-bold mb-3">Testing Tools</p>
               <button type="button" @click="openResetConfirm" :disabled="editLoading || resetLoading"
-                      class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 font-semibold text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <i class="fa fa-rotate-left"></i>
                 Reset Voter (Clear Vote, Email & Candidates)
               </button>
@@ -120,12 +163,69 @@
 
             <div class="flex justify-end gap-3">
               <button type="button" @click="closeEditVoter" :disabled="editLoading"
-                      class="px-5 py-2.5 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
+                class="px-5 py-2.5 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
                 Cancel
               </button>
               <button type="submit" :disabled="editLoading"
-                      class="bg-[#2E7D32] hover:bg-[#1B5E20] text-white px-6 py-2.5 rounded-lg font-bold transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed">
+                class="bg-[#2E7D32] hover:bg-[#1B5E20] text-white px-6 py-2.5 rounded-lg font-bold transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed">
                 {{ editLoading ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Voter Modal -->
+    <div v-if="showAddVoter" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-[#2E7D32] text-white py-3 px-6 flex items-center justify-between sticky top-0">
+          <h3 class="text-sm font-bold uppercase tracking-wider">Add Voter</h3>
+          <button @click="closeAddVoter" class="text-white/80 hover:text-white text-xl leading-none">&times;</button>
+        </div>
+        <div class="p-8">
+          <form @submit.prevent="submitAddVoter">
+            <div class="flex flex-col gap-6 mb-6">
+              <div class="relative">
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Student Full Name
+                  <span class="text-red-500">*</span></label>
+                <input v-model="addForm.student_name" type="text" required
+                  class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+              </div>
+              <div class="relative">
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">LSU Email <span
+                    class="text-red-500">*</span></label>
+                <input v-model="addForm.lsu_email" type="email" required
+                  class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+              </div>
+              <div class="relative">
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">LSU ID Number <span
+                    class="text-red-500">*</span></label>
+                <input v-model="addForm.lsu_id_number" type="text" required
+                  class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+              </div>
+              <div class="relative">
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">College <span
+                    class="text-red-500">*</span></label>
+                <input v-model="addForm.college" type="text" required
+                  class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+              </div>
+              <div class="relative">
+                <label class="block text-xs font-bold text-slate-800 mb-1 uppercase tracking-wide">Program <span
+                    class="text-red-500">*</span></label>
+                <input v-model="addForm.program" type="text" required
+                  class="w-full px-0 py-2 bg-transparent border-0 border-b-2 border-slate-300 focus:border-green-700 focus:ring-0 text-slate-900 transition-colors font-medium text-lg">
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-3">
+              <button type="button" @click="closeAddVoter" :disabled="addLoading"
+                class="px-5 py-2.5 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-60">
+                Cancel
+              </button>
+              <button type="submit" :disabled="addLoading"
+                class="bg-[#2E7D32] hover:bg-[#1B5E20] text-white px-6 py-2.5 rounded-lg font-bold transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed">
+                {{ addLoading ? 'Adding...' : 'Add Voter' }}
               </button>
             </div>
           </form>
@@ -135,14 +235,22 @@
 
     <header class="mb-10 pb-8 border-b-2 border-slate-100">
       <div class="flex flex-col items-center justify-center w-full mb-8 gap-6">
-        <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/lsu-corporate-logo-green.png" alt="LSU Logo" class="h-20 sm:h-24 object-contain drop-shadow-sm" />
+        <img
+          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/lsu-corporate-logo-green.png"
+          alt="LSU Logo" class="h-20 sm:h-24 object-contain drop-shadow-sm" />
         <div class="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOA.jpg" alt="COA" class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOE.jpg" alt="COE" class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCSO.png" alt="CSO" class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-contain bg-white shadow-md border-2 border-white p-1" />
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUSAC.jpg" alt="SAC" class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSG.jpg" alt="USG" class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSGJA.jpg" alt="USGJA" class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOA.jpg" alt="COA"
+            class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOE.jpg" alt="COE"
+            class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCSO.png" alt="CSO"
+            class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-contain bg-white shadow-md border-2 border-white p-1" />
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUSAC.jpg" alt="SAC"
+            class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSG.jpg" alt="USG"
+            class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSGJA.jpg"
+            alt="USGJA" class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
         </div>
       </div>
       <div class="text-center">
@@ -153,16 +261,23 @@
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
       <h2 class="text-2xl font-bold text-slate-900">Registered Voters</h2>
       <div class="flex items-center gap-4">
-        <button @click="downloadTemplate" class="bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 border border-blue-200 px-6 py-3 rounded-lg font-semibold cursor-pointer transition-colors duration-200 flex items-center gap-2 shrink-0">
+        <button @click="downloadTemplate"
+          class="bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 border border-blue-200 px-6 py-3 rounded-lg font-semibold cursor-pointer transition-colors duration-200 flex items-center gap-2 shrink-0">
           <i class="fa fa-file-alt"></i> Download Template
         </button>
         <input type="file" id="csvUpload" accept=".csv" @change="handleFileUpload" class="hidden">
-        <label for="csvUpload" class="bg-transparent border-2 border-green-600 text-green-600 hover:bg-green-50 px-6 py-3 rounded-lg font-semibold cursor-pointer transition-colors duration-200 flex items-center gap-2 shrink-0">
+        <label for="csvUpload"
+          class="bg-transparent border-2 border-green-600 text-green-600 hover:bg-green-50 px-6 py-3 rounded-lg font-semibold cursor-pointer transition-colors duration-200 flex items-center gap-2 shrink-0">
           <i class="fa fa-upload"></i> Select CSV
         </label>
         <button v-if="csvFile" @click="uploadVoters" :disabled="loading"
-                class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed shrink-0">
+          class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed shrink-0">
           {{ loading ? 'Uploading...' : 'Confirm Upload' }}
+        </button>
+
+        <button @click="openAddVoter"
+          class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold cursor-pointer transition-colors duration-200 flex items-center gap-2 shrink-0">
+          <i class="fa fa-user-plus"></i> Add Voter
         </button>
       </div>
     </div>
@@ -170,41 +285,65 @@
 
     <!-- Search Filter -->
     <div class="mb-4">
-      <div class="relative max-w-md">
-        <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
-          <i class="fa fa-search text-sm"></i>
-        </span>
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search by name, ID, email, program or college…"
-          class="w-full pl-9 pr-10 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-200 bg-white text-slate-800 placeholder-slate-400 transition-colors"
-        />
-        <button v-if="searchQuery" @click="searchQuery = ''" class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
-          <i class="fa fa-times text-sm"></i>
-        </button>
+      <div class="mb-5">
+        <div class="relative w-full">
+          <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 pointer-events-none">
+            <i class="fa fa-search text-sm"></i>
+          </span>
+          <input v-model="searchQuery" type="text" placeholder="Search by name, ID, email, program or college…"
+            class="w-full pl-9 pr-10 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-200 bg-white text-slate-800 placeholder-slate-400 transition-colors" />
+          <button v-if="searchQuery" @click="searchQuery = ''"
+            class="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
+            <i class="fa fa-times text-sm"></i>
+          </button>
+        </div>
+        <p v-if="searchQuery && !votersLoading" class="text-xs text-slate-500 mt-1.5 ml-1">
+          Showing {{ filteredVoters.length }} of {{ voters.length }} voters
+        </p>
       </div>
-      <p v-if="searchQuery && !votersLoading" class="text-xs text-slate-500 mt-1.5 ml-1">
-        Showing {{ filteredVoters.length }} of {{ voters.length }} voters
-      </p>
+
+      <div v-if="!votersLoading && voters.length" class="grid grid-cols-3 gap-4 mb-8">
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-center">
+          <div class="text-2xl font-extrabold text-slate-900">{{ voters.length }}</div>
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wide mt-1">Total Voters</div>
+        </div>
+        <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+          <div class="text-2xl font-extrabold text-green-600">{{ votedCount }}</div>
+          <div class="text-xs font-semibold text-green-600 uppercase tracking-wide mt-1">Voted</div>
+        </div>
+        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
+          <div class="text-2xl font-extrabold text-yellow-700">{{ notVotedCount }}</div>
+          <div class="text-xs font-semibold text-yellow-700 uppercase tracking-wide mt-1">Not Yet Voted</div>
+        </div>
+      </div>
+
+
     </div>
 
     <!-- Bulk actions bar -->
     <div v-if="!votersLoading && filteredVoters.length" class="flex flex-wrap items-center justify-between gap-4 mb-4">
       <label class="flex items-center gap-2 text-sm font-semibold text-slate-600 cursor-pointer select-none">
         <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
-               class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+          class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
         Select All
       </label>
-      <button v-if="selectedIds.length" @click="showDeleteConfirm = true" :disabled="deleting"
-              class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shrink-0">
-        <i class="fa fa-trash"></i> Delete Selected ({{ selectedIds.length }})
-      </button>
+      <div v-if="selectedIds.length" class="flex items-center gap-3">
+        <button @click="showBulkResetConfirm = true" :disabled="bulkResetting || deleting"
+          class="bg-amber-50 hover:bg-amber-100 text-amber-700 border-2 border-amber-300 px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shrink-0">
+          <i class="fa fa-rotate-left"></i> Reset Selected ({{ selectedIds.length }})
+        </button>
+        <button @click="showDeleteConfirm = true" :disabled="deleting || bulkResetting"
+          class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shrink-0">
+          <i class="fa fa-trash"></i> Delete Selected ({{ selectedIds.length }})
+        </button>
+      </div>
     </div>
 
     <!-- Loading state -->
-    <div v-if="votersLoading" class="flex items-center justify-center gap-3 py-16 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
-      <svg class="animate-spin h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <div v-if="votersLoading"
+      class="flex items-center justify-center gap-3 py-16 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+      <svg class="animate-spin h-5 w-5 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+        viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
       </svg>
@@ -217,22 +356,49 @@
           <tr>
             <th class="bg-slate-50 px-6 py-4 border-b border-slate-200 w-12">
               <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
-                     class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+                class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
             </th>
-            <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Student</th>
-            <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">ID Number</th>
-            <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Program</th>
-            <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Status</th>
-            <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200">Email Ready</th>
-            <th class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">Actions</th>
+            <th @click="toggleSort('student_name')"
+              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700">
+              Student
+              <i v-if="sortKey === 'student_name'"
+                :class="['fa ml-1', sortOrder === 'asc' ? 'fa-caret-up' : 'fa-caret-down']"></i>
+            </th>
+            <th @click="toggleSort('lsu_id_number')"
+              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700">
+              ID Number
+              <i v-if="sortKey === 'lsu_id_number'"
+                :class="['fa ml-1', sortOrder === 'asc' ? 'fa-caret-up' : 'fa-caret-down']"></i>
+            </th>
+            <th @click="toggleSort('program')"
+              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700">
+              Program
+              <i v-if="sortKey === 'program'"
+                :class="['fa ml-1', sortOrder === 'asc' ? 'fa-caret-up' : 'fa-caret-down']"></i>
+            </th>
+            <th @click="toggleSort('has_voted')"
+              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700">
+              Status
+              <i v-if="sortKey === 'has_voted'"
+                :class="['fa ml-1', sortOrder === 'asc' ? 'fa-caret-up' : 'fa-caret-down']"></i>
+            </th>
+            <th @click="toggleSort('email_ready')"
+              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700">
+              Email Ready
+              <i v-if="sortKey === 'email_ready'"
+                :class="['fa ml-1', sortOrder === 'asc' ? 'fa-caret-up' : 'fa-caret-down']"></i>
+            </th>
+            <th
+              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">
+              Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="v in filteredVoters" :key="v.id"
-              :class="['hover:bg-slate-50 transition-colors', selectedIds.includes(v.id) ? 'bg-green-50/60' : '']">
+          <tr v-for="v in sortedVoters" :key="v.id"
+            :class="['hover:bg-slate-50 transition-colors', selectedIds.includes(v.id) ? 'bg-green-50/60' : '']">
             <td class="px-6 py-4 border-b border-slate-200">
               <input type="checkbox" :checked="selectedIds.includes(v.id)" @change="toggleSelect(v.id)"
-                     class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+                class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
             </td>
             <td class="px-6 py-4 border-b border-slate-200">
               <div>
@@ -259,7 +425,8 @@
               </span>
             </td>
             <td class="px-6 py-4 border-b border-slate-200 text-right">
-              <button @click="openEditVoter(v)" class="text-slate-400 hover:text-green-600 transition-colors" title="Edit voter">
+              <button @click="openEditVoter(v)" class="text-slate-400 hover:text-green-600 transition-colors"
+                title="Edit voter">
                 <i class="fa fa-pen"></i>
               </button>
             </td>
@@ -269,14 +436,17 @@
     </div>
 
     <!-- No results state (search returned nothing) -->
-    <div v-else-if="!votersLoading && voters.length && searchQuery" class="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+    <div v-else-if="!votersLoading && voters.length && searchQuery"
+      class="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
       <div class="text-3xl mb-3">🔍</div>
       <p class="font-semibold text-slate-700">No results for "{{ searchQuery }}"</p>
       <p class="text-sm mt-1">Try a different name, ID number, or program.</p>
-      <button @click="searchQuery = ''" class="mt-4 text-green-600 hover:text-green-700 text-sm font-semibold underline">Clear search</button>
+      <button @click="searchQuery = ''"
+        class="mt-4 text-green-600 hover:text-green-700 text-sm font-semibold underline">Clear search</button>
     </div>
 
-    <div v-else-if="!votersLoading" class="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+    <div v-else-if="!votersLoading"
+      class="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
       No registered voters yet. Please upload a CSV.
     </div>
   </section>
@@ -286,7 +456,11 @@
 import { ref, computed, onMounted } from 'vue';
 
 const config = useRuntimeConfig();
-const API_BASE = `${config.public.apiUrl}/api/usg`; 
+const API_BASE = `${config.public.apiUrl}/api/usg`;
+
+// Voting status counters
+const votedCount = computed(() => voters.value.filter(isVoted).length);
+const notVotedCount = computed(() => voters.value.length - votedCount.value);
 
 const loading = ref(false);
 const voters = ref([]);
@@ -346,6 +520,45 @@ const filteredVoters = computed(() => {
   );
 });
 
+// --- Column sorting --------------------------------------------------------
+
+const sortKey = ref('student_name');
+const sortOrder = ref('asc'); // 'asc' | 'desc'
+
+const toggleSort = (key) => {
+  if (sortKey.value === key) {
+    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortOrder.value = 'asc';
+  }
+};
+
+const sortedVoters = computed(() => {
+  const list = [...filteredVoters.value];
+  const key = sortKey.value;
+  const dir = sortOrder.value === 'asc' ? 1 : -1;
+
+  return list.sort((a, b) => {
+    let aVal, bVal;
+
+    if (key === 'has_voted') {
+      aVal = isVoted(a) ? 1 : 0;
+      bVal = isVoted(b) ? 1 : 0;
+    } else if (key === 'email_ready') {
+      aVal = isEmailReady(a) ? 1 : 0;
+      bVal = isEmailReady(b) ? 1 : 0;
+    } else {
+      aVal = (a[key] ?? '').toString().toLowerCase();
+      bVal = (b[key] ?? '').toString().toLowerCase();
+    }
+
+    if (aVal < bVal) return -1 * dir;
+    if (aVal > bVal) return 1 * dir;
+    return 0;
+  });
+});
+
 const handleFileUpload = (e) => {
   csvFile.value = e.target.files[0];
 };
@@ -387,7 +600,8 @@ const uploadVoters = async () => {
       body: formData
     });
     if (res.ok) {
-      showToast('Voters uploaded successfully!', 'success');
+      const data = await res.json();
+      showToast(data.message || 'Voters uploaded successfully!', 'success');
       csvFile.value = null;
       await fetchVoters();
     } else {
@@ -477,6 +691,106 @@ const deleteSelectedVoters = async () => {
     showToast('Failed to delete selected voters.', 'error');
   } finally {
     deleting.value = false;
+  }
+};
+
+
+// --- Add voter (individual entry) ---------------------------------------
+
+const showAddVoter = ref(false);
+const addLoading = ref(false);
+const addForm = ref({
+  student_name: '',
+  lsu_email: '',
+  lsu_id_number: '',
+  college: '',
+  program: '',
+});
+
+const openAddVoter = () => {
+  addForm.value = { student_name: '', lsu_email: '', lsu_id_number: '', college: '', program: '' };
+  showAddVoter.value = true;
+};
+
+const closeAddVoter = () => {
+  showAddVoter.value = false;
+};
+
+const submitAddVoter = async () => {
+  addLoading.value = true;
+
+  try {
+    const res = await fetch(`${API_BASE}/voters/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(addForm.value)
+    });
+
+    if (res.ok) {
+      await fetchVoters();
+      showToast('Voter added successfully!', 'success');
+      closeAddVoter();
+    } else {
+      const errorText = await res.text();
+      try {
+        const errorJson = JSON.parse(errorText);
+        const errorMsg = Object.entries(errorJson)
+          .map(([key, val]) => `${key}: ${Array.isArray(val) ? val.join(', ') : val}`)
+          .join(' | ');
+        showToast(errorMsg || 'Failed to add voter.', 'error');
+      } catch {
+        showToast(errorText || 'Failed to add voter.', 'error');
+      }
+    }
+  } catch (err) {
+    console.error('Error adding voter:', err);
+    showToast('Failed to add voter.', 'error');
+  } finally {
+    addLoading.value = false;
+  }
+};
+
+// --- Multi-select reset -----------------------------------------------
+
+const showBulkResetConfirm = ref(false);
+const bulkResetting = ref(false);
+
+const resetSelectedVoters = async () => {
+  if (!selectedIds.value.length) return;
+  bulkResetting.value = true;
+
+  const idsToReset = [...selectedIds.value];
+
+  try {
+    const results = await Promise.allSettled(
+      idsToReset.map(id =>
+        fetch(`${API_BASE}/voters/${id}/reset/`, { method: 'POST' }).then(res => {
+          if (!res.ok) throw new Error(`Failed to reset voter ${id}`);
+          return id;
+        })
+      )
+    );
+
+    const succeeded = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.length - succeeded;
+
+    await fetchVoters();
+    pruneSelection();
+
+    showBulkResetConfirm.value = false;
+
+    if (failed === 0) {
+      showToast(`${succeeded} voter${succeeded > 1 ? 's' : ''} reset successfully!`, 'success');
+    } else if (succeeded === 0) {
+      showToast(`Failed to reset ${failed} voter${failed > 1 ? 's' : ''}.`, 'error');
+    } else {
+      showToast(`Reset ${succeeded}, but ${failed} failed. Please try again.`, 'error');
+    }
+  } catch (err) {
+    console.error('Error resetting voters:', err);
+    showToast('Failed to reset selected voters.', 'error');
+  } finally {
+    bulkResetting.value = false;
   }
 };
 
