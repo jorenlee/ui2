@@ -254,11 +254,11 @@
                 class="w-full border-b-2 lg:text-sm text-xs shadow border-green-800 px-4 py-3 focus:border-[#087830] focus:ring-4 focus:ring-green-100 outline-none transition"
               />
             </div>
- <!-- :disabled="loading || !voterIdInput.trim() || !emailInput.trim()" -->
+
             <!-- Button -->
             <button
               type="submit"
-             disabled
+              :disabled="loading || !voterIdInput.trim() || !emailInput.trim()"
               class="w-full rounded-xl bg-[#087830] hover:bg-[#066327] text-white py-3.5 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed uppercase"
             >
               <i class="fa-solid fa-vote-yea"></i>
@@ -370,7 +370,7 @@
         "
       >
         <!-- TABS HEADER -->
-        <div class="flex flex-wrap justify-center border-b border-slate-200 mb-8 pb-px gap-2 sm:gap-6">
+        <!-- <div class="flex flex-wrap justify-center border-b border-slate-200 mb-8 pb-px gap-2 sm:gap-6">
           <button
             @click="activeSection = 'usg'"
             type="button"
@@ -427,8 +427,76 @@
               {{ selectedAboCount }}
             </span>
           </button>
-        </div>
+        </div> -->
 
+
+        <!-- TABS HEADER -->
+<div class="flex flex-wrap justify-center border-b border-slate-200 mb-8 pb-px gap-2 sm:gap-6">
+
+  <!-- USG -->
+  <button
+    @click="changeSection('usg')"
+    type="button"
+    :class="[
+      'px-6 py-3 font-extrabold text-base sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2',
+      activeSection === 'usg'
+        ? 'border-green-600 text-green-800'
+        : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+    ]"
+  >
+    🏛️ USG
+
+    <span
+      v-if="selectedUsgCount > 0"
+      class="bg-green-600 text-white text-xs px-2 py-0.5 rounded-full font-bold"
+    >
+      {{ selectedUsgCount }}
+    </span>
+  </button>
+
+  <!-- Local Council -->
+  <button
+    @click="changeSection('local')"
+    type="button"
+    :class="[
+      'px-6 py-3 font-extrabold text-base sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2',
+      activeSection === 'local'
+        ? 'border-emerald-600 text-emerald-800'
+        : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+    ]"
+  >
+    🎓 Local Council
+
+    <span
+      v-if="selectedLocalCount > 0"
+      class="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full font-bold"
+    >
+      {{ selectedLocalCount }}
+    </span>
+  </button>
+
+  <!-- ABO -->
+  <button
+    @click="changeSection('abo')"
+    type="button"
+    :class="[
+      'px-6 py-3 font-extrabold text-base sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2',
+      activeSection === 'abo'
+        ? 'border-indigo-600 text-indigo-800'
+        : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+    ]"
+  >
+    🤝 ABO
+
+    <span
+      v-if="selectedAboCount > 0"
+      class="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full font-bold"
+    >
+      {{ selectedAboCount }}
+    </span>
+  </button>
+
+</div>
         <!-- USG CONTENT -->
         <div v-if="activeSection === 'usg'" class="animate-[fadeIn_0.3s_ease-out]">
           <div class="border-b-2 border-slate-100 pb-2 mb-6">
@@ -829,15 +897,19 @@
         </div>
 
         <!-- GLOBAL SUBMIT BUTTON -->
-        <div class="text-center mt-16 pt-8 border-t border-slate-200">
-          <button
-            @click="castVote"
-            :disabled="loading || isBallotEmpty"
-            class="bg-[#2E7D32] hover:bg-[#1B5E20] text-white px-12 py-4 font-bold text-xl shadow-xl shadow-green-700/20 transition-all hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 disabled:shadow-none disabled:cursor-not-allowed"
-          >
-            {{ loading ? "Submitting Votes..." : "Submit Votes" }}
-          </button>
-        </div>
+<div class="text-center mt-16 pt-8 border-t border-slate-200">
+  <button
+    @click="castVote"
+    :disabled="
+      loading ||
+      isBallotEmpty ||
+      !hasVisitedAllTabs
+    "
+    class="bg-[#2E7D32] hover:bg-[#1B5E20] text-white px-12 py-4 font-bold text-xl shadow-xl shadow-green-700/20 transition-all hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 disabled:shadow-none disabled:cursor-not-allowed"
+  >
+    {{ loading ? "Submitting Votes..." : "Submit Votes" }}
+  </button>
+</div>
       </div>
 
       <div
@@ -932,6 +1004,48 @@ const handleImageError = (e, candidateName) => {
   e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(candidateName)}&background=dcfce7&color=166534`;
 };
 
+
+const activeSection = ref("usg");
+
+/*
+|--------------------------------------------------------------------------
+| Track which ballot tabs have been opened
+|--------------------------------------------------------------------------
+*/
+const visitedTabs = ref({
+  usg: true, // Default tab is already opened
+  local: false,
+  abo: false,
+});
+
+const changeSection = (section) => {
+  activeSection.value = section;
+  visitedTabs.value[section] = true;
+};
+
+const hasVisitedAllTabs = computed(() => {
+  return (
+    visitedTabs.value.usg &&
+    visitedTabs.value.local &&
+    visitedTabs.value.abo
+  );
+});
+
+const remainingTabs = computed(() => {
+  return Object.entries(visitedTabs.value)
+    .filter(([_, visited]) => !visited)
+    .map(([key]) => {
+      switch (key) {
+        case "usg":
+          return "USG";
+        case "local":
+          return "Local Council";
+        case "abo":
+          return "ABO";
+      }
+    });
+});
+
 const loading = ref(false);
 const candidates = ref([]);
 const voterIdInput = ref("");
@@ -993,7 +1107,7 @@ const buildAbstainedPayload = () =>
     return { section, position, category };
   });
 
-const activeSection = ref("usg");
+
 
 // Ranks a USG/ABO position title: President first, Vice President (or VP)
 // second, board/general members last, everything else in between — using
@@ -1344,7 +1458,16 @@ const validateVoter = async () => {
 };
 
 const castVote = async () => {
+    if (!hasVisitedAllTabs.value) {
+    showToast(
+      `Please review the following section(s): ${remainingTabs.value.join(", ")}.`,
+      "error"
+    );
+    return;
+  }
+
   if (isBallotEmpty.value) return;
+  
   loading.value = true;
   try {
     const res = await fetch(`${API_BASE}/cast-vote/`, {
