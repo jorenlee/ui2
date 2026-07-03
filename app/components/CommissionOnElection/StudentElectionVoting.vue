@@ -254,7 +254,7 @@
                 class="w-full border-b-2 lg:text-sm text-xs shadow border-green-800 px-4 py-3 focus:border-[#087830] focus:ring-4 focus:ring-green-100 outline-none transition"
               />
             </div>
- :disabled="loading || !voterIdInput.trim() || !emailInput.trim()"
+ <!-- :disabled="loading || !voterIdInput.trim() || !emailInput.trim()" -->
             <!-- Button -->
             <button
               type="submit"
