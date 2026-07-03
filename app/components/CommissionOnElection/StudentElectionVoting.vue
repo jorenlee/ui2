@@ -890,11 +890,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from "vue";
-
+import { ref, onMounted, computed } from "vue";
 const config = useRuntimeConfig();
 const API_BASE = `${config.public.apiUrl || "http://localhost:8000"}/api/usg`;
-const { user } = useAuth();
 
 const getProfileImageUrl = (imagePath) => {
   if (!imagePath) return "";
@@ -945,11 +943,8 @@ const selectedCandidates = ref([]);
 // from. Keyed by "section::position" (e.g. "usg::President") so that the
 // same position title in different tabs (USG / Local / ABO) doesn't collide.
 const abstainedGroups = ref(new Set());
-
 const getGroupKey = (section, position) => `${section}::${position}`;
-
-const isAbstained = (section, position) =>
-  abstainedGroups.value.has(getGroupKey(section, position));
+const isAbstained = (section, position) => abstainedGroups.value.has(getGroupKey(section, position));
 
 // Toggles abstain for a position group. Choosing to abstain clears any
 // candidates already selected within that same group, since abstaining
@@ -1105,10 +1100,8 @@ const getVoterABO = (voter) => {
 
   // CCSEA — BLIS / BSCS / BSIT -> SOURCE
   if (
-    program === "BLIS" ||
     program === "BSCS" ||
     program === "BSIT" ||
-    program.includes("LIBRARY") ||
     program.includes("COMPUTER SCIENCE") ||
     program.includes("INFORMATION TECHNOLOGY") ||
     program.includes("SOURCE")
@@ -1116,20 +1109,10 @@ const getVoterABO = (voter) => {
     return "SOURCE";
   }
 
-  // CCSEA — BSArch / BSCE / BSCpE / BSECE / BSEE / BSGE -> PICE
+  // CCSEA — BSCE -> PICE
   if (
-    program === "BSARCH" ||
     program === "BSCE" ||
-    program === "BSCPE" ||
-    program === "BSECE" ||
-    program === "BSEE" ||
-    program === "BSGE" ||
-    program.includes("ARCHITECTURE") ||
     program.includes("CIVIL ENGINEERING") ||
-    program.includes("COMPUTER ENGINEERING") ||
-    program.includes("ELECTRONICS ENGINEERING") ||
-    program.includes("ELECTRICAL ENGINEERING") ||
-    program.includes("GEODETIC ENGINEERING") ||
     program.includes("PICE")
   ) {
     return "PICE";
@@ -1218,15 +1201,6 @@ const receiptTimestamp = ref(null);
 const receiptCode = ref("");
 const receiptSnapshot = ref({ usg: [], local: [], abo: [] });
 
-const escapeHtml = (str) =>
-  String(str ?? "").replace(/[&<>"']/g, (m) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[m]);
-
 const formatReceiptDate = (date) => {
   if (!(date instanceof Date) || isNaN(date)) return "—";
   return date.toLocaleString();
@@ -1237,10 +1211,7 @@ const buildReceiptCode = (idNumber, dateObj) => {
     dateObj instanceof Date && !isNaN(dateObj) ? dateObj.getTime() : Date.now();
   return `LSU-${idNumber || "VOTER"}-${stamp.toString(36).toUpperCase()}`;
 };
-// Walks a grouped-by-position object (from the live candidates list) and
-// records either the candidate(s) picked in that position, or marks it
-// ABSTAINED if nothing was picked. Used immediately after casting a vote,
-// while selectedCandidates/abstainedGroups still hold the live selection.
+
 const buildSectionReceipt = (groupedCandidates) => {
   const rows = [];
   Object.entries(groupedCandidates).forEach(([position, group]) => {
@@ -1256,9 +1227,6 @@ const buildSectionReceipt = (groupedCandidates) => {
   return rows;
 };
 
-// Builds the receipt right after a successful vote submission, from the
-// live ballot state. Must be called before selectedCandidates/
-// abstainedGroups could be reset elsewhere.
 const generateReceipt = () => {
   receiptSnapshot.value = {
     usg: buildSectionReceipt(usgCandidatesGrouped.value),
@@ -1273,10 +1241,6 @@ const generateReceipt = () => {
   showReceiptModal.value = true;
 };
 
-// Rebuilds the receipt from the voter's saved record (voted_candidates_details
-// + abstained_positions, both persisted server-side at vote time). Used when
-// re-opening the receipt from the lock screen — e.g. after a page refresh or
-// a fresh login — when the live selection state no longer exists.
 const buildReceiptFromRecord = () => {
   const bySection = { usg: [], local: [], abo: [] };
 
@@ -1434,13 +1398,6 @@ const usgCandidatesGrouped = computed(() => {
   });
   return sortGroupsByPosition(groups);
 });
-
-// Maps the voter's college to the correct SC-xxx category key.
-// Special case: College of Engineering and Architecture (CEA) and
-// College of Computer Studies (CCS) are merged under SC-CCSEA.
-// Special case: College of Business and College of Accountancy
-// are merged under SC-CBA.
-
 
 const getVoterLocalCategory = (voter) => {
   if (!voter || !voter.college) return null;
