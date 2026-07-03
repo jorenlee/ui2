@@ -256,7 +256,7 @@
             </div>
 
             <!-- Button -->
-                 :disabled="loading || !voterIdInput.trim() || !emailInput.trim()"
+                 <!-- :disabled="loading || !voterIdInput.trim() || !emailInput.trim()" -->
             <button
               type="submit"
           disabled
