@@ -256,9 +256,10 @@
             </div>
 
             <!-- Button -->
+                 :disabled="loading || !voterIdInput.trim() || !emailInput.trim()"
             <button
               type="submit"
-              :disabled="loading || !voterIdInput.trim() || !emailInput.trim()"
+          disabled
               class="w-full rounded-xl bg-[#087830] hover:bg-[#066327] text-white py-3.5 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed uppercase"
             >
               <i class="fa-solid fa-vote-yea"></i>
