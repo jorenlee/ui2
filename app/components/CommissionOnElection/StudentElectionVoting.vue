@@ -254,11 +254,11 @@
                 class="w-full border-b-2 lg:text-sm text-xs shadow border-green-800 px-4 py-3 focus:border-[#087830] focus:ring-4 focus:ring-green-100 outline-none transition"
               />
             </div>
-
+ :disabled="loading || !voterIdInput.trim() || !emailInput.trim()"
             <!-- Button -->
             <button
               type="submit"
-              :disabled="loading || !voterIdInput.trim() || !emailInput.trim()"
+             disabled
               class="w-full rounded-xl bg-[#087830] hover:bg-[#066327] text-white py-3.5 font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed uppercase"
             >
               <i class="fa-solid fa-vote-yea"></i>

@@ -776,57 +776,25 @@ const handleFileSelect = async (e) => {
   e.target.value = "";
 };
 
-const handlePaste = (e) => {
-  e.preventDefault();
-  
-  // Get plain text from clipboard (automatically removes font styles/HTML)
-  let text = e.clipboardData.getData('text/plain');
-  
-  if (text) {
-    // Reformat text to fill the whole area:
-    // 1. Normalize line endings
-    // 2. Preserve paragraphs (2 or more newlines) by replacing them with a temporary marker
-    // 3. Replace single newlines (hard wraps) with spaces so text fills the textarea width
-    // 4. Restore paragraphs as double newlines
-    // 5. Clean up excessive spaces
-    let processed = text
-      .replace(/\r\n/g, '\n')
-      .replace(/\n{2,}/g, '__PARAGRAPH_BREAK__')
-      .replace(/\n/g, ' ')
-      .replace(/__PARAGRAPH_BREAK__/g, '\n\n')
-      .replace(/[ \t]{2,}/g, ' ')
-      .trim();
-      
-    insertTextAtCursor(processed);
-  }
 
-  // Trigger auto detect after DOM update so content.descriptions is populated
-  nextTick(() => {
-    runAutoDetect();
-  });
-};
-
-const insertTextAtCursor = (text) => {
-  const textarea = document.querySelector('.md-editor textarea') || document.querySelector('textarea[v-model="content.descriptions"]');
-  if (!textarea) {
-    content.value.descriptions += text;
+// Reflow text: collapse hard line-breaks into spaces, keep real paragraph breaks
+const formatDescriptionText = () => {
+  const text = content.value.descriptions || "";
+  if (!text.trim()) {
+    displayToast("Nothing to format", "info");
     return;
   }
-  
-  const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const currentText = content.value.descriptions || "";
-  
-  content.value.descriptions = 
-    currentText.substring(0, start) + 
-    text + 
-    currentText.substring(end);
-    
-  // Restore cursor position after Vue update
-  nextTick(() => {
-    textarea.selectionStart = textarea.selectionEnd = start + text.length;
-    textarea.focus();
-  });
+
+  content.value.descriptions = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{2,}/g, '\u0000')   // mark real paragraph breaks
+    .replace(/\n/g, ' ')            // collapse single line-wraps into spaces
+    .replace(/\u0000/g, '\n\n')     // restore paragraph breaks
+    .replace(/[ \t]{2,}/g, ' ')     // clean up double spaces
+    .trim();
+
+  displayToast("✨ Text formatted for readability", "success", 1500);
+  runAutoDetect();
 };
 
 // Auto-detect SDGs, Page Filters, Content Types, and Authors from title & description
@@ -1195,23 +1163,31 @@ const displayToast = (message, type = "success", duration = 3000) => {
               </div>
             </div>
 
-            <!-- DESCRIPTION -->
-            <div>
-              <label class="block text-sm font-semibold mb-2"
-                :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-                Description
-                <span class="text-red-500">*</span>
-              </label>
-              <div @paste.capture="handlePaste">
-                <MdEditor
-                  v-model="content.descriptions"
-                  :theme="darkMode ? 'dark' : 'light'"
-                  @onBlur="runAutoDetect"
-                  language="en-US"
-                  style="height: 320px;"
-                />
-              </div>
-            </div>
+           <!-- DESCRIPTION -->
+<div>
+  <div class="flex justify-between items-center mb-2">
+    <label class="block text-sm font-semibold"
+      :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+      Description
+      <span class="text-red-500">*</span>
+    </label>
+    <button
+      @click="formatDescriptionText"
+      type="button"
+      class="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-1"
+    >
+      <i class="fa fa-align-left"></i> Format Text
+    </button>
+  </div>
+  <MdEditor
+    v-model="content.descriptions"
+    :theme="darkMode ? 'dark' : 'light'"
+    :preview="false"
+    @onBlur="runAutoDetect"
+    language="en-US"
+    style="height: 320px;"
+  />
+</div>
 
             <!-- FILTERS & SDGs -->
             <div class="border-t pt-6"

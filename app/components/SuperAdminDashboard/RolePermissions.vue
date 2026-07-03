@@ -48,7 +48,7 @@ const availableRoles = [
   "Commission on Election",
   "External Links",
   "General Services Office",
-  "IT Services Feedback",
+  // "IT Services Feedback",
   "Lasalle Alumni Association",
   "Open Educational Resources",
   "Safety and Security Center",
