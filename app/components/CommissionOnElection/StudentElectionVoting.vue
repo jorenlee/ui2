@@ -1,5 +1,6 @@
 <template>
-  <section class="animate-[fadeIn_0.4s_ease-out] relative">
+ <div>
+     <section class="animate-[fadeIn_0.4s_ease-out] relative">
     <!-- Toast Notification -->
     <div v-if="toast.show" :class="[
       'fixed top-6 right-6 p-4  shadow-2xl z-50 transform transition-all duration-300 max-w-sm w-full flex items-start gap-3 border',
@@ -731,6 +732,7 @@
       </div>
     </footer>
   </section>
+ </div>
 </template>
 
 <script setup>
