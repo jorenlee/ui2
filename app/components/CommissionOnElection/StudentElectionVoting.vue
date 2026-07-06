@@ -26,8 +26,8 @@
     <div v-if="showReceiptModal"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
       <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-[fadeIn_0.3s_ease-out] max-h-[90vh] flex flex-col">
-        <div class="bg-[#087830] px-6 py-5 text-center text-white shrink-0">
+        class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-[fadeIn_0.3s_ease-out] max-h-[90vh] flex flex-col mx-auto">
+        <div class="bg-[#087830] px-5 sm:px-6 py-5 text-center text-white shrink-0">
           <div class="text-4xl mb-1">🧾</div>
           <h3 class="text-lg font-extrabold uppercase tracking-wide">
             Official Ballot Receipt
@@ -35,7 +35,7 @@
           <p class="text-xs opacity-80 mt-1">Your vote has been recorded</p>
         </div>
 
-        <div class="p-6 overflow-y-auto">
+        <div class="p-5 sm:p-6 overflow-y-auto">
           <div class="text-sm border-b border-dashed border-slate-300 pb-4 mb-4 space-y-1">
             <div class="flex justify-between">
               <span class="text-slate-500">Voter</span>
@@ -148,7 +148,7 @@
 
     <!-- Authentication -->
     <div v-if="!currentVoter" class="flex justify-center px-4">
-      <div class="w-full lg:w-3/12 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
+      <div class="w-full sm:w-4/5 md:w-1/2 lg:w-1/3 xl:w-3/12 bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden">
         <!-- Green Top -->
         <div class="h-2 bg-[#087830]"></div>
 
@@ -198,14 +198,14 @@
 
     <!-- LOCK SCREEN (ALREADY VOTED) -->
     <div v-else-if="currentVoter.has_voted" class="animate-[fadeIn_0.4s_ease-out]">
-      <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-8 sm:p-12 text-center max-w-3xl mx-auto">
+      <div class="bg-white rounded-2xl shadow-xl border border-slate-100 p-5 sm:p-8 lg:p-12 text-center max-w-3xl mx-auto">
         <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
           <i class="fa fa-check text-4xl"></i>
         </div>
-        <h2 class="text-3xl font-extrabold text-slate-900 mb-2">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">
           Thank You For Voting!
         </h2>
-        <p class="text-lg text-slate-600 mb-8">
+        <p class="text-base sm:text-lg text-slate-600 mb-8">
           Your official ballot has been recorded,
           <strong class="text-slate-900">{{ currentVoter.student_name }}</strong>.
         </p>
@@ -217,7 +217,7 @@
           <h3 class="text-xl font-bold text-slate-800 border-b-2 border-slate-100 pb-2 mb-6">
             Your Selected Candidates
           </h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div v-for="c in currentVoter.voted_candidates_details" :key="c.id"
               class="flex items-center gap-4 p-4 border border-slate-200 bg-slate-50">
               <div v-if="c.student_candidate_profile_image"
@@ -227,10 +227,10 @@
               </div>
               <div v-else
                 class="w-12 h-12 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xl shrink-0">
-                {{ c.student_name.charAt(0) }}
+                {{ getInitial(c.student_name) }}
               </div>
               <div>
-                <div class="font-bold text-slate-900">{{ c.student_name }}</div>
+                <div class="font-bold text-slate-900">{{ c.student_name || "Unnamed Candidate" }}</div>
                 <div class="text-sm text-slate-500 font-semibold">
                   {{ c.title_position }}
                 </div>
@@ -251,10 +251,10 @@
     <!-- VOTING BALLOT -->
     <div v-else class="animate-[fadeIn_0.4s_ease-out]">
       <div class="text-center mb-12">
-        <h2 class="text-3xl font-extrabold text-slate-900 mb-2">
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">
           Official Election Ballot
         </h2>
-        <p class="text-lg text-slate-600">
+        <p class="text-base sm:text-lg text-slate-600">
           Welcome,
           <strong class="text-slate-900">{{ currentVoter.student_name }}</strong>. Please select your preferred
           candidates.
@@ -267,10 +267,11 @@
         Object.keys(aboCandidatesGrouped).length > 0
       ">
         <!-- TABS HEADER -->
-        <div class="flex flex-wrap justify-center border-b border-slate-200 mb-8 pb-px gap-2 sm:gap-6">
+        <div class="flex flex-nowrap sm:flex-wrap justify-start sm:justify-center overflow-x-auto sm:overflow-visible border-b border-slate-200 mb-8 pb-px gap-2 sm:gap-6 -mx-4 px-4 sm:mx-0 sm:px-0"
+          style="-webkit-overflow-scrolling: touch;">
           <!-- USG -->
           <button @click="changeSection('usg')" type="button" :class="[
-            'px-6 py-3 font-extrabold text-base sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2',
+            'shrink-0 px-4 sm:px-6 py-3 font-extrabold text-sm sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2 whitespace-nowrap',
             activeSection === 'usg'
               ? 'border-green-600 text-green-800'
               : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
@@ -285,7 +286,7 @@
 
           <!-- Local Council -->
           <button @click="changeSection('local')" type="button" :class="[
-            'px-6 py-3 font-extrabold text-base sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2',
+            'shrink-0 px-4 sm:px-6 py-3 font-extrabold text-sm sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2 whitespace-nowrap',
             activeSection === 'local'
               ? 'border-emerald-600 text-emerald-800'
               : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
@@ -300,7 +301,7 @@
 
           <!-- ABO -->
           <button @click="changeSection('abo')" type="button" :class="[
-            'px-6 py-3 font-extrabold text-base sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2',
+            'shrink-0 px-4 sm:px-6 py-3 font-extrabold text-sm sm:text-lg border-b-4 transition-all duration-300 relative flex items-center gap-2 whitespace-nowrap',
             activeSection === 'abo'
               ? 'border-indigo-600 text-indigo-800'
               : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
@@ -335,7 +336,7 @@
                   Select 1
                 </span>
               </h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 <label v-for="c in group" :key="c.id" :class="[
                   'relative flex flex-col items-center p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm overflow-hidden group',
                   selectedCandidates.includes(c.id)
@@ -358,7 +359,7 @@
                       @error="handleImageError($event, c.student_name)" />
                     <div v-else
                       class="w-full h-full bg-gradient-to-tr from-green-100 to-emerald-50 text-green-700 flex items-center justify-center font-black text-5xl">
-                      {{ c.student_name.charAt(0) }}
+                      {{ getInitial(c.student_name) }}
                     </div>
 
                     <div :class="[
@@ -381,7 +382,7 @@
                     </span>
                     <h5
                       class="font-extrabold text-slate-800 text-base leading-tight group-hover:text-green-800 transition-colors mb-1">
-                      {{ c.student_name }}
+                      {{ c.student_name || "Unnamed Candidate" }}
                     </h5>
                     <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                       {{ c.college }}<template v-if="c.program"> - {{ c.program }}</template>
@@ -462,7 +463,7 @@
                   Select 1
                 </span>
               </h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 <label v-for="c in group" :key="c.id" :class="[
                   'relative flex flex-col items-center p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm overflow-hidden group',
                   selectedCandidates.includes(c.id)
@@ -471,7 +472,7 @@
                 ]">
                   <input :type="isSingleSelectPosition(position) ? 'radio' : 'checkbox'"
                     :name="isSingleSelectPosition(position) ? getGroupKey('local', position) : undefined"
-                    :value="c.id" v-model="selectedCandidates"
+                    :value="c.id" :checked="selectedCandidates.includes(c.id)"
                     @change="onCandidateToggle('local', position, group, c.id)" class="hidden" />
 
                   <div class="relative w-full aspect-square mb-4 overflow-hidden shadow-inner bg-slate-100 shrink-0">
@@ -481,7 +482,7 @@
                       @error="handleImageError($event, c.student_name)" />
                     <div v-else
                       class="w-full h-full bg-gradient-to-tr from-emerald-100 to-teal-50 text-emerald-700 flex items-center justify-center font-black text-5xl">
-                      {{ c.student_name.charAt(0) }}
+                      {{ getInitial(c.student_name) }}
                     </div>
 
                     <div :class="[
@@ -504,7 +505,7 @@
                     </span>
                     <h5
                       class="font-extrabold text-slate-800 text-base leading-tight group-hover:text-emerald-800 transition-colors mb-1">
-                      {{ c.student_name }}
+                      {{ c.student_name || "Unnamed Candidate" }}
                     </h5>
                     <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                       {{ c.college }}<template v-if="c.program"> - {{ c.program }}</template>
@@ -587,7 +588,7 @@
                   Select 1
                 </span>
               </h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 <label v-for="c in group" :key="c.id" :class="[
                   'relative flex flex-col items-center p-5 border-2 rounded-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 text-center bg-white shadow-sm overflow-hidden group',
                   selectedCandidates.includes(c.id)
@@ -596,7 +597,7 @@
                 ]">
                   <input :type="isSingleSelectPosition(position) ? 'radio' : 'checkbox'"
                     :name="isSingleSelectPosition(position) ? getGroupKey('abo', position) : undefined"
-                    :value="c.id" v-model="selectedCandidates"
+                    :value="c.id" :checked="selectedCandidates.includes(c.id)"
                     @change="onCandidateToggle('abo', position, group, c.id)" class="hidden" />
 
                   <div class="relative w-full aspect-square mb-4 overflow-hidden shadow-inner bg-slate-100 shrink-0">
@@ -606,7 +607,7 @@
                       @error="handleImageError($event, c.student_name)" />
                     <div v-else
                       class="w-full h-full bg-gradient-to-tr from-indigo-100 to-violet-50 text-indigo-700 flex items-center justify-center font-black text-5xl">
-                      {{ c.student_name.charAt(0) }}
+                      {{ getInitial(c.student_name) }}
                     </div>
 
                     <div :class="[
@@ -629,7 +630,7 @@
                     </span>
                     <h5
                       class="font-extrabold text-slate-800 text-base leading-tight group-hover:text-indigo-800 transition-colors mb-1">
-                      {{ c.student_name }}
+                      {{ c.student_name || "Unnamed Candidate" }}
                     </h5>
                     <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                       {{ c.college }}<template v-if="c.program"> - {{ c.program }}</template>
@@ -692,7 +693,7 @@
             isBallotEmpty ||
             !hasVisitedAllTabs
             "
-            class="bg-[#2E7D32] hover:bg-[#1B5E20] text-white px-12 py-4 font-bold text-xl shadow-xl shadow-green-700/20 transition-all hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 disabled:shadow-none disabled:cursor-not-allowed">
+            class="w-full sm:w-auto bg-[#2E7D32] hover:bg-[#1B5E20] text-white px-8 sm:px-12 py-3.5 sm:py-4 font-bold text-base sm:text-xl shadow-xl shadow-green-700/20 transition-all hover:-translate-y-1 disabled:opacity-50 disabled:hover:translate-y-0 disabled:shadow-none disabled:cursor-not-allowed">
             {{ loading ? "Submitting Votes..." : "Submit Votes" }}
           </button>
         </div>
@@ -779,7 +780,18 @@ const getProfileImageUrl = (imagePath) => {
 };
 
 const handleImageError = (e, candidateName) => {
-  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(candidateName)}&background=dcfce7&color=166534`;
+  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(candidateName || "?")}&background=dcfce7&color=166534`;
+};
+
+// Safely returns the first letter of a candidate's name for the avatar
+// fallback. Some candidate records coming from the API can be missing
+// student_name (blank import row, deleted profile, etc.) — calling
+// .charAt(0) directly on that would throw and blank the whole page the
+// moment that record is rendered (e.g. switching to a tab that renders
+// candidates for the first time).
+const getInitial = (name) => {
+  if (typeof name !== "string" || name.trim().length === 0) return "?";
+  return name.trim().charAt(0).toUpperCase();
 };
 
 
