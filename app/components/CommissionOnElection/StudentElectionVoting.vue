@@ -342,10 +342,14 @@
                     ? 'border-green-600 bg-green-50/40 shadow-md ring-4 ring-green-500/10'
                     : 'border-slate-200 hover:border-green-400 hover:shadow-md',
                 ]">
-                  <input :type="isSingleSelectPosition(position) ? 'radio' : 'checkbox'"
-                    :name="isSingleSelectPosition(position) ? getGroupKey('usg', position) : undefined"
-                    :value="c.id" v-model="selectedCandidates"
-                    @change="onCandidateToggle('usg', position, group, c.id)" class="hidden" />
+                  <input
+  :type="isSingleSelectPosition(position) ? 'radio' : 'checkbox'"
+  :name="isSingleSelectPosition(position) ? getGroupKey('usg', position) : undefined"
+  :value="c.id"
+  :checked="selectedCandidates.includes(c.id)"
+  @change="onCandidateToggle('usg', position, group, c.id)"
+  class="hidden"
+/>
 
                   <div class="relative w-full aspect-square mb-4 overflow-hidden shadow-inner bg-slate-100 shrink-0">
                     <img v-if="c.student_candidate_profile_image"
@@ -881,14 +885,23 @@ const clearAbstain = (section, position) => {
 const onCandidateToggle = (section, position, group, candidateId) => {
   clearAbstain(section, position);
 
-  if (
-    isSingleSelectPosition(position) &&
-    selectedCandidates.value.includes(candidateId)
-  ) {
-    const idsInGroup = new Set(group.map((c) => c.id));
-    selectedCandidates.value = selectedCandidates.value.filter(
-      (id) => id === candidateId || !idsInGroup.has(id),
-    );
+  const idsInGroup = new Set(group.map((c) => c.id));
+
+  if (isSingleSelectPosition(position)) {
+    // Radio behavior: only this candidate stays selected within the group
+    selectedCandidates.value = [
+      ...selectedCandidates.value.filter((id) => !idsInGroup.has(id)),
+      candidateId,
+    ];
+  } else {
+    // Checkbox behavior: toggle this candidate in/out
+    if (selectedCandidates.value.includes(candidateId)) {
+      selectedCandidates.value = selectedCandidates.value.filter(
+        (id) => id !== candidateId,
+      );
+    } else {
+      selectedCandidates.value = [...selectedCandidates.value, candidateId];
+    }
   }
 };
 
