@@ -45,6 +45,16 @@ const heroCarouselNews = computed(() => {
     });
 });
 
+const videoExtensions = [
+  ".mp4",
+  ".avi",
+  ".mov",
+  ".wmv",
+  ".flv",
+  ".webm",
+  ".mkv",
+];
+
 // Helper function to check if item has video content
 const hasVideoContent = (item) => {
   if (item.files && item.files.some((file) => isVideoFile(file))) {
@@ -57,7 +67,8 @@ const hasVideoContent = (item) => {
       (link) =>
         link.includes("youtube.com") ||
         link.includes("youtu.be") ||
-        link.includes("facebook.com/reel"),
+        link.includes("facebook.com/reel") ||
+        isVideoFile(link),
     )
   ) {
     return true;
@@ -66,17 +77,12 @@ const hasVideoContent = (item) => {
   return false;
 };
 
-const isVideoFile = (filename) => {
-  const videoExtensions = [
-    ".mp4",
-    ".avi",
-    ".mov",
-    ".wmv",
-    ".flv",
-    ".webm",
-    ".mkv",
-  ];
-  return videoExtensions.some((ext) => filename.toLowerCase().includes(ext));
+// Matches by extension, so it works whether `str` is a bare filename
+// (e.g. "clip.mp4") or a full URL to an .mp4 hosted anywhere
+// (e.g. "https://.../optimized_something.mp4").
+const isVideoFile = (str) => {
+  const clean = str.split("?")[0].split("#")[0].toLowerCase();
+  return videoExtensions.some((ext) => clean.includes(ext));
 };
 
 // Returns the uploaded video filename for an item, if any
@@ -90,7 +96,8 @@ const getVideoFileUrl = (filename) => {
   return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${filename}`;
 };
 
-// Returns the first video link (YouTube / Facebook reel) for an item, if any
+// Returns the first video link for an item, if any: YouTube, Facebook
+// reel, or a direct URL to a video file (.mp4, .webm, etc) hosted anywhere.
 const getVideoLink = (item) => {
   if (!item.links) return null;
   return (
@@ -98,7 +105,8 @@ const getVideoLink = (item) => {
       (link) =>
         link.includes("youtube.com") ||
         link.includes("youtu.be") ||
-        link.includes("facebook.com/reel"),
+        link.includes("facebook.com/reel") ||
+        isVideoFile(link),
     ) || null
   );
 };
@@ -209,7 +217,10 @@ const parseFacebookVideos = async () => {
   FB.XFBML.parse();
 };
 
-// Resolves the embed src + type (file | youtube | facebook) for an item
+// Resolves the embed src + type (file | youtube | facebook) for an item.
+// "file" covers both an uploaded filename (prefixed with the uploads path)
+// and a direct video URL pasted as a link (e.g. an .mp4 hosted elsewhere),
+// which is used as-is since it's already a full URL.
 const getVideoSource = (item) => {
   const file = getVideoFile(item);
   if (file) {
@@ -223,6 +234,9 @@ const getVideoSource = (item) => {
     }
     if (link.includes("facebook.com/reel")) {
       return { type: "facebook", src: link };
+    }
+    if (isVideoFile(link)) {
+      return { type: "file", src: link };
     }
   }
 
@@ -343,7 +357,8 @@ onMounted(async () => {
           <!-- Full viewport height so the carousel reads as a true full
                height / full width hero, not a fixed 320px strip. -->
           <div class="relative w-full h-[800px] overflow-hidden bg-black">
-            <!-- Uploaded video file: no native controls, autoplay muted loop -->
+            <!-- Uploaded video file OR a direct .mp4 (etc) URL link:
+                 no native controls, autoplay muted loop -->
             <video
               v-if="getVideoSource(j)?.type === 'file'"
               :src="getVideoSource(j).src"
