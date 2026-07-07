@@ -24,6 +24,7 @@ const highlightedNews = computed(() => {
     "oer",
     "human resource center",
     "human resource",
+    "hero carousel",
   ];
 
   return info.value
@@ -130,25 +131,6 @@ const hasVideoContent = (item) => {
   return false;
 };
 
-// Add helper function to extract category from filters or use default
-const getCategoryLabel = (item) => {
-  if (!item.filters) return "News";
-
-  const filters = item.filters.toLowerCase();
-
-  // Check for explicit category keywords first
-  if (filters.includes("news highlight")) return "News Highlight";
-  if (filters.includes("announcement")) return "Announcement";
-  if (filters.includes("event")) return "Event";
-  if (filters.includes("news")) return "News";
-  // If only SDGs, count them and return SDG label
-  const sdgMatches = filters.match(/sdg\d+/gi) || [];
-  if (sdgMatches.length > 0) {
-    return `${sdgMatches.length} SDG${sdgMatches.length > 1 ? "s" : ""}`;
-  }
-
-  return "News"; // Default fallback
-};
 
 // Helper function to check if file is video
 const isVideoFile = (filename) => {

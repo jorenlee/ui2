@@ -80,6 +80,7 @@ const contentTypeList = ref([
   "News",
   "Events",
   "Announcements",
+  "Hero Carousel",
 ]);
 const selectedContentTypes = ref([]);
 
@@ -413,16 +414,6 @@ watch(
     // The checkboxes will manage their own state
   }
 );
-
-// ---------------- HELPERS ----------------
-const extractFileNameFromUrl = (url) => {
-  try {
-    const clean = url.split("?")[0];
-    return clean.split("/").pop();
-  } catch {
-    return "unknown_file";
-  }
-};
 
 // ---------------- FILE VALIDATION ----------------
 const selectedFiles = ref([]);
@@ -879,6 +870,7 @@ const runAutoDetect = () => {
     "News": ["news"],
     "Events": ["events", "event"],
     "Announcements": ["announcements", "announcement"],
+    "Hero Carousel": ["hero carousel"],
   };
 
   const newContentTypes = [...selectedContentTypes.value];
@@ -1303,7 +1295,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
                   >News and Updates Content Type</label
                 >
                 <div
-                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 border rounded-lg p-4"
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 border rounded-lg p-4"
                   :class="darkMode
                     ? 'bg-gray-900/50 border-gray-700'
                     : 'bg-gray-50 border-gray-200'"

@@ -36,25 +36,6 @@ const loading = ref(true);
 const errorMsg = ref("");
 const display = ref("desktop");
 
-const sdgOptions = ref([
-  { value: "sdg1", label: "SDG 1 - No Poverty" },
-  { value: "sdg2", label: "SDG 2 - Zero Hunger" },
-  { value: "sdg3", label: "SDG 3 - Good Health" },
-  { value: "sdg4", label: "SDG 4 - Quality Education" },
-  { value: "sdg5", label: "SDG 5 - Gender Equality" },
-  { value: "sdg6", label: "SDG 6 - Clean Water" },
-  { value: "sdg7", label: "SDG 7 - Affordable Energy" },
-  { value: "sdg8", label: "SDG 8 - Decent Work" },
-  { value: "sdg9", label: "SDG 9 - Industry Innovation" },
-  { value: "sdg10", label: "SDG 10 - Reduced Inequalities" },
-  { value: "sdg11", label: "SDG 11 - Sustainable Cities" },
-  { value: "sdg12", label: "SDG 12 - Responsible Consumption" },
-  { value: "sdg13", label: "SDG 13 - Climate Action" },
-  { value: "sdg14", label: "SDG 14 - Life Below Water" },
-  { value: "sdg15", label: "SDG 15 - Life on Land" },
-  { value: "sdg16", label: "SDG 16 - Peace and Justice" },
-  { value: "sdg17", label: "SDG 17 - Partnerships" },
-]);
 
 // Add SDG colors mapping
 const sdgColors = {
@@ -248,79 +229,10 @@ const isImageFile = (filename) => {
   return imageExtensions.includes(ext);
 };
 
-const isVideoFile = (filename) => {
-  const videoExtensions = ["mp4", "avi", "mov", "wmv", "flv", "webm"];
-  const ext = filename.split(".").pop()?.toLowerCase();
-  return videoExtensions.includes(ext);
-};
-
-const isPdfFile = (filename) => {
-  const ext = filename.split(".").pop()?.toLowerCase();
-  return ext === "pdf";
-};
-
-const getFileIcon = (filename) => {
-  if (isImageFile(filename)) return "fa fa-image";
-  if (isVideoFile(filename)) return "fa fa-video";
-  if (isPdfFile(filename)) return "fa fa-file-pdf";
-  return "fa fa-file";
-};
 
 const getFileUrl = (filename) => {
   return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${filename}`;
 };
-
-// ---------------- AUTHORS ----------------
-const authorsList = ref([
-  "Arts and Culture Center",
-  "Basic Education Unit",
-  "Educational Technology Center",
-  "Higher Education Unit",
-  "Human Resources Management",
-  "Marketing and Communications Center",
-  "Network Programs and Computerization Center",
-  "Student Affairs Center",
-  "Tingog Campus Press",
-  "University Student Government",
-]);
-
-const selectedAuthors = ref([]);
-
-// Helper functions for normalization and sanitization
-const normalize = (str) => {
-  return str.toLowerCase().trim();
-};
-
-const sanitizeList = (arr) => {
-  const seen = new Set();
-  return arr.filter((item) => {
-    const normalized = normalize(item);
-    if (seen.has(normalized)) return false;
-    seen.add(normalized);
-    return true;
-  });
-};
-
-// ---------------- OTHER FILTERS (BY PAGE) ----------------
-const pageFiltersList = ref([
-  "BOT",
-  "Programs",
-  "Organizational Chart",
-  "College",
-  "OER",
-]);
-
-const selectedPageFilters = ref([]);
-
-// ---------------- CONTENT TYPE FILTERS ----------------
-const contentTypeList = ref([
-  "News Highlights",
-  "News",
-  "Events",
-  "Announcements",
-]);
-
-const selectedContentTypes = ref([]);
 
 // Keep selectedAuthors in sync when user manually edits the authors text field.
 // Note: We don't update selectedAuthors here to avoid conflicts with checkbox selections
@@ -335,25 +247,7 @@ const handleImageError = (event, filename) => {
   }
 };
 
-const getCategoryLabel = (item) => {
-  if (!item?.filters) return "News";
 
-  const filters = item.filters.toLowerCase();
-
-  // Check for explicit category keywords first
-  if (filters.includes("news highlight")) return "News Highlight";
-  if (filters.includes("announcement")) return "Announcement";
-  if (filters.includes("event")) return "Event";
-  if (filters.includes("news")) return "News";
-
-  // If only SDGs, count them and return SDG label
-  const sdgMatches = filters.match(/sdg\d+/gi) || [];
-  if (sdgMatches.length > 0) {
-    return `${sdgMatches.length} SDG${sdgMatches.length > 1 ? "s" : ""}`;
-  }
-
-  return "News"; // Default fallback
-};
 
 const fetchList = async (silent = false) => {
   if (!silent) loading.value = true;
@@ -425,6 +319,7 @@ const filterOptions = [
   { value: "events", label: "Events" },
   { value: "announcements", label: "Announcements" },
   { value: "programs", label: "Programs" },
+  { value: "hero carousel", label: "Hero Carousel" },
 ];
 
 // Filtered and paginated data
@@ -590,12 +485,6 @@ const getSdgBadges = (item) => {
   return badges;
 };
 
-const superAdminEmails = [
-  "npc@lsu.edu.ph",
-  "michaeljohn.puertogalera@lsu.edu.ph",
-  "jason.yap@lsu.edu.ph",
-];
-
 </script>
 <template>
   <div>
@@ -613,7 +502,7 @@ const superAdminEmails = [
                   'lg:flex lg:gap-x-2'
                 ]">
                   <!-- Stats Cards -->
-                  <div class="flex gap-x-2 w-fit" v-if="superAdminEmails.includes(user.value?.email)">
+                  <div class="flex gap-x-2 w-fit">
                     <div class="p-2 lg:px-3 w-full lg:py-1 rounded-lg border-l-4 border-blue-500"
                       :class="darkMode ? 'bg-blue-900/30' : 'bg-blue-50'">
                       <div class="flex items-center">
@@ -647,9 +536,6 @@ const superAdminEmails = [
                   </div>
 
                   <!-- Search and Filter Controls -->
-
-
-
                   <div class="flex flex-col lg:flex-row items-center gap-3 w-full h-fit">
 
                     <div class="flex gap-2">
@@ -877,7 +763,7 @@ const superAdminEmails = [
                               j.authors || '—' }}</p>
                             <p class="truncate opacity-50 text-[10px]"
                               :class="darkMode ? 'text-gray-400' : 'text-gray-500'">{{ j.logs?.[0]?.personnel_email ||
-                              '' }}</p>
+                                '' }}</p>
                           </td>
 
                           <!-- Title -->
@@ -1010,128 +896,128 @@ const superAdminEmails = [
 
 
 
-      <!-- CSV Upload Modal -->
-      <div v-if="showCsvModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
-        @click="closeCsvModal">
-        <div class="w-full max-w-md rounded-lg shadow-lg overflow-hidden flex flex-col"
-          :class="darkMode ? 'bg-gray-800' : 'bg-white'" @click.stop>
-          <div class="flex justify-between items-center p-4 border-b"
-            :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
-            <h2 class="text-lg font-bold" :class="darkMode ? 'text-gray-200' : 'text-gray-800'">
-              CSV Upload
-            </h2>
-            <button @click="closeCsvModal" class="p-1"
-              :class="darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'">
-              <i class="fa fa-times text-lg"></i>
+    <!-- CSV Upload Modal -->
+    <div v-if="showCsvModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+      @click="closeCsvModal">
+      <div class="w-full max-w-md rounded-lg shadow-lg overflow-hidden flex flex-col"
+        :class="darkMode ? 'bg-gray-800' : 'bg-white'" @click.stop>
+        <div class="flex justify-between items-center p-4 border-b"
+          :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
+          <h2 class="text-lg font-bold" :class="darkMode ? 'text-gray-200' : 'text-gray-800'">
+            CSV Upload
+          </h2>
+          <button @click="closeCsvModal" class="p-1"
+            :class="darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'">
+            <i class="fa fa-times text-lg"></i>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div class="flex justify-center mb-4">
+            <button @click="downloadCsvTemplate"
+              class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg flex items-center gap-2 text-sm font-medium w-full justify-center transition-colors">
+              <i class="fa fa-download"></i> Download CSV Template
             </button>
           </div>
 
-          <div class="p-6 space-y-4">
-            <div class="flex justify-center mb-4">
-              <button @click="downloadCsvTemplate"
-                class="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg flex items-center gap-2 text-sm font-medium w-full justify-center transition-colors">
-                <i class="fa fa-download"></i> Download CSV Template
-              </button>
-            </div>
+          <div>
+            <label class="block text-sm font-medium mb-2" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+              Upload CSV File
+            </label>
+            <div
+              class="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-all duration-300 relative"
+              @dragover.prevent="isCsvDragOver = true" @dragleave.prevent="isCsvDragOver = false"
+              @drop.prevent="handleCsvDrop" :class="[
+                darkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-50',
+                isCsvDragOver ? (darkMode ? 'border-indigo-500 bg-indigo-900/30' : 'border-indigo-500 bg-indigo-50') : ''
+              ]">
 
-            <div>
-              <label class="block text-sm font-medium mb-2" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-                Upload CSV File
-              </label>
-              <div
-                class="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center transition-all duration-300 relative"
-                @dragover.prevent="isCsvDragOver = true" @dragleave.prevent="isCsvDragOver = false"
-                @drop.prevent="handleCsvDrop" :class="[
-                  darkMode ? 'border-gray-600 bg-gray-700/50' : 'border-gray-300 bg-gray-50',
-                  isCsvDragOver ? (darkMode ? 'border-indigo-500 bg-indigo-900/30' : 'border-indigo-500 bg-indigo-50') : ''
-                ]">
-
-                <div v-if="isCsvDragOver"
-                  class="absolute inset-0 flex items-center justify-center rounded-lg bg-indigo-500/10 pointer-events-none z-10 border-2 border-indigo-500 border-dashed">
-                  <span class="text-indigo-600 font-bold text-lg" :class="darkMode ? 'text-indigo-400' : ''">Drop file
-                    here</span>
-                </div>
-
-                <i class="fa fa-cloud-upload text-3xl mb-2 transition-colors" :class="[
-                  darkMode ? 'text-gray-400' : 'text-gray-500',
-                  isCsvDragOver ? (darkMode ? 'text-indigo-400' : 'text-indigo-500') : ''
-                ]"></i>
-                <input type="file" accept=".csv" @change="handleCsvSelect" class="hidden" id="csv-upload" />
-                <label for="csv-upload"
-                  class="cursor-pointer px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded text-sm font-medium transition-colors z-20"
-                  :class="darkMode ? 'bg-gray-600 hover:bg-gray-500 text-white' : ''">
-                  Browse File
-                </label>
-                <p class="mt-2 text-xs text-center z-20" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
-                  {{ csvFile ? csvFile.name : 'No file selected' }}
-                </p>
+              <div v-if="isCsvDragOver"
+                class="absolute inset-0 flex items-center justify-center rounded-lg bg-indigo-500/10 pointer-events-none z-10 border-2 border-indigo-500 border-dashed">
+                <span class="text-indigo-600 font-bold text-lg" :class="darkMode ? 'text-indigo-400' : ''">Drop file
+                  here</span>
               </div>
+
+              <i class="fa fa-cloud-upload text-3xl mb-2 transition-colors" :class="[
+                darkMode ? 'text-gray-400' : 'text-gray-500',
+                isCsvDragOver ? (darkMode ? 'text-indigo-400' : 'text-indigo-500') : ''
+              ]"></i>
+              <input type="file" accept=".csv" @change="handleCsvSelect" class="hidden" id="csv-upload" />
+              <label for="csv-upload"
+                class="cursor-pointer px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded text-sm font-medium transition-colors z-20"
+                :class="darkMode ? 'bg-gray-600 hover:bg-gray-500 text-white' : ''">
+                Browse File
+              </label>
+              <p class="mt-2 text-xs text-center z-20" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+                {{ csvFile ? csvFile.name : 'No file selected' }}
+              </p>
             </div>
           </div>
+        </div>
 
-          <div class="flex justify-end p-4 border-t gap-2"
-            :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
-            <button @click="closeCsvModal" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              :class="darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
-              Cancel
-            </button>
-            <button @click="uploadCsv" :disabled="!csvFile || uploadingCsv"
-              class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors">
-              <i v-if="uploadingCsv" class="fa fa-spinner fa-spin"></i>
-              <i v-else class="fa fa-upload"></i>
-              {{ uploadingCsv ? "Uploading..." : "Upload" }}
-            </button>
-          </div>
+        <div class="flex justify-end p-4 border-t gap-2"
+          :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
+          <button @click="closeCsvModal" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            :class="darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
+            Cancel
+          </button>
+          <button @click="uploadCsv" :disabled="!csvFile || uploadingCsv"
+            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors">
+            <i v-if="uploadingCsv" class="fa fa-spinner fa-spin"></i>
+            <i v-else class="fa fa-upload"></i>
+            {{ uploadingCsv ? "Uploading..." : "Upload" }}
+          </button>
         </div>
       </div>
+    </div>
 
-      <!-- Delete Confirmation Modal -->
-      <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
-        @click="closeDeleteModal">
-        <div class="w-full max-w-md rounded-lg shadow-lg overflow-hidden flex flex-col"
-          :class="darkMode ? 'bg-gray-800' : 'bg-white'" @click.stop>
-          <div class="flex justify-between items-center p-4 border-b"
-            :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
-            <h2 class="text-lg font-bold flex items-center text-red-500">
-              <i class="fa fa-exclamation-triangle mr-2"></i> Confirm Deletion
-            </h2>
-            <button @click="closeDeleteModal" class="p-1" :disabled="deleteLoading"
-              :class="darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'">
-              <i class="fa fa-times text-lg"></i>
-            </button>
-          </div>
+    <!-- Delete Confirmation Modal -->
+    <div v-if="showDeleteModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+      @click="closeDeleteModal">
+      <div class="w-full max-w-md rounded-lg shadow-lg overflow-hidden flex flex-col"
+        :class="darkMode ? 'bg-gray-800' : 'bg-white'" @click.stop>
+        <div class="flex justify-between items-center p-4 border-b"
+          :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
+          <h2 class="text-lg font-bold flex items-center text-red-500">
+            <i class="fa fa-exclamation-triangle mr-2"></i> Confirm Deletion
+          </h2>
+          <button @click="closeDeleteModal" class="p-1" :disabled="deleteLoading"
+            :class="darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'">
+            <i class="fa fa-times text-lg"></i>
+          </button>
+        </div>
 
-          <div class="p-6">
-            <p :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-              Are you sure you want to delete <strong>{{ selectedForDelete.length }}</strong> selected item(s)? This
-              action
-              cannot be undone.
-            </p>
-          </div>
+        <div class="p-6">
+          <p :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+            Are you sure you want to delete <strong>{{ selectedForDelete.length }}</strong> selected item(s)? This
+            action
+            cannot be undone.
+          </p>
+        </div>
 
-          <div class="flex justify-end p-4 border-t gap-2"
-            :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
-            <button @click="closeDeleteModal" :disabled="deleteLoading"
-              class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              :class="darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
-              Cancel
-            </button>
-            <button @click="executeBulkDelete" :disabled="deleteLoading"
-              class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors">
-              <i v-if="deleteLoading" class="fa fa-spinner fa-spin"></i>
-              <i v-else class="fa fa-trash"></i>
-              {{ deleteLoading ? "Deleting..." : "Delete" }}
-            </button>
-          </div>
+        <div class="flex justify-end p-4 border-t gap-2"
+          :class="darkMode ? 'border-gray-700 bg-gray-900/50' : 'border-gray-200 bg-gray-50'">
+          <button @click="closeDeleteModal" :disabled="deleteLoading"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            :class="darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
+            Cancel
+          </button>
+          <button @click="executeBulkDelete" :disabled="deleteLoading"
+            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-colors">
+            <i v-if="deleteLoading" class="fa fa-spinner fa-spin"></i>
+            <i v-else class="fa fa-trash"></i>
+            {{ deleteLoading ? "Deleting..." : "Delete" }}
+          </button>
         </div>
       </div>
+    </div>
 
-  <!-- Toast Notification -->
-  <div v-if="toast.show" :class="[
-    'fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white z-[9999]',
-    toast.type === 'success' ? 'bg-green-600' : 'bg-red-600',
-  ]">
-    {{ toast.message }}
-  </div>
+    <!-- Toast Notification -->
+    <div v-if="toast.show" :class="[
+      'fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white z-[9999]',
+      toast.type === 'success' ? 'bg-green-600' : 'bg-red-600',
+    ]">
+      {{ toast.message }}
+    </div>
   </div>
 </template>

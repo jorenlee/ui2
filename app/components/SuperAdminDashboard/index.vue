@@ -504,7 +504,7 @@ const currentViewConfig = computed(() => {
     ViewCurrentEnrolledStudents: { component: resolveComponent("CommissionOnElectionListEnrolledStudents"), class: "pb-32 p-10" },
     ViewStudentElectionResults: { component: resolveComponent("CommissionOnElectionStudentElectionResults"), class: "pb-32 p-10" },
     ViewStudentElectionVoting: { component: resolveComponent("CommissionOnElectionStudentElectionVoting"), class: "pb-32 p-10" },
-    ViewITServicesFeedback: { component: resolveComponent("ITFeedback"), class: "pb-32 p-10" },
+    ViewITServicesFeedback: { component: resolveComponent("ITFeedback"), class: "pb-32 p-4" },
     ViewVenueReservation: { component: resolveComponent("ComingSoon") },
     ViewVehicleReservation: { component: resolveComponent("ComingSoon") },
     ViewHRJobVacancyList: { component: resolveComponent("ComingSoon") },
