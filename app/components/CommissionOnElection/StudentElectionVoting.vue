@@ -715,27 +715,7 @@
       </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="mt-10 border-t border-slate-200 bg-white">
-      <div class="max-w-6xl mx-auto px-6 lg:py-3 py-3">
-        <div class="flex flex-col items-center justify-center text-center">
-          <img
-            src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/20th%20Anniversary%20Emerald%20Logos-20260618T012425Z-3-001/20th%20Anniversary%20Emerald%20Logos/Emerald%20with%20Theme%20-%20Green.png"
-            alt="La Salle University" class="w-12 h-12 object-contain opacity-90 lg:mb-3" />
 
-          <p class="lg:text-sm text-xs tracking-tighter font-semibold text-green-700">
-            © 2026 La Salle University Ozamiz, Inc.
-          </p>
-
-          <p class="lg:text-sm text-xs tracking-tighter text-slate-500">
-            Powered by
-            <span class="font-semibold text-[#087830]">
-              Network, Programs and Computerization Center (NPCC)
-            </span>
-          </p>
-        </div>
-      </div>
-    </footer>
   </section>
  </div>
 </template>
