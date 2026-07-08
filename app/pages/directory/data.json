@@ -507,7 +507,10 @@
             "office": "School of Graduate Studies Office",
             "location": "2F LS Bldg.",
             "local_tel_no": "155",
-            "mobile_no": "09631223793",
+            "mobile_no": [
+                "(+63) 9631223793",
+                ""
+            ],
             "email_address": ["graduatestudies@lsu.edu.ph",
                 ""
             ]
