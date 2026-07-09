@@ -64,7 +64,7 @@
           <span class="text-xs font-bold text-slate-400 bg-slate-100 rounded-full px-3 py-1 whitespace-nowrap">{{ COLLEGE_GROUPS.length }} colleges</span>
           <div class="flex-1 h-px bg-slate-200"></div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           <div v-for="g in COLLEGE_GROUPS" :key="g.key" class="bg-slate-50 border border-slate-200 rounded-xl p-6">
             <div class="flex justify-between items-baseline mb-4">
               <h3 class="text-lg font-bold text-slate-900 m-0">{{ g.label }}</h3>
@@ -77,7 +77,12 @@
             </div>
             <ul class="space-y-1.5">
               <li v-for="p in g.programs" :key="p" class="flex justify-between text-sm">
-                <span class="text-slate-500">{{ p }}</span>
+                <span class="text-slate-500">
+                  {{ p }}
+                  <span v-if="getAboForProgram(p)" class="text-[10px] font-bold text-slate-400 ml-1">
+                    ({{ getAboForProgram(p) }})
+                  </span>
+                </span>
                 <span class="font-semibold text-slate-700">
                   {{ getVotedCount(p) }} <span class="text-xs font-normal text-slate-400">/</span> {{ getCount(p) }}
                 </span>
@@ -94,7 +99,7 @@
           <span class="text-xs font-bold text-slate-400 bg-slate-100 rounded-full px-3 py-1 whitespace-nowrap">Academic Based Organization voters</span>
           <div class="flex-1 h-px bg-slate-200"></div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           <div v-for="g in ABO_GROUPS" :key="g.key" class="bg-slate-50 border border-slate-200 rounded-xl p-6">
             <div class="flex justify-between items-baseline mb-4">
               <h3 class="text-lg font-bold text-slate-900 m-0">{{ g.label }}</h3>
@@ -132,7 +137,7 @@
         </div>
 
         <!-- USG: flat candidate grid -->
-        <div v-if="!group.subgroups" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-if="!group.subgroups" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           <div v-for="c in group.candidates" :key="c.id"
             class="bg-slate-50 border border-slate-200 rounded-xl p-6 flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1 hover:shadow-xl">
             <div class="flex items-center gap-4">
@@ -171,7 +176,7 @@
               <span class="text-xs text-slate-400 bg-slate-100 rounded-full px-2 py-0.5 whitespace-nowrap">{{ sg.candidates.length }} {{ sg.candidates.length === 1 ? 'candidate' : 'candidates' }}</span>
               <div class="flex-1 h-px bg-slate-100"></div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
               <div v-for="c in sg.candidates" :key="c.id"
                 class="bg-slate-50 border border-slate-200 rounded-xl p-6 flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1 hover:shadow-xl">
                 <div class="flex items-center gap-4">
@@ -276,12 +281,18 @@ const groupedCandidates = computed(() => {
     }
 
     // ── ABO ────────────────────────────────────────────────────────────────
-    if (/\babo\b/i.test(cat)) {
+    if (isAboCategory(cat)) {
       // Determine org by matching the candidate's normalised program to ABO_GROUPS
       const normProg = normalizeProgram(c.program || '').toUpperCase();
-      const aboGroup = ABO_GROUPS.find((g) =>
+      let aboGroup = normProg ? ABO_GROUPS.find((g) =>
         g.programs.some((p) => p.toUpperCase() === normProg)
-      );
+      ) : null;
+
+      if (!aboGroup) {
+        const catUpper = cat.toUpperCase();
+        aboGroup = ABO_GROUPS.find((g) => catUpper.includes(g.key.toUpperCase()));
+      }
+
       const aboKey   = aboGroup ? aboGroup.key   : '_OTHER_ABO';
       const aboLabel = aboGroup ? aboGroup.label : 'Other';
       if (!aboSubgroups[aboKey]) aboSubgroups[aboKey] = { key: aboKey, label: aboLabel, candidates: [] };
@@ -334,6 +345,22 @@ const groupedCandidates = computed(() => {
   }
   return result;
 });
+
+const getAboForProgram = (program) => {
+  if (!program) return "";
+  const pUpper = program.toUpperCase().trim();
+  const abo = ABO_GROUPS.find((g) =>
+    g.programs.some((p) => p.toUpperCase().trim() === pUpper)
+  );
+  return abo ? abo.label : "";
+};
+
+const isAboCategory = (cat) => {
+  if (!cat) return false;
+  const c = cat.trim().toUpperCase();
+  if (/(?:^|[-_\s])abo(?:[-_\s]|$)/i.test(c)) return true;
+  return ABO_GROUPS.some((g) => c.includes(g.key.toUpperCase()));
+};
 
 // ===================== COUNTERS =====================
 // Maps full college names (and common aliases) to their canonical college code.
@@ -612,11 +639,17 @@ const getCandidateVoteStats = (c) => {
   if (/usg|all colleges/i.test(cat)) {
     total = voterStats.value.total_voted || 0;
     label = `of ${total} total votes cast`;
-  } else if (/\babo\b/i.test(cat)) {
+  } else if (isAboCategory(cat)) {
     const normProg = normalizeProgram(c.program || '').toUpperCase();
-    const aboGroup = ABO_GROUPS.find((g) =>
+    let aboGroup = normProg ? ABO_GROUPS.find((g) =>
       g.programs.some((p) => p.toUpperCase() === normProg)
-    );
+    ) : null;
+
+    if (!aboGroup) {
+      const catUpper = cat.toUpperCase();
+      aboGroup = ABO_GROUPS.find((g) => catUpper.includes(g.key.toUpperCase()));
+    }
+
     total = aboGroup ? getAboVotedTotal(aboGroup) : 0;
     label = `of ${total} votes cast in ${aboGroup ? aboGroup.label : (c.program || 'ABO')}`;
   } else {
