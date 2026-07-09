@@ -6,12 +6,10 @@
         <p class="text-lg text-slate-500">Manage University Student Government Elections</p>
       </div>
       <div class="flex gap-4 mt-8 border-b-2 border-slate-200 pb-4 overflow-x-auto">
-        <button v-for="tab in tabs" :key="tab.id" 
-                :class="[
-                  'px-6 py-3 text-base font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 whitespace-nowrap',
-                  activeTab === tab.id ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 bg-transparent'
-                ]"
-                @click="activeTab = tab.id">
+        <button v-for="tab in tabs" :key="tab.id" :class="[
+          'px-6 py-3 text-base font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 whitespace-nowrap',
+          activeTab === tab.id ? 'bg-green-600 text-white shadow-lg shadow-green-600/20' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 bg-transparent'
+        ]" @click="activeTab = tab.id">
           <span>{{ tab.icon }}</span>
           {{ tab.name }}
         </button>
@@ -31,7 +29,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import AddCandidates from './AddCandidates.vue';
 import ListEnrolledStudents from './ListEnrolledStudents.vue';
-import StudentElectionResults from './StudentElectionResults.vue';
+import StudentElectionResults from './StudentElectionResultsV1.vue/index.js';
 import StudentElectionVoting from './StudentElectionVoting.vue';
 
 const tabs = [
@@ -59,7 +57,14 @@ onUnmounted(() => {
 
 <style>
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
