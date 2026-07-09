@@ -141,10 +141,14 @@
           <div v-for="c in group.candidates" :key="c.id"
             class="bg-slate-50 border border-slate-200 rounded-xl p-6 flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1 hover:shadow-xl">
             <div class="flex items-center gap-4">
-              <div v-if="c.student_candidate_profile_image"
+              <div v-if="!c.is_abstain && c.student_candidate_profile_image"
                 class="w-14 h-14 rounded-full shrink-0 overflow-hidden shadow-sm border border-slate-200 bg-white">
                 <img :src="getProfileImageUrl(c.student_candidate_profile_image)" alt="Profile"
                   class="w-full h-full object-cover" @error="handleImageError($event, c.student_name)" />
+              </div>
+              <div v-else-if="c.is_abstain"
+                class="w-14 h-14 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-2xl shrink-0 border border-slate-200">
+                🚫
               </div>
               <div class="w-14 h-14 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold text-2xl shrink-0" v-else>
                 {{ c.student_name.charAt(0) }}
@@ -180,10 +184,14 @@
               <div v-for="c in sg.candidates" :key="c.id"
                 class="bg-slate-50 border border-slate-200 rounded-xl p-6 flex flex-col justify-between transition-transform duration-200 hover:-translate-y-1 hover:shadow-xl">
                 <div class="flex items-center gap-4">
-                  <div v-if="c.student_candidate_profile_image"
+                  <div v-if="!c.is_abstain && c.student_candidate_profile_image"
                     class="w-14 h-14 rounded-full shrink-0 overflow-hidden shadow-sm border border-slate-200 bg-white">
                     <img :src="getProfileImageUrl(c.student_candidate_profile_image)" alt="Profile"
                       class="w-full h-full object-cover" @error="handleImageError($event, c.student_name)" />
+                  </div>
+                  <div v-else-if="c.is_abstain"
+                    class="w-14 h-14 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center font-bold text-2xl shrink-0 border border-slate-200">
+                    🚫
                   </div>
                   <div class="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-2xl shrink-0" v-else>
                     {{ c.student_name.charAt(0) }}
@@ -228,9 +236,14 @@ const API_BASE = `${config.public.apiUrl || 'http://localhost:8000'}/api/usg`;
 
 const getProfileImageUrl = (imagePath) => {
   if (!imagePath) return '';
-  if (imagePath.startsWith('http') || imagePath.startsWith('data:')) return imagePath;
+  
+  // Cut the excess URL, keeping up to the file extension
+  const match = imagePath.match(/^(.*?\.(?:png|jpg|jpeg|webp|gif))/i);
+  const cleanedPath = (match ? match[1] : imagePath).trim();
+
+  if (cleanedPath.startsWith('http') || cleanedPath.startsWith('data:')) return cleanedPath;
   const base = (config.public.apiUrl || 'http://localhost:8000').replace(/\/$/, '');
-  const path = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
+  const path = cleanedPath.startsWith('/') ? cleanedPath : `/${cleanedPath}`;
   return `${base}${path}`;
 };
 
@@ -239,7 +252,7 @@ const handleImageError = (e, candidateName) => {
 };
 
 const candidates = ref([]);
-const voterStats = ref({ total_voters: 0, total_voted: 0, colleges: {}, voted: {} });
+const voterStats = ref({ total_voters: 0, total_voted: 0, colleges: {}, voted: {}, abstains: {} });
 let pollInterval = null;
 
 // number_of_votes is a CharField on CandidateModel (models.py), so it can
@@ -259,19 +272,45 @@ const GROUP_DEFS = [
   { key: 'ABO', label: 'ABO', match: (cat) => /\babo\b/i.test(cat) },
 ];
 
-// Because number_of_votes is stored as a string, sorting on the backend
-// (or not sorting at all) can put candidates in the wrong order once vote
-// counts hit double digits, e.g. "9" > "10" alphabetically. Always sort
-// numerically on the client so each group reflects real vote totals.
 const groupedCandidates = computed(() => {
   const collegeOrder = COLLEGE_GROUPS.map((g) => g.key);  // [CAS, CBA, CCJE, ...]
   const aboOrder = ABO_GROUPS.map((g) => g.key);          // [POLISAYS, JSWAP, ...]
+
+  const uniquePositions = new Map();
+  for (const c of candidates.value) {
+    const key = `${c.category}::${c.title_position}`;
+    if (!uniquePositions.has(key)) {
+      uniquePositions.set(key, {
+        category: c.category,
+        title_position: c.title_position,
+        college: c.college,
+        program: c.program,
+      });
+    }
+  }
+
+  const listWithAbstains = [...candidates.value];
+  for (const [key, posData] of uniquePositions.entries()) {
+    const abstainsCount = voterStats.value.abstains?.[posData.title_position] || 0;
+    if (abstainsCount > 0) {
+      listWithAbstains.push({
+        id: `abstain-${posData.category}-${posData.title_position}`,
+        student_name: 'Abstain',
+        title_position: posData.title_position,
+        category: posData.category,
+        college: posData.college,
+        program: posData.program,
+        number_of_votes: abstainsCount.toString(),
+        is_abstain: true,
+      });
+    }
+  }
 
   const usgCandidates = [];
   const collegeSubgroups = {};   // { 'CAS': { key, label, candidates[] }, ... }
   const aboSubgroups = {};       // { 'POLISAYS': { key, label, candidates[] }, ... }
 
-  for (const c of candidates.value) {
+  for (const c of listWithAbstains) {
     const cat = (c.category || '').trim();
 
     // ── USG ────────────────────────────────────────────────────────────────
@@ -443,7 +482,8 @@ const getAboVotedTotal = (group) => group.programs.reduce((sum, p) => sum + getV
 const getTurnoutPercent = () => {
   const total = voterStats.value.total_voters || 0;
   const voted = voterStats.value.total_voted || 0;
-  return total > 0 ? ((voted / total) * 100).toFixed(1) : '0.0';
+  const percent = total > 0 ? (voted / total) * 100 : 0;
+  return percent > 100 ? '100' : percent.toFixed(1);
 };
 // =================== END COUNTERS ===================
 
@@ -568,6 +608,7 @@ const fetchVoterStats = async () => {
       
       const colleges = {};
       const voted = {};
+      const abstains = {};
       
       for (const voter of voters) {
         const p_raw = voter.program || "";
@@ -615,13 +656,26 @@ const fetchVoterStats = async () => {
             }
           }
         }
+
+        // Count abstains.
+        if (voter.voted_candidates && Array.isArray(voter.voted_candidates)) {
+          for (const vc of voter.voted_candidates) {
+            if (vc.student_name === 'Abstain' && vc.lsu_id_number === 'ABSTAIN') {
+              const pos = vc.title_position;
+              if (pos) {
+                abstains[pos] = (abstains[pos] || 0) + 1;
+              }
+            }
+          }
+        }
       }
       
       voterStats.value = {
         total_voters,
         total_voted,
         colleges,
-        voted
+        voted,
+        abstains
       };
 ;
     }
@@ -631,7 +685,7 @@ const fetchVoterStats = async () => {
 };
 
 const getCandidateVoteStats = (c) => {
-  const votes = parseVotes(c.number_of_votes);
+  let votes = parseVotes(c.number_of_votes);
   let total = 0;
   let label = '';
   const cat = (c.category || '').trim();
@@ -659,8 +713,21 @@ const getCandidateVoteStats = (c) => {
     label = `of ${total} votes cast in ${collegeCode || c.college || 'College'}`;
   }
 
-  const percent = total > 0 ? (votes / total) * 100 : 0;
-  const percentString = percent.toFixed(1);
+  if (votes > total) {
+    votes = total;
+  }
+
+  let percent = total > 0 ? (votes / total) * 100 : 0;
+  let percentString = percent.toFixed(1);
+  if (percent >= 100) {
+    percent = 100;
+    percentString = '100';
+  }
+
+  const abstains = voterStats.value.abstains?.[c.title_position] || 0;
+  if (!c.is_abstain) {
+    label += ` (${abstains} ${abstains === 1 ? 'abstain' : 'abstains'})`;
+  }
 
   return {
     percent,
