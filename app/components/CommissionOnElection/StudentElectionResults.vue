@@ -1,34 +1,38 @@
 <template>
     <section class="animate-[fadeIn_0.4s_ease-out]">
         <header class="mb-10 pb-8 border-b-2 border-slate-100">
-            <div class="flex flex-col items-center justify-center w-full mb-8 gap-6">
-                <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/lsu-corporate-logo-green.png"
-                    alt="LSU Logo" class="h-20 sm:h-24 object-contain drop-shadow-sm" />
-                <div class="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOA.jpg"
-                        alt="COA"
-                        class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
-                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOE.jpg"
-                        alt="COE"
-                        class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
-                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCSO.png"
-                        alt="CSO"
-                        class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-contain bg-white shadow-md border-2 border-white p-1" />
-                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUSAC.jpg"
-                        alt="SAC"
-                        class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
-                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSG.jpg"
-                        alt="USG"
-                        class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
-                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSGJA.jpg"
-                        alt="USGJA"
-                        class="h-12 w-12 sm:h-16 sm:w-16 rounded-full object-cover shadow-md border-2 border-white" />
-                </div>
-            </div>
+            <div class="flex justify-center mb-8">
+        <div class="flex flex-wrap items-center justify-center lg:gap-5 gap-x-3">
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOA.jpg" alt="COA"
+            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOE.jpg" alt="COE"
+            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCSO.png" alt="CSO"
+            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 bg-white object-contain p-1 shadow-sm" />
+
+          <!-- Center Logo -->
+          <img
+            src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/circleLSULogo.jpg"
+            alt="LSU Logo" class="lg:w-24 lg:h-24 w-12 h-12 object-contain" />
+
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUSAC.jpg" alt="SAC"
+            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSG.jpg" alt="USG"
+            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSGJA.jpg"
+            alt="USGJA"
+            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+        </div>
+      </div>
             <div
-                class="flex flex-col sm:flex-row justify-between items-center sm:items-end gap-4 text-center sm:text-left">
-                <div class="w-full sm:w-auto text-center sm:text-left">
+                class="flex flex-col sm:flex-row justify-center items-center sm:items-center gap-4 text-center sm:text-center">
+                <div class="w-full sm:w-auto text-center sm:text-center">
                     <h1 class="text-4xl font-extrabold text-slate-900 mb-2 tracking-tight">Commission on Election</h1>
+                    <p>Powered by <span class="font-bold">LSU Network, Programs and Computerization Center</span></p>
                     <p class="text-lg text-slate-500">Live Real-time Student Election Results</p>
                 </div>
                 <!-- <button
