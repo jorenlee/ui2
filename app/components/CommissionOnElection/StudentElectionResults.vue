@@ -656,13 +656,13 @@ const normalizeCollege = (college) => {
 // voters counted via normalizeCollege fallback (e.g. those with no program but
 // a recognisable college name) are included in the group totals.
 const COLLEGE_GROUPS = [
-    { key: 'CAS', label: 'CAS', programs: ['CAS', 'AB-POLSC', 'BSPsych', 'BSSW'] },
-    { key: 'CBA', label: 'CBA', programs: ['CBA', 'BSA', 'BSAIS', 'BSBAFM', 'BSBAMM'] },
-    { key: 'CCJE', label: 'CCJE', programs: ['CCJE', 'BSCrim'] },
-    { key: 'CCSEA', label: 'CCSEA', programs: ['CCSEA', 'BLIS', 'BSArch', 'BSCE', 'BSCpE', 'BSCS', 'BSECE', 'BSEE', 'BSGE', 'BSIT'] },
-    { key: 'CON', label: 'CON', programs: ['CON', 'BSN'] },
-    { key: 'CTE', label: 'CTE', programs: ['CTE', 'BEED- /General Education', 'BPE', 'BSED /English', 'BSED /Social Studies', 'BSNED', 'BTLE /Home Economics'] },
-    { key: 'CTHM', label: 'CTHM', programs: ['CTHM', 'BSHM', 'BSTM'] },
+    { key: 'CAS', label: 'CAS', programs: ['AB-POLSC', 'BSPsych', 'BSSW'] },
+    { key: 'CBA', label: 'CBA', programs: ['BSA', 'BSAIS', 'BSBAFM', 'BSBAMM'] },
+    { key: 'CCJE', label: 'CCJE', programs: ['BSCrim'] },
+    { key: 'CCSEA', label: 'CCSEA', programs: ['BLIS', 'BSArch', 'BSCE', 'BSCpE', 'BSCS', 'BSECE', 'BSEE', 'BSGE', 'BSIT'] },
+    { key: 'CON', label: 'CON', programs: ['BSN'] },
+    { key: 'CTE', label: 'CTE', programs: ['BEED- /General Education', 'BPE', 'BSED /English', 'BSED /Social Studies', 'BSNED', 'BTLE /Home Economics'] },
+    { key: 'CTHM', label: 'CTHM', programs: ['BSHM', 'BSTM'] },
 ];
 
 // Academic Based Organizations — each ABO draws its voters from specific programs.
