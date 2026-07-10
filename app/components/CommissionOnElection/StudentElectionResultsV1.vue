@@ -520,10 +520,10 @@ const normalizeProgram = (program) => {
   if (p.includes("ACCOUNTANCY") || p.includes("ACCOUNTING") || p.includes("BSA")) {
     return "BSA";
   }
-  if (p.includes("FINANCIAL") || p.includes("BSBAFM") || p.includes("JFINEX")) {
+  if (p.includes("FINANCIAL") || p.includes("BSBAFM") || p.includes("JFINEX") || p.includes("BSBA - FM") || p.includes("BSBA-FM") || p.endsWith("FM")) {
     return "BSBAFM";
   }
-  if (p.includes("MARKETING") || p.includes("BSBAMM") || p.includes("JMEX")) {
+  if (p.includes("MARKETING") || p.includes("BSBAMM") || p.includes("JMEX") || p.includes("BSBA - MM") || p.includes("BSBA-MM") || p.endsWith("MM")) {
     return "BSBAMM";
   }
   

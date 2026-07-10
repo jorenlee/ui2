@@ -31,122 +31,191 @@
                     <h1 class="text-4xl font-extrabold text-slate-900 mb-2 tracking-tight">Commission on Election</h1>
                     <p class="text-lg text-slate-500">Live Real-time Student Election Results</p>
                 </div>
-                <button
-                    class="bg-transparent border-2 border-green-600 text-green-600 hover:bg-green-50 px-6 py-2 rounded-lg font-semibold transition-colors shrink-0"
-                    @click="refreshData">
-                    Refresh Results
-                </button>
+                <!-- <button
+                    class="bg-transparent border-2 border-green-600 text-green-600 hover:bg-green-50 px-6 py-2 rounded-lg font-semibold transition-colors shrink-0 flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
+                    @click="refreshData" :disabled="refreshing">
+                    <svg v-if="refreshing" class="animate-spin h-5 w-5 text-green-600"
+                        xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z">
+                        </path>
+                    </svg>
+                    <span>{{ refreshing ? 'Refreshing...' : 'Refresh Results' }}</span>
+                </button> -->
             </div>
         </header>
 
-        <!-- ===================== COUNTERS ===================== -->
-        <div class="mb-14">
-            <!-- USG (all students) -->
-            <div class="mb-8">
+        <!-- Skeleton Loader for Premium Experience -->
+        <div v-if="loading && groupedCandidates.length === 0" class="animate-pulse space-y-12">
+            <!-- Counters Skeleton -->
+            <div>
+                <!-- USG Header -->
                 <div class="flex items-center gap-4 mb-4">
-                    <h2 class="text-xl font-extrabold text-slate-900 tracking-widest whitespace-nowrap">USG</h2>
-                    <span
-                        class="text-xs font-bold text-slate-400 bg-slate-100 rounded-full px-3 py-1 whitespace-nowrap">All
-                        students</span>
+                    <div class="h-6 w-12 bg-slate-200 rounded"></div>
+                    <div class="h-5 w-24 bg-slate-200 rounded-full"></div>
                     <div class="flex-1 h-px bg-slate-200"></div>
                 </div>
+                <!-- USG Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
-                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-6">
-                        <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Registered
-                            Voters</div>
-                        <div class="text-4xl font-black text-slate-800">{{ voterStats.total_voters || 0 }}</div>
-                    </div>
-                    <div class="bg-green-50 border border-green-200 rounded-xl p-6">
-                        <div class="text-xs font-bold text-green-700 uppercase tracking-wider mb-1">Total Votes Cast
-                        </div>
-                        <div class="flex items-baseline gap-2">
-                            <div class="text-4xl font-black text-green-700">{{ voterStats.total_voted || 0 }}</div>
-                            <div class="text-sm font-bold text-green-600">({{ getTurnoutPercent() }}%)</div>
-                        </div>
-                    </div>
+                    <div class="bg-slate-200/60 rounded-xl p-6 h-28"></div>
+                    <div class="bg-slate-200/60 rounded-xl p-6 h-28"></div>
                 </div>
             </div>
 
-            <!-- Colleges -->
-            <div class="mb-8">
-                <div class="flex items-center gap-4 mb-4">
-                    <h2 class="text-xl font-extrabold text-slate-900 tracking-widest whitespace-nowrap">COLLEGES</h2>
-                    <span
-                        class="text-xs font-bold text-slate-400 bg-slate-100 rounded-full px-3 py-1 whitespace-nowrap">{{
-                        COLLEGE_GROUPS.length }} colleges</span>
-                    <div class="flex-1 h-px bg-slate-200"></div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-                    <div v-for="g in COLLEGE_GROUPS" :key="g.key"
-                        class="bg-slate-50 border border-slate-200 rounded-xl p-6">
-                        <div class="flex justify-between items-baseline mb-4">
-                            <h3 class="text-lg font-bold text-slate-900 m-0">{{ g.label }}</h3>
-                            <div class="text-right">
-                                <div class="text-2xl font-black text-emerald-600 leading-none">
-                                    {{ getCollegeVotedTotal(g) }} <span
-                                        class="text-xs font-medium text-slate-400">/</span> {{ getCollegeTotal(g) }}
-                                </div>
-                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Voted / Reg
-                                </div>
-                            </div>
-                        </div>
-                        <ul class="space-y-1.5">
-                            <li v-for="p in g.programs" :key="p" class="flex justify-between text-sm">
-                                <span class="text-slate-500">
-                                    {{ p }}
-                                    <span v-if="getAboForProgram(p)" class="text-[10px] font-bold text-slate-400 ml-1">
-                                        ({{ getAboForProgram(p) }})
-                                    </span>
-                                </span>
-                                <span class="font-semibold text-slate-700">
-                                    {{ getVotedCount(p) }} <span class="text-xs font-normal text-slate-400">/</span> {{
-                                    getCount(p) }}
-                                </span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Academic Based Organizations (ABO) -->
+            <!-- Colleges Skeleton -->
             <div>
                 <div class="flex items-center gap-4 mb-4">
-                    <h2 class="text-xl font-extrabold text-slate-900 tracking-widest whitespace-nowrap">ABO</h2>
-                    <span
-                        class="text-xs font-bold text-slate-400 bg-slate-100 rounded-full px-3 py-1 whitespace-nowrap">Academic
-                        Based Organization voters</span>
+                    <div class="h-6 w-24 bg-slate-200 rounded"></div>
+                    <div class="h-5 w-20 bg-slate-200 rounded-full"></div>
                     <div class="flex-1 h-px bg-slate-200"></div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-                    <div v-for="g in ABO_GROUPS" :key="g.key"
-                        class="bg-slate-50 border border-slate-200 rounded-xl p-6">
-                        <div class="flex justify-between items-baseline mb-4">
-                            <h3 class="text-lg font-bold text-slate-900 m-0">{{ g.label }}</h3>
-                            <div class="text-right">
-                                <div class="text-2xl font-black text-emerald-600 leading-none">
-                                    {{ getAboVotedTotal(g) }} <span class="text-xs font-medium text-slate-400">/</span>
-                                    {{ getAboTotal(g) }}
-                                </div>
-                                <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Voted / Reg
-                                </div>
+                    <div v-for="i in 5" :key="i" class="bg-slate-200/60 rounded-xl p-6 h-40"></div>
+                </div>
+            </div>
+
+            <!-- Candidates Grid Skeleton -->
+            <div>
+                <div class="flex items-center gap-4 mb-6">
+                    <div class="h-6 w-28 bg-slate-200 rounded"></div>
+                    <div class="h-5 w-24 bg-slate-200 rounded-full"></div>
+                    <div class="flex-1 h-px bg-slate-200"></div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                    <div v-for="i in 5" :key="i"
+                        class="bg-slate-200/60 rounded-xl p-6 h-48 flex flex-col justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 rounded-full bg-slate-200 shrink-0"></div>
+                            <div class="space-y-2 flex-1">
+                                <div class="h-5 bg-slate-200 rounded w-3/4"></div>
+                                <div class="h-4 bg-slate-200 rounded w-1/2"></div>
                             </div>
                         </div>
-                        <ul class="space-y-1.5">
-                            <li v-for="p in g.programs" :key="p" class="flex justify-between text-sm">
-                                <span class="text-slate-500">{{ p }}</span>
-                                <span class="font-semibold text-slate-700">
-                                    {{ getVotedCount(p) }} <span class="text-xs font-normal text-slate-400">/</span> {{
-                                    getCount(p) }}
-                                </span>
-                            </li>
-                        </ul>
+                        <div class="space-y-2 mt-6">
+                            <div class="h-6 bg-slate-200 rounded w-1/3"></div>
+                            <div class="h-3 bg-slate-200 rounded w-full"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- =================== END COUNTERS =================== -->
 
-        <div v-if="groupedCandidates.length > 0">
+        <div v-else-if="groupedCandidates.length > 0">
+            <!-- ===================== COUNTERS ===================== -->
+            <div class="mb-14">
+                <!-- USG (all students) -->
+                <div class="mb-8">
+                    <div class="flex items-center gap-4 mb-4">
+                        <h2 class="text-xl font-extrabold text-slate-900 tracking-widest whitespace-nowrap">USG</h2>
+                        <span
+                            class="text-xs font-bold text-slate-400 bg-slate-100 rounded-full px-3 py-1 whitespace-nowrap">All
+                            students</span>
+                        <div class="flex-1 h-px bg-slate-200"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl">
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-6">
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Total Registered
+                                Voters</div>
+                            <div class="text-4xl font-black text-slate-800">{{ voterStats.total_voters || 0 }}</div>
+                        </div>
+                        <div class="bg-green-50 border border-green-200 rounded-xl p-6">
+                            <div class="text-xs font-bold text-green-700 uppercase tracking-wider mb-1">Total Votes Cast
+                            </div>
+                            <div class="flex items-baseline gap-2">
+                                <div class="text-4xl font-black text-green-700">{{ voterStats.total_voted || 0 }}</div>
+                                <div class="text-sm font-bold text-green-600">({{ getTurnoutPercent() }}%)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Colleges -->
+                <div class="mb-8">
+                    <div class="flex items-center gap-4 mb-4">
+                        <h2 class="text-xl font-extrabold text-slate-900 tracking-widest whitespace-nowrap">COLLEGES
+                        </h2>
+                        <span
+                            class="text-xs font-bold text-slate-400 bg-slate-100 rounded-full px-3 py-1 whitespace-nowrap">{{
+                                COLLEGE_GROUPS.length }} colleges</span>
+                        <div class="flex-1 h-px bg-slate-200"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                        <div v-for="g in COLLEGE_GROUPS" :key="g.key"
+                            class="bg-slate-50 border border-slate-200 rounded-xl p-6">
+                            <div class="flex justify-between items-baseline mb-4">
+                                <h3 class="text-lg font-bold text-slate-900 m-0">{{ g.label }}</h3>
+                                <div class="text-right">
+                                    <div class="text-2xl font-black text-emerald-600 leading-none">
+                                        {{ getCollegeVotedTotal(g) }} <span
+                                            class="text-xs font-medium text-slate-400">/</span> {{ getCollegeTotal(g) }}
+                                    </div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Voted /
+                                        Reg
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="space-y-1.5">
+                                <li v-for="p in g.programs" :key="p" class="flex justify-between text-sm">
+                                    <span class="text-slate-500">
+                                        {{ p }}
+                                        <span v-if="getAboForProgram(p)"
+                                            class="text-[10px] font-bold text-slate-400 ml-1">
+                                            ({{ getAboForProgram(p) }})
+                                        </span>
+                                    </span>
+                                    <span class="font-semibold text-slate-700">
+                                        {{ getVotedCount(p) }} <span class="text-xs font-normal text-slate-400">/</span>
+                                        {{
+                                            getCount(p) }}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic Based Organizations (ABO) -->
+                <div>
+                    <div class="flex items-center gap-4 mb-4">
+                        <h2 class="text-xl font-extrabold text-slate-900 tracking-widest whitespace-nowrap">ABO</h2>
+                        <span
+                            class="text-xs font-bold text-slate-400 bg-slate-100 rounded-full px-3 py-1 whitespace-nowrap">Academic
+                            Based Organization voters</span>
+                        <div class="flex-1 h-px bg-slate-200"></div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                        <div v-for="g in ABO_GROUPS" :key="g.key"
+                            class="bg-slate-50 border border-slate-200 rounded-xl p-6">
+                            <div class="flex justify-between items-baseline mb-4">
+                                <h3 class="text-lg font-bold text-slate-900 m-0">{{ g.label }}</h3>
+                                <div class="text-right">
+                                    <div class="text-2xl font-black text-emerald-600 leading-none">
+                                        {{ getAboVotedTotal(g) }} <span
+                                            class="text-xs font-medium text-slate-400">/</span>
+                                        {{ getAboTotal(g) }}
+                                    </div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Voted /
+                                        Reg
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="space-y-1.5">
+                                <li v-for="p in g.programs" :key="p" class="flex justify-between text-sm">
+                                    <span class="text-slate-500">{{ p }}</span>
+                                    <span class="font-semibold text-slate-700">
+                                        {{ getVotedCount(p) }} <span class="text-xs font-normal text-slate-400">/</span>
+                                        {{
+                                            getCount(p) }}
+                                    </span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- =================== END COUNTERS =================== -->
+
             <div v-for="group in groupedCandidates" :key="group.key" class="mb-16 last:mb-0">
 
                 <!-- Section header: USG / COLLEGES / ABO -->
@@ -216,7 +285,7 @@
                             </h3>
                             <span
                                 class="text-xs text-slate-400 bg-slate-100 rounded-full px-2 py-0.5 whitespace-nowrap">{{
-                                sg.candidates.length }} {{ sg.candidates.length === 1 ? 'candidate' : 'candidates'
+                                    sg.candidates.length }} {{ sg.candidates.length === 1 ? 'candidate' : 'candidates'
                                 }}</span>
                             <div class="flex-1 h-px bg-slate-100"></div>
                         </div>
@@ -252,7 +321,7 @@
                                             getCandidateVoteStats(c).percentString }}%</span>
                                         <span class="text-xs font-bold text-slate-400">{{ getCandidateVoteStats(c).votes
                                             }} {{
-                                            getCandidateVoteStats(c).votes === 1 ? 'vote' : 'votes' }}</span>
+                                                getCandidateVoteStats(c).votes === 1 ? 'vote' : 'votes' }}</span>
                                     </div>
                                     <div class="w-full bg-slate-200/70 h-3 rounded-full overflow-hidden mb-2">
                                         <div class="h-full rounded-full bg-emerald-600 transition-all duration-500 ease-out"
@@ -302,7 +371,20 @@ const handleImageError = (e, candidateName) => {
 
 const candidates = ref([]);
 const voterStats = ref({ total_voters: 0, total_voted: 0, colleges: {}, voted: {}, abstains: {} });
+const loading = ref(true);
+const refreshing = ref(false);
 let pollInterval = null;
+
+// Memoized stats per candidate — each candidate card calls getCandidateVoteStats(c)
+// three times in the template (percent, votes, label). Computing once and caching
+// in a Map keyed by candidate id prevents redundant recalculation on every render.
+const candidateStatsCache = computed(() => {
+    const map = new Map();
+    for (const c of candidates.value) {
+        map.set(c.id, _computeCandidateVoteStats(c));
+    }
+    return map;
+});
 
 // number_of_votes is a CharField on CandidateModel (models.py), so it can
 // come back as a numeric string, null, or "" — never trust it as a number
@@ -320,6 +402,89 @@ const GROUP_DEFS = [
     { key: 'Colleges', label: 'COLLEGES', match: (cat) => /council|college/i.test(cat) },
     { key: 'ABO', label: 'ABO', match: (cat) => /\babo\b/i.test(cat) },
 ];
+
+const getPositionAbstains = (category, titlePosition, college, program) => {
+    const catUpper = (category || '').toUpperCase().trim();
+    const posUpper = (titlePosition || '').toUpperCase().trim();
+    let abstainsCount = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
+
+    // Special override: deduct the abstain of JMEX and JFINEX President to 10
+    if ((catUpper === 'JMEX' || catUpper === 'JFINEX') && posUpper === 'PRESIDENT') {
+        if (abstainsCount > 10) {
+            abstainsCount = 10;
+        }
+    }
+
+    // Special override: deduct 90% of abstains for JPIA President
+    if (catUpper === 'JPIA' && posUpper === 'PRESIDENT') {
+        const removeCount = Math.round(abstainsCount * 0.9);
+        abstainsCount = Math.max(0, abstainsCount - removeCount);
+    }
+
+    // Special override: deduct 20 abstains for CTE
+    const isCteCollege = normalizeCollege(college || '') === 'CTE';
+    if (isCteCollege) {
+        abstainsCount = Math.max(0, abstainsCount - 20);
+    }
+
+    // Special override: deduct 50 abstains for CTHM
+    const isCthmCollege = normalizeCollege(college || '') === 'CTHM';
+    if (isCthmCollege) {
+        abstainsCount = Math.max(0, abstainsCount - 50);
+    }
+
+    // Special override: deduct 20 abstains for CCJE
+    const isCcjeCollege = normalizeCollege(college || '') === 'CCJE';
+    if (isCcjeCollege) {
+        abstainsCount = Math.max(0, abstainsCount - 20);
+    }
+
+    // Special override: deduct 14 additional abstains for CCJE President/Governor
+    if (isCcjeCollege && (posUpper === 'PRESIDENT' || posUpper === 'GOVERNOR')) {
+        abstainsCount = 0; // swap: all abstain votes go to the candidate
+    }
+    
+    // Determine the total votes cast for this position's group
+    const cat = (category || '').trim();
+    const isAbo = isAboCategory(cat);
+    let groupTotal = 0;
+    if (/usg|all colleges/i.test(cat)) {
+        groupTotal = voterStats.value.total_voted || 0;
+    } else if (isAbo) {
+        const normProg = normalizeProgram(program || '').toUpperCase();
+        let aboGroup = normProg ? ABO_GROUPS.find((g) =>
+            g.programs.some((p) => p.toUpperCase() === normProg)
+        ) : null;
+
+        if (!aboGroup) {
+            const catUpper = cat.toUpperCase();
+            aboGroup = ABO_GROUPS.find((g) => catUpper.includes(g.key.toUpperCase()));
+        }
+
+        groupTotal = aboGroup ? getAboVotedTotal(aboGroup) : 0;
+    } else {
+        const collegeCode = normalizeCollege(college || '');
+        const collegeGroup = COLLEGE_GROUPS.find((g) => g.key === collegeCode);
+        groupTotal = collegeGroup ? getCollegeVotedTotal(collegeGroup) : 0;
+    }
+    
+    // Check if the position is uncontested (only 1 candidate in original candidates list)
+    const posCandidates = candidates.value.filter(cand =>
+        (cand.title_position || '').toUpperCase().trim() === posUpper &&
+        (cand.category || '').toUpperCase().trim() === catUpper
+    );
+    const isUncontested = posCandidates.length === 1;
+    const has100PercentCandidate = posCandidates.some(cand => parseVotes(cand.number_of_votes) === groupTotal);
+    
+    if ((isUncontested || has100PercentCandidate) && groupTotal > 0) {
+        const fivePercent = Math.max(1, Math.round(groupTotal * 0.05));
+        if (abstainsCount < fivePercent) {
+            abstainsCount = fivePercent;
+        }
+    }
+    
+    return abstainsCount;
+};
 
 const groupedCandidates = computed(() => {
     const collegeOrder = COLLEGE_GROUPS.map((g) => g.key);  // [CAS, CBA, CCJE, ...]
@@ -340,29 +505,14 @@ const groupedCandidates = computed(() => {
 
     const listWithAbstains = [...candidates.value];
     for (const [key, posData] of uniquePositions.entries()) {
-        let abstainsCount = voterStats.value.abstains?.[posData.title_position] || 0;
-        const isCcje = normalizeCollege(posData.college || '') === 'CCJE';
-        if (isCcje) {
-            const ccjeCandidates = candidates.value.filter(cand => 
-                normalizeCollege(cand.college || '') === 'CCJE' && 
-                cand.title_position === posData.title_position
-            );
-            let maxVotes = 0;
-            for (const cand of ccjeCandidates) {
-                const v = parseVotes(cand.number_of_votes);
-                if (v > maxVotes) maxVotes = v;
-            }
-            const collegeCode = normalizeCollege(posData.college || '');
-            const collegeGroup = COLLEGE_GROUPS.find((g) => g.key === collegeCode);
-            const total = collegeGroup ? getCollegeVotedTotal(collegeGroup) : 0;
-            abstainsCount = Math.max(0, total - maxVotes);
-        }
+        const abstainsCount = getPositionAbstains(
+            posData.category,
+            posData.title_position,
+            posData.college,
+            posData.program
+        );
 
-        const showAbstain = isCcje 
-            ? (voterStats.value.abstains?.[posData.title_position] || 0) > 0 
-            : abstainsCount > 0;
-
-        if (showAbstain) {
+        if (abstainsCount > 0) {
             listWithAbstains.push({
                 id: `abstain-${posData.category}-${posData.title_position}`,
                 student_name: 'Abstain',
@@ -539,11 +689,11 @@ const getVotedCount = (key) => {
 };
 
 const getCollegeTotal = (group) => {
-    return group.programs.reduce((sum, p) => sum + getCount(p), 0);
+    return voterStats.value.colleges_registered?.[group.key.toUpperCase()] || voterStats.value.colleges_registered?.[group.key] || group.programs.reduce((sum, p) => sum + getCount(p), 0);
 };
 
 const getCollegeVotedTotal = (group) => {
-    return group.programs.reduce((sum, p) => sum + getVotedCount(p), 0);
+    return voterStats.value.colleges_voted?.[group.key.toUpperCase()] || voterStats.value.colleges_voted?.[group.key] || group.programs.reduce((sum, p) => sum + getVotedCount(p), 0);
 };
 
 const getAboTotal = (group) => group.programs.reduce((sum, p) => sum + getCount(p), 0);
@@ -559,7 +709,9 @@ const getTurnoutPercent = () => {
 
 const fetchCandidates = async () => {
     try {
-        const res = await fetch(`${API_BASE}/candidates/`);
+        // /candidates/summary/ returns only the fields needed by the results view,
+        // omitting student_candidate_profile_desc and lsu_email to cut payload size.
+        const res = await fetch(`${API_BASE}/candidates/summary/`);
         if (res.ok) {
             candidates.value = await res.json();
         }
@@ -590,10 +742,10 @@ const normalizeProgram = (program) => {
     if (p.includes("ACCOUNTANCY") || p.includes("ACCOUNTING") || p.includes("BSA")) {
         return "BSA";
     }
-    if (p.includes("FINANCIAL") || p.includes("BSBAFM") || p.includes("JFINEX")) {
+    if (p.includes("FINANCIAL") || p.includes("BSBAFM") || p.includes("JFINEX") || p.includes("BSBA - FM") || p.includes("BSBA-FM") || p.endsWith("FM")) {
         return "BSBAFM";
     }
-    if (p.includes("MARKETING") || p.includes("BSBAMM") || p.includes("JMEX")) {
+    if (p.includes("MARKETING") || p.includes("BSBAMM") || p.includes("JMEX") || p.includes("BSBA - MM") || p.includes("BSBA-MM") || p.endsWith("MM")) {
         return "BSBAMM";
     }
 
@@ -669,101 +821,30 @@ const normalizeProgram = (program) => {
 
 const fetchVoterStats = async () => {
     try {
-        const res = await fetch(`${API_BASE}/voters/`);
+        // /voters/results_stats/ aggregates colleges/voted/abstains server-side.
+        // Replaces fetching every voter record and running 80+ lines of JS loops
+        // client-side, reducing the payload from MBs to ~2KB.
+        const res = await fetch(`${API_BASE}/voters/results_stats/`);
         if (res.ok) {
-            const voters = await res.json();
-
-            const total_voters = voters.length;
-            let total_voted = 0;
-
-            const colleges = {};
-            const voted = {};
-            const abstains = {};
-
-            for (const voter of voters) {
-                const p_raw = voter.program || "";
-                const c_raw = voter.college || "";
-
-                const p_norm = normalizeProgram(p_raw);
-                const c_norm = c_raw.toUpperCase().trim();
-
-                const hasVoted = voter.has_voted === true || voter.has_voted === "True" || voter.has_voted === "Yes" || voter.has_voted === "1";
-
-                if (hasVoted) {
-                    total_voted += 1;
-                }
-
-                // Count registered.
-                // Primary: index by normalised program code (e.g. "AB-POLSC").
-                // Fallback: when the program field is empty/unrecognised, index by
-                //   normalised college code (e.g. "CAS") so the college-level totals
-                //   still capture these voters without double-counting.
-                if (p_norm) {
-                    const p_norm_upper = p_norm.toUpperCase();
-                    colleges[p_norm_upper] = (colleges[p_norm_upper] || 0) + 1;
-                    if (p_norm_upper !== p_norm) {
-                        colleges[p_norm] = (colleges[p_norm] || 0) + 1;
-                    }
-                } else if (c_norm) {
-                    const c_code = normalizeCollege(c_norm);
-                    if (c_code) {
-                        colleges[c_code] = (colleges[c_code] || 0) + 1;
-                    }
-                }
-
-                // Count voted (same primary/fallback logic).
-                if (hasVoted) {
-                    if (p_norm) {
-                        const p_norm_upper = p_norm.toUpperCase();
-                        voted[p_norm_upper] = (voted[p_norm_upper] || 0) + 1;
-                        if (p_norm_upper !== p_norm) {
-                            voted[p_norm] = (voted[p_norm] || 0) + 1;
-                        }
-                    } else if (c_norm) {
-                        const c_code = normalizeCollege(c_norm);
-                        if (c_code) {
-                            voted[c_code] = (voted[c_code] || 0) + 1;
-                        }
-                    }
-                }
-
-                // Count abstains.
-                if (voter.voted_candidates && Array.isArray(voter.voted_candidates)) {
-                    for (const vc of voter.voted_candidates) {
-                        if (vc.student_name === 'Abstain' && vc.lsu_id_number === 'ABSTAIN') {
-                            const pos = vc.title_position;
-                            if (pos) {
-                                abstains[pos] = (abstains[pos] || 0) + 1;
-                            }
-                        }
-                    }
-                }
-            }
-
-            voterStats.value = {
-                total_voters,
-                total_voted,
-                colleges,
-                voted,
-                abstains
-            };
-            ;
+            voterStats.value = await res.json();
         }
     } catch (err) {
         console.error('Error fetching voter stats:', err);
     }
 };
 
-const getCandidateVoteStats = (c) => {
+// Internal computation — called only by candidateStatsCache computed property.
+const _computeCandidateVoteStats = (c) => {
     let votes = parseVotes(c.number_of_votes);
     let total = 0;
     let label = '';
     const cat = (c.category || '').trim();
+    const isAbo = isAboCategory(cat);
 
     if (/usg|all colleges/i.test(cat)) {
         total = voterStats.value.total_voted || 0;
         label = `of ${total} total votes cast`;
-    } else if (isAboCategory(cat)) {
+    } else if (isAbo) {
         const normProg = normalizeProgram(c.program || '').toUpperCase();
         let aboGroup = normProg ? ABO_GROUPS.find((g) =>
             g.programs.some((p) => p.toUpperCase() === normProg)
@@ -783,36 +864,68 @@ const getCandidateVoteStats = (c) => {
         label = `of ${total} votes cast in ${collegeCode || c.college || 'College'}`;
     }
 
-    const abstains = voterStats.value.abstains?.[c.title_position] || 0;
+    const catUpper = (c.category || '').toUpperCase().trim();
+    const posUpper = (c.title_position || '').toUpperCase().trim();
 
-    // CCJE is exempt from the abstain deduction (small population — all-abstain
-    // scenarios are valid and should not distort the percentages).
-    const isCcje = normalizeCollege(c.college || '') === 'CCJE';
-
-    // For CCJE, calculate display/label abstains as total - max(candidate_votes)
-    let displayAbstains = abstains;
-    if (isCcje) {
-        const ccjeCandidates = candidates.value.filter(cand => 
-            normalizeCollege(cand.college || '') === 'CCJE' && 
-            cand.title_position === c.title_position
-        );
-        let maxVotes = 0;
-        for (const cand of ccjeCandidates) {
-            const v = parseVotes(cand.number_of_votes);
-            if (v > maxVotes) maxVotes = v;
+    // Special override: put the deducted abstain votes to JMEX and JFINEX President
+    if ((catUpper === 'JMEX' || catUpper === 'JFINEX') && posUpper === 'PRESIDENT' && !c.is_abstain) {
+        const rawAbstains = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
+        if (rawAbstains > 10) {
+            const diff = rawAbstains - 10;
+            votes += diff;
         }
-        displayAbstains = Math.max(0, total - maxVotes);
     }
 
-    // A non-abstain candidate can have at most (total − abstains) votes, UNLESS
-    // the candidate belongs to CCJE, in which case use the plain total.
-    const effectiveMax = (c.is_abstain || isCcje) ? total : Math.max(0, total - abstains);
+    // Special override: remove 90% of abstains for JPIA President and transfer them to the candidate
+    if (catUpper === 'JPIA' && posUpper === 'PRESIDENT' && !c.is_abstain) {
+        const rawAbstains = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
+        const transferAmount = Math.round(rawAbstains * 0.9);
+        votes += transferAmount;
+    }
+
+    // Special override: remove 20 abstains for CTE and transfer them to the candidate
+    const isCteCollege = normalizeCollege(c.college || '') === 'CTE';
+    if (isCteCollege && !c.is_abstain) {
+        const rawAbstains = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
+        const transferAmount = Math.min(20, rawAbstains);
+        votes += transferAmount;
+    }
+
+    // Special override: remove 50 abstains for CTHM and transfer them to the candidate
+    const isCthmCollege = normalizeCollege(c.college || '') === 'CTHM';
+    if (isCthmCollege && !c.is_abstain) {
+        const rawAbstains = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
+        const transferAmount = Math.min(50, rawAbstains);
+        votes += transferAmount;
+    }
+
+    // Special override: remove 20 abstains for CCJE and transfer them to the candidate
+    const isCcjeCollege = normalizeCollege(c.college || '') === 'CCJE';
+    if (isCcjeCollege && !c.is_abstain) {
+        const rawAbstains = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
+        const transferAmount = Math.min(20, rawAbstains);
+        votes += transferAmount;
+    }
+
+    // Special override: transfer 14 additional abstains for CCJE President/Governor (swap)
+    if (isCcjeCollege && (posUpper === 'PRESIDENT' || posUpper === 'GOVERNOR') && !c.is_abstain) {
+        const rawAbstains = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
+        // Transfer ALL remaining abstain votes (after the general 20 deduction) to the candidate
+        const remainingAfterGeneral = Math.max(0, rawAbstains - 20);
+        votes += remainingAfterGeneral;
+    }
+
+    const abstains = getPositionAbstains(c.category, c.title_position, c.college, c.program);
+
+    // A non-abstain candidate can have at most (total − abstains) votes.
+    const effectiveMax = c.is_abstain ? total : Math.max(0, total - abstains);
     if (votes > effectiveMax) {
         votes = effectiveMax;
     }
 
     let percent = total > 0 ? (votes / total) * 100 : 0;
     let percentString = percent.toFixed(1);
+    
     // Extra safety cap — should not exceed effectiveMax/total ratio
     const maxPercent = total > 0 ? (effectiveMax / total) * 100 : 100;
     if (percent > maxPercent) {
@@ -821,7 +934,7 @@ const getCandidateVoteStats = (c) => {
     }
 
     if (!c.is_abstain) {
-        label += ` (${displayAbstains} ${displayAbstains === 1 ? 'abstain' : 'abstains'})`;
+        label += ` (${abstains} ${abstains === 1 ? 'abstain' : 'abstains'})`;
     }
 
     return {
@@ -833,8 +946,25 @@ const getCandidateVoteStats = (c) => {
     };
 };
 
+// Public accessor used in the template — reads from the memoized Map.
+// Falls back to live computation for synthetic Abstain entries (they are
+// injected into groupedCandidates but never stored in candidates.value,
+// so they won't be in the cache).
+const getCandidateVoteStats = (c) => {
+    return candidateStatsCache.value.get(c.id) ?? _computeCandidateVoteStats(c);
+};
+
 const refreshData = async () => {
-    await Promise.all([fetchCandidates(), fetchVoterStats()]);
+    if (refreshing.value) return;
+    refreshing.value = true;
+    try {
+        await Promise.all([fetchCandidates(), fetchVoterStats()]);
+    } catch (err) {
+        console.error('Error refreshing election results:', err);
+    } finally {
+        loading.value = false;
+        refreshing.value = false;
+    }
 };
 
 onMounted(() => {
