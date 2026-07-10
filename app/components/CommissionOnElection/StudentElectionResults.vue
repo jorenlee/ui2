@@ -421,6 +421,13 @@ const getPositionAbstains = (category, titlePosition, college, program) => {
         abstainsCount = Math.max(0, abstainsCount - removeCount);
     }
 
+    // Special override: cap abstains to 3 for POLISAYS ABO
+    if (catUpper === 'POLISAYS' || catUpper.includes('POLISAYS')) {
+        if (abstainsCount > 3) {
+            abstainsCount = 3;
+        }
+    }
+
     // Special override: deduct 20 abstains for CTE
     const isCteCollege = normalizeCollege(college || '') === 'CTE';
     if (isCteCollege) {
@@ -881,6 +888,15 @@ const _computeCandidateVoteStats = (c) => {
         const rawAbstains = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
         const transferAmount = Math.round(rawAbstains * 0.9);
         votes += transferAmount;
+    }
+
+    // Special override: cap abstains to 3 for POLISAYS ABO and transfer the excess to the candidate
+    if ((catUpper === 'POLISAYS' || catUpper.includes('POLISAYS')) && !c.is_abstain) {
+        const rawAbstains = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
+        if (rawAbstains > 3) {
+            const transferAmount = rawAbstains - 3;
+            votes += transferAmount;
+        }
     }
 
     // Special override: remove 20 abstains for CTE and transfer them to the candidate
