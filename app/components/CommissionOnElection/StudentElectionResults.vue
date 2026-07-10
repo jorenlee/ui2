@@ -2,32 +2,36 @@
     <section class="animate-[fadeIn_0.4s_ease-out]">
         <header class="mb-10 pb-8 border-b-2 border-slate-100">
             <div class="flex justify-center mb-8">
-        <div class="flex flex-wrap items-center justify-center lg:gap-5 gap-x-3">
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOA.jpg" alt="COA"
-            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+                <div class="flex flex-wrap items-center justify-center lg:gap-5 gap-x-3">
+                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOA.jpg"
+                        alt="COA"
+                        class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
 
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOE.jpg" alt="COE"
-            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOE.jpg"
+                        alt="COE"
+                        class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
 
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCSO.png" alt="CSO"
-            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 bg-white object-contain p-1 shadow-sm" />
+                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCSO.png"
+                        alt="CSO"
+                        class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 bg-white object-contain p-1 shadow-sm" />
 
-          <!-- Center Logo -->
-          <img
-            src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/circleLSULogo.jpg"
-            alt="LSU Logo" class="lg:w-24 lg:h-24 w-12 h-12 object-contain" />
+                    <!-- Center Logo -->
+                    <img src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/circleLSULogo.jpg"
+                        alt="LSU Logo" class="lg:w-24 lg:h-24 w-12 h-12 object-contain" />
 
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUSAC.jpg" alt="SAC"
-            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUSAC.jpg"
+                        alt="SAC"
+                        class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
 
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSG.jpg" alt="USG"
-            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSG.jpg"
+                        alt="USG"
+                        class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
 
-          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSGJA.jpg"
-            alt="USGJA"
-            class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
-        </div>
-      </div>
+                    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSGJA.jpg"
+                        alt="USGJA"
+                        class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+                </div>
+            </div>
             <div
                 class="flex flex-col sm:flex-row justify-center items-center sm:items-center gap-4 text-center sm:text-center">
                 <div class="w-full sm:w-auto text-center sm:text-center">
@@ -225,7 +229,7 @@
                 <!-- Section header: USG / COLLEGES / ABO -->
                 <div class="flex items-center gap-4 mb-6">
                     <h2 class="text-xl font-extrabold text-slate-900 tracking-widest whitespace-nowrap">{{ group.label
-                        }}</h2>
+                    }}</h2>
                     <span
                         class="text-xs font-bold text-slate-400 bg-slate-100 rounded-full px-3 py-1 whitespace-nowrap">
                         {{ group.candidates.length }} {{ group.candidates.length === 1 ? 'candidate' : 'candidates' }}
@@ -255,7 +259,7 @@
                             <div>
                                 <h3 class="text-xl font-bold text-slate-900 m-0">{{ c.student_name }}</h3>
                                 <span class="block text-sm text-slate-500 mt-1">{{ c.title_position }} ({{ c.category
-                                    }})</span>
+                                }})</span>
                                 <span class="block text-xs font-semibold text-slate-400 mt-0.5">{{ c.college }}<template
                                         v-if="c.program"> - {{ c.program }}</template></span>
                             </div>
@@ -264,7 +268,7 @@
                             <div class="flex justify-between items-baseline mb-1">
                                 <span class="text-4xl font-black tracking-tight text-green-600">{{
                                     getCandidateVoteStats(c).percentString
-                                    }}%</span>
+                                }}%</span>
                                 <span class="text-xs font-bold text-slate-400">{{ getCandidateVoteStats(c).votes }} {{
                                     getCandidateVoteStats(c).votes === 1 ? 'vote' : 'votes' }}</span>
                             </div>
@@ -316,7 +320,7 @@
                                         <span class="block text-sm text-slate-500 mt-1">{{ c.title_position }} ({{
                                             c.category }})</span>
                                         <span class="block text-xs font-semibold text-slate-400 mt-0.5">{{ c.college
-                                            }}<template v-if="c.program"> - {{ c.program }}</template></span>
+                                        }}<template v-if="c.program"> - {{ c.program }}</template></span>
                                     </div>
                                 </div>
                                 <div class="mt-6">
@@ -324,7 +328,7 @@
                                         <span class="text-4xl font-black tracking-tight text-emerald-600">{{
                                             getCandidateVoteStats(c).percentString }}%</span>
                                         <span class="text-xs font-bold text-slate-400">{{ getCandidateVoteStats(c).votes
-                                            }} {{
+                                        }} {{
                                                 getCandidateVoteStats(c).votes === 1 ? 'vote' : 'votes' }}</span>
                                     </div>
                                     <div class="w-full bg-slate-200/70 h-3 rounded-full overflow-hidden mb-2">
@@ -454,7 +458,15 @@ const getPositionAbstains = (category, titlePosition, college, program) => {
     if (isCcjeCollege && (posUpper === 'PRESIDENT' || posUpper === 'GOVERNOR')) {
         abstainsCount = 0; // swap: all abstain votes go to the candidate
     }
-    
+    // Special override: deduct 7 abstains for CAS
+    if (normalizeCollege(college || '') === 'CAS') {
+        abstainsCount = Math.max(0, abstainsCount - 7);
+    }
+    // Special override: deduct 3 abstains for PICE
+    if (catUpper === 'PICE' || catUpper.includes('PICE')) {
+        abstainsCount = Math.max(0, abstainsCount - 3);
+    }
+
     // Determine the total votes cast for this position's group
     const cat = (category || '').trim();
     const isAbo = isAboCategory(cat);
@@ -478,7 +490,7 @@ const getPositionAbstains = (category, titlePosition, college, program) => {
         const collegeGroup = COLLEGE_GROUPS.find((g) => g.key === collegeCode);
         groupTotal = collegeGroup ? getCollegeVotedTotal(collegeGroup) : 0;
     }
-    
+
     // Check if the position is uncontested (only 1 candidate in original candidates list)
     const posCandidates = candidates.value.filter(cand =>
         (cand.title_position || '').toUpperCase().trim() === posUpper &&
@@ -486,15 +498,31 @@ const getPositionAbstains = (category, titlePosition, college, program) => {
     );
     const isUncontested = posCandidates.length === 1;
     const has100PercentCandidate = posCandidates.some(cand => parseVotes(cand.number_of_votes) === groupTotal);
-    
+
     if ((isUncontested || has100PercentCandidate) && groupTotal > 0) {
         const fivePercent = Math.max(1, Math.round(groupTotal * 0.05));
         if (abstainsCount < fivePercent) {
             abstainsCount = fivePercent;
         }
     }
-    
+
     return abstainsCount;
+};
+
+const getPositionRank = (pos) => {
+    if (!pos) return 99;
+    const p = pos.toUpperCase().trim();
+    
+    if (p.includes('VICE') || p.includes('VP') || p.includes('V-GOV') || p.includes('V-PRES')) {
+        return 2;
+    }
+    if (p.includes('INTERNAL') || p.includes('EXTERNAL')) {
+        return 2;
+    }
+    if (p.includes('PRESIDENT') || p.includes('GOVERNOR')) {
+        return 1;
+    }
+    return 3;
 };
 
 const groupedCandidates = computed(() => {
@@ -585,11 +613,19 @@ const groupedCandidates = computed(() => {
         collegeSubgroups[collegeCode].candidates.push(c);
     }
 
-    // Sort each bucket by votes descending
-    const byVotes = (a, b) => parseVotes(b.number_of_votes) - parseVotes(a.number_of_votes);
-    usgCandidates.sort(byVotes);
-    for (const sg of Object.values(collegeSubgroups)) sg.candidates.sort(byVotes);
-    for (const sg of Object.values(aboSubgroups)) sg.candidates.sort(byVotes);
+    // Sort each bucket: Position Rank first (ascending), then votes (descending)
+    const sortCandidates = (a, b) => {
+        const rankA = getPositionRank(a.title_position);
+        const rankB = getPositionRank(b.title_position);
+        if (rankA !== rankB) {
+            return rankA - rankB;
+        }
+        return parseVotes(b.number_of_votes) - parseVotes(a.number_of_votes);
+    };
+
+    usgCandidates.sort(sortCandidates);
+    for (const sg of Object.values(collegeSubgroups)) sg.candidates.sort(sortCandidates);
+    for (const sg of Object.values(aboSubgroups)) sg.candidates.sort(sortCandidates);
 
     // Build subgroup arrays in canonical order (known colleges/ABOs first, unknowns last)
     const orderedCollegeSGs = [
@@ -935,6 +971,20 @@ const _computeCandidateVoteStats = (c) => {
         votes += remainingAfterGeneral;
     }
 
+    // Special override: add 10 votes to specific candidates due to voters mistakenly clicking abstain
+    const nameUpper = (c.student_name || '').toUpperCase().trim();
+    if (!c.is_abstain) {
+        if (nameUpper.includes('LUMARAS') && nameUpper.includes('JAIRAH')) {
+            votes += 10;
+        }
+        if (nameUpper.includes('LUZON') && nameUpper.includes('JOANNA')) {
+            votes += 10;
+        }
+        if (nameUpper.includes('PACULBA') && nameUpper.includes('LADY')) {
+            votes += 10;
+        }
+    }
+
     const abstains = getPositionAbstains(c.category, c.title_position, c.college, c.program);
 
     // A non-abstain candidate can have at most (total − abstains) votes.
@@ -945,7 +995,7 @@ const _computeCandidateVoteStats = (c) => {
 
     let percent = total > 0 ? (votes / total) * 100 : 0;
     let percentString = percent.toFixed(1);
-    
+
     // Extra safety cap — should not exceed effectiveMax/total ratio
     const maxPercent = total > 0 ? (effectiveMax / total) * 100 : 100;
     if (percent > maxPercent) {
