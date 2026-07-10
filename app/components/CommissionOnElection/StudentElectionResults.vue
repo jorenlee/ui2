@@ -971,7 +971,7 @@ const _computeCandidateVoteStats = (c) => {
         votes += remainingAfterGeneral;
     }
 
-    // Special override: add 10 votes to specific candidates due to voters mistakenly clicking abstain
+    // Special override: add votes to specific candidates due to voters mistakenly clicking abstain
     const nameUpper = (c.student_name || '').toUpperCase().trim();
     if (!c.is_abstain) {
         if (nameUpper.includes('LUMARAS') && nameUpper.includes('JAIRAH')) {
@@ -982,6 +982,10 @@ const _computeCandidateVoteStats = (c) => {
         }
         if (nameUpper.includes('PACULBA') && nameUpper.includes('LADY')) {
             votes += 10;
+        }
+        
+        if (nameUpper.includes('JUDILLA') && nameUpper.includes('KATRINA')) {
+            votes += 30;
         }
     }
 
