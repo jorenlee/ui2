@@ -356,7 +356,7 @@ onMounted(async () => {
         >
           <!-- Full viewport height so the carousel reads as a true full
                height / full width hero, not a fixed 320px strip. -->
-          <div class="relative w-full h-[800px] overflow-hidden bg-black">
+          <div class="relative w-full lg:h-[800px] overflow-hidden bg-black">
             <!-- Uploaded video file OR a direct .mp4 (etc) URL link:
                  no native controls, autoplay muted loop -->
             <video
