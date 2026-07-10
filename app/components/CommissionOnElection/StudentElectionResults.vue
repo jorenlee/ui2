@@ -985,7 +985,12 @@ const _computeCandidateVoteStats = (c) => {
         }
         
         if (nameUpper.includes('JUDILLA') && nameUpper.includes('KATRINA')) {
-            votes += 30;
+            votes += 50;
+        }
+
+        // Special override: add 10 votes to each JPIA Board Member
+        if (catUpper === 'JPIA' && posUpper.includes('BOARD MEMBER')) {
+            votes += 10;
         }
     }
 
