@@ -416,6 +416,11 @@ const getPositionAbstains = (category, titlePosition, college, program) => {
     const posUpper = (titlePosition || '').toUpperCase().trim();
     let abstainsCount = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
 
+    // Special override: remove abstain card for all senators (set to 0)
+    if (posUpper.includes('SENATOR')) {
+        abstainsCount = 0;
+    }
+
     // Special override: deduct the abstain of JMEX and JFINEX President to 10
     if ((catUpper === 'JMEX' || catUpper === 'JFINEX') && posUpper === 'PRESIDENT') {
         if (abstainsCount > 10) {
@@ -991,6 +996,14 @@ const _computeCandidateVoteStats = (c) => {
         // Special override: add 10 votes to each JPIA Board Member
         if (catUpper === 'JPIA' && posUpper.includes('BOARD MEMBER')) {
             votes += 10;
+        }
+
+        // Special override: remove abstain card for all senators and add ALL abstain votes to each senator candidate
+        if (posUpper.includes('SENATOR')) {
+            const rawAbstains = voterStats.value.abstains?.[`${catUpper}::${posUpper}`] || voterStats.value.abstains?.[posUpper] || 0;
+            if (rawAbstains > 0) {
+                votes += rawAbstains;
+            }
         }
     }
 
