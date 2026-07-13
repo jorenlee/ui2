@@ -1,19 +1,19 @@
 <template>
     <section class="animate-[fadeIn_0.4s_ease-out]">
-        <header class="mb-10 pb-8 border-b-2 border-slate-100">
+        <header class="mb-5 pb-4 border-b-2 border-slate-100">
             <div class="flex justify-center">
                 <div class="flex flex-wrap items-center justify-center lg:gap-5 gap-x-3">
                     <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOA.jpg"
                         alt="COA"
-                        class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+                        class="lg:w-14 lg:h-14 w-8 h-8 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
 
                     <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCOE.jpg"
                         alt="COE"
-                        class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+                        class="lg:w-14 lg:h-14 w-8 h-8 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
 
                     <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUCSO.png"
                         alt="CSO"
-                        class="lg:w-16 lg:h-16 w-10 h-10 rounded-full border border-slate-200 bg-white object-contain shadow-sm" />
+                        class="lg:w-16 lg:h-16 w-8 h-8 rounded-full border border-slate-200 bg-white object-contain shadow-sm" />
 
                     <!-- Center Logo -->
                     <img src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/circleLSULogo.jpg"
@@ -21,24 +21,25 @@
 
                     <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUSAC.jpg"
                         alt="SAC"
-                        class="lg:w-16 lg:h-16 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+                        class="lg:w-16 lg:h-16 w-8 h-8 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
 
                     <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSG.jpg"
                         alt="USG"
-                        class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+                        class="lg:w-14 lg:h-14 w-8 h-8 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
 
                     <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Student%20Election/LSUUSGJA.jpg"
                         alt="USGJA"
-                        class="lg:w-14 lg:h-14 w-10 h-10 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
+                        class="lg:w-14 lg:h-14 w-8 h-8 rounded-full border border-slate-200 object-cover bg-white shadow-sm" />
                 </div>
             </div>
             <div
                 class="flex flex-col sm:flex-row justify-center items-center sm:items-center gap-4 text-center sm:text-center">
                 <div class="w-full sm:w-auto text-center sm:text-center">
-                    <h1 class="text-4xl font-extrabold text-green-800 tracking-tight">Commission on Election</h1>
-                    <p>Powered by <span class="font-bold">LSU Network, Programs and Computerization Center</span></p>
-                    <p class="text-lg text-slate-500"><span class="font-semibold">A.Y 2026-2027</span> Live Real-time Student Election Results</p>
+                    <h1 class="lg:text-4xl text-2xl font-extrabold text-green-800 tracking-tight">Commission on Election</h1>
+                    <p class="lg:text-lg text-xs tracking-tighter">Powered by <span class="font-bold">LSU Network, Programs and Computerization Center</span></p>
+                    <p class="lg:text-lg text-sm text-slate-500 tracking-tighter"><span class="font-semibold">A.Y 2026-2027</span> Live Real-time Student Election Results</p>
                 </div>
+
                 <!-- <button
                     class="bg-transparent border-2 border-green-600 text-green-600 hover:bg-green-50 px-6 py-2 rounded-lg font-semibold transition-colors shrink-0 flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-not-allowed"
                     @click="refreshData" :disabled="refreshing">
@@ -111,7 +112,7 @@
 
         <div v-else-if="groupedCandidates.length > 0">
             <!-- ===================== COUNTERS ===================== -->
-            <div class="mb-14">
+            <div class="mb-5">
                 <!-- USG (all students) -->
                 <div class="mb-8">
                     <div class="flex items-center gap-4 mb-4">
