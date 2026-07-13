@@ -43,7 +43,7 @@
       </div>
     </div>
     <div class="min-h-screen bg-gray-50 font-sans lg:flex gap-x-5">
-      <div class="w-4/12 mx-auto">
+      <div class="lg:w-4/12 mx-auto">
         <div class="w-full gap-x-4">
           <!-- Statistics -->
           <div class="space-y-4 w-full">
@@ -521,7 +521,7 @@
               <!-- Passage (if present) -->
               <div
                 v-if="q.passage"
-                class="bg-gray-50 border border-gray-100 rounded-lg p-4 font-serif text-xs text-gray-600 leading-relaxed italic border-l-4 border-emerald-600"
+                class="bg-gray-50 border rounded-lg p-4 font-serif text-xs text-gray-600 leading-relaxed italic border-l-4 border-emerald-600"
               >
                 {{ q.passage }}
               </div>
@@ -649,6 +649,13 @@
                     }})
                   </button>
                   <button
+                    @click="downloadCSV"
+                    :disabled="attempts.length === 0"
+                    class="bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <i class="fas fa-file-csv"></i> Download CSV
+                  </button>
+                  <button
                     @click="fetchAttempts"
                     :disabled="loadingAttempts"
                     class="text-xs font-extrabold text-blue-600 hover:text-blue-800 hover:underline disabled:opacity-50"
@@ -719,6 +726,9 @@
                       <td class="p-4">
                         <div class="font-extrabold text-gray-800 uppercase">
                           {{ attempt.fullname }}
+                        </div>
+                        <div class="text-[11px] text-gray-400 font-medium">
+                          +63{{ attempt.contact_number }}
                         </div>
                         <div class="text-[11px] text-gray-400 font-medium">
                           {{ attempt.email }}
@@ -1439,6 +1449,29 @@ const deleteQuestion = async (questionId, itemNum) => {
     console.error("Delete question error:", err);
     showToast("An error occurred while deleting the question.", "error");
   }
+};
+
+const downloadCSV = () => {
+  if (!attempts.value || attempts.value.length === 0) return;
+
+  const headers = ["fullname", "email", "contact_number"];
+  const rows = attempts.value.map((a) => [
+    `"${(a.fullname || "").replace(/"/g, '""')}"`,
+    `"${(a.email || "").replace(/"/g, '""')}"`,
+    `"${(a.contact_number || "").replace(/"/g, '""')}"`,
+  ]);
+
+  const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join(
+    "\n",
+  );
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `examinees_${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
 };
 
 onMounted(() => {
