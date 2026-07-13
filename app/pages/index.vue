@@ -37,9 +37,9 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="font-montserrat">
-    <Header />
     <div class="relative">
-      <HeroCarousel/>
+      <Header/>
+      <HeroCarousel class="-z-10 lg:pt-0 pt-12"/>
       <Shortcuts class="2xl-shadow lg:absolute bottom-0 w-full" />
     </div>
     <div id="main-content" class="lg:relative block z-0">

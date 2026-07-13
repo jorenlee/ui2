@@ -213,9 +213,9 @@ const desktopNav = [
 
 <template>
   <div
-    class=" z-50 w-full font-montserrat border-b-4 border-green-800 transition-all duration-300"
+    class="z-50 w-full font-montserrat transition-all duration-300"
     :class="
-      isScrolled ? 'bg-white/90 backdrop-blur-md shadow-lg fixed' : 'bg-white'
+      isScrolled ? 'bg-green-900/90 backdrop-blur-md shadow-lg fixed' : 'absolute lg:bg-transparent bg-green-700'
     "
   >
     <div class="px-3">
@@ -224,7 +224,7 @@ const desktopNav = [
         <div class="flex items-center gap-4">
           <a href="/" class="flex items-center hover:opacity-90 transition">
             <img
-              src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/lsu-logotype-green.png"
+              src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/lsu-logotype-white.png"
               class="transition-all duration-300"
               :class="isScrolled ? 'w-48' : 'lg:w-60 w-48'"
               alt="La Salle University"
@@ -234,7 +234,7 @@ const desktopNav = [
           <button
             @click="openSearchModal"
             aria-label="Search"
-            class="group flex items-center gap-2 rounded-full bg-green-900 pl-3 px-1.5 py-2 text-white shadow-xl transition hover:bg-green-800"
+            class="group flex items-center gap-2 rounded-full bg-white pl-3 px-1.5 py-2 text-green-900 shadow-xl transition hover:bg-green-800"
           >
             <i class="fa fa-search text-xl"></i>
             <input
@@ -255,7 +255,7 @@ const desktopNav = [
             >
               <a
                 :href="item.href || '#'"
-                class="block whitespace-nowrap px-2 text-sm font-medium text-green-900 transition hover:bg-green-700 hover:text-white"
+                class="block whitespace-nowrap px-2 text-sm font-medium text-white transition hover:bg-green-700 hover:text-white"
                 :class="isScrolled ? 'lg:py-5 py-6' : 'lg:py-7 py-6'"
               >
                 {{ item.label }}
@@ -281,7 +281,7 @@ const desktopNav = [
         <!-- Mobile Toggle -->
         <button
           @click="menuDetails = !menuDetails"
-          class="lg:hidden p-2 text-green-900 transition hover:text-green-700"
+          class="lg:hidden p-2 lg:text-green-900 text-white transition hover:text-green-700"
           aria-label="Toggle menu"
         >
           <i

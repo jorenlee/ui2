@@ -43,9 +43,9 @@ const majorComponents = ref([
 
 <template>
   <div class="font-montserrat">
-    <div class="w-full lg:py-4 z-30">
+    <div class="w-full z-30">
       <div
-        class="grid grid-cols-2 sm:grid-cols-3 bg-white rounded-2xl lg:flex lg:justify-evenly lg:items-center gap-1 sm:gap-2 lg:gap-0.5 text-center border-4 border-gray-50 shadow-xl lg:w-11/12 mx-auto"
+        class="grid grid-cols-2 sm:grid-cols-3 lg:bg-white/90 lg:flex lg:justify-evenly lg:items-center gap-1 sm:gap-2 lg:gap-0.5 text-center border-gray-50 shadow-xl"
       >
         <a
           v-for="(item, index) in majorComponents"
@@ -53,7 +53,7 @@ const majorComponents = ref([
           :href="item.link"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex flex-col lg:flex-row justify-center items-center rounded-md lg:rounded-none py-3 lg:py-2.5 px-2 lg:px-3 hover:bg-gray-100 transition-all duration-200 text-center lg:w-1/5 w-full h-auto shadow-md lg:shadow-none"
+          class="flex flex-col lg:flex-row justify-center items-center rounded-md lg:rounded-none py-3 lg:py-2 px-2 lg:px-3 hover:bg-gray-100 transition-all duration-200 text-center lg:w-1/5 w-full h-auto shadow-md lg:shadow-none text-green-900 hover:text-green-800"
         >
           <!-- IMAGE (handles Canvas special case) -->
           <div v-if="item.image">
@@ -85,7 +85,7 @@ const majorComponents = ref([
             <i
               :class="[
                 item.icon,
-                'text-4xl lasalle-green-text my-auto mx-auto lg:mr-2',
+                'text-4xl  my-auto mx-auto lg:mr-2',
               ]"
             ></i>
           </div>
@@ -93,7 +93,7 @@ const majorComponents = ref([
           <!-- LABEL -->
           <span
             v-if="!item.hideLabel"
-            class="mt-1 lg:mt-0 font-semibold lasalle-green-text uppercase text-sm lg:text-base lg:ml-2 text-center lg:text-left"
+            class="mt-1 lg:mt-0 font-semibold uppercase text-sm lg:text-base lg:ml-2 text-center lg:text-left"
           >
             {{ item.name }}
           </span>
@@ -102,9 +102,3 @@ const majorComponents = ref([
     </div>
   </div>
 </template>
-
-<style scoped>
-.lasalle-green-text {
-  color: #014421;
-}
-</style>
