@@ -263,18 +263,18 @@ const submitAppointmentToGmail = async () => {
 
 <template>
   <div class="bg-gray-50">
-    <Header />
+    <Header class="z-50 absolute"/>
     <div class="">
       <div class="relative">
         <img
-          src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/about.jpg"
+          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/about.jpg"
           class="align-top w-full h-auto lg:object-fill lg:block hidden"
         />
         <img
           src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/enrollment/enrollmentbg-mobile-lower-size.png"
-          class="align-top w-full min-h-40 pt-12 lg:hidden block"
+          class="align-top w-full lg:hidden block"
         />
-        <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
+        <div class="absolute top-1/2 transform -translate-y-1/2 w-full">
           <h1
             class="lg:block hidden font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto"
           >

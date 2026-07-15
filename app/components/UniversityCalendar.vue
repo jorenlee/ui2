@@ -1,9 +1,9 @@
 <template>
-  <div class="p-4 min-h-auto w-full bg-green-900 lg:pt-12 pt-5 lg:pb-10 pb-5">
+  <div class="p-4 min-h-auto w-full lg:pt-12 pt-5 lg:pb-10 pb-5">
     <div class="w-full mx-auto">
       <div class="flex">
         <h2
-          class="lg:text-xl text-lg font-bold text-center mt-2 mb-4 w-full uppercase text-white"
+          class="lg:text-xl text-lg font-bold text-center mt-2 mb-4 w-full uppercase text-green-800"
         >
           University Calendar
         </h2>
@@ -23,7 +23,7 @@
         ></iframe>
       </div>
 
-      <p class="text-gray-100 text-center text-[10px] mt-3 leading-tight">
+      <p class="text-green-900 text-center text-[10px] mt-3 leading-tight">
         Send an email to
         <a href="mailto:chancellor@lsu.edu.ph" class="font-bold"
           >chancellor@lsu.edu.ph</a

@@ -38,10 +38,9 @@ function handleMouseLeave() {
           class="align-top w-full h-36 object-none lg:hidden block"
           alt="Green tones gradient background"
         />
-        <div></div>
-        <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
+        <div class="px-6 absolute top-1/2 transform -translate-y-1/2 w-full">
           <h1
-            class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto"
+            class="font-bold uppercase text-white lg:text-2xl text-lg"
           >
             Administration
             <span class="lg:text-base text-xs lg:mt-5 ml-5"
@@ -49,9 +48,9 @@ function handleMouseLeave() {
             >
           </h1>
         </div>
-        <div class="pt-2.5 pb-3 shadow-lg">
+        <div class="pt-2.5 pb-3 shadow-lg px-6">
           <ul
-            class="flex lasalle-green-text capitalize w-11/12 mx-auto text-xs"
+            class="flex lasalle-green-text capitalize text-xs"
           >
             <li><a href="/" class="mr-1">Home</a></li>
             <li>
