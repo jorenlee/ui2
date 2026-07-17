@@ -8,49 +8,68 @@ const slides = ref([]);
 const currentIndex = ref(0);
 const activeRadio = ref("t-1");
 const slideLimit = ref(7); // change anytime
+const loading = ref(true);
 
 let interval = null;
 
-/* ================= FETCH DATA ================= */
-const data = await $fetch(endpoint.value + "/api/cms/content/list/");
+/* ================= FETCH DATA (client-side only — avoids SSR block) ================= */
+const fetchSlides = async () => {
+  try {
+    let data;
+    try {
+      // Use the fast endpoint: server-side filter to announcements + limit to 15 records
+      data = await $fetch(
+        endpoint.value + "/api/cms/content/fast/?filters=announcements&limit=15"
+      );
+    } catch (fastError) {
+      console.warn("Fast endpoint failed, falling back to list endpoint in Slider:", fastError);
+      const rawData = await $fetch(endpoint.value + "/api/cms/content/list/");
+      const listData = Array.isArray(rawData) ? rawData : [];
+      // Filter for announcements client-side
+      data = listData.filter((j) => {
+        if (!j.filters) return false;
+        return j.filters
+          .toLowerCase()
+          .split(",")
+          .map((f) => f.trim())
+          .includes("announcements");
+      });
+    }
 
-/* ================= FILTER ANNOUNCEMENTS ================= */
-let filtered = data.filter((j) => {
-  if (!j.filters) return false;
-  return j.filters
-    .toLowerCase()
-    .split(",")
-    .map((f) => f.trim())
-    .includes("announcements");
-});
+    /* ================= IMAGE EXTENSION FILTER ================= */
+    let filtered = Array.isArray(data) ? data : [];
+    filtered = filtered.filter((j) => {
+      const file = j.files?.[0]?.url || j.files?.[0];
+      if (!file) return false;
+      return /\.(jpg|jpeg|png)$/i.test(file);
+    });
 
-/* ================= IMAGE EXTENSION FILTER ================= */
-filtered = filtered.filter((j) => {
-  const file = j.files?.[0]?.url || j.files?.[0];
-  if (!file) return false;
-  return /\.(jpg|jpeg|png)$/i.test(file);
-});
+    /* ================= ENSURE SLIDES (CONTINUOUS LOOP) ================= */
+    const baseSlides = [...filtered];
 
-/* ================= ENSURE SLIDES (CONTINUOUS LOOP) ================= */
-const baseSlides = [...filtered];
+    if (baseSlides.length === 0) {
+      slides.value = [];
+    } else {
+      while (filtered.length < slideLimit.value) {
+        filtered = filtered.concat(baseSlides);
+      }
 
-if (baseSlides.length === 0) {
-  slides.value = [];
-} else {
-  while (filtered.length < slideLimit.value) {
-    filtered = filtered.concat(baseSlides);
+      slides.value = filtered.slice(0, slideLimit.value).map((j, index) => ({
+        ...j,
+        radioId: `t-${index + 1}`,
+      }));
+    }
+
+    /* ================= INITIAL ACTIVE ================= */
+    if (slides.value.length) {
+      activeRadio.value = slides.value[0].radioId;
+    }
+  } catch (err) {
+    console.error("Slider fetch error:", err);
+  } finally {
+    loading.value = false;
   }
-
-  slides.value = filtered.slice(0, slideLimit.value).map((j, index) => ({
-    ...j,
-    radioId: `t-${index + 1}`,
-  }));
-}
-
-/* ================= INITIAL ACTIVE ================= */
-if (slides.value.length) {
-  activeRadio.value = slides.value[0].radioId;
-}
+};
 
 /* ================= AUTO SLIDE ================= */
 const nextSlide = () => {
@@ -112,7 +131,8 @@ const onTouchEnd = (e) => {
   startAutoSlide();
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchSlides();
   startAutoSlide();
 
   // inject dynamic CSS

@@ -174,8 +174,14 @@ const visibleNews = computed(() => {
 
 onMounted(async () => {
   try {
-    const res = await $fetch(endpoint.value + "/api/cms/content/list/");
-    info.value = Array.isArray(res) ? res : [];
+    try {
+      const res = await $fetch(endpoint.value + "/api/cms/content/fast/?filters=published&exclude=bot,programs,organizational chart,college,oer,human resource center,human resource,hero carousel&limit=30");
+      info.value = Array.isArray(res) ? res : [];
+    } catch (fastError) {
+      console.warn("Fast endpoint failed, falling back to list endpoint:", fastError);
+      const res = await $fetch(endpoint.value + "/api/cms/content/list/");
+      info.value = Array.isArray(res) ? res : [];
+    }
   } catch (error) {
     console.error("Error fetching list:", error);
     errorMsg.value = "Failed to load news & updates.";
@@ -285,6 +291,7 @@ onMounted(async () => {
                   :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
                   class="w-full lg:h-[320px] h-auto object-cover transition-transform duration-300 hover:scale-110"
                   alt="News thumbnail"
+                  loading="lazy"
                 />
                 <div
                   v-else
@@ -294,6 +301,7 @@ onMounted(async () => {
                     src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png"
                     class="w-full lg:h-[320px] h-[100px] object-cover"
                     alt="Default thumbnail"
+                    loading="lazy"
                   />
                 </div>
 

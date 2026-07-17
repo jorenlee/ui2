@@ -288,8 +288,14 @@ watch(visibleNews, (items) => {
 
 onMounted(async () => {
   try {
-    const res = await $fetch(endpoint.value + "/api/cms/content/list/");
-    info.value = Array.isArray(res) ? res : [];
+    try {
+      const res = await $fetch(endpoint.value + "/api/cms/content/fast/?filters=published,hero carousel&limit=20");
+      info.value = Array.isArray(res) ? res : [];
+    } catch (fastError) {
+      console.warn("Fast endpoint failed, falling back to list endpoint:", fastError);
+      const res = await $fetch(endpoint.value + "/api/cms/content/list/");
+      info.value = Array.isArray(res) ? res : [];
+    }
   } catch (error) {
     console.error("Error fetching list:", error);
     errorMsg.value = "Failed to load hero carousel content.";
@@ -367,7 +373,7 @@ onMounted(async () => {
               autoplay
               muted
               loop
-              preload="metadata"
+              preload="none"
             ></video>
 
             <!-- YouTube: chrome already stripped via URL params above -->

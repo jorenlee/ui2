@@ -1,6 +1,6 @@
 <script setup>
-const display = ref("desktop");
 import { ref, onMounted, onBeforeUnmount } from "vue";
+
 const showScrollButton = ref(false);
 
 const handleScroll = () => {
@@ -14,19 +14,7 @@ const scrollToTop = () => {
   });
 };
 
-const scrollDown = () => {
-  const target = document.getElementById("news-and-updates-title");
-  if (target) {
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-};
-
 onMounted(() => {
-  nextTick(() => {
-    if (window.innerWidth < 800) {
-      display.value = "mobile";
-    }
-  });
   window.addEventListener("scroll", handleScroll);
 });
 
