@@ -68,7 +68,11 @@ const performSearch = () => {
           item.title?.toLowerCase().includes(query) ||
           item.authors?.toLowerCase().includes(query) ||
           item.descriptions?.toLowerCase().includes(query) ||
-          item.filters?.toLowerCase().includes(query)
+          item.filters?.toLowerCase().includes(query) ||
+          item.content_id?.toLowerCase().includes(query) ||
+          item.date?.toLowerCase().includes(query) ||
+          (Array.isArray(item.links) && item.links.some((link) => link?.toLowerCase().includes(query))) ||
+          (Array.isArray(item.files) && item.files.some((file) => file?.toLowerCase().includes(query)))
         );
       })
       .slice(0, 20); // Limit to 20 results

@@ -384,19 +384,24 @@ const filteredRequests = computed(() => {
         requestorName,
         requestorEmail,
         centerOfficeRoom,
+        (r.ticket_id || "").toString().toLowerCase(),
+        (r.issue_concern_request_item_type || "").toString().toLowerCase(),
+        (r.issue_concern_request_details || "").toString().toLowerCase(),
+        (r.owner_type || "").toString().toLowerCase(),
+        (r.client_role || "").toString().toLowerCase(),
+        (r.buy_me_coffee || "").toString().toLowerCase(),
+        (r.evaluation_feedback_client_star_rating || "").toString().toLowerCase(),
+        (r.evaluation_feedback_client_comment || "").toString().toLowerCase(),
+        (r.logs || [])
+          .map((log) => `${log.status} ${log.remarks} ${log.assigned_technician_name || ""}`)
+          .join(" ")
+          .toLowerCase(),
       ];
 
       // For multi-word search: ALL words must be found (AND logic)
-      // Each word must match as a complete word (word boundary matching)
+      // Each word is matched as a partial substring
       return searchWords.every((word) => {
-        // Escape special regex characters in the search word
-        const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        // Create regex with word boundaries (\b) for exact word matching
-        // This ensures "jason" matches "jason" but not "jasonsmith"
-        const wordRegex = new RegExp(`\\b${escapedWord}\\b`, "i");
-
-        // Check if the word matches in ANY of the searchable fields
-        return searchableFields.some((field) => wordRegex.test(field));
+        return searchableFields.some((field) => field.includes(word));
       });
     });
   }
@@ -1348,6 +1353,78 @@ const itemStatusClass = (status) => {
   }
 };
 
+// Bulk Delete State & Functions
+const selectedRequests = ref([]);
+const isDeleting = ref(false);
+
+const allSelected = computed(() => {
+  return (
+    paginatedRequests.value.length > 0 &&
+    paginatedRequests.value.every((r) => selectedRequests.value.includes(r.id))
+  );
+});
+
+const toggleSelectAll = () => {
+  if (allSelected.value) {
+    // Deselect only the ones currently visible on this page
+    const visibleIds = paginatedRequests.value.map((r) => r.id);
+    selectedRequests.value = selectedRequests.value.filter((id) => !visibleIds.includes(id));
+  } else {
+    // Select currently visible ones on this page
+    const visibleIds = paginatedRequests.value.map((r) => r.id);
+    const newSelected = [...selectedRequests.value];
+    visibleIds.forEach((id) => {
+      if (!newSelected.includes(id)) {
+        newSelected.push(id);
+      }
+    });
+    selectedRequests.value = newSelected;
+  }
+};
+
+// Clear selections when active tab, search filter, status filter, technician filter, or date filter changes
+watch(
+  [activeTab, debouncedSearchFilter, statusFilter, technicianFilter, dateFilter],
+  () => {
+    selectedRequests.value = [];
+  }
+);
+
+const deleteSelectedRequests = async () => {
+  if (selectedRequests.value.length === 0) return;
+
+  const confirmMsg = `Are you sure you want to delete ${selectedRequests.value.length} selected ticket(s)? This action cannot be undone.`;
+  if (!confirm(confirmMsg)) return;
+
+  isDeleting.value = true;
+  try {
+    const res = await $fetch(endpoint.value + "/api/cits/request-ticket/bulk-delete/", {
+      method: "POST",
+      body: {
+        ids: selectedRequests.value,
+      },
+    });
+
+    if (res.status === "deleted") {
+      showToaster(
+        `✅ Successfully deleted ${res.count} ticket(s).`,
+        "success"
+      );
+      // Remove deleted tickets from local requests array
+      requests.value = requests.value.filter(
+        (r) => !selectedRequests.value.includes(r.id)
+      );
+      selectedRequests.value = [];
+    } else {
+      showToaster("❌ Failed to delete tickets.", "error");
+    }
+  } catch (err) {
+    console.error("Failed to bulk delete tickets:", err);
+    showToaster("❌ Failed to bulk delete tickets. Please try again.", "error");
+  } finally {
+    isDeleting.value = false;
+  }
+};
 
 </script>
 
@@ -1421,7 +1498,7 @@ const itemStatusClass = (status) => {
             <input
               v-model="searchFilter"
               type="text"
-              placeholder="Search personnel..."
+              placeholder="Search anything..."
               class="w-full pl-9 pr-3 py-2 text-xs lg:text-sm border rounded-md focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all outline-none"
               :class="
                 darkMode
@@ -1440,6 +1517,30 @@ const itemStatusClass = (status) => {
           >
             <i class="fa fa-plus text-xs"></i>
             <span>Walk-in Ticket</span>
+          </button>
+        </div>
+
+        <!-- Delete Selected Button -->
+        <div v-if="selectedRequests.length > 0" class="w-full lg:w-auto flex-shrink-0 order-2">
+          <button
+            class="w-full lg:w-auto bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 whitespace-nowrap text-xs lg:text-sm font-medium shadow-sm hover:shadow transition-all flex items-center justify-center gap-2"
+            @click="deleteSelectedRequests"
+            :disabled="isDeleting"
+          >
+            <i class="fa" :class="isDeleting ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+            <span>Delete Selected ({{ selectedRequests.length }})</span>
+          </button>
+        </div>
+
+        <!-- Select All (Mobile-friendly toggle) -->
+        <div class="w-full lg:w-auto flex-shrink-0 order-2 lg:hidden">
+          <button
+            class="w-full lg:w-auto px-4 py-2 rounded-md text-xs font-medium border transition-all flex items-center justify-center gap-2"
+            :class="darkMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'"
+            @click="toggleSelectAll"
+          >
+            <i class="fa" :class="allSelected ? 'fa-check-square' : 'fa-square'"></i>
+            <span>{{ allSelected ? 'Deselect All' : 'Select All' }}</span>
           </button>
         </div>
 
@@ -1540,7 +1641,7 @@ const itemStatusClass = (status) => {
       >
         <i class="fa fa-info-circle mr-1.5 text-blue-500"></i>
         <span
-          >Searching with exact word matching{{
+          >Searching all fields{{
             searchFilter.trim().split(/\s+/).length > 1
               ? " (ALL words must match)"
               : ""
@@ -1557,6 +1658,17 @@ const itemStatusClass = (status) => {
           : 'bg-gradient-to-r from-green-700 to-green-600'
       "
     >
+      <!-- Select All Checkbox Column -->
+      <div
+        class="lg:w-1/12 w-full min-w-[50px] flex items-center justify-center px-3 py-2 text-white border-r border-green-500"
+      >
+        <input
+          type="checkbox"
+          :checked="allSelected"
+          @change="toggleSelectAll"
+          class="w-4 h-4 cursor-pointer accent-green-600 rounded bg-white"
+        />
+      </div>
       <div
         @click="sortBy('issue_concern_request_category_type')"
         class="lg:w-6/12 w-full min-w-[150px] flex items-center px-3 py-2 text-white font-bold text-xs border-r border-green-500 cursor-pointer hover:bg-green-800 transition-colors"
@@ -1734,6 +1846,19 @@ const itemStatusClass = (status) => {
           ]"
           @click="openModal(item)"
         >
+          <!-- Select Checkbox Column -->
+          <div
+            class="lg:w-1/12 w-full min-w-[50px] flex items-center justify-center px-3 py-2 border-r"
+            :class="darkMode ? 'border-gray-700' : 'border-gray-200'"
+            @click.stop
+          >
+            <input
+              type="checkbox"
+              :value="item.id"
+              v-model="selectedRequests"
+              class="w-4 h-4 cursor-pointer accent-green-600 rounded"
+            />
+          </div>
           <div
             class="lg:w-6/12 w-full min-w-[150px] px-3 text-left text-xs"
             :class="darkMode ? 'text-gray-200' : 'text-gray-900'"
@@ -1831,12 +1956,20 @@ const itemStatusClass = (status) => {
         >
           <!-- Status Badge with Mood Icon -->
           <div class="flex items-center justify-between">
-            <span
-              class="inline-flex px-2.5 py-1 rounded text-xs font-semibold"
-              :class="ticketStatusClass(latestStatus(item)?.status)"
-            >
-              {{ latestStatus(item)?.status || "-" }}
-            </span>
+            <div class="flex items-center gap-2" @click.stop>
+              <input
+                type="checkbox"
+                :value="item.id"
+                v-model="selectedRequests"
+                class="w-4 h-4 cursor-pointer accent-green-600 rounded"
+              />
+              <span
+                class="inline-flex px-2.5 py-1 rounded text-xs font-semibold"
+                :class="ticketStatusClass(latestStatus(item)?.status)"
+              >
+                {{ latestStatus(item)?.status || "-" }}
+              </span>
+            </div>
             <div
               class="w-8 h-8 rounded-full flex items-center justify-center shadow-sm flex-shrink-0"
               :class="getMoodIcon(item).bgClass"
