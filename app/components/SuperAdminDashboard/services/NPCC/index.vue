@@ -1356,6 +1356,7 @@ const itemStatusClass = (status) => {
 // Bulk Delete State & Functions
 const selectedRequests = ref([]);
 const isDeleting = ref(false);
+const showDeleteConfirm = ref(false);
 
 const allSelected = computed(() => {
   return (
@@ -1390,11 +1391,19 @@ watch(
   }
 );
 
-const deleteSelectedRequests = async () => {
+// Show the toast confirmation instead of browser confirm()
+const promptDeleteConfirm = () => {
   if (selectedRequests.value.length === 0) return;
+  showDeleteConfirm.value = true;
+};
 
-  const confirmMsg = `Are you sure you want to delete ${selectedRequests.value.length} selected ticket(s)? This action cannot be undone.`;
-  if (!confirm(confirmMsg)) return;
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+};
+
+const confirmDelete = async () => {
+  showDeleteConfirm.value = false;
+  if (selectedRequests.value.length === 0) return;
 
   isDeleting.value = true;
   try {
@@ -1524,7 +1533,7 @@ const deleteSelectedRequests = async () => {
         <div v-if="selectedRequests.length > 0" class="w-full lg:w-auto flex-shrink-0 order-2">
           <button
             class="w-full lg:w-auto bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 whitespace-nowrap text-xs lg:text-sm font-medium shadow-sm hover:shadow transition-all flex items-center justify-center gap-2"
-            @click="deleteSelectedRequests"
+            @click="promptDeleteConfirm"
             :disabled="isDeleting"
           >
             <i class="fa" :class="isDeleting ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
@@ -1798,6 +1807,44 @@ const deleteSelectedRequests = async () => {
           }"
         ></i>
         <span>{{ toaster.message }}</span>
+      </div>
+    </transition>
+
+    <!-- Delete Confirmation Toast -->
+    <transition name="slide-up">
+      <div
+        v-if="showDeleteConfirm"
+        class="fixed top-1/3 left-1/2 -translate-x-1/2 z-50 w-full max-w-sm mx-auto"
+      >
+        <div class="bg-white border-2 border-red-200 rounded-2xl shadow-2xl p-5 flex flex-col gap-3">
+          <div class="flex items-start gap-3">
+            <div class="flex-shrink-0 w-9 h-9 rounded-full bg-red-100 flex items-center justify-center">
+              <i class="fa fa-exclamation-triangle text-red-500 text-base"></i>
+            </div>
+            <div>
+              <p class="font-bold text-gray-800 text-sm">Delete Confirmation</p>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Are you sure you want to delete
+                <span class="font-semibold text-red-600">{{ selectedRequests.length }} ticket(s)</span>?
+                This action <span class="font-semibold">cannot be undone</span>.
+              </p>
+            </div>
+          </div>
+          <div class="flex gap-2 justify-end">
+            <button
+              @click="cancelDelete"
+              class="px-4 py-2 rounded-lg text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+            >
+              <i class="fa fa-times mr-1"></i> Cancel
+            </button>
+            <button
+              @click="confirmDelete"
+              class="px-4 py-2 rounded-lg text-xs font-semibold bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm"
+            >
+              <i class="fa fa-trash mr-1"></i> Yes, Delete
+            </button>
+          </div>
+        </div>
       </div>
     </transition>
 
@@ -3331,5 +3378,15 @@ const deleteSelectedRequests = async () => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.25s ease;
+}
+.slide-up-enter-from,
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
 }
 </style>
