@@ -319,11 +319,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="w-full relative">
+  <div class="w-full relative bg-black">
     <!-- Loading State -->
-    <div v-if="loading" class="flex flex-col items-center justify-center py-20">
+    <div v-if="loading" class="flex flex-col items-center justify-center py-32 bg-black text-white">
       <div class="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
-      <p class="mt-6 text-green-700 font-semibold text-lg animate-pulse">
+      <p class="mt-6 text-green-400 font-semibold text-lg animate-pulse">
         Loading Hero Carousel...
       </p>
     </div>

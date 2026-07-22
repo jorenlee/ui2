@@ -219,7 +219,7 @@ const desktopNav = [
   <div
     class="z-50 w-full font-montserrat transition-all duration-300"
     :class="
-      isScrolled ? 'bg-green-900/90 backdrop-blur-md shadow-lg fixed' : 'absolute lg:bg-transparent bg-green-700'
+      isScrolled ? 'bg-green-900/90 backdrop-blur-md shadow-lg fixed top-0 left-0' : 'absolute top-0 left-0 lg:bg-transparent bg-green-700'
     "
   >
     <div class="px-3">
@@ -285,12 +285,12 @@ const desktopNav = [
         <!-- Mobile Toggle -->
         <button
           @click="menuDetails = !menuDetails"
-          class="lg:hidden p-2 lg:text-green-900 text-white transition hover:text-green-700"
+          class="lg:hidden p-2 lg:text-green-900 text-white transition hover:text-green-200"
           aria-label="Toggle menu"
         >
           <i
-            class="fa text-3xl"
-            :class="menuDetails ? 'fa-times' : 'fa-bars'"
+            class="fas text-3xl"
+            :class="menuDetails ? 'fa-xmark' : 'fa-bars'"
           ></i>
         </button>
       </div>

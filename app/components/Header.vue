@@ -9,7 +9,7 @@ const searchQuery = ref("");
 const searchResults = ref([]);
 const searchLoading = ref(false);
 const allContent = ref([]);
-const openMobile = ref(true);
+const openMobile = ref(null);
 
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
@@ -219,7 +219,7 @@ const desktopNav = [
   <div
     class=" z-50 w-full font-montserrat border-b-4 border-green-800 transition-all duration-300"
     :class="
-      isScrolled ? 'bg-white/90 backdrop-blur-md shadow-lg fixed' : 'bg-white'
+      isScrolled ? 'bg-white backdrop-blur-md shadow-lg fixed' : ''
     "
   >
     <div class="px-3">
@@ -289,8 +289,8 @@ const desktopNav = [
           aria-label="Toggle menu"
         >
           <i
-            class="fa text-3xl"
-            :class="menuDetails ? 'fa-times' : 'fa-bars'"
+            class="fas text-3xl"
+            :class="menuDetails ? 'fa-xmark' : 'fa-bars'"
           ></i>
         </button>
       </div>
@@ -317,7 +317,11 @@ const desktopNav = [
               @click="toggleMobile(item.label)"
               class="flex w-full items-center justify-between bg-gray-100 px-5 py-4 font-bold text-green-950"
             >
-              {{ item.label }}
+              <span>{{ item.label }}</span>
+              <i
+                class="fas text-xs transition-transform duration-200"
+                :class="openMobile === item.label ? 'fa-chevron-up' : 'fa-chevron-down'"
+              ></i>
             </button>
 
             <a
@@ -330,6 +334,7 @@ const desktopNav = [
 
             <ul
               v-if="item.children"
+              v-show="openMobile === item.label"
               class="bg-[#f7faf7]"
             >
               <li v-for="child in item.children" :key="child.label">
