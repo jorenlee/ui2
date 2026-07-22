@@ -768,7 +768,7 @@ const handleFileSelect = async (e) => {
 };
 
 
-// Reflow text: collapse hard line-breaks into spaces, keep real paragraph breaks
+// Reflow text: ensure blank lines (double newlines) between paragraphs/lines for proper FB caption spacing
 const formatDescriptionText = () => {
   const text = content.value.descriptions || "";
   if (!text.trim()) {
@@ -777,11 +777,9 @@ const formatDescriptionText = () => {
   }
 
   content.value.descriptions = text
-    .replace(/\r\n/g, '\n')
-    .replace(/\n{2,}/g, '\u0000')   // mark real paragraph breaks
-    .replace(/\n/g, ' ')            // collapse single line-wraps into spaces
-    .replace(/\u0000/g, '\n\n')     // restore paragraph breaks
-    .replace(/[ \t]{2,}/g, ' ')     // clean up double spaces
+    .replace(/\r\n/g, '\n')          // normalize Windows line endings
+    .replace(/\n+/g, '\n\n')         // ensure blank line (double newline) between lines for proper spacing
+    .replace(/[ \t]{2,}/g, ' ')      // clean up double spaces within a line
     .trim();
 
   displayToast("✨ Text formatted for readability", "success", 1500);
