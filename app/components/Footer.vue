@@ -100,7 +100,7 @@ const quickLinks = [
                   Quick Links
                 </h3>
 
-                <ul class="grid grid-cols-3 lg:grid-cols-6 gap-4 text-xs">
+                <ul class="grid lg:grid-cols-6 w-fit lg:mx-0 mx-auto gap-4 text-xs">
                   <li v-for="(link, index) in quickLinks" :key="index">
                     <a
                       :href="link.href"

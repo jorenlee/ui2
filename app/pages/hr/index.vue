@@ -100,7 +100,7 @@ onBeforeUnmount(() => {
     <div>
       <div class="relative">
         <img
-          src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/about.jpg"
+          src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/about.jpg"
           class="align-top w-full h-auto lg:object-fill lg:block hidden"
         />
         <img

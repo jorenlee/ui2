@@ -82,7 +82,7 @@
     <div class="">
       <div class="">
         <div class="relative">
-          <img src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/about.jpg" class="align-top w-full h-auto lg:object-fill lg:block hidden" />
+          <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/about.jpg" class="align-top w-full h-auto lg:object-fill lg:block hidden" />
           <img src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png" class="align-top w-full h-36 object-none lg:hidden block" />
           <div class="
               pt-10
