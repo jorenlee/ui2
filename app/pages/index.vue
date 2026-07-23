@@ -27,8 +27,7 @@ onBeforeUnmount(() => {
   <div class="font-montserrat">
     <div class="relative">
       <LandingHeader class="hidden lg:block"/>
-      <!-- <Header class="lg:hidden"/> -->
-      <HeroCarousel class="-z-10"/>
+      <HeroCarousel class="-z-10 lg:pt-0 pt-12"/>
       <Shortcuts class="2xl-shadow lg:absolute bottom-0 w-full" />
     </div>
     <div id="main-content" class="lg:relative block z-0">
