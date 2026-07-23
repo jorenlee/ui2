@@ -77,23 +77,34 @@ const hasVideoContent = (item) => {
   return false;
 };
 
-// Matches by extension, so it works whether `str` is a bare filename
-// (e.g. "clip.mp4") or a full URL to an .mp4 hosted anywhere
-// (e.g. "https://.../optimized_something.mp4").
+// Matches by extension, handling string filenames, object file structures, or full video URLs
 const isVideoFile = (str) => {
-  const clean = str.split("?")[0].split("#")[0].toLowerCase();
+  if (!str) return false;
+  let target = str;
+  if (typeof str === "object" && str !== null) {
+    target = str.url || str.name || str.path || "";
+  }
+  if (typeof target !== "string") return false;
+  const clean = target.split("?")[0].split("#")[0].toLowerCase();
   return videoExtensions.some((ext) => clean.includes(ext));
 };
 
-// Returns the uploaded video filename for an item, if any
+// Returns the uploaded video filename or object for an item, if any
 const getVideoFile = (item) => {
-  if (!item.files) return null;
+  if (!item?.files || !Array.isArray(item.files)) return null;
   return item.files.find((file) => isVideoFile(file)) || null;
 };
 
-// Builds the direct URL for an uploaded video file
-const getVideoFileUrl = (filename) => {
-  return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${filename}`;
+// Builds the direct URL for an uploaded video file or link
+const getVideoFileUrl = (file) => {
+  let name = file;
+  if (typeof file === "object" && file !== null) {
+    name = file.url || file.name || file.path || "";
+  }
+  if (typeof name === "string" && (name.startsWith("http://") || name.startsWith("https://"))) {
+    return name;
+  }
+  return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${name}`;
 };
 
 // Returns the first video link for an item, if any: YouTube, Facebook
@@ -373,7 +384,8 @@ onMounted(async () => {
               autoplay
               muted
               loop
-              preload="none"
+              preload="auto"
+              @canplay="(e) => e.target.play()"
             ></video>
 
             <!-- YouTube: chrome already stripped via URL params above -->

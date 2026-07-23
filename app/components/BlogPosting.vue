@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, nextTick, computed } from "vue";
+import { ref, onMounted, onBeforeUnmount, nextTick, computed } from "vue";
 import _ from "lodash";
 import moment from "moment";
 
@@ -14,6 +14,8 @@ const endpoint = ref(config.public.apiUrl);
 // Carousel state
 const currentSlide = ref(0);
 const itemsPerSlide = ref(5); // Default for desktop
+const isHovered = ref(false);
+let autoScrollTimer = null;
 
 const highlightedNews = computed(() => {
   const excludedFilters = [
@@ -110,12 +112,10 @@ const getSdgBadges = (item) => {
 
 // Helper function to check if item has video content
 const hasVideoContent = (item) => {
-  // Check for video files
   if (item.files && item.files.some((file) => isVideoFile(file))) {
     return true;
   }
 
-  // Check for video links
   if (
     item.links &&
     item.links.some(
@@ -130,7 +130,6 @@ const hasVideoContent = (item) => {
 
   return false;
 };
-
 
 // Helper function to check if file is video
 const isVideoFile = (filename) => {
@@ -157,12 +156,33 @@ const canGoNext = computed(() => currentSlide.value < totalSlides.value - 1);
 const nextSlide = () => {
   if (canGoNext.value) {
     currentSlide.value++;
+  } else {
+    currentSlide.value = 0; // Seamless loop to start
   }
 };
 
 const prevSlide = () => {
   if (canGoPrev.value) {
     currentSlide.value--;
+  } else {
+    currentSlide.value = Math.max(0, totalSlides.value - 1); // Seamless loop to end
+  }
+};
+
+// Auto scroll timer (3 seconds interval)
+const startAutoScroll = () => {
+  stopAutoScroll();
+  autoScrollTimer = setInterval(() => {
+    if (!isHovered.value && totalSlides.value > 1) {
+      nextSlide();
+    }
+  }, 3000);
+};
+
+const stopAutoScroll = () => {
+  if (autoScrollTimer) {
+    clearInterval(autoScrollTimer);
+    autoScrollTimer = null;
   }
 };
 
@@ -171,6 +191,56 @@ const visibleNews = computed(() => {
   const end = start + itemsPerSlide.value;
   return highlightedNews.value.slice(start, end);
 });
+
+// Safe image URL resolver
+const getImageUrl = (item) => {
+  if (!item?.files || !item.files.length) {
+    return "https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png";
+  }
+  let file = item.files[0];
+  if (typeof file === "object" && file !== null) {
+    file = file.url || file.name || file.path || "";
+  }
+  if (typeof file === "string" && file.trim()) {
+    if (file.startsWith("http://") || file.startsWith("https://")) {
+      return file;
+    }
+    return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${file.trim()}`;
+  }
+  return "https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png";
+};
+
+const handleImageError = (e) => {
+  if (e.target.src !== "https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png") {
+    e.target.src = "https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png";
+  }
+};
+
+// Preconnect CDN domain for faster image connections
+useHead({
+  link: [
+    { rel: 'preconnect', href: 'https://lsu-media-styles.sgp1.digitaloceanspaces.com' },
+    { rel: 'dns-prefetch', href: 'https://lsu-media-styles.sgp1.digitaloceanspaces.com' }
+  ]
+});
+
+// Background image preloader for instant slide transitions
+const preloadImages = () => {
+  if (!highlightedNews.value || !highlightedNews.value.length) return;
+
+  // Preload default image
+  const defaultImg = new Image();
+  defaultImg.src = "https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png";
+
+  // Preload all news thumbnails into browser HTTP cache
+  highlightedNews.value.forEach((item) => {
+    const url = getImageUrl(item);
+    if (url) {
+      const img = new Image();
+      img.src = url;
+    }
+  });
+};
 
 onMounted(async () => {
   try {
@@ -182,6 +252,9 @@ onMounted(async () => {
       const res = await $fetch(endpoint.value + "/api/cms/content/list/");
       info.value = Array.isArray(res) ? res : [];
     }
+
+    // Start background image preloader as soon as data arrives
+    preloadImages();
   } catch (error) {
     console.error("Error fetching list:", error);
     errorMsg.value = "Failed to load news & updates.";
@@ -197,6 +270,12 @@ onMounted(async () => {
   } else {
     itemsPerSlide.value = 5; // Show 5 items on desktop
   }
+
+  startAutoScroll();
+});
+
+onBeforeUnmount(() => {
+  stopAutoScroll();
 });
 </script>
 
@@ -206,24 +285,27 @@ onMounted(async () => {
     <div
       class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
     ></div>
-    <!-- style="
-        background-image: url('https://lsu-media-styles.sgp1.digitaloceanspaces.com/481668685_1139543031299171_4009940609016510904_n.jpg');
-      " -->
-    <!-- <div class="absolute inset-0 bg-[#fffafadf]"></div> -->
-    <!-- Dark overlay -->
 
     <!-- Content -->
     <div class="relative z-10 mx-auto">
-      <div class="flex justify-between">
-        <div class="lg:mb-8 mb-3 w-fit mx-auto">
-          <!-- Title -->
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:mb-8 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
           <h2
             id="news-and-updates-title"
-            class="text-left text-green-800 lg:text-3xl text-xl font-bold tracking-wide drop-shadow-lg"
+            class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight"
           >
-            News and Updates
+            News & <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-800 to-teal-700">Updates</span>
           </h2>
+          <p class="text-slate-500 text-xs sm:text-sm mt-1">Discover recent campus announcements, achievements, and stories.</p>
         </div>
+
+        <a
+          href="/news-updates"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs sm:text-sm rounded-xl border border-emerald-200/80 transition-colors shrink-0"
+        >
+          <span>Explore All Articles</span>
+          <i class="fas fa-arrow-right text-xs"></i>
+        </a>
       </div>
 
       <!-- Loading State -->
@@ -253,9 +335,12 @@ onMounted(async () => {
       <div
         v-else-if="highlightedNews.length"
         class="px-2"
+        @mouseenter="isHovered = true"
+        @mouseleave="isHovered = false"
       >
         <!-- Left Arrow -->
-        <button
+        <div class="lg:flex hidden">
+          <button
           v-if="canGoPrev"
           @click="prevSlide"
           class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 left-0"
@@ -273,6 +358,7 @@ onMounted(async () => {
         >
           <i class="fas fa-chevron-right text-xl"></i>
         </button>
+        </div>
 
         <!-- News Grid -->
         <div
@@ -285,25 +371,16 @@ onMounted(async () => {
           >
             <a :href="'news-updates/' + j.id" class="block">
               <!-- Image Section -->
-              <div class="relative overflow-hidden">
+              <div class="relative overflow-hidden bg-slate-100 min-h-[160px] lg:min-h-[320px]">
                 <img
-                  v-if="j.files && j.files.length > 0"
-                  :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-media-styles/cms/data/uploads/${j.files[0]}`"
+                  :src="getImageUrl(j)"
                   class="w-full lg:h-[320px] h-auto object-cover transition-transform duration-300 hover:scale-110"
                   alt="News thumbnail"
-                  loading="lazy"
+                  loading="eager"
+                  fetchpriority="high"
+                  decoding="async"
+                  @error="handleImageError"
                 />
-                <div
-                  v-else
-                  class="w-full lg:h-[320px] h-[100px] bg-gray-200 flex items-center justify-center"
-                >
-                  <img
-                    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU-Default.png"
-                    class="w-full lg:h-[320px] h-[100px] object-cover"
-                    alt="Default thumbnail"
-                    loading="lazy"
-                  />
-                </div>
 
                 <!-- Play button overlay for videos -->
                 <div

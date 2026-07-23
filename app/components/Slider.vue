@@ -229,7 +229,7 @@ watch(dynamicCSS, (newCSS) => {
 
 <template>
   <div class="relative">
-    <div class="slider bg-[#031d03]">
+    <div class="slider pt-12">
       <!-- RADIO INPUTS -->
       <input
         v-for="j in slides"
@@ -275,7 +275,7 @@ watch(dynamicCSS, (newCSS) => {
     </div>
 
     <!-- WAVES -->
-    <div class="absolute bottom-0 w-full">
+    <!-- <div class="absolute bottom-0 w-full">
       <svg
         class="waves"
         xmlns="http://www.w3.org/2000/svg"
@@ -311,7 +311,7 @@ watch(dynamicCSS, (newCSS) => {
           <use xlink:href="#gentle-wave" x="48" y="7" fill="#fff" />
         </g>
       </svg>
-    </div>
+    </div> -->
   </div>
 </template>
 
