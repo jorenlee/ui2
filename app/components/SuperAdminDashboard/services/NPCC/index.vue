@@ -1435,6 +1435,371 @@ const confirmDelete = async () => {
   }
 };
 
+// CSV Export Report State & Functions
+const showExportModal = ref(false);
+const exportScope = ref("filtered"); // 'filtered', 'selected', 'all'
+const exportOnlyRated = ref(false);
+const minRatingFilter = ref(0);
+
+const availableExportColumns = ref([
+  { key: "ticket_id", label: "Ticket ID", checked: true },
+  { key: "created_at", label: "Date Created", checked: true },
+  { key: "requestor_fullname", label: "Requestor Name", checked: true },
+  { key: "requestor_lsu_email", label: "Requestor LSU Email", checked: true },
+  { key: "category_type", label: "Category Type", checked: true },
+  { key: "item_type", label: "Item Type / Specific Concern", checked: true },
+  { key: "location", label: "Center / Office / Room", checked: true },
+  { key: "assigned_technicians", label: "Assigned Personnel", checked: true },
+  { key: "status", label: "Current Status", checked: true },
+  { key: "star_rating", label: "Client Star Rating ⭐", checked: true },
+  { key: "client_comment", label: "Client Feedback Comment 💬", checked: true },
+  { key: "issue_details", label: "Issue Details", checked: false },
+  { key: "owner_type", label: "Owner Type", checked: false },
+  { key: "client_role", label: "Client Role", checked: false },
+  { key: "buy_me_coffee", label: "Buy Me Coffee", checked: false },
+]);
+
+const exportRatingStats = computed(() => {
+  const rated = requests.value.filter(
+    (r) => r.evaluation_feedback_client_star_rating && parseInt(r.evaluation_feedback_client_star_rating) > 0
+  );
+  const totalRated = rated.length;
+  const sumRating = rated.reduce(
+    (sum, r) => sum + parseInt(r.evaluation_feedback_client_star_rating || 0),
+    0
+  );
+  const avgRating = totalRated > 0 ? (sumRating / totalRated).toFixed(1) : "0.0";
+  return { totalRated, avgRating };
+});
+
+const openExportModal = () => {
+  showExportModal.value = true;
+};
+
+const selectAllExportColumns = (select) => {
+  availableExportColumns.value.forEach((col) => {
+    col.checked = select;
+  });
+};
+
+const downloadCSVReport = () => {
+  let sourceData = [];
+  if (exportScope.value === "selected" && selectedRequests.value.length > 0) {
+    sourceData = requests.value.filter((r) => selectedRequests.value.includes(r.id));
+  } else if (exportScope.value === "all") {
+    sourceData = [...requests.value];
+  } else {
+    sourceData = [...filteredRequests.value];
+  }
+
+  if (exportOnlyRated.value) {
+    sourceData = sourceData.filter(
+      (r) => r.evaluation_feedback_client_star_rating && parseInt(r.evaluation_feedback_client_star_rating) > 0
+    );
+  }
+  if (minRatingFilter.value > 0) {
+    sourceData = sourceData.filter(
+      (r) => parseInt(r.evaluation_feedback_client_star_rating || 0) >= minRatingFilter.value
+    );
+  }
+
+  if (sourceData.length === 0) {
+    showToaster("⚠️ No ticket records match your selected export filters.", "warning");
+    return;
+  }
+
+  const selectedCols = availableExportColumns.value.filter((c) => c.checked);
+  if (selectedCols.length === 0) {
+    showToaster("⚠️ Please select at least one column to include in the report.", "warning");
+    return;
+  }
+
+  const formatField = (val) => {
+    if (val === null || val === undefined) return '""';
+    const str = String(val).replace(/"/g, '""');
+    return `"${str}"`;
+  };
+
+  const headers = selectedCols.map((c) => formatField(c.label)).join(",");
+  const rows = sourceData.map((item) => {
+    return selectedCols
+      .map((col) => {
+        let val = "";
+        switch (col.key) {
+          case "ticket_id":
+            val = item.ticket_id || item.id || "";
+            break;
+          case "created_at":
+            val = item.created_at ? moment(item.created_at).format("YYYY-MM-DD HH:mm:ss") : "";
+            break;
+          case "requestor_fullname":
+            val = item.requestor_fullname || "";
+            break;
+          case "requestor_lsu_email":
+            val = item.requestor_lsu_email || "";
+            break;
+          case "category_type":
+            val = item.issue_concern_request_category_type || "";
+            break;
+          case "item_type":
+            val = item.issue_concern_request_item_type || "";
+            break;
+          case "location":
+            val = item.issue_concern_request_center_office_room || "";
+            break;
+          case "assigned_technicians":
+            val = item.technicians_assigned?.map((t) => t.name).join("; ") || "";
+            break;
+          case "status":
+            val = latestStatus(item)?.status || item.current_status || "";
+            break;
+          case "star_rating":
+            val = item.evaluation_feedback_client_star_rating ? `${item.evaluation_feedback_client_star_rating} Stars` : "Unrated";
+            break;
+          case "client_comment":
+            val = item.evaluation_feedback_client_comment || "";
+            break;
+          case "issue_details":
+            val = item.issue_concern_request_details || "";
+            break;
+          case "owner_type":
+            val = item.owner_type || "";
+            break;
+          case "client_role":
+            val = item.client_role || "";
+            break;
+          case "buy_me_coffee":
+            val = item.buy_me_coffee || "";
+            break;
+          default:
+            val = "";
+        }
+        return formatField(val);
+      })
+      .join(",");
+  });
+
+  const csvContent = "\uFEFF" + [headers, ...rows].join("\r\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.setAttribute("href", url);
+  const dateStr = moment().format("YYYY-MM-DD");
+  link.setAttribute("download", `NPCC_TechSupport_Report_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  showExportModal.value = false;
+  showToaster(`✅ Exported ${sourceData.length} records to CSV report!`, "success");
+};
+
+// PDF Report State & Functions
+const pdfReportData = ref([]);
+const pdfReportColumns = ref([]);
+
+const getReportValue = (item, key) => {
+  switch (key) {
+    case "ticket_id":
+      return item.ticket_id || item.id || "";
+    case "created_at":
+      return item.created_at ? moment(item.created_at).format("YYYY-MM-DD HH:mm") : "";
+    case "requestor_fullname":
+      return item.requestor_fullname || "";
+    case "requestor_lsu_email":
+      return item.requestor_lsu_email || "";
+    case "category_type":
+      return item.issue_concern_request_category_type || "";
+    case "item_type":
+      return item.issue_concern_request_item_type || "";
+    case "location":
+      return item.issue_concern_request_center_office_room || "";
+    case "assigned_technicians":
+      return item.technicians_assigned?.map((t) => t.name).join(", ") || "—";
+    case "status":
+      return latestStatus(item)?.status || item.current_status || "—";
+    case "star_rating":
+      return item.evaluation_feedback_client_star_rating ? `${item.evaluation_feedback_client_star_rating} ★` : "Unrated";
+    case "client_comment":
+      return item.evaluation_feedback_client_comment || "—";
+    case "issue_details":
+      return item.issue_concern_request_details || "—";
+    case "owner_type":
+      return item.owner_type || "—";
+    case "client_role":
+      return item.client_role || "—";
+    case "buy_me_coffee":
+      return item.buy_me_coffee || "—";
+    default:
+      return "—";
+  }
+};
+
+const generatePDFReport = () => {
+  let sourceData = [];
+  if (exportScope.value === "selected" && selectedRequests.value.length > 0) {
+    sourceData = requests.value.filter((r) => selectedRequests.value.includes(r.id));
+  } else if (exportScope.value === "all") {
+    sourceData = [...requests.value];
+  } else {
+    sourceData = [...filteredRequests.value];
+  }
+
+  if (exportOnlyRated.value) {
+    sourceData = sourceData.filter(
+      (r) => r.evaluation_feedback_client_star_rating && parseInt(r.evaluation_feedback_client_star_rating) > 0
+    );
+  }
+  if (minRatingFilter.value > 0) {
+    sourceData = sourceData.filter(
+      (r) => parseInt(r.evaluation_feedback_client_star_rating || 0) >= minRatingFilter.value
+    );
+  }
+
+  if (sourceData.length === 0) {
+    showToaster("⚠️ No ticket records match your selected export filters.", "warning");
+    return;
+  }
+
+  const selectedCols = availableExportColumns.value.filter((c) => c.checked);
+  if (selectedCols.length === 0) {
+    showToaster("⚠️ Please select at least one column to include in the PDF report.", "warning");
+    return;
+  }
+
+  const printWindow = window.open("", "_blank", "width=1150,height=850");
+  if (!printWindow) {
+    showToaster("⚠️ Popup blocked. Please allow popups to generate PDF report.", "warning");
+    return;
+  }
+
+  const dateStr = moment().format("MMMM DD, YYYY hh:mm A");
+  const userEmail = user.value?.email || "NPCC Admin";
+
+  const tableHeadersHtml = selectedCols
+    .map((col) => `<th style="border: 1px solid #15803d; padding: 7px 9px; background-color: #15803d; color: #ffffff; text-align: left; font-size: 10px; font-weight: 800; text-transform: uppercase;">${col.label}</th>`)
+    .join("");
+
+  const tableRowsHtml = sourceData
+    .map((item, idx) => {
+      const rowBg = idx % 2 === 0 ? "#ffffff" : "#f8fafc";
+      const cellsHtml = selectedCols
+        .map((col) => {
+          const val = getReportValue(item, col.key);
+          const isRating = col.key === "star_rating";
+          const cellStyle = isRating ? 'font-weight: 800; color: #d97706;' : '';
+          return `<td style="border: 1px solid #cbd5e1; padding: 6px 9px; vertical-align: top; font-size: 10px; ${cellStyle}">${val}</td>`;
+        })
+        .join("");
+      return `<tr style="background-color: ${rowBg};">${cellsHtml}</tr>`;
+    })
+    .join("");
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>NPCC Tech Support PDF Report - ${moment().format("YYYY-MM-DD")}</title>
+        <style>
+          @page { size: A4 landscape; margin: 10mm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 15px; color: #0f172a; background: #ffffff; }
+          .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 3px solid #15803d; padding-bottom: 12px; margin-bottom: 15px; }
+          .header-left { display: flex; align-items: center; gap: 14px; }
+          .logo { height: 50px; width: auto; }
+          .title { margin: 0; font-size: 18px; font-weight: 900; color: #166534; text-transform: uppercase; letter-spacing: -0.5px; }
+          .subtitle { margin: 2px 0 0 0; font-size: 12px; font-weight: 700; color: #334155; }
+          .subtext { margin: 2px 0 0 0; font-size: 10px; color: #64748b; }
+          .header-right { text-align: right; font-size: 10px; }
+          
+          .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+          .kpi-card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; text-align: center; }
+          .kpi-card.green { background-color: #f0fdf4; border-color: #bbf7d0; }
+          .kpi-card.amber { background-color: #fffbeb; border-color: #fde68a; }
+          .kpi-card.blue { background-color: #eff6ff; border-color: #bfdbfe; }
+          .kpi-card.purple { background-color: #faf5ff; border-color: #e9d5ff; }
+          .kpi-label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #64748b; display: block; }
+          .kpi-value { font-size: 16px; font-weight: 900; margin-top: 2px; display: block; }
+
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10px; table-layout: auto; }
+          th, td { border: 1px solid #cbd5e1; word-wrap: break-word; }
+
+          .footer { margin-top: 25px; padding-top: 12px; border-top: 1px solid #cbd5e1; display: flex; justify-content: space-between; font-size: 10px; }
+          .sig-box { width: 220px; }
+          .sig-line { border-bottom: 1px solid #64748b; margin-top: 30px; margin-bottom: 4px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="header-left">
+            <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/lsu-corporate-logo-green.png" class="logo" alt="LSU Logo" />
+            <div>
+              <h1 class="title">La Salle University</h1>
+              <div class="subtitle">Network & Performance Computing Center (NPCC)</div>
+              <div class="subtext">Official Technical Support & IT Services Report Documentation</div>
+            </div>
+          </div>
+          <div class="header-right">
+            <div><strong>Date Generated:</strong> ${dateStr}</div>
+            <div style="margin-top: 3px;"><strong>Generated By:</strong> ${userEmail}</div>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card green">
+            <span class="kpi-label" style="color: #166534;">Total Tickets</span>
+            <span class="kpi-value" style="color: #15803d;">${sourceData.length}</span>
+          </div>
+          <div class="kpi-card amber">
+            <span class="kpi-label" style="color: #92400e;">Avg Client Rating</span>
+            <span class="kpi-value" style="color: #d97706;">${exportRatingStats.value.avgRating} ★</span>
+          </div>
+          <div class="kpi-card blue">
+            <span class="kpi-label" style="color: #1e40af;">Rated Tickets</span>
+            <span class="kpi-value" style="color: #1d4ed8;">${exportRatingStats.value.totalRated}</span>
+          </div>
+          <div class="kpi-card purple">
+            <span class="kpi-label" style="color: #6b21a8;">Report Scope</span>
+            <span class="kpi-value" style="color: #7e22ce; text-transform: capitalize;">${exportScope.value}</span>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>${tableHeadersHtml}</tr>
+          </thead>
+          <tbody>
+            ${tableRowsHtml}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <div class="sig-box">
+            <strong>Prepared & Verified By:</strong>
+            <div class="sig-line"></div>
+            <div>NPCC Technical Officer</div>
+          </div>
+          <div class="sig-box" style="text-align: right;">
+            <strong>Approved By:</strong>
+            <div class="sig-line"></div>
+            <div>Head of IT & Computing Services</div>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+
+  setTimeout(() => {
+    printWindow.print();
+  }, 400);
+
+  showExportModal.value = false;
+  showToaster(`✅ Generated PDF Report with ${sourceData.length} records!`, "success");
+};
 </script>
 
 <template>
@@ -1516,6 +1881,18 @@ const confirmDelete = async () => {
               "
             />
           </div>
+        </div>
+
+        <!-- CSV Export Report Button -->
+        <div class="w-full lg:w-auto flex-shrink-0 order-2 lg:order-2">
+          <button
+            class="w-full lg:w-auto bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 whitespace-nowrap text-xs lg:text-sm font-medium shadow-sm hover:shadow transition-all flex items-center justify-center gap-2"
+            @click="openExportModal"
+            title="Download CSV Report with custom column checkboxes and rating highlights"
+          >
+            <i class="fa fa-file-csv text-sm"></i>
+            <span>Export CSV Report</span>
+          </button>
         </div>
 
         <!-- Walk-in Ticket Button -->
@@ -3367,6 +3744,212 @@ const confirmDelete = async () => {
         </div>
       </div>
     </div>
+
+    <!-- ================= CSV EXPORT REPORT MODAL ================= -->
+    <div
+      v-if="showExportModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+    >
+      <div
+        class="relative w-full max-w-2xl rounded-2xl shadow-2xl p-6 transition-all"
+        :class="darkMode ? 'bg-gray-800 text-gray-100 border border-gray-700' : 'bg-white text-gray-800 border border-gray-200'"
+      >
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between border-b pb-4" :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center text-lg font-bold">
+              <i class="fa fa-file-csv"></i>
+            </div>
+            <div>
+              <h3 class="text-base font-bold">CSV Report & Documentation Export</h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Configure report scope, rating highlights, and columns</p>
+            </div>
+          </div>
+          <button
+            @click="showExportModal = false"
+            class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          >
+            <i class="fa fa-times text-gray-500"></i>
+          </button>
+        </div>
+
+        <!-- Rating Highlights Banner -->
+        <div
+          class="mt-4 p-4 rounded-xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+          :class="darkMode ? 'bg-gray-900/80 border-gray-700' : 'bg-amber-50 border-amber-200'"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-amber-400/20 text-amber-500 flex items-center justify-center text-xl">
+              <i class="fa fa-star"></i>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-gray-800 dark:text-gray-200">Feedback Rating Highlights</p>
+              <p class="text-xs text-gray-600 dark:text-gray-400">
+                Average Client Rating: <span class="font-extrabold text-amber-500">{{ exportRatingStats.avgRating }} ★</span>
+                <span class="ml-1 text-[11px]">({{ exportRatingStats.totalRated }} rated tickets)</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-medium">
+              <input
+                type="checkbox"
+                v-model="exportOnlyRated"
+                class="w-4 h-4 accent-amber-500 rounded"
+              />
+              <span>Export Rated Tickets Only</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="mt-4 space-y-4 text-xs">
+          <!-- 1. Report Scope -->
+          <div>
+            <label class="block font-bold mb-1.5 uppercase text-[11px] tracking-wider text-gray-500">
+              1. Select Data Scope
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <label
+                class="p-2.5 rounded-xl border cursor-pointer flex items-center gap-2 transition"
+                :class="[
+                  exportScope === 'filtered'
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 font-bold text-blue-600 dark:text-blue-400'
+                    : darkMode ? 'border-gray-700 bg-gray-900/40' : 'border-gray-200 bg-gray-50',
+                ]"
+              >
+                <input type="radio" value="filtered" v-model="exportScope" class="accent-blue-600" />
+                <span>Filtered Results ({{ filteredRequests.length }})</span>
+              </label>
+
+              <label
+                class="p-2.5 rounded-xl border cursor-pointer flex items-center gap-2 transition"
+                :class="[
+                  exportScope === 'selected'
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 font-bold text-blue-600 dark:text-blue-400'
+                    : darkMode ? 'border-gray-700 bg-gray-900/40' : 'border-gray-200 bg-gray-50',
+                  selectedRequests.length === 0 ? 'opacity-50 cursor-not-allowed' : '',
+                ]"
+              >
+                <input
+                  type="radio"
+                  value="selected"
+                  v-model="exportScope"
+                  :disabled="selectedRequests.length === 0"
+                  class="accent-blue-600"
+                />
+                <span>Selected Items ({{ selectedRequests.length }})</span>
+              </label>
+
+              <label
+                class="p-2.5 rounded-xl border cursor-pointer flex items-center gap-2 transition"
+                :class="[
+                  exportScope === 'all'
+                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 font-bold text-blue-600 dark:text-blue-400'
+                    : darkMode ? 'border-gray-700 bg-gray-900/40' : 'border-gray-200 bg-gray-50',
+                ]"
+              >
+                <input type="radio" value="all" v-model="exportScope" class="accent-blue-600" />
+                <span>All Records ({{ requests.length }})</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 2. Minimum Rating Filter Option -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-bold mb-1 uppercase text-[11px] tracking-wider text-gray-500">
+                Filter by Minimum Rating ⭐
+              </label>
+              <select
+                v-model="minRatingFilter"
+                class="w-full px-3 py-2 rounded-xl border text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                :class="darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'"
+              >
+                <option :value="0">All Ratings (No rating filter)</option>
+                <option :value="5">⭐⭐⭐⭐⭐ 5 Stars Only</option>
+                <option :value="4">⭐⭐⭐⭐ 4 Stars and Above</option>
+                <option :value="3">⭐⭐⭐ 3 Stars and Above</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 3. Column Selection Checkboxes -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="font-bold uppercase text-[11px] tracking-wider text-gray-500">
+                2. Select Columns to Include in CSV Report
+              </label>
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  @click="selectAllExportColumns(true)"
+                  class="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                >
+                  Select All
+                </button>
+                <span class="text-gray-400">|</span>
+                <button
+                  type="button"
+                  @click="selectAllExportColumns(false)"
+                  class="text-[11px] font-bold text-gray-500 hover:underline"
+                >
+                  Deselect All
+                </button>
+              </div>
+            </div>
+
+            <div
+              class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 rounded-xl border max-h-48 overflow-y-auto"
+              :class="darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-slate-50 border-gray-200'"
+            >
+              <label
+                v-for="col in availableExportColumns"
+                :key="col.key"
+                class="flex items-center gap-2 p-1.5 rounded hover:bg-gray-200/50 dark:hover:bg-gray-800 cursor-pointer text-xs"
+              >
+                <input
+                  type="checkbox"
+                  v-model="col.checked"
+                  class="w-4 h-4 accent-blue-600 rounded"
+                />
+                <span :class="col.checked ? 'font-semibold' : 'text-gray-500'">{{ col.label }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div class="flex items-center justify-end gap-3 mt-6 pt-4 border-t" :class="darkMode ? 'border-gray-700' : 'border-gray-200'">
+          <button
+            type="button"
+            @click="showExportModal = false"
+            class="px-4 py-2.5 rounded-xl font-semibold text-xs border transition"
+            :class="darkMode ? 'bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            @click="downloadCSVReport"
+            class="px-4 py-2.5 rounded-xl font-bold text-xs bg-blue-600 hover:bg-blue-700 text-white shadow-md transition flex items-center gap-1.5"
+          >
+            <i class="fa fa-file-csv"></i>
+            <span>CSV Report</span>
+          </button>
+
+          <button
+            type="button"
+            @click="generatePDFReport"
+            class="px-4 py-2.5 rounded-xl font-bold text-xs bg-red-600 hover:bg-red-700 text-white shadow-md transition flex items-center gap-1.5"
+          >
+            <i class="fa fa-file-pdf"></i>
+            <span>Generate PDF Report</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -3388,5 +3971,20 @@ const confirmDelete = async () => {
 .slide-up-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(20px);
+}
+
+@media print {
+  body > *:not(#npcc-printable-pdf-report) {
+    display: none !important;
+  }
+  #npcc-printable-pdf-report {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white !important;
+    color: black !important;
+  }
 }
 </style>
