@@ -303,6 +303,7 @@ const authorsList = ref([
 ]);
 
 const selectedAuthors = ref([]);
+const creatorEmail = ref("");
 
 const updateAuthorFilters = () => {
   const existing = content.value.filters || "";
@@ -511,6 +512,7 @@ watch(() => props.editData, (newVal) => {
       selectedPageFilters.value = [];
       selectedContentTypes.value = [];
     }
+    creatorEmail.value = newVal.personnel || newVal.logs?.[0]?.personnel_email || user.value?.email || "";
   } else {
     // Inline reset (cannot call resetForm() here — it's declared later as a const)
     content.value = {
@@ -525,6 +527,7 @@ watch(() => props.editData, (newVal) => {
       is_approved: false,
       is_published: false,
     };
+    creatorEmail.value = user.value?.email || "";
     selectedFiles.value = [];
     selectedSDGs.value = [];
     selectedAuthors.value = [];
@@ -959,6 +962,24 @@ const submitContent = async () => {
       ? `${endpoint.value}/api/cms/content/${props.editData.id}/` 
       : `${endpoint.value}/api/cms/content/create/`;
 
+    // Set personnel and update logs with creatorEmail
+    content.value.personnel = creatorEmail.value;
+    if (!content.value.logs || !Array.isArray(content.value.logs) || content.value.logs.length === 0) {
+      content.value.logs = [
+        {
+          personnel_fullname: user.value?.name || "",
+          personnel_designation: creatorEmail.value,
+          personnel_email: creatorEmail.value,
+          remarks_title: "N/A",
+          remarks_description: "N/A",
+          timestamp: moment().valueOf(),
+        },
+      ];
+    } else {
+      content.value.logs[0].personnel_email = creatorEmail.value;
+      content.value.logs[0].personnel_designation = creatorEmail.value;
+    }
+
     const response = await $fetch(url, {
       method: method,
       body: {
@@ -1005,6 +1026,7 @@ const resetForm = () => {
     is_approved: false,
     is_published: false,
   };
+  creatorEmail.value = user.value?.email || "";
   selectedFiles.value = [];
   selectedSDGs.value = [];
   selectedAuthors.value = [];
@@ -1118,6 +1140,23 @@ const displayToast = (message, type = "success", duration = 3000) => {
                   ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
                 placeholder="e.g., John Doe, Jane Smith"
+              />
+            </div>
+
+            <!-- CONTENT CREATOR / AUTHOR EMAIL -->
+            <div>
+              <label class="block text-sm font-semibold mb-2"
+                :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+                >Content Creator Email (Author Email)</label
+              >
+              <input
+                v-model="creatorEmail"
+                type="email"
+                class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-green-500 focus:border-transparent transition"
+                :class="darkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
+                  : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
+                placeholder="e.g., jason.yap@lsu.edu.ph"
               />
             </div>
 

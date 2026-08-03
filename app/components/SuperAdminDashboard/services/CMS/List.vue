@@ -849,7 +849,7 @@ const getSdgBadges = (item) => {
                               j.authors || '—' }}</p>
                             <p class="truncate opacity-50 text-[10px]"
                               :class="darkMode ? 'text-gray-400' : 'text-gray-500'">{{ j.logs?.[0]?.personnel_email ||
-                                '' }}</p>
+                                j.personnel || '' }}</p>
                           </td>
 
                           <!-- Title -->
@@ -937,7 +937,8 @@ const getSdgBadges = (item) => {
                           <p class="text-xs mb-1" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">
                             ID: {{ j.content_id }}
                           </p>
-                          <p class="text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">{{ j.authors }}</p>
+                          <p class="text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">{{ j.authors || '—' }}</p>
+                          <p class="text-[10px] opacity-60" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">{{ j.logs?.[0]?.personnel_email || j.personnel || '' }}</p>
                         </div>
                         <button v-if="canEdit(j)" @click.stop="openEditModal(j)"
                           class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs flex-shrink-0">
