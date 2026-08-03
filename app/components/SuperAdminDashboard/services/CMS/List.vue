@@ -249,6 +249,81 @@ const handleImageError = (event, filename) => {
 
 
 
+const localRolePermissions = ref([]);
+
+const effectiveRolePermissions = computed(() => {
+  if (props.rolePermissions && props.rolePermissions.length > 0) {
+    return props.rolePermissions;
+  }
+  return localRolePermissions.value;
+});
+
+const fetchLocalRolePermissions = async () => {
+  if (props.rolePermissions && props.rolePermissions.length > 0) return;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/cits/role-permissions/list/`);
+    if (Array.isArray(res)) {
+      localRolePermissions.value = res;
+    }
+  } catch (err) {
+    console.error("Error fetching role permissions in List.vue:", err);
+  }
+};
+
+const userRoles = computed(() => {
+  if (!user.value?.email) return [];
+  const found = effectiveRolePermissions.value.find(
+    (r) => r.email?.toLowerCase() === user.value.email?.toLowerCase()
+  );
+  return found?.role_filter_permissions || [];
+});
+
+const isSuperAdmin = computed(() => {
+  return (
+    user.value?.role === "Super Admin" ||
+    user.value?.is_superadmin ||
+    userRoles.value.includes("Super Admin")
+  );
+});
+
+const canEdit = (item) => {
+  if (!item) return false;
+  if (isSuperAdmin.value) return true;
+  if (!user.value?.email) return false;
+
+  const userEmail = user.value.email.toLowerCase().trim();
+  const userName = user.value.name ? user.value.name.toLowerCase().trim() : "";
+
+  // Check item.personnel field if present
+  if (item.personnel && item.personnel.toLowerCase().trim() === userEmail) {
+    return true;
+  }
+
+  // Check item.logs array for personnel_email, personnel_designation, or personnel_fullname
+  if (Array.isArray(item.logs) && item.logs.length > 0) {
+    const isLogAuthor = item.logs.some((log) => {
+      const logEmail = log.personnel_email?.toLowerCase().trim();
+      const logDesig = log.personnel_designation?.toLowerCase().trim();
+      const logName = log.personnel_fullname?.toLowerCase().trim();
+      return (
+        (logEmail && logEmail === userEmail) ||
+        (logDesig && logDesig === userEmail) ||
+        (userName && logName && logName === userName)
+      );
+    });
+    if (isLogAuthor) return true;
+  }
+
+  // Check item.authors field if it contains user's email or name
+  if (item.authors) {
+    const authorsLower = item.authors.toLowerCase();
+    if (authorsLower.includes(userEmail)) return true;
+    if (userName && authorsLower.includes(userName)) return true;
+  }
+
+  return false;
+};
+
 const fetchList = async (silent = false) => {
   if (!silent) loading.value = true;
   try {
@@ -263,6 +338,7 @@ const fetchList = async (silent = false) => {
 };
 
 onMounted(async () => {
+  await fetchLocalRolePermissions();
   await fetchList();
 });
 
@@ -275,6 +351,10 @@ const handleFormSubmitted = async () => {
 };
 
 const openEditModal = async (item) => {
+  if (!canEdit(item)) {
+    showToast("Only the author who inputed data or Super Admin can edit this content.", "error");
+    return;
+  }
   editLoading.value = true;
 
   try {
@@ -380,23 +460,25 @@ const selectedForDelete = ref([]);
 
 const selectAll = computed({
   get: () => {
-    if (paginatedInfo.value && paginatedInfo.value.length > 0) {
-      return paginatedInfo.value.every((item) => selectedForDelete.value.includes(item.id));
+    const editableItems = paginatedInfo.value.filter((item) => canEdit(item));
+    if (editableItems.length > 0) {
+      return editableItems.every((item) => selectedForDelete.value.includes(item.id));
     }
     return false;
   },
   set: (val) => {
+    const editableItems = paginatedInfo.value.filter((item) => canEdit(item));
     if (val) {
       const newSelections = [...selectedForDelete.value];
-      paginatedInfo.value.forEach((item) => {
+      editableItems.forEach((item) => {
         if (!newSelections.includes(item.id)) {
           newSelections.push(item.id);
         }
       });
       selectedForDelete.value = newSelections;
     } else {
-      const currentIds = paginatedInfo.value.map(item => item.id);
-      selectedForDelete.value = selectedForDelete.value.filter(id => !currentIds.includes(id));
+      const currentIds = editableItems.map((item) => item.id);
+      selectedForDelete.value = selectedForDelete.value.filter((id) => !currentIds.includes(id));
     }
   }
 });
@@ -588,7 +670,7 @@ const getSdgBadges = (item) => {
                       </select>
 
                       <!-- Mobile Edit Button -->
-                      <button v-if="selectedItem && display === 'mobile'" @click="showEditModal = !showEditModal"
+                      <button v-if="selectedItem && display === 'mobile' && canEdit(selectedItem)" @click="showEditModal = !showEditModal"
                         class="lg:hidden bg-green-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap">
                         {{ showEditModal ? "Close" : "Edit" }}
                       </button>
@@ -699,8 +781,8 @@ const getSdgBadges = (item) => {
                           ]">
                           <!-- Checkbox -->
                           <td class="px-2 py-2 text-center align-middle">
-                            <input type="checkbox" :value="j.id" v-model="selectedForDelete" @click.stop
-                              class="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer" />
+                            <input type="checkbox" :value="j.id" v-model="selectedForDelete" :disabled="!canEdit(j)" @click.stop
+                              class="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed" />
                           </td>
 
                           <!-- Status -->
@@ -794,11 +876,14 @@ const getSdgBadges = (item) => {
 
                           <!-- Actions -->
                           <td class="px-1 py-2 align-middle text-center">
-                            <button @click.stop="openEditModal(j)"
+                            <button v-if="canEdit(j)" @click.stop="openEditModal(j)"
                               class="bg-yellow-500 hover:bg-yellow-400 active:bg-yellow-600 text-white w-8 h-8 rounded-lg transition-colors flex items-center justify-center mx-auto shadow-sm"
                               title="Edit">
                               <i class="fa fa-edit text-sm"></i>
                             </button>
+                            <span v-else class="text-gray-400 text-xs flex items-center justify-center opacity-40 cursor-not-allowed" title="Only the author or Super Admin can edit">
+                              <i class="fa fa-lock text-sm"></i>
+                            </span>
                           </td>
                         </tr>
                       </tbody>
@@ -816,7 +901,7 @@ const getSdgBadges = (item) => {
                         : ''
                     ]" @click="
                       selectedItem = j;
-                    openEditModal(j);
+                      if (canEdit(j)) openEditModal(j);
                     ">
                       <div class="flex justify-between items-start mb-2 gap-3">
                         <div class="flex-shrink-0 w-20 h-16">
@@ -854,10 +939,13 @@ const getSdgBadges = (item) => {
                           </p>
                           <p class="text-xs" :class="darkMode ? 'text-gray-400' : 'text-gray-600'">{{ j.authors }}</p>
                         </div>
-                        <button @click.stop="openEditModal(j)"
+                        <button v-if="canEdit(j)" @click.stop="openEditModal(j)"
                           class="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded text-xs flex-shrink-0">
                           <i class="fa fa-edit"></i>
                         </button>
+                        <span v-else class="text-gray-400 text-xs px-2 py-1 flex-shrink-0 opacity-40" title="Only the author or Super Admin can edit">
+                          <i class="fa fa-lock"></i>
+                        </span>
                       </div>
                       <div v-if="j.descriptions" class="text-xs whitespace-pre-wrap line-clamp-3"
                         :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
