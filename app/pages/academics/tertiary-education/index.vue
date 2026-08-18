@@ -46,6 +46,19 @@ const isBachelorProgram = (item) => {
   return hasBachelorTitle || (hasProgramFilter && hasAbbrParentheses);
 };
 
+const getCollegeVmgSlug = (college) => {
+  if (college.vmgItem && (college.vmgItem.id || college.vmgItem.content_id)) {
+    return `/academics/tertiary-education/${college.vmgItem.id || college.vmgItem.content_id}`;
+  }
+  if (college.abbr) {
+    return `/academics/tertiary-education/${college.abbr.toLowerCase()}`;
+  }
+  if (college.link) {
+    return `/academics/tertiary-education/${college.link}`;
+  }
+  return `/academics/tertiary-education`;
+};
+
 const fetchCMSPrograms = async () => {
   try {
     const res = await $fetch(endpoint.value + "/api/cms/content/list/").catch(() => null);
@@ -60,7 +73,7 @@ const fetchCMSPrograms = async () => {
                 const cAbbr = (college.abbr || "").toLowerCase();
                 if (!cAbbr) return;
 
-                // Find CMS list items corresponding to this college and filter ONLY Bachelor programs
+                // 1. Find CMS list items corresponding to this college and filter ONLY Bachelor programs
                 const cmsItems = res.filter((item) => {
                   if (!item) return false;
                   const filters = (item.filters || item.filter || "").toLowerCase();
@@ -87,6 +100,47 @@ const fetchCMSPrograms = async () => {
                     };
                   });
                 }
+
+                // 2. Find College VMG / College Info item from CMS for this college (e.g., CCSEA Vision Mission Goal)
+                const vmgItem = res.find((item) => {
+                  if (!item) return false;
+                  const filters = (item.filters || item.filter || "").toLowerCase();
+                  const title = (item.title || "").toLowerCase();
+                  const desc = (item.descriptions || item.description || "").toLowerCase();
+
+                  const matchesCollege =
+                    filters.includes(cAbbr) ||
+                    title.includes(cAbbr) ||
+                    desc.includes(cAbbr) ||
+                    (college.title && title.includes(college.title.toLowerCase()));
+
+                  const isVmgKeyword =
+                    filters.includes("vision") ||
+                    filters.includes("mission") ||
+                    filters.includes("goal") ||
+                    filters.includes("college") ||
+                    title.includes("vision") ||
+                    title.includes("mission") ||
+                    title.includes("goal") ||
+                    title.includes("vmg") ||
+                    desc.includes("vision") ||
+                    desc.includes("mission") ||
+                    desc.includes("goal");
+
+                  const isNotBachelor = !isBachelorProgram(item);
+
+                  return matchesCollege && (isVmgKeyword || isNotBachelor);
+                });
+
+                if (vmgItem) {
+                  college.vmgItem = {
+                    id: vmgItem.id || vmgItem.content_id,
+                    title: vmgItem.title || `${college.abbr} Vision Mission Goal`,
+                    description: vmgItem.descriptions || vmgItem.description || "",
+                    filters: vmgItem.filters || "",
+                    cmsData: vmgItem,
+                  };
+                }
               });
             }
           });
@@ -95,7 +149,7 @@ const fetchCMSPrograms = async () => {
       tertiary.value = cloned;
     }
   } catch (error) {
-    console.error("Error fetching CMS content list for CCSEA:", error);
+    console.error("Error fetching CMS content list for colleges:", error);
   }
 };
 
@@ -215,6 +269,38 @@ onMounted(async () => {
 
                   <!-- Card Body -->
                   <div v-if="a.active" class="border-t border-gray-100 bg-gray-50 px-5 py-4">
+                    <!-- College Level Info & VMG Link -->
+                    <div class="mb-3.5 pb-3 border-b border-gray-200">
+                      <NuxtLink
+                        :to="getCollegeVmgSlug(a)"
+                        class="flex items-center justify-between p-3 bg-green-900/5 hover:bg-green-900/10 border border-green-900/20 rounded-lg text-green-900 transition-all group no-underline shadow-sm"
+                      >
+                        <div class="flex items-center gap-3 min-w-0">
+                          <div class="w-8 h-8 rounded-md bg-green-900 text-white flex items-center justify-center text-xs shrink-0 shadow-sm">
+                            <i class="fas fa-bullseye"></i>
+                          </div>
+                          <div class="min-w-0">
+                            <div class="text-xs font-extrabold uppercase tracking-wide group-hover:text-green-950 flex items-center gap-2 truncate">
+                              <span class="truncate">{{ a.vmgItem?.title || `${a.abbr} Vision, Mission & Goals` }}</span>
+                              <span class="text-[0.6rem] bg-green-100 text-green-900 font-mono px-1.5 py-0.5 rounded border border-green-200 shrink-0">College Info</span>
+                            </div>
+                            <div class="text-[0.7rem] text-gray-600 truncate">
+                              View Vision, Mission, Goals & Objectives for {{ a.title }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-xs font-bold text-green-900 shrink-0 group-hover:translate-x-0.5 transition-transform ml-2">
+                          <span class="hidden sm:inline">View VMG</span>
+                          <i class="fas fa-chevron-right text-[0.65rem]"></i>
+                        </div>
+                      </NuxtLink>
+                    </div>
+
+                    <!-- Degree Programs List -->
+                    <div class="text-[0.65rem] font-bold tracking-[0.15em] text-gray-500 uppercase mb-2">
+                      DEGREE PROGRAMS
+                    </div>
+
                     <ul class="list-none m-0 p-0 pl-2 border-l-2 border-gray-200">
                       <li v-for="(p, l) in a.programs" :key="l"
                         class="flex items-baseline gap-2 py-1 border-b border-dashed border-gray-200 last:border-b-0 group">

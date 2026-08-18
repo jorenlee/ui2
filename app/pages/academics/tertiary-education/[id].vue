@@ -49,12 +49,16 @@ const formattedDate = computed(() => {
   return moment(item.value.date).format("MMMM D, YYYY");
 });
 
-// Program Abbreviation Extractor
+// Program / College Abbreviation Extractor
 const programAbbr = computed(() => {
   if (!item.value) return "";
   if (item.value.abbr) return item.value.abbr;
+  if (item.value.collegeAbbr) return item.value.collegeAbbr;
   const match = (item.value.title || "").match(/\(([A-Z0-9-]+)\)/i);
-  return match ? match[1] : "";
+  if (match) return match[1];
+  const firstWord = (item.value.title || "").split(" ")[0];
+  if (firstWord && firstWord === firstWord.toUpperCase() && firstWord.length <= 6) return firstWord;
+  return "";
 });
 
 // Program Clean Title (without parentheses abbr)
@@ -63,21 +67,72 @@ const programCleanTitle = computed(() => {
   return item.value.title.replace(/\s*\([^)]*\)/g, "").trim();
 });
 
+// SDG Colors Mapping
+const sdgColors = {
+  1: "#e5243b", 2: "#dda63a", 3: "#4c9f38", 4: "#c5192d", 5: "#ff3a21",
+  6: "#26bde2", 7: "#fcc30b", 8: "#a21942", 9: "#fd6925", 10: "#dd1367",
+  11: "#fd9d24", 12: "#bf8b2e", 13: "#3f7e44", 14: "#0a97d9", 15: "#56c02b",
+  16: "#00689d", 17: "#19486a",
+};
+
+const sdgBadges = computed(() => {
+  if (!item.value?.filters) return [];
+  const filters = item.value.filters.toLowerCase();
+  const badges = [];
+  for (let i = 1; i <= 17; i++) {
+    const patterns = [
+      `\\bsdg${i}\\b`, `\\bsdg ${i}\\b`, `\\bsdg-${i}\\b`, `\\bsdg_${i}\\b`,
+      `\\bgoal ${i}\\b`, `\\bgoal${i}\\b`, `\\bsdg${i.toString().padStart(2, "0")}\\b`,
+    ];
+    if (patterns.some((pattern) => new RegExp(pattern, "i").test(filters))) {
+      badges.push({ number: i, color: sdgColors[i] || "#14532d" });
+    }
+  }
+  return badges;
+});
+
+// Check if content represents a College VMG or College Info item
+const isCollegeContent = computed(() => {
+  if (!item.value) return false;
+  if (item.value.isCollege) return true;
+  const title = (item.value.title || "").toLowerCase();
+  const filters = (item.value.filters || "").toLowerCase();
+  return (
+    title.includes("college") ||
+    title.includes("vision") ||
+    title.includes("mission") ||
+    title.includes("vmg") ||
+    filters.includes("college") ||
+    filters.includes("vision") ||
+    filters.includes("mission")
+  );
+});
+
 // Section Parser
 const extractListItems = (text) => {
   if (!text) return null;
-  const regex = /(\d+[\.\)]\s+[\s\S]+?)(?=\d+[\.\)]\s+|$)/g;
-  const matches = text.match(regex);
-  if (matches && matches.length > 1) {
-    return matches.map((m) => m.replace(/^\d+[\.\)]\s*/, "").trim());
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const listItems = [];
+  for (const line of lines) {
+    const match = line.match(/^(?:\d+[\.\)]|[-•*])\s*(.+)/);
+    if (match) {
+      listItems.push(match[1].trim());
+    }
   }
-  return null;
+  return listItems.length > 0 ? listItems : null;
 };
 
 const extractIntroText = (text) => {
   if (!text) return "";
-  const match = text.match(/^([\s\S]+?)(?=\d+[\.\)]\s+)/);
-  return match ? match[1].trim() : text;
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const nonListLines = [];
+  for (const line of lines) {
+    if (/^(?:\d+[\.\)]|[-•*])\s*/.test(line)) {
+      break;
+    }
+    nonListLines.push(line);
+  }
+  return nonListLines.join("\n").trim();
 };
 
 const parsedSections = computed(() => {
@@ -85,18 +140,20 @@ const parsedSections = computed(() => {
   const rawText = item.value.descriptions || item.value.description || "";
   if (!rawText) return [];
 
-  // Match bold markers like **Program Description ** or **Program Outcomes **
+  // Match bold markers like **Program Description**, **Goal**, **General Objectives**, **Vision**, **Mission**
   const sectionHeaderRegex = /\*\*\s*([^*:]+?)\s*:?\s*\*\*/g;
   const matches = [...rawText.matchAll(sectionHeaderRegex)];
 
   if (matches.length === 0) {
+    const listItems = extractListItems(rawText);
+    const introText = listItems ? extractIntroText(rawText) : rawText;
     return [
       {
         id: "section-overview",
-        title: "Program Overview",
-        icon: "fa-book-open",
-        bodyText: rawText,
-        items: null,
+        title: isCollegeContent.value ? "College Overview & Goals" : "Program Overview",
+        icon: isCollegeContent.value ? "fa-university" : "fa-book-open",
+        bodyText: introText,
+        items: listItems,
         isRawHtml: rawText.includes("<") && rawText.includes(">"),
       },
     ];
@@ -111,8 +168,10 @@ const parsedSections = computed(() => {
 
     let icon = "fa-circle-info";
     const lowerTitle = title.toLowerCase();
-    if (lowerTitle.includes("description") || lowerTitle.includes("overview")) icon = "fa-book-open";
+    if (lowerTitle.includes("vision")) icon = "fa-eye";
+    else if (lowerTitle.includes("mission")) icon = "fa-compass";
     else if (lowerTitle.includes("objective") || lowerTitle.includes("goal")) icon = "fa-bullseye";
+    else if (lowerTitle.includes("description") || lowerTitle.includes("overview")) icon = "fa-book-open";
     else if (lowerTitle.includes("outcome") || lowerTitle.includes("competenc")) icon = "fa-award";
     else if (lowerTitle.includes("career") || lowerTitle.includes("opportunity")) icon = "fa-briefcase";
     else if (lowerTitle.includes("curriculum") || lowerTitle.includes("course")) icon = "fa-graduation-cap";
@@ -126,7 +185,7 @@ const parsedSections = computed(() => {
       icon: icon,
       bodyText: introText,
       items: listItems,
-      isRawHtml: false,
+      isRawHtml: sectionBody.includes("<") && sectionBody.includes(">"),
     });
   }
 
@@ -136,11 +195,11 @@ const parsedSections = computed(() => {
     if (leading) {
       sections.unshift({
         id: "section-intro",
-        title: "Program Overview",
+        title: isCollegeContent.value ? "College Overview" : "Overview",
         icon: "fa-book-open",
         bodyText: leading,
         items: null,
-        isRawHtml: false,
+        isRawHtml: leading.includes("<") && leading.includes(">"),
       });
     }
   }
@@ -148,32 +207,189 @@ const parsedSections = computed(() => {
   return sections;
 });
 
+// CMS-driven programs under the matched college (populated during fetch)
+const collegePrograms = ref([]);
+const collegeProgramsLoading = ref(false);
+
+const isBachelorProgram = (cmsItem) => {
+  if (!cmsItem || !cmsItem.title) return false;
+  const t = cmsItem.title.trim().toLowerCase();
+  const f = (cmsItem.filters || "").toLowerCase();
+  return (
+    t.includes("bachelor") ||
+    t.startsWith("bs ") ||
+    t.startsWith("bsit") ||
+    t.startsWith("bscs") ||
+    t.startsWith("ba ") ||
+    t.includes("bachelor of") ||
+    f.includes("programs")
+  );
+};
+
+// Resolve route for a CMS program item
+const getProgramRoute = (p) => {
+  if (p.id) return `/academics/tertiary-education/${p.id}`;
+  if (p.content_id) return `/academics/tertiary-education/${p.content_id}`;
+  return `/academics/tertiary-education`;
+};
+
+// Check if a program card is the currently viewed page
+const isCurrentProgram = (p) => {
+  const currentId = String(itemId).toLowerCase();
+  return (
+    String(p.id || "") === String(itemId) ||
+    String(p.content_id || "") === String(itemId) ||
+    (p.abbr || "").toLowerCase() === currentId
+  );
+};
+
+// Resolve the college abbreviation for any CMS item (VMG OR individual program)
+const resolveCollegeAbbr = (cmsItem, cmsId) => {
+  const pageFilters = (cmsItem?.filters || "").toLowerCase();
+  const pageTitle = (cmsItem?.title || "").toLowerCase();
+  const cleanId = String(cmsId).toLowerCase();
+
+  let matchedAbbr = "";
+  tertiaryJSON.tertiary.forEach((t) => {
+    if (t.under_grad) {
+      t.under_grad.forEach((tu) => {
+        if (tu.list) {
+          tu.list.forEach((col) => {
+            if (matchedAbbr) return; // already found
+            const cAbbr = (col.abbr || "").toLowerCase();
+            const cTitle = (col.title || "").toLowerCase();
+
+            // Direct match: this page IS the college VMG
+            if (cleanId === cAbbr || cleanId.includes(cAbbr) || pageTitle.includes(cAbbr) || pageFilters.includes(cAbbr) || pageTitle.includes(cTitle)) {
+              matchedAbbr = cAbbr;
+              return;
+            }
+
+            // Indirect match: this page is a program UNDER this college
+            if (col.programs) {
+              const inCollege = col.programs.some((p) => {
+                const pAbbr = (p.abbr || "").toLowerCase();
+                const pLink = (p.link || "").toLowerCase();
+                const pSlug = (p.title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+                return pAbbr === cleanId || pLink === cleanId || pSlug === cleanId || pSlug.includes(cleanId) || cleanId.includes(pAbbr);
+              });
+              if (inCollege) matchedAbbr = cAbbr;
+            }
+          });
+        }
+      });
+    }
+  });
+
+  // Also check pageFilters directly for college abbr keywords
+  if (!matchedAbbr) {
+    const abbrList = ["ccsea", "cas", "cbe", "che", "ced", "cn", "crim", "ctaf"];
+    for (const a of abbrList) {
+      if (pageFilters.includes(a) || cleanId.includes(a)) {
+        matchedAbbr = a;
+        break;
+      }
+    }
+  }
+
+  return matchedAbbr;
+};
+
+// Fetch CMS programs for the college this page belongs to (works for ALL pages)
+const fetchCollegeProgramsFromCMS = async (cmsListRes) => {
+  collegeProgramsLoading.value = true;
+  try {
+    const list = cmsListRes || await $fetch(`${endpoint.value}/api/cms/content/list/`).catch(() => null);
+    if (!Array.isArray(list)) return;
+
+    const matchedAbbr = resolveCollegeAbbr(item.value, itemId);
+    if (!matchedAbbr) return;
+
+    // Filter CMS list: items that match the college abbr AND are bachelor programs
+    const matched = list.filter((cmsItem) => {
+      if (!cmsItem) return false;
+      const f = (cmsItem.filters || "").toLowerCase();
+      const t2 = (cmsItem.title || "").toLowerCase();
+      const d = (cmsItem.descriptions || cmsItem.description || "").toLowerCase();
+      const matchesCollege = f.includes(matchedAbbr) || t2.includes(matchedAbbr) || d.includes(matchedAbbr);
+      return matchesCollege && isBachelorProgram(cmsItem);
+    });
+
+    collegePrograms.value = matched.map((cmsItem) => ({
+      id: cmsItem.id,
+      content_id: cmsItem.content_id,
+      title: cmsItem.title,
+      abbr: (() => {
+        const m = (cmsItem.title || "").match(/\(([A-Z0-9-]{2,8})\)/i);
+        return m ? m[1] : "";
+      })(),
+      filters: cmsItem.filters || "",
+    }));
+  } finally {
+    collegeProgramsLoading.value = false;
+  }
+};
+
 const fetchProgramDetails = async () => {
   loading.value = true;
   errorMsg.value = "";
   try {
-    // 1. Fetch directly by ID from CMS
-    const res = await $fetch(`${endpoint.value}/api/cms/content/${itemId}/`).catch(() => null);
+    const cleanId = String(itemId).toLowerCase().trim();
+
+    // ── Fire BOTH requests in parallel ──────────────────────────────────────
+    const [res, listRes] = await Promise.all([
+      $fetch(`${endpoint.value}/api/cms/content/${itemId}/`).catch(() => null),
+      $fetch(`${endpoint.value}/api/cms/content/list/`).catch(() => null),
+    ]);
+
+    // 1. Direct CMS hit by numeric id
     if (res && (res.title || res.id)) {
       item.value = res;
-    } else {
-      // 2. Search in CMS content list
-      const listRes = await $fetch(`${endpoint.value}/api/cms/content/list/`).catch(() => null);
-      if (Array.isArray(listRes)) {
-        const found = listRes.find(
-          (c) =>
-            String(c.id) === String(itemId) ||
-            String(c.content_id) === String(itemId) ||
-            (c.title && c.title.toLowerCase().replace(/[^a-z0-9]/g, "-").includes(String(itemId).toLowerCase())) ||
-            (c.filters && c.filters.toLowerCase().includes(String(itemId).toLowerCase()))
+    } else if (Array.isArray(listRes)) {
+      // 2. Search the list by id / slug / filters
+      const found = listRes.find((c) => {
+        if (!c) return false;
+        const cId = String(c.id || "").toLowerCase();
+        const cContentId = String(c.content_id || "").toLowerCase();
+        const cTitle = (c.title || "").toLowerCase();
+        const cFilters = (c.filters || "").toLowerCase();
+        const titleSlug = cTitle.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+        return (
+          cId === cleanId ||
+          cContentId === cleanId ||
+          titleSlug === cleanId ||
+          titleSlug.includes(cleanId) ||
+          cleanId.includes(titleSlug) ||
+          cFilters.includes(cleanId)
         );
-        if (found) {
-          item.value = found;
-        }
+      });
+
+      if (found) {
+        item.value = found;
+      } else {
+        // 3. College VMG fallback (e.g. /ccsea → "CCSEA Vision Mission Goal")
+        const collegeVmg = listRes.find((c) => {
+          if (!c) return false;
+          const cFilters = (c.filters || "").toLowerCase();
+          const cTitle = (c.title || "").toLowerCase();
+          const matchesAbbr =
+            cFilters.includes(cleanId) ||
+            cTitle.includes(cleanId) ||
+            cleanId.includes(cTitle);
+          const isVmg =
+            cTitle.includes("vision") ||
+            cTitle.includes("mission") ||
+            cTitle.includes("goal") ||
+            cFilters.includes("vision") ||
+            cFilters.includes("college");
+          return matchesAbbr && isVmg;
+        });
+        if (collegeVmg) item.value = collegeVmg;
       }
     }
 
-    // 3. Fallback to static tertiary.json
+    // 4. Synchronous static JSON fallback (no extra network cost)
     if (!item.value) {
       let staticFound = null;
       tertiaryJSON.tertiary.forEach((t) => {
@@ -181,20 +397,24 @@ const fetchProgramDetails = async () => {
           t.under_grad.forEach((tu) => {
             if (tu.list) {
               tu.list.forEach((col) => {
-                if (col.link === itemId || col.abbr?.toLowerCase() === String(itemId).toLowerCase()) {
+                const cAbbr = (col.abbr || "").toLowerCase();
+                const cLink = (col.link || "").toLowerCase();
+
+                if (cleanId === cLink || cleanId === cAbbr || cleanId.includes(cAbbr)) {
                   staticFound = {
-                    title: col.title,
-                    descriptions: `Program descriptions and curriculum for ${col.title}.`,
+                    title: `${col.abbr} Vision, Mission & Goals`,
+                    descriptions: `**College Overview**\n${col.title} (${col.abbr})\n\n**Goal**\nThe ${col.title} aims to provide high quality education with strong foundation of technical and professional expertise.\n\n**General Objectives**\n1. Prepare the students to be globally competent with high-level technical expertise.\n2. Develop students' effective communication and leadership skills.\n3. Instill a deep sense of environmental, social, and ethical responsibility.\n4. Promote passion for life-long learning and research.`,
                     isCollege: true,
                     programs: col.programs,
                     collegeAbbr: col.abbr,
+                    authors: col.title,
                   };
-                } else if (col.programs) {
+                } else if (!staticFound && col.programs) {
                   const matchP = col.programs.find(
                     (p) =>
-                      p.abbr?.toLowerCase() === String(itemId).toLowerCase() ||
-                      p.link === itemId ||
-                      p.title?.toLowerCase().replace(/[^a-z0-9]/g, "-").includes(String(itemId).toLowerCase())
+                      p.abbr?.toLowerCase() === cleanId ||
+                      p.link === cleanId ||
+                      (p.title && p.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").includes(cleanId))
                   );
                   if (matchP) {
                     staticFound = {
@@ -202,6 +422,7 @@ const fetchProgramDetails = async () => {
                       descriptions: matchP.description || matchP.goalDescription || `Degree program offering under ${col.title}.`,
                       abbr: matchP.abbr,
                       collegeTitle: col.title,
+                      authors: col.title,
                     };
                   }
                 }
@@ -210,15 +431,18 @@ const fetchProgramDetails = async () => {
           });
         }
       });
-      if (staticFound) {
-        item.value = staticFound;
-      }
+      if (staticFound) item.value = staticFound;
+    }
+
+    // 5. Populate college programs grid for ALL pages (reuses already-fetched listRes)
+    if (item.value) {
+      fetchCollegeProgramsFromCMS(listRes || null); // intentionally not awaited — loads in background
     }
   } catch (err) {
-    console.error("Error fetching program detail:", err);
-    errorMsg.value = "Failed to load program details.";
+    console.error("Error fetching program/college detail:", err);
+    errorMsg.value = "Failed to load details.";
   } finally {
-    loading.value = false;
+    loading.value = false;  // page content shows immediately; programs grid loads in background
   }
 };
 
@@ -227,7 +451,7 @@ onMounted(async () => {
 });
 
 useHead(() => ({
-  title: item.value?.title ? `${item.value.title} | LSU Tertiary Education` : "Program Details | LSU",
+  title: item.value?.title ? `${item.value.title} | LSU Tertiary Education` : "Program / College Details | LSU",
 }));
 </script>
 
@@ -246,7 +470,7 @@ useHead(() => ({
             {{ programAbbr }}
           </span>
         </div>
-        <h1 class="text-xl lg:text-3xl font-extrabold text-white tracking-wide uppercase leading-tight max-w-4xl">
+        <h1 class="text-xl lg:text-3xl font-extrabold text-white tracking-wide uppercase leading-tight max-w-8xl">
           {{ programCleanTitle || item?.title || 'Degree Program Details' }}
         </h1>
         <p v-if="programAbbr && programCleanTitle" class="mt-1 text-green-200 text-xs font-semibold tracking-wider uppercase">
@@ -316,7 +540,9 @@ useHead(() => ({
           <div class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm border-l-4 border-l-green-900">
             <div class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-5">
               <div>
-                <span class="text-[0.65rem] font-bold tracking-[0.2em] uppercase text-green-900 block mb-1">PROGRAM DEGREE</span>
+                <span class="text-[0.65rem] font-bold tracking-[0.2em] uppercase text-green-900 block mb-1">
+                  {{ isCollegeContent ? 'COLLEGE VISION, MISSION & GOALS' : 'PROGRAM DEGREE' }}
+                </span>
                 <h2 class="text-xl lg:text-2xl font-extrabold text-gray-900 leading-snug">
                   {{ item.title }}
                 </h2>
@@ -333,6 +559,19 @@ useHead(() => ({
               </span>
               <span v-if="formattedDate" class="inline-flex items-center gap-1.5 bg-gray-100 px-3 py-1 rounded-full border border-gray-200 font-medium">
                 <i class="fas fa-calendar-alt text-gray-500"></i> Updated: {{ formattedDate }}
+              </span>
+            </div>
+
+            <!-- SDG Badges -->
+            <div v-if="sdgBadges.length > 0" class="flex flex-wrap items-center gap-1.5 mt-4 pt-3 border-t border-gray-100">
+              <span class="text-[0.65rem] font-bold uppercase tracking-wider text-gray-400 mr-1">SDGs:</span>
+              <span
+                v-for="sdg in sdgBadges"
+                :key="sdg.number"
+                class="text-[0.65rem] font-bold text-white px-2 py-0.5 rounded shadow-xs"
+                :style="{ backgroundColor: sdg.color }"
+              >
+                SDG {{ sdg.number }}
               </span>
             </div>
           </div>
@@ -377,16 +616,62 @@ useHead(() => ({
             </div>
           </div>
 
-          <!-- Static College Offerings Fallback -->
-          <div v-if="item.isCollege && item.programs && item.programs.length > 0" class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm">
-            <h3 class="text-lg font-bold uppercase tracking-wider text-green-900 mb-5 pb-3 border-b border-gray-100 flex items-center gap-2">
-              <i class="fas fa-list-check text-green-800"></i> Available Programs under {{ item.title }}
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div v-for="(p, pIdx) in item.programs" :key="pIdx" class="p-4 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between hover:border-green-300 hover:bg-green-50/20 transition-all">
-                <span class="text-xs font-semibold text-gray-900 leading-snug">{{ p.title }}</span>
-                <span v-if="p.abbr" class="text-[0.65rem] font-mono font-bold bg-green-100 text-green-900 px-2 py-0.5 rounded border border-green-200 shrink-0 ml-2">{{ p.abbr }}</span>
-              </div>
+          <!-- Programs Offered (shown on ALL pages — college VMG and individual programs) -->
+          <div v-if="collegeProgramsLoading || collegePrograms.length > 0" class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
+              <h3 class="text-lg font-bold uppercase tracking-wider text-green-900 flex items-center gap-2">
+                <i class="fas fa-graduation-cap text-green-800"></i>
+                Degree Programs Offered
+              </h3>
+              <span v-if="programAbbr" class="text-[0.65rem] font-bold text-green-900 bg-green-50 border border-green-200 px-2 py-1 rounded font-mono">
+                {{ programAbbr }}
+              </span>
+            </div>
+
+            <!-- Loading skeleton -->
+            <div v-if="collegeProgramsLoading" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div v-for="n in 6" :key="n" class="h-16 bg-gray-100 rounded-xl animate-pulse"></div>
+            </div>
+
+            <!-- CMS Programs Grid -->
+            <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <NuxtLink
+                v-for="(p, pIdx) in collegePrograms"
+                :key="pIdx"
+                :to="getProgramRoute(p)"
+                :class="[
+                  'group flex items-center justify-between p-4 rounded-xl border transition-all no-underline cursor-pointer',
+                  isCurrentProgram(p)
+                    ? 'bg-green-900 border-green-700 shadow-md ring-2 ring-green-500/40 pointer-events-none'
+                    : 'bg-gray-50 border-gray-200 hover:border-green-700 hover:bg-green-50/40 hover:shadow-md'
+                ]"
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <div :class="[
+                    'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors',
+                    isCurrentProgram(p) ? 'bg-white/20' : 'bg-green-900/10 group-hover:bg-green-900'
+                  ]">
+                    <i :class="[
+                      'fas fa-book-open text-xs transition-colors',
+                      isCurrentProgram(p) ? 'text-white' : 'text-green-900 group-hover:text-white'
+                    ]"></i>
+                  </div>
+                  <span :class="[
+                    'text-xs font-semibold leading-snug transition-colors',
+                    isCurrentProgram(p) ? 'text-white' : 'text-gray-900 group-hover:text-green-900'
+                  ]">{{ p.title }}</span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 ml-2">
+                  <span v-if="p.abbr" :class="[
+                    'text-[0.6rem] font-mono font-bold px-2 py-0.5 rounded border',
+                    isCurrentProgram(p) ? 'bg-white/20 text-white border-white/30' : 'bg-green-100 text-green-900 border-green-200'
+                  ]">
+                    {{ p.abbr }}
+                  </span>
+                  <i v-if="!isCurrentProgram(p)" class="fas fa-chevron-right text-[0.6rem] text-gray-400 group-hover:text-green-700 transition-colors"></i>
+                  <i v-else class="fas fa-circle-dot text-[0.6rem] text-green-300"></i>
+                </div>
+              </NuxtLink>
             </div>
           </div>
 
