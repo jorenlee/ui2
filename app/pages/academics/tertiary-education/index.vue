@@ -15,6 +15,11 @@ const schoolToggle = (a, b) => {
   gradStud.value = b;
 };
 
+const isCollegeEnabled = (college) => {
+  if (!college || !college.abbr) return false;
+  return college.abbr.toUpperCase() === 'CCSEA';
+};
+
 const getProgramSlug = (p, fallbackLink) => {
   if (!p) return `/academics/tertiary-education/${fallbackLink || ''}`;
   if (p.id) return `/academics/tertiary-education/${p.id}`;
@@ -249,26 +254,41 @@ onMounted(async () => {
               <!-- Accordion list -->
               <div class="flex flex-col gap-0.5">
                 <div v-for="(a, k) in tu.list" :key="k"
-                  class="bg-white border border-gray-200 transition-all duration-150" :class="a.active
-                    ? 'border-l-[3px] border-l-green-900'
-                    : 'border-l-[3px] border-l-transparent hover:border-l-green-900'">
+                  class="bg-white border border-gray-200 transition-all duration-150" :class="[
+                    a.active && isCollegeEnabled(a)
+                      ? 'border-l-[3px] border-l-green-900'
+                      : 'border-l-[3px] border-l-transparent',
+                    isCollegeEnabled(a)
+                      ? 'hover:border-l-green-900'
+                      : 'opacity-60'
+                  ]">
                   <!-- Card Header -->
-                  <div class="flex items-center justify-between py-3.5 px-4 cursor-pointer gap-4"
-                    @click="a.active = !a.active">
+                  <div class="flex items-center justify-between py-3.5 px-4 gap-4"
+                    :class="isCollegeEnabled(a) ? 'cursor-pointer' : 'cursor-default'"
+                    @click="isCollegeEnabled(a) && (a.active = !a.active)">
                     <div class="flex items-baseline gap-3 min-w-0">
                       <span
-                        class="text-[0.65rem] font-bold tracking-wider text-green-900 font-mono whitespace-nowrap bg-green-50 px-1.5 py-0.5 border border-green-200 shrink-0">{{
+                        class="text-[0.65rem] font-bold tracking-wider font-mono whitespace-nowrap px-1.5 py-0.5 border shrink-0"
+                        :class="isCollegeEnabled(a)
+                          ? 'text-green-900 bg-green-50 border-green-200'
+                          : 'text-gray-400 bg-gray-100 border-gray-200'">{{
                           a.abbr }}</span>
-                      <span class="text-[0.82rem] font-semibold text-gray-900 text-left leading-snug">{{ a.title
+                      <span class="text-[0.82rem] font-semibold text-left leading-snug"
+                        :class="isCollegeEnabled(a) ? 'text-gray-900' : 'text-gray-400'">{{ a.title
                       }}</span>
                     </div>
-                    <div class="text-green-900 text-xs shrink-0 w-5 text-center">
-                      <i class="fas" :class="a.active ? 'fa-minus' : 'fa-plus'"></i>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <span v-if="!isCollegeEnabled(a)"
+                        class="text-[0.6rem] font-bold tracking-wider uppercase text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-sm whitespace-nowrap"
+                      >Coming Soon</span>
+                      <div v-if="isCollegeEnabled(a)" class="text-green-900 text-xs w-5 text-center">
+                        <i class="fas" :class="a.active ? 'fa-minus' : 'fa-plus'"></i>
+                      </div>
                     </div>
                   </div>
 
                   <!-- Card Body -->
-                  <div v-if="a.active" class="border-t border-gray-100 bg-gray-50 px-5 py-4">
+                  <div v-if="a.active && isCollegeEnabled(a)" class="border-t border-gray-100 bg-gray-50 px-5 py-4">
                     <!-- College Level Info & VMG Link -->
                     <div class="mb-3.5 pb-3 border-b border-gray-200">
                       <NuxtLink
