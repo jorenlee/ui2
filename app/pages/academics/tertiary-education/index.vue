@@ -1,14 +1,107 @@
 <script setup>
+import { ref, onMounted } from "vue";
 import tertiaryJSON from "./tertiary.json";
-const tertiary = ref(tertiaryJSON.tertiary);
+
+const tertiary = ref(JSON.parse(JSON.stringify(tertiaryJSON.tertiary)));
 
 const underGrad = ref(true);
 const gradStud = ref(false);
+
+const config = useRuntimeConfig();
+const endpoint = ref(config.public.apiUrl);
 
 const schoolToggle = (a, b) => {
   underGrad.value = a;
   gradStud.value = b;
 };
+
+const getProgramSlug = (p, fallbackLink) => {
+  if (!p) return `/academics/tertiary-education/${fallbackLink || ''}`;
+  if (p.id) return `/academics/tertiary-education/${p.id}`;
+  if (p.content_id) return `/academics/tertiary-education/${p.content_id}`;
+  if (p.abbr) return `/academics/tertiary-education/${p.abbr.toLowerCase()}`;
+  if (p.title) {
+    const slug = p.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return `/academics/tertiary-education/${slug}`;
+  }
+  return `/academics/tertiary-education/${fallbackLink || ''}`;
+};
+
+const isBachelorProgram = (item) => {
+  if (!item || !item.title) return false;
+  const title = item.title.trim().toLowerCase();
+  const filters = (item.filters || item.filter || "").toLowerCase();
+  const category = (item.category || "").toLowerCase();
+
+  const hasBachelorTitle =
+    title.includes("bachelor") ||
+    title.startsWith("bs ") ||
+    title.startsWith("bs") ||
+    title.startsWith("ba ") ||
+    title.includes("bachelor of");
+
+  const hasAbbrParentheses = /\([a-z0-9-]{2,8}\)/i.test(item.title);
+  const hasProgramFilter = filters.includes("programs") || category.includes("programs");
+
+  return hasBachelorTitle || (hasProgramFilter && hasAbbrParentheses);
+};
+
+const fetchCMSPrograms = async () => {
+  try {
+    const res = await $fetch(endpoint.value + "/api/cms/content/list/").catch(() => null);
+    if (res && Array.isArray(res)) {
+      const cloned = JSON.parse(JSON.stringify(tertiaryJSON.tertiary));
+
+      cloned.forEach((t) => {
+        if (t.under_grad) {
+          t.under_grad.forEach((tu) => {
+            if (tu.list) {
+              tu.list.forEach((college) => {
+                const cAbbr = (college.abbr || "").toLowerCase();
+                if (!cAbbr) return;
+
+                // Find CMS list items corresponding to this college and filter ONLY Bachelor programs
+                const cmsItems = res.filter((item) => {
+                  if (!item) return false;
+                  const filters = (item.filters || item.filter || "").toLowerCase();
+                  const title = (item.title || "").toLowerCase();
+                  const desc = (item.descriptions || item.description || "").toLowerCase();
+
+                  const matchesCollege =
+                    filters.includes(cAbbr) ||
+                    title.includes(cAbbr) ||
+                    desc.includes(cAbbr);
+
+                  return matchesCollege && isBachelorProgram(item);
+                });
+
+                if (cmsItems.length > 0) {
+                  // Dynamically map CMS list items directly to college programs
+                  college.programs = cmsItems.map((cmsItem) => {
+                    return {
+                      id: cmsItem.id || cmsItem.content_id,
+                      title: cmsItem.title,
+                      description: cmsItem.descriptions || cmsItem.description || "",
+                      filters: cmsItem.filters || "",
+                      cmsData: cmsItem,
+                    };
+                  });
+                }
+              });
+            }
+          });
+        }
+      });
+      tertiary.value = cloned;
+    }
+  } catch (error) {
+    console.error("Error fetching CMS content list for CCSEA:", error);
+  }
+};
+
+onMounted(async () => {
+  await fetchCMSPrograms();
+});
 </script>
 
 <template>
@@ -122,17 +215,16 @@ const schoolToggle = (a, b) => {
 
                   <!-- Card Body -->
                   <div v-if="a.active" class="border-t border-gray-100 bg-gray-50 px-5 py-4">
-                    <a :href="`/academics/tertiary-education/${a.link}`" class="block no-underline">
-                      <ul class="list-none m-0 p-0 pl-2 border-l-2 border-gray-200">
-                        <li v-for="(p, l) in a.programs" :key="l"
-                          class="flex items-baseline gap-2 py-1 border-b border-dashed border-gray-200 last:border-b-0 group">
-                          <span class="text-green-900 text-xs shrink-0 font-bold">—</span>
-                          <span
-                            class="text-[0.78rem] text-gray-800 transition-colors duration-100 group-hover:text-green-900 group-hover:font-semibold">{{
-                              p.title }}</span>
-                        </li>
-                      </ul>
-                    </a>
+                    <ul class="list-none m-0 p-0 pl-2 border-l-2 border-gray-200">
+                      <li v-for="(p, l) in a.programs" :key="l"
+                        class="flex items-baseline gap-2 py-1 border-b border-dashed border-gray-200 last:border-b-0 group">
+                        <span class="text-green-900 text-xs shrink-0 font-bold">—</span>
+                        <NuxtLink :to="getProgramSlug(p, a.link)"
+                          class="text-[0.78rem] text-gray-800 transition-colors duration-100 group-hover:text-green-900 group-hover:font-semibold no-underline flex-1">
+                          {{ p.title }}
+                        </NuxtLink>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>
@@ -165,9 +257,9 @@ const schoolToggle = (a, b) => {
 
                 <!-- Grad Card Programs -->
                 <div v-if="a.active" class="p-5 bg-gray-50">
-                  <a href="/academics/tertiary-education/programs"
+                  <NuxtLink :to="getProgramSlug(a, 'programs')"
                     class="block text-[0.78rem] font-bold uppercase tracking-wider text-green-900 no-underline hover:underline mb-4 pb-2 border-b border-gray-200">{{
-                      a.title }}</a>
+                      a.title }}</NuxtLink>
 
                   <ul class="list-none p-0 m-0">
                     <li v-for="(c, l) in a.category" :key="l" class="mb-4">
@@ -176,9 +268,10 @@ const schoolToggle = (a, b) => {
                         {{ c.title }}</div>
                       <ul class="list-none p-0 m-0">
                         <li v-for="(p, m) in c.programs" :key="m" class="py-0.5 pl-5 group">
-                          <div
-                            class="text-[0.78rem] text-gray-800 transition-colors duration-100 group-hover:text-green-900 group-hover:font-semibold">
-                            {{ p.title }}</div>
+                          <NuxtLink :to="getProgramSlug(p, 'programs')"
+                            class="text-[0.78rem] text-gray-800 transition-colors duration-100 group-hover:text-green-900 group-hover:font-semibold no-underline block">
+                            {{ p.title }}
+                          </NuxtLink>
                           <div v-for="(j, n) in p.major" :key="n" class="text-[0.72rem] text-gray-500 pl-3">
                             <span v-if="j !== ''">&#8212; {{ j }}</span>
                           </div>
