@@ -247,8 +247,6 @@ const handleImageError = (event, filename) => {
   }
 };
 
-
-
 const localRolePermissions = ref([]);
 
 const effectiveRolePermissions = computed(() => {
