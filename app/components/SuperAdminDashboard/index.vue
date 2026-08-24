@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, defineAsyncComponent, shallowRef, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 
 const router = useRouter();
@@ -14,6 +14,7 @@ const { user, isLoggedIn, logout, setAuth, init } = useAuth();
 const rolePermissions = ref([]);
 const darkMode = ref(false);
 const currentView = ref("Menu");
+const initialLoading = ref(true);
 
 const openGroups = ref([
   "Content Management",
@@ -28,6 +29,7 @@ const openGroups = ref([
   "Human Resource",
   "Office of The Chancellor",
   "Commission on Election",
+  "Commission on Election BEU",
   "External Links",
   "General Services Office",
   "Lasalle Alumni Association",
@@ -48,15 +50,17 @@ const openGroups = ref([
 // lsuOnlyMenuGroups is an *additional* restriction layered on top of the
 // role check below (not a grant on its own): even with the matching role,
 // these groups are hidden from non-@lsu.edu.ph accounts.
-const lsuOnlyMenuGroups = [
+// Using a Set for O(1) lookups instead of Array.includes O(n).
+const lsuOnlyMenuGroups = new Set([
   "Animo Run",
   "External Links",
   "Lasalle Alumni Association",
   "Commission on Election",
+  "Commission on Election BEU",
   "General Services Office",
   "Document Reviewer",
   "Safety and Security Center",
-];
+]);
 
 // ---------------- API ----------------
 const api = (url) => $fetch(`${endpoint}${url}`);
@@ -99,6 +103,7 @@ const toggleDarkMode = () => {
 
 // ---------------- MOUNT ----------------
 onMounted(async () => {
+  // Start auth init — must complete before we can check isLoggedIn
   await init();
 
   const token = route.query.token;
@@ -107,10 +112,13 @@ onMounted(async () => {
     router.replace("/dashboard");
   }
 
-  if (!isLoggedIn.value) router.replace("/login");
+  if (!isLoggedIn.value) {
+    router.replace("/login");
+    return; // No need to fetch role permissions if not logged in
+  }
 
-  await fetchRolePermissions();
-
+  // Read dark mode preference synchronously (no await needed) while
+  // role permissions fetch runs in the background.
   if (process.client) {
     const stored = localStorage.getItem("theme");
     const prefersDark = window.matchMedia(
@@ -119,6 +127,12 @@ onMounted(async () => {
 
     darkMode.value = stored === "dark" || (!stored && prefersDark);
   }
+
+  // Fetch role permissions — runs after the UI has already painted the
+  // menu skeleton, so the user sees content immediately.
+  await fetchRolePermissions();
+
+  initialLoading.value = false;
 });
 
 // ---------------- MENU FILTER ----------------
@@ -154,7 +168,7 @@ const filteredMenuList = computed(() => {
 
     if (!menu.allowedRole || !roles.includes(menu.allowedRole)) return false;
 
-    if (lsuOnlyMenuGroups.includes(menu.group) && !email?.endsWith("@lsu.edu.ph")) {
+    if (lsuOnlyMenuGroups.has(menu.group) && !email?.endsWith("@lsu.edu.ph")) {
       return false;
     }
 
@@ -211,6 +225,36 @@ const subMenuList = [
         icon: "fa-list",
         type: "button",
         view: "ViewStudentElectionVoting",
+      },
+    ],
+  },
+  {
+    group: "Commission on Election BEU",
+    allowedRole: "Commission on Election BEU",
+    items: [
+      {
+        label: "Add Candidates",
+        icon: "fa-address-card",
+        type: "button",
+        view: "ViewAddCandidatesBEU",
+      },
+      {
+        label: "List of Current Enrolled Students",
+        icon: "fa-users",
+        type: "button",
+        view: "ViewCurrentEnrolledStudentsBEU",
+      },
+      {
+        label: "Student Election Results",
+        icon: "fa-check",
+        type: "button",
+        view: "ViewStudentElectionResultsBEU",
+      },
+      {
+        label: "Student Election Voting",
+        icon: "fa-list",
+        type: "button",
+        view: "ViewStudentElectionVotingBEU",
       },
     ],
   },
@@ -481,49 +525,77 @@ const menuList = [
   { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
 ];
 
-// ---------------- VIEW CONFIG ----------------
-const currentViewConfig = computed(() => {
-  const views = {
-    ViewContentList: {component: resolveComponent("SuperAdminDashboardServicesCMSList"),class: "p-4 pb-32",},
-    ViewLibraryAppointments: {component: resolveComponent("SuperAdminDashboardServicesLibraryReserved"),class: "pb-32",},
-    ViewLibraryBooks: {component: resolveComponent("SuperAdminDashboardServicesLibraryBooks"),class: "pb-32",},
-    ViewLibrarySchedules: {component: resolveComponent("SuperAdminDashboardServicesLibrarySchedules"),class: "pb-24",},
-    ViewBookProfiling: {component: resolveComponent("ComingSoon"),class: "pb-24",},
-    ViewOnlineDatabaseUsageTracking: {component: resolveComponent("ComingSoon"),class: "pb-24",},
-    ViewUniversityCalendar: {component: resolveComponent("SuperAdminDashboardServicesChancellorOffice"),class: "p-4 pb-32",},
-    ViewNPCCManagement: {component: resolveComponent("SuperAdminDashboardServicesNPCC"),class: "px-2 pb-32",},
-    ViewRegistrarAppointments: {component: resolveComponent("SuperAdminDashboardServicesRegistrar"),class: "pb-32",},
-    ViewCampusPassRequests: {component: resolveComponent("SuperAdminDashboardServicesCampusPass"),class: "pb-32",},
-    ViewDRSList: {component: resolveComponent("SuperAdminDashboardServicesDocumentReviewSystemList"),class: "pb-32",},
-    ViewDRSForm: {component: resolveComponent("SuperAdminDashboardServicesDocumentReviewSystemForm"),class: "pb-20",},
-    ViewITServicesFeedocumentReviewSystemck: {component: resolveComponent("UniversityPortalITServicesList"),class: "pb-32",},
-    ViewRolePermissions: {component: resolveComponent("SuperAdminDashboardRolePermissions"),class: "pb-32",},
-    ViewAnimoRunRegistration: {component: resolveComponent("AnimoRunRegistration"),class: "pb-32",},
-    ViewAnimoRunList: {component: resolveComponent("AnimoRunList"),class: "pb-32",},
-    ViewAddCandidates: { component: resolveComponent("CommissionOnElectionAddCandidates"), class: "pb-32 p-10" },
-    ViewCurrentEnrolledStudents: { component: resolveComponent("CommissionOnElectionListEnrolledStudents"), class: "pb-32 p-10" },
-    ViewStudentElectionResults: { component: resolveComponent("CommissionOnElectionStudentElectionResults"), class: "pb-32 p-10" },
-    ViewStudentElectionVoting: { component: resolveComponent("CommissionOnElectionStudentElectionVoting"), class: "pb-32 p-10" },
-    ViewITServicesFeedback: { component: resolveComponent("ITFeedback"), class: "pb-32 p-4" },
-    ViewVenueReservation: { component: resolveComponent("ComingSoon") },
-    ViewVehicleReservation: { component: resolveComponent("ComingSoon") },
-    ViewHRJobVacancyList: { component: resolveComponent("ComingSoon") },
-    ViewBorrowKeys: { component: resolveComponent("ComingSoon") },
-    ViewAlumni: { component: resolveComponent("ComingSoon") },
-    ViewCurrentEmployedAdmins: {component: resolveComponent("SuperAdminDashboardServicesHumanResourceEmployedAdmins",), class: "pb-32",},
-    ViewGSOFacilitiesReservationForm: { component: resolveComponent("GSOFacilitiesReservationForm"), class: "pb-32",},
-    ViewGSOFacilitiesReservationList: { component: resolveComponent("GSOFacilitiesReservationList"),class: "pb-32",},
-    ViewGSOVehicleReservationForm: { component: resolveComponent("GSOVehicleReservationForm"),class: "pb-32",},
-    ViewGSOVehicleReservationList: { component: resolveComponent("GSOVehicleReservationList"),class: "pb-32",},
-    ViewOERForm: { component: resolveComponent("SuperAdminDashboardServicesOERForm"),class: "pb-32",},
-    ViewOERList: {component: resolveComponent("SuperAdminDashboardServicesOERList"),class: "pb-32",},
-    ViewJurisDoctorAdmissionTestManagement: { component: resolveComponent("JurisDoctorAdmin"), class: "pb-32", },
-    ViewJurisDoctorAdmissionTest: { component: resolveComponent("JurisDoctorAdmission"), class: "pb-32", },
-  };
+// ---------------- LAZY VIEW MAP ----------------
+// Each view maps to its CSS class and a lazy-loaded component via
+// defineAsyncComponent. The component JS is only downloaded when the
+// user actually navigates to that view — not at initial page load.
+// This replaces the old computed that called resolveComponent() for
+// ALL 34 views on every reactive re-evaluation.
+const lazyViewMap = {
+  ViewContentList: { loader: () => import("~/components/SuperAdminDashboard/Services/CMS/List.vue"), class: "p-4 pb-32" },
+  ViewLibraryAppointments: { loader: () => import("~/components/SuperAdminDashboard/Services/Library/reserved/index.vue"), class: "pb-32" },
+  ViewLibraryBooks: { loader: () => import("~/components/SuperAdminDashboard/Services/Library/books/index.vue"), class: "pb-32" },
+  ViewLibrarySchedules: { loader: () => import("~/components/SuperAdminDashboard/Services/Library/schedules/index.vue"), class: "pb-24" },
+  ViewBookProfiling: { loader: () => import("~/components/ComingSoon.vue"), class: "pb-24" },
+  ViewOnlineDatabaseUsageTracking: { loader: () => import("~/components/ComingSoon.vue"), class: "pb-24" },
+  ViewUniversityCalendar: { loader: () => import("~/components/SuperAdminDashboard/Services/ChancellorOffice/index.vue"), class: "p-4 pb-32" },
+  ViewNPCCManagement: { loader: () => import("~/components/SuperAdminDashboard/Services/NPCC/index.vue"), class: "px-2 pb-32" },
+  ViewRegistrarAppointments: { loader: () => import("~/components/SuperAdminDashboard/Services/Registrar/index.vue"), class: "pb-32" },
+  ViewCampusPassRequests: { loader: () => import("~/components/SuperAdminDashboard/Services/CampusPass/index.vue"), class: "pb-32" },
+  ViewDRSList: { loader: () => import("~/components/SuperAdminDashboard/Services/DocumentReviewSystem/List.vue"), class: "pb-32" },
+  ViewDRSForm: { loader: () => import("~/components/SuperAdminDashboard/Services/DocumentReviewSystem/Form.vue"), class: "pb-20" },
+  ViewRolePermissions: { loader: () => import("~/components/SuperAdminDashboard/RolePermissions.vue"), class: "pb-32" },
+  ViewAnimoRunRegistration: { loader: () => import("~/components/AnimoRunRegistration.vue"), class: "pb-32" },
+  ViewAnimoRunList: { loader: () => import("~/components/AnimoRunList.vue"), class: "pb-32" },
+  ViewAddCandidates: { loader: () => import("~/components/CommissionOnElection/AddCandidates.vue"), class: "pb-32 p-10" },
+  ViewCurrentEnrolledStudents: { loader: () => import("~/components/CommissionOnElection/ListEnrolledStudents.vue"), class: "pb-32 p-10" },
+  ViewStudentElectionResults: { loader: () => import("~/components/CommissionOnElection/StudentElectionResults.vue"), class: "pb-32 p-10" },
+  ViewStudentElectionVoting: { loader: () => import("~/components/CommissionOnElection/StudentElectionVoting.vue"), class: "pb-32 p-10" },
+  ViewAddCandidatesBEU: { loader: () => import("~/components/CommissionOnElectionBEU/AddCandidates.vue"), class: "pb-32 p-10" },
+  ViewCurrentEnrolledStudentsBEU: { loader: () => import("~/components/CommissionOnElectionBEU/ListEnrolledStudents.vue"), class: "pb-32 p-10" },
+  ViewStudentElectionResultsBEU: { loader: () => import("~/components/CommissionOnElectionBEU/StudentElectionResults.vue"), class: "pb-32 p-10" },
+  ViewStudentElectionVotingBEU: { loader: () => import("~/components/CommissionOnElectionBEU/StudentElectionVoting.vue"), class: "pb-32 p-10" },
+  ViewITServicesFeedback: { loader: () => import("~/components/ITFeedback/index.vue"), class: "pb-32 p-4" },
+  ViewVenueReservation: { loader: () => import("~/components/ComingSoon.vue"), class: "" },
+  ViewVehicleReservation: { loader: () => import("~/components/ComingSoon.vue"), class: "" },
+  ViewHRJobVacancyList: { loader: () => import("~/components/ComingSoon.vue"), class: "" },
+  ViewBorrowKeys: { loader: () => import("~/components/ComingSoon.vue"), class: "" },
+  ViewAlumni: { loader: () => import("~/components/ComingSoon.vue"), class: "" },
+  ViewCurrentEmployedAdmins: { loader: () => import("~/components/SuperAdminDashboard/Services/HumanResource/EmployedAdmins.vue"), class: "pb-32" },
+  ViewGSOFacilitiesReservationForm: { loader: () => import("~/components/GSO/FacilitiesReservationForm.vue"), class: "pb-32" },
+  ViewGSOFacilitiesReservationList: { loader: () => import("~/components/GSO/FacilitiesReservationList.vue"), class: "pb-32" },
+  ViewGSOVehicleReservationForm: { loader: () => import("~/components/GSO/VehicleReservationForm.vue"), class: "pb-32" },
+  ViewGSOVehicleReservationList: { loader: () => import("~/components/GSO/VehicleReservationList.vue"), class: "pb-32" },
+  ViewOERForm: { loader: () => import("~/components/SuperAdminDashboard/Services/OER/Form.vue"), class: "pb-32" },
+  ViewOERList: { loader: () => import("~/components/SuperAdminDashboard/Services/OER/List.vue"), class: "pb-32" },
+  ViewJurisDoctorAdmissionTestManagement: { loader: () => import("~/components/JurisDoctor/Admin.vue"), class: "pb-32" },
+  ViewJurisDoctorAdmissionTest: { loader: () => import("~/components/JurisDoctor/Admission.vue"), class: "pb-32" },
+};
 
+// ---------------- ACTIVE VIEW (resolved lazily) ----------------
+// shallowRef avoids deep-reactivity overhead on component objects.
+// The watcher only fires when currentView changes, resolving exactly
+// one component via defineAsyncComponent at that moment.
+const activeViewComponent = shallowRef(null);
+const activeViewClass = ref("");
 
-  return views[currentView.value];
-});
+watch(
+  currentView,
+  (viewName) => {
+    const entry = lazyViewMap[viewName];
+    if (entry) {
+      activeViewComponent.value = defineAsyncComponent({
+        loader: entry.loader,
+        delay: 0,
+      });
+      activeViewClass.value = entry.class;
+    } else {
+      activeViewComponent.value = null;
+      activeViewClass.value = "";
+    }
+  },
+  { immediate: true },
+);
 
 // ---------------- ACTIONS ----------------
 const toggleGroup = (group) => {
@@ -546,13 +618,19 @@ const logOut = () => logout();
     <div v-if="isUserAuthenticated">
       <div class="w-full">
         <div class="overflow-y-auto">
-          <div v-if="currentViewConfig" :class="currentViewConfig.class">
-            <component
-              :is="currentViewConfig.component"
-              :darkMode="darkMode"
-              :rolePermissions="rolePermissions"
-              v-bind="currentViewConfig.props || {}"
-            />
+          <div v-if="activeViewComponent" :class="activeViewClass">
+            <Suspense>
+              <component
+                :is="activeViewComponent"
+                :darkMode="darkMode"
+                :rolePermissions="rolePermissions"
+              />
+              <template #fallback>
+                <div class="flex items-center justify-center py-20">
+                  <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+                </div>
+              </template>
+            </Suspense>
           </div>
         </div>
         <SuperAdminDashboardNavigation
@@ -564,7 +642,14 @@ const logOut = () => logout();
         />
         <div v-if="currentView === 'Menu'" class="lg:px-2 pb-80">
           <SuperAdminDashboardWelcome :darkMode="darkMode" />
+          <template v-if="initialLoading">
+            <div class="flex items-center justify-center py-10">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              <span class="ml-3 text-sm opacity-60">Loading menu…</span>
+            </div>
+          </template>
           <SuperAdminDashboardMenuList
+            v-else
             :filteredMenuList="filteredMenuList"
             :darkMode="darkMode"
             :currentView="currentView"

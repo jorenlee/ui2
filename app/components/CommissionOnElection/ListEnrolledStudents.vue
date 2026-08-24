@@ -233,6 +233,50 @@
       </div>
     </div>
 
+    <!-- CSV Column Picker Modal -->
+    <div v-if="showCsvColumnPicker" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+        <div class="bg-[#2E7D32] text-white py-3 px-6 flex items-center justify-between rounded-t-xl">
+          <h3 class="text-sm font-bold uppercase tracking-wider">Download CSV — Select Columns</h3>
+          <button @click="showCsvColumnPicker = false" class="text-white/80 hover:text-white text-xl leading-none">&times;</button>
+        </div>
+        <div class="p-6">
+          <p class="text-sm text-slate-500 mb-4">Choose which columns to include in the CSV export.</p>
+
+          <!-- Select All / Deselect All -->
+          <div class="flex items-center justify-between mb-3 pb-3 border-b border-slate-100">
+            <label class="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer select-none">
+              <input type="checkbox" :checked="csvSelectedColumns.length === csvAvailableColumns.length" @change="toggleAllCsvColumns"
+                class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+              Select All
+            </label>
+            <span class="text-xs text-slate-400">{{ csvSelectedColumns.length }} of {{ csvAvailableColumns.length }} selected</span>
+          </div>
+
+          <div class="flex flex-col gap-2 max-h-64 overflow-y-auto">
+            <label v-for="col in csvAvailableColumns" :key="col.key"
+              class="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 cursor-pointer select-none transition-colors">
+              <input type="checkbox" :value="col.key" v-model="csvSelectedColumns"
+                class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
+              <span class="text-sm font-medium text-slate-700">{{ col.label }}</span>
+            </label>
+          </div>
+
+          <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-100">
+            <button @click="showCsvColumnPicker = false"
+              class="px-4 py-2 rounded-lg font-semibold text-slate-600 hover:bg-slate-100 transition-colors">
+              Cancel
+            </button>
+            <button @click="downloadCsv" :disabled="!csvSelectedColumns.length"
+              class="bg-[#2E7D32] hover:bg-[#1B5E20] text-white px-5 py-2 rounded-lg font-bold transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+              <i class="fa fa-download"></i>
+              Download CSV ({{ sortedVoters.length }} rows)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <header class="mb-10 pb-8 border-b-2 border-slate-100">
       <div class="flex flex-col items-center justify-center w-full mb-8 gap-6">
         <img
@@ -260,7 +304,7 @@
     </header>
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
       <h2 class="text-2xl font-bold text-slate-900">Registered Voters</h2>
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-4 flex-wrap">
         <button @click="downloadTemplate"
           class="bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 border border-blue-200 px-6 py-3 rounded-lg font-semibold cursor-pointer transition-colors duration-200 flex items-center gap-2 shrink-0">
           <i class="fa fa-file-alt"></i> Download Template
@@ -273,6 +317,12 @@
         <button v-if="csvFile" @click="uploadVoters" :disabled="loading"
           class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed shrink-0">
           {{ loading ? 'Uploading...' : 'Confirm Upload' }}
+        </button>
+
+        <!-- CSV Download Button -->
+        <button @click="openCsvColumnPicker" :disabled="!voters.length"
+          class="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 border border-emerald-200 px-6 py-3 rounded-lg font-semibold cursor-pointer transition-colors duration-200 flex items-center gap-2 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
+          <i class="fa fa-download"></i> Download CSV
         </button>
 
         <button @click="openAddVoter"
@@ -297,7 +347,7 @@
             <i class="fa fa-times text-sm"></i>
           </button>
         </div>
-        <p v-if="searchQuery && !votersLoading" class="text-xs text-slate-500 mt-1.5 ml-1">
+        <p v-if="debouncedSearch && !votersLoading" class="text-xs text-slate-500 mt-1.5 ml-1">
           Showing {{ filteredVoters.length }} of {{ voters.length }} voters
         </p>
       </div>
@@ -358,35 +408,26 @@
               <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll"
                 class="w-4 h-4 rounded border-slate-300 text-green-600 focus:ring-green-500 cursor-pointer">
             </th>
-            <th @click="toggleSort('student_name')"
-              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700">
-              Student
-              <i v-if="sortKey === 'student_name'"
-                :class="['fa ml-1', sortOrder === 'asc' ? 'fa-caret-up' : 'fa-caret-down']"></i>
-            </th>
-            <th @click="toggleSort('lsu_id_number')"
-              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700">
-              ID Number
-              <i v-if="sortKey === 'lsu_id_number'"
-                :class="['fa ml-1', sortOrder === 'asc' ? 'fa-caret-up' : 'fa-caret-down']"></i>
-            </th>
-            <th @click="toggleSort('program')"
-              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700">
-              Program
-              <i v-if="sortKey === 'program'"
-                :class="['fa ml-1', sortOrder === 'asc' ? 'fa-caret-up' : 'fa-caret-down']"></i>
-            </th>
-            <th @click="toggleSort('has_voted')"
-              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700">
-              Status
-              <i v-if="sortKey === 'has_voted'"
-                :class="['fa ml-1', sortOrder === 'asc' ? 'fa-caret-up' : 'fa-caret-down']"></i>
-            </th>
-            <th @click="toggleSort('email_ready')"
-              class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700">
-              Email Ready
-              <i v-if="sortKey === 'email_ready'"
-                :class="['fa ml-1', sortOrder === 'asc' ? 'fa-caret-up' : 'fa-caret-down']"></i>
+            <th v-for="col in tableColumns" :key="col.key"
+              @click="toggleSort(col.key)"
+              :class="[
+                'bg-slate-50 px-6 py-4 text-sm font-semibold uppercase tracking-wider border-b border-slate-200 cursor-pointer select-none hover:text-slate-700 group transition-colors',
+                sortKey === col.key ? 'text-green-700 bg-green-50/50' : 'text-slate-500'
+              ]">
+              <div class="flex items-center gap-1.5">
+                {{ col.label }}
+                <!-- Always-visible sort icon -->
+                <span class="inline-flex flex-col leading-none text-[10px] -space-y-0.5">
+                  <i :class="[
+                    'fa fa-caret-up transition-colors',
+                    sortKey === col.key && sortOrder === 'asc' ? 'text-green-600' : 'text-slate-300 group-hover:text-slate-400'
+                  ]"></i>
+                  <i :class="[
+                    'fa fa-caret-down transition-colors',
+                    sortKey === col.key && sortOrder === 'desc' ? 'text-green-600' : 'text-slate-300 group-hover:text-slate-400'
+                  ]"></i>
+                </span>
+              </div>
             </th>
             <th
               class="bg-slate-50 px-6 py-4 text-sm font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">
@@ -394,7 +435,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="v in sortedVoters" :key="v.id"
+          <tr v-for="v in paginatedVoters" :key="v.id"
             :class="['hover:bg-slate-50 transition-colors', selectedIds.includes(v.id) ? 'bg-green-50/60' : '']">
             <td class="px-6 py-4 border-b border-slate-200">
               <input type="checkbox" :checked="selectedIds.includes(v.id)" @change="toggleSelect(v.id)"
@@ -433,13 +474,45 @@
           </tr>
         </tbody>
       </table>
+
+      <!-- Pagination controls -->
+      <div v-if="totalPages > 1" class="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-200">
+        <div class="flex items-center gap-2 text-sm text-slate-600">
+          <span>Rows per page:</span>
+          <select v-model.number="pageSize" class="border border-slate-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-green-500 bg-white">
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+            <option :value="250">250</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-1 text-sm text-slate-600">
+          <span class="mr-3">{{ paginationLabel }}</span>
+          <button @click="currentPage = 1" :disabled="currentPage === 1"
+            class="px-2 py-1 rounded hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            <i class="fa fa-angle-double-left"></i>
+          </button>
+          <button @click="currentPage--" :disabled="currentPage === 1"
+            class="px-2 py-1 rounded hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            <i class="fa fa-angle-left"></i>
+          </button>
+          <button @click="currentPage++" :disabled="currentPage === totalPages"
+            class="px-2 py-1 rounded hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            <i class="fa fa-angle-right"></i>
+          </button>
+          <button @click="currentPage = totalPages" :disabled="currentPage === totalPages"
+            class="px-2 py-1 rounded hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+            <i class="fa fa-angle-double-right"></i>
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- No results state (search returned nothing) -->
-    <div v-else-if="!votersLoading && voters.length && searchQuery"
+    <div v-else-if="!votersLoading && voters.length && debouncedSearch"
       class="text-center py-12 text-slate-500 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
       <div class="text-3xl mb-3">🔍</div>
-      <p class="font-semibold text-slate-700">No results for "{{ searchQuery }}"</p>
+      <p class="font-semibold text-slate-700">No results for "{{ debouncedSearch }}"</p>
       <p class="text-sm mt-1">Try a different name, ID number, or program.</p>
       <button @click="searchQuery = ''"
         class="mt-4 text-green-600 hover:text-green-700 text-sm font-semibold underline">Clear search</button>
@@ -453,7 +526,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 
 const config = useRuntimeConfig();
 const API_BASE = `${config.public.apiUrl}/api/usg`;
@@ -471,8 +544,22 @@ const csvFile = ref(null);
 // "No registered voters yet" empty state before data arrives.
 const votersLoading = ref(true);
 
-// Search filter query
+// Search filter query — the raw input value updates immediately for a
+// responsive typing experience, while debouncedSearch (used for actual
+// filtering) lags behind by 250ms to avoid re-sorting/re-filtering the
+// entire voter list on every single keystroke.
 const searchQuery = ref('');
+const debouncedSearch = ref('');
+let debounceTimer = null;
+
+watch(searchQuery, (val) => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    debouncedSearch.value = val;
+    // Reset to first page when search changes
+    currentPage.value = 1;
+  }, 250);
+});
 
 const toast = ref({ show: false, type: '', message: '' });
 const showToast = (message, type = 'error') => {
@@ -507,9 +594,9 @@ const isEmailReady = (v) => {
   return hasEmail && isVoted(v);
 };
 
-// Filtered voters based on the search query (name, ID, email, program, college)
+// Filtered voters based on the debounced search query (name, ID, email, program, college)
 const filteredVoters = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase();
+  const q = debouncedSearch.value.trim().toLowerCase();
   if (!q) return voters.value;
   return voters.value.filter(v =>
     (v.student_name || '').toLowerCase().includes(q) ||
@@ -525,6 +612,15 @@ const filteredVoters = computed(() => {
 const sortKey = ref('student_name');
 const sortOrder = ref('asc'); // 'asc' | 'desc'
 
+// Table column definitions for dynamic header rendering and sort icons
+const tableColumns = [
+  { key: 'student_name', label: 'Student' },
+  { key: 'lsu_id_number', label: 'ID Number' },
+  { key: 'program', label: 'Program' },
+  { key: 'has_voted', label: 'Status' },
+  { key: 'email_ready', label: 'Email Ready' },
+];
+
 const toggleSort = (key) => {
   if (sortKey.value === key) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc';
@@ -532,6 +628,8 @@ const toggleSort = (key) => {
     sortKey.value = key;
     sortOrder.value = 'asc';
   }
+  // Reset to page 1 when sort changes
+  currentPage.value = 1;
 };
 
 const sortedVoters = computed(() => {
@@ -559,6 +657,30 @@ const sortedVoters = computed(() => {
   });
 });
 
+// --- Pagination ------------------------------------------------------------
+
+const pageSize = ref(50);
+const currentPage = ref(1);
+
+const totalPages = computed(() => Math.max(1, Math.ceil(sortedVoters.value.length / pageSize.value)));
+
+// Clamp currentPage if data shrinks (e.g. after search or delete)
+watch(totalPages, (tp) => {
+  if (currentPage.value > tp) currentPage.value = tp;
+});
+
+const paginatedVoters = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return sortedVoters.value.slice(start, start + pageSize.value);
+});
+
+const paginationLabel = computed(() => {
+  const total = sortedVoters.value.length;
+  const start = (currentPage.value - 1) * pageSize.value + 1;
+  const end = Math.min(currentPage.value * pageSize.value, total);
+  return `${start}–${end} of ${total}`;
+});
+
 const handleFileUpload = (e) => {
   csvFile.value = e.target.files[0];
 };
@@ -575,12 +697,79 @@ const downloadTemplate = () => {
   window.URL.revokeObjectURL(url);
 };
 
+// --- CSV Download with Dynamic Column Selection ----------------------------
+
+const showCsvColumnPicker = ref(false);
+
+const csvAvailableColumns = [
+  { key: 'student_name', label: 'Student Name' },
+  { key: 'lsu_email', label: 'LSU Email' },
+  { key: 'lsu_id_number', label: 'LSU ID Number' },
+  { key: 'college', label: 'College' },
+  { key: 'program', label: 'Program' },
+  { key: 'has_voted', label: 'Has Voted' },
+  { key: 'email_ready', label: 'Email Ready' },
+];
+
+const csvSelectedColumns = ref(csvAvailableColumns.map(c => c.key));
+
+const toggleAllCsvColumns = () => {
+  if (csvSelectedColumns.value.length === csvAvailableColumns.length) {
+    csvSelectedColumns.value = [];
+  } else {
+    csvSelectedColumns.value = csvAvailableColumns.map(c => c.key);
+  }
+};
+
+const openCsvColumnPicker = () => {
+  showCsvColumnPicker.value = true;
+};
+
+const downloadCsv = () => {
+  const cols = csvAvailableColumns.filter(c => csvSelectedColumns.value.includes(c.key));
+  if (!cols.length) return;
+
+  // Build header row
+  const header = cols.map(c => `"${c.label}"`).join(',');
+
+  // Build data rows from sorted (and filtered) voters
+  const rows = sortedVoters.value.map(v => {
+    return cols.map(c => {
+      let val;
+      if (c.key === 'has_voted') {
+        val = isVoted(v) ? 'Yes' : 'No';
+      } else if (c.key === 'email_ready') {
+        val = isEmailReady(v) ? 'Ready' : 'Not Ready';
+      } else {
+        val = v[c.key] ?? '';
+      }
+      // Escape double quotes in CSV values
+      return `"${String(val).replace(/"/g, '""')}"`;
+    }).join(',');
+  });
+
+  const csvContent = [header, ...rows].join('\n');
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.setAttribute('href', url);
+  const dateStr = new Date().toISOString().slice(0, 10);
+  a.setAttribute('download', `voters_export_${dateStr}.csv`);
+  a.click();
+  window.URL.revokeObjectURL(url);
+
+  showCsvColumnPicker.value = false;
+  showToast(`CSV exported with ${cols.length} column${cols.length > 1 ? 's' : ''} and ${sortedVoters.value.length} rows.`, 'success');
+};
+
+// --- Fetch voters ----------------------------------------------------------
+
 const fetchVoters = async () => {
   try {
-    const res = await fetch(`${API_BASE}/voters/`);
-    if (res.ok) {
-      voters.value = await res.json();
-    }
+    // Use $fetch (Nuxt/ofetch) for automatic JSON parsing, connection
+    // pooling, request deduplication, and faster response handling
+    // compared to raw fetch().
+    voters.value = await $fetch(`${API_BASE}/voters/`);
   } catch (err) {
     console.error('Error fetching voters:', err);
   } finally {
