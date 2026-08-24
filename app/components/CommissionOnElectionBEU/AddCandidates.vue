@@ -341,6 +341,11 @@
           <i class="fa fa-file-upload"></i>
           <span>Import CSV</span>
         </button>
+        <button @click="exportCsv"
+                class="flex-1 sm:flex-none px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-xl font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-2 border border-emerald-200 shadow-sm">
+          <i class="fa fa-file-export"></i>
+          <span>Export CSV</span>
+        </button>
         <button @click="showAddCandidate = true"
                 class="flex-1 sm:flex-none px-4 py-2 bg-[#087830] hover:bg-[#066327] text-white rounded-xl font-semibold text-xs sm:text-sm transition shadow-sm flex items-center justify-center gap-2">
           <i class="fa fa-plus"></i>
@@ -822,5 +827,50 @@ const uploadCsv = async () => {
   } finally {
     uploadingCsv.value = false;
   }
+};
+
+const exportCsv = () => {
+  const dataToExport = filteredCandidates.value;
+  if (dataToExport.length === 0) {
+    showToast('No candidates to export.', 'error');
+    return;
+  }
+
+  const headers = [
+    'student_name',
+    'lsu_id_number',
+    'lsu_email',
+    'grade_and_section',
+    'title_position',
+    'partylist',
+    'number_of_votes',
+    'student_candidate_profile_desc',
+    'student_candidate_profile_image',
+  ];
+
+  const escapeCell = (val) => {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const rows = dataToExport.map(c =>
+    headers.map(h => escapeCell(c[h])).join(',')
+  );
+
+  const csvContent = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  const timestamp = new Date().toISOString().slice(0, 10);
+  link.setAttribute('download', `beu_candidates_${timestamp}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+  showToast(`Exported ${dataToExport.length} candidate(s) to CSV!`);
 };
 </script>
