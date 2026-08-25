@@ -101,16 +101,20 @@
           <p class="text-xs text-slate-500 mb-4">Please review your selections carefully before final submission. This cannot be undone.</p>
           
           <div class="space-y-3">
-            <div v-for="group in positionGroups" :key="group.position"
-                 class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-center text-xs">
-              <span class="font-bold text-slate-700 uppercase tracking-wide">{{ group.position }}</span>
-              <span v-if="selectedVotes[group.position] === 'ABSTAIN'" class="text-slate-400 italic font-medium">
+            <div v-for="group in filteredPositionGroups" :key="group.position"
+                 class="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex justify-between items-start text-xs gap-2">
+              <span class="font-bold text-slate-700 uppercase tracking-wide shrink-0">{{ group.position }}</span>
+              <span v-if="selectedVotes[group.position] === 'ABSTAIN'" class="text-slate-400 italic font-medium text-right">
                 Abstained
               </span>
-              <span v-else-if="selectedVotes[group.position]" class="font-extrabold text-[#087830]">
+              <span v-else-if="isSenatorPosition(group.position) && Array.isArray(selectedVotes[group.position]) && selectedVotes[group.position].length"
+                    class="font-extrabold text-[#087830] text-right">
+                {{ selectedVotes[group.position].map(id => getCandidateNameById(id)).join(', ') }}
+              </span>
+              <span v-else-if="selectedVotes[group.position] && !isSenatorPosition(group.position)" class="font-extrabold text-[#087830] text-right">
                 {{ getCandidateNameById(selectedVotes[group.position]) }}
               </span>
-              <span v-else class="text-red-500 font-bold">
+              <span v-else class="text-red-500 font-bold text-right">
                 Not Selected
               </span>
             </div>
@@ -280,17 +284,26 @@
       </div>
 
       <!-- Position Ballot Cards -->
-      <div v-for="group in positionGroups" :key="group.position"
+      <div v-for="group in filteredPositionGroups" :key="group.position"
            class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         
         <div class="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center">
           <div>
             <h3 class="text-base font-extrabold text-slate-800 uppercase tracking-wide">{{ group.position }}</h3>
-            <p class="text-xs text-slate-500">Select 1 candidate or Abstain</p>
+            <p class="text-xs text-slate-500">
+              <template v-if="isSenatorPosition(group.position)">
+                Select up to {{ group.candidates.length }} candidates or Abstain
+              </template>
+              <template v-else>Select 1 candidate or Abstain</template>
+            </p>
           </div>
-          <span v-if="selectedVotes[group.position]"
+          <span v-if="isPositionSelected(group.position)"
                 class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
-            <i class="fa fa-check text-[10px]"></i> Selected
+            <i class="fa fa-check text-[10px]"></i>
+            <template v-if="isSenatorPosition(group.position) && Array.isArray(selectedVotes[group.position]) && selectedVotes[group.position].length > 0">
+              {{ selectedVotes[group.position].length }} Selected
+            </template>
+            <template v-else>Selected</template>
           </span>
           <span v-else class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
             Pending
@@ -305,7 +318,7 @@
                  @click="selectCandidate(group.position, c.id)"
                  :class="[
                    'cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col justify-between select-none relative',
-                   selectedVotes[group.position] === c.id
+                   isCandidateSelected(group.position, c.id)
                      ? 'border-[#087830] bg-emerald-50/50 shadow-md ring-2 ring-emerald-500/20'
                      : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50'
                  ]">
@@ -333,14 +346,21 @@
               </div>
 
               <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span class="text-xs font-semibold" :class="selectedVotes[group.position] === c.id ? 'text-[#087830]' : 'text-slate-400'">
-                  {{ selectedVotes[group.position] === c.id ? 'Selected' : 'Click to select' }}
+                <span class="text-xs font-semibold" :class="isCandidateSelected(group.position, c.id) ? 'text-[#087830]' : 'text-slate-400'">
+                  {{ isCandidateSelected(group.position, c.id) ? 'Selected' : 'Click to select' }}
                 </span>
-                <div :class="[
-                  'w-5 h-5 rounded-full border flex items-center justify-center text-xs transition-colors',
-                  selectedVotes[group.position] === c.id ? 'bg-[#087830] border-[#087830] text-white' : 'border-slate-300 bg-white'
+                <!-- Checkbox for senators, radio for others -->
+                <div v-if="isSenatorPosition(group.position)" :class="[
+                  'w-5 h-5 rounded border-2 flex items-center justify-center text-xs transition-colors',
+                  isCandidateSelected(group.position, c.id) ? 'bg-[#087830] border-[#087830] text-white' : 'border-slate-300 bg-white'
                 ]">
-                  <i v-if="selectedVotes[group.position] === c.id" class="fa fa-check text-[10px]"></i>
+                  <i v-if="isCandidateSelected(group.position, c.id)" class="fa fa-check text-[10px]"></i>
+                </div>
+                <div v-else :class="[
+                  'w-5 h-5 rounded-full border flex items-center justify-center text-xs transition-colors',
+                  isCandidateSelected(group.position, c.id) ? 'bg-[#087830] border-[#087830] text-white' : 'border-slate-300 bg-white'
+                ]">
+                  <i v-if="isCandidateSelected(group.position, c.id)" class="fa fa-check text-[10px]"></i>
                 </div>
               </div>
             </div>
@@ -365,15 +385,22 @@
               <i v-if="selectedVotes[group.position] === 'ABSTAIN'" class="fa fa-check text-[10px]"></i>
             </div>
           </div>
+
+          <!-- Senator checkbox hint -->
+          <p v-if="isSenatorPosition(group.position) && selectedVotes[group.position] !== 'ABSTAIN'"
+             class="text-[11px] text-blue-600 mt-2 flex items-center gap-1">
+            <i class="fa fa-info-circle"></i>
+            You can select multiple candidates. Checked candidates are highlighted.
+          </p>
         </div>
       </div>
 
       <!-- Submit Action Bar -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4 sticky bottom-4">
         <div class="text-xs text-slate-500">
-          Positions chosen: <strong class="text-slate-800">{{ chosenCount }} / {{ positionGroups.length }}</strong>
+          Positions chosen: <strong class="text-slate-800">{{ chosenCount }} / {{ filteredPositionGroups.length }}</strong>
         </div>
-        <button @click="openReviewModal" :disabled="chosenCount < positionGroups.length"
+        <button @click="openReviewModal" :disabled="chosenCount < filteredPositionGroups.length"
                 class="w-full sm:w-auto px-8 py-3 bg-[#087830] hover:bg-[#066327] text-white rounded-xl font-extrabold text-sm transition shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           <span>Review & Submit Ballot</span>
           <i class="fa fa-arrow-right text-xs"></i>
@@ -424,6 +451,15 @@ onMounted(() => {
   fetchCandidates();
 });
 
+// Extract leading grade number from grade_and_section, e.g. "11- STEM HS - Br. X" → "11"
+const getGradeLevel = (gradeAndSection) => {
+  if (!gradeAndSection) return null;
+  const match = gradeAndSection.toString().trim().match(/^(\d+)/);
+  return match ? match[1] : null;
+};
+
+const voterGradeLevel = computed(() => getGradeLevel(currentVoter.value?.grade_and_section));
+
 const positionGroups = computed(() => {
   const map = {};
   candidates.value.forEach(c => {
@@ -442,13 +478,58 @@ const positionGroups = computed(() => {
   return result;
 });
 
+// Filtered groups: senator positions keep all candidates (school-wide);
+// all other positions only show candidates whose grade level matches the voter's grade level.
+const filteredPositionGroups = computed(() => {
+  return positionGroups.value.map(group => {
+    if (isSenatorPosition(group.position)) {
+      // Senators are school-wide — no grade filter
+      return group;
+    }
+    const filtered = group.candidates.filter(c => {
+      const candidateGrade = getGradeLevel(c.grade_and_section);
+      return !voterGradeLevel.value || candidateGrade === voterGradeLevel.value;
+    });
+    return { ...group, candidates: filtered };
+  }).filter(group => group.candidates.length > 0);
+});
+
 const chosenCount = computed(() => {
   let count = 0;
-  positionGroups.value.forEach(g => {
-    if (selectedVotes.value[g.position]) count++;
+  filteredPositionGroups.value.forEach(g => {
+    const sel = selectedVotes.value[g.position];
+    if (isSenatorPosition(g.position)) {
+      // For senators: count as chosen if ABSTAIN or at least 1 candidate selected
+      if (sel === 'ABSTAIN' || (Array.isArray(sel) && sel.length > 0)) count++;
+    } else {
+      if (sel) count++;
+    }
   });
   return count;
 });
+
+// Returns true if the position name contains 'senator' (case-insensitive)
+const isSenatorPosition = (position) => {
+  return position?.toLowerCase().includes('senator');
+};
+
+// Returns true if a candidate is selected for the given position
+const isCandidateSelected = (position, candidateId) => {
+  const sel = selectedVotes.value[position];
+  if (isSenatorPosition(position)) {
+    return Array.isArray(sel) && sel.includes(candidateId);
+  }
+  return sel === candidateId;
+};
+
+// Returns true if ANY selection has been made for the position
+const isPositionSelected = (position) => {
+  const sel = selectedVotes.value[position];
+  if (isSenatorPosition(position)) {
+    return sel === 'ABSTAIN' || (Array.isArray(sel) && sel.length > 0);
+  }
+  return !!sel;
+};
 
 const verifyStudent = async () => {
   if (!voterIdInput.value.trim() || !emailInput.value.trim()) return;
@@ -524,7 +605,20 @@ const logoutVoter = () => {
 };
 
 const selectCandidate = (position, candidateId) => {
-  selectedVotes.value[position] = candidateId;
+  if (isSenatorPosition(position)) {
+    // Toggle multi-select for senators
+    const current = Array.isArray(selectedVotes.value[position]) ? selectedVotes.value[position] : [];
+    const idx = current.indexOf(candidateId);
+    if (idx === -1) {
+      selectedVotes.value[position] = [...current, candidateId];
+    } else {
+      const updated = current.filter(id => id !== candidateId);
+      // If nothing left, remove the key so it counts as unselected
+      selectedVotes.value[position] = updated.length ? updated : undefined;
+    }
+  } else {
+    selectedVotes.value[position] = candidateId;
+  }
 };
 
 const selectAbstain = (position) => {
@@ -547,7 +641,7 @@ const submitFinalVote = async () => {
     const abstainedPositions = [];
     const choices = [];
 
-    for (const group of positionGroups.value) {
+    for (const group of filteredPositionGroups.value) {
       const selection = selectedVotes.value[group.position];
       if (selection === 'ABSTAIN') {
         abstainedPositions.push(group.position);
@@ -555,6 +649,14 @@ const submitFinalVote = async () => {
           position: group.position,
           candidateName: 'Abstained',
           isAbstain: true
+        });
+      } else if (isSenatorPosition(group.position) && Array.isArray(selection) && selection.length) {
+        // Multi-select: push each senator ID separately
+        selection.forEach(id => candidateIds.push(id));
+        choices.push({
+          position: group.position,
+          candidateName: selection.map(id => getCandidateNameById(id)).join(', '),
+          isAbstain: false
         });
       } else if (selection) {
         candidateIds.push(selection);
