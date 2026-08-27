@@ -451,6 +451,9 @@ onMounted(() => {
   fetchCandidates();
 });
 
+// Known strand keywords for BEU (add more as needed)
+const STRAND_KEYWORDS = ['STEM', 'ABM', 'HUMSS', 'GAS', 'TVL', 'ARTS', 'ICT', 'HE'];
+
 // Extract leading grade number from grade_and_section, e.g. "11- STEM HS - Br. X" → "11"
 const getGradeLevel = (gradeAndSection) => {
   if (!gradeAndSection) return null;
@@ -458,7 +461,20 @@ const getGradeLevel = (gradeAndSection) => {
   return match ? match[1] : null;
 };
 
+// Extract strand keyword from grade_and_section, e.g. "12- STEM MED Br. X" → "STEM"
+const getStrand = (gradeAndSection) => {
+  if (!gradeAndSection) return null;
+  const upper = gradeAndSection.toString().toUpperCase();
+  for (const strand of STRAND_KEYWORDS) {
+    // Match as a whole word (bounded by non-alphanumeric)
+    const regex = new RegExp(`(?<![A-Z])${strand}(?![A-Z])`);
+    if (regex.test(upper)) return strand;
+  }
+  return null;
+};
+
 const voterGradeLevel = computed(() => getGradeLevel(currentVoter.value?.grade_and_section));
+const voterStrand = computed(() => getStrand(currentVoter.value?.grade_and_section));
 
 const positionGroups = computed(() => {
   const map = {};
@@ -478,17 +494,29 @@ const positionGroups = computed(() => {
   return result;
 });
 
-// Filtered groups: senator positions keep all candidates (school-wide);
-// all other positions only show candidates whose grade level matches the voter's grade level.
+// Filtered groups:
+// - Senators: school-wide — no grade or strand filter
+// - Governor (and other strand-specific positions): filter by BOTH grade level AND strand
 const filteredPositionGroups = computed(() => {
   return positionGroups.value.map(group => {
     if (isSenatorPosition(group.position)) {
-      // Senators are school-wide — no grade filter
+      // Senators are school-wide — no grade/strand filter
       return group;
     }
     const filtered = group.candidates.filter(c => {
       const candidateGrade = getGradeLevel(c.grade_and_section);
-      return !voterGradeLevel.value || candidateGrade === voterGradeLevel.value;
+      const candidateStrand = getStrand(c.grade_and_section);
+
+      // Grade must match voter's grade
+      const gradeMatch = !voterGradeLevel.value || candidateGrade === voterGradeLevel.value;
+
+      // If the voter has a detected strand AND the candidate also has a strand,
+      // they must match (e.g. STEM voter only sees STEM Governor).
+      // If either side has no detectable strand, fall back to grade-only filtering.
+      const strandMatch =
+        !voterStrand.value || !candidateStrand || candidateStrand === voterStrand.value;
+
+      return gradeMatch && strandMatch;
     });
     return { ...group, candidates: filtered };
   }).filter(group => group.candidates.length > 0);
@@ -539,6 +567,37 @@ const verifyStudent = async () => {
     showToast("Please enter a valid @lsu.edu.ph email address", "error");
     return;
   }
+// ---------------------------------------------------------------------------
+// Normalize the voter object received from the API.
+// The API stores votes as `voted_candidates` (a flat JSON array of objects).
+// The template and receipt logic expect `voted_candidates_details` and
+// `abstained_list` — so we derive them here.
+// ---------------------------------------------------------------------------
+const normalizeVoter = (voter) => {
+  if (!voter) return voter;
+  const raw = Array.isArray(voter.voted_candidates) ? voter.voted_candidates : [];
+
+  // Real voted candidates (exclude ABSTAIN sentinels and TIMESTAMP entries)
+  const details = raw.filter(
+    v => v.lsu_id_number !== 'ABSTAIN' && v.student_name !== 'TIMESTAMP'
+  );
+
+  // Abstained positions
+  const abstains = raw
+    .filter(v => v.lsu_id_number === 'ABSTAIN')
+    .map(v => ({ position: v.title_position }));
+
+  // Extract voted_at from the embedded TIMESTAMP entry (if present)
+  const timestampEntry = raw.find(v => v.student_name === 'TIMESTAMP');
+  const voted_at = timestampEntry?.lsu_id_number || voter.voted_at || null;
+
+  return {
+    ...voter,
+    voted_candidates_details: details,
+    abstained_list: abstains,
+    voted_at,
+  };
+};
 
   verifying.value = true;
   try {
@@ -551,14 +610,14 @@ const verifyStudent = async () => {
     });
 
     if (res.valid && res.voter) {
-      currentVoter.value = res.voter;
+      currentVoter.value = normalizeVoter(res.voter);
       selectedVotes.value = {};
       showToast(`Welcome, ${res.voter.student_name}!`);
     }
   } catch (err) {
     console.error(err);
     if (err.data?.has_voted && err.data?.voter) {
-      currentVoter.value = err.data.voter;
+      currentVoter.value = normalizeVoter(err.data.voter);
       showToast("You have already voted in this election.", "error");
     } else {
       const msg = err.data?.error || "Voter verification failed. Please check your LSU ID and Email.";
@@ -572,8 +631,19 @@ const verifyStudent = async () => {
 const openReceiptFromRecord = () => {
   if (!currentVoter.value) return;
 
-  const details = currentVoter.value.voted_candidates_details || [];
-  const abstains = currentVoter.value.abstained_list || [];
+  // Prefer pre-normalized details; fall back to parsing raw voted_candidates
+  const details = currentVoter.value.voted_candidates_details
+    ?? (Array.isArray(currentVoter.value.voted_candidates)
+        ? currentVoter.value.voted_candidates.filter(
+            v => v.lsu_id_number !== 'ABSTAIN' && v.student_name !== 'TIMESTAMP'
+          )
+        : []);
+  const abstains = currentVoter.value.abstained_list
+    ?? (Array.isArray(currentVoter.value.voted_candidates)
+        ? currentVoter.value.voted_candidates
+            .filter(v => v.lsu_id_number === 'ABSTAIN')
+            .map(v => ({ position: v.title_position }))
+        : []);
 
   const choices = [];
   details.forEach(d => {
@@ -703,9 +773,28 @@ const finishVoting = () => {
 };
 
 const getProfileImageUrl = (img) => {
-  if (!img) return "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/circleLSULogo.jpg";
-  if (img.startsWith("http://") || img.startsWith("https://")) return img;
-  return `${endpoint}${img}`;
+  const fallback = "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/circleLSULogo.jpg";
+  if (!img) return fallback;
+
+  // Trim whitespace
+  let cleaned = img.toString().trim();
+  if (!cleaned) return fallback;
+
+  // Strip S3 pre-signed query parameters (e.g. ?X-Amz-Algorithm=...&X-Amz-Signature=...)
+  // Keep only the path up to and including the file extension (.png, .jpg, etc.)
+  const qIndex = cleaned.indexOf('?');
+  if (qIndex !== -1) cleaned = cleaned.substring(0, qIndex);
+
+  // Already a full URL — return as-is (without query string)
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) return cleaned;
+
+  // Relative path: ensure exactly one leading slash, then prepend API endpoint
+  const relativePath = cleaned.startsWith('/') ? cleaned : `/${cleaned}`;
+  // Collapse any accidental double-slashes in the path portion
+  const safePath = relativePath.replace(/\/\/+/g, '/');
+  // Remove trailing slash from endpoint to avoid double-slash at join point
+  const baseUrl = (endpoint || '').toString().replace(/\/+$/, '');
+  return `${baseUrl}${safePath}`;
 };
 
 const handleImageError = (event, name) => {
