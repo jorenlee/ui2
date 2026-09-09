@@ -437,6 +437,24 @@
                 "objectives":[]
               }
             ]
+          },
+          {
+            "logo": "cmls.png",
+            "title": "College of Medical Laboratory Science",
+            "abbr": "CMLS",
+            "active": false,
+            "link": "lsu-cmls",
+            "programs": [{
+              "abbr": "BSMLS",
+              "title": "Bachelor of Science in Medical Laboratory Science",
+              "description": "",
+              "vision": "",
+              "mission": "",
+              "goalDescription": "",
+              "goals": [],
+              "objectivesDescription": "",
+              "objectives": []
+            }]
           }
         ]
       }]
@@ -486,6 +504,14 @@
                           "Major in Physical Education",
                           "Major in Science",
                           "Major in Social Studies"]
+                }
+              ]
+            },
+            {
+              "title": "College of Law",
+              "programs": [{
+                  "title": "Juris Doctor",
+                  "major": []
                 }
               ]
             }
