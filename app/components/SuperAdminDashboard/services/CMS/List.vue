@@ -396,8 +396,20 @@ const filterOptions = [
   { value: "news", label: "News" },
   { value: "events", label: "Events" },
   { value: "announcements", label: "Announcements" },
-  { value: "programs", label: "Programs" },
   { value: "hero carousel", label: "Hero Carousel" },
+  { value: "programs", label: "Programs" },
+  { value: "CAS (College of Arts and Sciences)", label: "CAS (College of Arts and Sciences)" },
+  { value: "CBA (College of Business and Accountancy)", label: "CBA (College of Business and Accountancy)" },
+  { value: "CCJE (College of Criminal Justice Education)", label: "CCJE (College of Criminal Justice Education)" },
+  { value: "CCSEA (College of Computer Studies, Engineering and Architecture)", label: "CCSEA (College of Computer Studies, Engineering and Architecture)" },
+  { value: "CON (College of Nursing)", label: "CON (College of Nursing)" },
+  { value: "CTE (College of Teacher Education)", label: "CTE (College of Teacher Education)" },
+  { value: "CTHM (College of Tourism and Hospitality Management)", label: "CTHM (College of Tourism and Hospitality Management)" },
+  { value: "CMLS (College of Medical Laboratory Science)", label: "CMLS (College of Medical Laboratory Science)" },
+  {
+    value: "SGS (School of Graduate Studies)",
+    label: "SGS (School of Graduate Studies)"
+  }
 ];
 
 // Filtered and paginated data

@@ -16,8 +16,12 @@ const schoolToggle = (a, b) => {
 };
 
 const isCollegeEnabled = (college) => {
-  if (!college || !college.abbr) return false;
-  return college.abbr.toUpperCase() === 'CCSEA';
+  if (!college) return false;
+  return Boolean(
+    (college.programs && college.programs.length > 0) ||
+    college.vmgItem ||
+    college.abbr
+  );
 };
 
 const getProgramSlug = (p, fallbackLink) => {
@@ -32,23 +36,156 @@ const getProgramSlug = (p, fallbackLink) => {
   return `/academics/tertiary-education/${fallbackLink || ''}`;
 };
 
-const isBachelorProgram = (item) => {
+// Check if an item is a Graduate degree program (Master, Doctor, JD, PhD, etc.)
+const isGraduateProgram = (item) => {
   if (!item || !item.title) return false;
   const title = item.title.trim().toLowerCase();
   const filters = (item.filters || item.filter || "").toLowerCase();
   const category = (item.category || "").toLowerCase();
 
-  const hasBachelorTitle =
+  return (
+    title.includes("doctor") ||
+    title.includes("master") ||
+    title.includes("ph.d") ||
+    title.includes("phd") ||
+    title.includes("juris doctor") ||
+    title.includes("post-graduate") ||
+    title.includes("postgraduate") ||
+    /\b(dba|mba|mpa|med|maed|msn|mit|jd)\b/i.test(title) ||
+    filters.includes("graduate studies") ||
+    filters.includes("school of graduate") ||
+    filters.includes("sgs") ||
+    category.includes("graduate")
+  );
+};
+
+// Check if an item is a College VMG / College Info item (NOT a degree program)
+const isCollegeVmgItem = (item) => {
+  if (!item || !item.title) return false;
+  const title = item.title.trim().toLowerCase();
+  const filters = (item.filters || item.filter || "").toLowerCase();
+
+  // If title contains degree program indicators, it cannot be a VMG item
+  if (
     title.includes("bachelor") ||
     title.startsWith("bs ") ||
     title.startsWith("bs") ||
     title.startsWith("ba ") ||
-    title.includes("bachelor of");
+    title.startsWith("ba") ||
+    title.startsWith("bee") ||
+    title.startsWith("bpe") ||
+    title.startsWith("btle") ||
+    title.startsWith("blis") ||
+    title.includes("master") ||
+    title.includes("doctor") ||
+    title.includes("juris doctor")
+  ) {
+    return false;
+  }
+
+  const hasVmgTitle =
+    title.includes("vision") ||
+    title.includes("mission") ||
+    title.includes("goal") ||
+    title.includes("vmg") ||
+    title.includes("objectives") ||
+    title.includes("college info") ||
+    title.includes("college overview") ||
+    title.includes("about the college");
+
+  const hasVmgFilter =
+    filters.includes("vision") ||
+    filters.includes("mission") ||
+    filters.includes("vmg");
+
+  return hasVmgTitle || hasVmgFilter;
+};
+
+// Check if an item is an Undergraduate / Bachelor degree program
+const isUndergradProgram = (item) => {
+  if (!item || !item.title) return false;
+  // Strictly EXCLUDE graduate programs
+  if (isGraduateProgram(item)) return false;
+  // Strictly EXCLUDE VMG items
+  if (isCollegeVmgItem(item)) return false;
+
+  const title = item.title.trim().toLowerCase();
+  const filters = (item.filters || item.filter || "").toLowerCase();
+  const category = (item.category || "").toLowerCase();
+
+  const hasBachelorKeyword =
+    title.includes("bachelor") ||
+    title.startsWith("bs ") ||
+    title.startsWith("bs") ||
+    title.startsWith("ba ") ||
+    title.startsWith("ba") ||
+    title.startsWith("bee") ||
+    title.startsWith("bpe") ||
+    title.startsWith("btle") ||
+    title.startsWith("blis") ||
+    title.includes("diploma") ||
+    title.includes("associate");
 
   const hasAbbrParentheses = /\([a-z0-9-]{2,8}\)/i.test(item.title);
   const hasProgramFilter = filters.includes("programs") || category.includes("programs");
 
-  return hasBachelorTitle || (hasProgramFilter && hasAbbrParentheses);
+  return hasBachelorKeyword || (hasProgramFilter && hasAbbrParentheses) || hasProgramFilter;
+};
+
+const isCollegeMatch = (cmsItem, college) => {
+  if (!cmsItem || !college) return false;
+  const cAbbr = (college.abbr || "").trim().toLowerCase();
+  const cTitle = (college.title || "").trim().toLowerCase();
+  const filters = (cmsItem.filters || cmsItem.filter || "").toLowerCase();
+  const title = (cmsItem.title || "").toLowerCase();
+
+  // 1. Exact or regex word boundary check on abbreviation
+  if (cAbbr) {
+    const regexAbbr = new RegExp(`(^|[^a-zA-Z0-9])${cAbbr}([^a-zA-Z0-9]|$)`, "i");
+    if (regexAbbr.test(filters) || regexAbbr.test(title)) return true;
+  }
+
+  // 2. Full college title in filters or title
+  if (cTitle && (filters.includes(cTitle) || title.includes(cTitle))) return true;
+
+  // 3. Check known college keywords / aliases
+  const aliases = {
+    cas: ["arts and sciences", "college of arts and sciences"],
+    cba: ["business and accountancy", "college of business and accountancy"],
+    ccje: ["criminal justice", "criminal justice education", "college of criminal justice"],
+    ccsea: [
+      "computer studies",
+      "engineering and architecture",
+      "engineering, and architecture",
+      "college of computer studies",
+      "college of engineering",
+    ],
+    con: ["college of nursing", "nursing department", "school of nursing"],
+    cte: ["teacher education", "college of teacher education", "education department"],
+    cthm: ["tourism and hospitality", "hospitality management", "college of tourism"],
+    cmls: ["medical laboratory science", "college of medical laboratory"],
+    sgs: ["graduate studies", "school of graduate studies", "graduate school"],
+  };
+
+  const collegeAliases = aliases[cAbbr] || [];
+  for (const alias of collegeAliases) {
+    if (filters.includes(alias) || title.includes(alias)) return true;
+  }
+
+  // 4. Check if CMS item title matches any default programs defined for this college in tertiary.json
+  if (Array.isArray(college.programs)) {
+    for (const prog of college.programs) {
+      const pTitle = (prog.title || "").trim().toLowerCase();
+      const pAbbr = (prog.abbr || "").trim().toLowerCase();
+      if (pAbbr) {
+        const regexPAbbr = new RegExp(`(^|[^a-zA-Z0-9])${pAbbr}([^a-zA-Z0-9]|$)`, "i");
+        if (regexPAbbr.test(title) || regexPAbbr.test(filters)) return true;
+      }
+      if (pTitle && (title.includes(pTitle) || pTitle.includes(title))) return true;
+    }
+  }
+
+  return false;
 };
 
 const getCollegeVmgSlug = (college) => {
@@ -64,6 +201,18 @@ const getCollegeVmgSlug = (college) => {
   return `/academics/tertiary-education`;
 };
 
+// Helper to remove duplicate programs by normalized title
+const dedupePrograms = (programs) => {
+  const seen = new Set();
+  return programs.filter((p) => {
+    if (!p || !p.title) return false;
+    const norm = p.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (seen.has(norm)) return false;
+    seen.add(norm);
+    return true;
+  });
+};
+
 const fetchCMSPrograms = async () => {
   try {
     const res = await $fetch(endpoint.value + "/api/cms/content/list/").catch(() => null);
@@ -71,6 +220,7 @@ const fetchCMSPrograms = async () => {
       const cloned = JSON.parse(JSON.stringify(tertiaryJSON.tertiary));
 
       cloned.forEach((t) => {
+        // ── 1. Undergraduate Studies Colleges ──
         if (t.under_grad) {
           t.under_grad.forEach((tu) => {
             if (tu.list) {
@@ -78,24 +228,15 @@ const fetchCMSPrograms = async () => {
                 const cAbbr = (college.abbr || "").toLowerCase();
                 if (!cAbbr) return;
 
-                // 1. Find CMS list items corresponding to this college and filter ONLY Bachelor programs
+                // Find CMS list items corresponding to this college that are STRICTLY UNDERGRADUATE programs
                 const cmsItems = res.filter((item) => {
                   if (!item) return false;
-                  const filters = (item.filters || item.filter || "").toLowerCase();
-                  const title = (item.title || "").toLowerCase();
-                  const desc = (item.descriptions || item.description || "").toLowerCase();
-
-                  const matchesCollege =
-                    filters.includes(cAbbr) ||
-                    title.includes(cAbbr) ||
-                    desc.includes(cAbbr);
-
-                  return matchesCollege && isBachelorProgram(item);
+                  return isCollegeMatch(item, college) && isUndergradProgram(item);
                 });
 
                 if (cmsItems.length > 0) {
-                  // Dynamically map CMS list items directly to college programs
-                  college.programs = cmsItems.map((cmsItem) => {
+                  // Dynamically map CMS list items directly to college programs (deduplicated)
+                  const mapped = cmsItems.map((cmsItem) => {
                     return {
                       id: cmsItem.id || cmsItem.content_id,
                       title: cmsItem.title,
@@ -104,37 +245,13 @@ const fetchCMSPrograms = async () => {
                       cmsData: cmsItem,
                     };
                   });
+                  college.programs = dedupePrograms(mapped);
                 }
 
-                // 2. Find College VMG / College Info item from CMS for this college (e.g., CCSEA Vision Mission Goal)
+                // Find College VMG / College Info item from CMS for this college
                 const vmgItem = res.find((item) => {
                   if (!item) return false;
-                  const filters = (item.filters || item.filter || "").toLowerCase();
-                  const title = (item.title || "").toLowerCase();
-                  const desc = (item.descriptions || item.description || "").toLowerCase();
-
-                  const matchesCollege =
-                    filters.includes(cAbbr) ||
-                    title.includes(cAbbr) ||
-                    desc.includes(cAbbr) ||
-                    (college.title && title.includes(college.title.toLowerCase()));
-
-                  const isVmgKeyword =
-                    filters.includes("vision") ||
-                    filters.includes("mission") ||
-                    filters.includes("goal") ||
-                    filters.includes("college") ||
-                    title.includes("vision") ||
-                    title.includes("mission") ||
-                    title.includes("goal") ||
-                    title.includes("vmg") ||
-                    desc.includes("vision") ||
-                    desc.includes("mission") ||
-                    desc.includes("goal");
-
-                  const isNotBachelor = !isBachelorProgram(item);
-
-                  return matchesCollege && (isVmgKeyword || isNotBachelor);
+                  return isCollegeMatch(item, college) && isCollegeVmgItem(item);
                 });
 
                 if (vmgItem) {
@@ -145,6 +262,49 @@ const fetchCMSPrograms = async () => {
                     filters: vmgItem.filters || "",
                     cmsData: vmgItem,
                   };
+                }
+              });
+            }
+          });
+        }
+
+        // ── 2. Graduate Studies (SGS) ──
+        if (t.grad_stud) {
+          t.grad_stud.forEach((tg) => {
+            if (tg.list) {
+              tg.list.forEach((college) => {
+                // Find all Graduate CMS items
+                const gradCmsItems = res.filter((item) => {
+                  if (!item) return false;
+                  return isGraduateProgram(item) || isCollegeMatch(item, college);
+                });
+
+                // Attach matching CMS item IDs to grad programs in Graduate School categories
+                if (college.category && Array.isArray(college.category)) {
+                  college.category.forEach((cat) => {
+                    if (cat.programs && Array.isArray(cat.programs)) {
+                      cat.programs.forEach((p) => {
+                        const pTitle = (p.title || "").toLowerCase().trim();
+                        const pNorm = pTitle.replace(/[^a-z0-9]/g, "");
+
+                        const matchedCms = gradCmsItems.find((ci) => {
+                          const ciTitle = (ci.title || "").toLowerCase().trim();
+                          const ciNorm = ciTitle.replace(/[^a-z0-9]/g, "");
+                          return (
+                            ciTitle.includes(pTitle) ||
+                            pTitle.includes(ciTitle) ||
+                            ciNorm.includes(pNorm) ||
+                            pNorm.includes(ciNorm)
+                          );
+                        });
+
+                        if (matchedCms) {
+                          p.id = matchedCms.id || matchedCms.content_id;
+                          p.cmsData = matchedCms;
+                        }
+                      });
+                    }
+                  });
                 }
               });
             }

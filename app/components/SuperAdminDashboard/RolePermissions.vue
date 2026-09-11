@@ -82,7 +82,7 @@ const totalEmailsToSend = ref(0);
 const failedEmailCount = ref(0);
 const shouldCancelEmailSending = ref(false);
 const testEmailRecipient = ref("");
-const showTestEmailInput = ref(false);
+// const showTestEmailInput = ref(false);
 const confirmSendAllModal = ref(false);
 
 // Email Image Attachments & Inline Previews (Gmail style)
@@ -93,6 +93,7 @@ const activePreviewImage = ref(null); // For Image Lightbox / Full-screen modal
 const toasts = ref([]);
 
 const defaultForm = {
+  fullname: "",
   email: "",
   role_filter_permissions: [],
   updated_at: "",
@@ -139,14 +140,31 @@ const availableRoles = [
   "Safety and Security Center",
   "Juris Doctor Admin",
   "Juris Doctor Examinee",
+  "Student",
+  "Faculty",
+  "Staff",
 ].map((r) => ({ value: r, label: r }));
+
+// ---------------- PRE-INDEXED SEARCH & FAST LOOKUPS ----------------
+const prepareItemSearchIndex = (item) => {
+  if (!item) return;
+  const roles = Array.isArray(item.role_filter_permissions)
+    ? item.role_filter_permissions.join(" ")
+    : "";
+  item._searchKey = `${item.fullname || ""} ${item.email || ""} ${roles} ${item.created_at || ""} ${item.updated_at || ""}`.toLowerCase();
+};
 
 // ---------------- FETCH ----------------
 const fetchList = async (retries = 2) => {
   isLoading.value = true;
   try {
     const res = await $fetch(`${endpoint}/api/cits/role-permissions/list/`);
-    listItems.value = res || [];
+    if (res && Array.isArray(res)) {
+      res.forEach(prepareItemSearchIndex);
+      listItems.value = res;
+    } else {
+      listItems.value = [];
+    }
   } catch (e) {
     if (e?.status === 429 && retries > 0) {
       await sleep(2000);
@@ -164,41 +182,66 @@ const sortBy = (field) => {
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
   } else {
     sortField.value = field;
-    sortOrder.value = "asc";
   }
 };
 
+// ---------------- SEARCH DEBOUNCE & FAST FILTERING ----------------
+const debouncedSearchQuery = ref("");
+let searchDebounceTimer = null;
+
+watch(searchQuery, (newVal) => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  const trimmed = (newVal || "").trim();
+  if (!trimmed) {
+    debouncedSearchQuery.value = "";
+    currentPage.value = 1;
+    return;
+  }
+  searchDebounceTimer = setTimeout(() => {
+    debouncedSearchQuery.value = trimmed;
+    currentPage.value = 1;
+  }, 80);
+});
+
 // ---------------- FILTER & SORT COMPUTED ----------------
 const filteredList = computed(() => {
-  const q = searchQuery.value.toLowerCase().trim();
-  let list = listItems.value;
+  const q = debouncedSearchQuery.value.toLowerCase();
+  const list = listItems.value;
+  if (!list || !list.length) return [];
 
+  let result = list;
   if (q) {
-    list = list.filter(
-      (i) =>
-        i.email?.toLowerCase().includes(q) ||
-        i.role_filter_permissions?.some((r) => r.toLowerCase().includes(q)),
-    );
+    result = list.filter((i) => {
+      if (!i._searchKey) prepareItemSearchIndex(i);
+      return i._searchKey.includes(q);
+    });
   }
 
-  if (!sortField.value) return list;
+  if (!sortField.value) return result;
 
-  return [...list].sort((a, b) => {
-    let result = 0;
-    if (sortField.value === "email") {
-      const valA = (a.email || "").toLowerCase();
-      const valB = (b.email || "").toLowerCase();
-      result = valA.localeCompare(valB);
-    } else if (sortField.value === "roles") {
-      const rolesA = (a.role_filter_permissions || []).join(", ").toLowerCase();
-      const rolesB = (b.role_filter_permissions || []).join(", ").toLowerCase();
-      result = rolesA.localeCompare(rolesB);
-    } else if (sortField.value === "created_at") {
-      const timeA = new Date(a.created_at || a.updated_at || 0).getTime() || 0;
-      const timeB = new Date(b.created_at || b.updated_at || 0).getTime() || 0;
-      result = timeA - timeB;
+  const field = sortField.value;
+  const isAsc = sortOrder.value === "asc";
+
+  return [...result].sort((a, b) => {
+    let diff = 0;
+    if (field === "fullname") {
+      const valA = a.fullname || "";
+      const valB = b.fullname || "";
+      diff = valA < valB ? -1 : (valA > valB ? 1 : 0);
+    } else if (field === "email") {
+      const valA = a.email || "";
+      const valB = b.email || "";
+      diff = valA < valB ? -1 : (valA > valB ? 1 : 0);
+    } else if (field === "roles") {
+      const rolesA = (a.role_filter_permissions?.[0] || "");
+      const rolesB = (b.role_filter_permissions?.[0] || "");
+      diff = rolesA < rolesB ? -1 : (rolesA > rolesB ? 1 : 0);
+    } else if (field === "created_at") {
+      const valA = a.created_at || a.updated_at || "";
+      const valB = b.created_at || b.updated_at || "";
+      diff = valA < valB ? -1 : (valA > valB ? 1 : 0);
     }
-    return sortOrder.value === "asc" ? result : -result;
+    return isAsc ? diff : -diff;
   });
 });
 
@@ -213,12 +256,29 @@ const paginatedList = computed(() => {
   return filteredList.value.slice(start, start + pageSize.value);
 });
 
-watch(searchQuery, () => {
-  currentPage.value = 1;
+// Progressive rendering limit for large page sizes (e.g. 500, 1000, 10000)
+const displayLimit = ref(150);
+
+const renderedPaginatedList = computed(() => {
+  const list = paginatedList.value;
+  if (list.length <= displayLimit.value) {
+    return list;
+  }
+  return list.slice(0, displayLimit.value);
 });
 
-watch(pageSize, () => {
-  currentPage.value = 1;
+const loadMoreRows = () => {
+  if (displayLimit.value < paginatedList.value.length) {
+    displayLimit.value = Math.min(displayLimit.value + 300, paginatedList.value.length);
+  }
+};
+
+const loadAllPageRows = () => {
+  displayLimit.value = paginatedList.value.length;
+};
+
+watch([currentPage, pageSize, debouncedSearchQuery], () => {
+  displayLimit.value = Math.min(pageSize.value, 150);
 });
 
 const goToPage = (p) => {
@@ -227,19 +287,27 @@ const goToPage = (p) => {
   }
 };
 
-// ---------------- SELECTION & BATCH STATE ----------------
-const isItemSelected = (id) => selectedIds.value.includes(id);
+// ---------------- SELECTION & BATCH STATE (O(1) Hash Set Optimization) ----------------
+const selectedIdsSet = computed(() => new Set(selectedIds.value));
+
+const isItemSelected = (id) => selectedIdsSet.value.has(id);
 
 const isAllPageSelected = computed(() => {
-  if (!paginatedList.value.length) return false;
-  return paginatedList.value.every((item) => selectedIds.value.includes(item.id));
+  const list = paginatedList.value;
+  if (!list.length) return false;
+  const set = selectedIdsSet.value;
+  return list.every((item) => set.has(item.id));
 });
 
 const isPartialPageSelected = computed(() => {
-  if (!paginatedList.value.length) return false;
-  const pageIds = paginatedList.value.map((i) => i.id);
-  const selectedOnPage = pageIds.filter((id) => selectedIds.value.includes(id));
-  return selectedOnPage.length > 0 && selectedOnPage.length < pageIds.length;
+  const list = paginatedList.value;
+  if (!list.length) return false;
+  const set = selectedIdsSet.value;
+  let count = 0;
+  for (let i = 0; i < list.length; i++) {
+    if (set.has(list[i].id)) count++;
+  }
+  return count > 0 && count < list.length;
 });
 
 const toggleSelectAllPage = () => {
@@ -267,7 +335,7 @@ const clearSelection = () => {
 };
 
 const toggleSelectItem = (id) => {
-  if (selectedIds.value.includes(id)) {
+  if (selectedIdsSet.value.has(id)) {
     selectedIds.value = selectedIds.value.filter((i) => i !== id);
   } else {
     selectedIds.value.push(id);
@@ -872,8 +940,9 @@ const openForm = (item = null) => {
   editingItem.value = item;
   formData.value = item
     ? {
-      email: item.email,
-      role_filter_permissions: [...item.role_filter_permissions],
+      fullname: item.fullname || "",
+      email: item.email || "",
+      role_filter_permissions: [...(item.role_filter_permissions || [])],
     }
     : { ...defaultForm };
 
@@ -947,29 +1016,130 @@ const readFileAsText = (file) => {
   });
 };
 
-const parseCsvEmails = (text) => {
+const parseCsvRows = (text) => {
   if (!text) return [];
-  const lines = text.split(/\r?\n/);
-  const lineEmailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+/g;
-  const emails = [];
-  const seen = new Set();
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return [];
 
-  for (let i = 0; i < lines.length; i++) {
+  const results = [];
+  const seenEmails = new Set();
+  const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z0-9.-]+/;
+
+  const parseCsvLine = (line) => {
+    const row = [];
+    let insideQuote = false;
+    let entry = "";
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        insideQuote = !insideQuote;
+      } else if (c === "," && !insideQuote) {
+        row.push(entry.trim().replace(/^["']|["']$/g, ""));
+        entry = "";
+      } else {
+        entry += c;
+      }
+    }
+    row.push(entry.trim().replace(/^["']|["']$/g, ""));
+    return row;
+  };
+
+  const firstLine = lines[0];
+  const firstLineHasEmail = emailRegex.test(firstLine);
+  let startIndex = 0;
+  let headerMap = null;
+
+  if (!firstLineHasEmail) {
+    startIndex = 1;
+    const headerCols = parseCsvLine(firstLine).map((h) =>
+      h.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    );
+    headerMap = {
+      fullName: headerCols.findIndex(
+        (h) =>
+          h === "fullname" ||
+          h === "name" ||
+          h === "completename" ||
+          h === "userfullname",
+      ),
+      firstName: headerCols.findIndex(
+        (h) =>
+          h === "firstname" ||
+          h === "first" ||
+          h === "givenname" ||
+          h === "fname",
+      ),
+      lastName: headerCols.findIndex(
+        (h) =>
+          h === "lastname" ||
+          h === "last" ||
+          h === "surname" ||
+          h === "familyname" ||
+          h === "lname",
+      ),
+      email: headerCols.findIndex(
+        (h) => h.includes("email") || h.includes("mail") || h === "useremail",
+      ),
+    };
+  }
+
+  for (let i = startIndex; i < lines.length; i++) {
     const line = lines[i].trim();
     if (!line) continue;
 
-    const matches = line.match(lineEmailPattern);
-    if (matches) {
-      for (const m of matches) {
-        const cleaned = m.trim().toLowerCase();
-        if (cleaned && !seen.has(cleaned)) {
-          seen.add(cleaned);
-          emails.push(cleaned);
+    const cols = parseCsvLine(line);
+    let email = "";
+    let fullname = "";
+
+    if (headerMap && headerMap.email !== -1 && cols[headerMap.email]) {
+      const match = cols[headerMap.email].match(emailRegex);
+      if (match) email = match[0].toLowerCase().trim();
+    }
+
+    if (!email) {
+      for (const col of cols) {
+        const match = col.match(emailRegex);
+        if (match) {
+          email = match[0].toLowerCase().trim();
+          break;
         }
       }
     }
+
+    if (!email) continue;
+    if (seenEmails.has(email)) continue;
+    seenEmails.add(email);
+
+    if (headerMap) {
+      if (headerMap.fullName !== -1 && cols[headerMap.fullName]) {
+        fullname = cols[headerMap.fullName].trim();
+      } else if (headerMap.firstName !== -1 || headerMap.lastName !== -1) {
+        const f =
+          headerMap.firstName !== -1 ? (cols[headerMap.firstName] || "").trim() : "";
+        const l =
+          headerMap.lastName !== -1 ? (cols[headerMap.lastName] || "").trim() : "";
+        fullname = `${f} ${l}`.trim();
+      }
+    }
+
+    if (!fullname && cols.length > 1) {
+      const nonEmailCols = cols.filter(
+        (c) => !emailRegex.test(c) && c.length > 0 && !c.includes("@"),
+      );
+      if (nonEmailCols.length === 1) {
+        fullname = nonEmailCols[0].trim();
+      } else if (nonEmailCols.length >= 2) {
+        fullname = nonEmailCols.slice(0, 2).join(" ").trim();
+      }
+    }
+
+    results.push({
+      email,
+      fullname: fullname || "",
+    });
   }
-  return emails;
+
+  return results;
 };
 
 const cancelCsvProcessing = () => {
@@ -992,9 +1162,9 @@ const submitCsvUpload = async () => {
 
   try {
     const fileText = await readFileAsText(csvFile.value);
-    const extractedEmails = parseCsvEmails(fileText);
+    const extractedRows = parseCsvRows(fileText);
 
-    if (extractedEmails.length === 0) {
+    if (extractedRows.length === 0) {
       showToast("No valid email addresses found in the CSV file.", "error");
       isUploadingCsv.value = false;
       return;
@@ -1007,40 +1177,41 @@ const submitCsvUpload = async () => {
     );
 
     const seenInBatch = new Set();
-    const emailsToCreate = [];
+    const itemsToCreate = [];
     let skippedCount = 0;
 
-    for (const rawEmail of extractedEmails) {
-      const emailLower = rawEmail.toLowerCase();
+    for (const row of extractedRows) {
+      const emailLower = row.email.toLowerCase();
       if (existingEmailsSet.has(emailLower) || seenInBatch.has(emailLower)) {
         skippedCount++;
       } else {
         seenInBatch.add(emailLower);
-        emailsToCreate.push(rawEmail);
+        itemsToCreate.push(row);
       }
     }
 
-    if (emailsToCreate.length === 0) {
+    if (itemsToCreate.length === 0) {
       csvUploadResult.value = {
-        total_rows: extractedEmails.length,
+        total_rows: extractedRows.length,
         added_count: 0,
         skipped_count: skippedCount,
-        message: `All ${extractedEmails.length.toLocaleString()} emails in the file already exist in the database (skipped).`,
+        message: `All ${extractedRows.length.toLocaleString()} emails in the file already exist in the database (skipped).`,
       };
       showToast(csvUploadResult.value.message, "info", 5000);
       isUploadingCsv.value = false;
       return;
     }
 
-    const totalToCreate = emailsToCreate.length;
+    const totalToCreate = itemsToCreate.length;
     let addedCount = 0;
     let failedCount = 0;
     const CONCURRENCY_LIMIT = 4;
 
-    const createSingleRole = async (email, retries = 2) => {
+    const createSingleRole = async (item, retries = 2) => {
       const now = new Date();
       const payload = {
-        email: email,
+        fullname: item.fullname || "",
+        email: item.email,
         role_filter_permissions: ["External Links"],
         updated_at: now.toString(),
       };
@@ -1052,19 +1223,20 @@ const submitCsvUpload = async () => {
         addedCount++;
         listItems.value.unshift({
           id: res?.id || Date.now() + Math.random(),
-          email: email,
+          fullname: item.fullname || "",
+          email: item.email,
           role_filter_permissions: ["External Links"],
           created_at: now.toISOString(),
           updated_at: now.toString(),
         });
-        existingEmailsSet.add(email.toLowerCase());
+        existingEmailsSet.add(item.email.toLowerCase());
         return true;
       } catch (err) {
         if (err?.status === 429 && retries > 0) {
           await sleep(2000);
-          return createSingleRole(email, retries - 1);
+          return createSingleRole(item, retries - 1);
         }
-        console.error(`Failed to add ${email}:`, err);
+        console.error(`Failed to add ${item.email}:`, err);
         failedCount++;
         return false;
       }
@@ -1072,14 +1244,14 @@ const submitCsvUpload = async () => {
 
     uploadProgressText.value = `Importing 0 of ${totalToCreate.toLocaleString()} users...`;
 
-    for (let i = 0; i < emailsToCreate.length; i += CONCURRENCY_LIMIT) {
+    for (let i = 0; i < itemsToCreate.length; i += CONCURRENCY_LIMIT) {
       if (shouldCancelUpload.value) {
         showToast("Upload stopped by user", "warning");
         break;
       }
 
-      const chunk = emailsToCreate.slice(i, i + CONCURRENCY_LIMIT);
-      await Promise.all(chunk.map((email) => createSingleRole(email)));
+      const chunk = itemsToCreate.slice(i, i + CONCURRENCY_LIMIT);
+      await Promise.all(chunk.map((item) => createSingleRole(item)));
 
       const processed = Math.min(i + chunk.length, totalToCreate);
       uploadProgressPercent.value = Math.round(
@@ -1091,7 +1263,7 @@ const submitCsvUpload = async () => {
     }
 
     csvUploadResult.value = {
-      total_rows: extractedEmails.length,
+      total_rows: extractedRows.length,
       added_count: addedCount,
       skipped_count: skippedCount + failedCount,
       message: `Successfully imported ${addedCount.toLocaleString()} user(s) with "External Links" role. Skipped ${skippedCount.toLocaleString()} existing/duplicate record(s).`,
@@ -1108,17 +1280,17 @@ const submitCsvUpload = async () => {
 
 // ---------------- DOWNLOAD CSV TEMPLATE ----------------
 const downloadCsvTemplate = () => {
-  const headers = ["First Name", "Last Name", "Email Address"];
+  const headers = ["Full Name", "First Name", "Last Name", "Email Address"];
   const sampleRows = [
-    ["Juan", "Dela Cruz", "juan.delacruz@lsu.edu.ph"],
-    ["Maria", "Santos", "maria.santos@lsu.edu.ph"],
-    ["Pedro", "Penduko", "pedro.penduko@lsu.edu.ph"],
+    ["Juan Dela Cruz", "Juan", "Dela Cruz", "juan.delacruz@lsu.edu.ph"],
+    ["Maria Santos", "Maria", "Santos", "maria.santos@lsu.edu.ph"],
+    ["Pedro Penduko", "Pedro", "Penduko", "pedro.penduko@lsu.edu.ph"],
   ];
 
   const csvContent =
     headers.join(",") +
     "\n" +
-    sampleRows.map((r) => r.join(",")).join("\n") +
+    sampleRows.map((r) => r.map((c) => `"${c}"`).join(",")).join("\n") +
     "\n";
 
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -1142,33 +1314,76 @@ const toggleRole = (role) => {
 };
 
 // ---------------- SAVE ----------------
+const isSaving = ref(false);
+
 const submitForm = async () => {
   if (!formData.value.email.trim())
     return showToast("Email cannot be empty", "warning");
 
-  formData.value.updated_at = new Date().toString();
-  isLoading.value = true;
+  const isEditing = !!editingItem.value;
+  const currentEditingId = editingItem.value?.id;
+  const payload = {
+    fullname: (formData.value.fullname || "").trim(),
+    email: formData.value.email.trim(),
+    role_filter_permissions: [...formData.value.role_filter_permissions],
+    updated_at: new Date().toString(),
+  };
 
-  const url = editingItem.value
-    ? `${endpoint}/api/cits/role-permissions/${editingItem.value.id}/edit/`
+  isSaving.value = true;
+
+  const url = isEditing
+    ? `${endpoint}/api/cits/role-permissions/${currentEditingId}/edit/`
     : `${endpoint}/api/cits/role-permissions/create/`;
 
-  const method = editingItem.value ? "PUT" : "POST";
+  const method = isEditing ? "PUT" : "POST";
 
   try {
-    await $fetch(url, { method, body: formData.value });
+    const res = await $fetch(url, { method, body: payload });
+
+    if (res?.status === "errors") {
+      const errMsgs = res.errors ? Object.values(res.errors).flat().join(", ") : "Validation error";
+      showToast(`Error: ${errMsgs}`, "error", 4000);
+      return;
+    }
+
+    // Optimistically update local state immediately so user sees changes instantly
+    if (isEditing) {
+      const idx = listItems.value.findIndex((i) => i.id === currentEditingId);
+      if (idx !== -1) {
+        listItems.value[idx] = {
+          ...listItems.value[idx],
+          fullname: payload.fullname,
+          email: payload.email,
+          role_filter_permissions: [...payload.role_filter_permissions],
+          updated_at: payload.updated_at,
+        };
+      }
+    } else {
+      listItems.value.unshift({
+        id: res?.id || Date.now(),
+        fullname: payload.fullname,
+        email: payload.email,
+        role_filter_permissions: [...payload.role_filter_permissions],
+        created_at: new Date().toISOString(),
+        updated_at: payload.updated_at,
+      });
+    }
+
+    // Immediately close modal
+    closeForm();
 
     showToast(
-      `Role permission ${editingItem.value ? "updated" : "created"} successfully`,
+      `Role permission ${isEditing ? "updated" : "created"} successfully`,
       "success",
     );
 
-    await fetchList();
-    closeForm();
+    // Refresh list in background
+    fetchList();
   } catch (e) {
+    console.error("Error saving role permission:", e);
     showToast("Error saving role permission", "error");
   } finally {
-    isLoading.value = false;
+    isSaving.value = false;
   }
 };
 
@@ -1296,7 +1511,7 @@ onMounted(async () => {
       <!-- SEARCH -->
       <div class="w-full relative">
         <i class="fa fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-        <input v-model="searchQuery" type="text" placeholder="Search by email or role..."
+        <input v-model="searchQuery" type="text" placeholder="Search by fullname, email, or role..."
           class="w-full pl-10 pr-4 lg:py-2 py-1 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white text-gray-800 shadow-2xs" />
       </div>
 
@@ -1447,6 +1662,19 @@ onMounted(async () => {
                   </div>
                 </th>
 
+                <!-- Fullname Column -->
+                <th scope="col" @click="sortBy('fullname')"
+                  class="px-4 py-3.5 cursor-pointer hover:bg-gray-200/70 transition" title="Click to sort by Fullname">
+                  <div class="flex items-center gap-1.5">
+                    <span>Fullname</span>
+                    <span class="text-xs">
+                      <i v-if="sortField === 'fullname'" class="fa"
+                        :class="sortOrder === 'asc' ? 'fa-sort-up text-green-700 font-bold' : 'fa-sort-down text-green-700 font-bold'"></i>
+                      <i v-else class="fa fa-sort text-gray-400 opacity-60"></i>
+                    </span>
+                  </div>
+                </th>
+
                 <!-- Email Column -->
                 <th scope="col" @click="sortBy('email')"
                   class="px-4 py-3.5 cursor-pointer hover:bg-gray-200/70 transition" title="Click to sort by Email">
@@ -1498,7 +1726,7 @@ onMounted(async () => {
             <tbody class="divide-y divide-gray-100">
               <!-- Loading State -->
               <tr v-if="isLoading">
-                <td colspan="5" class="py-12 text-center text-gray-500">
+                <td colspan="6" class="py-12 text-center text-gray-500">
                   <div class="flex items-center justify-center gap-2">
                     <i class="fa fa-spinner fa-spin text-green-600 text-lg"></i>
                     <span class="text-sm font-medium">Loading role permissions...</span>
@@ -1508,13 +1736,13 @@ onMounted(async () => {
 
               <!-- Empty State -->
               <tr v-else-if="filteredList.length === 0">
-                <td colspan="5" class="py-12 text-center text-gray-500">
+                <td colspan="6" class="py-12 text-center text-gray-500">
                   <div class="text-sm">No role permissions found.</div>
                 </td>
               </tr>
 
               <!-- Data Rows -->
-              <tr v-for="(item, k) in paginatedList" :key="item.id || k" class="transition group" :class="[
+              <tr v-for="(item, k) in renderedPaginatedList" :key="item.id || k" class="transition group" :class="[
                 isItemSelected(item.id)
                   ? 'bg-emerald-50/90 text-emerald-950 font-medium'
                   : k % 2
@@ -1527,6 +1755,11 @@ onMounted(async () => {
                     <input type="checkbox" :checked="isItemSelected(item.id)" @change="toggleSelectItem(item.id)"
                       class="w-4 h-4 rounded text-green-600 focus:ring-green-500 cursor-pointer accent-green-600" />
                   </div>
+                </td>
+
+                <!-- Fullname Column -->
+                <td class="px-4 py-3 font-medium text-gray-900 break-all">
+                  {{ item.fullname || '-' }}
                 </td>
 
                 <!-- Email Column -->
@@ -1567,6 +1800,25 @@ onMounted(async () => {
                       class="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-2xs transition cursor-pointer"
                       title="Delete Role Permission">
                       <i class="fa fa-trash w-3.5 h-3.5 flex items-center justify-center"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Progressive Chunk Loader (Active for huge page sizes like 10,000) -->
+              <tr v-if="renderedPaginatedList.length < paginatedList.length" class="bg-gray-50/90 border-t border-gray-200">
+                <td colspan="6" class="py-2.5 px-4 text-center text-xs text-gray-600">
+                  <div class="flex flex-wrap items-center justify-center gap-3">
+                    <span>
+                      Rendered <strong>{{ renderedPaginatedList.length.toLocaleString() }}</strong> of <strong>{{ paginatedList.length.toLocaleString() }}</strong> records on this page
+                    </span>
+                    <button type="button" @click="loadMoreRows"
+                      class="px-3 py-1 bg-white hover:bg-gray-100 border border-gray-300 rounded-md text-xs font-semibold text-green-700 shadow-2xs transition cursor-pointer">
+                      <i class="fa fa-chevron-down mr-1"></i> Load Next 300
+                    </button>
+                    <button type="button" @click="loadAllPageRows"
+                      class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-md text-xs font-semibold shadow-2xs transition cursor-pointer">
+                      <i class="fa fa-list mr-1"></i> Render All {{ paginatedList.length.toLocaleString() }}
                     </button>
                   </div>
                 </td>
@@ -2431,7 +2683,7 @@ onMounted(async () => {
 
     <!-- CREATE / EDIT MODAL -->
     <div v-if="showForm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white w-full max-w-lg p-6 rounded-xl shadow-2xl">
+      <div class="bg-white w-full lg:w-11/12 p-6 rounded-xl shadow-2xl">
         <h2 class="text-xl font-bold mb-4 text-gray-900">
           {{
             editingItem ? "Edit Role Permission" : "Create Role Permission"
@@ -2439,13 +2691,21 @@ onMounted(async () => {
         </h2>
 
         <div class="space-y-4">
-          <input v-model="formData.email" type="email" placeholder="User Email"
-            class="w-full border border-gray-300 p-3 rounded text-sm focus:ring-2 focus:ring-green-500 focus:outline-none bg-white text-gray-800" />
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">Full Name</label>
+            <input v-model="formData.fullname" type="text" placeholder="Full Name (optional, ready to be filled out)"
+              class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:outline-none bg-white text-gray-800" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">User Email <span class="text-red-500">*</span></label>
+            <input v-model="formData.email" type="email" placeholder="User Email (e.g. name@lsu.edu.ph)"
+              class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:outline-none bg-white text-gray-800" />
+          </div>
 
           <div>
             <p class="font-semibold mb-2 text-sm text-gray-800">Select Roles</p>
-
-            <div class="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1">
+            <div class="grid grid-cols-4 gap-2 max-h-60 overflow-y-auto p-1">
               <label v-for="role in availableRoles" :key="role.value"
                 class="flex items-center gap-2 text-xs text-gray-700 hover:bg-gray-50 p-1 rounded cursor-pointer">
                 <input type="checkbox" :checked="formData.role_filter_permissions.includes(role.value)
@@ -2457,14 +2717,15 @@ onMounted(async () => {
         </div>
 
         <div class="flex justify-end gap-2 mt-6">
-          <button @click="closeForm"
-            class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium rounded transition cursor-pointer">
+          <button @click="closeForm" :disabled="isSaving"
+            class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium rounded transition disabled:opacity-50 cursor-pointer">
             Cancel
           </button>
 
-          <button @click="submitForm"
-            class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition cursor-pointer">
-            Save
+          <button @click="submitForm" :disabled="isSaving"
+            class="px-5 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-xs font-medium rounded shadow transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+            <i v-if="isSaving" class="fa fa-spinner fa-spin"></i>
+            <span>{{ isSaving ? "Saving..." : "Save" }}</span>
           </button>
         </div>
       </div>

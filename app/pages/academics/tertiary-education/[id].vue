@@ -218,10 +218,16 @@ const isBachelorProgram = (cmsItem) => {
   return (
     t.includes("bachelor") ||
     t.startsWith("bs ") ||
-    t.startsWith("bsit") ||
-    t.startsWith("bscs") ||
+    t.startsWith("bs") ||
     t.startsWith("ba ") ||
-    t.includes("bachelor of") ||
+    t.startsWith("ba") ||
+    t.startsWith("bee") ||
+    t.startsWith("bpe") ||
+    t.startsWith("btle") ||
+    t.startsWith("blis") ||
+    t.includes("doctor") ||
+    t.includes("master") ||
+    t.includes("juris doctor") ||
     f.includes("programs")
   );
 };
@@ -247,7 +253,7 @@ const isCurrentProgram = (p) => {
 const resolveCollegeAbbr = (cmsItem, cmsId) => {
   const pageFilters = (cmsItem?.filters || "").toLowerCase();
   const pageTitle = (cmsItem?.title || "").toLowerCase();
-  const cleanId = String(cmsId).toLowerCase();
+  const cleanId = String(cmsId || "").toLowerCase();
 
   let matchedAbbr = "";
   tertiaryJSON.tertiary.forEach((t) => {
@@ -259,8 +265,13 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
             const cAbbr = (col.abbr || "").toLowerCase();
             const cTitle = (col.title || "").toLowerCase();
 
+            // Word-boundary check for abbreviation or full title in page filters / title
+            const regexAbbr = new RegExp(`(^|[^a-zA-Z0-9])${cAbbr}([^a-zA-Z0-9]|$)`, "i");
+            const matchesAbbr = regexAbbr.test(pageFilters) || regexAbbr.test(pageTitle) || cleanId === cAbbr;
+            const matchesTitle = cTitle && (pageTitle.includes(cTitle) || pageFilters.includes(cTitle));
+
             // Direct match: this page IS the college VMG
-            if (cleanId === cAbbr || cleanId.includes(cAbbr) || pageTitle.includes(cAbbr) || pageFilters.includes(cAbbr) || pageTitle.includes(cTitle)) {
+            if (matchesAbbr || matchesTitle) {
               matchedAbbr = cAbbr;
               return;
             }
@@ -270,8 +281,13 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
               const inCollege = col.programs.some((p) => {
                 const pAbbr = (p.abbr || "").toLowerCase();
                 const pLink = (p.link || "").toLowerCase();
-                const pSlug = (p.title || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-                return pAbbr === cleanId || pLink === cleanId || pSlug === cleanId || pSlug.includes(cleanId) || cleanId.includes(pAbbr);
+                const pTitle = (p.title || "").toLowerCase();
+                const pSlug = pTitle.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+                return (
+                  (pAbbr && (pAbbr === cleanId || new RegExp(`(^|[^a-zA-Z0-9])${pAbbr}([^a-zA-Z0-9]|$)`, "i").test(pageTitle))) ||
+                  (pLink && pLink === cleanId) ||
+                  (pSlug && (pSlug === cleanId || pageTitle.includes(pTitle) || pTitle.includes(pageTitle)))
+                );
               });
               if (inCollege) matchedAbbr = cAbbr;
             }
@@ -279,13 +295,30 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
         }
       });
     }
+
+    if (t.grad_stud) {
+      t.grad_stud.forEach((tg) => {
+        if (tg.list) {
+          tg.list.forEach((col) => {
+            if (matchedAbbr) return;
+            const cAbbr = (col.abbr || "").toLowerCase();
+            const cTitle = (col.title || "").toLowerCase();
+            const regexAbbr = new RegExp(`(^|[^a-zA-Z0-9])${cAbbr}([^a-zA-Z0-9]|$)`, "i");
+            if (regexAbbr.test(pageFilters) || regexAbbr.test(pageTitle) || (cTitle && pageTitle.includes(cTitle)) || cleanId === cAbbr) {
+              matchedAbbr = cAbbr;
+            }
+          });
+        }
+      });
+    }
   });
 
-  // Also check pageFilters directly for college abbr keywords
+  // Also check pageFilters directly for known college abbreviations
   if (!matchedAbbr) {
-    const abbrList = ["ccsea", "cas", "cbe", "che", "ced", "cn", "crim", "ctaf"];
+    const abbrList = ["cas", "cba", "ccje", "ccsea", "con", "cte", "cthm", "cmls", "sgs"];
     for (const a of abbrList) {
-      if (pageFilters.includes(a) || cleanId.includes(a)) {
+      const regex = new RegExp(`(^|[^a-zA-Z0-9])${a}([^a-zA-Z0-9]|$)`, "i");
+      if (regex.test(pageFilters) || regex.test(pageTitle) || cleanId === a) {
         matchedAbbr = a;
         break;
       }
@@ -305,13 +338,14 @@ const fetchCollegeProgramsFromCMS = async (cmsListRes) => {
     const matchedAbbr = resolveCollegeAbbr(item.value, itemId);
     if (!matchedAbbr) return;
 
-    // Filter CMS list: items that match the college abbr AND are bachelor programs
+    const regexMatchedAbbr = new RegExp(`(^|[^a-zA-Z0-9])${matchedAbbr}([^a-zA-Z0-9]|$)`, "i");
+
+    // Filter CMS list: items that match the college abbr AND are bachelor/degree programs
     const matched = list.filter((cmsItem) => {
       if (!cmsItem) return false;
       const f = (cmsItem.filters || "").toLowerCase();
       const t2 = (cmsItem.title || "").toLowerCase();
-      const d = (cmsItem.descriptions || cmsItem.description || "").toLowerCase();
-      const matchesCollege = f.includes(matchedAbbr) || t2.includes(matchedAbbr) || d.includes(matchedAbbr);
+      const matchesCollege = regexMatchedAbbr.test(f) || regexMatchedAbbr.test(t2);
       return matchesCollege && isBachelorProgram(cmsItem);
     });
 
