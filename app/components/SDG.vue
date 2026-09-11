@@ -23,14 +23,14 @@ const sdgs = [
 </script>
 
 <template>
-  <section class="pb-10 pt-5 sm:py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-    <div class="relative bg-gradient-to-b from-white via-emerald-50/40 to-slate-50 border border-emerald-100/80 rounded-3xl p-6 sm:p-10 lg:p-12 shadow-xl shadow-emerald-950/5 overflow-hidden">
+  <section>
+    <div class="relative bg-gradient-to-b from-white via-emerald-50/40 to-slate-50 border border-emerald-100/80 rounded-3xl p-6 sm:p-10 lg:p-12 shadow-xl shadow-emerald-950/5 overflow-hidden w-11/12 mx-auto">
       <!-- Ambient Decorative Glows -->
       <div class="absolute -top-32 -right-32 w-80 h-80 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none"></div>
       <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-teal-400/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <!-- Header & Partner Logos -->
-      <div class="relative z-10 flex flex-col items-center text-center max-w-4xl mx-auto mb-8 sm:mb-10">
+      <div class="relative z-10 flex flex-col items-center text-center w-11/12 mx-auto mb-8 sm:mb-10">
         <span class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-100/90 text-emerald-800 text-xs font-bold uppercase tracking-widest rounded-full mb-4 border border-emerald-200/60">
           <i class="fas fa-seedling text-emerald-600"></i> Institutional Commitment
         </span>
@@ -49,17 +49,22 @@ const sdgs = [
           />
         </div>
 
-        <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 mt-4 mb-2 tracking-tight">
-          La Salle University supports the <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-800 to-teal-700">Sustainable Development Goals</span>
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 mt-4 tracking-tight">
+          La Salle University supports the 
         </h2>
-        <p class="text-slate-600 text-xs sm:text-base max-w-2xl">
+
+        <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 mb-5 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-800 to-teal-700">Sustainable Development Goals</h2>
+
+
+
+        <p class="text-slate-600 text-xs sm:text-base w-full">
           Driving meaningful impact through campus research, social action, environmental stewardship, and inclusive education.
         </p>
       </div>
 
       <!-- Interactive SDGs Mini Grid -->
       <div class="relative z-10 mb-8 sm:mb-10">
-        <div class="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-2.5 sm:gap-3.5 max-w-5xl mx-auto">
+        <div class="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-2.5 sm:gap-3.5 w-11/12 mx-auto">
           <NuxtLink
             v-for="s in sdgs"
             :key="s.id"

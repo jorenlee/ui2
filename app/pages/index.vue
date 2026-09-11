@@ -107,13 +107,12 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
     ════════════════════════════════════════ -->
     <section id="sustainability" class="relative bg-slate-50 py-2">
       <!-- Section label -->
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-0">
+      <div class="w-11/12 mx-auto my-10">
         <div class="flex items-center gap-3 mb-1">
           <span class="w-1 h-6 rounded-full bg-gradient-to-b from-teal-600 to-emerald-400"></span>
           <span class="text-xs font-bold uppercase tracking-[0.18em] text-teal-800">Sustainability</span>
         </div>
       </div>
-
       <SDG />
     </section>
 
