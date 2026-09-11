@@ -19,6 +19,7 @@ const isCollegeEnabled = (college) => {
   if (!college) return false;
   return Boolean(
     (college.programs && college.programs.length > 0) ||
+    (college.category && college.category.length > 0) ||
     college.vmgItem ||
     college.abbr
   );
@@ -36,36 +37,47 @@ const getProgramSlug = (p, fallbackLink) => {
   return `/academics/tertiary-education/${fallbackLink || ''}`;
 };
 
-// Check if an item is a Graduate degree program (Master, Doctor, JD, PhD, etc.)
-const isGraduateProgram = (item) => {
-  if (!item || !item.title) return false;
-  const title = item.title.trim().toLowerCase();
-  const filters = (item.filters || item.filter || "").toLowerCase();
-  const category = (item.category || "").toLowerCase();
-
-  return (
-    title.includes("doctor") ||
-    title.includes("master") ||
-    title.includes("ph.d") ||
-    title.includes("phd") ||
-    title.includes("juris doctor") ||
-    title.includes("post-graduate") ||
-    title.includes("postgraduate") ||
-    /\b(dba|mba|mpa|med|maed|msn|mit|jd)\b/i.test(title) ||
-    filters.includes("graduate studies") ||
-    filters.includes("school of graduate") ||
-    filters.includes("sgs") ||
-    category.includes("graduate")
-  );
-};
-
 // Check if an item is a College VMG / College Info item (NOT a degree program)
-const isCollegeVmgItem = (item) => {
+const isCollegeVmgItem = (item, college = null) => {
   if (!item || !item.title) return false;
   const title = item.title.trim().toLowerCase();
   const filters = (item.filters || item.filter || "").toLowerCase();
+  const authors = (item.authors || item.author || "").toLowerCase();
+  const descriptions = (item.descriptions || item.description || "").toLowerCase();
 
-  // If title contains degree program indicators, it cannot be a VMG item
+  // If title is an exact match for college title or abbreviation
+  if (college) {
+    const cTitle = (college.title || "").trim().toLowerCase();
+    const cAbbr = (college.abbr || "").trim().toLowerCase();
+    if (cTitle && title === cTitle) return true;
+    if (cAbbr && title === cAbbr) return true;
+  }
+
+  // Common college titles
+  const collegeTitles = [
+    "school of graduate studies",
+    "sgs",
+    "college of arts and sciences",
+    "cas",
+    "college of business and accountancy",
+    "cba",
+    "college of criminal justice education",
+    "ccje",
+    "college of computer studies, engineering, and architecture",
+    "college of computer studies, engineering and architecture",
+    "ccsea",
+    "college of nursing",
+    "con",
+    "college of teacher education",
+    "cte",
+    "college of tourism and hospitality management",
+    "cthm",
+    "college of medical laboratory science",
+    "cmls"
+  ];
+  if (collegeTitles.includes(title)) return true;
+
+  // If title starts with a specific degree prefix, it is NOT a VMG item
   if (
     title.includes("bachelor") ||
     title.startsWith("bs ") ||
@@ -76,9 +88,11 @@ const isCollegeVmgItem = (item) => {
     title.startsWith("bpe") ||
     title.startsWith("btle") ||
     title.startsWith("blis") ||
-    title.includes("master") ||
-    title.includes("doctor") ||
-    title.includes("juris doctor")
+    title.startsWith("doctor of") ||
+    title.startsWith("doctor in") ||
+    title.startsWith("master of") ||
+    title.startsWith("master in") ||
+    title.startsWith("juris doctor")
   ) {
     return false;
   }
@@ -98,7 +112,78 @@ const isCollegeVmgItem = (item) => {
     filters.includes("mission") ||
     filters.includes("vmg");
 
-  return hasVmgTitle || hasVmgFilter;
+  const hasVmgDesc =
+    descriptions.includes("**vision**") ||
+    descriptions.includes("**mission**") ||
+    (descriptions.includes("vision") && descriptions.includes("mission"));
+
+  return hasVmgTitle || hasVmgFilter || hasVmgDesc;
+};
+
+// Check if an item is strictly a Graduate degree program (Master, Doctor, JD, PhD, etc.)
+const isGraduateProgram = (item) => {
+  if (!item || !item.title) return false;
+  const title = item.title.trim().toLowerCase();
+  const filters = (item.filters || item.filter || "").toLowerCase();
+
+  // Exclude VMG items
+  if (isCollegeVmgItem(item)) return false;
+
+  // Strictly exclude news / announcements / exams / passers / publications / general postings
+  if (
+    filters.includes("news") ||
+    filters.includes("announcement") ||
+    filters.includes("event") ||
+    filters.includes("highlights") ||
+    filters.includes("hero carousel") ||
+    title.includes("passer") ||
+    title.includes("licensure") ||
+    title.includes("examination") ||
+    title.includes("exam") ||
+    title.includes("congratulations") ||
+    title.includes("congrats") ||
+    title.includes("publication") ||
+    title.includes("research") ||
+    title.includes("webinar") ||
+    title.includes("seminar") ||
+    title.includes("workshop") ||
+    title.includes("board passer") ||
+    title.includes("hiring") ||
+    title.includes("job") ||
+    title.includes("schedule")
+  ) {
+    return false;
+  }
+
+  // Must strictly match master, doctor, juris doctor, phd, or known graduate degree patterns
+  const isDoctor =
+    title.startsWith("doctor of") ||
+    title.startsWith("doctor in") ||
+    title.startsWith("doctorate") ||
+    title.includes("doctor of philosophy") ||
+    title.includes("doctor in business") ||
+    title.includes("doctor of education") ||
+    /\b(ph\.?d\.?|dba|edd)\b/i.test(title);
+
+  const isMaster =
+    title.startsWith("master of") ||
+    title.startsWith("master in") ||
+    title.startsWith("master's in") ||
+    title.startsWith("master's of") ||
+    title.includes("master of arts") ||
+    title.includes("master of science") ||
+    title.includes("master in education") ||
+    title.includes("master in business") ||
+    title.includes("master in public") ||
+    /\b(mba|mpa|maed|med|msn|mit|msit|mscs)\b/i.test(title);
+
+  const isLaw =
+    title.includes("juris doctor") ||
+    title === "jd" ||
+    /\bjd\b/i.test(title) ||
+    title.includes("bachelor of laws");
+
+  return isDoctor || isMaster || isLaw;
 };
 
 // Check if an item is an Undergraduate / Bachelor degree program
@@ -137,16 +222,17 @@ const isCollegeMatch = (cmsItem, college) => {
   const cAbbr = (college.abbr || "").trim().toLowerCase();
   const cTitle = (college.title || "").trim().toLowerCase();
   const filters = (cmsItem.filters || cmsItem.filter || "").toLowerCase();
+  const authors = (cmsItem.authors || cmsItem.author || "").toLowerCase();
   const title = (cmsItem.title || "").toLowerCase();
 
   // 1. Exact or regex word boundary check on abbreviation
   if (cAbbr) {
     const regexAbbr = new RegExp(`(^|[^a-zA-Z0-9])${cAbbr}([^a-zA-Z0-9]|$)`, "i");
-    if (regexAbbr.test(filters) || regexAbbr.test(title)) return true;
+    if (regexAbbr.test(filters) || regexAbbr.test(title) || regexAbbr.test(authors)) return true;
   }
 
-  // 2. Full college title in filters or title
-  if (cTitle && (filters.includes(cTitle) || title.includes(cTitle))) return true;
+  // 2. Full college title in filters, title, or authors
+  if (cTitle && (filters.includes(cTitle) || title.includes(cTitle) || authors.includes(cTitle))) return true;
 
   // 3. Check known college keywords / aliases
   const aliases = {
@@ -164,12 +250,19 @@ const isCollegeMatch = (cmsItem, college) => {
     cte: ["teacher education", "college of teacher education", "education department"],
     cthm: ["tourism and hospitality", "hospitality management", "college of tourism"],
     cmls: ["medical laboratory science", "college of medical laboratory"],
-    sgs: ["graduate studies", "school of graduate studies", "graduate school"],
+    sgs: [
+      "graduate studies",
+      "school of graduate studies",
+      "school of graduate",
+      "graduate school",
+      "sgs (school of graduate studies)",
+      "higher education unit, sgs",
+    ],
   };
 
   const collegeAliases = aliases[cAbbr] || [];
   for (const alias of collegeAliases) {
-    if (filters.includes(alias) || title.includes(alias)) return true;
+    if (filters.includes(alias) || title.includes(alias) || authors.includes(alias)) return true;
   }
 
   // 4. Check if CMS item title matches any default programs defined for this college in tertiary.json
@@ -185,7 +278,45 @@ const isCollegeMatch = (cmsItem, college) => {
     }
   }
 
+  // 5. Check if CMS item title matches any categories or programs in college.category (e.g. SGS)
+  if (Array.isArray(college.category)) {
+    for (const cat of college.category) {
+      if (Array.isArray(cat.programs)) {
+        for (const prog of cat.programs) {
+          const pTitle = (prog.title || "").trim().toLowerCase();
+          if (pTitle && (title.includes(pTitle) || pTitle.includes(title))) return true;
+        }
+      }
+    }
+  }
+
   return false;
+};
+
+// Helper for uncategorized graduate programs fetched from CMS (strictly degree programs)
+const uncategorizedGradPrograms = (college) => {
+  if (!college || !college.programs || !college.category) return [];
+  const categorizedTitles = new Set();
+
+  college.category.forEach((cat) => {
+    if (cat.programs) {
+      cat.programs.forEach((p) => {
+        if (p.title) {
+          categorizedTitles.add(p.title.toLowerCase().replace(/[^a-z0-9]/g, ""));
+        }
+      });
+    }
+  });
+
+  return college.programs.filter((p) => {
+    if (!isGraduateProgram(p)) return false;
+    const norm = (p.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (categorizedTitles.has(norm)) return false;
+    for (const catTitle of categorizedTitles) {
+      if (catTitle.includes(norm) || norm.includes(catTitle)) return false;
+    }
+    return true;
+  });
 };
 
 const getCollegeVmgSlug = (college) => {
@@ -251,13 +382,13 @@ const fetchCMSPrograms = async () => {
                 // Find College VMG / College Info item from CMS for this college
                 const vmgItem = res.find((item) => {
                   if (!item) return false;
-                  return isCollegeMatch(item, college) && isCollegeVmgItem(item);
+                  return isCollegeMatch(item, college) && isCollegeVmgItem(item, college);
                 });
 
                 if (vmgItem) {
                   college.vmgItem = {
                     id: vmgItem.id || vmgItem.content_id,
-                    title: vmgItem.title || `${college.abbr} Vision Mission Goal`,
+                    title: vmgItem.title || `${college.abbr} Vision, Mission & Goals`,
                     description: vmgItem.descriptions || vmgItem.description || "",
                     filters: vmgItem.filters || "",
                     cmsData: vmgItem,
@@ -273,10 +404,14 @@ const fetchCMSPrograms = async () => {
           t.grad_stud.forEach((tg) => {
             if (tg.list) {
               tg.list.forEach((college) => {
-                // Find all Graduate CMS items
+                // Find all Graduate CMS items (strictly graduate degree programs)
                 const gradCmsItems = res.filter((item) => {
                   if (!item) return false;
-                  return isGraduateProgram(item) || isCollegeMatch(item, college);
+                  return (
+                    isCollegeMatch(item, college) &&
+                    isGraduateProgram(item) &&
+                    !isCollegeVmgItem(item, college)
+                  );
                 });
 
                 // Attach matching CMS item IDs to grad programs in Graduate School categories
@@ -291,8 +426,10 @@ const fetchCMSPrograms = async () => {
                           const ciTitle = (ci.title || "").toLowerCase().trim();
                           const ciNorm = ciTitle.replace(/[^a-z0-9]/g, "");
                           return (
+                            ciTitle === pTitle ||
                             ciTitle.includes(pTitle) ||
                             pTitle.includes(ciTitle) ||
+                            ciNorm === pNorm ||
                             ciNorm.includes(pNorm) ||
                             pNorm.includes(ciNorm)
                           );
@@ -305,6 +442,34 @@ const fetchCMSPrograms = async () => {
                       });
                     }
                   });
+                }
+
+                // Dynamically map strictly verified graduate programs into college.programs
+                const mappedGrad = gradCmsItems.map((cmsItem) => {
+                  return {
+                    id: cmsItem.id || cmsItem.content_id,
+                    title: cmsItem.title,
+                    description: cmsItem.descriptions || cmsItem.description || "",
+                    filters: cmsItem.filters || "",
+                    cmsData: cmsItem,
+                  };
+                });
+                college.programs = dedupePrograms(mappedGrad);
+
+                // Find College VMG / College Info item from CMS for Graduate Studies / SGS
+                const vmgItem = res.find((item) => {
+                  if (!item) return false;
+                  return isCollegeMatch(item, college) && isCollegeVmgItem(item, college);
+                });
+
+                if (vmgItem) {
+                  college.vmgItem = {
+                    id: vmgItem.id || vmgItem.content_id,
+                    title: vmgItem.title || `${college.abbr} Vision, Mission & Goals`,
+                    description: vmgItem.descriptions || vmgItem.description || "",
+                    filters: vmgItem.filters || "",
+                    cmsData: vmgItem,
+                  };
                 }
               });
             }
@@ -504,47 +669,140 @@ onMounted(async () => {
                 <span class="text-[0.7rem] font-bold tracking-[0.2em] uppercase text-green-900">{{ tu.title }}</span>
               </div>
 
-              <div v-for="(a, k) in tu.list" :key="k"
-                class="bg-white border border-gray-200 border-l-[3px] border-l-green-900 mb-1">
-                <!-- Grad Card Identity Panel -->
-                <div
-                  class="flex items-center gap-5 py-4 px-5 cursor-pointer border-b border-gray-100 transition-colors duration-150 hover:bg-green-50/30"
-                  @click="a.active = !a.active">
-                  <img
-                    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/colleges/gradschool2025.jpg"
-                    class="w-12 h-auto shrink-0" :alt="a.logo" />
-                  <div class="flex-1 text-[0.82rem] font-bold text-green-900 uppercase tracking-wide">{{ a.title }}
+              <!-- Accordion list -->
+              <div class="flex flex-col gap-0.5">
+                <div v-for="(a, k) in tu.list" :key="k"
+                  class="bg-white border border-gray-200 transition-all duration-150" :class="[
+                    a.active && isCollegeEnabled(a)
+                      ? 'border-l-[3px] border-l-green-900'
+                      : 'border-l-[3px] border-l-transparent',
+                    isCollegeEnabled(a)
+                      ? 'hover:border-l-green-900'
+                      : 'opacity-60'
+                  ]">
+                  <!-- Card Header -->
+                  <div class="flex items-center justify-between py-3.5 px-4 gap-4"
+                    :class="isCollegeEnabled(a) ? 'cursor-pointer' : 'cursor-default'"
+                    @click="isCollegeEnabled(a) && (a.active = !a.active)">
+                    <div class="flex items-baseline gap-3 min-w-0">
+                      <span
+                        class="text-[0.65rem] font-bold tracking-wider font-mono whitespace-nowrap px-1.5 py-0.5 border shrink-0"
+                        :class="isCollegeEnabled(a)
+                          ? 'text-green-900 bg-green-50 border-green-200'
+                          : 'text-gray-400 bg-gray-100 border-gray-200'">{{
+                          a.abbr }}</span>
+                      <span class="text-[0.82rem] font-semibold text-left leading-snug"
+                        :class="isCollegeEnabled(a) ? 'text-gray-900' : 'text-gray-400'">{{ a.title
+                      }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <span v-if="!isCollegeEnabled(a)"
+                        class="text-[0.6rem] font-bold tracking-wider uppercase text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-sm whitespace-nowrap"
+                      >Coming Soon</span>
+                      <div v-if="isCollegeEnabled(a)" class="text-green-900 text-xs w-5 text-center">
+                        <i class="fas" :class="a.active ? 'fa-minus' : 'fa-plus'"></i>
+                      </div>
+                    </div>
                   </div>
-                  <div class="text-[0.68rem] text-gray-400 flex items-center gap-1.5 whitespace-nowrap">
-                    <i class="fas text-green-900" :class="a.active ? 'fa-minus' : 'fa-plus'"></i>
-                    {{ a.active ? 'Collapse' : 'View Programs' }}
-                  </div>
-                </div>
 
-                <!-- Grad Card Programs -->
-                <div v-if="a.active" class="p-5 bg-gray-50">
-                  <NuxtLink :to="getProgramSlug(a, 'programs')"
-                    class="block text-[0.78rem] font-bold uppercase tracking-wider text-green-900 no-underline hover:underline mb-4 pb-2 border-b border-gray-200">{{
-                      a.title }}</NuxtLink>
-
-                  <ul class="list-none p-0 m-0">
-                    <li v-for="(c, l) in a.category" :key="l" class="mb-4">
-                      <div
-                        class="text-[0.72rem] font-bold tracking-widest uppercase text-gray-500 mb-2 pl-3 border-l-2 border-green-900">
-                        {{ c.title }}</div>
-                      <ul class="list-none p-0 m-0">
-                        <li v-for="(p, m) in c.programs" :key="m" class="py-0.5 pl-5 group">
-                          <NuxtLink :to="getProgramSlug(p, 'programs')"
-                            class="text-[0.78rem] text-gray-800 transition-colors duration-100 group-hover:text-green-900 group-hover:font-semibold no-underline block">
-                            {{ p.title }}
-                          </NuxtLink>
-                          <div v-for="(j, n) in p.major" :key="n" class="text-[0.72rem] text-gray-500 pl-3">
-                            <span v-if="j !== ''">&#8212; {{ j }}</span>
+                  <!-- Card Body -->
+                  <div v-if="a.active && isCollegeEnabled(a)" class="border-t border-gray-100 bg-gray-50 px-5 py-4">
+                    <!-- College Level Info & VMG Link -->
+                    <div class="mb-3.5 pb-3 border-b border-gray-200">
+                      <NuxtLink
+                        :to="getCollegeVmgSlug(a)"
+                        class="flex items-center justify-between p-3 bg-green-900/5 hover:bg-green-900/10 border border-green-900/20 rounded-lg text-green-900 transition-all group no-underline shadow-sm"
+                      >
+                        <div class="flex items-center gap-3 min-w-0">
+                          <div class="w-8 h-8 rounded-md bg-green-900 text-white flex items-center justify-center text-xs shrink-0 shadow-sm">
+                            <i class="fas fa-bullseye"></i>
                           </div>
-                        </li>
-                      </ul>
-                    </li>
-                  </ul>
+                          <div class="min-w-0">
+                            <div class="text-xs font-extrabold uppercase tracking-wide group-hover:text-green-950 flex items-center gap-2 truncate">
+                              <span class="truncate">{{ a.vmgItem?.title || `${a.abbr} Vision, Mission & Goals` }}</span>
+                              <span class="text-[0.6rem] bg-green-100 text-green-900 font-mono px-1.5 py-0.5 rounded border border-green-200 shrink-0">College Info</span>
+                            </div>
+                            <div class="text-[0.7rem] text-gray-600 truncate">
+                              View Vision, Mission, Goals & Objectives for {{ a.title }}
+                            </div>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 text-xs font-bold text-green-900 shrink-0 group-hover:translate-x-0.5 transition-transform ml-2">
+                          <span class="hidden sm:inline">View VMG</span>
+                          <i class="fas fa-chevron-right text-[0.65rem]"></i>
+                        </div>
+                      </NuxtLink>
+                    </div>
+
+                    <!-- Degree Programs List -->
+                    <div class="text-[0.65rem] font-bold tracking-[0.15em] text-gray-500 uppercase mb-3">
+                      DEGREE PROGRAMS
+                    </div>
+
+                    <!-- Categorized Programs (Graduate School of Business, Education, Law, etc.) -->
+                    <div v-if="a.category && a.category.length > 0" class="flex flex-col gap-4">
+                      <div v-for="(c, l) in a.category" :key="l">
+                        <div
+                          class="text-[0.72rem] font-bold tracking-wider uppercase text-green-900 mb-2 pl-2.5 border-l-2 border-green-900">
+                          {{ c.title }}
+                        </div>
+                        <ul class="list-none m-0 p-0 pl-2 border-l-2 border-gray-200 ml-2.5">
+                          <li v-for="(p, m) in c.programs" :key="m"
+                            class="py-1.5 border-b border-dashed border-gray-200 last:border-b-0 group">
+                            <div class="flex items-baseline gap-2">
+                              <span class="text-green-900 text-xs shrink-0 font-bold">—</span>
+                              <NuxtLink :to="getProgramSlug(p, a.link)"
+                                class="text-[0.78rem] text-gray-800 transition-colors duration-100 group-hover:text-green-900 group-hover:font-semibold no-underline flex-1">
+                                {{ p.title }}
+                              </NuxtLink>
+                            </div>
+                            <!-- Majors if any -->
+                            <div v-if="p.major && p.major.some(maj => maj && maj.trim() !== '')"
+                              class="pl-5 pt-1 flex flex-col gap-0.5">
+                              <div v-for="(j, n) in p.major.filter(maj => maj && maj.trim() !== '')" :key="n"
+                                class="text-[0.72rem] text-gray-500 flex items-baseline gap-1.5">
+                                <span class="text-gray-400 text-[0.65rem]">&#8212;</span>
+                                <span>{{ j }}</span>
+                              </div>
+                            </div>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <!-- Any other graduate programs fetched from CMS that are not in default categories -->
+                      <div v-if="uncategorizedGradPrograms(a).length > 0">
+                        <div
+                          class="text-[0.72rem] font-bold tracking-wider uppercase text-green-900 mb-2 pl-2.5 border-l-2 border-green-900">
+                          Other Graduate Programs
+                        </div>
+                        <ul class="list-none m-0 p-0 pl-2 border-l-2 border-gray-200 ml-2.5">
+                          <li v-for="(p, m) in uncategorizedGradPrograms(a)" :key="'uncat-' + m"
+                            class="py-1.5 border-b border-dashed border-gray-200 last:border-b-0 group">
+                            <div class="flex items-baseline gap-2">
+                              <span class="text-green-900 text-xs shrink-0 font-bold">—</span>
+                              <NuxtLink :to="getProgramSlug(p, a.link)"
+                                class="text-[0.78rem] text-gray-800 transition-colors duration-100 group-hover:text-green-900 group-hover:font-semibold no-underline flex-1">
+                                {{ p.title }}
+                              </NuxtLink>
+                            </div>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <!-- Flat Programs List fallback -->
+                    <ul v-else-if="a.programs && a.programs.length > 0" class="list-none m-0 p-0 pl-2 border-l-2 border-gray-200">
+                      <li v-for="(p, l) in a.programs" :key="l"
+                        class="flex items-baseline gap-2 py-1 border-b border-dashed border-gray-200 last:border-b-0 group">
+                        <span class="text-green-900 text-xs shrink-0 font-bold">—</span>
+                        <NuxtLink :to="getProgramSlug(p, a.link)"
+                          class="text-[0.78rem] text-gray-800 transition-colors duration-100 group-hover:text-green-900 group-hover:font-semibold no-underline flex-1">
+                          {{ p.title }}
+                        </NuxtLink>
+                      </li>
+                    </ul>
+
+                  </div>
                 </div>
               </div>
             </div>

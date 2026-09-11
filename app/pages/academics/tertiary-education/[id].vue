@@ -252,6 +252,7 @@ const isCurrentProgram = (p) => {
 // Resolve the college abbreviation for any CMS item (VMG OR individual program)
 const resolveCollegeAbbr = (cmsItem, cmsId) => {
   const pageFilters = (cmsItem?.filters || "").toLowerCase();
+  const pageAuthors = (cmsItem?.authors || cmsItem?.author || "").toLowerCase();
   const pageTitle = (cmsItem?.title || "").toLowerCase();
   const cleanId = String(cmsId || "").toLowerCase();
 
@@ -265,10 +266,10 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
             const cAbbr = (col.abbr || "").toLowerCase();
             const cTitle = (col.title || "").toLowerCase();
 
-            // Word-boundary check for abbreviation or full title in page filters / title
+            // Word-boundary check for abbreviation or full title in page filters / title / authors
             const regexAbbr = new RegExp(`(^|[^a-zA-Z0-9])${cAbbr}([^a-zA-Z0-9]|$)`, "i");
-            const matchesAbbr = regexAbbr.test(pageFilters) || regexAbbr.test(pageTitle) || cleanId === cAbbr;
-            const matchesTitle = cTitle && (pageTitle.includes(cTitle) || pageFilters.includes(cTitle));
+            const matchesAbbr = regexAbbr.test(pageFilters) || regexAbbr.test(pageTitle) || regexAbbr.test(pageAuthors) || cleanId === cAbbr;
+            const matchesTitle = cTitle && (pageTitle.includes(cTitle) || pageFilters.includes(cTitle) || pageAuthors.includes(cTitle));
 
             // Direct match: this page IS the college VMG
             if (matchesAbbr || matchesTitle) {
@@ -304,8 +305,30 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
             const cAbbr = (col.abbr || "").toLowerCase();
             const cTitle = (col.title || "").toLowerCase();
             const regexAbbr = new RegExp(`(^|[^a-zA-Z0-9])${cAbbr}([^a-zA-Z0-9]|$)`, "i");
-            if (regexAbbr.test(pageFilters) || regexAbbr.test(pageTitle) || (cTitle && pageTitle.includes(cTitle)) || cleanId === cAbbr) {
+            if (
+              regexAbbr.test(pageFilters) ||
+              regexAbbr.test(pageTitle) ||
+              regexAbbr.test(pageAuthors) ||
+              (cTitle && pageTitle.includes(cTitle)) ||
+              (cTitle && pageFilters.includes(cTitle)) ||
+              (cTitle && pageAuthors.includes(cTitle)) ||
+              cleanId === cAbbr
+            ) {
               matchedAbbr = cAbbr;
+              return;
+            }
+
+            if (col.category) {
+              col.category.forEach((cat) => {
+                if (cat.programs) {
+                  const inCat = cat.programs.some((p) => {
+                    const pTitle = (p.title || "").toLowerCase();
+                    const pSlug = pTitle.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+                    return pSlug === cleanId || pageTitle.includes(pTitle) || pTitle.includes(pageTitle);
+                  });
+                  if (inCat) matchedAbbr = cAbbr;
+                }
+              });
             }
           });
         }
@@ -313,12 +336,12 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
     }
   });
 
-  // Also check pageFilters directly for known college abbreviations
+  // Also check pageFilters and pageAuthors directly for known college abbreviations
   if (!matchedAbbr) {
     const abbrList = ["cas", "cba", "ccje", "ccsea", "con", "cte", "cthm", "cmls", "sgs"];
     for (const a of abbrList) {
       const regex = new RegExp(`(^|[^a-zA-Z0-9])${a}([^a-zA-Z0-9]|$)`, "i");
-      if (regex.test(pageFilters) || regex.test(pageTitle) || cleanId === a) {
+      if (regex.test(pageFilters) || regex.test(pageTitle) || regex.test(pageAuthors) || cleanId === a) {
         matchedAbbr = a;
         break;
       }
