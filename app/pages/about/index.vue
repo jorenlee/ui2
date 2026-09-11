@@ -11,7 +11,7 @@
         { label: 'Login', url: '/login', icon: 'fa fa-user' }
       ]"
     />
-    <SuperAdminDashboardServicesDrsForm/>
+    <SuperAdminDashboardDocumentReviewSystemForm/>
     <Footer />
   </div>
 </template> -->

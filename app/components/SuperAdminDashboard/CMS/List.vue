@@ -773,7 +773,7 @@ const getSdgBadges = (item) => {
                       <tbody v-if="loading">
                         <tr>
                           <td colspan="7">
-                            <SuperAdminDashboardServicesLoading />
+                            <SuperAdminDashboardLoading />
                           </td>
                         </tr>
                       </tbody>
@@ -897,7 +897,7 @@ const getSdgBadges = (item) => {
                     </table>
                   </div>
 
-                  <SuperAdminDashboardServicesLoading v-if="loading" />
+                  <SuperAdminDashboardLoading v-if="loading" />
 
                   <!-- Mobile Card View -->
                   <div v-else class="lg:hidden divide-y" :class="darkMode ? 'divide-gray-700' : 'divide-gray-200'">
@@ -988,7 +988,7 @@ const getSdgBadges = (item) => {
           </div>
 
           <!-- Form -->
-          <SuperAdminDashboardServicesCMSForm :darkMode="darkMode" :editData="showEditModal ? editContent : null"
+          <SuperAdminDashboardCMSForm :darkMode="darkMode" :editData="showEditModal ? editContent : null"
             @content-submitted="handleFormSubmitted" />
         </div>
       </div>
