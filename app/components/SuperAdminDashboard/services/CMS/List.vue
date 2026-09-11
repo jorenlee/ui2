@@ -406,10 +406,7 @@ const filterOptions = [
   { value: "CTE (College of Teacher Education)", label: "CTE (College of Teacher Education)" },
   { value: "CTHM (College of Tourism and Hospitality Management)", label: "CTHM (College of Tourism and Hospitality Management)" },
   { value: "CMLS (College of Medical Laboratory Science)", label: "CMLS (College of Medical Laboratory Science)" },
-  {
-    value: "SGS (School of Graduate Studies)",
-    label: "SGS (School of Graduate Studies)"
-  }
+  { value: "SGS (School of Graduate Studies)", label: "SGS (School of Graduate Studies)"}
 ];
 
 // Filtered and paginated data
