@@ -553,48 +553,9 @@ onMounted(async () => {
         </main>
       </div>
     </div>
-
-    <!-- ── COMING SOON ── -->
-    <section class="cs-section bg-[#0f2413] py-20 px-[5%] text-center relative overflow-hidden">
-      <div class="relative z-10 max-w-[640px] mx-auto">
-        <div class="text-[0.65rem] font-bold tracking-[0.3em] text-green-500 mb-3">UPCOMING</div>
-        <h2 class="text-2xl lg:text-3xl font-extrabold text-white tracking-wide uppercase mb-5">More Courses Coming Soon
-        </h2>
-        <div class="w-10 h-0.5 bg-green-500 mx-auto mb-6"></div>
-        <p class="text-sm text-white/65 leading-relaxed mb-8">
-          We are continuously expanding our academic offerings. Stay tuned for
-          exciting new programs and courses designed to prepare you for the future.
-        </p>
-        <div class="flex flex-wrap justify-center gap-2 mb-7">
-          <span
-            class="border border-white/25 text-white/85 px-3.5 py-1 text-[0.72rem] font-semibold tracking-wider uppercase cursor-default transition-all duration-200 hover:bg-green-500/10 hover:border-green-500">Graduate
-            Programs</span>
-          <span
-            class="border border-white/25 text-white/85 px-3.5 py-1 text-[0.72rem] font-semibold tracking-wider uppercase cursor-default transition-all duration-200 hover:bg-green-500/10 hover:border-green-500">Professional
-            Courses</span>
-          <span
-            class="border border-white/25 text-white/85 px-3.5 py-1 text-[0.72rem] font-semibold tracking-wider uppercase cursor-default transition-all duration-200 hover:bg-green-500/10 hover:border-green-500">Certifications</span>
-        </div>
-        <p class="text-xs text-white/40">
-          <i class="fas fa-bell text-yellow-400 mr-1"></i>&nbsp; Check back regularly for updates.
-        </p>
-      </div>
-    </section>
-
     <Footer />
   </div>
 </template>
 
 <style scoped>
-/* Pseudo-element grid overlay — the only thing Tailwind can't handle inline */
-.cs-section::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(90deg,
-      transparent,
-      transparent 59px,
-      rgba(255, 255, 255, 0.02) 60px);
-  pointer-events: none;
-}
 </style>
