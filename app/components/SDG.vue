@@ -30,12 +30,12 @@ const sdgs = [
       <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-teal-400/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <!-- Header & Partner Logos -->
-      <div class="relative z-10 flex flex-col items-center text-center w-11/12 mx-auto mb-8 sm:mb-10">
+      <div class="relative z-10 flex flex-col items-center text-center lg:w-11/12 mx-auto mb-8 sm:mb-10">
         <span class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-100/90 text-emerald-800 text-xs font-bold uppercase tracking-widest rounded-full mb-4 border border-emerald-200/60">
           <i class="fas fa-seedling text-emerald-600"></i> Institutional Commitment
         </span>
 
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 my-2">
+        <div class="flex items-center justify-center gap-6 sm:gap-10 my-2">
           <img
             src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/lsu-corporate-logo-green.png"
             alt="La Salle University Logo"
@@ -49,22 +49,22 @@ const sdgs = [
           />
         </div>
 
-        <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 mt-4 tracking-tight">
+        <p class="lg:text-3xl text-xs font-extrabold text-green-950 mt-4">
           La Salle University supports the 
-        </h2>
+        </p>
 
-        <h2 class="text-2xl sm:text-4xl font-extrabold text-slate-900 mb-5 tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-800 to-teal-700">Sustainable Development Goals</h2>
+        <p class="lg:text-4xl text-sm font-extrabold text-slate-900 mb-5 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-800 to-teal-700 uppercase">Sustainable Development Goals</p>
 
 
 
-        <p class="text-slate-600 text-xs sm:text-base w-full">
+        <p class="text-slate-600 text-xs w-full">
           Driving meaningful impact through campus research, social action, environmental stewardship, and inclusive education.
         </p>
       </div>
 
       <!-- Interactive SDGs Mini Grid -->
       <div class="relative z-10 mb-8 sm:mb-10">
-        <div class="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-9 gap-2.5 sm:gap-3.5 w-11/12 mx-auto">
+        <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-9 gap-2.5 sm:gap-3.5 lg:w-11/12 mx-auto">
           <NuxtLink
             v-for="s in sdgs"
             :key="s.id"
