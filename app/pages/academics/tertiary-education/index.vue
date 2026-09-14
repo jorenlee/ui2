@@ -627,7 +627,7 @@ onMounted(async () => {
                           <div class="min-w-0">
                             <div class="text-xs font-extrabold uppercase tracking-wide group-hover:text-green-950 flex items-center gap-2 truncate">
                               <span class="truncate">{{ a.vmgItem?.title || `${a.abbr} Vision, Mission & Goals` }}</span>
-                              <span class="text-[0.6rem] bg-green-100 text-green-900 font-mono px-1.5 py-0.5 rounded border border-green-200 shrink-0">College Info</span>
+                              
                             </div>
                             <div class="text-[0.7rem] text-gray-600 truncate">
                               View Vision, Mission, Goals & Objectives for {{ a.title }}
@@ -720,7 +720,7 @@ onMounted(async () => {
                           <div class="min-w-0">
                             <div class="text-xs font-extrabold uppercase tracking-wide group-hover:text-green-950 flex items-center gap-2 truncate">
                               <span class="truncate">{{ a.vmgItem?.title || `${a.abbr} Vision, Mission & Goals` }}</span>
-                              <span class="text-[0.6rem] bg-green-100 text-green-900 font-mono px-1.5 py-0.5 rounded border border-green-200 shrink-0">College Info</span>
+                              
                             </div>
                             <div class="text-[0.7rem] text-gray-600 truncate">
                               View Vision, Mission, Goals & Objectives for {{ a.title }}

@@ -518,7 +518,7 @@ useHead(() => ({
 
     <!-- ── HERO BANNER ── -->
     <div class="relative overflow-hidden bg-gradient-to-r from-green-950 via-green-900 to-green-950 text-white shadow-inner">
-      <div class="max-w-[1280px] mx-auto px-[5%] py-6 lg:py-8 relative z-10">
+      <div class="mx-auto w-11/12 py-6 lg:py-8 relative z-10">
         <div class="flex flex-wrap items-center gap-3 mb-2">
           <span class="bg-green-700/80 text-white text-[0.65rem] font-mono font-bold px-3 py-1 rounded border border-green-500/30 uppercase tracking-widest shadow-sm">
             LASALLIAN TERTIARY EDUCATION
@@ -537,8 +537,8 @@ useHead(() => ({
     </div>
 
     <!-- ── BREADCRUMB ── -->
-    <nav class="bg-white border-b border-gray-200 px-[5%] shadow-sm">
-      <div class="max-w-[1280px] mx-auto">
+    <nav class="bg-white border-b border-gray-200 shadow-sm">
+      <div class="w-11/12 mx-auto">
         <ul class="flex items-center flex-wrap gap-x-1.5 h-11 text-[0.75rem] text-gray-500 overflow-x-auto whitespace-nowrap list-none m-0 p-0">
           <li class="flex items-center gap-1.5">
             <NuxtLink to="/" class="text-green-900 no-underline capitalize hover:underline font-medium">
@@ -562,7 +562,7 @@ useHead(() => ({
     </nav>
 
     <!-- ── MAIN CONTENT ── -->
-    <div class="max-w-[1280px] mx-auto px-[5%] pt-8 pb-16 flex-1 w-full">
+    <div class="mx-auto lg:w-11/12 pt-8 pb-16 flex-1 w-full">
 
       <!-- Back Navigation Button -->
       <div class="mb-6">
@@ -591,7 +591,7 @@ useHead(() => ({
       <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
         <!-- LEFT COLUMN: Program Content Sections (8 Cols) -->
-        <div class="lg:col-span-8 space-y-6">
+        <div class="lg:col-span-9 space-y-6">
 
           <!-- Header Card -->
           <div class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm border-l-4 border-l-green-900">
@@ -735,7 +735,7 @@ useHead(() => ({
         </div>
 
         <!-- RIGHT COLUMN: Sidebar (4 Cols) -->
-        <div class="lg:col-span-4 space-y-6 sticky top-6">
+        <div class="lg:col-span-3 space-y-6 sticky top-6">
 
           <!-- Image Spotlight Card -->
           <div v-if="imageFiles.length > 0" class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
@@ -765,18 +765,18 @@ useHead(() => ({
 
           <!-- Admissions & Enrollment Action Card -->
           <div class="bg-gradient-to-br from-green-950 to-green-900 text-white rounded-xl p-6 shadow-md border border-green-800">
-            <div class="w-10 h-10 rounded-full bg-green-500/20 border border-green-400/30 flex items-center justify-center text-green-400 text-lg mb-4">
+          
+            <h4 class="flex items-center gap-2 text-lg font-extrabold uppercase tracking-wide mb-2 text-white">
+               <span class="w-10 h-10 rounded-full bg-green-500/20 border border-green-400/30 flex items-center justify-center text-green-400 text-lg">
               <i class="fas fa-user-graduate"></i>
-            </div>
-            <h4 class="text-lg font-extrabold uppercase tracking-wide mb-2 text-white">
-              Enroll at La Salle
+            </span> Enroll at La Salle
             </h4>
             <p class="text-xs text-white/75 leading-relaxed mb-6">
               Take the next step in your academic journey. Inquire now or check admission requirements for {{ programAbbr || 'this program' }}.
             </p>
             <div class="space-y-2.5">
               <a
-                href="/admissions"
+                href="/enrollment"
                 class="block text-center w-full py-2.5 px-4 bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors shadow"
               >
                 Apply for Admission
