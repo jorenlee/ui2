@@ -108,6 +108,113 @@ const isCollegeContent = computed(() => {
   );
 });
 
+// Academic Level Extracted from CMS Content Filters & Metadata
+const programLevel = computed(() => {
+  if (!item.value) return "Tertiary Education";
+  const filters = (item.value.filters || "").toLowerCase();
+  const title = (item.value.title || "").toLowerCase();
+  const authors = (item.value.authors || "").toLowerCase();
+
+  // 1. Direct match in filters
+  if (
+    filters.includes("graduate level") ||
+    filters.includes("graduate studies") ||
+    filters.includes("postgraduate") ||
+    filters.includes("post-graduate") ||
+    filters.includes("doctorate level") ||
+    filters.includes("master level")
+  ) {
+    return "Graduate Level";
+  }
+  if (
+    filters.includes("undergraduate level") ||
+    filters.includes("undergraduate") ||
+    filters.includes("bachelor level") ||
+    filters.includes("baccalaureate")
+  ) {
+    return "Undergraduate";
+  }
+  if (
+    filters.includes("basic education") ||
+    filters.includes("senior high") ||
+    filters.includes("junior high") ||
+    filters.includes("elementary")
+  ) {
+    return "Basic Education";
+  }
+
+  // 2. Keyword check on title & college context
+  const isGrad =
+    title.includes("master") ||
+    title.includes("doctor") ||
+    title.includes("juris doctor") ||
+    title.includes("school of graduate") ||
+    title.includes("graduate studies") ||
+    authors.includes("sgs") ||
+    filters.includes("sgs") ||
+    /\b(ph\.?d\.?|dba|edd|mba|mpa|maed|med|msn|mit|msit|mscs)\b/i.test(title);
+
+  if (isGrad) return "Graduate Level";
+
+  const isUndergrad =
+    title.includes("bachelor") ||
+    title.startsWith("bs ") ||
+    title.startsWith("bs-") ||
+    title.startsWith("ba ") ||
+    title.startsWith("ba-") ||
+    title.startsWith("bee") ||
+    title.startsWith("bpe") ||
+    title.startsWith("btle") ||
+    title.startsWith("blis");
+
+  if (isUndergrad) return "Undergraduate";
+
+  if (isCollegeContent.value) {
+    if (title.includes("graduate") || filters.includes("sgs")) return "Graduate Level";
+    return "Tertiary Education";
+  }
+
+  return "Undergraduate";
+});
+
+// Program publication / verification status from CMS Content Filters
+const programStatus = computed(() => {
+  if (!item.value) return { text: "Active", isPublished: true, isVerified: false };
+  const filters = (item.value.filters || "").toLowerCase();
+
+  const isVerified = filters.includes("verified");
+  const isApproved = filters.includes("approved");
+  const isPublished = filters.includes("published");
+
+  if (isPublished || isApproved || isVerified || filters.includes("active")) {
+    let label = "Active";
+    if (isPublished && isVerified) label = "Published & Verified";
+    else if (isPublished) label = "Published";
+    else if (isVerified) label = "Verified";
+    return { text: label, isPublished: true, isVerified };
+  }
+  if (filters.includes("draft")) {
+    return { text: "Draft", isPublished: false, isVerified: false };
+  }
+  if (filters.includes("archived")) {
+    return { text: "Archived", isPublished: false, isVerified: false };
+  }
+  return { text: "Active", isPublished: true, isVerified: false };
+});
+
+// Parsed general filter tags from CMS
+const parsedFilterTags = computed(() => {
+  if (!item.value?.filters) return [];
+  return item.value.filters
+    .split(",")
+    .map((t) => t.trim())
+    .filter((t) => {
+      if (!t) return false;
+      // Exclude SDGs (handled separately)
+      return !/^(sdg\s*\d+|goal\s*\d+|sdg-\d+|sdg_\d+)$/i.test(t);
+    });
+});
+
 // Section Parser
 const extractListItems = (text) => {
   if (!text) return null;
@@ -798,7 +905,7 @@ useHead(() => ({
             <div class="space-y-3 text-xs">
               <div class="flex justify-between items-center py-1 border-b border-dashed border-gray-100">
                 <span class="text-gray-500 font-medium">Unit / Department:</span>
-                <span class="text-gray-900 font-bold">{{ item.authors || 'Higher Education' }}</span>
+                <span class="text-gray-900 font-bold text-right ml-2">{{ item.authors || 'Higher Education' }}</span>
               </div>
               <div v-if="programAbbr" class="flex justify-between items-center py-1 border-b border-dashed border-gray-100">
                 <span class="text-gray-500 font-medium">Code:</span>
@@ -806,12 +913,30 @@ useHead(() => ({
               </div>
               <div class="flex justify-between items-center py-1 border-b border-dashed border-gray-100">
                 <span class="text-gray-500 font-medium">Level:</span>
-                <span class="text-gray-900 font-bold">Undergraduate</span>
+                <span class="text-gray-900 font-bold">{{ programLevel }}</span>
               </div>
-              <div class="flex justify-between items-center py-1">
+              <div class="flex justify-between items-center py-1 border-b border-dashed border-gray-100">
                 <span class="text-gray-500 font-medium">Status:</span>
-                <span class="text-green-700 font-bold flex items-center gap-1">
-                  <i class="fas fa-check-circle text-xs"></i> Active
+                <span
+                  class="font-bold flex items-center gap-1"
+                  :class="programStatus.isPublished ? 'text-green-700' : 'text-amber-600'"
+                >
+                  <i class="fas" :class="programStatus.isPublished ? 'fa-check-circle' : 'fa-clock'"></i>
+                  {{ programStatus.text }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Content Filter Tags -->
+            <div v-if="parsedFilterTags.length > 0" class="pt-2 border-t border-gray-100">
+              <span class="text-[0.65rem] font-bold uppercase tracking-wider text-gray-400 block mb-2">Content Filters & Tags</span>
+              <div class="flex flex-wrap gap-1">
+                <span
+                  v-for="(tag, tIdx) in parsedFilterTags"
+                  :key="tIdx"
+                  class="text-[0.65rem] font-medium bg-gray-100 text-gray-700 px-2 py-0.5 rounded border border-gray-200/80"
+                >
+                  {{ tag }}
                 </span>
               </div>
             </div>
