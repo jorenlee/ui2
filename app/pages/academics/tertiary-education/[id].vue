@@ -482,83 +482,83 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
   let matchedAbbr = "";
   if (tertiaryJSON?.tertiary && Array.isArray(tertiaryJSON.tertiary)) {
     tertiaryJSON.tertiary.forEach((t) => {
-    if (t.under_grad) {
-      t.under_grad.forEach((tu) => {
-        if (tu.list) {
-          tu.list.forEach((col) => {
-            if (matchedAbbr) return; // already found
-            const cAbbr = (col.abbr || "").toLowerCase();
-            const cTitle = (col.title || "").toLowerCase();
+      if (t.under_grad) {
+        t.under_grad.forEach((tu) => {
+          if (tu.list) {
+            tu.list.forEach((col) => {
+              if (matchedAbbr) return; // already found
+              const cAbbr = (col.abbr || "").toLowerCase();
+              const cTitle = (col.title || "").toLowerCase();
 
-            // Word-boundary check for abbreviation or full title in page filters / title / authors
-            const regexAbbr = new RegExp(`(^|[^a-zA-Z0-9])${cAbbr}([^a-zA-Z0-9]|$)`, "i");
-            const matchesAbbr = regexAbbr.test(pageFilters) || regexAbbr.test(pageTitle) || regexAbbr.test(pageAuthors) || cleanId === cAbbr;
-            const matchesTitle = cTitle && (pageTitle.includes(cTitle) || pageFilters.includes(cTitle) || pageAuthors.includes(cTitle));
+              // Word-boundary check for abbreviation or full title in page filters / title / authors
+              const regexAbbr = new RegExp(`(^|[^a-zA-Z0-9])${cAbbr}([^a-zA-Z0-9]|$)`, "i");
+              const matchesAbbr = regexAbbr.test(pageFilters) || regexAbbr.test(pageTitle) || regexAbbr.test(pageAuthors) || cleanId === cAbbr;
+              const matchesTitle = cTitle && (pageTitle.includes(cTitle) || pageFilters.includes(cTitle) || pageAuthors.includes(cTitle));
 
-            // Direct match: this page IS the college VMG
-            if (matchesAbbr || matchesTitle) {
-              matchedAbbr = cAbbr;
-              return;
-            }
+              // Direct match: this page IS the college VMG
+              if (matchesAbbr || matchesTitle) {
+                matchedAbbr = cAbbr;
+                return;
+              }
 
-            // Indirect match: this page is a program UNDER this college
-            if (col.programs) {
-              const inCollege = col.programs.some((p) => {
-                const pAbbr = (p.abbr || "").toLowerCase();
-                const pLink = (p.link || "").toLowerCase();
-                const pTitle = (p.title || "").toLowerCase();
-                const pSlug = pTitle.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-                return (
-                  (pAbbr && (pAbbr === cleanId || new RegExp(`(^|[^a-zA-Z0-9])${pAbbr}([^a-zA-Z0-9]|$)`, "i").test(pageTitle))) ||
-                  (pLink && pLink === cleanId) ||
-                  (pSlug && (pSlug === cleanId || pageTitle.includes(pTitle) || pTitle.includes(pageTitle)))
-                );
-              });
-              if (inCollege) matchedAbbr = cAbbr;
-            }
-          });
-        }
-      });
-    }
+              // Indirect match: this page is a program UNDER this college
+              if (col.programs) {
+                const inCollege = col.programs.some((p) => {
+                  const pAbbr = (p.abbr || "").toLowerCase();
+                  const pLink = (p.link || "").toLowerCase();
+                  const pTitle = (p.title || "").toLowerCase();
+                  const pSlug = pTitle.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+                  return (
+                    (pAbbr && (pAbbr === cleanId || new RegExp(`(^|[^a-zA-Z0-9])${pAbbr}([^a-zA-Z0-9]|$)`, "i").test(pageTitle))) ||
+                    (pLink && pLink === cleanId) ||
+                    (pSlug && (pSlug === cleanId || pageTitle.includes(pTitle) || pTitle.includes(pageTitle)))
+                  );
+                });
+                if (inCollege) matchedAbbr = cAbbr;
+              }
+            });
+          }
+        });
+      }
 
-    if (t.grad_stud) {
-      t.grad_stud.forEach((tg) => {
-        if (tg.list) {
-          tg.list.forEach((col) => {
-            if (matchedAbbr) return;
-            const cAbbr = (col.abbr || "").toLowerCase();
-            const cTitle = (col.title || "").toLowerCase();
-            const regexAbbr = new RegExp(`(^|[^a-zA-Z0-9])${cAbbr}([^a-zA-Z0-9]|$)`, "i");
-            if (
-              regexAbbr.test(pageFilters) ||
-              regexAbbr.test(pageTitle) ||
-              regexAbbr.test(pageAuthors) ||
-              (cTitle && pageTitle.includes(cTitle)) ||
-              (cTitle && pageFilters.includes(cTitle)) ||
-              (cTitle && pageAuthors.includes(cTitle)) ||
-              cleanId === cAbbr
-            ) {
-              matchedAbbr = cAbbr;
-              return;
-            }
+      if (t.grad_stud) {
+        t.grad_stud.forEach((tg) => {
+          if (tg.list) {
+            tg.list.forEach((col) => {
+              if (matchedAbbr) return;
+              const cAbbr = (col.abbr || "").toLowerCase();
+              const cTitle = (col.title || "").toLowerCase();
+              const regexAbbr = new RegExp(`(^|[^a-zA-Z0-9])${cAbbr}([^a-zA-Z0-9]|$)`, "i");
+              if (
+                regexAbbr.test(pageFilters) ||
+                regexAbbr.test(pageTitle) ||
+                regexAbbr.test(pageAuthors) ||
+                (cTitle && pageTitle.includes(cTitle)) ||
+                (cTitle && pageFilters.includes(cTitle)) ||
+                (cTitle && pageAuthors.includes(cTitle)) ||
+                cleanId === cAbbr
+              ) {
+                matchedAbbr = cAbbr;
+                return;
+              }
 
-            if (col.category) {
-              col.category.forEach((cat) => {
-                if (cat.programs) {
-                  const inCat = cat.programs.some((p) => {
-                    const pTitle = (p.title || "").toLowerCase();
-                    const pSlug = pTitle.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-                    return pSlug === cleanId || pageTitle.includes(pTitle) || pTitle.includes(pageTitle);
-                  });
-                  if (inCat) matchedAbbr = cAbbr;
-                }
-              });
-            }
-          });
-        }
-      });
-    }
-  });
+              if (col.category) {
+                col.category.forEach((cat) => {
+                  if (cat.programs) {
+                    const inCat = cat.programs.some((p) => {
+                      const pTitle = (p.title || "").toLowerCase();
+                      const pSlug = pTitle.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+                      return pSlug === cleanId || pageTitle.includes(pTitle) || pTitle.includes(pageTitle);
+                    });
+                    if (inCat) matchedAbbr = cAbbr;
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+    });
   }
 
   // Also check pageFilters and pageAuthors directly for known college abbreviations
@@ -1227,20 +1227,24 @@ useHead(() => ({
     <Header />
 
     <!-- ── HERO BANNER ── -->
-    <div class="relative overflow-hidden bg-gradient-to-r from-green-950 via-green-900 to-green-950 text-white shadow-inner">
+    <div
+      class="relative overflow-hidden bg-gradient-to-r from-green-950 via-green-900 to-green-950 text-white shadow-inner">
       <div class="mx-auto w-11/12 py-6 lg:py-8 relative z-10">
         <div class="flex flex-wrap items-center gap-3 mb-2">
-          <span class="bg-green-700/80 text-white text-[0.65rem] font-mono font-bold px-3 py-1 rounded border border-green-500/30 uppercase tracking-widest shadow-sm">
+          <span
+            class="bg-green-700/80 text-white text-[0.65rem] font-mono font-bold px-3 py-1 rounded border border-green-500/30 uppercase tracking-widest shadow-sm">
             LASALLIAN TERTIARY EDUCATION
           </span>
-          <span v-if="programAbbr" class="bg-yellow-500/90 text-gray-950 text-[0.65rem] font-mono font-bold px-2.5 py-1 rounded shadow-sm">
+          <span v-if="programAbbr"
+            class="bg-yellow-500/90 text-gray-950 text-[0.65rem] font-mono font-bold px-2.5 py-1 rounded shadow-sm">
             {{ programAbbr }}
           </span>
         </div>
         <h1 class="text-xl lg:text-3xl font-extrabold text-white tracking-wide uppercase leading-tight max-w-8xl">
           {{ programCleanTitle || item?.title || 'Degree Program Details' }}
         </h1>
-        <p v-if="programAbbr && programCleanTitle" class="mt-1 text-green-200 text-xs font-semibold tracking-wider uppercase">
+        <p v-if="programAbbr && programCleanTitle"
+          class="mt-1 text-green-200 text-xs font-semibold tracking-wider uppercase">
           {{ item?.title }}
         </p>
       </div>
@@ -1249,7 +1253,8 @@ useHead(() => ({
     <!-- ── BREADCRUMB ── -->
     <nav class="bg-white border-b border-gray-200 shadow-sm">
       <div class="w-11/12 mx-auto">
-        <ul class="flex items-center flex-wrap gap-x-1.5 h-11 text-[0.75rem] text-gray-500 overflow-x-auto whitespace-nowrap list-none m-0 p-0">
+        <ul
+          class="flex items-center flex-wrap gap-x-1.5 h-11 text-[0.75rem] text-gray-500 overflow-x-auto whitespace-nowrap list-none m-0 p-0">
           <li class="flex items-center gap-1.5">
             <NuxtLink to="/" class="text-green-900 no-underline capitalize hover:underline font-medium">
               <i class="fas fa-home text-xs mr-1 text-green-800"></i>Home
@@ -1257,15 +1262,18 @@ useHead(() => ({
           </li>
           <li class="flex items-center gap-1.5">
             <i class="fas fa-chevron-right text-[0.55rem] text-gray-400"></i>
-            <NuxtLink to="/academics/tertiary-education" class="text-green-900 no-underline capitalize hover:underline font-medium">Academics</NuxtLink>
+            <NuxtLink to="/academics/tertiary-education"
+              class="text-green-900 no-underline capitalize hover:underline font-medium">Academics</NuxtLink>
           </li>
           <li class="flex items-center gap-1.5">
             <i class="fas fa-chevron-right text-[0.55rem] text-gray-400"></i>
-            <NuxtLink to="/academics/tertiary-education" class="text-green-900 no-underline capitalize hover:underline font-medium">Tertiary Education</NuxtLink>
+            <NuxtLink to="/academics/tertiary-education"
+              class="text-green-900 no-underline capitalize hover:underline font-medium">Tertiary Education</NuxtLink>
           </li>
           <li class="flex items-center gap-1.5">
             <i class="fas fa-chevron-right text-[0.55rem] text-gray-400"></i>
-            <span class="capitalize text-gray-400 truncate max-w-[240px] font-semibold">{{ item?.title || 'Program' }}</span>
+            <span class="capitalize text-gray-400 truncate max-w-[240px] font-semibold">{{ item?.title || 'Program'
+              }}</span>
           </li>
         </ul>
       </div>
@@ -1276,7 +1284,8 @@ useHead(() => ({
 
       <!-- Back Navigation Button -->
       <div class="mb-6">
-        <NuxtLink to="/academics/tertiary-education" class="inline-flex items-center gap-2 text-xs font-bold text-green-900 uppercase tracking-wider hover:text-green-700 transition-colors bg-white px-4 py-2 border border-gray-200 rounded-lg shadow-sm hover:shadow">
+        <NuxtLink to="/academics/tertiary-education"
+          class="inline-flex items-center gap-2 text-xs font-bold text-green-900 uppercase tracking-wider hover:text-green-700 transition-colors bg-white px-4 py-2 border border-gray-200 rounded-lg shadow-sm hover:shadow">
           <i class="fas fa-arrow-left text-green-800"></i> Back to All Programs
         </NuxtLink>
       </div>
@@ -1291,8 +1300,10 @@ useHead(() => ({
       <div v-else-if="!item && !loading" class="bg-white p-12 rounded-xl border border-gray-200 text-center shadow-sm">
         <i class="fas fa-graduation-cap text-gray-300 text-6xl mb-4"></i>
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Program Details Unavailable</h2>
-        <p class="text-gray-600 text-sm mb-6 max-w-md mx-auto">The requested degree program specifications could not be loaded or located at this time.</p>
-        <NuxtLink to="/academics/tertiary-education" class="inline-flex items-center gap-2 px-6 py-3 bg-green-900 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-green-800 transition-all shadow">
+        <p class="text-gray-600 text-sm mb-6 max-w-md mx-auto">The requested degree program specifications could not be
+          loaded or located at this time.</p>
+        <NuxtLink to="/academics/tertiary-education"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-green-900 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-green-800 transition-all shadow">
           <i class="fas fa-th-list"></i> Browse All Programs
         </NuxtLink>
       </div>
@@ -1314,23 +1325,27 @@ useHead(() => ({
                   {{ item.title }}
                 </h2>
               </div>
-              <span v-if="programAbbr" class="text-sm font-mono font-bold bg-green-50 text-green-900 px-3 py-1.5 border border-green-200 rounded-lg shrink-0">
+              <span v-if="programAbbr"
+                class="text-sm font-mono font-bold bg-green-50 text-green-900 px-3 py-1.5 border border-green-200 rounded-lg shrink-0">
                 {{ programAbbr }}
               </span>
             </div>
 
 
-            
+
 
             <!-- Meta Badges -->
             <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
-              <span v-if="paascuInfo" class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-900 border border-emerald-300 px-3 py-1 rounded-full font-bold shadow-xs">
+              <span v-if="paascuInfo"
+                class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-900 border border-emerald-300 px-3 py-1 rounded-full font-bold shadow-xs">
                 <i class="fas fa-award text-emerald-700"></i> {{ paascuInfo.titleBadge }}
               </span>
-              <span v-if="item.authors" class="inline-flex items-center gap-1.5 bg-gray-100 px-3 py-1 rounded-full border border-gray-200 font-medium">
+              <span v-if="item.authors"
+                class="inline-flex items-center gap-1.5 bg-gray-100 px-3 py-1 rounded-full border border-gray-200 font-medium">
                 <i class="fas fa-university text-green-900"></i> {{ item.authors }}
               </span>
-              <span v-if="formattedDate" class="inline-flex items-center gap-1.5 bg-gray-100 px-3 py-1 rounded-full border border-gray-200 font-medium">
+              <span v-if="formattedDate"
+                class="inline-flex items-center gap-1.5 bg-gray-100 px-3 py-1 rounded-full border border-gray-200 font-medium">
                 <i class="fas fa-calendar-alt text-gray-500"></i> Updated: {{ formattedDate }}
               </span>
             </div>
@@ -1342,169 +1357,28 @@ useHead(() => ({
 
 
 
-            
+
 
             <!-- SDG Badges -->
-            <div v-if="sdgBadges.length > 0" class="flex flex-wrap items-center gap-1.5 mt-4 pt-3 border-t border-gray-100">
+            <div v-if="sdgBadges.length > 0"
+              class="flex flex-wrap items-center gap-1.5 mt-4 pt-3 border-t border-gray-100">
               <span class="text-[0.65rem] font-bold uppercase tracking-wider text-gray-400 mr-1">SDGs:</span>
-              <span
-                v-for="sdg in sdgBadges"
-                :key="sdg.number"
+              <span v-for="sdg in sdgBadges" :key="sdg.number"
                 class="text-[0.65rem] font-bold text-white px-2 py-0.5 rounded shadow-xs"
-                :style="{ backgroundColor: sdg.color }"
-              >
+                :style="{ backgroundColor: sdg.color }">
                 SDG {{ sdg.number }}
               </span>
             </div>
           </div>
 
 
-          <div v-if="(collegeLogoInfo && collegeLogoInfo.logoUrl) || paascuInfo" class="lg:flex gap-x-2">
-
-
-          <!-- ── Official College / Department Logo Card ── -->
-          <div
-            v-if="collegeLogoInfo && collegeLogoInfo.logoUrl"
-            class="w-full bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-3 relative overflow-hidden transition-all hover:border-green-800/40 hover:shadow-md"
-          >
-            <!-- Card Header -->
-            <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
-              <div class="flex items-center gap-2">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
-                  <i class="fas fa-landmark"></i>
-                </span>
-                <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-green-950">
-                  COLLEGE SEAL & LOGO
-                </span>
-              </div>
-              <span v-if="collegeLogoInfo.abbr" class="text-[0.6rem] font-bold font-mono px-2 py-0.5 rounded-full bg-green-50 text-green-900 border border-green-200">
-                {{ collegeLogoInfo.abbr }}
-              </span>
-            </div>
-
-            <!-- Logo Display Area -->
-            <div class="flex flex-col items-center text-center">
-              <div
-                class="relative rounded-2xl border border-gray-200 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50 p-4 shadow-inner cursor-pointer group hover:border-green-600 hover:shadow-md transition-all max-w-[220px] w-full flex items-center justify-center min-h-[160px]"
-                @click="openImageModal(collegeLogoInfo.logoUrl)"
-                title="Click to view high-resolution College Seal"
-              >
-                <img
-                  :src="collegeLogoInfo.logoUrl"
-                  :alt="collegeLogoInfo.title"
-                  class="max-h-36 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter"
-                />
-                <div class="absolute inset-0 bg-green-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[0.65rem] font-bold gap-1 rounded-2xl backdrop-blur-xs">
-                  <i class="fas fa-search-plus text-xs"></i> View Full Seal
-                </div>
-              </div>
-
-              <!-- College Name & Info -->
-              <h5 class="mt-3 text-xs font-extrabold text-gray-900 leading-snug uppercase tracking-wide">
-                {{ collegeLogoInfo.title }}
-              </h5>
-              <p class="mt-1 text-[0.68rem] text-gray-500 font-medium">
-                Official Department Seal • La Salle University
-              </p>
-            </div>
-          </div>
-
-
-                     <!-- ── PAASCU Course Program Accreditation Spotlight Card ── -->
-          <div
-            v-if="paascuInfo"
-            class="w-full bg-gradient-to-b from-emerald-50/80 via-white to-white border-2 border-emerald-600/30 rounded-xl p-5 shadow-sm space-y-3.5 relative overflow-hidden transition-all hover:border-emerald-600/50 hover:shadow-md"
-          >
-            <div class="absolute -right-8 -bottom-8 w-28 h-28 bg-emerald-100/40 rounded-full blur-xl pointer-events-none"></div>
-
-            <!-- Card Header -->
-            <div class="flex items-center justify-between border-b border-emerald-100/80 pb-2.5">
-              <div class="flex items-center gap-2">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-white text-xs shadow-xs">
-                  <i class="fas fa-award"></i>
-                </span>
-                <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-emerald-950">
-                  PAASCU ACCREDITED
-                </span>
-              </div>
-              <span class="text-[0.6rem] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-700 text-white shadow-xs">
-                {{ paascuInfo.statusBadge }}
-              </span>
-            </div>
-
-            <!-- PAASCU Logo Spotlight Area -->
-            <div class="flex flex-col items-center text-center">
-              <div
-                class="relative rounded-xl border border-emerald-200/80 bg-white p-3.5 shadow-xs cursor-pointer group hover:border-emerald-500 hover:shadow transition-all max-w-[210px] w-full flex items-center justify-center min-h-[120px]"
-                @click="openImageModal(paascuInfo.imageUrl)"
-                title="Click to view PAASCU Accreditation Seal"
-              >
-                <img
-                  :src="paascuInfo.imageUrl"
-                  alt="PAASCU Accredited Seal"
-                  class="max-h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-xs"
-                />
-                <div class="absolute inset-0 bg-emerald-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[0.65rem] font-bold gap-1 rounded-xl backdrop-blur-xs">
-                  <i class="fas fa-search-plus text-xs"></i> View Full Seal
-                </div>
-              </div>
-
-              <!-- Title & Accreditation Text -->
-              <h5 class="mt-3 text-xs font-extrabold text-emerald-950 uppercase tracking-wide">
-                {{ paascuInfo.titleBadge }}
-              </h5>
-              <p class="mt-1 text-[0.7rem] text-gray-600 leading-snug">
-                Philippine Accrediting Association of Schools, Colleges and Universities
-              </p>
-              <div class="mt-2.5 flex items-center justify-center gap-1.5 text-[0.65rem] text-emerald-900 bg-emerald-100/70 border border-emerald-200/80 px-3 py-1 rounded-lg font-semibold w-full">
-                <i class="fas fa-certificate text-emerald-700"></i>
-                <span>Quality Assured & FAAP Certified</span>
-              </div>
-            </div>
-          </div>
-
-</div>
-          <!-- ── Student Model & Program Spotlight Card ── -->
-          <!-- <div v-if="regularSpotlightImages.length > 0" class="bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-3 relative overflow-hidden transition-all hover:border-green-800/40 hover:shadow-md">
-            <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
-              <div class="flex items-center gap-2">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
-                  <i class="fas fa-user-graduate"></i>
-                </span>
-                <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-green-950">
-                  PROGRAM SPOTLIGHT
-                </span>
-              </div>
-              <span class="text-[0.6rem] text-gray-400 font-normal">Click to enlarge</span>
-            </div>
-
-            <div class="space-y-4">
-              <div
-                v-for="(file, idx) in regularSpotlightImages"
-                :key="idx"
-                class="relative rounded-2xl overflow-hidden border border-gray-200 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50 p-4 group cursor-pointer shadow-inner flex items-center justify-center min-h-[160px] hover:border-green-600 transition-all"
-                @click="openImageModal(getFileUrl(file))"
-              >
-                <img
-                  :src="getFileUrl(file)"
-                  :alt="item.title"
-                  class="w-full max-h-[320px] h-auto object-contain transition-all duration-300 group-hover:scale-105 filter drop-shadow-md"
-                />
-                <div class="absolute inset-0 bg-green-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2 rounded-2xl backdrop-blur-xs">
-                  <i class="fas fa-search-plus text-base"></i> View Full Image
-                </div>
-              </div>
-            </div>
-          </div> -->
-
-
-          
-
-          <!-- Structured Sections -->
-          <div v-for="section in parsedSections" :key="section.id" class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm transition-all hover:border-gray-300">
+            <!-- Structured Sections -->
+          <div v-for="section in parsedSections" :key="section.id"
+            class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm transition-all hover:border-gray-300">
             <!-- Section Title -->
             <div class="flex items-center gap-3 border-b border-gray-100 pb-4 mb-5">
-              <div class="w-9 h-9 rounded-lg bg-green-50 border border-green-200 flex items-center justify-center text-green-900 text-sm shrink-0">
+              <div
+                class="w-9 h-9 rounded-lg bg-green-50 border border-green-200 flex items-center justify-center text-green-900 text-sm shrink-0">
                 <i class="fas" :class="section.icon"></i>
               </div>
               <h3 class="text-lg lg:text-xl font-extrabold text-gray-900 tracking-wide uppercase">
@@ -1513,49 +1387,42 @@ useHead(() => ({
             </div>
 
             <!-- Raw HTML fallback if overview html -->
-            <div v-if="section.isRawHtml" class="prose max-w-none text-gray-700 text-sm leading-relaxed" v-html="section.rawContent"></div>
+            <div v-if="section.isRawHtml" class="prose max-w-none text-gray-700 text-sm leading-relaxed"
+              v-html="section.rawContent"></div>
 
             <!-- Parsed Content Body with Paragraphs, Numbered Lists, and Bullet Lists -->
             <div v-else class="space-y-4">
               <div v-for="(block, bIdx) in section.blocks" :key="bIdx">
                 <!-- Paragraph Block -->
-                <p
-                  v-if="block.type === 'paragraph'"
+                <p v-if="block.type === 'paragraph'"
                   class="text-gray-700 text-sm lg:text-base leading-relaxed text-justify"
-                  v-html="formatInlineMarkdown(block.text)"
-                ></p>
+                  v-html="formatInlineMarkdown(block.text)"></p>
 
                 <!-- Numbered List Block -->
-                <div
-                  v-else-if="block.type === 'number'"
-                  class="mt-3 space-y-2.5"
-                >
-                  <div
-                    v-for="(item, idx) in block.items"
-                    :key="idx"
-                    class="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-gray-50 border border-gray-200/80 transition-all hover:bg-green-50/40 hover:border-green-300 group shadow-xs"
-                  >
-                    <span class="w-7 h-7 rounded-full bg-green-900 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover:bg-green-800 transition-colors">
+                <div v-else-if="block.type === 'number'" class="mt-3 space-y-2.5">
+                  <div v-for="(item, idx) in block.items" :key="idx"
+                    class="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-gray-50 border border-gray-200/80 transition-all hover:bg-green-50/40 hover:border-green-300 group shadow-xs">
+                    <span
+                      class="w-7 h-7 rounded-full bg-green-900 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover:bg-green-800 transition-colors">
                       {{ item.num || (idx + 1) }}
                     </span>
-                    <div class="text-gray-800 text-sm leading-relaxed group-hover:text-green-950 font-medium pt-0.5 flex-1" v-html="formatInlineMarkdown(item.text)"></div>
+                    <div
+                      class="text-gray-800 text-sm leading-relaxed group-hover:text-green-950 font-medium pt-0.5 flex-1"
+                      v-html="formatInlineMarkdown(item.text)"></div>
                   </div>
                 </div>
 
                 <!-- Bullet List Block -->
-                <div
-                  v-else-if="block.type === 'bullet'"
-                  class="mt-3 space-y-2.5"
-                >
-                  <div
-                    v-for="(item, idx) in block.items"
-                    :key="idx"
-                    class="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-gray-50/90 border border-gray-200/80 transition-all hover:bg-green-50/40 hover:border-green-300 group shadow-xs"
-                  >
-                    <span class="w-6 h-6 rounded-full bg-green-100 text-green-900 border border-green-300/80 flex items-center justify-center shrink-0 mt-0.5 shadow-xs group-hover:bg-green-900 group-hover:text-white transition-all">
+                <div v-else-if="block.type === 'bullet'" class="mt-3 space-y-2.5">
+                  <div v-for="(item, idx) in block.items" :key="idx"
+                    class="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-gray-50/90 border border-gray-200/80 transition-all hover:bg-green-50/40 hover:border-green-300 group shadow-xs">
+                    <span
+                      class="w-6 h-6 rounded-full bg-green-100 text-green-900 border border-green-300/80 flex items-center justify-center shrink-0 mt-0.5 shadow-xs group-hover:bg-green-900 group-hover:text-white transition-all">
                       <i class="fas fa-check text-[10px]"></i>
                     </span>
-                    <div class="text-gray-800 text-sm leading-relaxed group-hover:text-green-950 font-medium pt-0.5 flex-1" v-html="formatInlineMarkdown(item.text)"></div>
+                    <div
+                      class="text-gray-800 text-sm leading-relaxed group-hover:text-green-950 font-medium pt-0.5 flex-1"
+                      v-html="formatInlineMarkdown(item.text)"></div>
                   </div>
                 </div>
               </div>
@@ -1563,16 +1430,122 @@ useHead(() => ({
           </div>
 
 
-          
+
+
+          <div v-if="(collegeLogoInfo && collegeLogoInfo.logoUrl) || paascuInfo" class="lg:flex gap-x-2">
+
+
+            <!-- ── Official College / Department Logo Card ── -->
+            <div v-if="collegeLogoInfo && collegeLogoInfo.logoUrl"
+              class="w-full bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-3 relative overflow-hidden transition-all hover:border-green-800/40 hover:shadow-md">
+              <!-- Card Header -->
+              <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
+                    <i class="fas fa-landmark"></i>
+                  </span>
+                  <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-green-950">
+                    COLLEGE SEAL & LOGO
+                  </span>
+                </div>
+                <span v-if="collegeLogoInfo.abbr"
+                  class="text-[0.6rem] font-bold font-mono px-2 py-0.5 rounded-full bg-green-50 text-green-900 border border-green-200">
+                  {{ collegeLogoInfo.abbr }}
+                </span>
+              </div>
+
+              <!-- Logo Display Area -->
+              <div class="flex flex-col items-center text-center">
+                <div
+                  class="relative rounded-2xl border border-gray-200 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50 p-4 shadow-inner cursor-pointer group hover:border-green-600 hover:shadow-md transition-all max-w-[220px] w-full flex items-center justify-center min-h-[160px]"
+                  @click="openImageModal(collegeLogoInfo.logoUrl)" title="Click to view high-resolution College Seal">
+                  <img :src="collegeLogoInfo.logoUrl" :alt="collegeLogoInfo.title"
+                    class="max-h-36 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter" />
+                  <div
+                    class="absolute inset-0 bg-green-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[0.65rem] font-bold gap-1 rounded-2xl backdrop-blur-xs">
+                    <i class="fas fa-search-plus text-xs"></i> View Full Seal
+                  </div>
+                </div>
+
+                <!-- College Name & Info -->
+                <h5 class="mt-3 text-xs font-extrabold text-gray-900 leading-snug uppercase tracking-wide">
+                  {{ collegeLogoInfo.title }}
+                </h5>
+                <p class="mt-1 text-[0.68rem] text-gray-500 font-medium">
+                  Official Department Seal • La Salle University
+                </p>
+              </div>
+            </div>
+
+
+            <!-- ── PAASCU Course Program Accreditation Spotlight Card ── -->
+            <div v-if="paascuInfo"
+              class="w-full bg-gradient-to-b from-emerald-50/80 via-white to-white border-2 border-emerald-600/30 rounded-xl p-5 shadow-sm space-y-3.5 relative overflow-hidden transition-all hover:border-emerald-600/50 hover:shadow-md">
+              <div
+                class="absolute -right-8 -bottom-8 w-28 h-28 bg-emerald-100/40 rounded-full blur-xl pointer-events-none">
+              </div>
+
+              <!-- Card Header -->
+              <div class="flex items-center justify-between border-b border-emerald-100/80 pb-2.5">
+                <div class="flex items-center gap-2">
+                  <span
+                    class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-white text-xs shadow-xs">
+                    <i class="fas fa-award"></i>
+                  </span>
+                  <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-emerald-950">
+                    PAASCU ACCREDITED
+                  </span>
+                </div>
+                <span
+                  class="text-[0.6rem] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-700 text-white shadow-xs">
+                  {{ paascuInfo.statusBadge }}
+                </span>
+              </div>
+
+              <!-- PAASCU Logo Spotlight Area -->
+              <div class="flex flex-col items-center text-center">
+                <div
+                  class="relative rounded-xl border border-emerald-200/80 bg-white p-3.5 shadow-xs cursor-pointer group hover:border-emerald-500 hover:shadow transition-all max-w-[210px] w-full flex items-center justify-center min-h-[120px]"
+                  @click="openImageModal(paascuInfo.imageUrl)" title="Click to view PAASCU Accreditation Seal">
+                  <img :src="paascuInfo.imageUrl" alt="PAASCU Accredited Seal"
+                    class="max-h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-xs" />
+                  <div
+                    class="absolute inset-0 bg-emerald-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[0.65rem] font-bold gap-1 rounded-xl backdrop-blur-xs">
+                    <i class="fas fa-search-plus text-xs"></i> View Full Seal
+                  </div>
+                </div>
+
+                <!-- Title & Accreditation Text -->
+                <h5 class="mt-3 text-xs font-extrabold text-emerald-950 uppercase tracking-wide">
+                  {{ paascuInfo.titleBadge }}
+                </h5>
+                <p class="mt-1 text-[0.7rem] text-gray-600 leading-snug">
+                  Philippine Accrediting Association of Schools, Colleges and Universities
+                </p>
+                <div
+                  class="mt-2.5 flex items-center justify-center gap-1.5 text-[0.65rem] text-emerald-900 bg-emerald-100/70 border border-emerald-200/80 px-3 py-1 rounded-lg font-semibold w-full">
+                  <i class="fas fa-certificate text-emerald-700"></i>
+                  <span>Quality Assured & FAAP Certified</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+
+
 
           <!-- Programs Offered (shown on ALL pages — college VMG and individual programs) -->
-          <div v-if="collegeProgramsLoading || collegePrograms.length > 0" class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm">
+          <div v-if="collegeProgramsLoading || collegePrograms.length > 0"
+            class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm">
             <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
               <h3 class="text-lg font-bold uppercase tracking-wider text-green-900 flex items-center gap-2">
                 <i class="fas fa-graduation-cap text-green-800"></i>
                 Degree Programs Offered
               </h3>
-              <span v-if="programAbbr" class="text-[0.65rem] font-bold text-green-900 bg-green-50 border border-green-200 px-2 py-1 rounded font-mono">
+              <span v-if="programAbbr"
+                class="text-[0.65rem] font-bold text-green-900 bg-green-50 border border-green-200 px-2 py-1 rounded font-mono">
                 {{ programAbbr }}
               </span>
             </div>
@@ -1584,17 +1557,12 @@ useHead(() => ({
 
             <!-- CMS Programs Grid -->
             <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <NuxtLink
-                v-for="(p, pIdx) in collegePrograms"
-                :key="pIdx"
-                :to="getProgramRoute(p)"
-                :class="[
-                  'group flex items-center justify-between p-4 rounded-xl border transition-all no-underline cursor-pointer',
-                  isCurrentProgram(p)
-                    ? 'bg-green-900 border-green-700 shadow-md ring-2 ring-green-500/40 pointer-events-none'
-                    : 'bg-gray-50 border-gray-200 hover:border-green-700 hover:bg-green-50/40 hover:shadow-md'
-                ]"
-              >
+              <NuxtLink v-for="(p, pIdx) in collegePrograms" :key="pIdx" :to="getProgramRoute(p)" :class="[
+                'group flex items-center justify-between p-4 rounded-xl border transition-all no-underline cursor-pointer',
+                isCurrentProgram(p)
+                  ? 'bg-green-900 border-green-700 shadow-md ring-2 ring-green-500/40 pointer-events-none'
+                  : 'bg-gray-50 border-gray-200 hover:border-green-700 hover:bg-green-50/40 hover:shadow-md'
+              ]">
                 <div class="flex items-center gap-3 min-w-0">
                   <div :class="[
                     'w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors',
@@ -1617,7 +1585,8 @@ useHead(() => ({
                   ]">
                     {{ p.abbr }}
                   </span>
-                  <i v-if="!isCurrentProgram(p)" class="fas fa-chevron-right text-[0.6rem] text-gray-400 group-hover:text-green-700 transition-colors"></i>
+                  <i v-if="!isCurrentProgram(p)"
+                    class="fas fa-chevron-right text-[0.6rem] text-gray-400 group-hover:text-green-700 transition-colors"></i>
                   <i v-else class="fas fa-circle-dot text-[0.6rem] text-green-300"></i>
                 </div>
               </NuxtLink>
@@ -1625,10 +1594,12 @@ useHead(() => ({
           </div>
 
           <!-- ── Program & Campus Media Gallery Section ── -->
-          <div v-if="imageFiles.length > 0" class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm space-y-5">
+          <div v-if="imageFiles.length > 0"
+            class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm space-y-5">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-4">
               <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-lg bg-green-50 border border-green-200 flex items-center justify-center text-green-900 text-sm shrink-0">
+                <div
+                  class="w-9 h-9 rounded-lg bg-green-50 border border-green-200 flex items-center justify-center text-green-900 text-sm shrink-0">
                   <i class="fas fa-images"></i>
                 </div>
                 <div>
@@ -1647,18 +1618,13 @@ useHead(() => ({
 
             <!-- Gallery Grid -->
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div
-                v-for="(file, gIdx) in imageFiles"
-                :key="gIdx"
+              <div v-for="(file, gIdx) in imageFiles" :key="gIdx"
                 class="group relative rounded-xl overflow-hidden border border-gray-200 bg-gradient-to-b from-gray-50 via-white to-gray-50 p-4 shadow-xs hover:shadow-md hover:border-green-600 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[180px]"
-                @click="openImageModal(getFileUrl(file))"
-              >
-                <img
-                  :src="getFileUrl(file)"
-                  :alt="`${item.title} Media ${gIdx + 1}`"
-                  class="max-h-44 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-xs"
-                />
-                <div class="absolute inset-0 bg-green-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs font-bold gap-2 rounded-xl backdrop-blur-xs p-3 text-center">
+                @click="openImageModal(getFileUrl(file))">
+                <img :src="getFileUrl(file)" :alt="`${item.title} Media ${gIdx + 1}`"
+                  class="max-h-44 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-xs" />
+                <div
+                  class="absolute inset-0 bg-green-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs font-bold gap-2 rounded-xl backdrop-blur-xs p-3 text-center">
                   <i class="fas fa-search-plus text-lg"></i>
                   <span>View High-Resolution</span>
                 </div>
@@ -1671,56 +1637,55 @@ useHead(() => ({
         <!-- ── COLUMN 2: NEWS & UPDATES (1/4 = 3/12 Columns) ── -->
         <div class="lg:col-span-5 space-y-6">
 
-                  <!-- Admissions & Enrollment Action Card -->
-          <div class="bg-gradient-to-br from-green-950 to-green-900 text-white rounded-xl p-6 shadow-md border border-green-800">
-          
+          <!-- Admissions & Enrollment Action Card -->
+          <div
+            class="bg-gradient-to-br from-green-950 to-green-900 text-white rounded-xl p-6 shadow-md border border-green-800">
+
             <h4 class="flex items-center gap-2 text-lg font-extrabold uppercase tracking-wide mb-2 text-white">
-               <span class="w-10 h-10 rounded-full bg-green-500/20 border border-green-400/30 flex items-center justify-center text-green-400 text-lg">
-              <i class="fas fa-user-graduate"></i>
-            </span> Enroll at La Salle
+              <span
+                class="w-10 h-10 rounded-full bg-green-500/20 border border-green-400/30 flex items-center justify-center text-green-400 text-lg">
+                <i class="fas fa-user-graduate"></i>
+              </span> Enroll at La Salle
             </h4>
             <p class="text-xs text-white/75 leading-relaxed mb-6">
-              Take the next step in your academic journey. Inquire now or check admission requirements for {{ programAbbr || 'this program' }}.
+              Take the next step in your academic journey. Inquire now or check admission requirements for {{
+                programAbbr || 'this program' }}.
             </p>
             <div class="space-y-2.5">
-              <a
-                href="/enrollment"
-                class="block text-center w-full py-2.5 px-4 bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors shadow"
-              >
+              <a href="/enrollment"
+                class="block text-center w-full py-2.5 px-4 bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors shadow">
                 Apply for Admission
               </a>
-              <NuxtLink
-                to="/academics/tertiary-education"
-                class="block text-center w-full py-2.5 px-4 border border-white/30 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors"
-              >
+              <NuxtLink to="/academics/tertiary-education"
+                class="block text-center w-full py-2.5 px-4 border border-white/30 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors">
                 Browse All Programs
               </NuxtLink>
             </div>
           </div>
 
           <!-- Events & Announcements Card Container -->
-          <div class="bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-4 transition-all hover:border-green-800/40 hover:shadow-md">
-            
+          <div
+            class="bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-4 transition-all hover:border-green-800/40 hover:shadow-md">
+
             <!-- Section Header -->
             <div class="flex items-center justify-between border-b border-gray-100 pb-3">
               <div class="flex items-center gap-2">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
+                <span
+                  class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
                   <i class="fas fa-bullhorn"></i>
                 </span>
                 <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-green-950">
                   {{ (collegeLogoInfo?.abbr || programAbbr) ? `${collegeLogoInfo?.abbr || programAbbr} UPDATES` : 'NEWS & EVENTS' }}
                 </span>
               </div>
-              <NuxtLink
-                to="/news-updates/list"
-                class="text-[0.65rem] font-bold text-green-900 hover:text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 transition-colors inline-flex items-center gap-1"
-              >
+              <NuxtLink to="/news-updates/list"
+                class="text-[0.65rem] font-bold text-green-900 hover:text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 transition-colors inline-flex items-center gap-1">
                 <span>View All</span>
                 <i class="fas fa-arrow-right text-[0.55rem]"></i>
               </NuxtLink>
             </div>
 
-            
+
 
             <!-- Loading Skeleton -->
             <div v-if="collegeNewsLoading" class="space-y-3">
@@ -1729,36 +1694,28 @@ useHead(() => ({
 
             <!-- News & Events Vertical Feed -->
 
-            
+
             <div v-else-if="collegeNewsEvents.length > 0" class="lg:grid grid-cols-2 gap-2">
-              <NuxtLink
-                v-for="(news, nIdx) in collegeNewsEvents"
-                :key="news.id || nIdx"
+              <NuxtLink v-for="(news, nIdx) in collegeNewsEvents" :key="news.id || nIdx"
                 :to="`/news-updates/${news.id || news.content_id}`"
-                class="group bg-gray-50/60 rounded-xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md hover:border-green-600 hover:bg-white transition-all flex flex-col no-underline"
-              >
+                class="group bg-gray-50/60 rounded-xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md hover:border-green-600 hover:bg-white transition-all flex flex-col no-underline">
                 <!-- Thumbnail Image -->
                 <div class="relative h-[350px] w-full overflow-hidden bg-gray-100">
-                  <img
-                    v-if="news.files && news.files.length > 0 && isImageFile(news.files[0])"
-                    :src="getFileUrl(news.files[0])"
-                    :alt="news.title"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div
-                    v-else
-                    class="w-full h-full bg-gradient-to-br from-green-950 via-green-900 to-green-800 flex flex-col items-center justify-center text-white p-3 text-center"
-                  >
+                  <img v-if="news.files && news.files.length > 0 && isImageFile(news.files[0])"
+                    :src="getFileUrl(news.files[0])" :alt="news.title"
+                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <div v-else
+                    class="w-full h-full bg-gradient-to-br from-green-950 via-green-900 to-green-800 flex flex-col items-center justify-center text-white p-3 text-center">
                     <i class="fas fa-newspaper text-2xl text-white/40 mb-1"></i>
-                    <span class="text-[0.6rem] font-bold text-white/70 uppercase tracking-wider">La Salle University</span>
+                    <span class="text-[0.6rem] font-bold text-white/70 uppercase tracking-wider">La Salle
+                      University</span>
                   </div>
 
                   <!-- Category Tag Badge -->
                   <div class="absolute top-2 left-2">
                     <span
                       class="inline-flex items-center gap-1 text-[0.6rem] font-bold px-2 py-0.5 rounded-full border shadow-xs"
-                      :class="getNewsCategory(news).bg"
-                    >
+                      :class="getNewsCategory(news).bg">
                       <i class="fas text-[0.55rem]" :class="getNewsCategory(news).icon"></i>
                       {{ getNewsCategory(news).label }}
                     </span>
@@ -1780,12 +1737,14 @@ useHead(() => ({
                     </div>
 
                     <!-- Title -->
-                    <h4 class="text-xs font-extrabold text-gray-900 group-hover:text-green-900 transition-colors line-clamp-2 leading-snug mb-1.5">
+                    <h4
+                      class="text-xs font-extrabold text-gray-900 group-hover:text-green-900 transition-colors line-clamp-2 leading-snug mb-1.5">
                       {{ news.title }}
                     </h4>
 
                     <!-- Excerpt -->
-                    <p v-if="news.descriptions || news.description" class="text-[0.7rem] text-gray-600 line-clamp-2 leading-relaxed mb-2">
+                    <p v-if="news.descriptions || news.description"
+                      class="text-[0.7rem] text-gray-600 line-clamp-2 leading-relaxed mb-2">
                       {{ (news.descriptions || news.description).replace(/<[^>]*>?/gm, '').substring(0, 85) }}...
                     </p>
                   </div>
@@ -1793,17 +1752,16 @@ useHead(() => ({
                   <!-- Action Footer -->
                   <div class="pt-2 border-t border-gray-200/60 flex items-center justify-between">
                     <div class="flex items-center gap-1 flex-wrap">
-                      <span
-                        v-for="sdg in getNewsSdgBadges(news).slice(0, 2)"
-                        :key="sdg.number"
+                      <span v-for="sdg in getNewsSdgBadges(news).slice(0, 2)" :key="sdg.number"
                         class="text-[0.55rem] font-bold text-white px-1.5 py-0.2 rounded"
-                        :style="{ backgroundColor: sdg.color }"
-                      >
+                        :style="{ backgroundColor: sdg.color }">
                         SDG {{ sdg.number }}
                       </span>
                     </div>
-                    <span class="text-[0.68rem] font-bold text-green-900 group-hover:text-green-700 inline-flex items-center gap-1 shrink-0 ml-auto">
-                      Read <i class="fas fa-arrow-right text-[0.6rem] transition-transform group-hover:translate-x-0.5"></i>
+                    <span
+                      class="text-[0.68rem] font-bold text-green-900 group-hover:text-green-700 inline-flex items-center gap-1 shrink-0 ml-auto">
+                      Read <i
+                        class="fas fa-arrow-right text-[0.6rem] transition-transform group-hover:translate-x-0.5"></i>
                     </span>
                   </div>
                 </div>
@@ -1823,25 +1781,22 @@ useHead(() => ({
 
         </div>
 
-       
+
 
       </div>
     </div>
 
     <!-- Image Lightbox Modal -->
-    <div
-      v-if="showImageModal"
+    <div v-if="showImageModal"
       class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-      @click="closeImageModal"
-    >
+      @click="closeImageModal">
       <div class="relative max-w-4xl w-full max-h-[90vh] flex flex-col items-center" @click.stop>
-        <button
-          @click="closeImageModal"
-          class="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl font-bold focus:outline-none"
-        >
+        <button @click="closeImageModal"
+          class="absolute -top-10 right-0 text-white hover:text-gray-300 text-2xl font-bold focus:outline-none">
           <i class="fas fa-times"></i>
         </button>
-        <img :src="selectedImage" :alt="item?.title" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" />
+        <img :src="selectedImage" :alt="item?.title"
+          class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" />
       </div>
     </div>
 
@@ -1855,7 +1810,10 @@ useHead(() => ({
   margin-bottom: 1rem;
   line-height: 1.7;
 }
-.prose :deep(h1), .prose :deep(h2), .prose :deep(h3) {
+
+.prose :deep(h1),
+.prose :deep(h2),
+.prose :deep(h3) {
   color: #14532d;
   font-weight: 800;
   margin-top: 1.5rem;
