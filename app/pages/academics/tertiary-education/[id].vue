@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import moment from "moment";
 import tertiaryJSON from "./tertiary.json";
@@ -480,7 +480,8 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
   const cleanId = String(cmsId || "").toLowerCase();
 
   let matchedAbbr = "";
-  tertiaryJSON.tertiary.forEach((t) => {
+  if (tertiaryJSON?.tertiary && Array.isArray(tertiaryJSON.tertiary)) {
+    tertiaryJSON.tertiary.forEach((t) => {
     if (t.under_grad) {
       t.under_grad.forEach((tu) => {
         if (tu.list) {
@@ -558,6 +559,7 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
       });
     }
   });
+  }
 
   // Also check pageFilters and pageAuthors directly for known college abbreviations
   if (!matchedAbbr) {
@@ -814,7 +816,195 @@ const isCmsPublished = (cmsItem) => {
   return filters.includes("published");
 };
 
-// Fetch News, Events & Announcements from CMS for the college (PUBLISHED ONLY)
+// Check if a CMS news/event item is genuinely related to a specific college or degree program
+const isNewsRelatedToCollegeOrProgram = (cmsItem, matchedCollegeAbbr, currentItem) => {
+  if (!cmsItem) return false;
+
+  const title = (cmsItem.title || "").toLowerCase();
+  const rawFilters = (cmsItem.filters || cmsItem.filter || "").toLowerCase();
+  const authors = (cmsItem.authors || cmsItem.author || "").toLowerCase();
+  const descriptions = (cmsItem.descriptions || cmsItem.description || "").toLowerCase();
+
+  // Clean filter tags array
+  const filterTags = rawFilters
+    .split(/[,;\n]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+
+  const colAbbr = (matchedCollegeAbbr || "").toLowerCase().trim();
+  const progAbbr = (currentItem?.abbr || programAbbr.value || "").toLowerCase().trim();
+  const progTitle = (currentItem?.title || "").toLowerCase().trim();
+
+  // 1. College of Nursing (CON) / Nursing Program (BSN)
+  if (colAbbr === "con" || progAbbr === "bsn" || progTitle.includes("nursing")) {
+    const hasExplicitNursingTerm =
+      title.includes("nursing") ||
+      title.includes("nurse") ||
+      title.includes("nurses") ||
+      title.includes("bsn") ||
+      title.includes("college of nursing") ||
+      authors.includes("college of nursing") ||
+      authors.includes("nursing") ||
+      authors.includes("dean of nursing") ||
+      filterTags.includes("nursing") ||
+      filterTags.includes("bsn") ||
+      filterTags.includes("college of nursing") ||
+      filterTags.includes("lsu-con") ||
+      filterTags.includes("lsu con");
+
+    const descriptionNursingMatch =
+      descriptions.includes("college of nursing") ||
+      descriptions.includes("nursing student") ||
+      descriptions.includes("nursing board") ||
+      descriptions.includes("nursing licensure") ||
+      descriptions.includes("bs in nursing") ||
+      descriptions.includes("bachelor of science in nursing");
+
+    // Strictly reject generic "CON" words (conference, convention, TechZONED CON, youth con, pros and cons) if not about nursing
+    const isGenericConOrConference =
+      title.includes("techzoned") ||
+      title.includes("tech zoned") ||
+      title.includes("conference") ||
+      title.includes("convention") ||
+      title.includes("workshop") ||
+      title.includes("con 20") ||
+      title.includes("con 19");
+
+    if (isGenericConOrConference && !hasExplicitNursingTerm && !descriptionNursingMatch) {
+      return false;
+    }
+
+    if (filterTags.includes("con") && !isGenericConOrConference) {
+      return true;
+    }
+
+    return hasExplicitNursingTerm || descriptionNursingMatch;
+  }
+
+  // 2. College of Arts and Sciences (CAS)
+  if (colAbbr === "cas" || progTitle.includes("arts and sciences")) {
+    const casKeywords = [
+      "college of arts and sciences", "arts and sciences", "lsu-cas",
+      "political science", "bapolsc", "english language", "baels",
+      "communication", "bacomm", "philosophy", "baphilo",
+      "psychology", "bspsych", "social work", "bssw"
+    ];
+    if (filterTags.some((t) => t === "cas" || t === "lsu-cas" || t === "arts and sciences" || casKeywords.includes(t))) return true;
+    if (authors.includes("college of arts and sciences") || authors.includes("cas")) return true;
+    if (casKeywords.some((k) => title.includes(k) || descriptions.includes(k))) return true;
+    if (/\bcas\b/i.test(title) && !title.includes("in case") && !title.includes("broadcast") && !title.includes("cascade")) return true;
+    return false;
+  }
+
+  // 3. College of Business and Accountancy (CBA)
+  if (colAbbr === "cba" || progTitle.includes("business and accountancy") || progTitle.includes("business administration")) {
+    const cbaKeywords = [
+      "college of business and accountancy", "business and accountancy", "lsu-cba",
+      "accountancy", "accounting", "bsa", "bsais", "bsba", "bsba-fm", "bsba-mm",
+      "financial management", "marketing management", "office administration", "bsoa", "agribusiness", "bsab"
+    ];
+    if (filterTags.some((t) => t === "cba" || t === "lsu-cba" || t === "business and accountancy" || cbaKeywords.includes(t))) return true;
+    if (authors.includes("college of business and accountancy") || authors.includes("cba")) return true;
+    if (cbaKeywords.some((k) => title.includes(k) || descriptions.includes(k))) return true;
+    if (/\bcba\b/i.test(title)) return true;
+    return false;
+  }
+
+  // 4. College of Criminal Justice Education (CCJE)
+  if (colAbbr === "ccje" || progTitle.includes("criminal justice") || progTitle.includes("criminology")) {
+    const ccjeKeywords = [
+      "college of criminal justice education", "criminal justice education", "lsu-ccje",
+      "criminology", "criminologist", "criminologists", "criminal justice", "bsc"
+    ];
+    if (filterTags.some((t) => t === "ccje" || t === "lsu-ccje" || ccjeKeywords.includes(t))) return true;
+    if (authors.includes("college of criminal justice education") || authors.includes("ccje")) return true;
+    if (ccjeKeywords.some((k) => title.includes(k) || descriptions.includes(k))) return true;
+    if (/\bccje\b/i.test(title)) return true;
+    return false;
+  }
+
+  // 5. College of Computer Studies, Engineering and Architecture (CCSEA)
+  if (colAbbr === "ccsea" || progTitle.includes("computer studies") || progTitle.includes("engineering")) {
+    const ccseaKeywords = [
+      "college of computer studies", "ccsea", "lsu-ccsea", "ccs",
+      "civil engineering", "bsce", "architecture", "bsarch",
+      "electrical engineering", "bsee", "computer science", "bscs",
+      "information technology", "bsit", "engineering and architecture"
+    ];
+    if (filterTags.some((t) => t === "ccsea" || t === "lsu-ccsea" || t === "ccs" || ccseaKeywords.includes(t))) return true;
+    if (authors.includes("ccsea") || authors.includes("computer studies") || authors.includes("college of computer studies")) return true;
+    if (ccseaKeywords.some((k) => k !== "ccs" && k !== "ccsea" && (title.includes(k) || descriptions.includes(k)))) return true;
+    if (/\bccsea\b/i.test(title)) return true;
+    return false;
+  }
+
+  // 6. College of Teacher Education (CTE)
+  if (colAbbr === "cte" || progTitle.includes("teacher education") || progTitle.includes("education")) {
+    const cteKeywords = [
+      "college of teacher education", "teacher education", "lsu-cte",
+      "beed", "bsed", "bped", "btled", "blis",
+      "elementary education", "secondary education", "physical education",
+      "library and information science", "let passer", "licensure examination for teachers"
+    ];
+    if (filterTags.some((t) => t === "cte" || t === "lsu-cte" || t === "teacher education" || cteKeywords.includes(t))) return true;
+    if (authors.includes("college of teacher education") || authors.includes("cte")) return true;
+    if (cteKeywords.some((k) => title.includes(k) || descriptions.includes(k))) return true;
+    if (/\bcte\b/i.test(title)) return true;
+    return false;
+  }
+
+  // 7. College of Tourism and Hospitality Management (CTHM)
+  if (colAbbr === "cthm" || progTitle.includes("tourism") || progTitle.includes("hospitality")) {
+    const cthmKeywords = [
+      "college of tourism and hospitality management", "tourism and hospitality management",
+      "cthm", "lsu-cthm", "bshm", "bstm", "hospitality management", "tourism management",
+      "hospitality", "tourism"
+    ];
+    if (filterTags.some((t) => t === "cthm" || t === "lsu-cthm" || cthmKeywords.includes(t))) return true;
+    if (authors.includes("college of tourism and hospitality management") || authors.includes("cthm")) return true;
+    if (cthmKeywords.some((k) => title.includes(k) || descriptions.includes(k))) return true;
+    if (/\bcthm\b/i.test(title)) return true;
+    return false;
+  }
+
+  // 8. College of Medical Laboratory Science (CMLS)
+  if (colAbbr === "cmls" || progTitle.includes("medical laboratory") || progTitle.includes("medtech")) {
+    const cmlsKeywords = [
+      "college of medical laboratory science", "medical laboratory science", "lsu-cmls",
+      "bsmls", "medtech", "medical technology", "medical technologist"
+    ];
+    if (filterTags.some((t) => t === "cmls" || t === "lsu-cmls" || cmlsKeywords.includes(t))) return true;
+    if (authors.includes("college of medical laboratory science") || authors.includes("cmls")) return true;
+    if (cmlsKeywords.some((k) => title.includes(k) || descriptions.includes(k))) return true;
+    if (/\bcmls\b/i.test(title)) return true;
+    return false;
+  }
+
+  // 9. School of Graduate Studies (SGS)
+  if (colAbbr === "sgs" || progTitle.includes("graduate studies") || progTitle.includes("master") || progTitle.includes("doctor")) {
+    const sgsKeywords = [
+      "school of graduate studies", "graduate studies", "graduate school", "lsu-sgs",
+      "mba", "mpa", "maed", "med", "msn", "mit", "msit", "mscs", "phd", "dba", "edd",
+      "juris doctor"
+    ];
+    if (filterTags.some((t) => t === "sgs" || t === "lsu-sgs" || t === "graduate studies" || sgsKeywords.includes(t))) return true;
+    if (authors.includes("school of graduate studies") || authors.includes("sgs")) return true;
+    if (sgsKeywords.some((k) => title.includes(k) || descriptions.includes(k))) return true;
+    if (/\bsgs\b/i.test(title)) return true;
+    return false;
+  }
+
+  // 10. General Program Title & Abbreviation Match (for any specific program)
+  if (progAbbr && progAbbr.length >= 2) {
+    if (filterTags.includes(progAbbr)) return true;
+    const regexProg = new RegExp(`(^|[^a-zA-Z0-9])${progAbbr}([^a-zA-Z0-9]|$)`, "i");
+    if (regexProg.test(title) || regexProg.test(authors)) return true;
+  }
+
+  return false;
+};
+
+// Fetch News, Events & Announcements from CMS for the college (PUBLISHED & RELEVANT ONLY)
 const fetchCollegeNewsFromCMS = async (cmsListRes) => {
   collegeNewsLoading.value = true;
   try {
@@ -825,11 +1015,6 @@ const fetchCollegeNewsFromCMS = async (cmsListRes) => {
     const publishedList = list.filter(isCmsPublished);
 
     const matchedAbbr = resolveCollegeAbbr(item.value, itemId);
-    const college = matchedAbbr ? collegeMeta[matchedAbbr.toLowerCase()] : null;
-    const currentAbbr = (programAbbr.value || matchedAbbr || "").toLowerCase();
-    const collegeTitle = (college?.title || "").toLowerCase();
-
-    const regexAbbr = matchedAbbr ? new RegExp(`(^|[^a-zA-Z0-9])${matchedAbbr}([^a-zA-Z0-9]|$)`, "i") : null;
 
     // Filter out degree programs and VMG items
     const nonProgramItems = publishedList.filter((cmsItem) => {
@@ -843,22 +1028,9 @@ const fetchCollegeNewsFromCMS = async (cmsListRes) => {
       return true;
     });
 
-    // College-specific match
+    // College and Program strictly-relevant match
     const matched = nonProgramItems.filter((cmsItem) => {
-      const f = (cmsItem.filters || "").toLowerCase();
-      const t = (cmsItem.title || "").toLowerCase();
-      const a = (cmsItem.authors || cmsItem.author || "").toLowerCase();
-      const d = (cmsItem.descriptions || cmsItem.description || "").toLowerCase();
-
-      if (regexAbbr && (regexAbbr.test(f) || regexAbbr.test(t) || regexAbbr.test(a) || regexAbbr.test(d))) return true;
-      if (collegeTitle && (t.includes(collegeTitle) || f.includes(collegeTitle) || a.includes(collegeTitle))) return true;
-
-      if (currentAbbr && currentAbbr.length >= 2) {
-        const regexProg = new RegExp(`(^|[^a-zA-Z0-9])${currentAbbr}([^a-zA-Z0-9]|$)`, "i");
-        if (regexProg.test(f) || regexProg.test(t) || regexProg.test(a)) return true;
-      }
-
-      return false;
+      return isNewsRelatedToCollegeOrProgram(cmsItem, matchedAbbr, item.value);
     });
 
     matched.sort((x, y) => {
@@ -867,25 +1039,8 @@ const fetchCollegeNewsFromCMS = async (cmsListRes) => {
       return dateY - dateX;
     });
 
-    if (matched.length > 0) {
-      collegeNewsEvents.value = matched.slice(0, 6);
-    } else {
-      // Fallback to recent university-wide academic news, events, or announcements
-      const general = nonProgramItems.filter((cmsItem) => {
-        const f = (cmsItem.filters || "").toLowerCase();
-        const t = (cmsItem.title || "").toLowerCase();
-        return (
-          f.includes("event") || f.includes("announcement") || f.includes("academic") ||
-          f.includes("news") || t.includes("event") || t.includes("announcement")
-        );
-      });
-      general.sort((x, y) => {
-        const dateX = new Date(x.date || x.created_at || 0).getTime();
-        const dateY = new Date(y.date || y.created_at || 0).getTime();
-        return dateY - dateX;
-      });
-      collegeNewsEvents.value = general.slice(0, 3);
-    }
+    // Only set strictly matched news items for the college/program
+    collegeNewsEvents.value = matched.slice(0, 6);
   } finally {
     collegeNewsLoading.value = false;
   }
@@ -992,7 +1147,7 @@ const fetchProgramDetails = async () => {
     }
 
     // 4. Synchronous static JSON fallback (no extra network cost)
-    if (!item.value) {
+    if (!item.value && tertiaryJSON?.tertiary && Array.isArray(tertiaryJSON.tertiary)) {
       let staticFound = null;
       tertiaryJSON.tertiary.forEach((t) => {
         if (t.under_grad) {
@@ -1052,6 +1207,15 @@ const fetchProgramDetails = async () => {
 onMounted(async () => {
   await fetchProgramDetails();
 });
+
+watch(
+  () => route.params.id,
+  async (newId) => {
+    if (newId) {
+      await fetchProgramDetails();
+    }
+  }
+);
 
 useHead(() => ({
   title: item.value?.title ? `${item.value.title} | LSU Tertiary Education` : "Program / College Details | LSU",
