@@ -295,6 +295,7 @@ const isCollegeVmgItem = (item, college = null) => {
     title.includes("mission") ||
     title.includes("goal") ||
     title.includes("vmg") ||
+    title.includes("vmgo") ||
     title.includes("objectives") ||
     title.includes("college info") ||
     title.includes("college overview") ||
@@ -303,11 +304,14 @@ const isCollegeVmgItem = (item, college = null) => {
   const hasVmgFilter =
     filters.includes("vision") ||
     filters.includes("mission") ||
-    filters.includes("vmg");
+    filters.includes("vmg") ||
+    filters.includes("vmgo");
 
   const hasVmgDesc =
     descriptions.includes("**vision**") ||
     descriptions.includes("**mission**") ||
+    descriptions.includes("**vmg**") ||
+    descriptions.includes("**vmgo**") ||
     (descriptions.includes("vision") && descriptions.includes("mission"));
 
   return hasVmgTitle || hasVmgFilter || hasVmgDesc;
@@ -537,7 +541,7 @@ const isCmsPublished = (item) => {
 
 // ── Slugs ──
 const getProgramSlug = (p, fallbackLink) => {
-  if (!p) return `/academics/tertiary-education/${fallbackLink || ""}`;
+  if (!p) return `/academics/tertiary-education`;
   if (p.id) return `/academics/tertiary-education/${p.id}`;
   if (p.content_id) return `/academics/tertiary-education/${p.content_id}`;
   if (p.abbr) return `/academics/tertiary-education/${p.abbr.toLowerCase()}`;
@@ -545,15 +549,12 @@ const getProgramSlug = (p, fallbackLink) => {
     const slug = p.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     return `/academics/tertiary-education/${slug}`;
   }
-  return `/academics/tertiary-education/${fallbackLink || ""}`;
+  return `/academics/tertiary-education`;
 };
 
 const getCollegeVmgSlug = (college) => {
   if (college && college.vmgItem && (college.vmgItem.id || college.vmgItem.content_id)) {
     return `/academics/tertiary-education/${college.vmgItem.id || college.vmgItem.content_id}`;
-  }
-  if (college && college.abbr) {
-    return `/academics/tertiary-education/${college.abbr.toLowerCase()}`;
   }
   return `/academics/tertiary-education`;
 };
@@ -964,7 +965,7 @@ useHead({
         <!-- ════════════════════════════════════════════════════════════════ -->
         <!-- LEFT SIDEBAR: BROWSE BY + SDG EXPLORER                           -->
         <!-- ════════════════════════════════════════════════════════════════ -->
-        <aside class="flex flex-col gap-6 sticky top-20">
+        <aside class="flex flex-col gap-6 lg:sticky top-20">
 
           <!-- 1. Browse By Level Navigation Card -->
           <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm">
@@ -1213,6 +1214,7 @@ useHead({
 
                 <!-- College VMG Link Banner -->
                 <NuxtLink
+                  v-if="col.vmgItem"
                   :to="getCollegeVmgSlug(col)"
                   class="flex items-center justify-between p-3.5 bg-gradient-to-r from-emerald-900 to-teal-950 hover:from-emerald-950 hover:to-slate-950 rounded-xl text-white transition-all group no-underline shadow-sm"
                 >
@@ -1359,6 +1361,7 @@ useHead({
 
                 <!-- SGS VMG Link Banner -->
                 <NuxtLink
+                  v-if="col.vmgItem"
                   :to="getCollegeVmgSlug(col)"
                   class="flex items-center justify-between p-3.5 bg-gradient-to-r from-emerald-900 to-teal-950 hover:from-emerald-950 hover:to-slate-950 rounded-xl text-white transition-all group no-underline shadow-sm"
                 >
