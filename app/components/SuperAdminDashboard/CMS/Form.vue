@@ -288,6 +288,34 @@ watch(approvalPublished, () => {
   updateApprovalStatus();
 });
 
+// Synchronize SDG checkboxes whenever content.filters changes manually
+watch(
+  () => content.value.filters,
+  (newVal) => {
+    if (newVal === undefined || newVal === null) return;
+    const lower = newVal.toLowerCase();
+
+    // Sync selectedSDGs with filters content
+    const sdgValues = sdgOptions.value.map((s) => s.value);
+    const matchedSDGs = sdgValues.filter((sdg) => {
+      const num = sdg.replace("sdg", "");
+      const patterns = [
+        `\\bsdg${num}\\b`, `\\bsdg ${num}\\b`, `\\bsdg-${num}\\b`, `\\bsdg_${num}\\b`,
+        `\\bgoal ${num}\\b`, `\\bgoal${num}\\b`, `\\bsdg${num.padStart(2, "0")}\\b`
+      ];
+      return patterns.some((p) => new RegExp(p, "i").test(lower));
+    });
+
+    const isSameSDGs =
+      matchedSDGs.length === selectedSDGs.value.length &&
+      matchedSDGs.every((s) => selectedSDGs.value.includes(s));
+
+    if (!isSameSDGs) {
+      selectedSDGs.value = matchedSDGs;
+    }
+  }
+);
+
 // ---------------- AUTHORS ----------------
 const authorsList = ref([
   "Arts and Culture Center",
@@ -890,10 +918,9 @@ const formatDescriptionText = () => {
     .trim();
 
   displayToast("✨ Text formatted for readability", "success", 1500);
-  runAutoDetect();
 };
 
-// Auto-detect SDGs, Page Filters, Content Types, and Authors from title & description
+// Auto-detect Page Filters, Content Types, and Authors from title & description (SDGs are strictly manual)
 const runAutoDetect = () => {
   const titleText = content.value.title || "";
   const descText = content.value.descriptions || "";
@@ -901,47 +928,7 @@ const runAutoDetect = () => {
 
   let detectedAny = false;
 
-  // 1. SDGs
-  const sdgKeywords = {
-    sdg1: ["sdg 1", "sdg1", "no poverty"],
-    sdg2: ["sdg 2", "sdg2", "zero hunger"],
-    sdg3: ["sdg 3", "sdg3", "good health", "well-being", "well being"],
-    sdg4: ["sdg 4", "sdg4", "quality education"],
-    sdg5: ["sdg 5", "sdg5", "gender equality"],
-    sdg6: ["sdg 6", "sdg6", "clean water", "sanitation"],
-    sdg7: ["sdg 7", "sdg7", "affordable energy", "clean energy"],
-    sdg8: ["sdg 8", "sdg8", "decent work", "economic growth"],
-    sdg9: ["sdg 9", "sdg9", "industry innovation", "infrastructure"],
-    sdg10: ["sdg 10", "sdg10", "reduced inequalities", "reduced inequality"],
-    sdg11: ["sdg 11", "sdg11", "sustainable cities", "sustainable communities"],
-    sdg12: ["sdg 12", "sdg12", "responsible consumption", "responsible production"],
-    sdg13: ["sdg 13", "sdg13", "climate action"],
-    sdg14: ["sdg 14", "sdg14", "life below water"],
-    sdg15: ["sdg 15", "sdg15", "life on land"],
-    sdg16: ["sdg 16", "sdg16", "peace and justice", "strong institutions"],
-    sdg17: ["sdg 17", "sdg17", "partnerships for the goals", "partnerships"],
-  };
-
-  const newSDGs = [...selectedSDGs.value];
-  let sdgUpdated = false;
-  for (const [key, keywords] of Object.entries(sdgKeywords)) {
-    const hasMatch = keywords.some(keyword => {
-      const escaped = keyword.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-      const regex = new RegExp(`\\b${escaped}\\b`, "i");
-      return regex.test(text);
-    });
-    if (hasMatch && !newSDGs.includes(key)) {
-      newSDGs.push(key);
-      sdgUpdated = true;
-    }
-  }
-  if (sdgUpdated) {
-    selectedSDGs.value = newSDGs;
-    updateFilters();
-    detectedAny = true;
-  }
-
-  // 2. Page Filters
+  // 1. Page Filters
   const pageKeywords = {
     "BOT": ["bot", "board of trustees"],
     "Programs": ["programs", "program"],
@@ -1316,7 +1303,6 @@ const displayToast = (message, type = "success", duration = 3000) => {
     v-model="content.descriptions"
     :theme="darkMode ? 'dark' : 'light'"
     :preview="false"
-    @onBlur="runAutoDetect"
     language="en-US"
     style="height: 320px;"
   />

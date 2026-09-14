@@ -638,7 +638,7 @@ const collegeLogoInfo = computed(() => {
   const matchedAbbr = resolveCollegeAbbr(item.value, itemId);
   const college = matchedAbbr ? collegeMeta[matchedAbbr.toLowerCase()] : null;
 
-  // 1. Check if uploaded files contain the official college logo/seal
+  // 1. Check if uploaded files contain the official college logo/seal by identifying "logo" or "seal" in the file string
   let uploadedLogo = null;
   if (item.value.files && Array.isArray(item.value.files)) {
     uploadedLogo = item.value.files.find((f) => {
@@ -647,28 +647,18 @@ const collegeLogoInfo = computed(() => {
       // Exclude PAASCU logo
       if (/paascu/i.test(lowerF)) return false;
 
-      // Match file against college abbreviation, logo name, or seal keywords
-      if (matchedAbbr && new RegExp(`(^|[^a-zA-Z0-9])${matchedAbbr}([^a-zA-Z0-9]|$)`, "i").test(lowerF)) {
-        return true;
-      }
-      if (college && college.logoFile && lowerF.includes(college.logoFile.toLowerCase().replace(/\.[^.]+$/, ""))) {
-        return true;
-      }
-      if (lowerF.includes("seal") || lowerF.includes("logo") || lowerF.includes("department")) {
-        return true;
-      }
-      return false;
+      // Identify "logo" or "seal" string word in the image filename provided
+      return lowerF.includes("logo") || lowerF.includes("seal");
     });
   }
 
-  const logoUrl = uploadedLogo
-    ? getFileUrl(uploadedLogo)
-    : college?.cdnUrl || null;
-
-  if (!logoUrl && !college) return null;
+  // If no logo image is provided in the uploaded files, hide the logo display
+  if (!uploadedLogo) {
+    return null;
+  }
 
   return {
-    logoUrl,
+    logoUrl: getFileUrl(uploadedLogo),
     abbr: college?.abbr || programAbbr.value || "LSU",
     title: college?.title || item.value.authors || "College Department",
     uploadedFileName: uploadedLogo,
@@ -683,13 +673,9 @@ const regularSpotlightImages = computed(() => {
   return imageFiles.value.filter((file) => {
     if (logoFile && file === logoFile) return false;
     if (paascuFile && file === paascuFile) return false;
-    if (/paascu/i.test(file)) return false;
-    if (collegeLogoInfo.value?.abbr) {
-      const abbr = collegeLogoInfo.value.abbr.toLowerCase();
-      if (new RegExp(`(^|[^a-zA-Z0-9])${abbr}([^a-zA-Z0-9]|$)`, "i").test(file.toLowerCase())) {
-        return false;
-      }
-    }
+    const lower = file.toLowerCase();
+    if (/paascu/i.test(lower)) return false;
+    if (lower.includes("logo") || lower.includes("seal")) return false;
     return true;
   });
 });
@@ -1209,7 +1195,7 @@ useHead(() => ({
           </div>
 
 
-<div class="lg:flex gap-x-2">
+          <div v-if="(collegeLogoInfo && collegeLogoInfo.logoUrl) || paascuInfo" class="lg:flex gap-x-2">
 
 
           <!-- ── Official College / Department Logo Card ── -->
@@ -1558,7 +1544,7 @@ useHead(() => ({
                   <i class="fas fa-bullhorn"></i>
                 </span>
                 <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-green-950">
-                  {{ collegeLogoInfo?.abbr ? `${collegeLogoInfo.abbr} UPDATES` : 'NEWS & EVENTS' }}
+                  {{ (collegeLogoInfo?.abbr || programAbbr) ? `${collegeLogoInfo?.abbr || programAbbr} UPDATES` : 'NEWS & EVENTS' }}
                 </span>
               </div>
               <NuxtLink
