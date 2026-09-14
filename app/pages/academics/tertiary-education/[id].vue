@@ -677,6 +677,94 @@ const getNewsSdgBadges = (newsItem) => {
   return badges;
 };
 
+// Filter to ensure ONLY actual news, events, and announcements are included (excludes courses, degree programs, and college VMG pages)
+const isAcademicCourseOrVmgContent = (cmsItem) => {
+  if (!cmsItem || !cmsItem.title) return true;
+  const t = cmsItem.title.trim().toLowerCase();
+  const f = (cmsItem.filters || cmsItem.filter || "").toLowerCase();
+  const d = (cmsItem.descriptions || cmsItem.description || "").toLowerCase();
+
+  // 1. Exclude if recognized as degree/undergrad program
+  if (isBachelorProgram(cmsItem)) return true;
+
+  // 2. Additional graduate/doctoral/master/program degree titles
+  if (
+    t.startsWith("master") ||
+    t.startsWith("doctor") ||
+    t.startsWith("bachelor") ||
+    t.startsWith("bs ") ||
+    t.startsWith("ba ") ||
+    t.includes("juris doctor") ||
+    t.includes("degree program") ||
+    t.includes("curriculum") ||
+    /\b(ph\.?d|dba|edd|mba|mpa|maed|med|msn|mit|msit|mscs)\b/i.test(t)
+  ) {
+    return true;
+  }
+
+  // 3. College VMG or Department overview items (e.g. "School of Graduate Studies", "College of Arts and Sciences", etc.)
+  const knownColleges = [
+    "school of graduate studies",
+    "sgs",
+    "college of arts and sciences",
+    "cas",
+    "college of business and accountancy",
+    "cba",
+    "college of criminal justice education",
+    "ccje",
+    "college of computer studies, engineering, and architecture",
+    "college of computer studies, engineering and architecture",
+    "college of computer studies",
+    "ccsea",
+    "college of nursing",
+    "con",
+    "college of teacher education",
+    "cte",
+    "college of tourism and hospitality management",
+    "cthm",
+    "college of medical laboratory science",
+    "cmls"
+  ];
+  if (knownColleges.some((c) => t === c || t === `${c} vision mission goal` || t === `${c} vmg` || t === `${c} overview`)) {
+    return true;
+  }
+
+  // 4. Check if title contains Vision, Mission, Goals, Objectives, VMG
+  if (
+    t.includes("vision, mission") ||
+    t.includes("vision and mission") ||
+    t.includes("vision & mission") ||
+    t.includes("vision, mission & goals") ||
+    t.includes("vision, mission, and goals") ||
+    t.includes("vmg") ||
+    t.includes("goals & objectives") ||
+    t.includes("college overview") ||
+    t.includes("college vision") ||
+    t.includes("about the college")
+  ) {
+    return true;
+  }
+
+  // 5. Check if descriptions contain Vision/Mission/Goals or Program Description markdown structures
+  if (
+    (d.includes("**vision**") && d.includes("**mission**")) ||
+    (d.includes("vision:") && d.includes("mission:")) ||
+    d.includes("**program description**") ||
+    d.includes("**educational objectives**") ||
+    d.includes("**career opportunities**") ||
+    d.includes("**program educational objectives**")
+  ) {
+    return true;
+  }
+
+  // 6. If filter tags indicate it's a program/curriculum rather than news
+  if ((f.includes("programs") || f.includes("tertiary") || f.includes("curriculum")) && !f.includes("news") && !f.includes("event") && !f.includes("announcement") && !f.includes("highlight")) {
+    return true;
+  }
+
+  return false;
+};
+
 // Fetch News, Events & Announcements from CMS for the college
 const fetchCollegeNewsFromCMS = async (cmsListRes) => {
   collegeNewsLoading.value = true;
@@ -698,10 +786,7 @@ const fetchCollegeNewsFromCMS = async (cmsListRes) => {
       const cContentId = String(cmsItem.content_id || "");
       if (cId === String(itemId) || cContentId === String(itemId)) return false;
 
-      if (isBachelorProgram(cmsItem)) return false;
-
-      const t = (cmsItem.title || "").toLowerCase();
-      if ((t.includes("vision") && t.includes("mission")) || t.includes("vmg") || t.includes("goals & objectives")) return false;
+      if (isAcademicCourseOrVmgContent(cmsItem)) return false;
 
       return true;
     });
@@ -1159,7 +1244,7 @@ useHead(() => ({
 
 </div>
           <!-- ── Student Model & Program Spotlight Card ── -->
-          <div v-if="regularSpotlightImages.length > 0" class="bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-3 relative overflow-hidden transition-all hover:border-green-800/40 hover:shadow-md">
+          <!-- <div v-if="regularSpotlightImages.length > 0" class="bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-3 relative overflow-hidden transition-all hover:border-green-800/40 hover:shadow-md">
             <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
               <div class="flex items-center gap-2">
                 <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
@@ -1189,7 +1274,7 @@ useHead(() => ({
                 </div>
               </div>
             </div>
-          </div>
+          </div> -->
 
 
           
@@ -1410,7 +1495,7 @@ useHead(() => ({
                 class="group bg-gray-50/60 rounded-xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md hover:border-green-600 hover:bg-white transition-all flex flex-col no-underline"
               >
                 <!-- Thumbnail Image -->
-                <div class="relative h-[300px] w-full overflow-hidden bg-gray-100">
+                <div class="relative h-[350px] w-full overflow-hidden bg-gray-100">
                   <img
                     v-if="news.files && news.files.length > 0 && isImageFile(news.files[0])"
                     :src="getFileUrl(news.files[0])"
