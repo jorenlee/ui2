@@ -320,14 +320,8 @@ const uncategorizedGradPrograms = (college) => {
 };
 
 const getCollegeVmgSlug = (college) => {
-  if (college.vmgItem && (college.vmgItem.id || college.vmgItem.content_id)) {
+  if (college && college.vmgItem && (college.vmgItem.id || college.vmgItem.content_id)) {
     return `/academics/tertiary-education/${college.vmgItem.id || college.vmgItem.content_id}`;
-  }
-  if (college.abbr) {
-    return `/academics/tertiary-education/${college.abbr.toLowerCase()}`;
-  }
-  if (college.link) {
-    return `/academics/tertiary-education/${college.link}`;
   }
   return `/academics/tertiary-education`;
 };
