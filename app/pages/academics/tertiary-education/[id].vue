@@ -991,11 +991,11 @@ useHead(() => ({
         </NuxtLink>
       </div>
 
-      <!-- Main Program Detail Layout -->
-      <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <!-- Main Program Detail Layout (2/4 Main Content, 1/4 News Updates, 1/4 PAASCU & Spotlight Columns) -->
+      <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
-        <!-- LEFT COLUMN: Program Content Sections (8 Cols) -->
-        <div class="lg:col-span-9 space-y-6">
+        <!-- ── COLUMN 1: MAIN CONTENT (2/4 = 6/12 Columns) ── -->
+        <div class="lg:col-span-8 space-y-6">
 
           <!-- Header Card -->
           <div class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm border-l-4 border-l-green-900">
@@ -1013,6 +1013,9 @@ useHead(() => ({
               </span>
             </div>
 
+
+            
+
             <!-- Meta Badges -->
             <div class="flex flex-wrap items-center gap-3 text-xs text-gray-600">
               <span v-if="paascuInfo" class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-900 border border-emerald-300 px-3 py-1 rounded-full font-bold shadow-xs">
@@ -1025,6 +1028,15 @@ useHead(() => ({
                 <i class="fas fa-calendar-alt text-gray-500"></i> Updated: {{ formattedDate }}
               </span>
             </div>
+
+
+
+
+
+
+
+
+            
 
             <!-- SDG Badges -->
             <div v-if="sdgBadges.length > 0" class="flex flex-wrap items-center gap-1.5 mt-4 pt-3 border-t border-gray-100">
@@ -1039,6 +1051,148 @@ useHead(() => ({
               </span>
             </div>
           </div>
+
+
+<div class="lg:flex gap-x-2">
+
+
+          <!-- ── Official College / Department Logo Card ── -->
+          <div
+            v-if="collegeLogoInfo && collegeLogoInfo.logoUrl"
+            class="w-full bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-3 relative overflow-hidden transition-all hover:border-green-800/40 hover:shadow-md"
+          >
+            <!-- Card Header -->
+            <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
+                  <i class="fas fa-landmark"></i>
+                </span>
+                <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-green-950">
+                  COLLEGE SEAL & LOGO
+                </span>
+              </div>
+              <span v-if="collegeLogoInfo.abbr" class="text-[0.6rem] font-bold font-mono px-2 py-0.5 rounded-full bg-green-50 text-green-900 border border-green-200">
+                {{ collegeLogoInfo.abbr }}
+              </span>
+            </div>
+
+            <!-- Logo Display Area -->
+            <div class="flex flex-col items-center text-center">
+              <div
+                class="relative rounded-2xl border border-gray-200 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50 p-4 shadow-inner cursor-pointer group hover:border-green-600 hover:shadow-md transition-all max-w-[220px] w-full flex items-center justify-center min-h-[160px]"
+                @click="openImageModal(collegeLogoInfo.logoUrl)"
+                title="Click to view high-resolution College Seal"
+              >
+                <img
+                  :src="collegeLogoInfo.logoUrl"
+                  :alt="collegeLogoInfo.title"
+                  class="max-h-36 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter"
+                />
+                <div class="absolute inset-0 bg-green-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[0.65rem] font-bold gap-1 rounded-2xl backdrop-blur-xs">
+                  <i class="fas fa-search-plus text-xs"></i> View Full Seal
+                </div>
+              </div>
+
+              <!-- College Name & Info -->
+              <h5 class="mt-3 text-xs font-extrabold text-gray-900 leading-snug uppercase tracking-wide">
+                {{ collegeLogoInfo.title }}
+              </h5>
+              <p class="mt-1 text-[0.68rem] text-gray-500 font-medium">
+                Official Department Seal • La Salle University
+              </p>
+            </div>
+          </div>
+
+
+                     <!-- ── PAASCU Course Program Accreditation Spotlight Card ── -->
+          <div
+            v-if="paascuInfo"
+            class="w-full bg-gradient-to-b from-emerald-50/80 via-white to-white border-2 border-emerald-600/30 rounded-xl p-5 shadow-sm space-y-3.5 relative overflow-hidden transition-all hover:border-emerald-600/50 hover:shadow-md"
+          >
+            <div class="absolute -right-8 -bottom-8 w-28 h-28 bg-emerald-100/40 rounded-full blur-xl pointer-events-none"></div>
+
+            <!-- Card Header -->
+            <div class="flex items-center justify-between border-b border-emerald-100/80 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-white text-xs shadow-xs">
+                  <i class="fas fa-award"></i>
+                </span>
+                <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-emerald-950">
+                  PAASCU ACCREDITED
+                </span>
+              </div>
+              <span class="text-[0.6rem] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-700 text-white shadow-xs">
+                {{ paascuInfo.statusBadge }}
+              </span>
+            </div>
+
+            <!-- PAASCU Logo Spotlight Area -->
+            <div class="flex flex-col items-center text-center">
+              <div
+                class="relative rounded-xl border border-emerald-200/80 bg-white p-3.5 shadow-xs cursor-pointer group hover:border-emerald-500 hover:shadow transition-all max-w-[210px] w-full flex items-center justify-center min-h-[120px]"
+                @click="openImageModal(paascuInfo.imageUrl)"
+                title="Click to view PAASCU Accreditation Seal"
+              >
+                <img
+                  :src="paascuInfo.imageUrl"
+                  alt="PAASCU Accredited Seal"
+                  class="max-h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-xs"
+                />
+                <div class="absolute inset-0 bg-emerald-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[0.65rem] font-bold gap-1 rounded-xl backdrop-blur-xs">
+                  <i class="fas fa-search-plus text-xs"></i> View Full Seal
+                </div>
+              </div>
+
+              <!-- Title & Accreditation Text -->
+              <h5 class="mt-3 text-xs font-extrabold text-emerald-950 uppercase tracking-wide">
+                {{ paascuInfo.titleBadge }}
+              </h5>
+              <p class="mt-1 text-[0.7rem] text-gray-600 leading-snug">
+                Philippine Accrediting Association of Schools, Colleges and Universities
+              </p>
+              <div class="mt-2.5 flex items-center justify-center gap-1.5 text-[0.65rem] text-emerald-900 bg-emerald-100/70 border border-emerald-200/80 px-3 py-1 rounded-lg font-semibold w-full">
+                <i class="fas fa-certificate text-emerald-700"></i>
+                <span>Quality Assured & FAAP Certified</span>
+              </div>
+            </div>
+          </div>
+
+</div>
+          <!-- ── Student Model & Program Spotlight Card ── -->
+          <div v-if="regularSpotlightImages.length > 0" class="bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-3 relative overflow-hidden transition-all hover:border-green-800/40 hover:shadow-md">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
+                  <i class="fas fa-user-graduate"></i>
+                </span>
+                <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-green-950">
+                  PROGRAM SPOTLIGHT
+                </span>
+              </div>
+              <span class="text-[0.6rem] text-gray-400 font-normal">Click to enlarge</span>
+            </div>
+
+            <div class="space-y-4">
+              <div
+                v-for="(file, idx) in regularSpotlightImages"
+                :key="idx"
+                class="relative rounded-2xl overflow-hidden border border-gray-200 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50 p-4 group cursor-pointer shadow-inner flex items-center justify-center min-h-[160px] hover:border-green-600 transition-all"
+                @click="openImageModal(getFileUrl(file))"
+              >
+                <img
+                  :src="getFileUrl(file)"
+                  :alt="item.title"
+                  class="w-full max-h-[320px] h-auto object-contain transition-all duration-300 group-hover:scale-105 filter drop-shadow-md"
+                />
+                <div class="absolute inset-0 bg-green-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2 rounded-2xl backdrop-blur-xs">
+                  <i class="fas fa-search-plus text-base"></i> View Full Image
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          
 
           <!-- Structured Sections -->
           <div v-for="section in parsedSections" :key="section.id" class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm transition-all hover:border-gray-300">
@@ -1079,6 +1233,9 @@ useHead(() => ({
               </div>
             </div>
           </div>
+
+
+          
 
           <!-- Programs Offered (shown on ALL pages — college VMG and individual programs) -->
           <div v-if="collegeProgramsLoading || collegePrograms.length > 0" class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm">
@@ -1165,13 +1322,13 @@ useHead(() => ({
               <div
                 v-for="(file, gIdx) in imageFiles"
                 :key="gIdx"
-                class="group relative rounded-xl overflow-hidden border border-gray-200 bg-gradient-to-b from-gray-50 via-white to-gray-50 p-4 shadow-xs hover:shadow-md hover:border-green-600 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[200px]"
+                class="group relative rounded-xl overflow-hidden border border-gray-200 bg-gradient-to-b from-gray-50 via-white to-gray-50 p-4 shadow-xs hover:shadow-md hover:border-green-600 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[180px]"
                 @click="openImageModal(getFileUrl(file))"
               >
                 <img
                   :src="getFileUrl(file)"
                   :alt="`${item.title} Media ${gIdx + 1}`"
-                  class="max-h-48 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-xs"
+                  class="max-h-44 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-xs"
                 />
                 <div class="absolute inset-0 bg-green-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs font-bold gap-2 rounded-xl backdrop-blur-xs p-3 text-center">
                   <i class="fas fa-search-plus text-lg"></i>
@@ -1181,260 +1338,12 @@ useHead(() => ({
             </div>
           </div>
 
-          <!-- ── College Events & Announcements Section (News & Updates) ── -->
-          <div v-if="collegeNewsLoading || collegeNewsEvents.length > 0" class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm space-y-6">
-            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-4">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-lg bg-green-50 border border-green-200 flex items-center justify-center text-green-900 text-sm shrink-0">
-                  <i class="fas fa-bullhorn"></i>
-                </div>
-                <div>
-                  <h3 class="text-lg font-bold uppercase tracking-wider text-green-900 leading-tight">
-                    {{ collegeLogoInfo?.abbr ? `${collegeLogoInfo.abbr} Events & Announcements` : 'Events & Announcements' }}
-                  </h3>
-                  <p class="text-xs text-gray-500">
-                    Latest news, advisories, academic milestones, and upcoming campus activities
-                  </p>
-                </div>
-              </div>
-              <NuxtLink
-                to="/news-updates/list"
-                class="inline-flex items-center gap-1.5 text-xs font-bold text-green-900 hover:text-green-700 bg-green-50 hover:bg-green-100/80 px-3.5 py-1.5 rounded-lg border border-green-200 transition-all shadow-xs"
-              >
-                <span>View All Updates</span>
-                <i class="fas fa-arrow-right text-[0.65rem]"></i>
-              </NuxtLink>
-            </div>
-
-            <!-- Loading Skeleton -->
-            <div v-if="collegeNewsLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              <div v-for="n in 3" :key="n" class="h-64 bg-gray-100 rounded-xl animate-pulse"></div>
-            </div>
-
-            <!-- News & Events Grid -->
-            <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              <NuxtLink
-                v-for="(news, nIdx) in collegeNewsEvents"
-                :key="news.id || nIdx"
-                :to="`/news-updates/${news.id || news.content_id}`"
-                class="group bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md hover:border-green-600 transition-all flex flex-col no-underline"
-              >
-                <!-- Thumbnail Image -->
-                <div class="relative h-44 w-full overflow-hidden bg-gray-100">
-                  <img
-                    v-if="news.files && news.files.length > 0 && isImageFile(news.files[0])"
-                    :src="getFileUrl(news.files[0])"
-                    :alt="news.title"
-                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                  <div
-                    v-else
-                    class="w-full h-full bg-gradient-to-br from-green-950 via-green-900 to-green-800 flex flex-col items-center justify-center text-white p-4 text-center"
-                  >
-                    <i class="fas fa-newspaper text-3xl text-white/40 mb-1"></i>
-                    <span class="text-[0.65rem] font-bold text-white/70 uppercase tracking-wider">La Salle University</span>
-                  </div>
-
-                  <!-- Category Tag Badge -->
-                  <div class="absolute top-2.5 left-2.5">
-                    <span
-                      class="inline-flex items-center gap-1 text-[0.65rem] font-bold px-2.5 py-0.5 rounded-full border shadow-xs"
-                      :class="getNewsCategory(news).bg"
-                    >
-                      <i class="fas text-[0.6rem]" :class="getNewsCategory(news).icon"></i>
-                      {{ getNewsCategory(news).label }}
-                    </span>
-                  </div>
-                </div>
-
-                <!-- Card Body -->
-                <div class="p-4 flex-1 flex flex-col justify-between">
-                  <div>
-                    <!-- Date & Author -->
-                    <div class="flex items-center justify-between text-[0.7rem] text-gray-500 mb-2 font-medium">
-                      <span v-if="news.date || news.created_at" class="flex items-center gap-1">
-                        <i class="fas fa-calendar-alt text-gray-400"></i>
-                        {{ moment(news.date || news.created_at).format("MMM D, YYYY") }}
-                      </span>
-                      <span v-if="news.authors" class="truncate max-w-[120px] text-gray-400">
-                        {{ news.authors }}
-                      </span>
-                    </div>
-
-                    <!-- Title -->
-                    <h4 class="text-sm font-extrabold text-gray-900 group-hover:text-green-900 transition-colors line-clamp-2 leading-snug mb-2">
-                      {{ news.title }}
-                    </h4>
-
-                    <!-- Excerpt -->
-                    <p v-if="news.descriptions || news.description" class="text-xs text-gray-600 line-clamp-2 leading-relaxed mb-3">
-                      {{ (news.descriptions || news.description).replace(/<[^>]*>?/gm, '').substring(0, 110) }}...
-                    </p>
-                  </div>
-
-                  <!-- SDG Badges & Action -->
-                  <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
-                    <div class="flex items-center gap-1 flex-wrap">
-                      <span
-                        v-for="sdg in getNewsSdgBadges(news).slice(0, 2)"
-                        :key="sdg.number"
-                        class="text-[0.6rem] font-bold text-white px-1.5 py-0.2 rounded"
-                        :style="{ backgroundColor: sdg.color }"
-                      >
-                        SDG {{ sdg.number }}
-                      </span>
-                      <span v-if="getNewsSdgBadges(news).length > 2" class="text-[0.6rem] font-bold text-gray-500 bg-gray-100 px-1 py-0.2 rounded">
-                        +{{ getNewsSdgBadges(news).length - 2 }}
-                      </span>
-                    </div>
-                    <span class="text-xs font-bold text-green-900 group-hover:text-green-700 inline-flex items-center gap-1 shrink-0 ml-auto">
-                      Read <i class="fas fa-arrow-right text-[0.65rem] transition-transform group-hover:translate-x-0.5"></i>
-                    </span>
-                  </div>
-                </div>
-              </NuxtLink>
-            </div>
-          </div>
-
         </div>
 
-        <!-- RIGHT COLUMN: Sidebar (4 Cols) -->
-        <div class="lg:col-span-3 space-y-6 sticky top-6">
+        <!-- ── COLUMN 2: NEWS & UPDATES (1/4 = 3/12 Columns) ── -->
+        <div class="lg:col-span-4 space-y-6">
 
-          <!-- ── PAASCU Course Program Accreditation Spotlight Card ── -->
-          <div
-            v-if="paascuInfo"
-            class="bg-gradient-to-b from-emerald-50/80 via-white to-white border-2 border-emerald-600/30 rounded-xl p-5 shadow-sm space-y-3.5 relative overflow-hidden transition-all hover:border-emerald-600/50 hover:shadow-md"
-          >
-            <div class="absolute -right-8 -bottom-8 w-28 h-28 bg-emerald-100/40 rounded-full blur-xl pointer-events-none"></div>
-
-            <!-- Card Header -->
-            <div class="flex items-center justify-between border-b border-emerald-100/80 pb-2.5">
-              <div class="flex items-center gap-2">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-700 text-white text-xs shadow-xs">
-                  <i class="fas fa-award"></i>
-                </span>
-                <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-emerald-950">
-                  PAASCU ACCREDITED
-                </span>
-              </div>
-              <span class="text-[0.6rem] font-bold font-mono px-2 py-0.5 rounded-full bg-emerald-700 text-white shadow-xs">
-                {{ paascuInfo.statusBadge }}
-              </span>
-            </div>
-
-            <!-- PAASCU Logo Spotlight Area -->
-            <div class="flex flex-col items-center text-center">
-              <div
-                class="relative rounded-xl border border-emerald-200/80 bg-white p-3.5 shadow-xs cursor-pointer group hover:border-emerald-500 hover:shadow transition-all max-w-[210px] w-full flex items-center justify-center min-h-[120px]"
-                @click="openImageModal(paascuInfo.imageUrl)"
-                title="Click to view PAASCU Accreditation Seal"
-              >
-                <img
-                  :src="paascuInfo.imageUrl"
-                  alt="PAASCU Accredited Seal"
-                  class="max-h-24 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter drop-shadow-xs"
-                />
-                <div class="absolute inset-0 bg-emerald-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[0.65rem] font-bold gap-1 rounded-xl backdrop-blur-xs">
-                  <i class="fas fa-search-plus text-xs"></i> View Full Seal
-                </div>
-              </div>
-
-              <!-- Title & Accreditation Text -->
-              <h5 class="mt-3 text-xs font-extrabold text-emerald-950 uppercase tracking-wide">
-                {{ paascuInfo.titleBadge }}
-              </h5>
-              <p class="mt-1 text-[0.7rem] text-gray-600 leading-snug">
-                Philippine Accrediting Association of Schools, Colleges and Universities
-              </p>
-              <div class="mt-2.5 flex items-center justify-center gap-1.5 text-[0.65rem] text-emerald-900 bg-emerald-100/70 border border-emerald-200/80 px-3 py-1 rounded-lg font-semibold w-full">
-                <i class="fas fa-certificate text-emerald-700"></i>
-                <span>Quality Assured & FAAP Certified</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── Official College / Department Logo Card ── -->
-          <div
-            v-if="collegeLogoInfo && collegeLogoInfo.logoUrl"
-            class="bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-3 relative overflow-hidden transition-all hover:border-green-800/40 hover:shadow-md"
-          >
-            <!-- Card Header -->
-            <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
-              <div class="flex items-center gap-2">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
-                  <i class="fas fa-landmark"></i>
-                </span>
-                <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-green-950">
-                  COLLEGE SEAL & LOGO
-                </span>
-              </div>
-              <span v-if="collegeLogoInfo.abbr" class="text-[0.6rem] font-bold font-mono px-2 py-0.5 rounded-full bg-green-50 text-green-900 border border-green-200">
-                {{ collegeLogoInfo.abbr }}
-              </span>
-            </div>
-
-            <!-- Logo Display Area -->
-            <div class="flex flex-col items-center text-center">
-              <div
-                class="relative rounded-2xl border border-gray-200 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50 p-4 shadow-inner cursor-pointer group hover:border-green-600 hover:shadow-md transition-all max-w-[220px] w-full flex items-center justify-center min-h-[160px]"
-                @click="openImageModal(collegeLogoInfo.logoUrl)"
-                title="Click to view high-resolution College Seal"
-              >
-                <img
-                  :src="collegeLogoInfo.logoUrl"
-                  :alt="collegeLogoInfo.title"
-                  class="max-h-36 w-auto object-contain transition-transform duration-300 group-hover:scale-105 filter"
-                />
-                <div class="absolute inset-0 bg-green-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[0.65rem] font-bold gap-1 rounded-2xl backdrop-blur-xs">
-                  <i class="fas fa-search-plus text-xs"></i> View Full Seal
-                </div>
-              </div>
-
-              <!-- College Name & Info -->
-              <h5 class="mt-3 text-xs font-extrabold text-gray-900 leading-snug uppercase tracking-wide">
-                {{ collegeLogoInfo.title }}
-              </h5>
-              <p class="mt-1 text-[0.68rem] text-gray-500 font-medium">
-                Official Department Seal • La Salle University
-              </p>
-            </div>
-          </div>
-
-          <!-- ── Student Model & Program Spotlight Card ── -->
-          <div v-if="regularSpotlightImages.length > 0" class="bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-3 relative overflow-hidden transition-all hover:border-green-800/40 hover:shadow-md">
-            <div class="flex items-center justify-between border-b border-gray-100 pb-2.5">
-              <div class="flex items-center gap-2">
-                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
-                  <i class="fas fa-user-graduate"></i>
-                </span>
-                <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-green-950">
-                  PROGRAM SPOTLIGHT
-                </span>
-              </div>
-              <span class="text-[0.6rem] text-gray-400 font-normal">Click to enlarge</span>
-            </div>
-
-            <div class="space-y-4">
-              <div
-                v-for="(file, idx) in regularSpotlightImages"
-                :key="idx"
-                class="relative rounded-2xl overflow-hidden border border-gray-200 bg-gradient-to-b from-gray-50/80 via-white to-gray-50/50 p-4 group cursor-pointer shadow-inner flex items-center justify-center min-h-[160px] hover:border-green-600 transition-all"
-                @click="openImageModal(getFileUrl(file))"
-              >
-                <img
-                  :src="getFileUrl(file)"
-                  :alt="item.title"
-                  class="w-full max-h-[320px] h-auto object-contain transition-all duration-300 group-hover:scale-105 filter drop-shadow-md"
-                />
-                <div class="absolute inset-0 bg-green-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold gap-2 rounded-2xl backdrop-blur-xs">
-                  <i class="fas fa-search-plus text-base"></i> View Full Image
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Admissions & Enrollment Action Card -->
+                  <!-- Admissions & Enrollment Action Card -->
           <div class="bg-gradient-to-br from-green-950 to-green-900 text-white rounded-xl p-6 shadow-md border border-green-800">
           
             <h4 class="flex items-center gap-2 text-lg font-extrabold uppercase tracking-wide mb-2 text-white">
@@ -1461,38 +1370,132 @@ useHead(() => ({
             </div>
           </div>
 
-          <!-- Quick Program Info Card -->
-          <!-- <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm space-y-4">
-            <h4 class="text-xs font-bold tracking-[0.15em] uppercase text-gray-500 border-b border-gray-100 pb-2">
-              PROGRAM METADATA
-            </h4>
-            <div class="space-y-3 text-xs">
-              <div class="flex justify-between items-center py-1 border-b border-dashed border-gray-100">
-                <span class="text-gray-500 font-medium">Unit / Department:</span>
-                <span class="text-gray-900 font-bold text-right ml-2">{{ item.authors || 'Higher Education' }}</span>
-              </div>
-              <div v-if="programAbbr" class="flex justify-between items-center py-1 border-b border-dashed border-gray-100">
-                <span class="text-gray-500 font-medium">Code:</span>
-                <span class="text-green-900 font-bold font-mono">{{ programAbbr }}</span>
-              </div>
-              <div class="flex justify-between items-center py-1 border-b border-dashed border-gray-100">
-                <span class="text-gray-500 font-medium">Level:</span>
-                <span class="text-gray-900 font-bold">{{ programLevel }}</span>
-              </div>
-              <div class="flex justify-between items-center py-1 border-b border-dashed border-gray-100">
-                <span class="text-gray-500 font-medium">Status:</span>
-                <span
-                  class="font-bold flex items-center gap-1"
-                  :class="programStatus.isPublished ? 'text-green-700' : 'text-amber-600'"
-                >
-                  <i class="fas" :class="programStatus.isPublished ? 'fa-check-circle' : 'fa-clock'"></i>
-                  {{ programStatus.text }}
+          <!-- Events & Announcements Card Container -->
+          <div class="bg-white border-2 border-green-800/20 rounded-xl p-5 shadow-sm space-y-4 transition-all hover:border-green-800/40 hover:shadow-md">
+            
+            <!-- Section Header -->
+            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div class="flex items-center gap-2">
+                <span class="flex h-6 w-6 items-center justify-center rounded-full bg-green-900 text-white text-xs shadow-xs">
+                  <i class="fas fa-bullhorn"></i>
+                </span>
+                <span class="text-[0.65rem] font-extrabold tracking-[0.16em] uppercase text-green-950">
+                  {{ collegeLogoInfo?.abbr ? `${collegeLogoInfo.abbr} UPDATES` : 'NEWS & EVENTS' }}
                 </span>
               </div>
+              <NuxtLink
+                to="/news-updates/list"
+                class="text-[0.65rem] font-bold text-green-900 hover:text-green-700 bg-green-50 px-2 py-0.5 rounded border border-green-200 transition-colors inline-flex items-center gap-1"
+              >
+                <span>View All</span>
+                <i class="fas fa-arrow-right text-[0.55rem]"></i>
+              </NuxtLink>
             </div>
-          </div> -->
+
+            
+
+            <!-- Loading Skeleton -->
+            <div v-if="collegeNewsLoading" class="space-y-3">
+              <div v-for="n in 3" :key="n" class="h-44 bg-gray-100 rounded-xl animate-pulse"></div>
+            </div>
+
+            <!-- News & Events Vertical Feed -->
+
+            
+            <div v-else-if="collegeNewsEvents.length > 0" class="space-y-4">
+              <NuxtLink
+                v-for="(news, nIdx) in collegeNewsEvents"
+                :key="news.id || nIdx"
+                :to="`/news-updates/${news.id || news.content_id}`"
+                class="group bg-gray-50/60 rounded-xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md hover:border-green-600 hover:bg-white transition-all flex flex-col no-underline"
+              >
+                <!-- Thumbnail Image -->
+                <div class="relative h-32 w-full overflow-hidden bg-gray-100">
+                  <img
+                    v-if="news.files && news.files.length > 0 && isImageFile(news.files[0])"
+                    :src="getFileUrl(news.files[0])"
+                    :alt="news.title"
+                    class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div
+                    v-else
+                    class="w-full h-full bg-gradient-to-br from-green-950 via-green-900 to-green-800 flex flex-col items-center justify-center text-white p-3 text-center"
+                  >
+                    <i class="fas fa-newspaper text-2xl text-white/40 mb-1"></i>
+                    <span class="text-[0.6rem] font-bold text-white/70 uppercase tracking-wider">La Salle University</span>
+                  </div>
+
+                  <!-- Category Tag Badge -->
+                  <div class="absolute top-2 left-2">
+                    <span
+                      class="inline-flex items-center gap-1 text-[0.6rem] font-bold px-2 py-0.5 rounded-full border shadow-xs"
+                      :class="getNewsCategory(news).bg"
+                    >
+                      <i class="fas text-[0.55rem]" :class="getNewsCategory(news).icon"></i>
+                      {{ getNewsCategory(news).label }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="p-3 flex-1 flex flex-col justify-between">
+                  <div>
+                    <!-- Date & Author -->
+                    <div class="flex items-center justify-between text-[0.68rem] text-gray-500 mb-1.5 font-medium">
+                      <span v-if="news.date || news.created_at" class="flex items-center gap-1">
+                        <i class="fas fa-calendar-alt text-gray-400"></i>
+                        {{ moment(news.date || news.created_at).format("MMM D, YYYY") }}
+                      </span>
+                      <span v-if="news.authors" class="truncate max-w-[90px] text-gray-400">
+                        {{ news.authors }}
+                      </span>
+                    </div>
+
+                    <!-- Title -->
+                    <h4 class="text-xs font-extrabold text-gray-900 group-hover:text-green-900 transition-colors line-clamp-2 leading-snug mb-1.5">
+                      {{ news.title }}
+                    </h4>
+
+                    <!-- Excerpt -->
+                    <p v-if="news.descriptions || news.description" class="text-[0.7rem] text-gray-600 line-clamp-2 leading-relaxed mb-2">
+                      {{ (news.descriptions || news.description).replace(/<[^>]*>?/gm, '').substring(0, 85) }}...
+                    </p>
+                  </div>
+
+                  <!-- Action Footer -->
+                  <div class="pt-2 border-t border-gray-200/60 flex items-center justify-between">
+                    <div class="flex items-center gap-1 flex-wrap">
+                      <span
+                        v-for="sdg in getNewsSdgBadges(news).slice(0, 2)"
+                        :key="sdg.number"
+                        class="text-[0.55rem] font-bold text-white px-1.5 py-0.2 rounded"
+                        :style="{ backgroundColor: sdg.color }"
+                      >
+                        SDG {{ sdg.number }}
+                      </span>
+                    </div>
+                    <span class="text-[0.68rem] font-bold text-green-900 group-hover:text-green-700 inline-flex items-center gap-1 shrink-0 ml-auto">
+                      Read <i class="fas fa-arrow-right text-[0.6rem] transition-transform group-hover:translate-x-0.5"></i>
+                    </span>
+                  </div>
+                </div>
+              </NuxtLink>
+            </div>
+
+            <!-- Empty State Fallback -->
+            <div v-else class="text-center py-6 text-gray-500 text-xs">
+              <i class="fas fa-calendar-alt text-gray-300 text-3xl mb-2"></i>
+              <p class="font-medium">No recent news or events posted for this department.</p>
+              <NuxtLink to="/news-updates/list" class="mt-2 inline-block text-xs font-bold text-green-900 underline">
+                Browse all LSU news
+              </NuxtLink>
+            </div>
+
+          </div>
 
         </div>
+
+       
 
       </div>
     </div>
