@@ -276,31 +276,91 @@ const parsedFilterTags = computed(() => {
     });
 });
 
-// Section Parser
-const extractListItems = (text) => {
-  if (!text) return null;
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const listItems = [];
-  for (const line of lines) {
-    const match = line.match(/^(?:\d+[\.\)]|[-•*])\s*(.+)/);
-    if (match) {
-      listItems.push(match[1].trim());
-    }
-  }
-  return listItems.length > 0 ? listItems : null;
+// Inline Markdown and text formatter (handles bold, italics, linebreaks)
+const formatInlineMarkdown = (text) => {
+  if (!text) return "";
+  return text
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\n/g, '<br />');
 };
 
-const extractIntroText = (text) => {
-  if (!text) return "";
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-  const nonListLines = [];
-  for (const line of lines) {
-    if (/^(?:\d+[\.\)]|[-•*])\s*/.test(line)) {
-      break;
+// Section Block Parser: distinguishes between paragraphs, numbered lists, and bullet lists
+const parseSectionBlocks = (rawText) => {
+  if (!rawText) return [];
+  const clean = rawText.replace(/\r\n/g, "\n").trim();
+  if (!clean) return [];
+
+  const lines = clean.split("\n");
+  const blocks = [];
+  let currentList = null; // { type: 'bullet' | 'number', items: [] }
+  let currentParagraph = [];
+
+  const flushParagraph = () => {
+    if (currentParagraph.length > 0) {
+      const text = currentParagraph.join("\n").trim();
+      if (text) {
+        blocks.push({ type: "paragraph", text });
+      }
+      currentParagraph = [];
     }
-    nonListLines.push(line);
+  };
+
+  const flushList = () => {
+    if (currentList && currentList.items.length > 0) {
+      blocks.push(currentList);
+      currentList = null;
+    }
+  };
+
+  for (let line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushParagraph();
+      flushList();
+      continue;
+    }
+
+    // Check for bullet list item: starts with -, *, •, +
+    const bulletMatch = trimmed.match(/^[-*•+]\s+(.+)/);
+    // Check for numbered list item: starts with 1., 1), (1), etc.
+    const numberMatch = trimmed.match(/^(\d+)[\.\)]\s+(.+)/) || trimmed.match(/^\((\d+)\)\s+(.+)/);
+
+    if (bulletMatch) {
+      flushParagraph();
+      if (currentList && currentList.type !== "bullet") {
+        flushList();
+      }
+      if (!currentList) {
+        currentList = { type: "bullet", items: [] };
+      }
+      currentList.items.push({
+        text: bulletMatch[1].trim(),
+      });
+    } else if (numberMatch) {
+      flushParagraph();
+      if (currentList && currentList.type !== "number") {
+        flushList();
+      }
+      if (!currentList) {
+        currentList = { type: "number", items: [] };
+      }
+      currentList.items.push({
+        num: numberMatch[1],
+        text: numberMatch[2].trim(),
+      });
+    } else {
+      if (currentList) {
+        flushList();
+      }
+      currentParagraph.push(trimmed);
+    }
   }
-  return nonListLines.join("\n").trim();
+
+  flushParagraph();
+  flushList();
+
+  return blocks;
 };
 
 const parsedSections = computed(() => {
@@ -313,16 +373,14 @@ const parsedSections = computed(() => {
   const matches = [...rawText.matchAll(sectionHeaderRegex)];
 
   if (matches.length === 0) {
-    const listItems = extractListItems(rawText);
-    const introText = listItems ? extractIntroText(rawText) : rawText;
     return [
       {
         id: "section-overview",
         title: isCollegeContent.value ? "College Overview & Goals" : "Program Overview",
         icon: isCollegeContent.value ? "fa-university" : "fa-book-open",
-        bodyText: introText,
-        items: listItems,
+        blocks: parseSectionBlocks(rawText),
         isRawHtml: rawText.includes("<") && rawText.includes(">"),
+        rawContent: rawText,
       },
     ];
   }
@@ -344,16 +402,13 @@ const parsedSections = computed(() => {
     else if (lowerTitle.includes("career") || lowerTitle.includes("opportunity")) icon = "fa-briefcase";
     else if (lowerTitle.includes("curriculum") || lowerTitle.includes("course")) icon = "fa-graduation-cap";
 
-    const listItems = extractListItems(sectionBody);
-    const introText = listItems ? extractIntroText(sectionBody) : sectionBody;
-
     sections.push({
       id: `section-${i}`,
       title: title,
       icon: icon,
-      bodyText: introText,
-      items: listItems,
+      blocks: parseSectionBlocks(sectionBody),
       isRawHtml: sectionBody.includes("<") && sectionBody.includes(">"),
+      rawContent: sectionBody,
     });
   }
 
@@ -365,9 +420,9 @@ const parsedSections = computed(() => {
         id: "section-intro",
         title: isCollegeContent.value ? "College Overview" : "Overview",
         icon: "fa-book-open",
-        bodyText: leading,
-        items: null,
+        blocks: parseSectionBlocks(leading),
         isRawHtml: leading.includes("<") && leading.includes(">"),
+        rawContent: leading,
       });
     }
   }
@@ -765,12 +820,23 @@ const isAcademicCourseOrVmgContent = (cmsItem) => {
   return false;
 };
 
-// Fetch News, Events & Announcements from CMS for the college
+// Check if a CMS item is published (is_published: true or filters contains "published")
+const isCmsPublished = (cmsItem) => {
+  if (!cmsItem) return false;
+  if (cmsItem.is_published === true) return true;
+  const filters = (cmsItem.filters || cmsItem.filter || "").toLowerCase();
+  return filters.includes("published");
+};
+
+// Fetch News, Events & Announcements from CMS for the college (PUBLISHED ONLY)
 const fetchCollegeNewsFromCMS = async (cmsListRes) => {
   collegeNewsLoading.value = true;
   try {
     const list = cmsListRes || await $fetch(`${endpoint.value}/api/cms/content/list/`).catch(() => null);
     if (!Array.isArray(list)) return;
+
+    // Filter to only PUBLISHED CMS items
+    const publishedList = list.filter(isCmsPublished);
 
     const matchedAbbr = resolveCollegeAbbr(item.value, itemId);
     const college = matchedAbbr ? collegeMeta[matchedAbbr.toLowerCase()] : null;
@@ -780,7 +846,7 @@ const fetchCollegeNewsFromCMS = async (cmsListRes) => {
     const regexAbbr = matchedAbbr ? new RegExp(`(^|[^a-zA-Z0-9])${matchedAbbr}([^a-zA-Z0-9]|$)`, "i") : null;
 
     // Filter out degree programs and VMG items
-    const nonProgramItems = list.filter((cmsItem) => {
+    const nonProgramItems = publishedList.filter((cmsItem) => {
       if (!cmsItem || !cmsItem.title) return false;
       const cId = String(cmsItem.id || "");
       const cContentId = String(cmsItem.content_id || "");
@@ -839,12 +905,15 @@ const fetchCollegeNewsFromCMS = async (cmsListRes) => {
   }
 };
 
-// Fetch CMS programs for the college this page belongs to (works for ALL pages)
+// Fetch CMS programs for the college this page belongs to (PUBLISHED ONLY)
 const fetchCollegeProgramsFromCMS = async (cmsListRes) => {
   collegeProgramsLoading.value = true;
   try {
     const list = cmsListRes || await $fetch(`${endpoint.value}/api/cms/content/list/`).catch(() => null);
     if (!Array.isArray(list)) return;
+
+    // Filter to only PUBLISHED CMS items
+    const publishedList = list.filter(isCmsPublished);
 
     const matchedAbbr = resolveCollegeAbbr(item.value, itemId);
     if (!matchedAbbr) return;
@@ -852,7 +921,7 @@ const fetchCollegeProgramsFromCMS = async (cmsListRes) => {
     const regexMatchedAbbr = new RegExp(`(^|[^a-zA-Z0-9])${matchedAbbr}([^a-zA-Z0-9]|$)`, "i");
 
     // Filter CMS list: items that match the college abbr AND are bachelor/degree programs
-    const matched = list.filter((cmsItem) => {
+    const matched = publishedList.filter((cmsItem) => {
       if (!cmsItem) return false;
       const f = (cmsItem.filters || "").toLowerCase();
       const t2 = (cmsItem.title || "").toLowerCase();
@@ -887,12 +956,14 @@ const fetchProgramDetails = async () => {
       $fetch(`${endpoint.value}/api/cms/content/list/`).catch(() => null),
     ]);
 
-    // 1. Direct CMS hit by numeric id
-    if (res && (res.title || res.id)) {
+    const publishedList = Array.isArray(listRes) ? listRes.filter(isCmsPublished) : [];
+
+    // 1. Direct CMS hit by numeric id (must be published)
+    if (res && (res.title || res.id) && isCmsPublished(res)) {
       item.value = res;
-    } else if (Array.isArray(listRes)) {
-      // 2. Search the list by id / slug / filters
-      const found = listRes.find((c) => {
+    } else if (publishedList.length > 0) {
+      // 2. Search the published list by id / slug / filters
+      const found = publishedList.find((c) => {
         if (!c) return false;
         const cId = String(c.id || "").toLowerCase();
         const cContentId = String(c.content_id || "").toLowerCase();
@@ -914,7 +985,7 @@ const fetchProgramDetails = async () => {
         item.value = found;
       } else {
         // 3. College VMG fallback (e.g. /ccsea → "CCSEA Vision Mission Goal")
-        const collegeVmg = listRes.find((c) => {
+        const collegeVmg = publishedList.find((c) => {
           if (!c) return false;
           const cFilters = (c.filters || "").toLowerCase();
           const cTitle = (c.title || "").toLowerCase();
@@ -1292,28 +1363,50 @@ useHead(() => ({
             </div>
 
             <!-- Raw HTML fallback if overview html -->
-            <div v-if="section.isRawHtml" class="prose max-w-none text-gray-700 text-sm leading-relaxed" v-html="section.bodyText"></div>
+            <div v-if="section.isRawHtml" class="prose max-w-none text-gray-700 text-sm leading-relaxed" v-html="section.rawContent"></div>
 
-            <!-- Parsed Content Body -->
+            <!-- Parsed Content Body with Paragraphs, Numbered Lists, and Bullet Lists -->
             <div v-else class="space-y-4">
-              <!-- Body Text / Paragraph -->
-              <p v-if="section.bodyText" class="text-gray-700 text-sm lg:text-base leading-relaxed text-justify">
-                {{ section.bodyText }}
-              </p>
+              <div v-for="(block, bIdx) in section.blocks" :key="bIdx">
+                <!-- Paragraph Block -->
+                <p
+                  v-if="block.type === 'paragraph'"
+                  class="text-gray-700 text-sm lg:text-base leading-relaxed text-justify"
+                  v-html="formatInlineMarkdown(block.text)"
+                ></p>
 
-              <!-- Numbered List Items Card Grid -->
-              <div v-if="section.items && section.items.length > 0" class="mt-6 space-y-3">
+                <!-- Numbered List Block -->
                 <div
-                  v-for="(itemText, idx) in section.items"
-                  :key="idx"
-                  class="flex items-start gap-4 p-4 rounded-lg bg-gray-50 border border-gray-200/80 transition-all hover:bg-green-50/30 hover:border-green-300 group"
+                  v-else-if="block.type === 'number'"
+                  class="mt-3 space-y-2.5"
                 >
-                  <span class="w-7 h-7 rounded-full bg-green-900 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover:bg-green-800">
-                    {{ idx + 1 }}
-                  </span>
-                  <p class="text-gray-800 text-sm leading-relaxed group-hover:text-green-950 font-medium">
-                    {{ itemText }}
-                  </p>
+                  <div
+                    v-for="(item, idx) in block.items"
+                    :key="idx"
+                    class="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-gray-50 border border-gray-200/80 transition-all hover:bg-green-50/40 hover:border-green-300 group shadow-xs"
+                  >
+                    <span class="w-7 h-7 rounded-full bg-green-900 text-white font-bold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover:bg-green-800 transition-colors">
+                      {{ item.num || (idx + 1) }}
+                    </span>
+                    <div class="text-gray-800 text-sm leading-relaxed group-hover:text-green-950 font-medium pt-0.5 flex-1" v-html="formatInlineMarkdown(item.text)"></div>
+                  </div>
+                </div>
+
+                <!-- Bullet List Block -->
+                <div
+                  v-else-if="block.type === 'bullet'"
+                  class="mt-3 space-y-2.5"
+                >
+                  <div
+                    v-for="(item, idx) in block.items"
+                    :key="idx"
+                    class="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-gray-50/90 border border-gray-200/80 transition-all hover:bg-green-50/40 hover:border-green-300 group shadow-xs"
+                  >
+                    <span class="w-6 h-6 rounded-full bg-green-100 text-green-900 border border-green-300/80 flex items-center justify-center shrink-0 mt-0.5 shadow-xs group-hover:bg-green-900 group-hover:text-white transition-all">
+                      <i class="fas fa-check text-[10px]"></i>
+                    </span>
+                    <div class="text-gray-800 text-sm leading-relaxed group-hover:text-green-950 font-medium pt-0.5 flex-1" v-html="formatInlineMarkdown(item.text)"></div>
+                  </div>
                 </div>
               </div>
             </div>

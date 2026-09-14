@@ -338,10 +338,20 @@ const dedupePrograms = (programs) => {
   });
 };
 
+// Check if a CMS item is published (is_published: true or filters contains "published")
+const isCmsPublished = (item) => {
+  if (!item) return false;
+  if (item.is_published === true) return true;
+  const filters = (item.filters || item.filter || "").toLowerCase();
+  return filters.includes("published");
+};
+
 const fetchCMSPrograms = async () => {
   try {
     const res = await $fetch(endpoint.value + "/api/cms/content/list/").catch(() => null);
     if (res && Array.isArray(res)) {
+      // Strictly consider ONLY published CMS contents
+      const publishedRes = res.filter((item) => item && isCmsPublished(item));
       const cloned = JSON.parse(JSON.stringify(tertiaryJSON.tertiary));
 
       cloned.forEach((t) => {
@@ -353,14 +363,13 @@ const fetchCMSPrograms = async () => {
                 const cAbbr = (college.abbr || "").toLowerCase();
                 if (!cAbbr) return;
 
-                // Find CMS list items corresponding to this college that are STRICTLY UNDERGRADUATE programs
-                const cmsItems = res.filter((item) => {
-                  if (!item) return false;
+                // Find PUBLISHED CMS list items corresponding to this college that are STRICTLY UNDERGRADUATE programs
+                const cmsItems = publishedRes.filter((item) => {
                   return isCollegeMatch(item, college) && isUndergradProgram(item);
                 });
 
                 if (cmsItems.length > 0) {
-                  // Dynamically map CMS list items directly to college programs (deduplicated)
+                  // Dynamically map published CMS list items directly to college programs (deduplicated)
                   const mapped = cmsItems.map((cmsItem) => {
                     return {
                       id: cmsItem.id || cmsItem.content_id,
@@ -373,9 +382,8 @@ const fetchCMSPrograms = async () => {
                   college.programs = dedupePrograms(mapped);
                 }
 
-                // Find College VMG / College Info item from CMS for this college
-                const vmgItem = res.find((item) => {
-                  if (!item) return false;
+                // Find PUBLISHED College VMG / College Info item from CMS for this college
+                const vmgItem = publishedRes.find((item) => {
                   return isCollegeMatch(item, college) && isCollegeVmgItem(item, college);
                 });
 
@@ -398,9 +406,8 @@ const fetchCMSPrograms = async () => {
           t.grad_stud.forEach((tg) => {
             if (tg.list) {
               tg.list.forEach((college) => {
-                // Find all Graduate CMS items (strictly graduate degree programs)
-                const gradCmsItems = res.filter((item) => {
-                  if (!item) return false;
+                // Find all PUBLISHED Graduate CMS items (strictly graduate degree programs)
+                const gradCmsItems = publishedRes.filter((item) => {
                   return (
                     isCollegeMatch(item, college) &&
                     isGraduateProgram(item) &&
@@ -408,7 +415,7 @@ const fetchCMSPrograms = async () => {
                   );
                 });
 
-                // Attach matching CMS item IDs to grad programs in Graduate School categories
+                // Attach matching PUBLISHED CMS item IDs to grad programs in Graduate School categories
                 if (college.category && Array.isArray(college.category)) {
                   college.category.forEach((cat) => {
                     if (cat.programs && Array.isArray(cat.programs)) {
@@ -438,7 +445,7 @@ const fetchCMSPrograms = async () => {
                   });
                 }
 
-                // Dynamically map strictly verified graduate programs into college.programs
+                // Dynamically map strictly verified PUBLISHED graduate programs into college.programs
                 const mappedGrad = gradCmsItems.map((cmsItem) => {
                   return {
                     id: cmsItem.id || cmsItem.content_id,
@@ -450,9 +457,8 @@ const fetchCMSPrograms = async () => {
                 });
                 college.programs = dedupePrograms(mappedGrad);
 
-                // Find College VMG / College Info item from CMS for Graduate Studies / SGS
-                const vmgItem = res.find((item) => {
-                  if (!item) return false;
+                // Find PUBLISHED College VMG / College Info item from CMS for Graduate Studies / SGS
+                const vmgItem = publishedRes.find((item) => {
                   return isCollegeMatch(item, college) && isCollegeVmgItem(item, college);
                 });
 

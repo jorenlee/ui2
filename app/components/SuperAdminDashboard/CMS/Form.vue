@@ -418,8 +418,8 @@ watch(
 
 // ---------------- FILE VALIDATION ----------------
 const selectedFiles = ref([]);
-const MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB for images
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB for PDFs and other files
+const MAX_IMAGE_SIZE = 25 * 1024 * 1024; // 25MB for images (auto-compressed before upload)
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB for PDFs and other files
 
 // helper for detectTypeFromName
 const detectTypeFromName = (filename) => {
@@ -570,9 +570,9 @@ const validateFile = (file) => {
   }
 
   // Different size limits for images vs other files
-  const isImage = mime.startsWith("image");
+  const isImage = mime.startsWith("image") || [".jpeg", ".jpg", ".png", ".webp"].includes(ext);
   const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_FILE_SIZE;
-  const sizeLimit = isImage ? "1MB" : "10MB";
+  const sizeLimit = isImage ? "25MB" : "50MB";
 
   if (file.size > maxSize) {
     showToast(`File too large: ${file.name} (Max ${sizeLimit})`);
@@ -691,6 +691,7 @@ const sortFilesByName = () => {
 // Format filename: replace spaces with underscores and remove parentheses
 const formatFilename = (filename) => {
   const lastDotIndex = filename.lastIndexOf('.');
+  if (lastDotIndex === -1) return filename.replace(/\s+/g, '_').replace(/[()]/g, '');
   const name = filename.substring(0, lastDotIndex);
   const extension = filename.substring(lastDotIndex);
 
@@ -699,6 +700,74 @@ const formatFilename = (filename) => {
     .replace(/[()]/g, ''); // Remove all parentheses
 
   return formattedName + extension;
+};
+
+// Fast client-side image compression for instant uploads
+const compressImageIfNeeded = async (file) => {
+  if (!file || !file.type || !file.type.startsWith("image/")) return file;
+  // Preserve SVGs, GIFs, and small images under 300KB
+  if (file.type === "image/gif" || file.type === "image/svg+xml" || file.size <= 300 * 1024) {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const MAX_WIDTH = 2048;
+          const MAX_HEIGHT = 2048;
+          let { width, height } = img;
+
+          if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+            if (width > height) {
+              height = Math.round((height * MAX_WIDTH) / width);
+              width = MAX_WIDTH;
+            } else {
+              width = Math.round((width * MAX_HEIGHT) / height);
+              height = MAX_HEIGHT;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(file);
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const isPng = file.type === "image/png";
+          const outputType = isPng ? "image/png" : "image/jpeg";
+          const quality = isPng ? 0.92 : 0.85;
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob && blob.size < file.size) {
+                const compressedFile = new File([blob], file.name, {
+                  type: outputType,
+                  lastModified: Date.now(),
+                });
+                resolve(compressedFile);
+              } else {
+                resolve(file);
+              }
+            },
+            outputType,
+            quality
+          );
+        } catch (err) {
+          console.warn("Client image compression fallback:", err);
+          resolve(file);
+        }
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
 };
 
 const uploadFile = async (file) => {
@@ -714,14 +783,12 @@ const uploadFile = async (file) => {
     const res = await $fetch(`${endpoint.value}/api/cms/content/file/upload/`, {
       method: "POST",
       body: formData,
-      headers: {
-        // Don't set Content-Type, let browser set it with boundary
-      },
-      timeout: 60000, // 60 seconds
+      timeout: 30000,
     });
 
-    showToast(`✅ File uploaded: ${formattedFilename}`, "success");
-    return { finalName: res.filename || res.name || formattedFilename };
+    const finalName = res?.filename || res?.name || res?.finalName || formattedFilename;
+    showToast(`✅ Uploaded: ${formattedFilename}`, "success");
+    return { finalName };
   } catch (error) {
     console.error("Upload error:", error);
 
@@ -736,14 +803,44 @@ const uploadFile = async (file) => {
   }
 };
 
-const handleFileSelect = async (e) => {
-  const files = e.target.files;
+const isDraggingFile = ref(false);
+
+const uploadSingleFile = async (fileObj) => {
+  if (!fileObj || !fileObj.file) return;
+  fileObj.uploading = true;
+  fileObj.error = null;
+
+  try {
+    const fileToUpload = await compressImageIfNeeded(fileObj.file);
+    const uploaded = await uploadFile(fileToUpload);
+    if (uploaded && uploaded.finalName) {
+      fileObj.uploading = false;
+      fileObj.uploaded = true;
+      fileObj.uploadedUrl = uploaded.finalName;
+      fileObj.error = null;
+    } else {
+      fileObj.uploading = false;
+      fileObj.uploaded = false;
+      fileObj.error = "Upload failed. Click to retry.";
+    }
+  } catch (err) {
+    console.error("Upload error:", err);
+    fileObj.uploading = false;
+    fileObj.uploaded = false;
+    fileObj.error = "Upload failed. Click to retry.";
+  }
+};
+
+const processFiles = async (files) => {
   if (!files?.length) return;
 
-  for (const file of files) {
-    if (!validateFile(file)) continue;
+  const validFiles = Array.from(files).filter((f) => validateFile(f));
+  if (!validFiles.length) return;
 
-    selectedFiles.value.push({
+  // 1. Immediately create previews and push to selectedFiles for instant visual feedback
+  const targetItems = [];
+  for (const file of validFiles) {
+    const fileObj = {
       file,
       name: file.name,
       type: detectType(file),
@@ -751,23 +848,30 @@ const handleFileSelect = async (e) => {
       uploaded: false,
       uploading: true,
       error: null,
-      uploadedUrl: null, // Store the uploaded filename here
-    });
-
-    const uploaded = await uploadFile(file);
-
-    const last = selectedFiles.value[selectedFiles.value.length - 1];
-    last.uploading = false;
-
-    if (uploaded) {
-      last.uploaded = true;
-      last.uploadedUrl = uploaded.finalName; // Store the filename from upload response
-    } else {
-      last.error = "Upload failed";
-    }
+      uploadedUrl: null,
+    };
+    selectedFiles.value.push(fileObj);
+    // Grab the reactive proxy in the array
+    const reactiveFileObj = selectedFiles.value[selectedFiles.value.length - 1];
+    targetItems.push(reactiveFileObj);
   }
 
+  // 2. Upload all files concurrently in parallel (faster & non-blocking)
+  await Promise.allSettled(targetItems.map((fObj) => uploadSingleFile(fObj)));
+};
+
+const handleFileSelect = async (e) => {
+  const files = e.target.files;
+  if (!files?.length) return;
+  await processFiles(files);
   e.target.value = "";
+};
+
+const handleFileDrop = async (e) => {
+  isDraggingFile.value = false;
+  const files = e.dataTransfer?.files;
+  if (!files?.length) return;
+  await processFiles(files);
 };
 
 
@@ -1469,20 +1573,40 @@ const displayToast = (message, type = "success", duration = 3000) => {
               </p>
 
               <label
-                class="block border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition"
-                :class="darkMode
-                  ? 'border-gray-600 hover:border-green-500 hover:bg-gray-700'
-                  : 'border-gray-300 hover:border-green-500 hover:bg-green-50'"
+                class="block border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition duration-200"
+                :class="[
+                  isDraggingFile
+                    ? 'border-green-500 bg-green-50/80 ring-4 ring-green-400/30 scale-[1.01]'
+                    : darkMode
+                      ? 'border-gray-600 hover:border-green-500 hover:bg-gray-700'
+                      : 'border-gray-300 hover:border-green-500 hover:bg-green-50'
+                ]"
+                @dragover.prevent="isDraggingFile = true"
+                @dragenter.prevent="isDraggingFile = true"
+                @dragleave.prevent="isDraggingFile = false"
+                @drop.prevent="handleFileDrop"
               >
-                <i class="fa fa-cloud-upload text-3xl mb-2"
-                  :class="darkMode ? 'text-gray-500' : 'text-gray-400'"></i>
-                <p class="text-sm font-medium"
-                  :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-                  Click to upload or drag and drop
+                <i
+                  class="fa fa-cloud-upload text-3xl mb-2 transition-all duration-200"
+                  :class="[
+                    isDraggingFile
+                      ? 'text-green-600 scale-125 animate-bounce'
+                      : darkMode ? 'text-gray-500' : 'text-gray-400'
+                  ]"
+                ></i>
+                <p
+                  class="text-sm font-medium transition-colors"
+                  :class="[
+                    isDraggingFile
+                      ? 'text-green-700 font-bold'
+                      : darkMode ? 'text-gray-300' : 'text-gray-700'
+                  ]"
+                >
+                  {{ isDraggingFile ? 'Drop your files to upload' : 'Click to upload or drag and drop' }}
                 </p>
                 <p class="text-xs mt-1"
                   :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
-                  Images: Max 1MB | PDFs & Other files: Max 10MB
+                  Images, PDFs & Other files: Max 1MB
                 </p>
                 <input
                   type="file"
@@ -1614,31 +1738,35 @@ const displayToast = (message, type = "success", duration = 3000) => {
                     <!-- Upload Status -->
                     <div
                       v-if="fileObj.uploading"
-                      class="absolute inset-0 bg-opacity-95 flex items-center justify-center"
-                      :class="darkMode ? 'bg-gray-800' : 'bg-white'"
+                      class="absolute inset-0 bg-opacity-85 backdrop-blur-[1px] flex items-center justify-center z-20"
+                      :class="darkMode ? 'bg-gray-900/85' : 'bg-white/85'"
                     >
-                      <div class="text-center">
+                      <div class="text-center px-2">
                         <i
                           class="fa fa-spinner fa-spin text-green-600 text-xl"
                         ></i>
-                        <p class="text-xs mt-2"
-                          :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Uploading...</p>
+                        <p class="text-xs mt-1.5 font-medium"
+                          :class="darkMode ? 'text-gray-200' : 'text-gray-700'">Uploading...</p>
                       </div>
                     </div>
 
                     <div
                       v-else-if="fileObj.uploaded"
-                      class="absolute top-1 right-1 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
+                      class="absolute top-2 right-2 bg-green-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-md z-20"
+                      title="Upload completed"
                     >
                       <i class="fa fa-check text-xs"></i>
                     </div>
 
                     <div
                       v-else-if="fileObj.error"
-                      class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                      :title="fileObj.error"
+                      @click.stop="uploadSingleFile(fileObj)"
+                      class="absolute inset-0 bg-red-900/80 backdrop-blur-[1px] flex flex-col items-center justify-center z-20 cursor-pointer p-2 text-center text-white transition hover:bg-red-900/90"
+                      title="Click to retry upload"
                     >
-                      <i class="fa fa-exclamation text-xs"></i>
+                      <i class="fa fa-exclamation-triangle text-amber-300 text-base mb-1"></i>
+                      <span class="text-[11px] font-bold leading-tight">Failed</span>
+                      <span class="text-[10px] underline mt-0.5 opacity-90">Click to retry</span>
                     </div>
 
                     <!-- Remove Button -->
