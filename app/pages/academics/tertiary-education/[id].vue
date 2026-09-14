@@ -995,7 +995,7 @@ useHead(() => ({
       <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
         <!-- ── COLUMN 1: MAIN CONTENT (2/4 = 6/12 Columns) ── -->
-        <div class="lg:col-span-8 space-y-6">
+        <div class="lg:col-span-7 space-y-6">
 
           <!-- Header Card -->
           <div class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm border-l-4 border-l-green-900">
@@ -1341,7 +1341,7 @@ useHead(() => ({
         </div>
 
         <!-- ── COLUMN 2: NEWS & UPDATES (1/4 = 3/12 Columns) ── -->
-        <div class="lg:col-span-4 space-y-6">
+        <div class="lg:col-span-5 space-y-6">
 
                   <!-- Admissions & Enrollment Action Card -->
           <div class="bg-gradient-to-br from-green-950 to-green-900 text-white rounded-xl p-6 shadow-md border border-green-800">
@@ -1402,7 +1402,7 @@ useHead(() => ({
             <!-- News & Events Vertical Feed -->
 
             
-            <div v-else-if="collegeNewsEvents.length > 0" class="space-y-4">
+            <div v-else-if="collegeNewsEvents.length > 0" class="lg:grid grid-cols-2 gap-2">
               <NuxtLink
                 v-for="(news, nIdx) in collegeNewsEvents"
                 :key="news.id || nIdx"
@@ -1410,7 +1410,7 @@ useHead(() => ({
                 class="group bg-gray-50/60 rounded-xl border border-gray-200 overflow-hidden shadow-xs hover:shadow-md hover:border-green-600 hover:bg-white transition-all flex flex-col no-underline"
               >
                 <!-- Thumbnail Image -->
-                <div class="relative h-32 w-full overflow-hidden bg-gray-100">
+                <div class="relative h-[300px] w-full overflow-hidden bg-gray-100">
                   <img
                     v-if="news.files && news.files.length > 0 && isImageFile(news.files[0])"
                     :src="getFileUrl(news.files[0])"
