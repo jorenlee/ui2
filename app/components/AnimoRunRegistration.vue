@@ -330,7 +330,7 @@ const submitRegistration = () => {
       props.darkMode ? 'bg-gray-900 text-gray-100' : 'bg-slate-50 text-gray-800',
     ]"
   >
-    <div class="w-11/12 mx-auto">
+    <div class="px-3">
       <!-- HERO / HEADER -->
       <div
         :class="[
@@ -900,9 +900,6 @@ const submitRegistration = () => {
                       <span class="font-bold text-sm text-gray-900 dark:text-gray-100">
                         LSU Higher Education Unit Student (College)
                       </span>
-                      <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
-                        Eligible for Add to Tuition
-                      </span>
                     </div>
                     <span class="text-xs text-gray-500 block mt-0.5">Enrolled College / Graduate School Students of La Salle University</span>
                   </div>
@@ -992,9 +989,7 @@ const submitRegistration = () => {
                       <span class="font-bold text-sm text-gray-900 dark:text-gray-100">
                         LSU Basic Education Unit Student (Grade School / JHS / SHS)
                       </span>
-                      <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
-                        Eligible for Add to Tuition
-                      </span>
+                     
                     </div>
                     <span class="text-xs text-gray-500 block mt-0.5">Grade School, Junior High School, or Senior High School</span>
                   </div>
@@ -1069,9 +1064,6 @@ const submitRegistration = () => {
                     <div class="flex items-center justify-between gap-2 flex-wrap">
                       <span class="font-bold text-sm text-gray-900 dark:text-gray-100">
                         LSU Employees / Lasallian Partners (Faculty / Personnel / Admin Staff)
-                      </span>
-                      <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
-                        Eligible for Salary Deduction
                       </span>
                     </div>
                     <span class="text-xs text-gray-500 block mt-0.5">Faculty, Staff, Administrators, and University Employees</span>
@@ -1242,8 +1234,9 @@ const submitRegistration = () => {
               </p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
+            <div class="">
+             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+               <div>
                 <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
                 <input
                   v-model="currentParticipant.firstname"
@@ -1278,8 +1271,10 @@ const submitRegistration = () => {
                   ]"
                 />
               </div>
+             </div>
 
-              <div>
+             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+               <div>
                 <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Suffix</label>
                 <select
                   v-model="currentParticipant.suffix"
@@ -1345,6 +1340,7 @@ const submitRegistration = () => {
                   </div>
                 </div>
               </div>
+             </div>
             </div>
           </section>
 
@@ -1360,8 +1356,8 @@ const submitRegistration = () => {
               </p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
+            <div class="flex w-full gap-4">
+              <div class="w-full">
                 <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Contact Phone Number *</label>
                 <div class="relative">
                   <span class="absolute left-3.5 top-3 text-xs text-gray-400">
@@ -1378,7 +1374,7 @@ const submitRegistration = () => {
                 </div>
               </div>
 
-              <div>
+              <div class="w-full">
                 <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Email Address *</label>
                 <div class="relative">
                   <span class="absolute left-3.5 top-3 text-xs text-gray-400">
@@ -1395,7 +1391,7 @@ const submitRegistration = () => {
                 </div>
               </div>
 
-              <div class="sm:col-span-2">
+              <div class="w-full">
                 <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Complete Address</label>
                 <div class="relative">
                   <span class="absolute left-3.5 top-3 text-xs text-gray-400">

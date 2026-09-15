@@ -207,31 +207,30 @@ const getStatusBadge = (status) => {
 <template>
   <div
     :class="[
-      'min-h-screen py-8 px-3 sm:px-6 lg:px-8 transition-colors duration-300',
+      'min-h-screen p-2 transition-colors duration-300',
       props.darkMode ? 'bg-gray-900 text-gray-100' : 'bg-slate-50 text-gray-800',
     ]"
   >
-    <div class="w-11/12 mx-auto space-y-6">
+    <div class="space-y-1">
       <!-- HEADER BANNER -->
       <div
         :class="[
-          'relative overflow-hidden rounded-3xl p-6 sm:p-8 border shadow-xl transition-all',
+          'relative overflow-hidden rounded-md px-5 py-2 border shadow-xl transition-all',
           props.darkMode
             ? 'bg-gradient-to-r from-emerald-950 via-gray-900 to-emerald-950 border-green-800/40'
             : 'bg-gradient-to-r from-emerald-700 via-teal-700 to-green-800 border-emerald-600 text-white',
         ]"
       >
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
-          <div>
-            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs font-semibold text-emerald-200 mb-2">
-              <i class="fas fa-list text-amber-300"></i> Registration Management Portal
+          <div class="flex items-center gap-x-3">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs font-semibold text-emerald-200">
+              <i class="fas fa-list text-amber-300"></i> Registration Management Portal 
             </div>
-            <h1 class="text-2xl sm:text-4xl font-black text-white tracking-tight">
-              Animo Run 2026 - Participant Status Checking
+             <h1 class="text-sm  text-white tracking-tight">
+            <span class="font-black">Animo Run 2026 - Participant Status Checking : </span>Track, verify, and manage all individual and group runner registrations
             </h1>
-            <p class="text-xs sm:text-sm text-emerald-100 mt-1">
-              Track, verify, and manage all individual and group runner registrations
-            </p>
+           
+       
           </div>
 
           <button
@@ -248,7 +247,7 @@ const getStatusBadge = (status) => {
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div
           :class="[
-            'p-5 rounded-2xl border shadow-sm transition flex items-center justify-between',
+            'px-5 py-2 rounded-2xl border shadow-sm transition flex items-center justify-between',
             props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
           ]"
         >
@@ -265,7 +264,7 @@ const getStatusBadge = (status) => {
 
         <div
           :class="[
-            'p-5 rounded-2xl border shadow-sm transition flex items-center justify-between',
+            'px-5 py-2 rounded-2xl border shadow-sm transition flex items-center justify-between',
             props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
           ]"
         >
@@ -282,7 +281,7 @@ const getStatusBadge = (status) => {
 
         <div
           :class="[
-            'p-5 rounded-2xl border shadow-sm transition flex items-center justify-between',
+            'px-5 py-2 rounded-2xl border shadow-sm transition flex items-center justify-between',
             props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
           ]"
         >
@@ -301,7 +300,7 @@ const getStatusBadge = (status) => {
       <!-- SEARCH & FILTER TOOLBAR -->
       <div
         :class="[
-          'p-5 rounded-3xl border shadow-md space-y-4 transition',
+          'p-3 rounded-3xl border shadow-md transition',
           props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
         ]"
       >
