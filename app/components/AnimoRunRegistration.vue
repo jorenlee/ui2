@@ -832,7 +832,7 @@ const submitRegistration = () => {
                   </label>
                   <input
                     v-model="currentParticipant.pet_name"
-                    placeholder="e.g. Milo / Barkley / Luna"
+                    placeholder="e.g. Milo / Barkley / Brownie"
                     :class="[
                       'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-sky-500 focus:outline-none',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
@@ -895,7 +895,7 @@ const submitRegistration = () => {
           </section>
 
           <!-- SECTION 2: PARTICIPANT CLASSIFICATION -->
-          <section>
+          <section v-if="currentParticipant.run_category !== '1K'">
             <div class="mb-4">
               <h3 class="text-lg font-bold flex items-center gap-2">
                 <span
@@ -1187,7 +1187,7 @@ const submitRegistration = () => {
           </section>
 
           <!-- SECTION 3: PERSONAL INFORMATION -->
-          <section>
+          <section v-if="currentParticipant.run_category !== '1K'">
             <div class="mb-4">
               <h3 class="text-lg font-bold flex items-center gap-2">
                 <span
@@ -1298,7 +1298,22 @@ const submitRegistration = () => {
               </p>
             </div>
 
-            <div class="flex w-full gap-4">
+            <div class="flex w-full gap-4 lg:px-10 px-3">
+              
+
+              <div class="w-full" v-if="paymentType === 'non_lsu_payment'">
+                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Email Address *</label>
+                <div class="relative">
+                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
+                    <i class="fas fa-envelope"></i>
+                  </span>
+                  <input v-model="currentParticipant.contact_email" placeholder="runner@lsu.edu.ph" :class="[
+                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                  ]" />
+                </div>
+              </div>
+
               <div class="w-full">
                 <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Contact Phone Number
                   *</label>
@@ -1307,19 +1322,6 @@ const submitRegistration = () => {
                     <i class="fas fa-phone"></i>
                   </span>
                   <input v-model="currentParticipant.contact_number" placeholder="0917 123 4567" :class="[
-                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
-                  ]" />
-                </div>
-              </div>
-
-              <div class="w-full">
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Email Address *</label>
-                <div class="relative">
-                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
-                    <i class="fas fa-envelope"></i>
-                  </span>
-                  <input v-model="currentParticipant.contact_email" placeholder="runner@lsu.edu.ph" :class="[
                     'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                     props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
                   ]" />
@@ -1437,7 +1439,7 @@ const submitRegistration = () => {
           </section>
 
           <!-- SECTION 6: T-SHIRT SIZE -->
-          <section>
+          <section v-if="currentParticipant.run_category !== '1K'">
             <div class="mb-4">
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-bold flex items-center gap-2">
