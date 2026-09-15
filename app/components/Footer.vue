@@ -64,7 +64,7 @@ const quickLinks = [
     <div class="h-1.5 w-full bg-gradient-to-r from-emerald-600 via-teal-400 to-emerald-600"></div>
 
     <!-- Main Footer Body with Backdrop Image -->
-    <div class="relative bg-[url('https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/footer.jpg')] bg-cover bg-center overflow-hidden pt-12 sm:pt-16 pb-8 px-4 sm:px-6 lg:px-8">
+    <div class="relative bg-[url('https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/footer.jpg')] bg-cover bg-center overflow-hidden lg:pt-12 pt-7 sm:pt-16 pb-8 px-4 sm:px-6 lg:px-8">
       <!-- Dark Emerald Gradient Overlay -->
       <div class="absolute inset-0 bg-gradient-to-br from-emerald-950/50 via-emerald-900/50 to-teal-950/50 pointer-events-none"></div>
 
@@ -79,25 +79,25 @@ const quickLinks = [
           <!-- Left Section: University Branding & Info -->
           <div class="lg:col-span-7 xl:col-span-8 text-center lg:text-left">
             <!-- Logos -->
-            <div class="mb-6 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 sm:gap-6">
+            <div class="lg:mb-6 mb-2 flex items-center justify-center lg:justify-start lg:gap-4 gap-2">
               <img
                 src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/20th%20Anniversary%20Emerald%20Logos-20260618T012425Z-3-001/20th%20Anniversary%20Emerald%20Logos/Emerald%20with%20Theme%20-%20White.png"
                 alt="20th Anniversary Logo"
-                class="h-14 sm:h-16 object-contain"
+                class="lg:h-14 h-16 object-contain"
               />
               <div class="hidden sm:block w-px h-10 bg-emerald-700/50"></div>
               <a href="https://lsu.edu.ph" class="block">
                 <img
                   src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/logos/lsu-w-h.png"
                   alt="La Salle University Logo"
-                  class="h-10 sm:h-12 object-contain transition-transform duration-300 hover:scale-105"
+                  class="lg:h-10 h-12 object-contain transition-transform duration-300 hover:scale-105"
                 />
               </a>
             </div>
 
             <!-- Address -->
-            <p class="text-xs sm:text-sm text-emerald-100/90 leading-relaxed max-w-xl mx-auto lg:mx-0 mb-4 flex items-center justify-center lg:justify-start gap-2">
-              <i class="fas fa-map-marker-alt text-emerald-400 text-xs shrink-0"></i>
+            <p class="text-xs sm:text-sm text-emerald-100/90 lg:tracking-normal tracking-tighter leading-relaxed max-w-xl mx-auto lg:mx-0 mb-4 lg:flex items-center justify-center lg:justify-start gap-2">
+              <i class="fas fa-map-marker-alt text-emerald-400 text-xs shrink-0 mr-1"></i>
               <span>La Salle St. Aguada, Ozamiz City, Misamis Occidental, Philippines 7200</span>
             </p>
 
@@ -132,13 +132,13 @@ const quickLinks = [
 
           <!-- Right Section: Social Media Connect Glass Card -->
           <div class="lg:col-span-5 xl:col-span-4 w-full">
-            <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-emerald-950/30 text-center">
+            <div class="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl lg:p-6 p-2 shadow-2xl shadow-emerald-950/30 text-center">
               <div class="inline-flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-bold uppercase tracking-wider text-emerald-200 mb-5 border border-white/10">
                 <i class="fa fa-share-alt text-emerald-400 text-xs"></i>
                 <span>Connect With Us</span>
               </div>
 
-              <div class="grid grid-cols-2 gap-3 sm:gap-4">
+              <div class="grid lg:grid-cols-2 grid-cols-4 lg:gap-3 gap-1">
                 <a
                   v-for="social in socials"
                   :key="social.name"

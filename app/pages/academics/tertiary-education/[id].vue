@@ -1304,7 +1304,7 @@ useHead(() => ({
 
     <!-- ── HERO BANNER ── -->
     <div
-      class="relative overflow-hidden bg-gradient-to-r from-green-950 via-green-900 to-green-950 text-white shadow-inner">
+      class="lg:flex hidden relative overflow-hidden bg-gradient-to-r from-green-950 via-green-900 to-green-950 text-white shadow-inner">
       <div class="mx-auto w-11/12 py-6 lg:py-8 relative z-10">
         <div class="flex flex-wrap items-center gap-3 mb-2">
           <span
@@ -1356,10 +1356,10 @@ useHead(() => ({
     </nav>
 
     <!-- ── MAIN CONTENT ── -->
-    <div class="mx-auto lg:w-11/12 pt-8 pb-16 flex-1 w-full">
+    <div class="mx-auto lg:w-11/12 lg:pt-8 pt-3 pb-16 flex-1 w-full">
 
       <!-- Back Navigation Button -->
-      <div class="mb-6">
+      <div class="lg:mb-6 mb-2 lg:ml-0 ml-3">
         <NuxtLink to="/academics/tertiary-education"
           class="inline-flex items-center gap-2 text-xs font-bold text-green-900 uppercase tracking-wider hover:text-green-700 transition-colors bg-white px-4 py-2 border border-gray-200 rounded-lg shadow-sm hover:shadow">
           <i class="fas fa-arrow-left text-green-800"></i> Back to All Programs
@@ -1388,10 +1388,10 @@ useHead(() => ({
       <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
         <!-- ── COLUMN 1: MAIN CONTENT (2/4 = 6/12 Columns) ── -->
-        <div class="lg:col-span-7 space-y-6">
+        <div class="lg:col-span-7 lg:space-y-6 space-y-2">
 
           <!-- Header Card -->
-          <div class="bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm border-l-4 border-l-green-900">
+          <div class="lg:ml-0 ml-3 bg-white border border-gray-200 rounded-xl p-6 lg:p-8 shadow-sm border-l-4 border-l-green-900">
             <div class="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 pb-5 mb-5">
               <div>
                 <span class="text-[0.65rem] font-bold tracking-[0.2em] uppercase text-green-900 block mb-1">
@@ -1717,13 +1717,12 @@ useHead(() => ({
           <div
             class="bg-gradient-to-br from-green-950 to-green-900 text-white rounded-xl p-6 shadow-md border border-green-800">
 
-            <h4 class="flex items-center gap-2 text-lg font-extrabold uppercase tracking-wide mb-2 text-white">
-              <span
-                class="w-10 h-10 rounded-full bg-green-500/20 border border-green-400/30 flex items-center justify-center text-green-400 text-lg">
-                <i class="fas fa-user-graduate"></i>
-              </span> Enroll at La Salle
+            <h4 class=" font-extrabold uppercase tracking-wide mb-2 flex items-center justify-center text-white text-lg">
+           
+              
+          Enroll at La Salle!
             </h4>
-            <p class="text-xs text-white/75 leading-relaxed mb-6">
+            <p class="text-xs text-white/75 leading-relaxed mb-6 text-center">
               Take the next step in your academic journey. Inquire now or check admission requirements for {{
                 programAbbr || 'this program' }}.
             </p>

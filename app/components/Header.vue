@@ -568,8 +568,10 @@ const desktopNav = [
     >
       <div
         v-if="menuDetails"
-        class="fixed left-0 w-full overflow-y-auto border-t-2 border-green-800 bg-white shadow-2xl"
-        style="max-height: calc(100vh - 86px)"
+        class="fixed left-0 z-30 w-full overflow-y-auto border-t-2 border-green-800 bg-white shadow-2xl"
+        :style="isScrolled
+          ? 'top: 50px; max-height: calc(100vh - 50px)'
+          : 'top: 52px; max-height: calc(100vh - 52px)'"
       >
         <ul class="pb-20">
           <li v-for="item in desktopNav" :key="item.label" class="border-b">
