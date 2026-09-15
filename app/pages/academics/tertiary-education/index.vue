@@ -391,7 +391,28 @@ const getExactCollegeAbbrForUndergrad = (item) => {
   const f = (item.filters || item.filter || "").toLowerCase();
   const a = (item.authors || item.author || "").toLowerCase();
 
-  // 1. CTE (College of Teacher Education) - check BEFORE CAS because of "English Language" or "Science" majors in education
+  // 1. CCSEA (Computer Studies, Engineering, Architecture, & Library and Information Science)
+  if (
+    t.includes("library and information") ||
+    t.includes("library science") ||
+    t.includes("information science") ||
+    /\b(blis|blis-)\b/i.test(t) ||
+    t.includes("computer studies") ||
+    t.includes("computer science") ||
+    t.includes("information technology") ||
+    t.includes("civil engineering") ||
+    t.includes("architecture") ||
+    t.includes("electrical engineering") ||
+    t.includes("electronics engineering") ||
+    t.includes("computer engineering") ||
+    /\b(ccsea|ccs|lsu-ccsea|bscs|bsit|bsce|bsarch|bsee|bsece|bscpe|blis)\b/i.test(t) ||
+    /\b(ccsea|ccs|lsu-ccsea)\b/i.test(f) ||
+    /\b(ccsea|ccs|lsu-ccsea)\b/i.test(a)
+  ) {
+    return "CCSEA";
+  }
+
+  // 2. CTE (College of Teacher Education) - check BEFORE CAS because of "English Language" or "Science" majors in education
   if (
     t.includes("secondary education") ||
     t.includes("elementary education") ||
@@ -399,27 +420,11 @@ const getExactCollegeAbbrForUndergrad = (item) => {
     t.includes("teacher education") ||
     t.includes("livelihood education") ||
     t.includes("physical education") ||
-    t.includes("library and information") ||
-    /\b(beed|bsed|bped|btled|btle|blis|bsn-ed|bee-gen|bse-)\b/i.test(t) ||
+    /\b(beed|bsed|bped|btled|btle|bsn-ed|bee-gen|bse-)\b/i.test(t) ||
     /\b(cte|lsu-cte)\b/i.test(f) ||
     /\b(cte|lsu-cte)\b/i.test(a)
   ) {
     return "CTE";
-  }
-
-  // 2. CCSEA (Computer Studies, Engineering & Architecture)
-  if (
-    t.includes("computer studies") ||
-    t.includes("computer science") ||
-    t.includes("information technology") ||
-    t.includes("civil engineering") ||
-    t.includes("architecture") ||
-    t.includes("electrical engineering") ||
-    /\b(ccsea|ccs|lsu-ccsea|bscs|bsit|bsce|bsarch|bsee)\b/i.test(t) ||
-    /\b(ccsea|ccs|lsu-ccsea)\b/i.test(f) ||
-    /\b(ccsea|ccs|lsu-ccsea)\b/i.test(a)
-  ) {
-    return "CCSEA";
   }
 
   // 3. CON (College of Nursing)

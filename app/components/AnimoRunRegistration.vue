@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
+import { useAuth } from "~/composables/useAuth";
 
 const props = defineProps({
   darkMode: {
@@ -10,6 +11,15 @@ const props = defineProps({
 
 const config = useRuntimeConfig();
 const endpoint = config?.public?.apiUrl || "";
+
+const { user, init } = useAuth();
+
+onMounted(() => {
+  if (init) init();
+  if (user?.value?.email && !participants.value[0].contact_email) {
+    participants.value[0].contact_email = user.value.email;
+  }
+});
 
 const form_type = ref("Individual");
 const number_of_participants_per_group = ref(1);
@@ -114,6 +124,7 @@ const createEmptyParticipant = (index = 1) => ({
   id: index,
   run_category: "3K",
   participant_type: "LSU Higher Education Unit Student",
+  lsu_id_number: "",
   firstname: "",
   middlename: "",
   lastname: "",
@@ -121,7 +132,7 @@ const createEmptyParticipant = (index = 1) => ({
   birthdate: "",
   gender: "Male",
   contact_number: "",
-  contact_email: "",
+  contact_email: user?.value?.email || "",
   contact_address: "",
   college_course: "BSIT",
   college_year: "1st Year",
@@ -287,6 +298,7 @@ const copyRunnerOneInfo = () => {
   p.partner_office = r1.partner_office;
   p.alumni_batch = r1.alumni_batch;
   p.organization = r1.organization;
+  p.lsu_id_number = r1.lsu_id_number;
 };
 
 const submitRegistration = () => {
@@ -313,12 +325,44 @@ const submitRegistration = () => {
     return;
   }
 
+  // Validate LSU ID Number for salary deduction / add to tuition
+  if (paymentType.value === "salary_deduction") {
+    if (!currentParticipant.value.lsu_id_number?.trim()) {
+      alert(
+        "⚠️ Please provide your LSU Employee ID Number for Salary Deduction verification."
+      );
+      return;
+    }
+  } else if (paymentType.value === "add_to_tuition") {
+    if (!currentParticipant.value.lsu_id_number?.trim()) {
+      alert(
+        "⚠️ Please provide your LSU Student ID Number for Add to Tuition verification."
+      );
+      return;
+    }
+  } else if (paymentType.value === "non_lsu_payment") {
+    if (!receiptFile.value) {
+      alert("⚠️ Please upload your proof of payment / receipt before submitting.");
+      return;
+    }
+  }
+
   isSubmitting.value = true;
   setTimeout(() => {
     isSubmitting.value = false;
-    alert(
-      "✅ Animo Run registration submitted successfully!\nAnimo Run Admin will verify your payment and send your official confirmation receipt."
-    );
+    if (paymentType.value === "salary_deduction") {
+      alert(
+        "✅ Animo Run registration submitted successfully!\nYour salary deduction request has been submitted to LSU HR & Accounting for payroll processing."
+      );
+    } else if (paymentType.value === "add_to_tuition") {
+      alert(
+        "✅ Animo Run registration submitted successfully!\nYour registration fee has been submitted to the LSU Accounting Office to be charged to your student tuition account."
+      );
+    } else {
+      alert(
+        "✅ Animo Run registration submitted successfully!\nAnimo Run Admin will verify your payment and send your official confirmation receipt."
+      );
+    }
   }, 1000);
 };
 </script>
@@ -1761,7 +1805,167 @@ const submitRegistration = () => {
                 </div>
               </div>
 
-              <!-- NON-LSU / GENERAL PAYMENT SUB-OPTIONS & DETAILS -->
+              <!-- 1. LSU EMPLOYEE INSTITUTIONAL VERIFICATION (SALARY DEDUCTION) -->
+              <div
+                v-if="paymentType === 'salary_deduction'"
+                class="mt-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-300 dark:border-emerald-800/60 space-y-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm font-bold">
+                      <i class="fas fa-id-badge"></i>
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                        LSU Employee Institutional Verification
+                      </h4>
+                      <p class="text-xs text-gray-500">
+                        No receipt upload required. Verified through your LSU Account and Employee ID.
+                      </p>
+                    </div>
+                  </div>
+
+                  <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5">
+                    <i class="fas fa-check-circle text-emerald-500"></i> No Receipt Needed
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-700">
+                  <!-- Verified LSU Email -->
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Authenticated LSU Email Address
+                    </label>
+                    <div class="relative">
+                      <span class="absolute left-3.5 top-2.5 text-xs text-emerald-600">
+                        <i class="fas fa-envelope-circle-check"></i>
+                      </span>
+                      <input
+                        type="email"
+                        :value="user?.email || currentParticipant.contact_email || 'runner@lsu.edu.ph'"
+                        readonly
+                        class="w-full pl-9 pr-24 py-2.5 rounded-xl border text-xs font-semibold bg-gray-50 dark:bg-gray-900/60 border-emerald-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 cursor-not-allowed"
+                      />
+                      <span class="absolute right-2.5 top-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                        <i class="fas fa-lock text-[9px] mr-1"></i> Verified
+                      </span>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-1">LSU Google Workspace credentials from your active dashboard session</p>
+                  </div>
+
+                  <!-- LSU Employee ID Number -->
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      LSU Employee ID Number *
+                    </label>
+                    <div class="relative">
+                      <span class="absolute left-3.5 top-2.5 text-xs text-gray-400">
+                        <i class="fas fa-address-card"></i>
+                      </span>
+                      <input
+                        type="text"
+                        v-model="currentParticipant.lsu_id_number"
+                        placeholder="e.g. EMP-2024-0012 or 2018-0421"
+                        :class="[
+                          'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
+                        ]"
+                      />
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-1">Enter your official LSU Faculty / Staff Employee ID Number</p>
+                  </div>
+                </div>
+
+                <!-- Payroll Authorization Notice -->
+                <div class="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 flex items-start gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
+                  <i class="fas fa-file-signature text-emerald-600 text-sm mt-0.5 shrink-0"></i>
+                  <div class="leading-relaxed">
+                    <strong>Salary Deduction Authorization:</strong> By submitting, you authorize the LSU Human Resource Center and Accounting Office to process the total registration fee of <strong>₱{{ grandTotal.toLocaleString() }}</strong> via automatic payroll salary deduction.
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. LSU STUDENT INSTITUTIONAL VERIFICATION (ADD TO TUITION) -->
+              <div
+                v-if="paymentType === 'add_to_tuition'"
+                class="mt-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-gray-800/90 border border-blue-300 dark:border-blue-800/60 space-y-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">
+                      <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <div>
+                      <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                        LSU Student Account Verification
+                      </h4>
+                      <p class="text-xs text-gray-500">
+                        No receipt upload required. Fee is charged directly to your student tuition assessment ledger.
+                      </p>
+                    </div>
+                  </div>
+
+                  <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 flex items-center gap-1.5">
+                    <i class="fas fa-check-circle text-blue-500"></i> No Receipt Needed
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-700">
+                  <!-- Verified LSU Student Email -->
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Authenticated LSU Student Email
+                    </label>
+                    <div class="relative">
+                      <span class="absolute left-3.5 top-2.5 text-xs text-blue-600">
+                        <i class="fas fa-envelope-circle-check"></i>
+                      </span>
+                      <input
+                        type="email"
+                        :value="user?.email || currentParticipant.contact_email || 'student@lsu.edu.ph'"
+                        readonly
+                        class="w-full pl-9 pr-24 py-2.5 rounded-xl border text-xs font-semibold bg-gray-50 dark:bg-gray-900/60 border-blue-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 cursor-not-allowed"
+                      />
+                      <span class="absolute right-2.5 top-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                        <i class="fas fa-lock text-[9px] mr-1"></i> Verified
+                      </span>
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-1">LSU Student Google Workspace credentials from your active dashboard session</p>
+                  </div>
+
+                  <!-- LSU Student ID Number -->
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      LSU Student ID Number *
+                    </label>
+                    <div class="relative">
+                      <span class="absolute left-3.5 top-2.5 text-xs text-gray-400">
+                        <i class="fas fa-id-card"></i>
+                      </span>
+                      <input
+                        type="text"
+                        v-model="currentParticipant.lsu_id_number"
+                        placeholder="e.g. 2023-10452"
+                        :class="[
+                          'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none',
+                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
+                        ]"
+                      />
+                    </div>
+                    <p class="text-[10px] text-gray-400 mt-1">Enter your official LSU Student ID Number</p>
+                  </div>
+                </div>
+
+                <!-- Student Ledger Notice -->
+                <div class="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 flex items-start gap-2.5 text-xs text-blue-800 dark:text-blue-300">
+                  <i class="fas fa-receipt text-blue-600 text-sm mt-0.5 shrink-0"></i>
+                  <div class="leading-relaxed">
+                    <strong>Student Account Billing:</strong> The registration fee of <strong>₱{{ grandTotal.toLocaleString() }}</strong> will be charged directly to your student ledger upon verification. You may settle this together with your semester tuition fees.
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. NON-LSU / GENERAL PAYMENT SUB-OPTIONS & DETAILS WITH RECEIPT UPLOAD -->
               <div
                 v-if="paymentType === 'non_lsu_payment'"
                 class="mt-4 p-5 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-200 dark:border-gray-700 space-y-4"
@@ -1857,79 +2061,79 @@ const submitRegistration = () => {
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <!-- UPLOAD RECEIPT SECTION -->
-              <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                <div class="flex items-center justify-between mb-3">
-                  <div>
-                    <h4 class="text-sm font-bold flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                      <i class="fas fa-file-invoice-dollar text-emerald-600"></i>
-                      Upload Receipt / Proof of Payment
-                    </h4>
-                    <p class="text-xs text-gray-500 mt-0.5">
-                      Animo Run Admin will verify the Payment before issuing race bib and confirmation
-                    </p>
+                <!-- UPLOAD RECEIPT SECTION (FOR NON-LSU ONLY) -->
+                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div class="flex items-center justify-between mb-3">
+                    <div>
+                      <h4 class="text-sm font-bold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                        <i class="fas fa-file-invoice-dollar text-emerald-600"></i>
+                        Upload Receipt / Proof of Payment
+                      </h4>
+                      <p class="text-xs text-gray-500 mt-0.5">
+                        Animo Run Admin will verify the Payment before issuing race bib and confirmation
+                      </p>
+                    </div>
+
+                    <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                      <i class="fas fa-shield-alt mr-1"></i> Admin Verification
+                    </span>
                   </div>
 
-                  <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                    <i class="fas fa-shield-alt mr-1"></i> Admin Verification
-                  </span>
-                </div>
+                  <!-- Receipt Dropzone -->
+                  <div
+                    :class="[
+                      'rounded-2xl border-2 border-dashed p-4 text-center transition-all relative overflow-hidden',
+                      receiptPreview
+                        ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
+                        : props.darkMode
+                        ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
+                        : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
+                    ]"
+                  >
+                    <div v-if="!receiptPreview">
+                      <i class="fas fa-cloud-upload-alt text-3xl text-emerald-500 mb-2"></i>
+                      <p class="text-xs font-bold mb-1">Upload Receipt or Deposit / Transfer Screenshot</p>
+                      <p class="text-[10px] text-gray-400 mb-3">PNG, JPG, or PDF up to 10MB</p>
+                      <label class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
+                        <i class="fas fa-upload"></i> Browse Receipt File
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          class="hidden"
+                          @change="handleReceiptUpload"
+                        />
+                      </label>
+                    </div>
 
-                <!-- Receipt Dropzone -->
-                <div
-                  :class="[
-                    'rounded-2xl border-2 border-dashed p-4 text-center transition-all relative overflow-hidden',
-                    receiptPreview
-                      ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
-                      : props.darkMode
-                      ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
-                      : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
-                  ]"
-                >
-                  <div v-if="!receiptPreview">
-                    <i class="fas fa-cloud-upload-alt text-3xl text-emerald-500 mb-2"></i>
-                    <p class="text-xs font-bold mb-1">Upload Receipt or Deposit / Transfer Screenshot</p>
-                    <p class="text-[10px] text-gray-400 mb-3">PNG, JPG, or PDF up to 10MB</p>
-                    <label class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
-                      <i class="fas fa-upload"></i> Browse Receipt File
-                      <input
-                        type="file"
-                        accept="image/*,.pdf"
-                        class="hidden"
-                        @change="handleReceiptUpload"
+                    <div v-else class="relative group max-w-sm mx-auto">
+                      <img
+                        :src="receiptPreview"
+                        alt="Receipt Preview"
+                        class="h-40 w-full object-cover rounded-xl border shadow-sm"
                       />
-                    </label>
-                  </div>
-
-                  <div v-else class="relative group max-w-sm mx-auto">
-                    <img
-                      :src="receiptPreview"
-                      alt="Receipt Preview"
-                      class="h-40 w-full object-cover rounded-xl border shadow-sm"
-                    />
-                    <div class="mt-2 flex items-center justify-between text-xs">
-                      <span class="truncate max-w-[200px] font-medium text-emerald-600 dark:text-emerald-400">
-                        <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
-                      </span>
-                      <button
-                        type="button"
-                        @click="removeReceipt"
-                        class="px-2.5 py-1 bg-rose-500 text-white rounded-lg text-xs font-bold hover:bg-rose-600 transition cursor-pointer"
-                      >
-                        Remove
-                      </button>
+                      <div class="mt-2 flex items-center justify-between text-xs">
+                        <span class="truncate max-w-[200px] font-medium text-emerald-600 dark:text-emerald-400">
+                          <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
+                        </span>
+                        <button
+                          type="button"
+                          @click="removeReceipt"
+                          class="px-2.5 py-1 bg-rose-500 text-white rounded-lg text-xs font-bold hover:bg-rose-600 transition cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- Admin verification badge -->
-                <div class="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
-                  <i class="fas fa-user-check text-amber-600 text-base shrink-0"></i>
-                  <span>
-                    <strong>Verification Notice:</strong> Animo Run Admin will verify the Payment and validate your registration details before final approval.
-                  </span>
+                  <!-- Admin verification badge -->
+                  <div class="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
+                    <i class="fas fa-user-check text-amber-600 text-base shrink-0"></i>
+                    <span>
+                      <strong>Verification Notice:</strong> Animo Run Admin will verify the Payment and validate your registration details before final approval.
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
