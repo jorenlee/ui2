@@ -697,9 +697,7 @@ const submitRegistration = () => {
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mb-1"></span>
                   Human
                   <span class="my-0.5 opacity-30">·</span>
-                
-
-                    Pet
+                  Pet
                   <span class="w-1.5 h-1.5 rounded-full bg-sky-500 inline-block mt-1"></span>
                 </div>
                 <div class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
