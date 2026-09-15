@@ -988,7 +988,7 @@ const getSdgBadges = (item) => {
           </div>
 
           <!-- Form -->
-          <SuperAdminDashboardCMSForm :darkMode="darkMode" :editData="showEditModal ? editContent : null"
+          <CMSForm :darkMode="darkMode" :editData="showEditModal ? editContent : null"
             @content-submitted="handleFormSubmitted" />
         </div>
       </div>
