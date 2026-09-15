@@ -16,10 +16,10 @@ const selectedRunner = ref(null);
 const isDetailModalOpen = ref(false);
 
 const runCategories = [
-  { id: "3K", name: "3K Fun Run", color: "bg-emerald-500 text-white" },
-  { id: "5K", name: "5K Fitness Run", color: "bg-green-600 text-white" },
-  { id: "10K", name: "10K Challenge", color: "bg-teal-600 text-white" },
-  { id: "21K", name: "21K Half Marathon", color: "bg-emerald-800 text-white" },
+  { id: "1K", name: "1K - EMERALD PAWS", color: "bg-sky-500 text-white" },
+  { id: "3K", name: "3K — EMERALD STARTER", color: "bg-amber-500 text-white" },
+  { id: "10K", name: "10K — EMERALD ENDURANCE", color: "bg-teal-600 text-white" },
+  { id: "20K", name: "20K — EMERALD ULTIMATE", color: "bg-emerald-800 text-white" },
 ];
 
 const registrations = ref([
@@ -170,11 +170,8 @@ const stats = computed(() => {
   const totalRunners = registrations.value.length;
   const confirmed = registrations.value.filter((r) => r.payment_status === "Confirmed").length;
   const pending = registrations.value.filter((r) => r.payment_status.startsWith("Pending")).length;
-  const totalRevenue = registrations.value
-    .filter((r) => r.payment_status === "Confirmed")
-    .reduce((sum, r) => sum + r.grand_total, 0);
 
-  return { totalRunners, confirmed, pending, totalRevenue };
+  return { totalRunners, confirmed, pending };
 });
 
 const openDetails = (runner) => {
@@ -201,8 +198,6 @@ const getStatusBadge = (status) => {
     case "Pending Approval":
     case "Pending Payment":
       return "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700";
-    case "Cancelled":
-      return "bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700";
     default:
       return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300";
   }
@@ -216,7 +211,7 @@ const getStatusBadge = (status) => {
       props.darkMode ? 'bg-gray-900 text-gray-100' : 'bg-slate-50 text-gray-800',
     ]"
   >
-    <div class="max-w-7xl mx-auto space-y-6">
+    <div class="w-11/12 mx-auto space-y-6">
       <!-- HEADER BANNER -->
       <div
         :class="[
@@ -242,15 +237,15 @@ const getStatusBadge = (status) => {
           <button
             type="button"
             @click="$emit('refresh')"
-            class="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-2 shadow-sm"
+            class="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-2 shadow-sm cursor-pointer"
           >
             <i class="fas fa-sync-alt"></i> Refresh Data
           </button>
         </div>
       </div>
 
-      <!-- STATS SUMMARY CARDS -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- STATS SUMMARY CARDS (3 COLUMNS - NO REVENUE/COST FOR DATA PRIVACY) -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div
           :class="[
             'p-5 rounded-2xl border shadow-sm transition flex items-center justify-between',
@@ -301,23 +296,6 @@ const getStatusBadge = (status) => {
             <i class="fas fa-clock"></i>
           </div>
         </div>
-
-        <div
-          :class="[
-            'p-5 rounded-2xl border shadow-sm transition flex items-center justify-between',
-            props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
-          ]"
-        >
-          <div>
-            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Confirmed Revenue</p>
-            <h3 class="text-2xl font-black text-teal-600 dark:text-teal-400 mt-1">
-              ₱{{ stats.totalRevenue.toLocaleString() }}
-            </h3>
-          </div>
-          <div class="w-12 h-12 rounded-2xl bg-teal-100 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 flex items-center justify-center text-xl">
-            <i class="fas fa-wallet"></i>
-          </div>
-        </div>
       </div>
 
       <!-- SEARCH & FILTER TOOLBAR -->
@@ -352,10 +330,10 @@ const getStatusBadge = (status) => {
               ]"
             >
               <option value="All">All Distance Categories</option>
-              <option value="3K">3K Fun Run</option>
-              <option value="5K">5K Fitness Run</option>
-              <option value="10K">10K Challenge</option>
-              <option value="21K">21K Half Marathon</option>
+              <option value="1K">1K - EMERALD PAWS (Pet Run)</option>
+              <option value="3K">3K — EMERALD STARTER</option>
+              <option value="10K">10K — EMERALD ENDURANCE</option>
+              <option value="20K">20K — EMERALD ULTIMATE</option>
             </select>
           </div>
 
@@ -372,7 +350,6 @@ const getStatusBadge = (status) => {
               <option value="Confirmed">Confirmed</option>
               <option value="Pending Approval">Pending Approval (Salary Deduction)</option>
               <option value="Pending Payment">Pending Payment</option>
-              <option value="Cancelled">Cancelled</option>
             </select>
           </div>
 
@@ -418,7 +395,6 @@ const getStatusBadge = (status) => {
                 <th class="p-4">Runner Name</th>
                 <th class="p-4">Classification</th>
                 <th class="p-4">Category</th>
-                <th class="p-4">Total Fee</th>
                 <th class="p-4">Payment Option</th>
                 <th class="p-4">Status</th>
                 <th class="p-4 text-center">Actions</th>
@@ -468,16 +444,9 @@ const getStatusBadge = (status) => {
                   </span>
                 </td>
 
-                <td class="p-4 font-bold text-gray-900 dark:text-gray-100">
-                  ₱{{ runner.grand_total.toLocaleString() }}
-                  <span v-if="runner.addons.length > 0" class="block text-[10px] font-normal text-emerald-600 dark:text-emerald-400">
-                    +{{ runner.addons.length }} add-on(s)
-                  </span>
-                </td>
-
                 <td class="p-4">
                   <span class="capitalize font-medium">
-                    {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : 'Direct / Stripe' }}
+                    {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' : 'Over the Counter / QR' }}
                   </span>
                 </td>
 
@@ -496,7 +465,7 @@ const getStatusBadge = (status) => {
                   <button
                     type="button"
                     @click="openDetails(runner)"
-                    class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition inline-flex items-center gap-1"
+                    class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition inline-flex items-center gap-1 cursor-pointer"
                   >
                     <i class="fas fa-eye"></i> View
                   </button>
@@ -504,7 +473,7 @@ const getStatusBadge = (status) => {
               </tr>
 
               <tr v-if="filteredRegistrations.length === 0">
-                <td colspan="8" class="p-8 text-center text-gray-500">
+                <td colspan="7" class="p-8 text-center text-gray-500">
                   <i class="fas fa-search text-3xl mb-2 text-gray-400 block"></i>
                   No registration records match your search criteria.
                 </td>
@@ -541,7 +510,7 @@ const getStatusBadge = (status) => {
           <button
             type="button"
             @click="closeDetails"
-            class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-rose-500 hover:text-white transition flex items-center justify-center font-bold"
+            class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-rose-500 hover:text-white transition flex items-center justify-center font-bold cursor-pointer"
           >
             <i class="fas fa-times"></i>
           </button>
@@ -589,7 +558,7 @@ const getStatusBadge = (status) => {
           <div class="flex items-center justify-between">
             <span class="font-bold text-emerald-800 dark:text-emerald-300">Run Category</span>
             <span class="font-black text-sm text-emerald-700 dark:text-emerald-400">
-              {{ selectedRunner.run_category }} (₱{{ selectedRunner.fee }})
+              {{ selectedRunner.run_category }}
             </span>
           </div>
 
@@ -600,11 +569,6 @@ const getStatusBadge = (status) => {
                 {{ addon }}
               </li>
             </ul>
-          </div>
-
-          <div class="border-t pt-2 dark:border-gray-700 flex justify-between font-black text-sm">
-            <span>Grand Total</span>
-            <span class="text-emerald-600 dark:text-emerald-400">₱{{ selectedRunner.grand_total.toLocaleString() }}</span>
           </div>
         </div>
 
@@ -626,29 +590,31 @@ const getStatusBadge = (status) => {
 
         <!-- Action / Status Management -->
         <div class="pt-4 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div class="text-xs font-medium">
-            Status:
-            <span :class="['px-2 py-0.5 rounded-lg border font-bold ml-1', getStatusBadge(selectedRunner.payment_status)]">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-medium">Status:</span>
+            <span :class="['px-2.5 py-0.5 rounded-lg border font-bold text-xs', getStatusBadge(selectedRunner.payment_status)]">
               {{ selectedRunner.payment_status }}
+            </span>
+            <span class="text-[10px] text-gray-500 dark:text-gray-400 font-medium ml-1">
+              <i class="fas fa-shield-alt text-emerald-600 mr-1"></i> No Refund Policy
             </span>
           </div>
 
           <div class="flex items-center gap-2 w-full sm:w-auto">
             <button
+              v-if="selectedRunner.payment_status !== 'Confirmed'"
               type="button"
               @click="updateStatus(selectedRunner, 'Confirmed')"
-              class="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition shadow-sm"
+              class="flex-1 sm:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
             >
-              <i class="fas fa-check"></i> Approve / Confirm
+              <i class="fas fa-check"></i> Approve / Confirm Payment
             </button>
-
-            <button
-              type="button"
-              @click="updateStatus(selectedRunner, 'Cancelled')"
-              class="flex-1 sm:flex-none px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition shadow-sm"
+            <span
+              v-else
+              class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5"
             >
-              <i class="fas fa-ban"></i> Cancel Registration
-            </button>
+              <i class="fas fa-check-circle"></i> Registration Confirmed
+            </span>
           </div>
         </div>
       </div>

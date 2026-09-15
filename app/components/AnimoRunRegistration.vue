@@ -1,5 +1,7 @@
 <script setup>
-import { ref, computed, watch } from "vue";const props = defineProps({
+import { ref, computed, watch } from "vue";
+
+const props = defineProps({
   darkMode: {
     type: Boolean,
     default: false,
@@ -7,92 +9,110 @@ import { ref, computed, watch } from "vue";const props = defineProps({
 });
 
 const config = useRuntimeConfig();
-const endpoint = config.public.apiUrl;
+const endpoint = config?.public?.apiUrl || "";
 
 const form_type = ref("Individual");
 const number_of_participants_per_group = ref(1);
 const activeParticipantIndex = ref(0);
 
-const paymentType = ref("direct_payment");
+const paymentType = ref("add_to_tuition");
+const nonLsuPaymentMethod = ref("qr_payment");
+const receiptFile = ref(null);
+const receiptPreview = ref(null);
 const isSubmitting = ref(false);
 
 const runCategories = [
   {
     id: "3K",
-    name: "3K Fun Run",
-    fee: 300,
-    time: "6:00 AM",
-    description: "Great for beginners, kids, and casual runners.",
-    color: "from-emerald-500 to-teal-600",
-    badge: "Popular",
+    name: "3K — EMERALD STARTER",
+    tagline: "Start your journey.",
+    fee: 1000,
+    time: "4:55 AM",
+    description: "Perfect for beginners, families, and casual runners.",
+    color: "from-amber-500 to-emerald-600",
+    badge: "Starter",
     icon: "fa-running",
-  },
-  {
-    id: "5K",
-    name: "5K Fitness Run",
-    fee: 500,
-    time: "5:45 AM",
-    description: "A classic distance to test your speed and endurance.",
-    color: "from-green-600 to-emerald-700",
-    badge: "Featured",
-    icon: "fa-bolt",
+    inclusions: [
+      "Event Shirt",
+      "Post-Meal & Snack",
+      "Race Bib",
+      "Metal Medal",
+    ],
   },
   {
     id: "10K",
-    name: "10K Challenge",
-    fee: 800,
-    time: "5:15 AM",
-    description: "For experienced runners aiming for a new personal record.",
-    color: "from-teal-600 to-cyan-700",
-    badge: "Pro",
+    name: "10K — EMERALD ENDURANCE",
+    tagline: "Go farther. Go stronger.",
+    fee: 1400,
+    time: "4:40 AM",
+    description: "For intermediate runners pushing their endurance limits.",
+    color: "from-teal-600 to-emerald-700",
+    badge: "Endurance",
     icon: "fa-stopwatch",
+    inclusions: [
+      "Event Shirt",
+      "Post-Meal & Snack",
+      "Race Bib",
+      "Metal Medal",
+    ],
   },
   {
-    id: "21K",
-    name: "21K Half Marathon",
-    fee: 1200,
-    time: "4:30 AM",
-    description: "The ultimate endurance run through scenic Ozamiz routes.",
-    color: "from-emerald-700 to-green-900",
-    badge: "Elite",
+    id: "20K",
+    name: "20K — EMERALD ULTIMATE",
+    tagline: "Conquer the ultimate challenge.",
+    fee: 1800,
+    time: "4:00 AM",
+    description: "The premier distance for competitive runners and veterans.",
+    color: "from-emerald-700 to-green-950",
+    badge: "Ultimate",
     icon: "fa-trophy",
+    inclusions: [
+      "Event Shirt & Finisher Shirt",
+      "Post-Meal & Snack",
+      "Race Bib",
+      "Metal Medal",
+    ],
   },
 ];
 
-const availableAddons = [
-  {
-    id: "singlet",
-    name: "Animo Dri-Fit Event Singlet",
-    fee: 350,
-    icon: "fa-tshirt",
-    desc: "Premium moisture-wicking green singlet",
-  },
-  {
-    id: "bottle",
-    name: "LSU Animo Stainless Flask (750ml)",
-    fee: 250,
-    icon: "fa-tint",
-    desc: "Insulated eco-friendly water flask",
-  },
-  {
-    id: "engraving",
-    name: "Finisher Medal Custom Engraving",
-    fee: 150,
-    icon: "fa-award",
-    desc: "Personalized name & finish time on medal",
-  },
-  {
-    id: "bib_name",
-    name: "Custom Name Printed on Race Bib",
-    fee: 100,
-    icon: "fa-id-badge",
-    desc: "Custom runner nick or handle on your bib",
-  },
+const petAddonInfo = {
+  id: "1K",
+  name: "1K — EMERALD PAWS",
+  subtitle: "Pet Run Add-on (Runner + Pet Buddy)",
+  tagline: "Because every run is better with your best friend.",
+  fee: 1000,
+  time: "5:00 AM",
+  description: "Bring your furry companion along for the special 1KM Pet Run route! Includes full pet kit & treats.",
+  inclusions: [
+    "Pet Owner's Shirt",
+    "Pet Treat & Pet Owner's Snack",
+    "Race Bib & Pet Bandana",
+    "Acrylic Medal",
+  ],
+};
+
+const tshirtSizes = [
+  "3XS",
+  "2XS",
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "2XL",
+  "3XL",
+  "4XL",
+  "5XL",
+  "6XL",
+  "7XL",
+  "8XL",
+  "9XL",
+  "10XL",
 ];
 
 const createEmptyParticipant = (index = 1) => ({
   id: index,
-  run_category: "5K",
+  run_category: "3K",
   participant_type: "LSU Higher Education Unit Student",
   firstname: "",
   middlename: "",
@@ -109,7 +129,14 @@ const createEmptyParticipant = (index = 1) => ({
   partner_office: "",
   alumni_batch: "",
   organization: "",
-  selectedAddons: [],
+  // Pet Run Add-On State
+  has_pet_addon: false,
+  pet_name: "",
+  pet_type: "Dog",
+  pet_breed: "",
+  pet_bandana_size: "Medium",
+  pet_vaccinated: true,
+  tshirt_size: "M",
   validIdFront: null,
   validIdFrontPreview: null,
   validIdBack: null,
@@ -163,6 +190,23 @@ const currentParticipant = computed(() => {
   );
 });
 
+// Automatically adjust recommended paymentType when participant classification changes
+watch(
+  () => currentParticipant.value.participant_type,
+  (newType) => {
+    if (newType === "Lasallian Partners") {
+      paymentType.value = "salary_deduction";
+    } else if (
+      newType === "LSU Higher Education Unit Student" ||
+      newType === "LSU Basic Education Unit Student"
+    ) {
+      paymentType.value = "add_to_tuition";
+    } else if (newType === "Non-LSU" || newType === "Alumni") {
+      paymentType.value = "non_lsu_payment";
+    }
+  }
+);
+
 const handleFileUpload = (event, type, pIndex) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -187,14 +231,16 @@ const removeFile = (type, pIndex) => {
   }
 };
 
-const toggleAddon = (pIndex, addonId) => {
-  const p = participants.value[pIndex];
-  const idx = p.selectedAddons.indexOf(addonId);
-  if (idx > -1) {
-    p.selectedAddons.splice(idx, 1);
-  } else {
-    p.selectedAddons.push(addonId);
-  }
+const handleReceiptUpload = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  receiptFile.value = file;
+  receiptPreview.value = URL.createObjectURL(file);
+};
+
+const removeReceipt = () => {
+  receiptFile.value = null;
+  receiptPreview.value = null;
 };
 
 const itemizedFees = computed(() => {
@@ -207,19 +253,18 @@ const itemizedFees = computed(() => {
     const cat = runCategories.find((c) => c.id === p.run_category);
     if (cat) {
       items.push({
-        name: `${labelPrefix}${cat.name}`,
+        name: `${labelPrefix}${cat.name} (${cat.id})`,
+        shirt: `Size: ${p.tshirt_size || "M"}`,
         amount: cat.fee,
       });
     }
-    p.selectedAddons.forEach((addonId) => {
-      const addon = availableAddons.find((a) => a.id === addonId);
-      if (addon) {
-        items.push({
-          name: `${labelPrefix}Add-on - ${addon.name}`,
-          amount: addon.fee,
-        });
-      }
-    });
+    if (p.has_pet_addon) {
+      items.push({
+        name: `${labelPrefix}🐾 Pet Run Add-on (1K EMERALD PAWS)${p.pet_name ? ' - Pet: ' + p.pet_name : ''}`,
+        shirt: "Includes Pet Owner's Shirt & Bandana",
+        amount: petAddonInfo.fee,
+      });
+    }
   });
   return items;
 });
@@ -244,18 +289,35 @@ const copyRunnerOneInfo = () => {
   p.organization = r1.organization;
 };
 
-const redirectStripe = async () => {
-  alert(
-    `Proceeding to Stripe Payment Checkout for ₱${grandTotal.value.toLocaleString()}`
-  );
-};
-
 const submitRegistration = () => {
+  // Validate non-LSU ID upload
+  const hasNonLsuWithoutId = participants.value.some(
+    (p) => p.participant_type === "Non-LSU" && !p.validIdFront
+  );
+
+  if (hasNonLsuWithoutId) {
+    alert(
+      "⚠️ Please upload a Valid ID for Non-LSU participant(s) before submitting."
+    );
+    return;
+  }
+
+  // Validate Pet Addon name if checked
+  const hasPetWithoutName = participants.value.some(
+    (p) => p.has_pet_addon && !p.pet_name.trim()
+  );
+  if (hasPetWithoutName) {
+    alert(
+      "🐾 Please provide your Pet's Name for the Pet Run Add-on."
+    );
+    return;
+  }
+
   isSubmitting.value = true;
   setTimeout(() => {
     isSubmitting.value = false;
     alert(
-      "✅ Animo Run registration submitted successfully! Check your email for confirmation."
+      "✅ Animo Run registration submitted successfully!\nAnimo Run Admin will verify your payment and send your official confirmation receipt."
     );
   }, 1000);
 };
@@ -264,15 +326,15 @@ const submitRegistration = () => {
 <template>
   <div
     :class="[
-      'min-h-screen py-8 px-3 sm:px-6 lg:px-8 transition-colors duration-300',
+      'min-h-screen py-2 px-3 sm:px-6 lg:px-8 transition-colors duration-300',
       props.darkMode ? 'bg-gray-900 text-gray-100' : 'bg-slate-50 text-gray-800',
     ]"
   >
-    <div class="max-w-5xl mx-auto">
+    <div class="w-11/12 mx-auto">
       <!-- HERO / HEADER -->
       <div
         :class="[
-          'relative overflow-hidden rounded-3xl shadow-xl mb-8 border transition-all duration-300',
+          'relative overflow-hidden rounded-3xl shadow-xl mb-2 border transition-all duration-300',
           props.darkMode
             ? 'bg-gradient-to-br from-green-950 via-emerald-900 to-gray-900 border-green-800/40'
             : 'bg-gradient-to-br from-green-800 via-emerald-700 to-teal-800 border-green-600 text-white',
@@ -286,30 +348,29 @@ const submitRegistration = () => {
           class="absolute -left-16 -bottom-16 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl pointer-events-none"
         ></div>
 
-        <div class="relative p-6 sm:p-10 text-center flex flex-col items-center">
-          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-emerald-200 mb-4 shadow-sm">
-            <i class="fas fa-running text-amber-400 animate-pulse"></i>
-            La Salle University Official Event
-          </div>
+        <div class="relative px-6 py-4 sm:px-10 text-center flex flex-col items-center">
+          <div class="flex items-center justify-center transform hover:scale-105 transition gap-x-12 flex-wrap">
+            <div class="w-fit">
+              <img
+                src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/Corporate%20Logo%20New/Corporate%20Logo%20White.png"
+                alt="LSU Logo"
+                class="w-36 mx-auto h-auto object-contain"
+              />
+            </div>
 
-          <div class="w-20 h-20 sm:w-24 sm:h-24 p-2 bg-white rounded-2xl shadow-lg mb-4 flex items-center justify-center transform hover:scale-105 transition">
-            <img
-              src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/lsu-corporate-logo-green.png"
-              alt="LSU Logo"
-              class="w-full h-auto object-contain"
-            />
-          </div>
+            <div class="w-full sm:w-auto text-center sm:text-left">
+              <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center justify-center sm:justify-start gap-3">
+                <span>ANIMO RUN 2026</span>
 
-          <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white mb-2 flex items-center justify-center gap-3">
-            <span>ANIMO RUN 2026</span>
-          </h1>
+                  <span class="text-sm sm:text-xs font-bold tracking-wide text-emerald-200">
+                THE EMERALD RUN
+              </span>
 
-          <p class="text-emerald-100 text-sm sm:text-base max-w-xl font-medium">
-            Run for a Cause • Unite Lasallian Community • Race to Excellence
-          </p>
+              </h1>
+            
 
-          <!-- Badges -->
-          <div class="mt-6 flex flex-wrap justify-center gap-3 text-xs">
+               <!-- Badges -->
+          <div class=" flex flex-wrap justify-center gap-3 text-xs">
             <span class="px-3 py-1 bg-black/20 backdrop-blur border border-white/10 rounded-lg text-emerald-200 font-medium">
               <i class="fas fa-calendar-alt mr-1.5 text-amber-300"></i> Annual University Run
             </span>
@@ -317,9 +378,15 @@ const submitRegistration = () => {
               <i class="fas fa-map-marker-alt mr-1.5 text-rose-300"></i> LSU Main Campus, Ozamiz
             </span>
             <span class="px-3 py-1 bg-black/20 backdrop-blur border border-white/10 rounded-lg text-emerald-200 font-medium">
-              <i class="fas fa-medal mr-1.5 text-yellow-300"></i> Exclusive Finisher Medals
+              <i class="fas fa-medal mr-1.5 text-yellow-300"></i> Exclusive Finisher Medals & Event Shirts
             </span>
           </div>
+            </div>
+
+
+          </div>
+
+         
         </div>
       </div>
 
@@ -355,7 +422,7 @@ const submitRegistration = () => {
             <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
               <!-- Individual / Group Radio Cards -->
               <div class="grid grid-cols-2 gap-3 w-full sm:w-auto">
-                  <div
+                <div
                   @click="form_type = 'Individual'"
                   :class="[
                     'flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
@@ -515,7 +582,7 @@ const submitRegistration = () => {
             </button>
           </div>
 
-          <!-- SECTION 1: RUN CATEGORY -->
+          <!-- SECTION 1: RUN CATEGORY (3 MAIN DISTANCES) -->
           <section>
             <div class="flex items-center justify-between mb-4">
               <div>
@@ -524,74 +591,260 @@ const submitRegistration = () => {
                   Run Category
                 </h3>
                 <p class="text-xs text-gray-500 ml-9">
-                  Choose the target distance for Runner #{{ activeParticipantIndex + 1 }}
+                  Choose the primary race distance for Runner #{{ activeParticipantIndex + 1 }}
                 </p>
               </div>
 
               <span class="text-xs font-semibold px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                Current Fee: ₱{{ runCategories.find(c => c.id === currentParticipant.run_category)?.fee || 0 }}
+                Category Fee: ₱{{ runCategories.find(c => c.id === currentParticipant.run_category)?.fee?.toLocaleString() || 0 }}
               </span>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- 3-COLUMN RUN CATEGORIES GRID -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
               <div
                 v-for="cat in runCategories"
                 :key="cat.id"
                 @click="currentParticipant.run_category = cat.id"
                 :class="[
-                  'relative rounded-2xl p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between group',
+                  'relative rounded-3xl p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between group overflow-hidden',
                   currentParticipant.run_category === cat.id
-                    ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-lg shadow-emerald-600/10 ring-2 ring-emerald-500/30 scale-[1.02]'
+                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-xl shadow-emerald-600/10 ring-2 ring-emerald-500/40 scale-[1.01]'
                     : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/60 hover:border-gray-600 hover:bg-gray-800'
-                    : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50',
+                    ? 'border-gray-700 bg-gray-800/60 hover:border-emerald-500/60 hover:bg-gray-800'
+                    : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50/20',
                 ]"
               >
-                <!-- Badge -->
-                <div class="flex items-center justify-between mb-3">
-                  <span
-                    :class="[
-                      'text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full text-white bg-gradient-to-r',
-                      cat.color,
-                    ]"
-                  >
-                    {{ cat.badge }}
-                  </span>
-                  <div
-                    :class="[
-                      'w-6 h-6 rounded-full flex items-center justify-center border text-xs transition',
-                      currentParticipant.run_category === cat.id
-                        ? 'bg-emerald-600 text-white border-emerald-600'
-                        : 'border-gray-300 text-transparent',
-                    ]"
-                  >
-                    <i class="fas fa-check"></i>
-                  </div>
-                </div>
-
-                <!-- Content -->
                 <div>
+                  <!-- Badge & Selector -->
+                  <div class="flex items-center justify-between mb-3">
+                    <span
+                      :class="[
+                        'text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full text-white bg-gradient-to-r shadow-sm',
+                        cat.color,
+                      ]"
+                    >
+                      <i :class="['fas mr-1', cat.icon]"></i> {{ cat.badge }}
+                    </span>
+                    <div
+                      :class="[
+                        'w-6 h-6 rounded-full flex items-center justify-center border text-xs transition font-bold',
+                        currentParticipant.run_category === cat.id
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : 'border-gray-300 text-transparent',
+                      ]"
+                    >
+                      <i class="fas fa-check"></i>
+                    </div>
+                  </div>
+
+                  <!-- Content -->
                   <div class="flex items-baseline justify-between">
                     <h4 class="text-2xl font-black tracking-tight text-emerald-700 dark:text-emerald-400">
                       {{ cat.id }}
                     </h4>
-                    <span class="text-lg font-bold text-gray-900 dark:text-gray-100">
-                      ₱{{ cat.fee }}
+                    <span class="text-xl font-black text-gray-900 dark:text-gray-100">
+                      ₱{{ cat.fee.toLocaleString() }}
                     </span>
                   </div>
 
-                  <p class="text-xs font-semibold text-gray-700 dark:text-gray-300 mt-1">
+                  <p class="text-xs font-bold text-gray-800 dark:text-gray-200 mt-1">
                     {{ cat.name }}
                   </p>
-                  <p class="text-[11px] text-gray-500 mt-2 line-clamp-2">
+                  
+                  <p class="text-[11px] italic text-emerald-700 dark:text-emerald-400 font-medium mt-1">
+                    "{{ cat.tagline }}"
+                  </p>
+
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1.5">
                     {{ cat.description }}
                   </p>
+
+                  <!-- Inclusions List -->
+                  <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700/60">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-2 flex items-center gap-1">
+                      <i class="fas fa-check-circle text-emerald-500"></i> Inclusions:
+                    </p>
+                    <ul class="space-y-1.5">
+                      <li
+                        v-for="(inc, incIdx) in cat.inclusions"
+                        :key="incIdx"
+                        class="text-[11px] text-gray-700 dark:text-gray-300 flex items-center gap-2"
+                      >
+                        <i class="fas fa-check text-emerald-500 text-[10px]"></i>
+                        <span>{{ inc }}</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
 
                 <!-- Gun Time -->
-                <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700/60 flex items-center justify-between text-[11px] text-gray-500">
-                  <span><i class="fas fa-flag-checkered mr-1"></i> Gun Time:</span>
-                  <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ cat.time }}</span>
+                <div class="mt-5 pt-3 border-t border-gray-200 dark:border-gray-700/60 flex items-center justify-between text-xs text-gray-500">
+                  <span class="font-medium"><i class="fas fa-flag-checkered mr-1 text-emerald-600"></i> Gun Time:</span>
+                  <span class="font-black text-emerald-600 dark:text-emerald-400">{{ cat.time }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SPECIAL PET RUN ADD-ON BANNER / CARD -->
+            <div
+              :class="[
+                'mt-6 rounded-3xl p-5 sm:p-6 border-2 transition-all duration-300 relative overflow-hidden',
+                currentParticipant.has_pet_addon
+                  ? 'border-sky-500 bg-sky-50/50 dark:bg-sky-950/40 ring-2 ring-sky-400/40 shadow-xl shadow-sky-500/10'
+                  : props.darkMode
+                  ? 'border-gray-700 bg-gray-800/40 hover:border-sky-500/50'
+                  : 'border-slate-200 bg-gradient-to-r from-sky-50/40 to-emerald-50/30 hover:border-sky-300',
+              ]"
+            >
+              <!-- Paw Watermark Background -->
+              <div class="absolute -right-6 -bottom-6 text-8xl text-sky-500/5 pointer-events-none">
+                <i class="fas fa-paw"></i>
+              </div>
+
+              <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white flex items-center justify-center text-xl shadow-md shadow-sky-500/20 shrink-0">
+                    <i class="fas fa-paw"></i>
+                  </div>
+
+                  <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-sky-500 text-white">
+                        Special Add-On
+                      </span>
+                      <h4 class="text-base font-black text-sky-950 dark:text-sky-300">
+                        {{ petAddonInfo.name }}
+                      </h4>
+                      <span class="text-xs font-bold text-sky-700 dark:text-sky-400">
+                        (Gun Time: {{ petAddonInfo.time }})
+                      </span>
+                    </div>
+
+                    <p class="text-xs italic text-sky-800 dark:text-sky-400 font-medium mt-0.5">
+                      "{{ petAddonInfo.tagline }}"
+                    </p>
+                    <p class="text-xs text-gray-600 dark:text-gray-300 mt-1 max-w-2xl">
+                      {{ petAddonInfo.description }}
+                    </p>
+
+                    <!-- Add-on Inclusions Pills -->
+                    <div class="mt-3 flex flex-wrap gap-2 text-[11px]">
+                      <span
+                        v-for="(inc, incIdx) in petAddonInfo.inclusions"
+                        :key="incIdx"
+                        class="px-2.5 py-1 rounded-lg bg-white/80 dark:bg-gray-800 border border-sky-200 dark:border-sky-800/80 text-sky-900 dark:text-sky-300 font-medium shadow-2xs flex items-center gap-1.5"
+                      >
+                        <i class="fas fa-paw text-sky-500 text-[10px]"></i>
+                        {{ inc }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Add-on Switch / Button -->
+                <div class="flex flex-col sm:flex-row md:flex-col items-end justify-center gap-2 shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-sky-200 dark:border-gray-700">
+                  <div class="text-right">
+                    <span class="text-xl font-black text-sky-700 dark:text-sky-400 block">
+                      +₱{{ petAddonInfo.fee.toLocaleString() }}
+                    </span>
+                    <span class="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Per Pet Runner</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    @click="currentParticipant.has_pet_addon = !currentParticipant.has_pet_addon"
+                    :class="[
+                      'px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2 shadow-sm cursor-pointer select-none',
+                      currentParticipant.has_pet_addon
+                        ? 'bg-sky-600 hover:bg-sky-700 text-white shadow-sky-600/30'
+                        : 'bg-white dark:bg-gray-800 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700 hover:bg-sky-50',
+                    ]"
+                  >
+                    <i :class="['fas', currentParticipant.has_pet_addon ? 'fa-check-circle' : 'fa-plus']"></i>
+                    <span>{{ currentParticipant.has_pet_addon ? 'Pet Run Added' : 'Add Pet Run' }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- EXPANDABLE PET COMPANION INFORMATION (WHEN ADD-ON IS ACTIVE) -->
+              <div
+                v-if="currentParticipant.has_pet_addon"
+                class="mt-5 pt-4 border-t border-sky-200 dark:border-sky-800/80"
+              >
+                <div class="flex items-center gap-2 mb-3">
+                  <i class="fas fa-id-badge text-sky-600"></i>
+                  <h5 class="text-xs font-bold uppercase tracking-wider text-sky-900 dark:text-sky-300">
+                    Pet Companion Information
+                  </h5>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Pet's Name *</label>
+                    <input
+                      v-model="currentParticipant.pet_name"
+                      placeholder="e.g. Milo / Barkley"
+                      :class="[
+                        'w-full px-3.5 py-2 rounded-xl border text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none',
+                        props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                      ]"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Pet Species / Type</label>
+                    <select
+                      v-model="currentParticipant.pet_type"
+                      :class="[
+                        'w-full px-3.5 py-2 rounded-xl border text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none',
+                        props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                      ]"
+                    >
+                      <option value="Dog">Dog 🐕</option>
+                      <option value="Cat">Cat 🐈</option>
+                      <option value="Other">Other Pet Companion</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Pet Breed</label>
+                    <input
+                      v-model="currentParticipant.pet_breed"
+                      placeholder="e.g. Golden Retriever / Aspin"
+                      :class="[
+                        'w-full px-3.5 py-2 rounded-xl border text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none',
+                        props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                      ]"
+                    />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Pet Bandana Size</label>
+                    <select
+                      v-model="currentParticipant.pet_bandana_size"
+                      :class="[
+                        'w-full px-3.5 py-2 rounded-xl border text-xs focus:ring-2 focus:ring-sky-500 focus:outline-none',
+                        props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                      ]"
+                    >
+                      <option value="Small">Small (Puppy / Small Breed / Cat)</option>
+                      <option value="Medium">Medium (Regular Breed / Beagle / Corgi)</option>
+                      <option value="Large">Large (Golden Retriever / Husky / Large)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="mt-3 p-3 rounded-xl bg-white/90 dark:bg-gray-800/90 border border-sky-200 dark:border-sky-900/60 flex items-start gap-2.5 text-xs text-gray-600 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    v-model="currentParticipant.pet_vaccinated"
+                    class="mt-0.5 accent-sky-600 rounded cursor-pointer"
+                    :id="'pet_vac_' + activeParticipantIndex"
+                  />
+                  <label :for="'pet_vac_' + activeParticipantIndex" class="cursor-pointer select-none">
+                    <strong>Pet Safety Assurance:</strong> I confirm my pet has updated anti-rabies vaccination, is friendly with other runners and pets, and will be kept on a leash at all times.
+                  </label>
                 </div>
               </div>
             </div>
@@ -605,7 +858,7 @@ const submitRegistration = () => {
                 Participant Classification
               </h3>
               <p class="text-xs text-gray-500 ml-9">
-                Select category affiliation for Lasallian discounts or registration tracking
+                Select category affiliation for university verification and payment options
               </p>
             </div>
 
@@ -614,38 +867,59 @@ const submitRegistration = () => {
               <div
                 @click="currentParticipant.participant_type = 'LSU Higher Education Unit Student'"
                 :class="[
-                  'rounded-2xl border p-4 transition-all duration-200 cursor-pointer',
+                  'rounded-2xl border p-4 transition-all duration-200 cursor-pointer text-left',
                   currentParticipant.participant_type === 'LSU Higher Education Unit Student'
-                    ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-sm ring-1 ring-emerald-500/30'
+                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm ring-1 ring-emerald-500/40'
                     : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800'
-                    : 'border-slate-200 bg-white hover:bg-slate-50',
+                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800 hover:border-gray-600'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-emerald-200',
                 ]"
               >
-                <div class="flex items-center justify-start gap-3 w-full text-left">
+                <div class="flex items-center gap-3.5 w-full">
+                  <div
+                    :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                      currentParticipant.participant_type === 'LSU Higher Education Unit Student'
+                        ? 'border-emerald-600 bg-emerald-600 shadow-sm shadow-emerald-600/30'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800',
+                    ]"
+                  >
+                    <div
+                      v-if="currentParticipant.participant_type === 'LSU Higher Education Unit Student'"
+                      class="w-2 h-2 rounded-full bg-white"
+                    ></div>
+                  </div>
                   <input
                     type="radio"
                     value="LSU Higher Education Unit Student"
                     v-model="currentParticipant.participant_type"
-                    class="w-4 h-4 shrink-0 accent-emerald-600"
+                    class="sr-only"
                   />
-                  <span class="font-bold text-sm text-gray-900 dark:text-gray-100 text-left">
-                    LSU Higher Education Unit Student (College)
-                  </span>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                      <span class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                        LSU Higher Education Unit Student (College)
+                      </span>
+                      <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                        Eligible for Add to Tuition
+                      </span>
+                    </div>
+                    <span class="text-xs text-gray-500 block mt-0.5">Enrolled College / Graduate School Students of La Salle University</span>
+                  </div>
                 </div>
 
                 <div
                   v-if="currentParticipant.participant_type === 'LSU Higher Education Unit Student'"
                   @click.stop
-                  class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pl-7 pt-3 border-t border-emerald-200 dark:border-gray-700"
+                  class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pl-8 pt-3.5 border-t border-emerald-200/80 dark:border-gray-700"
                 >
                   <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Course / Program</label>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Course / Program *</label>
                     <select
                       v-model="currentParticipant.college_course"
                       :class="[
-                        'w-full px-3 py-2 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                        props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                        'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                        props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                       ]"
                     >
                       <option value="">Select Course</option>
@@ -655,16 +929,19 @@ const submitRegistration = () => {
                       <option value="BSN">BS Nursing (BSN)</option>
                       <option value="BSBA">BS Business Administration (BSBA)</option>
                       <option value="BSA">BS Accountancy (BSA)</option>
+                      <option value="BSCrim">BS Criminology (BSCrim)</option>
+                      <option value="BSTM">BS Tourism Management (BSTM)</option>
+                      <option value="BSHM">BS Hospitality Management (BSHM)</option>
                     </select>
                   </div>
 
                   <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Year Level</label>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Year Level *</label>
                     <select
                       v-model="currentParticipant.college_year"
                       :class="[
-                        'w-full px-3 py-2 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                        props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                        'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                        props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                       ]"
                     >
                       <option value="">Select Year Level</option>
@@ -682,40 +959,61 @@ const submitRegistration = () => {
               <div
                 @click="currentParticipant.participant_type = 'LSU Basic Education Unit Student'"
                 :class="[
-                  'rounded-2xl border p-4 transition-all duration-200 cursor-pointer',
+                  'rounded-2xl border p-4 transition-all duration-200 cursor-pointer text-left',
                   currentParticipant.participant_type === 'LSU Basic Education Unit Student'
-                    ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-sm ring-1 ring-emerald-500/30'
+                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm ring-1 ring-emerald-500/40'
                     : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800'
-                    : 'border-slate-200 bg-white hover:bg-slate-50',
+                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800 hover:border-gray-600'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-emerald-200',
                 ]"
               >
-                <div class="flex items-center justify-start gap-3 w-full text-left">
+                <div class="flex items-center gap-3.5 w-full">
+                  <div
+                    :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                      currentParticipant.participant_type === 'LSU Basic Education Unit Student'
+                        ? 'border-emerald-600 bg-emerald-600 shadow-sm shadow-emerald-600/30'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800',
+                    ]"
+                  >
+                    <div
+                      v-if="currentParticipant.participant_type === 'LSU Basic Education Unit Student'"
+                      class="w-2 h-2 rounded-full bg-white"
+                    ></div>
+                  </div>
                   <input
                     type="radio"
                     value="LSU Basic Education Unit Student"
                     v-model="currentParticipant.participant_type"
-                    class="w-4 h-4 shrink-0 accent-emerald-600"
+                    class="sr-only"
                   />
-                  <span class="font-bold text-sm text-gray-900 dark:text-gray-100 text-left">
-                    LSU Basic Education Unit Student (Grade School / JHS / SHS)
-                  </span>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                      <span class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                        LSU Basic Education Unit Student (Grade School / JHS / SHS)
+                      </span>
+                      <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                        Eligible for Add to Tuition
+                      </span>
+                    </div>
+                    <span class="text-xs text-gray-500 block mt-0.5">Grade School, Junior High School, or Senior High School</span>
+                  </div>
                 </div>
 
                 <div
                   v-if="currentParticipant.participant_type === 'LSU Basic Education Unit Student'"
                   @click.stop
-                  class="mt-4 pl-7 pt-3 border-t border-emerald-200 dark:border-gray-700 max-w-md"
+                  class="mt-4 pl-8 pt-3.5 border-t border-emerald-200/80 dark:border-gray-700 max-w-md"
                 >
-                  <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Grade Level</label>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Grade Level *</label>
                   <select
                     v-model="currentParticipant.beu_grade"
                     :class="[
-                      'w-full px-3 py-2 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                      props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                      'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                     ]"
                   >
-                    <option value="">Select Grade</option>
+                    <option value="">Select Grade Level</option>
                     <option value="Pre-School">Pre-School</option>
                     <option value="Kinder 1">Kinder 1</option>
                     <option value="Kinder 2">Kinder 2</option>
@@ -739,45 +1037,72 @@ const submitRegistration = () => {
               <div
                 @click="currentParticipant.participant_type = 'Lasallian Partners'"
                 :class="[
-                  'rounded-2xl border p-4 transition-all duration-200 cursor-pointer',
+                  'rounded-2xl border p-4 transition-all duration-200 cursor-pointer text-left',
                   currentParticipant.participant_type === 'Lasallian Partners'
-                    ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-sm ring-1 ring-emerald-500/30'
+                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm ring-1 ring-emerald-500/40'
                     : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800'
-                    : 'border-slate-200 bg-white hover:bg-slate-50',
+                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800 hover:border-gray-600'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-emerald-200',
                 ]"
               >
-                <div class="flex items-center justify-start gap-3 w-full text-left">
+                <div class="flex items-center gap-3.5 w-full">
+                  <div
+                    :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                      currentParticipant.participant_type === 'Lasallian Partners'
+                        ? 'border-emerald-600 bg-emerald-600 shadow-sm shadow-emerald-600/30'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800',
+                    ]"
+                  >
+                    <div
+                      v-if="currentParticipant.participant_type === 'Lasallian Partners'"
+                      class="w-2 h-2 rounded-full bg-white"
+                    ></div>
+                  </div>
                   <input
                     type="radio"
                     value="Lasallian Partners"
                     v-model="currentParticipant.participant_type"
-                    class="w-4 h-4 shrink-0 accent-emerald-600"
+                    class="sr-only"
                   />
-                  <span class="font-bold text-sm text-gray-900 dark:text-gray-100 text-left">
-                    Lasallian Partners (Faculty / Personnel / Admin Staff)
-                  </span>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                      <span class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                        LSU Employees / Lasallian Partners (Faculty / Personnel / Admin Staff)
+                      </span>
+                      <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                        Eligible for Salary Deduction
+                      </span>
+                    </div>
+                    <span class="text-xs text-gray-500 block mt-0.5">Faculty, Staff, Administrators, and University Employees</span>
+                  </div>
                 </div>
 
                 <div
                   v-if="currentParticipant.participant_type === 'Lasallian Partners'"
                   @click.stop
-                  class="mt-4 pl-7 pt-3 border-t border-emerald-200 dark:border-gray-700 max-w-md"
+                  class="mt-4 pl-8 pt-3.5 border-t border-emerald-200/80 dark:border-gray-700 max-w-md"
                 >
-                  <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Center / Office / Department</label>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Center / Office / Department *</label>
                   <select
                     v-model="currentParticipant.partner_office"
                     :class="[
-                      'w-full px-3 py-2 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                      props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                      'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                     ]"
                   >
-                    <option value="">Select Office</option>
+                    <option value="">Select Office / Department</option>
                     <option value="Office of the Chancellor">Office of the Chancellor</option>
                     <option value="College of Computer Studies">College of Computer Studies</option>
+                    <option value="College of Arts and Sciences">College of Arts and Sciences</option>
+                    <option value="College of Business and Accountancy">College of Business and Accountancy</option>
+                    <option value="College of Education">College of Education</option>
+                    <option value="College of Nursing">College of Nursing</option>
+                    <option value="College of Law">College of Law</option>
                     <option value="General Services Office">General Services Office</option>
                     <option value="University Registrar">University Registrar</option>
                     <option value="Human Resource Center">Human Resource Center</option>
+                    <option value="Accounting Office">Accounting Office</option>
                   </select>
                 </div>
               </div>
@@ -786,39 +1111,55 @@ const submitRegistration = () => {
               <div
                 @click="currentParticipant.participant_type = 'Alumni'"
                 :class="[
-                  'rounded-2xl border p-4 transition-all duration-200 cursor-pointer',
+                  'rounded-2xl border p-4 transition-all duration-200 cursor-pointer text-left',
                   currentParticipant.participant_type === 'Alumni'
-                    ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-sm ring-1 ring-emerald-500/30'
+                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm ring-1 ring-emerald-500/40'
                     : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800'
-                    : 'border-slate-200 bg-white hover:bg-slate-50',
+                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800 hover:border-gray-600'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-emerald-200',
                 ]"
               >
-                <div class="flex items-center justify-start gap-3 w-full text-left">
+                <div class="flex items-center gap-3.5 w-full">
+                  <div
+                    :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                      currentParticipant.participant_type === 'Alumni'
+                        ? 'border-emerald-600 bg-emerald-600 shadow-sm shadow-emerald-600/30'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800',
+                    ]"
+                  >
+                    <div
+                      v-if="currentParticipant.participant_type === 'Alumni'"
+                      class="w-2 h-2 rounded-full bg-white"
+                    ></div>
+                  </div>
                   <input
                     type="radio"
                     value="Alumni"
                     v-model="currentParticipant.participant_type"
-                    class="w-4 h-4 shrink-0 accent-emerald-600"
+                    class="sr-only"
                   />
-                  <span class="font-bold text-sm text-gray-900 dark:text-gray-100 text-left">
-                    Lasallian Alumni
-                  </span>
+                  <div class="flex-1 min-w-0">
+                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
+                      Lasallian Alumni
+                    </span>
+                    <span class="text-xs text-gray-500 block mt-0.5">Graduates & Alumni of La Salle University / ICC</span>
+                  </div>
                 </div>
 
                 <div
                   v-if="currentParticipant.participant_type === 'Alumni'"
                   @click.stop
-                  class="mt-4 pl-7 pt-3 border-t border-emerald-200 dark:border-gray-700 max-w-md"
+                  class="mt-4 pl-8 pt-3.5 border-t border-emerald-200/80 dark:border-gray-700 max-w-md"
                 >
-                  <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Batch / Graduation Year</label>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Batch / Graduation Year</label>
                   <input
                     type="text"
                     v-model="currentParticipant.alumni_batch"
-                    placeholder="e.g. Batch 2018"
+                    placeholder="e.g. Batch 2018 / High School 2014"
                     :class="[
-                      'w-full px-3 py-2 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                      props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                      'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                     ]"
                   />
                 </div>
@@ -828,39 +1169,60 @@ const submitRegistration = () => {
               <div
                 @click="currentParticipant.participant_type = 'Non-LSU'"
                 :class="[
-                  'rounded-2xl border p-4 transition-all duration-200 cursor-pointer',
+                  'rounded-2xl border p-4 transition-all duration-200 cursor-pointer text-left',
                   currentParticipant.participant_type === 'Non-LSU'
-                    ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-sm ring-1 ring-emerald-500/30'
+                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm ring-1 ring-emerald-500/40'
                     : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800'
-                    : 'border-slate-200 bg-white hover:bg-slate-50',
+                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800 hover:border-gray-600'
+                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-emerald-200',
                 ]"
               >
-                <div class="flex items-center justify-start gap-3 w-full text-left">
+                <div class="flex items-center gap-3.5 w-full">
+                  <div
+                    :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                      currentParticipant.participant_type === 'Non-LSU'
+                        ? 'border-emerald-600 bg-emerald-600 shadow-sm shadow-emerald-600/30'
+                        : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800',
+                    ]"
+                  >
+                    <div
+                      v-if="currentParticipant.participant_type === 'Non-LSU'"
+                      class="w-2 h-2 rounded-full bg-white"
+                    ></div>
+                  </div>
                   <input
                     type="radio"
                     value="Non-LSU"
                     v-model="currentParticipant.participant_type"
-                    class="w-4 h-4 shrink-0 accent-emerald-600"
+                    class="sr-only"
                   />
-                  <span class="font-bold text-sm text-gray-900 dark:text-gray-100 text-left">
-                    Non-LSU Guest / Guest Runner / Running Club
-                  </span>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                      <span class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                        Non-LSU / Guest Runner / Running Club
+                      </span>
+                      <span class="text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-2 py-0.5 rounded-md">
+                        *Requires Valid ID Upload below
+                      </span>
+                    </div>
+                    <span class="text-xs text-gray-500 block mt-0.5">Open to public runners, community enthusiasts, and visiting teams</span>
+                  </div>
                 </div>
 
                 <div
                   v-if="currentParticipant.participant_type === 'Non-LSU'"
                   @click.stop
-                  class="mt-4 pl-7 pt-3 border-t border-emerald-200 dark:border-gray-700 max-w-md"
+                  class="mt-4 pl-8 pt-3.5 border-t border-emerald-200/80 dark:border-gray-700 max-w-md"
                 >
-                  <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Organization / Running Club / Company</label>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Organization / Running Club / Company</label>
                   <input
                     type="text"
                     v-model="currentParticipant.organization"
-                    placeholder="e.g. Ozamiz Striders Running Club"
+                    placeholder="e.g. Ozamiz Lifestyle Runners Club"
                     :class="[
-                      'w-full px-3 py-2 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                      props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                      'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                     ]"
                   />
                 </div>
@@ -882,48 +1244,48 @@ const submitRegistration = () => {
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">First Name *</label>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
                 <input
                   v-model="currentParticipant.firstname"
                   placeholder="Juan"
                   :class="[
                     'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                   ]"
                 />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Middle Name</label>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Middle Name</label>
                 <input
                   v-model="currentParticipant.middlename"
                   placeholder="Santos"
                   :class="[
                     'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                   ]"
                 />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Last Name *</label>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Last Name *</label>
                 <input
                   v-model="currentParticipant.lastname"
                   placeholder="Dela Cruz"
                   :class="[
                     'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                   ]"
                 />
               </div>
 
               <div>
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Suffix</label>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Suffix</label>
                 <select
                   v-model="currentParticipant.suffix"
                   :class="[
                     'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                   ]"
                 >
                   <option value="">None</option>
@@ -934,32 +1296,32 @@ const submitRegistration = () => {
                   <option value="IV">IV</option>
                 </select>
               </div>
-            </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <!-- Date of Birth (1/4 column) -->
               <div>
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Date of Birth *</label>
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Date of Birth *</label>
                 <input
                   type="date"
                   v-model="currentParticipant.birthdate"
                   :class="[
                     'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                   ]"
                 />
               </div>
 
+              <!-- Gender (1/4 column) -->
               <div>
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Gender *</label>
-                <div class="grid grid-cols-2 gap-3">
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Gender *</label>
+                <div class="grid grid-cols-2 gap-2">
                   <div
                     @click="currentParticipant.gender = 'Male'"
                     :class="[
-                      'flex items-center justify-center gap-2 p-2.5 rounded-xl border cursor-pointer font-semibold text-xs transition',
+                      'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
                       currentParticipant.gender === 'Male'
                         ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                         : props.darkMode
-                        ? 'bg-gray-800 border-gray-600 text-gray-300'
+                        ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
                         : 'bg-white border-gray-300 text-gray-700 hover:bg-slate-50',
                     ]"
                   >
@@ -970,11 +1332,11 @@ const submitRegistration = () => {
                   <div
                     @click="currentParticipant.gender = 'Female'"
                     :class="[
-                      'flex items-center justify-center gap-2 p-2.5 rounded-xl border cursor-pointer font-semibold text-xs transition',
+                      'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
                       currentParticipant.gender === 'Female'
                         ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                         : props.darkMode
-                        ? 'bg-gray-800 border-gray-600 text-gray-300'
+                        ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
                         : 'bg-white border-gray-300 text-gray-700 hover:bg-slate-50',
                     ]"
                   >
@@ -1052,15 +1414,20 @@ const submitRegistration = () => {
             </div>
           </section>
 
-          <!-- SECTION 5: VALID ID UPLOAD -->
-          <section>
+          <!-- SECTION 5: VALID ID UPLOAD - for non LSU only -->
+          <section v-if="currentParticipant.participant_type === 'Non-LSU'">
             <div class="mb-4">
-              <h3 class="text-lg font-bold flex items-center gap-2">
-                <span class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">5</span>
-                Valid ID Upload
-              </h3>
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-xl bg-amber-100 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xs font-black">5</span>
+                  Valid ID Upload
+                </h3>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                  Required for Non-LSU
+                </span>
+              </div>
               <p class="text-xs text-gray-500 ml-9">
-                Upload School ID or Government ID for identity verification
+                Upload Government ID or Valid ID for identity verification of Non-LSU runners
               </p>
             </div>
 
@@ -1078,7 +1445,7 @@ const submitRegistration = () => {
               >
                 <div v-if="!currentParticipant.validIdFrontPreview">
                   <i class="fas fa-id-card text-3xl text-emerald-500 mb-2"></i>
-                  <p class="text-xs font-bold mb-1">Upload ID Front</p>
+                  <p class="text-xs font-bold mb-1">Upload ID Front *</p>
                   <p class="text-[10px] text-gray-400 mb-3">PNG, JPG, or PDF up to 5MB</p>
                   <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer shadow-sm">
                     <i class="fas fa-upload"></i> Browse File
@@ -1125,7 +1492,7 @@ const submitRegistration = () => {
               >
                 <div v-if="!currentParticipant.validIdBackPreview">
                   <i class="fas fa-address-card text-3xl text-emerald-500 mb-2"></i>
-                  <p class="text-xs font-bold mb-1">Upload ID Back</p>
+                  <p class="text-xs font-bold mb-1">Upload ID Back (Optional)</p>
                   <p class="text-[10px] text-gray-400 mb-3">PNG, JPG, or PDF up to 5MB</p>
                   <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold cursor-pointer shadow-sm">
                     <i class="fas fa-upload"></i> Browse File
@@ -1161,74 +1528,63 @@ const submitRegistration = () => {
             </div>
           </section>
 
-          <!-- SECTION 6: RACE ADD-ONS -->
+          <!-- SECTION 6: T-SHIRT SIZE -->
           <section>
             <div class="mb-4">
-              <h3 class="text-lg font-bold flex items-center gap-2">
-                <span class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">6</span>
-                Race Add-ons & Merchandise
-              </h3>
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                  <span class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">6</span>
+                  Size Tshirt
+                </h3>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                  Selected: <span class="font-black">{{ currentParticipant.tshirt_size || 'M' }}</span>
+                </span>
+              </div>
               <p class="text-xs text-gray-500 ml-9">
-                Optional merchandise and personalized upgrades for Runner #{{ activeParticipantIndex + 1 }}
+                Select official event race shirt size for Runner #{{ activeParticipantIndex + 1 }} (Available from 3XS to 10XL)
               </p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div
-                v-for="addon in availableAddons"
-                :key="addon.id"
-                @click="toggleAddon(activeParticipantIndex, addon.id)"
+            <!-- Radio Button Group for Sizes from 3XS to 10XL -->
+            <div class="grid grid-cols-4 sm:grid-cols-8 gap-2.5">
+              <label
+                v-for="size in tshirtSizes"
+                :key="size"
+                @click="currentParticipant.tshirt_size = size"
                 :class="[
-                  'p-4 rounded-2xl border cursor-pointer transition-all duration-200 flex items-center justify-between',
-                  currentParticipant.selectedAddons.includes(addon.id)
-                    ? 'border-emerald-600 bg-emerald-50/40 dark:bg-emerald-950/30 shadow-sm ring-1 ring-emerald-500'
+                  'relative flex flex-col items-center justify-center p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
+                  currentParticipant.tshirt_size === size
+                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
                     : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800'
-                    : 'border-slate-200 bg-white hover:bg-slate-50',
+                    ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
+                    : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
                 ]"
               >
-                <div class="flex items-center gap-3">
-                  <div
-                    :class="[
-                      'w-10 h-10 rounded-xl flex items-center justify-center text-lg',
-                      currentParticipant.selectedAddons.includes(addon.id)
-                        ? 'bg-emerald-600 text-white'
-                        : props.darkMode
-                        ? 'bg-gray-700 text-gray-400'
-                        : 'bg-emerald-100 text-emerald-700',
-                    ]"
-                  >
-                    <i :class="['fas', addon.icon]"></i>
-                  </div>
+                <input
+                  type="radio"
+                  name="tshirt_size"
+                  :value="size"
+                  v-model="currentParticipant.tshirt_size"
+                  class="sr-only"
+                />
+                <i
+                  :class="[
+                    'fas fa-tshirt mb-1 text-sm transition',
+                    currentParticipant.tshirt_size === size
+                      ? 'text-white'
+                      : 'text-gray-400 group-hover:text-emerald-600',
+                  ]"
+                ></i>
+                <span class="text-xs font-bold">{{ size }}</span>
+              </label>
+            </div>
 
-                  <div>
-                    <h4 class="text-xs font-bold text-gray-900 dark:text-gray-100">
-                      {{ addon.name }}
-                    </h4>
-                    <p class="text-[11px] text-gray-500 mt-0.5">
-                      {{ addon.desc }}
-                    </p>
-                  </div>
-                </div>
-
-                <div class="text-right">
-                  <span class="text-sm font-bold text-emerald-700 dark:text-emerald-400">
-                    +₱{{ addon.fee }}
-                  </span>
-                  <div class="mt-1">
-                    <span
-                      :class="[
-                        'text-[10px] px-2 py-0.5 rounded-full font-bold',
-                        currentParticipant.selectedAddons.includes(addon.id)
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400',
-                      ]"
-                    >
-                      {{ currentParticipant.selectedAddons.includes(addon.id) ? 'Selected' : 'Add' }}
-                    </span>
-                  </div>
-                </div>
-              </div>
+            <!-- Size note -->
+            <div class="mt-3 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+              <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
+              <span>
+                {{ currentParticipant.has_pet_addon ? 'Includes official Event Shirt in your chosen size + Pet Owner\'s Shirt & Pet Bandana from the Pet Run add-on.' : currentParticipant.run_category === '20K' ? 'Includes both Event Shirt and Finisher Shirt in your chosen size.' : 'Includes official Animo Run Event Shirt in your chosen size.' }}
+              </span>
             </div>
           </section>
 
@@ -1253,8 +1609,11 @@ const submitRegistration = () => {
                 :key="i"
                 class="flex items-center justify-between font-medium"
               >
-                <span class="text-gray-600 dark:text-gray-400">{{ item.name }}</span>
-                <span class="font-bold text-gray-900 dark:text-gray-200">₱{{ item.amount }}</span>
+                <div>
+                  <span class="text-gray-700 dark:text-gray-300 font-semibold">{{ item.name }}</span>
+                  <span class="ml-2 text-[11px] text-emerald-600 dark:text-emerald-400">({{ item.shirt }})</span>
+                </div>
+                <span class="font-bold text-gray-900 dark:text-gray-100">₱{{ item.amount.toLocaleString() }}</span>
               </div>
             </div>
 
@@ -1267,88 +1626,329 @@ const submitRegistration = () => {
             </div>
 
             <!-- Payment Type Selection -->
-            <div class="space-y-3 mb-8">
+            <div class="space-y-4 mb-8">
               <label class="block text-xs font-bold uppercase tracking-wider text-gray-500">
                 Select Payment Option
               </label>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <!-- Salary Deduction Option -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- 1. LSU Employees - Salary Deduction -->
                 <div
                   @click="paymentType = 'salary_deduction'"
                   :class="[
-                    'p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 text-left justify-start',
+                    'p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between text-left relative',
                     paymentType === 'salary_deduction'
-                      ? 'border-emerald-600 bg-emerald-600/10 ring-2 ring-emerald-500/40'
+                      ? 'border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/40 ring-2 ring-emerald-500/40 shadow-sm'
                       : props.darkMode
-                      ? 'border-gray-700 bg-gray-800/40'
+                      ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600'
                       : 'border-slate-200 bg-white hover:bg-slate-50',
                   ]"
                 >
-                  <input
-                    type="radio"
-                    name="paymentType"
-                    value="salary_deduction"
-                    v-model="paymentType"
-                    class="mt-1 shrink-0 accent-emerald-600"
-                  />
-                  <div class="text-left">
-                    <span class="font-bold text-sm block">Via Salary Deduction</span>
-                    <span class="text-xs text-gray-500 block mt-0.5">
-                      Exclusive for LSU Faculty & Staff. Pending admin approval.
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                        LSU Employees
+                      </span>
+                      <div
+                        :class="[
+                          'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                          paymentType === 'salary_deduction'
+                            ? 'border-emerald-600 bg-emerald-600'
+                            : 'border-gray-300 dark:border-gray-600',
+                        ]"
+                      >
+                        <div v-if="paymentType === 'salary_deduction'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                      </div>
+                      <input
+                        type="radio"
+                        name="paymentType"
+                        value="salary_deduction"
+                        v-model="paymentType"
+                        class="sr-only"
+                      />
+                    </div>
+                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
+                      Salary Deduction
                     </span>
+                    <p class="text-xs text-gray-500 mt-1">
+                      Exclusive for LSU Faculty & Staff. Subject to HR & Payroll verification.
+                    </p>
                   </div>
                 </div>
 
-                <!-- Direct Payment Option -->
+                <!-- 2. LSU Students - Add to Tuition -->
                 <div
-                  @click="paymentType = 'direct_payment'"
+                  @click="paymentType = 'add_to_tuition'"
                   :class="[
-                    'p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 text-left justify-start',
-                    paymentType === 'direct_payment'
-                      ? 'border-emerald-600 bg-emerald-600/10 ring-2 ring-emerald-500/40'
+                    'p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between text-left relative',
+                    paymentType === 'add_to_tuition'
+                      ? 'border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/40 ring-2 ring-emerald-500/40 shadow-sm'
                       : props.darkMode
-                      ? 'border-gray-700 bg-gray-800/40'
+                      ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600'
                       : 'border-slate-200 bg-white hover:bg-slate-50',
                   ]"
                 >
-                  <input
-                    type="radio"
-                    name="paymentType"
-                    value="direct_payment"
-                    v-model="paymentType"
-                    class="mt-1 shrink-0 accent-emerald-600"
-                  />
-                  <div class="text-left">
-                    <span class="font-bold text-sm block">Via Direct Payment / Stripe</span>
-                    <span class="text-xs text-gray-500 block mt-0.5">
-                      Pay instantly using GCash, Maya, Credit Card, or Over-the-Counter.
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                        LSU Students
+                      </span>
+                      <div
+                        :class="[
+                          'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                          paymentType === 'add_to_tuition'
+                            ? 'border-emerald-600 bg-emerald-600'
+                            : 'border-gray-300 dark:border-gray-600',
+                        ]"
+                      >
+                        <div v-if="paymentType === 'add_to_tuition'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                      </div>
+                      <input
+                        type="radio"
+                        name="paymentType"
+                        value="add_to_tuition"
+                        v-model="paymentType"
+                        class="sr-only"
+                      />
+                    </div>
+                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
+                      Add to Tuition
                     </span>
+                    <p class="text-xs text-gray-500 mt-1">
+                      Billed directly to student school account & tuition ledger.
+                    </p>
                   </div>
                 </div>
-            </div>
+
+                <!-- 3. Non-LSU Payment -->
+                <div
+                  @click="paymentType = 'non_lsu_payment'"
+                  :class="[
+                    'p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between text-left relative',
+                    paymentType === 'non_lsu_payment'
+                      ? 'border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/40 ring-2 ring-emerald-500/40 shadow-sm'
+                      : props.darkMode
+                      ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600'
+                      : 'border-slate-200 bg-white hover:bg-slate-50',
+                  ]"
+                >
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
+                        Non-LSU / Guests
+                      </span>
+                      <div
+                        :class="[
+                          'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                          paymentType === 'non_lsu_payment'
+                            ? 'border-emerald-600 bg-emerald-600'
+                            : 'border-gray-300 dark:border-gray-600',
+                        ]"
+                      >
+                        <div v-if="paymentType === 'non_lsu_payment'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                      </div>
+                      <input
+                        type="radio"
+                        name="paymentType"
+                        value="non_lsu_payment"
+                        v-model="paymentType"
+                        class="sr-only"
+                      />
+                    </div>
+                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
+                      OTC / QR / Weekend Cash
+                    </span>
+                    <p class="text-xs text-gray-500 mt-1">
+                      Accounting OTC, QR Payment, or Cash at Ozamiz Lifestyle Runners.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- NON-LSU / GENERAL PAYMENT SUB-OPTIONS & DETAILS -->
+              <div
+                v-if="paymentType === 'non_lsu_payment'"
+                class="mt-4 p-5 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-200 dark:border-gray-700 space-y-4"
+              >
+                <div class="font-bold text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                  Select Non-LSU Payment Method:
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <!-- QR Payment -->
+                  <div
+                    @click="nonLsuPaymentMethod = 'qr_payment'"
+                    :class="[
+                      'p-3.5 rounded-xl border cursor-pointer transition text-xs font-semibold flex items-center gap-2.5',
+                      nonLsuPaymentMethod === 'qr_payment'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
+                    <div>
+                      <div class="font-bold">QR Payment Option</div>
+                      <div class="text-[10px] font-normal text-gray-500">GCash / Maya / Online Bank</div>
+                    </div>
+                  </div>
+
+                  <!-- Accounting OTC -->
+                  <div
+                    @click="nonLsuPaymentMethod = 'accounting_otc'"
+                    :class="[
+                      'p-3.5 rounded-xl border cursor-pointer transition text-xs font-semibold flex items-center gap-2.5',
+                      nonLsuPaymentMethod === 'accounting_otc'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
+                    <div>
+                      <div class="font-bold">Accounting OTC</div>
+                      <div class="text-[10px] font-normal text-gray-500">LSU Accounting Window</div>
+                    </div>
+                  </div>
+
+                  <!-- Weekend Cash -->
+                  <div
+                    @click="nonLsuPaymentMethod = 'weekend_cash'"
+                    :class="[
+                      'p-3.5 rounded-xl border cursor-pointer transition text-xs font-semibold flex items-center gap-2.5',
+                      nonLsuPaymentMethod === 'weekend_cash'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]"
+                  >
+                    <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
+                    <div>
+                      <div class="font-bold">Weekend Cash</div>
+                      <div class="text-[10px] font-normal text-gray-500">Ozamiz Lifestyle Runners Organizers</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Method Guidance -->
+                <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-xs">
+                  <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="flex items-start gap-3">
+                    <i class="fas fa-mobile-alt text-emerald-600 text-lg mt-0.5 shrink-0"></i>
+                    <div>
+                      <p class="font-bold text-gray-800 dark:text-gray-200">GCash / Maya / QR Payment</p>
+                      <p class="text-gray-500 dark:text-gray-400 text-[11px] mt-0.5">
+                        Scan or send payment for <strong>₱{{ grandTotal.toLocaleString() }}</strong> to LSU Animo Run Official Account:
+                        <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">0917-123-ANIMO (GCash / Maya)</span>.
+                        Please take a screenshot and upload your receipt below.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div v-else-if="nonLsuPaymentMethod === 'accounting_otc'" class="flex items-start gap-3">
+                    <i class="fas fa-cash-register text-emerald-600 text-lg mt-0.5 shrink-0"></i>
+                    <div>
+                      <p class="font-bold text-gray-800 dark:text-gray-200">LSU Accounting Office (Over-the-Counter)</p>
+                      <p class="text-gray-500 dark:text-gray-400 text-[11px] mt-0.5">
+                        Visit the LSU Accounting Office window (Mon-Fri 8:00 AM - 5:00 PM). State payment for <strong>Animo Run 2026</strong> and upload the official receipt slip below.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div v-else class="flex items-start gap-3">
+                    <i class="fas fa-map-pin text-emerald-600 text-lg mt-0.5 shrink-0"></i>
+                    <div>
+                      <p class="font-bold text-gray-800 dark:text-gray-200">CASH at Ozamiz Lifestyle Runner Organizers</p>
+                      <p class="text-gray-500 dark:text-gray-400 text-[11px] mt-0.5">
+                        Pay cash directly at the Ozamiz Lifestyle Runner Organizers booth every weekend during scheduled fun runs / meetups. Upload your organizer acknowledgement stub below.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- UPLOAD RECEIPT SECTION -->
+              <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 class="text-sm font-bold flex items-center gap-2 text-gray-900 dark:text-gray-100">
+                      <i class="fas fa-file-invoice-dollar text-emerald-600"></i>
+                      Upload Receipt / Proof of Payment
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                      Animo Run Admin will verify the Payment before issuing race bib and confirmation
+                    </p>
+                  </div>
+
+                  <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                    <i class="fas fa-shield-alt mr-1"></i> Admin Verification
+                  </span>
+                </div>
+
+                <!-- Receipt Dropzone -->
+                <div
+                  :class="[
+                    'rounded-2xl border-2 border-dashed p-4 text-center transition-all relative overflow-hidden',
+                    receiptPreview
+                      ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
+                      : props.darkMode
+                      ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
+                      : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
+                  ]"
+                >
+                  <div v-if="!receiptPreview">
+                    <i class="fas fa-cloud-upload-alt text-3xl text-emerald-500 mb-2"></i>
+                    <p class="text-xs font-bold mb-1">Upload Receipt or Deposit / Transfer Screenshot</p>
+                    <p class="text-[10px] text-gray-400 mb-3">PNG, JPG, or PDF up to 10MB</p>
+                    <label class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
+                      <i class="fas fa-upload"></i> Browse Receipt File
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        class="hidden"
+                        @change="handleReceiptUpload"
+                      />
+                    </label>
+                  </div>
+
+                  <div v-else class="relative group max-w-sm mx-auto">
+                    <img
+                      :src="receiptPreview"
+                      alt="Receipt Preview"
+                      class="h-40 w-full object-cover rounded-xl border shadow-sm"
+                    />
+                    <div class="mt-2 flex items-center justify-between text-xs">
+                      <span class="truncate max-w-[200px] font-medium text-emerald-600 dark:text-emerald-400">
+                        <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
+                      </span>
+                      <button
+                        type="button"
+                        @click="removeReceipt"
+                        class="px-2.5 py-1 bg-rose-500 text-white rounded-lg text-xs font-bold hover:bg-rose-600 transition cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Admin verification badge -->
+                <div class="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
+                  <i class="fas fa-user-check text-amber-600 text-base shrink-0"></i>
+                  <span>
+                    <strong>Verification Notice:</strong> Animo Run Admin will verify the Payment and validate your registration details before final approval.
+                  </span>
+                </div>
+              </div>
             </div>
 
             <!-- Submit / Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-4">
               <button
-                v-if="paymentType === 'direct_payment'"
-                type="button"
-                @click="redirectStripe"
-                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-indigo-600/20 transition-all flex items-center justify-center gap-2 text-base"
-              >
-                <i class="fas fa-credit-card"></i> Proceed to Stripe Payment (₱{{ grandTotal.toLocaleString() }})
-              </button>
-
-              <button
                 type="button"
                 @click="submitRegistration"
                 :disabled="isSubmitting"
-                class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 text-base"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 text-base cursor-pointer"
               >
-                <i v-if="!isSubmitting" class="fas fa-check-circle"></i>
-                <i v-else class="fas fa-spinner fa-spin"></i>
-                <span>{{ isSubmitting ? 'Submitting Registration...' : 'Confirm Registration' }}</span>
+                <i v-if="!isSubmitting" class="fas fa-check-circle text-lg"></i>
+                <i v-else class="fas fa-spinner fa-spin text-lg"></i>
+                <span>{{ isSubmitting ? 'Submitting Registration...' : 'Submit Registration (₱' + grandTotal.toLocaleString() + ')' }}</span>
               </button>
             </div>
           </section>
@@ -1360,6 +1960,11 @@ const submitRegistration = () => {
 </template>
 
 <style scoped>
+input[type="radio"],
+input[type="checkbox"] {
+  margin: 0 !important;
+}
+
 .scrollbar-thin::-webkit-scrollbar {
   height: 6px;
 }
