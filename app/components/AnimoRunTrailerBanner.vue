@@ -48,11 +48,11 @@
                 </h3>
 
                 <p
-                    class="mt-4 max-w-3xl text-sm leading-relaxed text-emerald-100 sm:text-base"
+                    class="mt-4 max-w-3xl text-sm lg:leading-relaxed text-emerald-100 sm:text-base"
                 >
                     Get ready for the new and improved registration system for
                     <strong class="text-white">
-                        Animo Run 2026 – The Emerald Run.
+                        Animo Run 2026: The Emerald Run.
                     </strong>
                 </p>
 

@@ -7,19 +7,24 @@
       <!-- Text -->
       <div>
         <p
-          class="text-sm font-bold uppercase tracking-[0.25em]
-          text-[#b08d2c]"
+          class="text-sm font-bold uppercase lg:tracking-[0.25em]
+          text-[#b08d2c] lg:ml-1"
         >
-          La Salle University Ozamiz
+          La Salle University Ozamiz, Inc.
         </p>
 
         <h2 class="mt-2 text-4xl font-black text-[#123b25] sm:text-5xl">
           LSU TUKIB <span class="text-[#c5a94e]">RESEARCH</span>
         </h2>
 
-        <p class="mt-2 font-semibold text-[#31533d]">
-          International Research Congress | Call For Papers October 1, 2026
+       <div class="lg:flex block mt-2">
+         <p class="font-semibold text-[#31533d] lg:pr-2 lg:border-r-2 lg:border-[#c5a94e]">
+          International Research Congress
         </p>
+        <p class="font-semibold text-[#31533d] lg:pl-2">
+           Call For Papers October 1, 2026
+        </p>
+       </div>
 
         <p class="mt-3 text-sm text-[#68766b]">
           Transforming Understanding Through Knowledge, Innovation, and
