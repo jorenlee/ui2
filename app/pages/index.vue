@@ -103,6 +103,11 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
     </section>
 
     <!-- ═══════════════════════════════════════
+         ANIMO RUN TRAILER B
+    ════════════════════════════════════════ -->
+<TUKIB/>
+    <AnimoRunTrailerBanner />
+    <!-- ═══════════════════════════════════════
          SUSTAINABILITY / SDGs
     ════════════════════════════════════════ -->
     <section id="sustainability" class="relative bg-slate-50 py-2">
