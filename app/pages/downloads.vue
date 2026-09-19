@@ -1,13 +1,20 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 
-const config = useRuntimeConfig();
-const endpoint = ref(config.public.apiUrl);
+const searchQuery = ref('');
+
+// Shared CMS content composable with in-memory caching & request de-duplication
+const { cachedList, fetchCmsList } = useCmsContent();
 
 const rawItems = ref([]);
 const loading = ref(true);
 const errorMsg = ref('');
-const searchQuery = ref('');
+
+// If cached data is available in memory, initialize instantly (0ms latency!)
+if (cachedList.value && Array.isArray(cachedList.value) && cachedList.value.length > 0) {
+    rawItems.value = cachedList.value;
+    loading.value = false;
+}
 
 // Helper to check if item is published
 const isPublished = (item) => {
@@ -27,12 +34,16 @@ const isDownloadsPost = (item) => {
     return filters.includes('downloads') || title.includes('downloads');
 };
 
-const fetchData = async () => {
-    loading.value = true;
+const fetchData = async (force = false) => {
+    if (!rawItems.value || rawItems.value.length === 0) {
+        loading.value = true;
+    }
     errorMsg.value = '';
     try {
-        const res = await $fetch(`${endpoint.value}/api/cms/content/list/`);
-        rawItems.value = Array.isArray(res) ? res : [];
+        const res = await fetchCmsList(force);
+        if (Array.isArray(res)) {
+            rawItems.value = res;
+        }
     } catch (err) {
         console.error('Error fetching CMS downloads:', err);
         errorMsg.value = 'Failed to load downloads data.';
@@ -41,7 +52,8 @@ const fetchData = async () => {
     }
 };
 
-onMounted(fetchData);
+// Initiate fetch immediately at script setup time (avoids waiting for DOM mount)
+fetchData();
 
 // Filter published posts with DOWNLOADS filter
 const publishedDownloadsPosts = computed(() => {
@@ -189,7 +201,7 @@ const filteredFiles = computed(() => {
                     <i class="fa fa-folder-open text-green-700 text-lg"></i>
                     <span>Available Files:</span>
                     <span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
-                        {{ downloadFiles.length }}
+                        {{ loading ? '...' : downloadFiles.length }}
                     </span>
                 </div>
 
@@ -204,15 +216,19 @@ const filteredFiles = computed(() => {
                 </div>
             </div>
 
-            <!-- Loading State -->
-            <div v-if="loading"
-                class="flex flex-col justify-center items-center py-16 bg-white rounded-xl shadow-sm border border-gray-200">
-                <svg class="animate-spin h-10 w-10 text-green-700 mb-3" xmlns="http://www.w3.org/2000/svg" fill="none"
-                    viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-                <p class="text-sm font-medium text-gray-600">Loading downloadable files...</p>
+            <!-- Skeleton Loading State -->
+            <div v-if="loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div v-for="n in 6" :key="n"
+                    class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 animate-pulse flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between gap-3 mb-3">
+                            <div class="h-4 w-12 bg-gray-200 rounded"></div>
+                            <div class="h-8 w-24 bg-gray-200 rounded-lg"></div>
+                        </div>
+                        <div class="h-4 bg-gray-200 rounded w-5/6 mb-2"></div>
+                        <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Error State -->
