@@ -1,4 +1,4 @@
-﻿<script setup>
+<script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { useAuth } from "~/composables/useAuth";
 
@@ -10,7 +10,30 @@ const props = defineProps({
 });
 
 const config = useRuntimeConfig();
-const endpoint = config?.public?.apiUrl || "";
+const endpoint = ref(config?.public?.apiUrl || "http://127.0.0.1:8000");
+if (!endpoint.value || endpoint.value.includes("buang_ka_eyy")) {
+  endpoint.value = "http://127.0.0.1:8000";
+}
+
+const toastModal = ref({
+  show: false,
+  title: "Validation Notice",
+  message: "",
+  type: "warning",
+});
+
+const showNotice = (message, title = "Validation Notice", type = "warning") => {
+  toastModal.value = {
+    show: true,
+    title,
+    message,
+    type,
+  };
+};
+
+const closeNotice = () => {
+  toastModal.value.show = false;
+};
 
 const { user, init } = useAuth();
 
@@ -111,6 +134,7 @@ const runCategories = [
 ];
 
 const tshirtSizes = [
+  "4XS",
   "3XS",
   "2XS",
   "XS",
@@ -122,11 +146,6 @@ const tshirtSizes = [
   "3XL",
   "4XL",
   "5XL",
-  "6XL",
-  "7XL",
-  "8XL",
-  "9XL",
-  "10XL",
 ];
 
 const createEmptyParticipant = (index = 1) => ({
@@ -310,15 +329,78 @@ const copyRunnerOneInfo = () => {
   p.lsu_id_number = r1.lsu_id_number;
 };
 
-const submitRegistration = () => {
+const isSuccessModalOpen = ref(false);
+const registrationResult = ref(null);
+
+const uploadSingleFile = async (file) => {
+  if (!file) return null;
+  const formData = new FormData();
+  formData.append("file", file);
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/upload/`, {
+      method: "POST",
+      body: formData,
+    });
+    return res.url;
+  } catch (err) {
+    console.warn("File upload to API failed or S3 unavailable:", err);
+    return null;
+  }
+};
+
+const resetForm = () => {
+  form_type.value = "Individual";
+  number_of_participants_per_group.value = 1;
+  activeParticipantIndex.value = 0;
+  participants.value = [createEmptyParticipant(1)];
+  receiptFile.value = null;
+  receiptPreview.value = null;
+  isSuccessModalOpen.value = false;
+  registrationResult.value = null;
+};
+
+const submitRegistration = async () => {
+  // Validate participant name & contact
+  for (let i = 0; i < participants.value.length; i++) {
+    const p = participants.value[i];
+    if (!p.firstname?.trim() || !p.lastname?.trim()) {
+      showNotice(
+        `Please provide the First Name and Last Name for Runner #${i + 1}.`,
+        "Participant Name Required",
+        "warning"
+      );
+      activeParticipantIndex.value = i;
+      return;
+    }
+    if (!p.contact_number?.trim()) {
+      showNotice(
+        `Please provide a valid Contact Number for Runner #${i + 1}.`,
+        "Contact Number Required",
+        "warning"
+      );
+      activeParticipantIndex.value = i;
+      return;
+    }
+    if (!p.contact_email?.trim() && !user?.value?.email) {
+      showNotice(
+        `Please provide an Email Address for Runner #${i + 1} to receive your confirmation receipt.`,
+        "Email Address Required",
+        "warning"
+      );
+      activeParticipantIndex.value = i;
+      return;
+    }
+  }
+
   // Validate non-LSU ID upload
   const hasNonLsuWithoutId = participants.value.some(
     (p) => p.participant_type === "Non-LSU" && !p.validIdFront
   );
-
   if (hasNonLsuWithoutId) {
-    alert(
-      "⚠️ Please upload a Valid ID for Non-LSU participant(s) before submitting."
+    showNotice(
+      "Please upload a Valid ID (Front) for Non-LSU participant(s) before submitting.",
+      "Valid ID Required",
+      "warning"
     );
     return;
   }
@@ -328,8 +410,10 @@ const submitRegistration = () => {
     (p) => p.run_category === "1K" && !p.pet_name?.trim()
   );
   if (hasPetWithoutName) {
-    alert(
-      "🐾 Please provide your Pet's Name for the 1K Emerald Paws Pet Run category."
+    showNotice(
+      "Please provide your Pet's Name for the 1K Emerald Paws Pet Run category.",
+      "Pet Name Required",
+      "warning"
     );
     return;
   }
@@ -339,8 +423,10 @@ const submitRegistration = () => {
     (p) => p.run_category === "1K" && !p.pet_vaccinated
   );
   if (hasPetWithoutVaccine) {
-    alert(
-      "🐾 Please confirm the Pet Safety and Anti-Rabies Vaccination assurance for the 1K Pet Run."
+    showNotice(
+      "Please confirm the Pet Safety and Anti-Rabies Vaccination assurance for the 1K Pet Run.",
+      "Pet Safety Assurance Required",
+      "warning"
     );
     return;
   }
@@ -348,42 +434,157 @@ const submitRegistration = () => {
   // Validate LSU ID Number for salary deduction / add to tuition
   if (paymentType.value === "salary_deduction") {
     if (!currentParticipant.value.lsu_id_number?.trim()) {
-      alert(
-        "⚠️ Please provide your LSU Employee ID Number for Salary Deduction verification."
+      showNotice(
+        "Please provide your LSU Employee ID Number for Salary Deduction verification.",
+        "LSU Employee ID Required",
+        "warning"
       );
       return;
     }
   } else if (paymentType.value === "add_to_tuition") {
     if (!currentParticipant.value.lsu_id_number?.trim()) {
-      alert(
-        "⚠️ Please provide your LSU Student ID Number for Add to Tuition verification."
+      showNotice(
+        "Please provide your LSU Student ID Number for Add to Tuition verification.",
+        "LSU Student ID Required",
+        "warning"
       );
       return;
     }
   } else if (paymentType.value === "non_lsu_payment") {
     if (!receiptFile.value) {
-      alert("⚠️ Please upload your proof of payment / receipt before submitting.");
+      showNotice(
+        "Please upload your proof of payment or deposit transfer screenshot before submitting.",
+        "Payment Receipt Required",
+        "warning"
+      );
       return;
     }
   }
 
   isSubmitting.value = true;
-  setTimeout(() => {
-    isSubmitting.value = false;
-    if (paymentType.value === "salary_deduction") {
-      alert(
-        "✅ Animo Run registration submitted successfully!\nYour salary deduction request has been submitted to LSU HR & Accounting for payroll processing."
-      );
-    } else if (paymentType.value === "add_to_tuition") {
-      alert(
-        "✅ Animo Run registration submitted successfully!\nYour registration fee has been submitted to the LSU Accounting Office to be charged to your student tuition account."
-      );
-    } else {
-      alert(
-        "✅ Animo Run registration submitted successfully!\nAnimo Run Admin will verify your payment and send your official confirmation receipt."
-      );
+
+  try {
+    // 1. Upload receipt file if present
+    let receiptUrl = "";
+    if (receiptFile.value) {
+      receiptUrl = await uploadSingleFile(receiptFile.value);
     }
-  }, 1000);
+
+    // 2. Upload participant valid IDs if present
+    for (const p of participants.value) {
+      if (p.validIdFront instanceof File) {
+        p.valid_id_front_url = await uploadSingleFile(p.validIdFront);
+      }
+      if (p.validIdBack instanceof File) {
+        p.valid_id_back_url = await uploadSingleFile(p.validIdBack);
+      }
+      if (!p.contact_email?.trim() && user?.value?.email) {
+        p.contact_email = user.value.email;
+      }
+    }
+
+    // 3. Prepare payload and dispatch to Django API
+    const effectivePaymentType =
+      paymentType.value === "non_lsu_payment"
+        ? nonLsuPaymentMethod.value || "qr_payment"
+        : paymentType.value;
+
+    let res;
+    if (form_type.value === "Group") {
+      const payload = {
+        participants: participants.value.map((p) => ({
+          firstname: p.firstname,
+          middlename: p.middlename,
+          lastname: p.lastname,
+          suffix: p.suffix,
+          run_category: p.run_category,
+          participant_type: p.participant_type,
+          lsu_id_number: p.lsu_id_number,
+          birthdate: p.birthdate,
+          gender: p.gender,
+          contact_number: p.contact_number,
+          contact_email: p.contact_email || user?.value?.email || "",
+          contact_address: p.contact_address,
+          college_course: p.college_course,
+          college_year: p.college_year,
+          beu_grade: p.beu_grade,
+          partner_office: p.partner_office,
+          alumni_batch: p.alumni_batch,
+          organization: p.organization,
+          tshirt_size: p.tshirt_size,
+          pet_name: p.pet_name,
+          pet_type: p.pet_type,
+          pet_breed: p.pet_breed,
+          pet_bandana_size: p.pet_bandana_size,
+          pet_vaccinated: p.pet_vaccinated,
+          valid_id_front: p.valid_id_front_url ? [{ name: "ID Front", url: p.valid_id_front_url }] : [],
+          valid_id_back: p.valid_id_back_url ? [{ name: "ID Back", url: p.valid_id_back_url }] : [],
+        })),
+        form_type: "Group",
+        payment_type: effectivePaymentType,
+        proof_of_payment: receiptUrl || "",
+        grand_total_payment: grandTotal.value,
+        detail_fees: itemizedFees.value,
+      };
+
+      res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
+        method: "POST",
+        body: payload,
+      });
+    } else {
+      const p = participants.value[0];
+      const payload = {
+        firstname: p.firstname,
+        middlename: p.middlename,
+        lastname: p.lastname,
+        suffix: p.suffix,
+        run_category: p.run_category,
+        participant_type: p.participant_type,
+        lsu_id_number: p.lsu_id_number,
+        birthdate: p.birthdate,
+        gender: p.gender,
+        contact_number: p.contact_number,
+        contact_email: p.contact_email || user?.value?.email || "",
+        contact_address: p.contact_address,
+        college_course: p.college_course,
+        college_year: p.college_year,
+        beu_grade: p.beu_grade,
+        partner_office: p.partner_office,
+        alumni_batch: p.alumni_batch,
+        organization: p.organization,
+        tshirt_size: p.tshirt_size,
+        pet_name: p.pet_name,
+        pet_type: p.pet_type,
+        pet_breed: p.pet_breed,
+        pet_bandana_size: p.pet_bandana_size,
+        pet_vaccinated: p.pet_vaccinated,
+        form_type: "Individual",
+        payment_type: effectivePaymentType,
+        proof_of_payment: receiptUrl || "",
+        grand_total_payment: grandTotal.value,
+        detail_fees: itemizedFees.value,
+        valid_id_front: p.valid_id_front_url ? [{ name: "ID Front", url: p.valid_id_front_url }] : [],
+        valid_id_back: p.valid_id_back_url ? [{ name: "ID Back", url: p.valid_id_back_url }] : [],
+      };
+
+      res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
+        method: "POST",
+        body: payload,
+      });
+    }
+
+    registrationResult.value = res;
+    isSuccessModalOpen.value = true;
+  } catch (error) {
+    console.error("Registration submission error:", error);
+    showNotice(
+      "We were unable to process your registration. Please check your network connection or try again in a few moments.",
+      "Submission Error",
+      "error"
+    );
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 </script>
 
@@ -1187,15 +1388,15 @@ const submitRegistration = () => {
           </section>
 
           <!-- SECTION 3: PERSONAL INFORMATION -->
-          <section v-if="currentParticipant.run_category !== '1K'">
+          <section>
             <div class="mb-4">
               <h3 class="text-lg font-bold flex items-center gap-2">
                 <span
                   class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">3</span>
-                Personal Information
+                <span>{{ currentParticipant.run_category === '1K' ? 'Pet Owner / Runner Personal Information' : 'Personal Information' }}</span>
               </h3>
               <p class="text-xs text-gray-500 ml-9">
-                Personal details for Runner #{{ activeParticipantIndex + 1 }}
+                {{ currentParticipant.run_category === '1K' ? 'Personal details of the pet owner / runner' : `Personal details for Runner #${activeParticipantIndex + 1}` }}
               </p>
             </div>
 
@@ -1298,10 +1499,8 @@ const submitRegistration = () => {
               </p>
             </div>
 
-            <div class="flex w-full gap-4 lg:px-10 px-3">
-              
-
-              <div class="w-full" v-if="paymentType === 'non_lsu_payment'">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="w-full">
                 <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Email Address *</label>
                 <div class="relative">
                   <span class="absolute left-3.5 top-3 text-xs text-gray-400">
@@ -1459,7 +1658,7 @@ const submitRegistration = () => {
             </div>
 
             <!-- Radio Button Group for Sizes from 3XS to 10XL -->
-            <div class="grid grid-cols-4 sm:grid-cols-8 gap-2.5">
+            <div class="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
               <label v-for="size in tshirtSizes" :key="size" @click="currentParticipant.tshirt_size = size" :class="[
                 'relative flex flex-col items-center justify-center p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
                 currentParticipant.tshirt_size === size
@@ -1850,11 +2049,7 @@ const submitRegistration = () => {
                     <div>
                       <p class="font-bold text-gray-800 dark:text-gray-200">GCash / Maya / QR Payment</p>
                       <p class="text-gray-500 dark:text-gray-400 text-[11px] mt-0.5">
-                        Scan or send payment for <strong>₱{{ grandTotal.toLocaleString() }}</strong> to LSU Animo Run
-                        Official Account:
-                        <span class="font-mono font-bold text-emerald-600 dark:text-emerald-400">0917-123-ANIMO (GCash /
-                          Maya)</span>.
-                        Please take a screenshot and upload your receipt below.
+                        Scan or send payment for <strong>₱{{ grandTotal.toLocaleString() }}</strong> to LSU Animo Run Official Account. Please take a screenshot and upload your receipt below.
                       </p>
                     </div>
                   </div>
@@ -1877,7 +2072,7 @@ const submitRegistration = () => {
                       </p>
                       <p class="text-gray-500 dark:text-gray-400 text-[11px] mt-0.5">
                         Pay cash directly at the Ozamiz Lifestyle Runner Organizers booth every weekend during scheduled
-                        fun runs / meetups. Upload your organizer acknowledgement stub below.
+                        fun runs / meetups. Upload your organizer acknowledgment receipt below.
                       </p>
                     </div>
                   </div>
@@ -1914,7 +2109,7 @@ const submitRegistration = () => {
                     <div v-if="!receiptPreview">
                       <i class="fas fa-cloud-upload-alt text-3xl text-emerald-500 mb-2"></i>
                       <p class="text-xs font-bold mb-1">Upload Receipt or Deposit / Transfer Screenshot</p>
-                      <p class="text-[10px] text-gray-400 mb-3">PNG, JPG, or PDF up to 10MB</p>
+                      <p class="text-[10px] text-gray-400 mb-3">PNG, JPG, or PDF up to 1MB</p>
                       <label
                         class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
                         <i class="fas fa-upload"></i> Browse Receipt File
@@ -1962,6 +2157,153 @@ const submitRegistration = () => {
             </div>
           </section>
 
+        </div>
+      </div>
+    </div>
+
+    <!-- SUCCESS CONFIRMATION MODAL -->
+    <div
+      v-if="isSuccessModalOpen"
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+    >
+      <div
+        :class="[
+          'w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border transition-all text-center space-y-5',
+          props.darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-gray-800'
+        ]"
+      >
+        <div class="w-20 h-20 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-3xl shadow-inner">
+          <i class="fas fa-check"></i>
+        </div>
+
+        <div>
+          <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+            Registration Successful
+          </span>
+          <h2 class="text-2xl font-black mt-2">
+            Registration Submitted!
+          </h2>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            {{ form_type === 'Group' ? `Successfully registered ${number_of_participants_per_group} runner(s).` : `Thank you, ${participants[0].firstname}! Your registration has been received.` }}
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-left text-xs space-y-2.5">
+          <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
+            <i class="fas fa-envelope-circle-check text-emerald-600 text-base"></i>
+            <span>Confirmation Receipt Sent!</span>
+          </div>
+          <p class="text-emerald-700 dark:text-emerald-400">
+            A confirmation receipt with your registration details and payment instructions has been sent to:
+          </p>
+          <div class="bg-white dark:bg-gray-900 px-3.5 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs flex items-center justify-between shadow-sm">
+            <div class="flex items-center gap-2 font-medium">
+              <i class="fas fa-envelope text-emerald-600"></i>
+              <span>{{ participants[0].contact_email || user?.email }}</span>
+            </div>
+            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md font-semibold">Sent</span>
+          </div>
+          <p class="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 italic">
+            * An official copy has also been sent to <strong>animorun@lsu.edu.ph</strong> for event records.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-gray-900/50 border border-slate-200 dark:border-gray-700 text-left text-xs space-y-1.5 text-gray-600 dark:text-gray-300">
+          <p class="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
+            <i class="fas fa-info-circle text-emerald-600"></i> Next Steps & Verification:
+          </p>
+          <p v-if="paymentType === 'salary_deduction'">
+            • Your salary deduction authorization will be verified by LSU HR & Accounting for payroll processing.
+          </p>
+          <p v-else-if="paymentType === 'add_to_tuition'">
+            • Your registration fee will be billed to your LSU student account by the LSU Accounting Office.
+          </p>
+          <p v-else>
+            • The Animo Run Committee will verify your uploaded payment receipt.
+          </p>
+          <p class="text-gray-500 dark:text-gray-400 pt-1">
+            Once verified by the event admin, you will receive your <strong>Official Race Confirmation Email</strong> containing your assigned bib number and kit claiming instructions.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          @click="resetForm"
+          class="w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition cursor-pointer flex items-center justify-center gap-2"
+        >
+          <i class="fas fa-check"></i> Done & Register Another Runner
+        </button>
+      </div>
+    </div>
+
+    <!-- TOAST / VALIDATION NOTIFICATION MODAL (REPLACES BROWSER ALERT) -->
+    <div
+      v-if="toastModal.show"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      @click.self="closeNotice"
+    >
+      <div
+        :class="[
+          'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+          props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+        ]"
+      >
+        <div
+          :class="[
+            'absolute top-0 left-0 right-0 h-1.5',
+            toastModal.type === 'error'
+              ? 'bg-rose-500'
+              : toastModal.type === 'success'
+              ? 'bg-emerald-500'
+              : 'bg-amber-500'
+          ]"
+        ></div>
+
+        <div
+          :class="[
+            'w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-sm mt-2',
+            toastModal.type === 'error'
+              ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400'
+              : toastModal.type === 'success'
+              ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400'
+              : 'bg-amber-100 text-amber-600 dark:bg-amber-950/80 dark:text-amber-400'
+          ]"
+        >
+          <i
+            :class="[
+              toastModal.type === 'error'
+                ? 'fas fa-exclamation-circle'
+                : toastModal.type === 'success'
+                ? 'fas fa-check-circle'
+                : 'fas fa-exclamation-triangle'
+            ]"
+          ></i>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-black tracking-tight">
+            {{ toastModal.title }}
+          </h3>
+          <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 leading-relaxed whitespace-pre-line px-2">
+            {{ toastModal.message }}
+          </p>
+        </div>
+
+        <div class="pt-2">
+          <button
+            type="button"
+            @click="closeNotice"
+            :class="[
+              'w-full py-3 px-5 rounded-2xl font-bold text-xs transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 text-white',
+              toastModal.type === 'error'
+                ? 'bg-rose-600 hover:bg-rose-700'
+                : toastModal.type === 'success'
+                ? 'bg-emerald-600 hover:bg-emerald-700'
+                : 'bg-amber-600 hover:bg-amber-700'
+            ]"
+          >
+            <span>Understood</span>
+          </button>
         </div>
       </div>
     </div>

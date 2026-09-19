@@ -96,8 +96,8 @@ const quickLinks = [
             </div>
 
             <!-- Address -->
-            <p class="text-xs sm:text-sm text-emerald-100/90 lg:tracking-normal tracking-tighter leading-relaxed max-w-xl mx-auto lg:mx-0 mb-4 lg:flex items-center justify-center lg:justify-start gap-2">
-              <i class="fas fa-map-marker-alt text-emerald-400 text-xs shrink-0 mr-1"></i>
+            <p class="lg:text-xs text-[16px] text-emerald-100/90 my-4 lg:flex items-center justify-center lg:justify-start">
+              <i class="fas fa-map-marker-alt text-emerald-400 text-xs shrink-0 mr-2"></i>
               <span>La Salle St. Aguada, Ozamiz City, Misamis Occidental, Philippines 7200</span>
             </p>
 

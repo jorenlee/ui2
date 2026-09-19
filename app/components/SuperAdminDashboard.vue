@@ -33,7 +33,8 @@ const openGroups = ref([
   "External Links",
   "General Services Office",
   "Lasalle Alumni Association",
-  "Animo Run",
+  "Animo Run Admin",
+  "Animo Run Participant",
   "Super Admin",
   "Juris Doctor Admin",
   "Juris Doctor Examinee",
@@ -52,7 +53,7 @@ const openGroups = ref([
 // these groups are hidden from non-@lsu.edu.ph accounts.
 // Using a Set for O(1) lookups instead of Array.includes O(n).
 const lsuOnlyMenuGroups = new Set([
-  "Animo Run",
+  "Animo Run Admin",
   "External Links",
   "Lasalle Alumni Association",
   "Commission on Election",
@@ -158,15 +159,22 @@ const filteredMenuList = computed(() => {
   // role grant — it's a narrowing check, not a way to bypass the role
   // requirement.
   const roleFiltered = subMenuList.filter((menu) => {
-    // IT Services Feedback is open to any @gmail.com or @lsu.edu.ph account,
+    // IT Services Feedback & Animo Run Participant are open to any @gmail.com or @lsu.edu.ph account,
     // regardless of what's set in Role Permissions.
-    if (menu.group === "IT Services Feedback") {
+    if (
+      menu.group === "IT Services Feedback" ||
+      menu.group === "Animo Run Participant"
+    ) {
       return (
         email?.endsWith("@gmail.com") || email?.endsWith("@lsu.edu.ph")
       );
     }
 
-    if (!menu.allowedRole || !roles.includes(menu.allowedRole)) return false;
+    const hasRole = Array.isArray(menu.allowedRole)
+      ? menu.allowedRole.some((r) => roles.includes(r))
+      : roles.includes(menu.allowedRole);
+
+    if (!menu.allowedRole || !hasRole) return false;
 
     if (lsuOnlyMenuGroups.has(menu.group) && !email?.endsWith("@lsu.edu.ph")) {
       return false;
@@ -181,8 +189,8 @@ const filteredMenuList = computed(() => {
 // ---------------- MENU ----------------
 const subMenuList = [
   {
-    group: "Animo Run",
-    allowedRole: "Animo Run",
+    group: "Animo Run Admin",
+    allowedRole: ["Animo Run Admin", "Animo Run"],
     items: [
       {
         label: "Registration",
@@ -195,6 +203,18 @@ const subMenuList = [
         icon: "fa-list",
         type: "button",
         view: "ViewAnimoRunList",
+      },
+    ],
+  },
+  {
+    group: "Animo Run Participant",
+    allowedRole: ["Animo Run Participant", "Animo Run"],
+    items: [
+      {
+        label: "Registration",
+        icon: "fa-running",
+        type: "button",
+        view: "ViewAnimoRunRegistration",
       },
     ],
   },

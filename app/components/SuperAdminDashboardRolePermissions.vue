@@ -129,6 +129,8 @@ const availableRoles = [
   "Registrar Menu",
   "Campus Pass Admin",
   "DRS Admin",
+  "Animo Run Admin",
+  "Animo Run Participant",
   "Animo Run",
   "Commission on Election",
   "Commission on Election BEU",
