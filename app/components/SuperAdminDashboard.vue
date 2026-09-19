@@ -206,18 +206,18 @@ const subMenuList = [
       },
     ],
   },
-  {
-    group: "Animo Run Participant",
-    allowedRole: ["Animo Run Participant", "Animo Run"],
-    items: [
-      {
-        label: "Registration",
-        icon: "fa-running",
-        type: "button",
-        view: "ViewAnimoRunRegistration",
-      },
-    ],
-  },
+  // {
+  //   group: "Animo Run Participant",
+  //   allowedRole: ["Animo Run Participant", "Animo Run"],
+  //   items: [
+  //     {
+  //       label: "Registration",
+  //       icon: "fa-running",
+  //       type: "button",
+  //       view: "ViewAnimoRunRegistration",
+  //     },
+  //   ],
+  // },
   {
     group: "Commission on Election",
     allowedRole: "Commission on Election",
