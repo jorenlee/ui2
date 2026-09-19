@@ -392,6 +392,7 @@ const sortOptions = [
 // Filter options
 const filterOptions = [
   { value: "", label: "All Contents" },
+  { value: "downloads", label: "Downloads" },
   { value: "news highlight", label: "News Highlight" },
   { value: "news", label: "News" },
   { value: "events", label: "Events" },

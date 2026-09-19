@@ -87,15 +87,30 @@ const downloadFiles = computed(() => {
 
         if (Array.isArray(post.links)) {
             post.links.forEach((link, idx) => {
+                let linkUrl = '';
+                let linkTitle = '';
+
                 if (typeof link === 'string' && link.trim()) {
+                    linkUrl = link.trim();
+                } else if (link && typeof link === 'object') {
+                    linkUrl = link.url || link.link || '';
+                    linkTitle = link.title || link.name || '';
+                }
+
+                if (linkUrl) {
+                    const baseTitle = linkTitle || post.title || `External Reference ${idx + 1}`;
+                    const displayTitle = (Array.isArray(post.links) && post.links.length > 1 && !linkTitle && post.title)
+                        ? `${baseTitle} (${idx + 1})`
+                        : baseTitle;
+
                     list.push({
                         id: `${post.id}-link-${idx}`,
-                        fileName: link,
-                        title: `External Reference ${idx + 1}`,
+                        fileName: linkUrl,
+                        title: displayTitle,
                         postTitle: post.title || 'Downloads',
                         author: post.authors || post.personnel || 'LSU Administration',
                         date: post.date || (post.created_at ? post.created_at.split('T')[0] : ''),
-                        url: link,
+                        url: linkUrl,
                         ext: 'link',
                         type: 'link',
                     });
