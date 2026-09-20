@@ -1,7 +1,7 @@
 <template>
-  <section class="relative overflow-hidden bg-[#f7f4ec] px-6 py-12">
+  <section class="relative overflow-hidden bg-[#f7f4ec] lg:py-24 py-12">
     <div
-      class="mx-auto flex max-w-6xl flex-col items-center justify-between
+      class="mx-auto flex lg:w-9/12 flex-col items-center justify-between
       gap-8 text-center md:flex-row md:text-left"
     >
       <!-- Text -->
@@ -26,8 +26,8 @@
         </p>
        </div>
 
-        <p class="mt-3 text-sm text-[#68766b]">
-          Transforming Understanding Through Knowledge, Innovation, and
+        <p class="mt-3 text-sm text-[#68766b] lg:w-full w-8/12 mx-auto">
+          Transforming Understanding Knowledge, Innovation, and
           Breakthroughs.
         </p>
       </div>

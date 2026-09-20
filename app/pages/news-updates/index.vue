@@ -11,8 +11,19 @@ import _ from "lodash";
 import moment from "moment";
 
 const display = ref("desktop");
-const info = ref([]);
-const loading = ref(true);
+const config = useRuntimeConfig();
+
+// Fetch news & updates using useAsyncData for instant SSR & fast client caching
+const { data: rawInfo, pending: loading } = useAsyncData(
+  "cms-content-list",
+  () => $fetch(`${config.public.apiUrl}/api/cms/content/list/`),
+  {
+    lazy: true,
+    default: () => [],
+  }
+);
+
+const info = computed(() => (Array.isArray(rawInfo.value) ? rawInfo.value : []));
 const errorMsg = ref("");
 
 // Filter states
@@ -22,7 +33,6 @@ const selectedMonth = ref("");
 
 // Scroll to top button
 const showScrollButton = ref(false);
-const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
 const handleScroll = () => {
@@ -261,16 +271,6 @@ const getCategoryLabel = (item) => {
 };
 
 onMounted(async () => {
-  try {
-    const res = await $fetch(endpoint.value + "/api/cms/content/list/");
-    info.value = Array.isArray(res) ? res : [];
-  } catch (error) {
-    console.error("Error fetching list:", error);
-    errorMsg.value = "Failed to load news & updates.";
-  } finally {
-    loading.value = false;
-  }
-
   await nextTick();
 
   if (window.innerWidth < 800) {
@@ -312,7 +312,7 @@ const groupedSections = computed(() => {
 
   const newsHighlight = sortByDateDesc(
     data.filter((i) => isIn(i, ["news highlight", "news-highlight"])),
-  );
+  ).slice(0, 5);
   const announcements = sortByDateDesc(
     data.filter((i) => isIn(i, ["announcement"])),
   );
@@ -448,80 +448,185 @@ watch([selectedSDG, selectedYear, selectedMonth], () => {
 <template>
   <div class="">
     <Header />
-    <div class="">
-      <div class="relative">
-        <Banner />
-        <img
-          src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
-          class="align-top w-full h-36 object-none lg:hidden block"
-        />
-        <div></div>
-        <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
-          <h1
-            class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto"
-          >
-            New and Updates
-          </h1>
-        </div>
+    <!-- SDGs Style Header Banner -->
+    <section class="relative bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 text-white overflow-hidden py-10 sm:py-14 px-4 sm:px-8 shadow-md">
+      <!-- Background Overlay Decorative Shapes -->
+      <div class="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+      <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -top-24 -left-24 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="shadow-lg text-green-700">
-          <div class="lg:flex justify-between border-b border-gray-200 lg:pl-5">
-            <div
-              class="flex items-center capitalize text-xs lg:border-b-0 border-b lg:px-0 px-1.5 py-2"
-            >
-              <div>
-                <a href="/" class="mr-2 hover:underline lg:h-10">Home</a>
+      <div class="max-w-7xl mx-auto relative z-10">
+        <!-- Breadcrumbs -->
+        <nav class="mb-4">
+          <ul class="inline-flex flex-wrap items-center gap-2 bg-emerald-900/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-emerald-700/40 text-xs text-emerald-200">
+            <li>
+              <NuxtLink to="/" class="hover:text-white transition-colors flex items-center gap-1.5">
+                <i class="fas fa-home text-[10px]"></i> Home
+              </NuxtLink>
+            </li>
+            <li class="text-emerald-500"><i class="fas fa-chevron-right text-[8px]"></i></li>
+            <li class="font-semibold text-white">News and Updates</li>
+          </ul>
+        </nav>
+
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div>
+            <span class="inline-block px-3 py-1 bg-emerald-800/80 text-emerald-300 text-xs font-semibold uppercase tracking-widest rounded-md mb-2 border border-emerald-700/50 shadow-sm">
+              LSU News &amp; Updates
+            </span>
+            <h1 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+              News and Updates
+            </h1>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 text-white shadow-sm">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg bg-emerald-600/90 text-white shadow-sm">
+                <i class="fas fa-newspaper text-base"></i>
               </div>
               <div>
-                <i class="fas fa-caret-right"></i>
-                <a href="/news-updates" class="mx-2 hover:underline lg:h-10"
-                  >News and Updates</a
-                >
+                <p class="text-xs text-emerald-200 font-medium">Published Updates</p>
+                <p class="text-lg font-bold leading-none">{{ info.length }} Article{{ info.length === 1 ? '' : 's' }}</p>
               </div>
             </div>
-            <div class="flex hover:text-green-800 text-white bg-white h-full">
-              <div
-                class="hover:bg-green-800 bg-white hover:text-white text-green-800 px-1 lg:px-4 lg:h-10 h-8 flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full"
-              >
-                <a href="/login" class="flex items-center w-fit mx-auto">
-                  <i class="fa fa-user" aria-hidden="true"></i>
-                  <span class="ml-3 whitespace-nowrap">Contribute</span>
-                </a>
-              </div>
-            </div>
+
+            <a href="/login" class="flex items-center gap-2 bg-emerald-600/90 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-3 rounded-2xl border border-emerald-500/50 shadow-sm transition-all">
+              <i class="fa fa-user"></i>
+              <span>Contribute</span>
+            </a>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <div class="lg:flex mx-auto">
       <div class="w-full lg:py-5 relative">
         <div class="relative z-10 px-2 mx-auto">
-          <!-- Loading state -->
-          <div v-if="loading" class="flex items-center justify-center py-20">
-            <div class="flex flex-col items-center">
-              <svg
-                class="animate-spin h-10 w-10 text-green-600"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                ></circle>
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                ></path>
-              </svg>
-              <div class="mt-4 text-green-600 font-medium">
-                Loading news & updates...
+          <!-- Skeleton Loading State -->
+          <div v-if="loading" class="animate-pulse space-y-8 py-4">
+            <!-- Top Section: Highlight & Announcements -->
+            <div class="grid grid-cols-1 lg:grid-cols-6 gap-6">
+              <!-- Latest News Highlight Skeleton (4 cols) -->
+              <div class="lg:col-span-4 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <div class="h-7 bg-gray-200 rounded w-52 mb-4"></div>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  <!-- Side cards skeleton -->
+                  <div class="order-2 lg:order-1 flex flex-col gap-3">
+                    <div v-for="i in 3" :key="i" class="flex h-28 bg-gray-50 rounded-lg p-2 gap-3 border border-gray-100">
+                      <div class="w-1/3 bg-gray-200 rounded-md h-full"></div>
+                      <div class="w-2/3 flex flex-col justify-between py-1">
+                        <div class="h-3 bg-gray-200 rounded w-16"></div>
+                        <div class="h-4 bg-gray-300 rounded w-full"></div>
+                        <div class="h-3 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-3 bg-gray-200 rounded w-20"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Main highlight card skeleton -->
+                  <div class="order-1 lg:order-2 lg:col-span-2 bg-gray-50 rounded-lg p-4 border border-gray-100 flex flex-col justify-between">
+                    <div class="h-56 bg-gray-200 rounded-lg w-full mb-4"></div>
+                    <div class="space-y-3">
+                      <div class="flex justify-between">
+                        <div class="h-3 bg-gray-200 rounded w-24"></div>
+                        <div class="h-3 bg-gray-200 rounded w-16"></div>
+                      </div>
+                      <div class="h-6 bg-gray-300 rounded w-4/5"></div>
+                      <div class="h-4 bg-gray-200 rounded w-full"></div>
+                      <div class="h-4 bg-gray-200 rounded w-2/3"></div>
+                      <div class="flex gap-2 pt-2">
+                        <div class="h-5 bg-gray-200 rounded w-12"></div>
+                        <div class="h-5 bg-gray-200 rounded w-12"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Announcements Skeleton (2 cols) -->
+              <div class="lg:col-span-2 bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <div class="h-7 bg-gray-200 rounded w-44 mb-4"></div>
+                <div class="space-y-4">
+                  <div v-for="i in 3" :key="i" class="border-b border-gray-100 pb-3 flex gap-3 h-28">
+                    <div class="w-1/4 bg-gray-200 rounded-md h-full flex-shrink-0"></div>
+                    <div class="flex-1 flex flex-col justify-between py-1">
+                      <div class="flex justify-between">
+                        <div class="h-3 bg-gray-200 rounded w-20"></div>
+                        <div class="h-3 bg-gray-200 rounded w-12"></div>
+                      </div>
+                      <div class="h-4 bg-gray-300 rounded w-full"></div>
+                      <div class="h-3 bg-gray-200 rounded w-2/3"></div>
+                      <div class="h-3 bg-gray-200 rounded w-16"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Research & Sustainability Skeleton -->
+            <div class="lg:flex gap-4 border-t border-gray-200 pt-6">
+              <!-- Research (4 cols) -->
+              <div class="lg:w-4/12 w-full bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-4 lg:mb-0">
+                <div class="h-7 bg-gray-200 rounded w-32 mb-4"></div>
+                <div class="space-y-4">
+                  <div v-for="i in 2" :key="i" class="border border-gray-100 rounded-lg p-3">
+                    <div class="h-36 bg-gray-200 rounded-md w-full mb-3"></div>
+                    <div class="h-4 bg-gray-300 rounded w-full mb-2"></div>
+                    <div class="h-3 bg-gray-200 rounded w-2/3 mb-3"></div>
+                    <div class="flex justify-between items-center">
+                      <div class="h-3 bg-gray-200 rounded w-16"></div>
+                      <div class="h-3 bg-gray-200 rounded w-16"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Social Action & Library (8 cols) -->
+              <div class="w-full bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-6">
+                <!-- Social Action -->
+                <div>
+                  <div class="h-7 bg-gray-200 rounded w-40 mb-4"></div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div v-for="i in 3" :key="i" class="border border-gray-100 rounded-lg p-2 flex h-40 gap-2">
+                      <div class="w-1/2 bg-gray-200 rounded-md h-full"></div>
+                      <div class="w-1/2 flex flex-col justify-between py-1">
+                        <div class="h-4 bg-gray-300 rounded w-full"></div>
+                        <div class="h-3 bg-gray-200 rounded w-3/4"></div>
+                        <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Learning Resource Center -->
+                <div>
+                  <div class="h-7 bg-gray-200 rounded w-52 mb-4"></div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div v-for="i in 3" :key="i" class="border border-gray-100 rounded-lg p-2 flex h-40 gap-2">
+                      <div class="w-1/2 bg-gray-200 rounded-md h-full"></div>
+                      <div class="w-1/2 flex flex-col justify-between py-1">
+                        <div class="h-3 bg-gray-200 rounded w-20"></div>
+                        <div class="h-4 bg-gray-300 rounded w-full"></div>
+                        <div class="h-3 bg-gray-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Educational Section Skeleton -->
+            <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+              <div class="h-7 bg-gray-200 rounded w-56 mb-4"></div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div v-for="i in 4" :key="i" class="border border-gray-100 rounded-lg overflow-hidden p-3 flex flex-col justify-between h-64">
+                  <div class="h-28 bg-gray-200 rounded-md w-full mb-3"></div>
+                  <div class="h-4 bg-gray-300 rounded w-full mb-2"></div>
+                  <div class="h-3 bg-gray-200 rounded w-4/5 mb-3"></div>
+                  <div class="flex justify-between items-center pt-2 border-t border-gray-50">
+                    <div class="h-3 bg-gray-200 rounded w-16"></div>
+                    <div class="h-3 bg-gray-200 rounded w-16"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

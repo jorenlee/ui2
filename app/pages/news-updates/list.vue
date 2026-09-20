@@ -11,8 +11,19 @@ import {
 import moment from "moment";
 
 const display = ref("desktop");
-const info = ref([]);
-const loading = ref(true);
+const config = useRuntimeConfig();
+
+// Fetch news & updates using useAsyncData for instant SSR & fast client caching
+const { data: rawInfo, pending: loading } = useAsyncData(
+  "cms-content-list",
+  () => $fetch(`${config.public.apiUrl}/api/cms/content/list/`),
+  {
+    lazy: true,
+    default: () => [],
+  }
+);
+
+const info = computed(() => (Array.isArray(rawInfo.value) ? rawInfo.value : []));
 const errorMsg = ref("");
 
 // Filter states
@@ -23,7 +34,6 @@ const selectedType = ref("");
 
 // Scroll to top button
 const showScrollButton = ref(false);
-const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
 const handleScroll = () => {
@@ -109,8 +119,9 @@ const getSdgColor = (sdgNumber) => {
 // Get available years and months from data
 const availableYears = computed(() => {
   const years = info.value
-    .filter((item) => item.date)
-    .map((item) => moment(item.date).year());
+    .filter((item) => item.date && moment(item.date).isValid())
+    .map((item) => moment(item.date).year())
+    .filter((year) => year && year >= 1900 && year !== 26 && year.toString().length === 4);
   return [...new Set(years)].sort((a, b) => b - a);
 });
 
@@ -132,6 +143,10 @@ const excludedFilters = [
   "organizational chart",
   "college",
   "oer",
+  "human resource center",
+  "human resource",
+  "hero carousel",
+  "downloads",
 ];
 
 // Filtered info based on all filters
@@ -284,16 +299,6 @@ const getCategoryLabel = (item) => {
 
 // Fetch data
 onMounted(async () => {
-  try {
-    const res = await $fetch(endpoint.value + "/api/cms/content/list/");
-    info.value = Array.isArray(res) ? res : [];
-  } catch (error) {
-    console.error("Error fetching list:", error);
-    errorMsg.value = "Failed to load news & updates.";
-  } finally {
-    loading.value = false;
-  }
-
   await nextTick();
   if (window.innerWidth < 800) display.value = "mobile";
 
@@ -338,51 +343,62 @@ const visiblePages = computed(() => {
 <template>
   <div class="bg-gray-50">
     <Header />
-    <div class="">
-      <div class="relative">
-        <Banner />
-        <img
-          src="https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png"
-          class="align-top w-full h-36 object-none lg:hidden block"
-        />
-        <div></div>
-        <div class="pt-10 absolute top-1/2 transform -translate-y-1/2 w-full">
-          <h1
-            class="font-bold uppercase text-white lg:text-2xl text-lg w-11/12 mx-auto"
-          >
-            New and Updates
-          </h1>
-        </div>
+    <!-- SDGs Style Header Banner -->
+    <section class="relative bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 text-white overflow-hidden py-10 sm:py-14 px-4 sm:px-8 shadow-md">
+      <!-- Background Overlay Decorative Shapes -->
+      <div class="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+      <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -top-24 -left-24 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="shadow-lg text-green-700">
-          <div class="lg:flex justify-between border-b border-gray-200 lg:pl-5">
-            <div
-              class="flex items-center capitalize text-xs lg:border-b-0 border-b lg:px-0 px-1.5 py-2"
-            >
-              <div>
-                <a href="/" class="mr-2 hover:underline lg:h-10">Home</a>
+      <div class="max-w-7xl mx-auto relative z-10">
+        <!-- Breadcrumbs -->
+        <nav class="mb-4">
+          <ul class="inline-flex flex-wrap items-center gap-2 bg-emerald-900/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-emerald-700/40 text-xs text-emerald-200">
+            <li>
+              <NuxtLink to="/" class="hover:text-white transition-colors flex items-center gap-1.5">
+                <i class="fas fa-home text-[10px]"></i> Home
+              </NuxtLink>
+            </li>
+            <li class="text-emerald-500"><i class="fas fa-chevron-right text-[8px]"></i></li>
+            <li>
+              <NuxtLink to="/news-updates" class="hover:text-white transition-colors">
+                News and Updates
+              </NuxtLink>
+            </li>
+            <li class="text-emerald-500"><i class="fas fa-chevron-right text-[8px]"></i></li>
+            <li class="font-semibold text-white">All Articles</li>
+          </ul>
+        </nav>
+
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div>
+            <span class="inline-block px-3 py-1 bg-emerald-800/80 text-emerald-300 text-xs font-semibold uppercase tracking-widest rounded-md mb-2 border border-emerald-700/50 shadow-sm">
+              LSU News Archive
+            </span>
+            <h1 class="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+              All News &amp; Updates
+            </h1>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-3 bg-white/10 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 text-white shadow-sm">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg bg-emerald-600/90 text-white shadow-sm">
+                <i class="fas fa-list text-base"></i>
               </div>
               <div>
-                <i class="fas fa-caret-right"></i>
-                <a href="/new-updates" class="mx-2 hover:underline lg:h-10"
-                  >News and Updates</a
-                >
+                <p class="text-xs text-emerald-200 font-medium">Total Articles</p>
+                <p class="text-lg font-bold leading-none">{{ filteredInfo.length }} Article{{ filteredInfo.length === 1 ? '' : 's' }}</p>
               </div>
             </div>
-            <div class="flex hover:text-green-800 text-white bg-white h-full">
-              <div
-                class="hover:bg-green-800 bg-white hover:text-white text-green-800 px-1 lg:px-4 lg:h-10 h-8 flex items-center capitalize text-xs lg:py-2 py-1 lg:w-fit w-full"
-              >
-                <a href="/login" class="flex items-center w-fit mx-auto">
-                  <i class="fa fa-user" aria-hidden="true"></i>
-                  <span class="ml-3 whitespace-nowrap">Contribute</span>
-                </a>
-              </div>
-            </div>
+
+            <a href="/login" class="flex items-center gap-2 bg-emerald-600/90 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-3 rounded-2xl border border-emerald-500/50 shadow-sm transition-all">
+              <i class="fa fa-user"></i>
+              <span>Contribute</span>
+            </a>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     <div class="lg:flex gap-5 lg:px-5 px-2 mx-auto">
       <div class="w-full py-5 relative">
@@ -491,6 +507,16 @@ const visiblePages = computed(() => {
               <!-- Pagination -->
               <div v-if="totalPages > 1" class="flex justify-center mt-[20px]">
                 <div class="flex items-center space-x-1">
+                  <!-- First Page Button (Super Front) -->
+                  <button
+                    :disabled="currentPage === 1"
+                    @click="currentPage = 1"
+                    class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
+                    title="First Page"
+                  >
+                    <i class="fas fa-angle-double-left"></i>
+                  </button>
+
                   <!-- Previous Button -->
                   <button
                     :disabled="currentPage === 1"
@@ -525,6 +551,16 @@ const visiblePages = computed(() => {
                     <span class="hidden sm:inline">Next</span>
                     <i class="fas fa-chevron-right ml-1"></i>
                   </button>
+
+                  <!-- Last Page Button (Super Last) -->
+                  <button
+                    :disabled="currentPage === totalPages"
+                    @click="currentPage = totalPages"
+                    class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
+                    title="Last Page"
+                  >
+                    <i class="fas fa-angle-double-right"></i>
+                  </button>
                 </div>
               </div>
             </div>
@@ -550,9 +586,45 @@ const visiblePages = computed(() => {
             total items)
           </div> -->
 
+          <!-- Skeleton Loading State -->
+          <div v-if="loading" class="animate-pulse">
+            <div class="grid lg:grid-cols-5 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <div
+                v-for="i in 10"
+                :key="i"
+                class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden flex flex-col justify-between"
+              >
+                <!-- Skeleton Image -->
+                <div class="h-[260px] bg-gray-200 w-full"></div>
+
+                <!-- Skeleton Content -->
+                <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
+                  <div class="flex items-center justify-between">
+                    <div class="h-3 bg-gray-200 rounded w-20"></div>
+                    <div class="h-3 bg-gray-200 rounded w-14"></div>
+                  </div>
+                  <div class="h-5 bg-gray-300 rounded w-full"></div>
+                  <div class="h-5 bg-gray-300 rounded w-3/4"></div>
+                  <div class="space-y-1.5 pt-1">
+                    <div class="h-3 bg-gray-200 rounded w-full"></div>
+                    <div class="h-3 bg-gray-200 rounded w-5/6"></div>
+                  </div>
+                  <div class="flex gap-1.5 pt-1">
+                    <div class="h-5 bg-gray-200 rounded w-14"></div>
+                    <div class="h-5 bg-gray-200 rounded w-14"></div>
+                  </div>
+                  <div class="pt-3 border-t border-gray-100 flex items-center justify-between">
+                    <div class="h-3 bg-gray-200 rounded w-24"></div>
+                    <div class="h-3 bg-gray-200 rounded w-16"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- News Cards -->
           <div
-            v-if="paginatedInfo.length"
+            v-else-if="paginatedInfo.length"
             class="grid lg:grid-cols-5 grid-cols-1 gap-6"
           >
             <div
@@ -712,6 +784,16 @@ const visiblePages = computed(() => {
           <!-- Pagination -->
           <div v-if="totalPages > 1" class="flex justify-center mt-8 mb-6">
             <div class="flex items-center space-x-1">
+              <!-- First Page Button (Super Front) -->
+              <button
+                :disabled="currentPage === 1"
+                @click="currentPage = 1"
+                class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
+                title="First Page"
+              >
+                <i class="fas fa-angle-double-left"></i>
+              </button>
+
               <!-- Previous Button -->
               <button
                 :disabled="currentPage === 1"
@@ -745,6 +827,16 @@ const visiblePages = computed(() => {
               >
                 <span class="hidden sm:inline">Next</span>
                 <i class="fas fa-chevron-right ml-1"></i>
+              </button>
+
+              <!-- Last Page Button (Super Last) -->
+              <button
+                :disabled="currentPage === totalPages"
+                @click="currentPage = totalPages"
+                class="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm transition-colors flex items-center"
+                title="Last Page"
+              >
+                <i class="fas fa-angle-double-right"></i>
               </button>
             </div>
           </div>

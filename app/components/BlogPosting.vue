@@ -27,6 +27,7 @@ const highlightedNews = computed(() => {
     "human resource center",
     "human resource",
     "hero carousel",
+    "downloads",
   ];
 
   return info.value
@@ -169,14 +170,22 @@ const prevSlide = () => {
   }
 };
 
-// Auto scroll timer (3 seconds interval)
+const goToFirst = () => {
+  currentSlide.value = 0;
+};
+
+const goToLast = () => {
+  currentSlide.value = Math.max(0, totalSlides.value - 1);
+};
+
+// Auto scroll timer (10 seconds interval)
 const startAutoScroll = () => {
   stopAutoScroll();
   autoScrollTimer = setInterval(() => {
     if (!isHovered.value && totalSlides.value > 1) {
       nextSlide();
     }
-  }, 3000);
+  }, 10000);
 };
 
 const stopAutoScroll = () => {
@@ -334,30 +343,55 @@ onBeforeUnmount(() => {
       <!-- Carousel Container -->
       <div
         v-else-if="highlightedNews.length"
-        class="px-2"
+        class="lg:px-28 px-4 relative"
         @mouseenter="isHovered = true"
         @mouseleave="isHovered = false"
       >
-        <!-- Left Arrow -->
+        <!-- Navigation Arrows (Desktop) -->
         <div class="lg:flex hidden">
+          <!-- Super First (<<) -->
           <button
-          v-if="canGoPrev"
-          @click="prevSlide"
-          class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 left-0"
-          aria-label="Previous slide"
-        >
-          <i class="fas fa-chevron-left text-xl"></i>
-        </button>
+            v-if="canGoPrev"
+            @click="goToFirst"
+            class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 left-0"
+            aria-label="First slide"
+            title="First Slide"
+          >
+            <i class="fas fa-angle-double-left text-xl"></i>
+          </button>
 
-        <!-- Right Arrow -->
-        <button
-          v-if="canGoNext"
-          @click="nextSlide"
-          class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 right-0"
-          aria-label="Next slide"
-        >
-          <i class="fas fa-chevron-right text-xl"></i>
-        </button>
+          <!-- Previous (<) -->
+          <button
+            v-if="canGoPrev"
+            @click="prevSlide"
+            class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 left-14"
+            aria-label="Previous slide"
+            title="Previous Slide"
+          >
+            <i class="fas fa-chevron-left text-xl"></i>
+          </button>
+
+          <!-- Next (>) -->
+          <button
+            v-if="canGoNext"
+            @click="nextSlide"
+            class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 right-14"
+            aria-label="Next slide"
+            title="Next Slide"
+          >
+            <i class="fas fa-chevron-right text-xl"></i>
+          </button>
+
+          <!-- Super Last (>>) -->
+          <button
+            v-if="canGoNext"
+            @click="goToLast"
+            class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 right-0"
+            aria-label="Last slide"
+            title="Last Slide"
+          >
+            <i class="fas fa-angle-double-right text-xl"></i>
+          </button>
         </div>
 
         <!-- News Grid -->

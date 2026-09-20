@@ -1,6 +1,6 @@
 <template>
     <section
-        class="relative overflow-hidden bg-[#064e3b] shadow-lg"
+        class="relative overflow-hidden bg-[#064e3b] shadow-lg px-4"
     >
         <!-- Decorative Background -->
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
@@ -20,7 +20,7 @@
 
         <!-- Content -->
         <div
-            class="relative z-10 flex flex-col items-center justify-between gap-6 px-6 py-8 sm:px-10 lg:flex-row lg:px-14"
+            class="relative z-10 flex flex-col items-center justify-between gap-6 py-8 lg:flex-row lg:w-9/12 mx-auto"
         >
 
             <!-- Left Content -->
