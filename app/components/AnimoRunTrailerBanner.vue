@@ -1,6 +1,6 @@
 <template>
     <section
-        class="relative overflow-hidden bg-[#064e3b] shadow-lg px-4"
+        class="relative overflow-hidden bg-[#064e3b] shadow-lg lg:px-0 px-4"
     >
         <!-- Decorative Background -->
         <div class="pointer-events-none absolute inset-0 overflow-hidden">
