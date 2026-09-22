@@ -539,8 +539,8 @@ const subMenuList = [
 
 // ---------------- TOP MENU ----------------
 const menuList = [
-  { label: "Menu", icon: "fa-bars", type: "button", view: "Menu" },
-  { label: "Settings", icon: "fa-cog", type: "button", view: "Settings" },
+  { label: "Menu", icon: "fa-home", type: "button", view: "Menu" },
+  { label: "Profile", icon: "fa-user", type: "button", view: "Profile" },
   { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
 ];
 
@@ -695,7 +695,7 @@ const logOut = () => logout();
             @menu-click="handleMenuClick"
           />
         </div>
-        <div v-if="currentView === 'Settings'" class="w-full p-4">
+        <div v-if="currentView === 'Profile'" class="w-full p-4">
           <SuperAdminDashboardWelcome :darkMode="darkMode" />
           <ToggleDarkLightMode
             :darkMode="darkMode"

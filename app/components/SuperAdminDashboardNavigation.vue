@@ -25,7 +25,10 @@
                LEFT: LSU LOGO + BRAND
                ================================================= -->
           <div class="flex items-center gap-3 shrink-0">
-
+<a href="/dashboard">
+  
+  <i class="fa fa-bars"></i>
+</a>
             <!-- LSU SEAL -->
             <div
               class="
@@ -48,8 +51,21 @@
             <!-- BRAND -->
             <div class="leading-tight">
 
-              <h1
-                class="font-bold text-base"
+
+
+              <p
+                class="text-[11px]"
+                :class="
+                  darkMode
+                    ? 'text-gray-400'
+                    : 'text-gray-500'
+                "
+              >
+                La Salle University Ozamiz, Inc.
+              </p>
+
+                            <h2
+                class="font-bold text-base -ml-[1.5px]"
                 :class="
                   darkMode
                     ? 'text-white'
@@ -57,18 +73,7 @@
                 "
               >
                 LSU Central
-              </h1>
-
-              <p
-                class="text-[11px] mt-0.5"
-                :class="
-                  darkMode
-                    ? 'text-gray-400'
-                    : 'text-gray-500'
-                "
-              >
-                La Salle University Ozamiz
-              </p>
+              </h2>
 
               <!-- POWERED BY -->
               <p
@@ -76,15 +81,15 @@
                   text-[9px]
                   font-medium
                   tracking-wide
-                  mt-1
+              
                 "
                 :class="
                   darkMode
-                    ? 'text-green-400'
-                    : 'text-green-600'
+                    ? 'text-gray-100'
+                    : 'text-gray-300 hover:text-gray-800 cursor-pointer'
                 "
               >
-                Powered By NPCC
+                <a href="https://lsu.edu.ph/npcc">Powered By NPCC</a>
               </p>
 
             </div>
@@ -195,13 +200,14 @@
                   flex
                   items-center
                   gap-2
-                  px-4
+                  px-2
                   py-3
-                  rounded-xl
+                  rounded
                   transition-all
                   duration-200
                   group
                   whitespace-nowrap
+                  shadow
                 "
                 :class="
                   currentView === menu.view
@@ -219,14 +225,14 @@
                   :class="[
                     'fa',
                     menu.icon,
-                    'text-base',
+                    'text-sm',
                   ]"
                 ></i>
 
                 <!-- LABEL -->
-                <span class="text-sm font-medium">
+                <!-- <span class="text-sm font-medium">
                   {{ menu.label }}
-                </span>
+                </span> -->
 
                 <!-- ACTIVE INDICATOR -->
                 <span
