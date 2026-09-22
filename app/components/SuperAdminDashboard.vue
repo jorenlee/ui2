@@ -636,6 +636,13 @@ const logOut = () => logout();
   >
     <div v-if="isUserAuthenticated">
       <div class="w-full">
+          <SuperAdminDashboardNavigation
+          :darkMode="darkMode"
+          :menuList="menuList"
+          :currentView="currentView"
+          :toggleGroup="toggleGroup"
+          @menu-click="handleMenuClick"
+        />
         <div class="overflow-y-auto">
           <div v-if="activeViewComponent" :class="activeViewClass">
             <Suspense>
@@ -661,15 +668,9 @@ const logOut = () => logout();
             </Suspense>
           </div>
         </div>
-        <SuperAdminDashboardNavigation
-          :darkMode="darkMode"
-          :menuList="menuList"
-          :currentView="currentView"
-          :toggleGroup="toggleGroup"
-          @menu-click="handleMenuClick"
-        />
+      
         <div v-if="currentView === 'Menu'" class="lg:px-2 pb-80">
-          <SuperAdminDashboardWelcome :darkMode="darkMode" />
+          <!-- <SuperAdminDashboardWelcome :darkMode="darkMode" /> -->
           <template v-if="initialLoading">
             <div class="mt-4 space-y-3 px-2 animate-pulse">
               <div v-for="n in 5" :key="'sk-group-' + n"
