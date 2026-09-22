@@ -1166,12 +1166,308 @@ const submitRegistration = async () => {
             </div>
           </div>
 
-          <!-- SECTION 2: PARTICIPANT CLASSIFICATION -->
-          <section v-if="currentParticipant.run_category && currentParticipant.run_category !== '1K'">
+
+
+          <!-- SECTION 2: PERSONAL INFORMATION -->
+          <section v-if="currentParticipant.run_category">
             <div class="mb-4">
               <h3 class="text-lg font-bold flex items-center gap-2">
                 <span
                   class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">2</span>
+                <span>{{ currentParticipant.run_category === '1K' ? 'Pet Owner / Runner Personal Information' : 'Personal Information' }}</span>
+              </h3>
+              <p class="text-xs text-gray-500 ml-9">
+                {{ currentParticipant.run_category === '1K' ? 'Personal details of the pet owner / runner' : `Personal details for Runner #${activeParticipantIndex + 1}` }}
+              </p>
+            </div>
+
+            <div class="">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
+                  <input v-model="currentParticipant.firstname" placeholder="Juan" :class="[
+                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                  ]" />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Middle Name</label>
+                  <input v-model="currentParticipant.middlename" placeholder="Santos" :class="[
+                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                  ]" />
+                </div>
+
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Last Name *</label>
+                  <input v-model="currentParticipant.lastname" placeholder="Dela Cruz" :class="[
+                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                  ]" />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Suffix</label>
+                  <select v-model="currentParticipant.suffix" :class="[
+                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                  ]">
+                    <option value="">None</option>
+                    <option value="Jr.">Jr.</option>
+                    <option value="Sr.">Sr.</option>
+                    <option value="II">II</option>
+                    <option value="III">III</option>
+                    <option value="IV">IV</option>
+                  </select>
+                </div>
+
+                <!-- Date of Birth (1/4 column) -->
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Date of Birth
+                    *</label>
+                  <input type="date" v-model="currentParticipant.birthdate" :class="[
+                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                  ]" />
+                </div>
+
+                <!-- Gender (1/4 column) -->
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Gender *</label>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div @click="currentParticipant.gender = 'Male'" :class="[
+                      'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
+                      currentParticipant.gender === 'Male'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : props.darkMode
+                          ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-slate-50',
+                    ]">
+                      <input type="radio" value="Male" v-model="currentParticipant.gender" class="sr-only" />
+                      <i class="fas fa-mars"></i> Male
+                    </div>
+
+                    <div @click="currentParticipant.gender = 'Female'" :class="[
+                      'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
+                      currentParticipant.gender === 'Female'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : props.darkMode
+                          ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-slate-50',
+                    ]">
+                      <input type="radio" value="Female" v-model="currentParticipant.gender" class="sr-only" />
+                      <i class="fas fa-venus"></i> Female
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 3: CONTACT DETAILS -->
+          <section v-if="currentParticipant.run_category">
+            <div class="mb-4">
+              <h3 class="text-lg font-bold flex items-center gap-2">
+                <span
+                  class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">3</span>
+                Contact Details
+              </h3>
+              <p class="text-xs text-gray-500 ml-9">
+                Used for registration confirmation and race notifications
+              </p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="w-full">
+                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Email Address *</label>
+                <div class="relative">
+                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
+                    <i class="fas fa-envelope"></i>
+                  </span>
+                  <input v-model="currentParticipant.contact_email" placeholder="runner@lsu.edu.ph" :class="[
+                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                  ]" />
+                </div>
+              </div>
+
+              <div class="w-full">
+                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Contact Phone Number
+                  *</label>
+                <div class="relative">
+                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
+                    <i class="fas fa-phone"></i>
+                  </span>
+                  <input v-model="currentParticipant.contact_number" placeholder="0917 123 4567" :class="[
+                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                  ]" />
+                </div>
+              </div>
+
+              <div class="w-full">
+                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Complete
+                  Address</label>
+                <div class="relative">
+                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
+                    <i class="fas fa-map-marker-alt"></i>
+                  </span>
+                  <input v-model="currentParticipant.contact_address" placeholder="Barangay, City, Province" :class="[
+                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                  ]" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- SECTION 4: SHIRT TYPE & SIZE -->
+          <section v-if="currentParticipant.run_category && currentParticipant.run_category !== '1K'">
+            <div class="mb-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                  <span
+                    class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">4</span>
+                  Shirt Selection
+                </h3>
+                <span
+                  class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                  Selected: <span class="font-black">{{ currentParticipant.selected_shirt_tab ? (currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : currentParticipant.selected_shirt_tab === 'finisher_shirt' ? 'Finisher Shirt' : 'Event Shirt') : 'Event Shirt' }}</span>
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 ml-9">
+                Prioritize your preferred shirt type and size for Runner #{{ activeParticipantIndex + 1 }}
+              </p>
+            </div>
+
+            <div
+              :class="[
+                'grid gap-3 mb-5',
+                currentParticipant.run_category === '20K' ? 'grid-cols-3' : 'grid-cols-2'
+              ]"
+            >
+              <button
+                v-if="currentParticipant.run_category === '20K' || currentParticipant.run_category === '3K' || currentParticipant.run_category === '10K'"
+                type="button"
+                @click="currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.shirt_type = 'event_shirt'"
+                :class="[
+                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                  currentParticipant.selected_shirt_tab === 'event_shirt'
+                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                    : props.darkMode
+                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                ]"
+              >
+                <i class="fas fa-shirt"></i>
+                <span>Event Shirt</span>
+              </button>
+
+              <button
+                type="button"
+                @click="currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.shirt_type = 'singlet'"
+                :class="[
+                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                  currentParticipant.selected_shirt_tab === 'singlet'
+                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                    : props.darkMode
+                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                ]"
+              >
+                <i class="fas fa-tshirt"></i>
+                <span>Singlet</span>
+              </button>
+
+              <button
+                v-if="currentParticipant.run_category === '20K'"
+                type="button"
+                @click="currentParticipant.selected_shirt_tab = 'finisher_shirt'"
+                :class="[
+                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                  currentParticipant.selected_shirt_tab === 'finisher_shirt'
+                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                    : props.darkMode
+                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                ]"
+              >
+                <i class="fas fa-medal"></i>
+                <span>Finisher Shirt</span>
+              </button>
+            </div>
+
+            <div class="space-y-4">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">
+                    {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? 'Finisher Shirt' : currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : 'Event Shirt' }} Size
+                  </h4>
+                  <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                    {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size || 'M') : currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M') }}
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
+                  <label
+                    v-for="size in tshirtSizes"
+                    :key="currentParticipant.selected_shirt_tab + '-' + size"
+                    @click="
+                      if (currentParticipant.selected_shirt_tab === 'finisher_shirt') {
+                        currentParticipant.finisher_shirt_size = size;
+                      } else if (currentParticipant.selected_shirt_tab === 'singlet') {
+                        currentParticipant.singlet_size = size;
+                        currentParticipant.shirt_type = 'singlet';
+                      } else {
+                        currentParticipant.event_shirt_size = size;
+                        currentParticipant.shirt_type = 'event_shirt';
+                      }
+                      currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)
+                    "
+                    :class="[
+                      'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
+                      (currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size)
+                        ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
+                        : props.darkMode
+                          ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
+                          : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
+                    ]"
+                  >
+                    <input
+                      type="radio"
+                      :name="'shirt_size_' + currentParticipant.selected_shirt_tab"
+                      :value="size"
+                      :checked="currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size"
+                      class="sr-only"
+                    />
+                    <i :class="[
+                      'mb-1 text-sm transition',
+                      currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size === size ? 'fas fa-medal text-white' : 'fas fa-medal text-gray-400') : (currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size === size ? 'fas fa-tshirt text-white' : 'fas fa-tshirt text-gray-400') : (currentParticipant.event_shirt_size === size ? 'fas fa-shirt text-white' : 'fas fa-shirt text-gray-400'))
+                    ]"></i>
+                    <span class="text-xs font-bold">{{ size }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="mt-4 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+              <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
+              <span>
+                {{ currentParticipant.run_category === '20K' ? 'Your 20K registration includes the event shirt, singlet, and finisher shirt sizes listed above.' : 'Includes your selected shirt type in the size above.' }}
+              </span>
+            </div>
+          </section>
+
+                    <!-- SECTION 5: PARTICIPANT CLASSIFICATION -->
+          <section v-if="currentParticipant.run_category && currentParticipant.run_category !== '1K'">
+            <div class="mb-4">
+              <h3 class="text-lg font-bold flex items-center gap-2">
+                <span
+                  class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">5</span>
                 Participant Classification
               </h3>
             </div>
@@ -1221,7 +1517,7 @@ const submitRegistration = async () => {
 
               </div>
 
-              <!-- STEP 2A: LSU EXCLUSIVE -->
+              <!-- STEP 5A: LSU EXCLUSIVE -->
               <div v-if="currentParticipant.participantGroup === 'LSU'" class="space-y-2">
 
                 <button type="button"
@@ -1433,7 +1729,7 @@ const submitRegistration = async () => {
 
               </div>
 
-              <!-- STEP 2B: OPEN CATEGORY -->
+              <!-- STEP 5B: OPEN CATEGORY -->
               <div v-if="currentParticipant.participantGroup === 'Open'" class="space-y-2">
 
                 <button type="button"
@@ -1496,300 +1792,6 @@ const submitRegistration = async () => {
             </div>
           </section>
         
-
-          <!-- SECTION 3: PERSONAL INFORMATION -->
-          <section v-if="currentParticipant.run_category">
-            <div class="mb-4">
-              <h3 class="text-lg font-bold flex items-center gap-2">
-                <span
-                  class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">3</span>
-                <span>{{ currentParticipant.run_category === '1K' ? 'Pet Owner / Runner Personal Information' : 'Personal Information' }}</span>
-              </h3>
-              <p class="text-xs text-gray-500 ml-9">
-                {{ currentParticipant.run_category === '1K' ? 'Personal details of the pet owner / runner' : `Personal details for Runner #${activeParticipantIndex + 1}` }}
-              </p>
-            </div>
-
-            <div class="">
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
-                  <input v-model="currentParticipant.firstname" placeholder="Juan" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]" />
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Middle Name</label>
-                  <input v-model="currentParticipant.middlename" placeholder="Santos" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]" />
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Last Name *</label>
-                  <input v-model="currentParticipant.lastname" placeholder="Dela Cruz" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]" />
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Suffix</label>
-                  <select v-model="currentParticipant.suffix" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]">
-                    <option value="">None</option>
-                    <option value="Jr.">Jr.</option>
-                    <option value="Sr.">Sr.</option>
-                    <option value="II">II</option>
-                    <option value="III">III</option>
-                    <option value="IV">IV</option>
-                  </select>
-                </div>
-
-                <!-- Date of Birth (1/4 column) -->
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Date of Birth
-                    *</label>
-                  <input type="date" v-model="currentParticipant.birthdate" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]" />
-                </div>
-
-                <!-- Gender (1/4 column) -->
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Gender *</label>
-                  <div class="grid grid-cols-2 gap-2">
-                    <div @click="currentParticipant.gender = 'Male'" :class="[
-                      'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
-                      currentParticipant.gender === 'Male'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : props.darkMode
-                          ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-slate-50',
-                    ]">
-                      <input type="radio" value="Male" v-model="currentParticipant.gender" class="sr-only" />
-                      <i class="fas fa-mars"></i> Male
-                    </div>
-
-                    <div @click="currentParticipant.gender = 'Female'" :class="[
-                      'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
-                      currentParticipant.gender === 'Female'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : props.darkMode
-                          ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-slate-50',
-                    ]">
-                      <input type="radio" value="Female" v-model="currentParticipant.gender" class="sr-only" />
-                      <i class="fas fa-venus"></i> Female
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- SECTION 4: CONTACT DETAILS -->
-          <section v-if="currentParticipant.run_category">
-            <div class="mb-4">
-              <h3 class="text-lg font-bold flex items-center gap-2">
-                <span
-                  class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">4</span>
-                Contact Details
-              </h3>
-              <p class="text-xs text-gray-500 ml-9">
-                Used for registration confirmation and race notifications
-              </p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div class="w-full">
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Email Address *</label>
-                <div class="relative">
-                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
-                    <i class="fas fa-envelope"></i>
-                  </span>
-                  <input v-model="currentParticipant.contact_email" placeholder="runner@lsu.edu.ph" :class="[
-                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
-                  ]" />
-                </div>
-              </div>
-
-              <div class="w-full">
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Contact Phone Number
-                  *</label>
-                <div class="relative">
-                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
-                    <i class="fas fa-phone"></i>
-                  </span>
-                  <input v-model="currentParticipant.contact_number" placeholder="0917 123 4567" :class="[
-                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
-                  ]" />
-                </div>
-              </div>
-
-              <div class="w-full">
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Complete
-                  Address</label>
-                <div class="relative">
-                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
-                    <i class="fas fa-map-marker-alt"></i>
-                  </span>
-                  <input v-model="currentParticipant.contact_address" placeholder="Barangay, City, Province" :class="[
-                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
-                  ]" />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- SECTION 5: SHIRT TYPE & SIZE -->
-          <section v-if="currentParticipant.run_category && currentParticipant.run_category !== '1K'">
-            <div class="mb-4">
-              <div class="flex items-center justify-between">
-                <h3 class="text-lg font-bold flex items-center gap-2">
-                  <span
-                    class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">5</span>
-                  Shirt Selection
-                </h3>
-                <span
-                  class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                  Selected: <span class="font-black">{{ currentParticipant.selected_shirt_tab ? (currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : currentParticipant.selected_shirt_tab === 'finisher_shirt' ? 'Finisher Shirt' : 'Event Shirt') : 'Event Shirt' }}</span>
-                </span>
-              </div>
-              <p class="text-xs text-gray-500 ml-9">
-                Prioritize your preferred shirt type and size for Runner #{{ activeParticipantIndex + 1 }}
-              </p>
-            </div>
-
-            <div
-              :class="[
-                'grid gap-3 mb-5',
-                currentParticipant.run_category === '20K' ? 'grid-cols-3' : 'grid-cols-2'
-              ]"
-            >
-              <button
-                v-if="currentParticipant.run_category === '20K' || currentParticipant.run_category === '3K' || currentParticipant.run_category === '10K'"
-                type="button"
-                @click="currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.shirt_type = 'event_shirt'"
-                :class="[
-                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                  currentParticipant.selected_shirt_tab === 'event_shirt'
-                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                ]"
-              >
-                <i class="fas fa-shirt"></i>
-                <span>Event Shirt</span>
-              </button>
-
-              <button
-                type="button"
-                @click="currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.shirt_type = 'singlet'"
-                :class="[
-                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                  currentParticipant.selected_shirt_tab === 'singlet'
-                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                ]"
-              >
-                <i class="fas fa-tshirt"></i>
-                <span>Singlet</span>
-              </button>
-
-              <button
-                v-if="currentParticipant.run_category === '20K'"
-                type="button"
-                @click="currentParticipant.selected_shirt_tab = 'finisher_shirt'"
-                :class="[
-                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                  currentParticipant.selected_shirt_tab === 'finisher_shirt'
-                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                ]"
-              >
-                <i class="fas fa-medal"></i>
-                <span>Finisher Shirt</span>
-              </button>
-            </div>
-
-            <div class="space-y-4">
-              <div>
-                <div class="flex items-center justify-between mb-2">
-                  <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                    {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? 'Finisher Shirt' : currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : 'Event Shirt' }} Size
-                  </h4>
-                  <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                    {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size || 'M') : currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M') }}
-                  </span>
-                </div>
-
-                <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
-                  <label
-                    v-for="size in tshirtSizes"
-                    :key="currentParticipant.selected_shirt_tab + '-' + size"
-                    @click="
-                      if (currentParticipant.selected_shirt_tab === 'finisher_shirt') {
-                        currentParticipant.finisher_shirt_size = size;
-                      } else if (currentParticipant.selected_shirt_tab === 'singlet') {
-                        currentParticipant.singlet_size = size;
-                        currentParticipant.shirt_type = 'singlet';
-                      } else {
-                        currentParticipant.event_shirt_size = size;
-                        currentParticipant.shirt_type = 'event_shirt';
-                      }
-                      currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)
-                    "
-                    :class="[
-                      'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
-                      (currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size)
-                        ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
-                        : props.darkMode
-                          ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
-                          : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
-                    ]"
-                  >
-                    <input
-                      type="radio"
-                      :name="'shirt_size_' + currentParticipant.selected_shirt_tab"
-                      :value="size"
-                      :checked="currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size"
-                      class="sr-only"
-                    />
-                    <i :class="[
-                      'mb-1 text-sm transition',
-                      currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size === size ? 'fas fa-medal text-white' : 'fas fa-medal text-gray-400') : (currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size === size ? 'fas fa-tshirt text-white' : 'fas fa-tshirt text-gray-400') : (currentParticipant.event_shirt_size === size ? 'fas fa-shirt text-white' : 'fas fa-shirt text-gray-400'))
-                    ]"></i>
-                    <span class="text-xs font-bold">{{ size }}</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div
-              class="mt-4 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
-              <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
-              <span>
-                {{ currentParticipant.run_category === '20K' ? 'Your 20K registration includes the event shirt, singlet, and finisher shirt sizes listed above.' : 'Includes your selected shirt type in the size above.' }}
-              </span>
-            </div>
-          </section>
 
           <!-- SECTION 6: PAYMENT SUMMARY & OPTIONS -->
           <section v-if="currentParticipant.run_category" :class="[
