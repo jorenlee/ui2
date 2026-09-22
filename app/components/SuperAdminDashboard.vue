@@ -646,8 +646,17 @@ const logOut = () => logout();
                 :rolePermissions="rolePermissions"
               />
               <template #fallback>
-                <div class="flex items-center justify-center py-20">
-                  <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+                <div class="p-4 space-y-4 animate-pulse">
+                  <!-- Skeleton header bar -->
+                  <div :class="['h-10 rounded-2xl w-full', darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                  <!-- Skeleton card grid -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+                    <div v-for="n in 6" :key="n"
+                      :class="['rounded-2xl p-4 space-y-2 border', darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200']">
+                      <div :class="['h-3 rounded w-3/4', darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                      <div :class="['h-2.5 rounded w-1/2', darkMode ? 'bg-gray-700' : 'bg-slate-100']"></div>
+                    </div>
+                  </div>
                 </div>
               </template>
             </Suspense>
@@ -663,9 +672,18 @@ const logOut = () => logout();
         <div v-if="currentView === 'Menu'" class="lg:px-2 pb-80">
           <SuperAdminDashboardWelcome :darkMode="darkMode" />
           <template v-if="initialLoading">
-            <div class="flex items-center justify-center py-10">
-              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-              <span class="ml-3 text-sm opacity-60">Loading menu…</span>
+            <div class="mt-4 space-y-3 px-2 animate-pulse">
+              <div v-for="n in 5" :key="'sk-group-' + n"
+                :class="['rounded-2xl border p-3 space-y-2', darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200']">
+                <!-- Group label -->
+                <div :class="['h-3 rounded w-1/3', darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                <!-- Menu items -->
+                <div class="space-y-1.5 pl-2">
+                  <div v-for="m in 2" :key="m"
+                    :class="['h-2.5 rounded', darkMode ? 'bg-gray-700' : 'bg-slate-100',
+                      m === 2 ? 'w-2/5' : 'w-3/5']"></div>
+                </div>
+              </div>
             </div>
           </template>
           <SuperAdminDashboardMenuList

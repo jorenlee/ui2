@@ -10,10 +10,7 @@ const props = defineProps({
 });
 
 const config = useRuntimeConfig();
-const endpoint = ref(config?.public?.apiUrl || "http://127.0.0.1:8000");
-if (!endpoint.value || endpoint.value.includes("buang_ka_eyy")) {
-  endpoint.value = "http://127.0.0.1:8000";
-}
+const endpoint = ref(config.public.apiUrl);
 
 const toastModal = ref({
   show: false,

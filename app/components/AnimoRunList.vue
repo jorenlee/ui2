@@ -9,12 +9,9 @@ const props = defineProps({
 });
 
 const config = useRuntimeConfig();
-const endpoint = ref(config?.public?.apiUrl || "http://127.0.0.1:8000");
-if (!endpoint.value || endpoint.value.includes("buang_ka_eyy")) {
-  endpoint.value = "http://127.0.0.1:8000";
-}
+const endpoint = ref(config.public.apiUrl);
 
-const isLoading = ref(false);
+const isFetching = ref(false);
 const isConfirming = ref(false);
 
 const confirmModal = ref({
@@ -59,7 +56,7 @@ const runCategories = [
 const registrations = ref([]);
 
 const fetchRegistrations = async () => {
-  isLoading.value = true;
+  isFetching.value = true;
   try {
     const res = await $fetch(`${endpoint.value}/api/animorun/list/`);
     if (Array.isArray(res)) {
@@ -68,7 +65,7 @@ const fetchRegistrations = async () => {
   } catch (err) {
     console.error("Error fetching Animo Run registrations:", err);
   } finally {
-    isLoading.value = false;
+    isFetching.value = false;
   }
 };
 
@@ -220,10 +217,10 @@ const getStatusBadge = (status) => {
 
           </div>
 
-          <button type="button" @click="fetchRegistrations" :disabled="isLoading"
+          <button type="button" @click="fetchRegistrations" :disabled="isFetching"
             class="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-2 shadow-sm cursor-pointer">
-            <i :class="['fas fa-sync-alt', isLoading ? 'fa-spin' : '']"></i>
-            {{ isLoading ? 'Refreshing...' : 'Refresh Data' }}
+            <i :class="['fas fa-sync-alt', isFetching ? 'fa-spin' : '']"></i>
+            {{ isFetching ? 'Refreshing...' : 'Refresh Data' }}
           </button>
         </div>
       </div>
@@ -237,7 +234,8 @@ const getStatusBadge = (status) => {
           <div>
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Runners</p>
             <h3 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-              {{ stats.totalRunners }}
+              <span v-if="isFetching" class="inline-block h-6 w-10 rounded-lg bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
+              <span v-else>{{ stats.totalRunners }}</span>
             </h3>
           </div>
           <div
@@ -253,7 +251,8 @@ const getStatusBadge = (status) => {
           <div>
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Confirmed Paid</p>
             <h3 class="text-2xl font-black text-green-600 dark:text-green-400 mt-1">
-              {{ stats.confirmed }}
+              <span v-if="isFetching" class="inline-block h-6 w-10 rounded-lg bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
+              <span v-else>{{ stats.confirmed }}</span>
             </h3>
           </div>
           <div
@@ -269,7 +268,8 @@ const getStatusBadge = (status) => {
           <div>
             <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pending Action</p>
             <h3 class="text-2xl font-black text-amber-500 dark:text-amber-400 mt-1">
-              {{ stats.pending }}
+              <span v-if="isFetching" class="inline-block h-6 w-10 rounded-lg bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
+              <span v-else>{{ stats.pending }}</span>
             </h3>
           </div>
           <div
@@ -362,79 +362,124 @@ const getStatusBadge = (status) => {
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700/60 text-xs">
-              <tr v-for="runner in filteredRegistrations" :key="runner.id" :class="[
-                'hover:bg-emerald-50/30 dark:hover:bg-gray-700/40 transition',
-              ]">
-                <td class="p-4 font-mono">
-                  <div class="font-bold text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</div>
-                  <span
-                    class="inline-block mt-0.5 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px]">
-                    RACE BIB {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
-                  </span>
-                </td>
 
-                <td class="p-4">
-                  <div class="font-bold text-gray-900 dark:text-gray-100">
-                    {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname
-                    }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
-                  </div>
-                  <div class="text-[11px] text-gray-500 truncate max-w-[180px]">
-                    {{ runner.contact_email || runner.email }}
-                  </div>
-                </td>
+              <!-- SKELETON ROWS while fetching -->
+              <template v-if="isFetching">
+                <tr v-for="n in 8" :key="'sk-' + n" :class="[
+                  'animate-pulse',
+                  props.darkMode ? 'bg-gray-800' : 'bg-white',
+                ]">
+                  <!-- Reg ID & Bib -->
+                  <td class="p-4">
+                    <div :class="['h-3 w-10 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                    <div :class="['h-2.5 w-20 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                  </td>
+                  <!-- Runner Name -->
+                  <td class="p-4">
+                    <div :class="['h-3 w-32 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                    <div :class="['h-2.5 w-40 rounded', props.darkMode ? 'bg-gray-600' : 'bg-slate-100']"></div>
+                  </td>
+                  <!-- Classification -->
+                  <td class="p-4">
+                    <div :class="['h-3 w-28 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                    <div :class="['h-2.5 w-16 rounded', props.darkMode ? 'bg-gray-600' : 'bg-slate-100']"></div>
+                  </td>
+                  <!-- Category -->
+                  <td class="p-4">
+                    <div :class="['h-5 w-16 rounded-full', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                  </td>
+                  <!-- Payment Option -->
+                  <td class="p-4">
+                    <div :class="['h-3 w-24 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                    <div :class="['h-2.5 w-12 rounded', props.darkMode ? 'bg-gray-600' : 'bg-slate-100']"></div>
+                  </td>
+                  <!-- Status -->
+                  <td class="p-4">
+                    <div :class="['h-5 w-20 rounded-xl', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                  </td>
+                  <!-- Actions -->
+                  <td class="p-4 text-center">
+                    <div :class="['h-6 w-14 rounded-xl mx-auto', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                  </td>
+                </tr>
+              </template>
 
-                <td class="p-4">
-                  <span class="font-medium text-gray-700 dark:text-gray-300 block">
-                    {{ runner.participant_type || 'Individual' }}
-                  </span>
-                  <span class="text-[10px] text-gray-400 block mt-0.5">
-                    {{ runner.college_course || runner.beu_grade || runner.partner_office || runner.alumni_batch ||
-                      runner.organization || 'General' }}
-                  </span>
-                </td>
+              <!-- ACTUAL DATA ROWS -->
+              <template v-else>
+                <tr v-for="runner in filteredRegistrations" :key="runner.id" :class="[
+                  'hover:bg-emerald-50/30 dark:hover:bg-gray-700/40 transition',
+                ]">
+                  <td class="p-4 font-mono">
+                    <div class="font-bold text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</div>
+                    <span
+                      class="inline-block mt-0.5 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px]">
+                      RACE BIB {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
+                    </span>
+                  </td>
 
-                <td class="p-4">
-                  <span :class="[
-                    'px-2.5 py-1 rounded-full font-black text-[11px] inline-block shadow-sm',
-                    runCategories.find(c => runner.run_category && runner.run_category.startsWith(c.id))?.color || 'bg-emerald-700 text-white',
-                  ]">
-                    {{ runner.run_category }}
-                  </span>
-                </td>
+                  <td class="p-4">
+                    <div class="font-bold text-gray-900 dark:text-gray-100">
+                      {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname
+                      }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
+                    </div>
+                    <div class="text-[11px] text-gray-500 truncate max-w-[180px]">
+                      {{ runner.contact_email || runner.email }}
+                    </div>
+                  </td>
 
-                <td class="p-4">
-                  <div class="font-medium capitalize">
-                    {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type ===
-                      'add_to_tuition' ? 'Add to Tuition' : 'Over the Counter / QR' }}
-                  </div>
-                  <div class="text-[10px] text-gray-400 font-bold mt-0.5">
-                    ₱{{ Number(runner.grand_total_payment || runner.grand_total || 0).toLocaleString() }}
-                  </div>
-                </td>
+                  <td class="p-4">
+                    <span class="font-medium text-gray-700 dark:text-gray-300 block">
+                      {{ runner.participant_type || 'Individual' }}
+                    </span>
+                    <span class="text-[10px] text-gray-400 block mt-0.5">
+                      {{ runner.college_course || runner.beu_grade || runner.partner_office || runner.alumni_batch ||
+                        runner.organization || 'General' }}
+                    </span>
+                  </td>
 
-                <td class="p-4">
-                  <span :class="[
-                    'px-2.5 py-1 rounded-xl text-[10px] font-bold border inline-block',
-                    getStatusBadge(runner.payment_status),
-                  ]">
-                    {{ runner.payment_status }}
-                  </span>
-                </td>
+                  <td class="p-4">
+                    <span :class="[
+                      'px-2.5 py-1 rounded-full font-black text-[11px] inline-block shadow-sm',
+                      runCategories.find(c => runner.run_category && runner.run_category.startsWith(c.id))?.color || 'bg-emerald-700 text-white',
+                    ]">
+                      {{ runner.run_category }}
+                    </span>
+                  </td>
 
-                <td class="p-4 text-center">
-                  <button type="button" @click="openDetails(runner)"
-                    class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition inline-flex items-center gap-1 cursor-pointer">
-                    <i class="fas fa-eye"></i> View
-                  </button>
-                </td>
-              </tr>
+                  <td class="p-4">
+                    <div class="font-medium capitalize">
+                      {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type ===
+                        'add_to_tuition' ? 'Add to Tuition' : 'Over the Counter / QR' }}
+                    </div>
+                    <div class="text-[10px] text-gray-400 font-bold mt-0.5">
+                      ₱{{ Number(runner.grand_total_payment || runner.grand_total || 0).toLocaleString() }}
+                    </div>
+                  </td>
 
-              <tr v-if="filteredRegistrations.length === 0">
-                <td colspan="7" class="p-8 text-center text-gray-500">
-                  <i class="fas fa-search text-3xl mb-2 text-gray-400 block"></i>
-                  No registration records match your search criteria.
-                </td>
-              </tr>
+                  <td class="p-4">
+                    <span :class="[
+                      'px-2.5 py-1 rounded-xl text-[10px] font-bold border inline-block',
+                      getStatusBadge(runner.payment_status),
+                    ]">
+                      {{ runner.payment_status }}
+                    </span>
+                  </td>
+
+                  <td class="p-4 text-center">
+                    <button type="button" @click="openDetails(runner)"
+                      class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition inline-flex items-center gap-1 cursor-pointer">
+                      <i class="fas fa-eye"></i> View
+                    </button>
+                  </td>
+                </tr>
+
+                <tr v-if="filteredRegistrations.length === 0">
+                  <td colspan="7" class="p-8 text-center text-gray-500">
+                    <i class="fas fa-search text-3xl mb-2 text-gray-400 block"></i>
+                    No registration records match your search criteria.
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
