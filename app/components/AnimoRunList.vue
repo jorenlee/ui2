@@ -46,6 +46,29 @@ const selectedParticipantType = ref("All");
 const selectedRunner = ref(null);
 const isDetailModalOpen = ref(false);
 
+const receiptModal = ref({
+  show: false,
+  url: "",
+  title: "Payment Receipt",
+  runner: null,
+});
+
+const openReceiptModal = (url, title = "Payment Receipt", runner = null) => {
+  if (!url) return;
+  receiptModal.value = {
+    show: true,
+    url,
+    title,
+    runner: runner || selectedRunner.value,
+  };
+};
+
+const closeReceiptModal = () => {
+  receiptModal.value.show = false;
+  receiptModal.value.url = "";
+  receiptModal.value.runner = null;
+};
+
 const runCategories = [
   { id: "1K", name: "1K - EMERALD PAWS", color: "bg-sky-500 text-white" },
   { id: "3K", name: "3K — EMERALD STARTER", color: "bg-amber-500 text-white" },
@@ -160,7 +183,7 @@ const executeConfirmPayment = async () => {
     }
     closeConfirmModal();
     showNotice(
-      `Registration and payment confirmed successfully for ${runner.firstname} ${runner.lastname}.\n\nAn official confirmation email has been dispatched to ${runner.contact_email || runner.email} and BCC'd to calendar@lsu.edu.ph.`,
+      `Registration and payment confirmed successfully for ${runner.firstname} ${runner.lastname}.\n\nAn official confirmation email has been sent to ${runner.contact_email || runner.email}.`,
       "Payment Confirmed!",
       "success"
     );
@@ -688,21 +711,31 @@ const getStatusBadge = (status) => {
 
             <!-- Valid ID Section -->
             <div v-if="getImageUrl(selectedRunner.valid_id_front) || getImageUrl(selectedRunner.valid_id_back)">
-              <h4 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Submitted Valid ID Documents
+              <h4 class="mt-5 text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Submitted Valid ID Documents
               </h4>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div v-if="getImageUrl(selectedRunner.valid_id_front)"
-                  class="border rounded-2xl p-2 text-center bg-slate-50 dark:bg-gray-900/40">
-                  <span class="text-[10px] font-semibold text-gray-500 block mb-1">ID Front</span>
+                  @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_front), 'Submitted Valid ID (Front)')"
+                  class="border rounded-2xl p-2 text-center bg-slate-50 dark:bg-gray-900/40 cursor-pointer hover:border-emerald-500 transition group"
+                  title="Click to view full image">
+                  <div class="flex items-center justify-center gap-1 mb-1">
+                    <span class="text-[10px] font-semibold text-gray-500 group-hover:text-emerald-600 transition">ID Front</span>
+                    <i class="fas fa-search-plus text-[10px] text-gray-400 group-hover:text-emerald-600 transition"></i>
+                  </div>
                   <img :src="getImageUrl(selectedRunner.valid_id_front)" alt="ID Front"
-                    class="w-full h-32 object-cover rounded-xl border" />
+                    class="w-full h-32 object-cover rounded-xl border group-hover:opacity-95 transition" />
                 </div>
 
                 <div v-if="getImageUrl(selectedRunner.valid_id_back)"
-                  class="border rounded-2xl p-2 text-center bg-slate-50 dark:bg-gray-900/40">
-                  <span class="text-[10px] font-semibold text-gray-500 block mb-1">ID Back</span>
+                  @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_back), 'Submitted Valid ID (Back)')"
+                  class="border rounded-2xl p-2 text-center bg-slate-50 dark:bg-gray-900/40 cursor-pointer hover:border-emerald-500 transition group"
+                  title="Click to view full image">
+                  <div class="flex items-center justify-center gap-1 mb-1">
+                    <span class="text-[10px] font-semibold text-gray-500 group-hover:text-emerald-600 transition">ID Back</span>
+                    <i class="fas fa-search-plus text-[10px] text-gray-400 group-hover:text-emerald-600 transition"></i>
+                  </div>
                   <img :src="getImageUrl(selectedRunner.valid_id_back)" alt="ID Back"
-                    class="w-full h-32 object-cover rounded-xl border" />
+                    class="w-full h-32 object-cover rounded-xl border group-hover:opacity-95 transition" />
                 </div>
               </div>
             </div>
@@ -747,21 +780,23 @@ const getStatusBadge = (status) => {
 
             <!-- Proof of Payment Receipt (if uploaded) -->
             <div v-if="selectedRunner.proof_of_payment">
-
               <div
                 class="border rounded-2xl lg:mt-5 p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <img :src="selectedRunner.proof_of_payment" alt="Payment Receipt"
-                    class="w-16 h-16 object-cover rounded-lg border" />
+                    class="w-16 h-16 object-cover rounded-lg border cursor-pointer hover:opacity-85 transition hover:ring-2 hover:ring-emerald-500"
+                    title="Click to view receipt"
+                    @click="openReceiptModal(selectedRunner.proof_of_payment, 'Payment Receipt Proof', selectedRunner)" />
                   <div>
                     <p class="font-bold text-xs">Payment Receipt</p>
-                    <p class="font-bold text-xs">Proof Attached</p>
+                    <p class="font-bold text-xs text-gray-500 dark:text-gray-400">Proof Attached</p>
                   </div>
                 </div>
-                <a :href="selectedRunner.proof_of_payment" target="_blank"
-                  class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition whitespace-nowrap">
-                  <i class="fas fa-external-link-alt mr-1"></i> View Receipt
-                </a>
+                <button type="button"
+                  @click="openReceiptModal(selectedRunner.proof_of_payment, 'Payment Receipt Proof', selectedRunner)"
+                  class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-sm">
+                  <i class="fas fa-receipt text-xs"></i> View Receipt
+                </button>
               </div>
             </div>
 
@@ -813,24 +848,15 @@ const getStatusBadge = (status) => {
 
         <div>
           <h3 class="text-lg font-black tracking-tight">
-            Confirm Payment & Issue Bib?
+            Confirm Payment?
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            You are approving registration for:
+            Are you sure you want to confirm payment?
           </p>
-          <div class="mt-2 p-3 rounded-xl bg-slate-50 dark:bg-gray-900/50 border text-left text-xs space-y-1">
-            <p><strong>Runner:</strong> {{ confirmModal.runner.firstname }} {{ confirmModal.runner.lastname }}</p>
-            <p><strong>Bib Number:</strong> {{ confirmModal.runner.run_number || confirmModal.runner.bib_number }}</p>
-            <p><strong>Category:</strong> {{ confirmModal.runner.run_category }}</p>
-            <p><strong>Recipient:</strong> {{ confirmModal.runner.contact_email || confirmModal.runner.email }}</p>
-          </div>
+        
         </div>
 
-        <div
-          class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-[11px] text-emerald-800 dark:text-emerald-300 text-left">
-          <i class="fas fa-info-circle mr-1"></i> An official registration & payment confirmation email will be
-          dispatched to the runner and BCC'd to <strong>animorun@lsu.edu.ph</strong>.
-        </div>
+       
 
         <div class="flex items-center gap-2 pt-2">
           <button type="button" @click="closeConfirmModal" :disabled="isConfirming"
@@ -897,7 +923,65 @@ const getStatusBadge = (status) => {
               ? 'bg-rose-600 hover:bg-rose-700'
               : 'bg-emerald-600 hover:bg-emerald-700'
           ]">
-            <span>Understood</span>
+            <span>Done</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAYMENT RECEIPT & IMAGE PREVIEW MODAL -->
+    <div v-if="receiptModal.show && receiptModal.url"
+      class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm"
+      @click.self="closeReceiptModal">
+      <div :class="[
+        'relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl shadow-2xl border overflow-hidden transition-all',
+        props.darkMode ? 'bg-gray-900 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <!-- Header -->
+        <div class="px-5 py-3.5 border-b flex items-center justify-between dark:border-gray-800 shrink-0">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center text-sm shadow-xs">
+              <i class="fas fa-receipt"></i>
+            </div>
+            <div>
+              <h3 class="text-sm sm:text-base font-black tracking-tight leading-tight">
+                {{ receiptModal.title }}
+              </h3>
+              <p v-if="receiptModal.runner" class="text-[11px] text-gray-500 dark:text-gray-400">
+                Runner: <span class="font-semibold text-emerald-600 dark:text-emerald-400">{{ receiptModal.runner.firstname }} {{ receiptModal.runner.lastname }}</span>
+                <span v-if="receiptModal.runner.run_number || receiptModal.runner.bib_number"> • Bib {{ receiptModal.runner.run_number || receiptModal.runner.bib_number }}</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <a :href="receiptModal.url" target="_blank" title="Open full image in new tab if needed"
+              class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition flex items-center justify-center text-xs cursor-pointer">
+              <i class="fas fa-external-link-alt"></i>
+            </a>
+            <button type="button" @click="closeReceiptModal"
+              class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-rose-500 hover:text-white text-gray-600 dark:text-gray-300 transition flex items-center justify-center text-xs font-bold cursor-pointer">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Image Content Area -->
+        <div class="p-3 sm:p-5 overflow-auto flex-1 flex items-center justify-center bg-slate-900/5 dark:bg-black/50 min-h-[260px]">
+          <img :src="receiptModal.url" :alt="receiptModal.title"
+            class="max-h-[66vh] max-w-full w-auto object-contain rounded-xl border shadow-md border-gray-200 dark:border-gray-800 select-none" />
+        </div>
+
+        <!-- Footer -->
+        <div class="px-5 py-3 border-t dark:border-gray-800 flex items-center justify-between text-xs bg-slate-50/50 dark:bg-gray-900/50 shrink-0">
+          <div class="text-[11px] text-gray-500 dark:text-gray-400">
+            <span v-if="receiptModal.runner && (receiptModal.runner.grand_total_payment || receiptModal.runner.grand_total)">
+              Amount Due: <strong class="text-emerald-600 dark:text-emerald-400 font-bold">₱{{ Number(receiptModal.runner.grand_total_payment || receiptModal.runner.grand_total || 0).toLocaleString() }}</strong>
+            </span>
+          </div>
+          <button type="button" @click="closeReceiptModal"
+            class="px-4 py-1.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold text-xs transition cursor-pointer">
+            Close
           </button>
         </div>
       </div>
