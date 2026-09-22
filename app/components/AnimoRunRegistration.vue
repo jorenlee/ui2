@@ -587,66 +587,46 @@ const submitRegistration = async () => {
 
 <template>
   <div :class="[
-    'min-h-screen py-2 px-3 sm:px-6 lg:px-8 transition-colors duration-300',
+    'min-h-screen py-2 px-2 sm:px-4 lg:px-8 transition-colors duration-300',
     props.darkMode ? 'bg-gray-900 text-gray-100' : 'bg-slate-50 text-gray-800',
   ]">
-    <div class="px-3">
+    <div class="">
       <!-- HERO / HEADER -->
       <div :class="[
-        'relative overflow-hidden rounded-3xl shadow-xl mb-2 border transition-all duration-300',
+        'relative overflow-hidden rounded-2xl shadow-xl mb-2 border transition-all duration-300',
         props.darkMode
           ? 'bg-gradient-to-br from-green-950 via-emerald-900 to-gray-900 border-green-800/40'
           : 'bg-gradient-to-br from-green-800 via-emerald-700 to-teal-800 border-green-600 text-white',
       ]">
         <!-- Background decorative elements -->
-        <div class="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none">
-        </div>
-        <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl pointer-events-none">
-        </div>
+        <div class="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl pointer-events-none"></div>
 
-        <div class="relative px-6 py-4 sm:px-10 text-center flex flex-col items-center">
-          <div class="flex items-center justify-center transform hover:scale-105 transition gap-x-12 flex-wrap">
-
-
-
-            <div class="">
-
-              <div class="flex items-center justify-center gap-x-5 mb-4">
-                <img
-                  src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/Corporate%20Logo%20New/Corporate%20Logo%20White.png"
-                  alt="LSU Logo" class="w-36 mx-auto h-auto object-contain" />
-                <h1
-                  class="mt-3 w-full flex text-center tracking-widest text-xl sm:text-2xl font-black text-white items-center justify-center sm:justify-start gap-3">
-                  <span>ANIMO RUN 2026</span>
-                  <span class="text-lg font-bold  text-emerald-200">
-                    THE EMERALD RUN
-                  </span>
-
-                </h1>
-              </div>
-
-
-              <!-- Badges -->
-              <div class=" flex flex-wrap justify-center gap-3 text-xs">
-                <span
-                  class="px-3 py-1 bg-black/20 backdrop-blur border border-white/10 rounded-lg text-emerald-200 font-medium">
-                  <i class="fas fa-calendar-alt mr-1.5 text-amber-300"></i> Annual University Run
+        <div class="relative px-4 py-3 sm:px-8 sm:py-5">
+          <!-- Mobile: compact row layout -->
+          <div class="flex items-center gap-3 sm:gap-5">
+            <img
+              src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/Corporate%20Logo%20New/Corporate%20Logo%20White.png"
+              alt="LSU Logo" class="w-11 sm:w-16 h-auto object-contain shrink-0" />
+            <div class="flex-1 min-w-0">
+              <h1 class="text-base sm:text-2xl font-black text-white tracking-wide leading-tight flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span>ANIMO RUN 2026</span>
+                <span class="text-emerald-200 font-semibold text-xs sm:text-base">· THE EMERALD RUN</span>
+              </h1>
+              <!-- Badges - scrollable on mobile -->
+              <div class="flex gap-2 mt-2 overflow-x-auto pb-1 scrollbar-none text-[10px] sm:text-xs flex-nowrap sm:flex-wrap">
+                <span class="px-2 py-1 bg-black/20 backdrop-blur border border-white/10 rounded-lg text-emerald-200 font-medium whitespace-nowrap shrink-0">
+                  <i class="fas fa-calendar-alt mr-1 text-amber-300"></i> Annual University Run
                 </span>
-                <span
-                  class="px-3 py-1 bg-black/20 backdrop-blur border border-white/10 rounded-lg text-emerald-200 font-medium">
-                  <i class="fas fa-map-marker-alt mr-1.5 text-rose-300"></i> LSU Main Campus, Ozamiz
+                <span class="px-2 py-1 bg-black/20 backdrop-blur border border-white/10 rounded-lg text-emerald-200 font-medium whitespace-nowrap shrink-0">
+                  <i class="fas fa-map-marker-alt mr-1 text-rose-300"></i> LSU Main Campus
                 </span>
-                <span
-                  class="px-3 py-1 bg-black/20 backdrop-blur border border-white/10 rounded-lg text-emerald-200 font-medium">
-                  <i class="fas fa-medal mr-1.5 text-yellow-300"></i> Exclusive Finisher Medals & Event Shirts
+                <span class="px-2 py-1 bg-black/20 backdrop-blur border border-white/10 rounded-lg text-emerald-200 font-medium whitespace-nowrap shrink-0">
+                  <i class="fas fa-medal mr-1 text-yellow-300"></i> Finisher Medals & Shirts
                 </span>
               </div>
             </div>
-
-
           </div>
-
-
         </div>
       </div>
 
@@ -659,18 +639,18 @@ const submitRegistration = async () => {
       ]">
         <!-- REGISTRATION TYPE SELECTOR -->
         <div :class="[
-          'p-6 border-b transition-colors duration-300',
+          'p-3 sm:p-5 border-b transition-colors duration-300',
           props.darkMode
             ? 'bg-gray-800/80 border-gray-700'
             : 'bg-gradient-to-r from-emerald-50/60 to-slate-50 border-slate-200',
         ]">
-          <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-5">
             <div>
-              <h2 class="text-xl font-bold flex items-center gap-2">
+              <h2 class="text-base sm:text-lg font-bold flex items-center gap-2">
                 <i class="fas fa-users text-emerald-600"></i>
                 Select Registration Type
               </h2>
-              <p class="text-xs text-gray-500 mt-1">
+              <p class="text-xs text-gray-500 mt-0.5">
                 Choose whether you are registering for yourself or a team/group
               </p>
             </div>
@@ -765,7 +745,7 @@ const submitRegistration = async () => {
         </div>
 
         <!-- FORM CONTENT AREA -->
-        <div class="p-6 sm:p-8 space-y-10">
+        <div class="p-3 sm:p-5 space-y-6 sm:space-y-8">
 
           <!-- GROUP HELPER TOOLBAR -->
           <div v-if="form_type === 'Group' && activeParticipantIndex > 0" :class="[
@@ -785,15 +765,15 @@ const submitRegistration = async () => {
 
           <!-- SECTION 1: RUN CATEGORY (3 MAIN DISTANCES) -->
           <section>
-            <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+            <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
               <div>
-                <h3 class="text-lg font-bold flex items-center gap-2">
+                <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
                   <span
                     class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">1</span>
                   Run Category
                 </h3>
                 <p class="text-xs text-gray-500 ml-9">
-                  Choose race distance for Runner #{{ activeParticipantIndex + 1 }} (1K Pet Run, 3K Starter, 10K Endurance, or 20K Ultimate)
+                  Choose race distance for Runner #{{ activeParticipantIndex + 1 }}
                 </p>
               </div>
 
@@ -801,7 +781,7 @@ const submitRegistration = async () => {
                 <span
                   v-if="currentParticipant.run_category === '1K'"
                   class="text-xs font-bold px-3 py-1.5 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-800 flex items-center gap-1.5 shadow-xs">
-                  <i class="fas fa-paw text-sky-500"></i> Selected: 1K Emerald Paws (₱1,000)
+                  <i class="fas fa-paw text-sky-500"></i> Selected: 1K (₱1,000)
                 </span>
                 <span
                   v-else
@@ -811,13 +791,35 @@ const submitRegistration = async () => {
               </div>
             </div>
 
-            <!-- ONE-ROW: Pet card | divider | Human cards -->
-            <div class="flex flex-col lg:flex-row gap-0 items-stretch">
+            <!-- Mobile Quick Category Selector Pills -->
+            <div class="lg:hidden flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
+              <button
+                v-for="cat in runCategories"
+                :key="'pill-' + cat.id"
+                type="button"
+                @click="currentParticipant.run_category = cat.id"
+                :class="[
+                  'px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shrink-0 select-none cursor-pointer',
+                  currentParticipant.run_category === cat.id
+                    ? (cat.categoryType === 'pet' ? 'bg-sky-600 text-white border-sky-600 shadow-md shadow-sky-600/30' : 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/30')
+                    : props.darkMode ? 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700' : 'bg-white text-gray-700 border-slate-200 hover:bg-emerald-50/50'
+                ]"
+              >
+                <i :class="['fas text-[11px]', cat.icon]"></i>
+                <span>{{ cat.id }}</span>
+                <span class="opacity-80 font-normal">₱{{ cat.fee.toLocaleString() }}</span>
+                <span v-if="cat.categoryType === 'pet'" class="text-[9px] bg-sky-400/30 text-sky-100 px-1 py-0.5 rounded uppercase font-extrabold">Pet</span>
+              </button>
+            </div>
+
+            <!-- RACE CARDS CONTAINER -->
+            <!-- Mobile: Horizontal swipe snap container; Desktop: flex row with sidebar -->
+            <div class="flex lg:flex-row gap-3 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scrollbar-none items-stretch -mx-2 px-2 sm:mx-0 sm:px-0">
 
               <!-- ── PET RUN CARD ─────────────────────────────────── -->
               <div
                 :class="[
-                  'relative rounded-3xl p-5 border-2 cursor-pointer transition-all duration-300 overflow-hidden select-none flex flex-col justify-between lg:w-[26%] shrink-0',
+                  'relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 overflow-hidden select-none flex flex-col justify-between w-[84vw] max-w-[320px] lg:w-[26%] shrink-0 snap-center',
                   currentParticipant.run_category === '1K'
                     ? 'border-sky-500 bg-gradient-to-b from-sky-50/90 to-white dark:from-sky-950/50 dark:to-gray-800/90 shadow-xl shadow-sky-500/20 ring-2 ring-sky-400/40 scale-[1.01]'
                     : props.darkMode
@@ -885,11 +887,11 @@ const submitRegistration = async () => {
                 </div>
               </div>
 
-              <!-- ── VERTICAL DIVIDER ─────────────────────────────── -->
+              <!-- ── VERTICAL DIVIDER (Desktop only) ──────────────── -->
               <div class="hidden lg:flex flex-col items-center justify-center px-3 shrink-0">
                 <div class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
                 <div :class="[
-                  'my-2 px-2 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest writing-vertical border shadow-sm shrink-0 flex flex-col items-center gap-1',
+                  'my-2 px-2 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm shrink-0 flex flex-col items-center gap-1',
                   props.darkMode ? 'bg-gray-800 border-gray-700 text-gray-500' : 'bg-white border-gray-200 text-gray-400 shadow-gray-100/80'
                 ]" style="writing-mode: vertical-rl; text-orientation: mixed;">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mb-1"></span>
@@ -902,13 +904,14 @@ const submitRegistration = async () => {
               </div>
 
               <!-- ── HUMAN RUN CARDS ──────────────────────────────── -->
-              <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <!-- Mobile: siblings in flex snap row via contents; Desktop: 3-column grid -->
+              <div class="contents lg:flex lg:flex-1 lg:grid lg:grid-cols-3 lg:gap-4">
                 <div
                   v-for="cat in runCategories.filter(c => c.categoryType === 'human')"
                   :key="cat.id"
                   @click="currentParticipant.run_category = cat.id"
                   :class="[
-                    'relative rounded-3xl p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between overflow-hidden select-none',
+                    'relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between overflow-hidden select-none w-[84vw] max-w-[320px] lg:w-auto shrink-0 snap-center lg:shrink',
                     currentParticipant.run_category === cat.id
                       ? 'border-emerald-600 bg-gradient-to-b from-emerald-50/70 to-white dark:from-emerald-950/40 dark:to-gray-800/90 shadow-xl shadow-emerald-600/10 ring-2 ring-emerald-500/40 scale-[1.02]'
                       : props.darkMode
@@ -980,6 +983,12 @@ const submitRegistration = async () => {
                 </div>
               </div>
 
+            </div>
+
+            <!-- Mobile Swipe Hint -->
+            <div class="lg:hidden flex items-center justify-center gap-1.5 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
+              <i class="fas fa-arrows-left-right text-[10px]"></i>
+              <span>Swipe cards horizontally to explore all race distances</span>
             </div>
 
 
@@ -1655,9 +1664,9 @@ const submitRegistration = async () => {
             </div>
 
             <!-- Radio Button Group for Sizes from 3XS to 10XL -->
-            <div class="grid grid-cols-4 sm:grid-cols-6 gap-2.5">
+            <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
               <label v-for="size in tshirtSizes" :key="size" @click="currentParticipant.tshirt_size = size" :class="[
-                'relative flex flex-col items-center justify-center p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
+                'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
                 currentParticipant.tshirt_size === size
                   ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
                   : props.darkMode
@@ -1688,7 +1697,7 @@ const submitRegistration = async () => {
 
           <!-- SECTION 7: PAYMENT SUMMARY & OPTIONS -->
           <section :class="[
-            'rounded-3xl p-6 sm:p-8 border shadow-lg transition-all',
+            'rounded-2xl p-4 sm:p-6 border shadow-lg transition-all',
             props.darkMode
               ? 'bg-gray-900/90 border-gray-700'
               : 'bg-gradient-to-br from-slate-50 to-emerald-50/40 border-emerald-200',
@@ -1723,7 +1732,7 @@ const submitRegistration = async () => {
                 Select Payment Option
               </label>
 
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <!-- 1. LSU Employees - Salary Deduction -->
                 <div @click="paymentType = 'salary_deduction'" :class="[
                   'p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between text-left relative',
@@ -2324,5 +2333,13 @@ input[type="checkbox"] {
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background: rgba(16, 185, 129, 0.3);
   border-radius: 9999px;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 </style>

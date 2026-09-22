@@ -198,27 +198,25 @@ const getStatusBadge = (status) => {
     <div class="space-y-1">
       <!-- HEADER BANNER -->
       <div :class="[
-        'relative overflow-hidden rounded-md px-5 py-2 border shadow-xl transition-all',
+        'relative overflow-hidden rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 border shadow-xl transition-all',
         props.darkMode
           ? 'bg-gradient-to-r from-emerald-950 via-gray-900 to-emerald-950 border-green-800/40'
           : 'bg-gradient-to-r from-emerald-700 via-teal-700 to-green-800 border-emerald-600 text-white',
       ]">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
-          <div class="flex items-center gap-x-3">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 relative z-10">
+          <div class="space-y-1">
             <div
-              class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur border border-white/20 text-xs font-semibold text-emerald-200">
+              class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-[11px] font-semibold text-emerald-200">
               <i class="fas fa-list text-amber-300"></i> Registration Management Portal
             </div>
-            <h1 class="text-sm  text-white tracking-tight">
-              <span class="font-black">Animo Run 2026 - Participant Status Checking : </span>Track, verify, and manage
-              all individual and group runner registrations
+            <h1 class="text-sm sm:text-base text-white font-black tracking-tight leading-snug">
+              Animo Run 2026 — Participant Status
+              <span class="font-normal text-xs sm:text-sm text-emerald-200 block sm:inline sm:ml-1">· Track, verify & manage runner registrations</span>
             </h1>
-
-
           </div>
 
           <button type="button" @click="fetchRegistrations" :disabled="isFetching"
-            class="px-4 py-2.5 rounded-2xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-2 shadow-sm cursor-pointer">
+            class="px-3.5 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-2 shadow-sm cursor-pointer shrink-0 self-end sm:self-auto">
             <i :class="['fas fa-sync-alt', isFetching ? 'fa-spin' : '']"></i>
             {{ isFetching ? 'Refreshing...' : 'Refresh Data' }}
           </button>
@@ -338,12 +336,136 @@ const getStatusBadge = (status) => {
         </div>
       </div>
 
-      <!-- PARTICIPANTS TABLE -->
+      <!-- PARTICIPANTS VIEW (RESPONSIVE: MOBILE CARDS + DESKTOP TABLE) -->
       <div :class="[
         'rounded-3xl border shadow-lg overflow-hidden transition',
         props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
       ]">
-        <div class="overflow-x-auto">
+        <!-- ── MOBILE CARD VIEW (VISIBLE ON PHONES / SMALL SCREENS < md) ── -->
+        <div class="block md:hidden p-3 space-y-3">
+          <!-- SKELETON CARDS while fetching on mobile -->
+          <template v-if="isFetching">
+            <div v-for="n in 4" :key="'m-sk-' + n" :class="[
+              'p-4 rounded-2xl border animate-pulse space-y-3',
+              props.darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-slate-50 border-slate-200'
+            ]">
+              <div class="flex items-center justify-between">
+                <div :class="['h-3 w-16 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                <div :class="['h-5 w-20 rounded-full', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+              </div>
+              <div :class="['h-4 w-40 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+              <div :class="['h-3 w-32 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+              <div class="flex gap-2 pt-2">
+                <div :class="['h-8 flex-1 rounded-xl', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+              </div>
+            </div>
+          </template>
+
+          <!-- MOBILE ACTUAL CARDS -->
+          <template v-else-if="filteredRegistrations.length > 0">
+            <div
+              v-for="runner in filteredRegistrations"
+              :key="'m-' + runner.id"
+              :class="[
+                'p-4 rounded-2xl border transition-all duration-200 shadow-sm space-y-3',
+                props.darkMode ? 'bg-gray-800/90 border-gray-700 hover:border-gray-600' : 'bg-white border-slate-200 hover:border-emerald-300'
+              ]"
+            >
+              <!-- Card Header: ID, Bib, and Status -->
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</span>
+                  <span class="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-[10px] uppercase">
+                    RACE BIB {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
+                  </span>
+                </div>
+                <span :class="[
+                  'px-2.5 py-0.5 rounded-xl text-[10px] font-bold border shrink-0',
+                  getStatusBadge(runner.payment_status)
+                ]">
+                  {{ runner.payment_status }}
+                </span>
+              </div>
+
+              <!-- Runner Info -->
+              <div>
+                <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100 leading-snug">
+                  {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
+                </h4>
+                <div class="flex items-center gap-3 text-xs text-gray-500 mt-1 flex-wrap">
+                  <span v-if="runner.contact_email || runner.email" class="flex items-center gap-1 truncate max-w-[200px]">
+                    <i class="fas fa-envelope text-[10px] text-gray-400"></i>
+                    {{ runner.contact_email || runner.email }}
+                  </span>
+                  <span v-if="runner.contact_number || runner.phone" class="flex items-center gap-1">
+                    <i class="fas fa-phone text-[10px] text-gray-400"></i>
+                    {{ runner.contact_number || runner.phone }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Badges Row: Category + Classification -->
+              <div class="flex items-center gap-1.5 flex-wrap pt-1">
+                <span :class="[
+                  'px-2.5 py-0.5 rounded-full font-black text-[10px] text-white shadow-xs flex items-center gap-1',
+                  runCategories.find(c => runner.run_category && runner.run_category.startsWith(c.id))?.color || 'bg-emerald-700'
+                ]">
+                  <i class="fas fa-running text-[9px]"></i> {{ runner.run_category }}
+                </span>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-slate-200 dark:border-gray-600">
+                  {{ runner.participant_type || 'Individual' }}
+                </span>
+              </div>
+
+              <!-- Payment Summary & Details -->
+              <div :class="[
+                'p-2.5 rounded-xl text-xs flex items-center justify-between',
+                props.darkMode ? 'bg-gray-900/50' : 'bg-slate-50'
+              ]">
+                <div class="text-gray-600 dark:text-gray-400">
+                  <span class="font-medium text-[11px] block text-gray-500">Payment Option</span>
+                  <span class="font-bold text-xs capitalize text-gray-800 dark:text-gray-200">
+                    {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' : 'Over the Counter / QR' }}
+                  </span>
+                </div>
+                <div class="text-right">
+                  <span class="font-medium text-[11px] block text-gray-500">Amount</span>
+                  <span class="font-black text-sm text-emerald-600 dark:text-emerald-400">
+                    ₱{{ Number(runner.grand_total_payment || runner.grand_total || 0).toLocaleString() }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Card Action Button -->
+              <div class="pt-1 flex gap-2">
+                <button
+                  type="button"
+                  @click="openDetails(runner)"
+                  class="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                >
+                  <i class="fas fa-eye text-xs"></i> View Full Details
+                </button>
+                <button
+                  v-if="runner.payment_status && runner.payment_status.startsWith('Pending')"
+                  type="button"
+                  @click="promptConfirmPayment(runner)"
+                  class="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0"
+                >
+                  <i class="fas fa-check text-xs"></i> Confirm
+                </button>
+              </div>
+            </div>
+          </template>
+
+          <!-- MOBILE EMPTY STATE -->
+          <div v-else class="p-8 text-center text-gray-500">
+            <i class="fas fa-search text-3xl mb-2 text-gray-400 block"></i>
+            <p class="text-xs">No registration records match your search criteria.</p>
+          </div>
+        </div>
+
+        <!-- ── DESKTOP TABLE VIEW (VISIBLE ON md+) ───────────────────── -->
+        <div class="hidden md:block overflow-x-auto">
           <table class="w-full text-left border-collapse">
             <thead>
               <tr :class="[
@@ -488,9 +610,9 @@ const getStatusBadge = (status) => {
 
     <!-- DETAIL & VERIFICATION MODAL -->
     <div v-if="isDetailModalOpen && selectedRunner"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+      class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
       <div :class="[
-        'relative lg:w-8/12 w-full  rounded-3xl shadow-2xl border p-6 sm:p-8 max-h-[90vh] overflow-y-auto space-y-6 transition',
+        'relative lg:w-8/12 w-full rounded-3xl shadow-2xl border p-4 sm:p-8 max-h-[92vh] overflow-y-auto space-y-4 sm:space-y-6 transition',
         props.darkMode ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-slate-200',
       ]">
         <!-- Modal Header -->
