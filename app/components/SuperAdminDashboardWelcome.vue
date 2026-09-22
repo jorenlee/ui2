@@ -90,11 +90,11 @@ const currentHour = computed(() => {
     <div class="relative overflow-hidden lg:rounded-3xl shadow-2xl lg:py-3 lg:px-10 px-4 py-2 mb-4" :class="[
       darkMode ? 'bg-green-950 text-white' : 'bg-green-600 text-white',
     ]">
-      <div class="relative z-10 flex items-center justify-between gap-8">
+      <div class="relative z-10 lg:flex items-center justify-between gap-8">
         <div class="w-full lg:w-4/12 flex items-center gap-4 lg:mb-0 mb-3">
           <!-- Greeting -->
           <div>
-            <h1 class="text-xl lg:text-4xl font-bold mb-1">
+            <h1 class="text-xl lg:text-4xl font-bold lg:mb-1">
               {{ currentHour }} 👋
             </h1>
             <p class="text-white/90 text-xs lg:text-base">
