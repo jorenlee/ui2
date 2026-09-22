@@ -192,6 +192,34 @@ const tshirtSizes = [
   "5XL",
 ];
 
+const shirtTypeOptions = [
+  { value: "singlet", label: "Singlet", icon: "fas fa-tshirt" },
+  { value: "event_shirt", label: "Event Shirt", icon: "fas fa-shirt" },
+];
+
+const getShirtTypeLabel = (shirtType) => {
+  if (shirtType === "singlet") return "Singlet";
+  return "Event Shirt";
+};
+
+const buildShirtSizeSummary = (participant) => {
+  if (!participant) return "Event Shirt: M;";
+
+  if (participant.run_category === "20K") {
+    const eventSize = participant.event_shirt_size || "M";
+    const singletSize = participant.singlet_size || "M";
+    const finisherSize = participant.finisher_shirt_size || "M";
+    return `Event Shirt: ${eventSize}; Singlet: ${singletSize}; Finisher Shirt: ${finisherSize};`;
+  }
+
+  const selected = participant.shirt_type === "singlet" ? "Singlet" : "Event Shirt";
+  const size = participant.shirt_type === "singlet"
+    ? participant.singlet_size || participant.tshirt_size || "M"
+    : participant.event_shirt_size || participant.tshirt_size || "M";
+
+  return `${selected}: ${size};`;
+};
+
 const createEmptyParticipant = (index = 1) => ({
   id: index,
   run_category: "",
@@ -214,13 +242,18 @@ const createEmptyParticipant = (index = 1) => ({
   alumni_id_preview: null,
   organization: "",
   participantGroup: null, // null | 'LSU' | 'Open'
+  shirt_type: "event_shirt",
+  selected_shirt_tab: "event_shirt",
+  tshirt_size: "Event Shirt: M;",
+  event_shirt_size: "M",
+  singlet_size: "M",
+  finisher_shirt_size: "M",
   // Pet Run fields (active when run_category === '1K')
   pet_name: "",
   pet_type: "Dog",
   pet_breed: "N/A",
   pet_bandana_size: "Standard",
   pet_vaccinated: true,
-  tshirt_size: "M",
 });
 
 const participants = ref([createEmptyParticipant(1)]);
@@ -314,8 +347,8 @@ const itemizedFees = computed(() => {
         p.run_category === "1K"
           ? `Size: ${p.tshirt_size || "M"} (Owner) + Bandana (${p.pet_bandana_size || "Medium"})`
           : p.run_category === "20K"
-          ? `Size: ${p.tshirt_size || "M"} (Event & Finisher Shirts)`
-          : `Size: ${p.tshirt_size || "M"}`;
+          ? buildShirtSizeSummary(p)
+          : `Size: ${buildShirtSizeSummary(p)}`;
 
       items.push({
         name: `${labelPrefix}${cat.name} (${cat.id})${p.run_category === "1K" && p.pet_name ? ' - Pet: ' + p.pet_name : ''}`,
@@ -347,6 +380,12 @@ const copyRunnerOneInfo = () => {
   p.alumni_batch = r1.alumni_batch;
   p.organization = r1.organization;
   p.lsu_id_number = r1.lsu_id_number;
+  p.shirt_type = r1.shirt_type || "event_shirt";
+  p.selected_shirt_tab = r1.selected_shirt_tab || p.shirt_type || "event_shirt";
+  p.event_shirt_size = r1.event_shirt_size || r1.tshirt_size || "M";
+  p.singlet_size = r1.singlet_size || "M";
+  p.finisher_shirt_size = r1.finisher_shirt_size || "M";
+  p.tshirt_size = buildShirtSizeSummary(p);
 };
 
 const isSuccessModalOpen = ref(false);
@@ -514,7 +553,8 @@ const submitRegistration = async () => {
           partner_office: p.partner_office,
           alumni_batch: p.alumni_batch,
           organization: p.organization,
-          tshirt_size: p.tshirt_size,
+          shirt_type: p.shirt_type,
+          tshirt_size: buildShirtSizeSummary(p),
           pet_name: p.pet_name,
           pet_type: p.pet_type,
           pet_breed: p.pet_breed,
@@ -555,7 +595,8 @@ const submitRegistration = async () => {
         partner_office: p.partner_office,
         alumni_batch: p.alumni_batch,
         organization: p.organization,
-        tshirt_size: p.tshirt_size,
+        shirt_type: p.shirt_type,
+        tshirt_size: buildShirtSizeSummary(p),
         pet_name: p.pet_name,
         pet_type: p.pet_type,
         pet_breed: p.pet_breed,
@@ -827,7 +868,7 @@ const submitRegistration = async () => {
 
 
 
-              <!-- Ã¢â€â‚¬Ã¢â€â‚¬ HUMAN RUN CARDS Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ -->
+              <!-- HUMAN RUN CARDS -->
                           <div class="contents lg:flex-1 lg:grid lg:grid-cols-3 lg:gap-4">
                 <div
                   v-for="cat in runCategories.filter(c => c.categoryType === 'human')"
@@ -915,7 +956,7 @@ const submitRegistration = async () => {
 
 
 
- <!-- Ã¢â€â‚¬Ã¢â€â‚¬ VERTICAL DIVIDER (Desktop only) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ -->
+ <!-- VERTICAL DIVIDER (Desktop only) -->
               <div class="hidden lg:flex flex-col items-center justify-center px-3 shrink-0">
                 <div class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
                 <div :class="[
@@ -926,7 +967,7 @@ const submitRegistration = async () => {
 
                     Pet
 
-                  <span class="my-0.5 opacity-30">Ã‚Â·</span>
+                  <span class="my-0.5 opacity-30">·</span>
                  
 
 
@@ -938,7 +979,7 @@ const submitRegistration = async () => {
               </div>
 
 
-             <!-- Ã¢â€â‚¬Ã¢â€â‚¬ PET RUN CARD Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ -->
+             <!-- PET RUN CARD -->
               <div
                 class="relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 overflow-hidden select-none flex flex-col justify-between w-[84vw] max-w-[320px] lg:w-[26%] shrink-0 snap-center"
                 :style="currentParticipant.run_category === '1K'
@@ -1612,54 +1653,140 @@ const submitRegistration = async () => {
             </div>
           </section>
 
-          <!-- SECTION 5: T-SHIRT SIZE -->
+          <!-- SECTION 5: SHIRT TYPE & SIZE -->
           <section v-if="currentParticipant.run_category && currentParticipant.run_category !== '1K'">
             <div class="mb-4">
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                   <span
                     class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">5</span>
-                  Size Tshirt
+                  Shirt Selection
                 </h3>
                 <span
                   class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                  Selected: <span class="font-black">{{ currentParticipant.tshirt_size || 'M' }}</span>
+                  Selected: <span class="font-black">{{ currentParticipant.selected_shirt_tab ? (currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : currentParticipant.selected_shirt_tab === 'finisher_shirt' ? 'Finisher Shirt' : 'Event Shirt') : 'Event Shirt' }}</span>
                 </span>
               </div>
               <p class="text-xs text-gray-500 ml-9">
-                Select official event race shirt size for Runner #{{ activeParticipantIndex + 1 }} (Available from 3XS
-                to 10XL)
+                Prioritize your preferred shirt type and size for Runner #{{ activeParticipantIndex + 1 }}
               </p>
             </div>
 
-            <!-- Radio Button Group for Sizes from 3XS to 10XL -->
-            <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
-              <label v-for="size in tshirtSizes" :key="size" @click="currentParticipant.tshirt_size = size" :class="[
-                'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
-                currentParticipant.tshirt_size === size
-                  ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
-                  : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
-                    : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
-              ]">
-                <input type="radio" name="tshirt_size" :value="size" v-model="currentParticipant.tshirt_size"
-                  class="sr-only" />
-                <i :class="[
-                  'fas fa-tshirt mb-1 text-sm transition',
-                  currentParticipant.tshirt_size === size
-                    ? 'text-white'
-                    : 'text-gray-400 group-hover:text-emerald-600',
-                ]"></i>
-                <span class="text-xs font-bold">{{ size }}</span>
-              </label>
+            <div
+              :class="[
+                'grid gap-3 mb-5',
+                currentParticipant.run_category === '20K' ? 'grid-cols-3' : 'grid-cols-2'
+              ]"
+            >
+              <button
+                v-if="currentParticipant.run_category === '20K' || currentParticipant.run_category === '3K' || currentParticipant.run_category === '10K'"
+                type="button"
+                @click="currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.shirt_type = 'event_shirt'"
+                :class="[
+                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                  currentParticipant.selected_shirt_tab === 'event_shirt'
+                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                    : props.darkMode
+                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                ]"
+              >
+                <i class="fas fa-shirt"></i>
+                <span>Event Shirt</span>
+              </button>
+
+              <button
+                type="button"
+                @click="currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.shirt_type = 'singlet'"
+                :class="[
+                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                  currentParticipant.selected_shirt_tab === 'singlet'
+                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                    : props.darkMode
+                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                ]"
+              >
+                <i class="fas fa-tshirt"></i>
+                <span>Singlet</span>
+              </button>
+
+              <button
+                v-if="currentParticipant.run_category === '20K'"
+                type="button"
+                @click="currentParticipant.selected_shirt_tab = 'finisher_shirt'"
+                :class="[
+                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                  currentParticipant.selected_shirt_tab === 'finisher_shirt'
+                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                    : props.darkMode
+                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                ]"
+              >
+                <i class="fas fa-medal"></i>
+                <span>Finisher Shirt</span>
+              </button>
             </div>
 
-            <!-- Size note -->
+            <div class="space-y-4">
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">
+                    {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? 'Finisher Shirt' : currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : 'Event Shirt' }} Size
+                  </h4>
+                  <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                    {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size || 'M') : currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M') }}
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
+                  <label
+                    v-for="size in tshirtSizes"
+                    :key="currentParticipant.selected_shirt_tab + '-' + size"
+                    @click="
+                      if (currentParticipant.selected_shirt_tab === 'finisher_shirt') {
+                        currentParticipant.finisher_shirt_size = size;
+                      } else if (currentParticipant.selected_shirt_tab === 'singlet') {
+                        currentParticipant.singlet_size = size;
+                        currentParticipant.shirt_type = 'singlet';
+                      } else {
+                        currentParticipant.event_shirt_size = size;
+                        currentParticipant.shirt_type = 'event_shirt';
+                      }
+                      currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)
+                    "
+                    :class="[
+                      'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
+                      (currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size)
+                        ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
+                        : props.darkMode
+                          ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
+                          : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
+                    ]"
+                  >
+                    <input
+                      type="radio"
+                      :name="'shirt_size_' + currentParticipant.selected_shirt_tab"
+                      :value="size"
+                      :checked="currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size"
+                      class="sr-only"
+                    />
+                    <i :class="[
+                      'mb-1 text-sm transition',
+                      currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size === size ? 'fas fa-medal text-white' : 'fas fa-medal text-gray-400') : (currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size === size ? 'fas fa-tshirt text-white' : 'fas fa-tshirt text-gray-400') : (currentParticipant.event_shirt_size === size ? 'fas fa-shirt text-white' : 'fas fa-shirt text-gray-400'))
+                    ]"></i>
+                    <span class="text-xs font-bold">{{ size }}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
             <div
-              class="mt-3 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+              class="mt-4 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
               <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
               <span>
-                {{ currentParticipant.run_category === '1K' ? 'Includes official Pet Owner\'s Event Shirt in your chosen size + Pet Bandana & Pet Treat kit from the 1K Emerald Paws Pet Run.' : currentParticipant.run_category === '20K' ? 'Includes both Event Shirt and Finisher Shirt in your chosen size.' : 'Includes official The Emerald Run Event Shirt in your chosen size.' }}
+                {{ currentParticipant.run_category === '20K' ? 'Your 20K registration includes the event shirt, singlet, and finisher shirt sizes listed above.' : 'Includes your selected shirt type in the size above.' }}
               </span>
             </div>
           </section>
@@ -2222,13 +2349,13 @@ const submitRegistration = async () => {
             <i class="fas fa-info-circle text-emerald-600"></i> Next Steps & Verification:
           </p>
           <p v-if="paymentType === 'salary_deduction'">
-            Ã¢â‚¬Â¢ Your salary deduction authorization will be verified by LSU HR & Accounting for payroll processing.
+            • Your salary deduction authorization will be verified by LSU HR & Accounting for payroll processing.
           </p>
           <p v-else-if="paymentType === 'add_to_tuition'">
-            Ã¢â‚¬Â¢ Your registration fee will be billed to your LSU student account by the LSU Accounting Office.
+            • Your registration fee will be billed to your LSU student account by the LSU Accounting Office.
           </p>
           <p v-else>
-            Ã¢â‚¬Â¢ The Emerald Run Committee will verify your uploaded payment receipt.
+            • The Emerald Run Committee will verify your uploaded payment receipt.
           </p>
           <p class="text-gray-500 dark:text-gray-400 pt-1">
             Once verified by the event admin, you will receive your <strong>Official Race Confirmation Email</strong> containing your assigned bib number and kit claiming instructions. <em>Please bring and present a physical Valid ID when claiming your race bib and event kit.</em>
@@ -2348,6 +2475,5 @@ input[type="checkbox"] {
 
 .pet-name-input:focus {
   box-shadow: 0 0 0 2px rgba(2, 133, 125, 0.25);
-  border-color: #02857D !important;
-}
+  border-color: #02857D !important;}
 </style>
