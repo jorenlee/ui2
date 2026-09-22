@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, nextTick, computed } from "vue";
+import { ref, onMounted, onBeforeUnmount, nextTick, computed, watch } from "vue";
 import _ from "lodash";
 import moment from "moment";
 
@@ -22,7 +22,6 @@ const highlightedNews = computed(() => {
     "bot",
     "programs",
     "organizational chart",
-    "college",
     "oer",
     "human resource center",
     "human resource",
@@ -251,10 +250,15 @@ const preloadImages = () => {
   });
 };
 
+// Reset to first slide whenever data reloads
+watch(info, () => {
+  currentSlide.value = 0;
+});
+
 onMounted(async () => {
   try {
     try {
-      const res = await $fetch(endpoint.value + "/api/cms/content/fast/?filters=published&exclude=bot,programs,organizational chart,college,oer,human resource center,human resource,hero carousel&limit=30");
+      const res = await $fetch(endpoint.value + "/api/cms/content/fast/?filters=published&exclude=bot,programs,organizational chart,oer,human resource center,human resource,hero carousel&limit=100");
       info.value = Array.isArray(res) ? res : [];
     } catch (fastError) {
       console.warn("Fast endpoint failed, falling back to list endpoint:", fastError);
@@ -291,46 +295,35 @@ onBeforeUnmount(() => {
 <template>
   <div class="w-full bg-[#ffffff] lg:pt-10 pb-5 py-5 relative">
     <!-- Background Image -->
-    <div
-      class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"
-    ></div>
+    <div class="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-30"></div>
 
     <!-- Content -->
     <div class="relative z-10 mx-auto">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:mb-8 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:mb-8 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2
-            id="news-and-updates-title"
-            class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight"
-          >
-            News & <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-800 to-teal-700">Updates</span>
+          <h2 id="news-and-updates-title" class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+            News & <span
+              class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-800 to-teal-700">Updates</span>
           </h2>
-          <p class="text-slate-500 text-xs sm:text-sm mt-1">Discover recent campus announcements, achievements, and stories.</p>
+          <p class="text-slate-500 text-xs sm:text-sm mt-1">Discover recent campus announcements, achievements, and
+            stories.</p>
         </div>
 
-        <a
-          href="/news-updates"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs sm:text-sm rounded-xl border border-emerald-200/80 transition-colors shrink-0"
-        >
+        <a href="/news-updates"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold text-xs sm:text-sm rounded-xl border border-emerald-200/80 transition-colors shrink-0">
           <span>Explore All Articles</span>
           <i class="fas fa-arrow-right text-xs"></i>
         </a>
       </div>
 
       <!-- Loading State -->
-      <div
-        v-if="loading"
-        class="flex flex-col items-center justify-center py-20 lg:w-11/12 mx-auto"
-      >
+      <div v-if="loading" class="flex flex-col items-center justify-center py-20 lg:w-11/12 mx-auto">
         <div class="relative">
           <!-- Spinner -->
-          <div
-            class="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"
-          ></div>
+          <div class="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
           <!-- Pulse effect -->
-          <div
-            class="absolute inset-0 w-16 h-16 border-4 border-green-300 rounded-full animate-ping opacity-20"
-          ></div>
+          <div class="absolute inset-0 w-16 h-16 border-4 border-green-300 rounded-full animate-ping opacity-20"></div>
         </div>
         <p class="mt-6 text-green-700 font-semibold text-lg animate-pulse">
           Loading News & Updates...
@@ -341,86 +334,43 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Carousel Container -->
-      <div
-        v-else-if="highlightedNews.length"
-        class="lg:px-28 px-4 relative"
-        @mouseenter="isHovered = true"
-        @mouseleave="isHovered = false"
-      >
-        <!-- Navigation Arrows (Desktop) -->
-        <div class="lg:flex hidden">
-          <!-- Super First (<<) -->
-          <button
-            v-if="canGoPrev"
-            @click="goToFirst"
-            class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 left-0"
-            aria-label="First slide"
-            title="First Slide"
-          >
-            <i class="fas fa-angle-double-left text-xl"></i>
-          </button>
+      <div v-else-if="highlightedNews.length" class="lg:px-4 px-4" @mouseenter="isHovered = true"
+        @mouseleave="isHovered = false">
 
-          <!-- Previous (<) -->
-          <button
-            v-if="canGoPrev"
-            @click="prevSlide"
-            class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 left-14"
-            aria-label="Previous slide"
-            title="Previous Slide"
-          >
-            <i class="fas fa-chevron-left text-xl"></i>
-          </button>
+        <!-- Desktop: flex row [<< <] [grid] [> >>] -->
+        <div class="lg:flex hidden items-center gap-2">
 
-          <!-- Next (>) -->
-          <button
-            v-if="canGoNext"
-            @click="nextSlide"
-            class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 right-14"
-            aria-label="Next slide"
-            title="Next Slide"
-          >
-            <i class="fas fa-chevron-right text-xl"></i>
-          </button>
+          <!-- Left arrows: << and < stacked -->
+          <div class="flex flex-col gap-2 shrink-0">
+            <button @click="goToFirst"
+              class="bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-10 h-10 flex items-center justify-center shadow-md transition-all duration-300 hover:scale-110 border border-green-100"
+             
+              aria-label="First slide" title="First Slide">
+              <i class="fas fa-angle-double-left"></i>
+            </button>
+            <button @click="prevSlide"
+              class="bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-10 h-10 flex items-center justify-center shadow-md transition-all duration-300 hover:scale-110 border border-green-100"
+             
+              aria-label="Previous slide" title="Previous Slide">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+          </div>
 
-          <!-- Super Last (>>) -->
-          <button
-            v-if="canGoNext"
-            @click="goToLast"
-            class="absolute lg:top-1/2 -top-3 lg:-translate-y-1/2 z-20 bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-12 h-12 flex items-center justify-center lg:shadow-xl transition-all duration-300 hover:scale-110 right-0"
-            aria-label="Last slide"
-            title="Last Slide"
-          >
-            <i class="fas fa-angle-double-right text-xl"></i>
-          </button>
-        </div>
-
-        <!-- News Grid -->
-        <div
-          class="grid lg:grid-cols-5 grid-cols-1 lg:gap-3 gap-2 transition-all duration-500"
-        >
-          <div
-            v-for="(j, i) in visibleNews"
-            :key="j.id || i"
-            class="bg-white border-2 border-green-50 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02]"
-          >
+          <!-- News Grid (desktop) -->
+          <div class="grid grid-cols-5 gap-3 transition-all duration-500 flex-1">
+          <div v-for="(j, i) in visibleNews" :key="j.id || i"
+            class="bg-white border-2 border-green-50 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02]">
             <a :href="'news-updates/' + j.id" class="block">
               <!-- Image Section -->
               <div class="relative overflow-hidden bg-slate-100 min-h-[160px] lg:min-h-[320px]">
-                <img
-                  :src="getImageUrl(j)"
+                <img :src="getImageUrl(j)"
                   class="w-full lg:h-[320px] h-auto object-cover transition-transform duration-300 hover:scale-110"
-                  alt="News thumbnail"
-                  loading="eager"
-                  fetchpriority="high"
-                  decoding="async"
-                  @error="handleImageError"
-                />
+                  alt="News thumbnail" loading="eager" fetchpriority="high" decoding="async"
+                  @error="handleImageError" />
 
                 <!-- Play button overlay for videos -->
-                <div
-                  v-if="hasVideoContent(j)"
-                  class="absolute inset-0 flex items-center justify-center bg-[#ffffff] bg-opacity-30"
-                >
+                <div v-if="hasVideoContent(j)"
+                  class="absolute inset-0 flex items-center justify-center bg-[#ffffff] bg-opacity-30">
                   <div class="bg-green-600 rounded-lg px-5 py-1 shadow-lg">
                     <i class="fas fa-play text-white text-xl ml-1"></i>
                   </div>
@@ -432,46 +382,40 @@ onBeforeUnmount(() => {
                 <!-- Category/Type Badge -->
                 <div class="flex items-center justify-between lg:mb-1">
                   <div
-                    class="inline-block py-1 lg:text-xs text-[10px] rounded-full uppercase tracking-wide text-[#1d1d1d]"
-                  >
-                    <div
-                      class="whitespace-nowrap tracking-tighter font-semibold"
-                      v-for="(item, i) in j.filters
-                        .split(',')
-                        .map((v) => v.trim())
-                        .filter((v) =>
-                          [
-                            'announcements',
-                            'news highlight',
-                            'news',
-                            'events',
-                            'announcement',
-                            'news highlights',
-                            'news',
-                            'event',
-                          ].includes(v.toLowerCase()),
-                        )"
-                      :key="i"
-                      :class="[
-                        'capitalize text-[10px] inline-block px-2 py-1 rounded-full mr-2 mb-2',
-                        item.toLowerCase() === 'announcements' &&
+                    class="inline-block py-1 lg:text-xs text-[10px] rounded-full uppercase tracking-wide text-[#1d1d1d]">
+                    <div class="whitespace-nowrap tracking-tighter font-semibold" v-for="(item, i) in j.filters
+                      .split(',')
+                      .map((v) => v.trim())
+                      .filter((v) =>
+                        [
+                          'announcements',
+                          'news highlight',
+                          'news',
+                          'events',
+                          'announcement',
+                          'news highlights',
+                          'news',
+                          'event',
+                        ].includes(v.toLowerCase()),
+                      )" :key="i" :class="[
+                          'capitalize text-[10px] inline-block px-2 py-1 rounded-full mr-2 mb-2',
+                          item.toLowerCase() === 'announcements' &&
                           'bg-yellow-100 text-yellow-800',
-                        item.toLowerCase() === 'news' &&
+                          item.toLowerCase() === 'news' &&
                           'bg-pink-100 text-pink-800',
-                        item.toLowerCase() === 'news highlight' &&
+                          item.toLowerCase() === 'news highlight' &&
                           'bg-red-100 text-red-800',
-                        item.toLowerCase() === 'events' &&
+                          item.toLowerCase() === 'events' &&
                           'bg-green-100 text-green-800',
-                        item.toLowerCase() === 'announcement' &&
+                          item.toLowerCase() === 'announcement' &&
                           'bg-yellow-100 text-yellow-800',
-                        item.toLowerCase() === 'new' &&
+                          item.toLowerCase() === 'new' &&
                           'bg-pink-100 text-pink-800',
-                        item.toLowerCase() === 'news highlights' &&
+                          item.toLowerCase() === 'news highlights' &&
                           'bg-red-100 text-red-800',
-                        item.toLowerCase() === 'event' &&
+                          item.toLowerCase() === 'event' &&
                           'bg-green-100 text-green-800',
-                      ]"
-                    >
+                        ]">
                       {{ item }}
                     </div>
                   </div>
@@ -480,22 +424,16 @@ onBeforeUnmount(() => {
                     <!-- SDG Badges -->
                     <span v-if="getSdgBadges(j).length" class="">
                       <span class="flex items-center flex-wrap gap-1">
-                        <span
-                          v-for="badge in getSdgBadges(j).slice(0, 2)"
-                          :key="badge.number"
-                          class="inline-flex items-center"
-                        >
+                        <span v-for="badge in getSdgBadges(j).slice(0, 2)" :key="badge.number"
+                          class="inline-flex items-center">
                           <span
                             class="inline-flex items-center px-1 py-0.5 min-w-4 justify-center rounded font-bold text-[#ffffff] shadow-sm text-[10px]"
-                            :style="{ backgroundColor: badge.color }"
-                          >
+                            :style="{ backgroundColor: badge.color }">
                             {{ badge.number }}
                           </span>
                         </span>
-                        <span
-                          v-if="getSdgBadges(j).length > 2"
-                          class="inline-flex items-center px-2 py-1 rounded font-medium bg-gray-200 text-gray-600 text-[10px]"
-                        >
+                        <span v-if="getSdgBadges(j).length > 2"
+                          class="inline-flex items-center px-2 py-1 rounded font-medium bg-gray-200 text-gray-600 text-[10px]">
                           +{{ getSdgBadges(j).length - 2 }} more
                         </span>
                       </span>
@@ -504,44 +442,86 @@ onBeforeUnmount(() => {
                 </div>
 
                 <!-- Title -->
-              <div class="flex items-center  lg:mb-2">
-                  <h3
-                  class="lg:text-sm text-xs font-bold text-[#1d1d1d] line-clamp-1 leading-0"
-                >
-                  {{ j.title }}
-                </h3>
+                <div class="flex items-center  lg:mb-2">
+                  <h3 class="lg:text-sm text-xs font-bold text-[#1d1d1d] line-clamp-1 leading-0">
+                    {{ j.title }}
+                  </h3>
 
-              </div>
+                </div>
                 <!-- Description Preview -->
-                <p
-                  v-if="j.descriptions"
-                  class="lg:text-xs text-[10px] text-[#1d1d1d] mb-3 line-clamp-2 font-montserrat"
-                >
+                <p v-if="j.descriptions"
+                  class="lg:text-xs text-[10px] text-[#1d1d1d] mb-3 line-clamp-2 font-montserrat">
                   {{ j.descriptions.substring(0, 100)
                   }}{{ j.descriptions.length > 100 ? "..." : "" }}
                 </p>
 
                 <!-- Footer -->
-                <div
-                  class="flex items-center justify-between pt-2 lg:pb-0 pb-1 border-t border-gray-100"
-                >
-                  <div
-                    class="flex items-center lg:text-xs text-[10px] text-[#1d1d1d]"
-                  >
+                <div class="flex items-center justify-between pt-2 lg:pb-0 pb-1 border-t border-gray-100">
+                  <div class="flex items-center lg:text-xs text-[10px] text-[#1d1d1d]">
                     <i class="fas fa-calendar mr-1"></i>
                     {{ moment(j.date || j.created_at).format("MMM DD, YYYY") }}
                   </div>
-                  <div
-                    class="flex items-center lg:text-xs text-[10px] text-[#1d1d1d] font-medium"
-                  >
+                  <div class="flex items-center lg:text-xs text-[10px] text-[#1d1d1d] font-medium">
                     Read More
                     <i class="fas fa-arrow-right ml-1"></i>
                   </div>
                 </div>
               </div>
             </a>
+          </div><!-- end card item -->
+        </div><!-- end desktop grid -->
+
+          <!-- Right arrows: > and >> stacked -->
+          <div class="flex flex-col gap-2 shrink-0">
+            <button @click="nextSlide"
+              class="bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-10 h-10 flex items-center justify-center shadow-md transition-all duration-300 hover:scale-110 border border-green-100"
+              aria-label="Next slide" title="Next Slide">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+            <button @click="goToLast"
+              class="bg-white hover:bg-green-600 text-green-600 hover:text-white rounded-full w-10 h-10 flex items-center justify-center shadow-md transition-all duration-300 hover:scale-110 border border-green-100"
+              aria-label="Last slide" title="Last Slide">
+              <i class="fas fa-angle-double-right"></i>
+            </button>
+          </div>
+
+        </div><!-- end desktop flex row -->
+
+        <!-- Slide indicator (desktop only) -->
+        <div v-if="totalSlides > 1" class="hidden justify-center items-center gap-2 mt-3">
+          <span
+            v-for="n in totalSlides"
+            :key="n"
+            @click="currentSlide = n - 1"
+            class="w-2 h-2 rounded-full cursor-pointer transition-all duration-300"
+            :class="currentSlide === n - 1 ? 'bg-green-600 w-4' : 'bg-gray-300 hover:bg-green-300'"
+          ></span>
+          <span class="text-xs text-gray-400 ml-2">Page {{ currentSlide + 1 }} of {{ totalSlides }} · {{ highlightedNews.length }} articles</span>
+        </div>
+
+        <!-- Mobile Grid -->
+        <div class="lg:hidden grid grid-cols-1 gap-2 transition-all duration-500">
+          <div v-for="(j, i) in visibleNews" :key="'mob-' + (j.id || i)"
+            class="bg-white border-2 border-green-50 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl">
+            <a :href="'news-updates/' + j.id" class="block">
+              <div class="relative overflow-hidden bg-slate-100 min-h-[160px]">
+                <img :src="getImageUrl(j)"
+                  class="w-full h-auto object-cover"
+                  alt="News thumbnail" loading="eager" @error="handleImageError" />
+              </div>
+              <div class="p-2">
+                <h3 class="text-xs font-bold text-[#1d1d1d] line-clamp-1">{{ j.title }}</h3>
+                <div class="flex items-center justify-between pt-1 border-t border-gray-100 mt-1">
+                  <span class="text-[10px] text-[#1d1d1d]">
+                    <i class="fas fa-calendar mr-1"></i>{{ moment(j.date || j.created_at).format("MMM DD, YYYY") }}
+                  </span>
+                  <span class="text-[10px] text-[#1d1d1d] font-medium">Read More <i class="fas fa-arrow-right ml-1"></i></span>
+                </div>
+              </div>
+            </a>
           </div>
         </div>
+
       </div>
 
       <!-- Empty State -->
@@ -550,18 +530,11 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- More Button -->
-      <div
-        class="w-11/12 mx-auto lg:mt-10 mt-5"
-        v-if="highlightedNews.length && !loading"
-      >
-        <a
-          href="/news-updates/list"
-          class="group relative flex flex-col items-center justify-center w-full max-w-xs mx-auto px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden"
-        >
+      <div class="w-11/12 mx-auto lg:my-10 my-5" v-if="highlightedNews.length && !loading">
+        <a href="/news-updates/list"
+          class="group relative flex flex-col items-center justify-center w-full max-w-xs mx-auto px-8 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 overflow-hidden">
           <!-- Animated background effect -->
-          <div
-            class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"
-          ></div>
+          <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
 
           <!-- Content -->
           <div class="relative z-10 flex items-center gap-x-5">
@@ -571,10 +544,7 @@ onBeforeUnmount(() => {
             </div>
 
             <div class="animate-bounce">
-              <i
-                class="fa fa-angle-double-down text-2xl mt-2"
-                aria-hidden="true"
-              ></i>
+              <i class="fa fa-angle-double-down text-2xl mt-2" aria-hidden="true"></i>
             </div>
             <!-- <div class="flex items-center gap-2 text-sm font-medium opacity-90">
               <span>See all updates</span>
@@ -632,6 +602,7 @@ onBeforeUnmount(() => {
     opacity: 0;
     backdrop-filter: blur(0px);
   }
+
   to {
     opacity: 1;
     backdrop-filter: blur(5px);
@@ -643,6 +614,7 @@ onBeforeUnmount(() => {
     opacity: 0;
     transform: scale(0.9) translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -659,11 +631,9 @@ onBeforeUnmount(() => {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-    circle at center,
-    rgba(0, 0, 0, 0.3) 0%,
-    rgba(0, 0, 0, 0.8) 100%
-  );
+  background: radial-gradient(circle at center,
+      rgba(0, 0, 0, 0.3) 0%,
+      rgba(0, 0, 0, 0.8) 100%);
   pointer-events: none;
 }
 
@@ -695,15 +665,17 @@ onBeforeUnmount(() => {
     0 6px 12px rgba(0, 0, 0, 0.6),
     0 8px 16px rgba(0, 0, 0, 0.4),
     0 10px 20px rgba(0, 0, 0, 0.3),
-    /* Secondary gray shadows for floating effect */ 0 12px 24px
-      rgba(128, 128, 128, 0.5),
+    /* Secondary gray shadows for floating effect */
+    0 12px 24px rgba(128, 128, 128, 0.5),
     0 16px 32px rgba(128, 128, 128, 0.3),
     0 20px 40px rgba(128, 128, 128, 0.2),
     0 24px 48px rgba(128, 128, 128, 0.1),
-    /* Subtle glow effect for prominence */ 0 0 10px rgba(255, 255, 255, 0.4),
+    /* Subtle glow effect for prominence */
+    0 0 10px rgba(255, 255, 255, 0.4),
     0 0 20px rgba(255, 255, 255, 0.2),
     0 0 30px rgba(255, 255, 255, 0.1),
-    /* Sharp definition shadows for clarity */ 1px 1px 2px rgba(0, 0, 0, 0.9),
+    /* Sharp definition shadows for clarity */
+    1px 1px 2px rgba(0, 0, 0, 0.9),
     2px 2px 4px rgba(0, 0, 0, 0.8),
     3px 3px 6px rgba(0, 0, 0, 0.6),
     4px 4px 8px rgba(0, 0, 0, 0.4);
