@@ -33,8 +33,7 @@ const openGroups = ref([
   "External Links",
   "General Services Office",
   "Lasalle Alumni Association",
-  "Animo Run Admin",
-  "Animo Run Participant",
+  "Emerald Run",
   "Super Admin",
   "Juris Doctor Admin",
   "Juris Doctor Examinee",
@@ -53,7 +52,7 @@ const openGroups = ref([
 // these groups are hidden from non-@lsu.edu.ph accounts.
 // Using a Set for O(1) lookups instead of Array.includes O(n).
 const lsuOnlyMenuGroups = new Set([
-  "Animo Run Admin",
+  "Emerald Run",
   "External Links",
   "Lasalle Alumni Association",
   "Commission on Election",
@@ -159,11 +158,11 @@ const filteredMenuList = computed(() => {
   // role grant — it's a narrowing check, not a way to bypass the role
   // requirement.
   const roleFiltered = subMenuList.filter((menu) => {
-    // IT Services Feedback & Animo Run Participant are open to any @gmail.com or @lsu.edu.ph account,
+    // IT Services Feedback & Emerald Run are open to any @gmail.com or @lsu.edu.ph account,
     // regardless of what's set in Role Permissions.
     if (
       menu.group === "IT Services Feedback" ||
-      menu.group === "Animo Run Participant"
+      menu.group === "Emerald Run"
     ) {
       return (
         email?.endsWith("@gmail.com") || email?.endsWith("@lsu.edu.ph")
@@ -189,35 +188,35 @@ const filteredMenuList = computed(() => {
 // ---------------- MENU ----------------
 const subMenuList = [
   {
-    group: "Animo Run Admin",
-    allowedRole: ["Animo Run Admin", "Animo Run"],
+    group: "Emerald Run",
+    allowedRole: ["Emerald Run Admin", "Emerald Run"],
     items: [
       {
-        label: "Registration",
+        label: "Walk-In Registration",
         icon: "fa-running",
         type: "button",
         view: "ViewAnimoRunRegistration",
       },
       {
-        label: "Status Checking",
+        label: "Payment Verification & Status",
         icon: "fa-list",
         type: "button",
         view: "ViewAnimoRunList",
       },
     ],
   },
-  {
-    group: "Animo Run Participant",
-    allowedRole: ["Animo Run Participant", "Animo Run"],
-    items: [
-      {
-        label: "Registration",
-        icon: "fa-running",
-        type: "button",
-        view: "ViewAnimoRunRegistration",
-      },
-    ],
-  },
+  // {
+  //   group: "Emerald Run",
+  //   allowedRole: ["Emerald Run", "Animo Run"],
+  //   items: [
+  //     {
+  //       label: "Registration",
+  //       icon: "fa-running",
+  //       type: "button",
+  //       view: "ViewAnimoRunRegistration",
+  //     },
+  //   ],
+  // },
   {
     group: "Commission on Election",
     allowedRole: "Commission on Election",

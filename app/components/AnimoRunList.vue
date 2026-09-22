@@ -706,42 +706,7 @@ const getStatusBadge = (status) => {
                 <p class="font-semibold">{{ selectedRunner.contact_address || selectedRunner.address || 'Ozamiz City' }}
                 </p>
               </div>
-
             </div>
-
-            <!-- Valid ID Section -->
-            <div v-if="getImageUrl(selectedRunner.valid_id_front) || getImageUrl(selectedRunner.valid_id_back)">
-              <h4 class="mt-5 text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Submitted Valid ID Documents
-              </h4>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div v-if="getImageUrl(selectedRunner.valid_id_front)"
-                  @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_front), 'Submitted Valid ID (Front)')"
-                  class="border rounded-2xl p-2 text-center bg-slate-50 dark:bg-gray-900/40 cursor-pointer hover:border-emerald-500 transition group"
-                  title="Click to view full image">
-                  <div class="flex items-center justify-center gap-1 mb-1">
-                    <span class="text-[10px] font-semibold text-gray-500 group-hover:text-emerald-600 transition">ID Front</span>
-                    <i class="fas fa-search-plus text-[10px] text-gray-400 group-hover:text-emerald-600 transition"></i>
-                  </div>
-                  <img :src="getImageUrl(selectedRunner.valid_id_front)" alt="ID Front"
-                    class="w-full h-32 object-cover rounded-xl border group-hover:opacity-95 transition" />
-                </div>
-
-                <div v-if="getImageUrl(selectedRunner.valid_id_back)"
-                  @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_back), 'Submitted Valid ID (Back)')"
-                  class="border rounded-2xl p-2 text-center bg-slate-50 dark:bg-gray-900/40 cursor-pointer hover:border-emerald-500 transition group"
-                  title="Click to view full image">
-                  <div class="flex items-center justify-center gap-1 mb-1">
-                    <span class="text-[10px] font-semibold text-gray-500 group-hover:text-emerald-600 transition">ID Back</span>
-                    <i class="fas fa-search-plus text-[10px] text-gray-400 group-hover:text-emerald-600 transition"></i>
-                  </div>
-                  <img :src="getImageUrl(selectedRunner.valid_id_back)" alt="ID Back"
-                    class="w-full h-32 object-cover rounded-xl border group-hover:opacity-95 transition" />
-                </div>
-              </div>
-            </div>
-
-
-
           </div>
 
           <div class="lg:w-6/12">
