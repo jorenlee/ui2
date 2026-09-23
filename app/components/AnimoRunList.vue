@@ -396,13 +396,10 @@ const saveEdit = async () => {
       ]">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 relative z-10">
           <div class="space-y-1">
-            <div
-              class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-[11px] font-semibold text-emerald-200">
-              <i class="fas fa-list text-amber-300"></i> Registration Management Portal
-            </div>
+          
             <h1 class="text-sm sm:text-base text-white font-black tracking-tight leading-snug">
               Animo Run 2026 — Participant Status
-              <span class="font-normal text-xs sm:text-sm text-emerald-200 block sm:inline sm:ml-1">· Track, verify & manage runner registrations</span>
+              <span class="font-normal text-xs sm:text-sm text-emerald-200 block sm:inline sm:ml-1"> <i class="fas fa-list text-amber-300"></i> Track, verify & manage runner registrations</span>
             </h1>
           </div>
 
