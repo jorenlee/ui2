@@ -4,12 +4,31 @@ import _ from "lodash";
 import moment from "moment";
 
 const display = ref("desktop");
-const info = ref([]);
-const loading = ref(true);
-const errorMsg = ref("");
-
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
+
+// In-memory cache across client route transitions
+const cachedNews = useState("blog_posting_content_cache", () => []);
+const info = ref(cachedNews.value && cachedNews.value.length ? [...cachedNews.value] : []);
+const loading = ref(info.value.length === 0);
+const errorMsg = ref("");
+
+// Immediate client-side sessionStorage check for 0ms instant display on repeat visits / reloads
+if (process.client && info.value.length === 0) {
+  try {
+    const local = sessionStorage.getItem("lsu_blog_posting_cache");
+    if (local) {
+      const parsed = JSON.parse(local);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        info.value = parsed;
+        cachedNews.value = parsed;
+        loading.value = false;
+      }
+    }
+  } catch (e) {
+    // sessionStorage unavailable
+  }
+}
 
 // Carousel state
 const currentSlide = ref(0);
@@ -250,31 +269,67 @@ const preloadImages = () => {
   });
 };
 
-// Reset to first slide whenever data reloads
-watch(info, () => {
-  currentSlide.value = 0;
+// Reset to first slide when data is first loaded
+watch(info, (newVal, oldVal) => {
+  if (!oldVal || oldVal.length === 0) {
+    currentSlide.value = 0;
+  }
+});
+
+// Early setup-level fetch for faster initial load & SSR support
+const { data: rawInfo, pending: fetchPending, error: fetchError } = useAsyncData(
+  "blog-posting-content-fast",
+  async () => {
+    try {
+      const res = await $fetch(
+        `${endpoint.value}/api/cms/content/fast/?filters=published&exclude=bot,programs,organizational chart,oer,human resource center,human resource,hero carousel&limit=60`
+      );
+      return Array.isArray(res) ? res : [];
+    } catch (fastError) {
+      console.warn("Fast endpoint failed, falling back to list endpoint:", fastError);
+      const fallback = await $fetch(`${endpoint.value}/api/cms/content/list/`);
+      return Array.isArray(fallback) ? fallback : [];
+    }
+  },
+  {
+    lazy: true,
+    default: () => (cachedNews.value && cachedNews.value.length ? cachedNews.value : []),
+  }
+);
+
+// Synchronize fetched data into state and cache
+watch(
+  rawInfo,
+  (newData) => {
+    if (Array.isArray(newData) && newData.length > 0) {
+      info.value = newData;
+      cachedNews.value = newData;
+      loading.value = false;
+      preloadImages();
+      if (process.client) {
+        try {
+          sessionStorage.setItem("lsu_blog_posting_cache", JSON.stringify(newData));
+        } catch (e) {}
+      }
+    }
+  },
+  { immediate: true }
+);
+
+watch(fetchPending, (isPending) => {
+  if (!isPending) {
+    loading.value = false;
+  }
+});
+
+watch(fetchError, (err) => {
+  if (err && info.value.length === 0) {
+    errorMsg.value = "Failed to load news & updates.";
+    loading.value = false;
+  }
 });
 
 onMounted(async () => {
-  try {
-    try {
-      const res = await $fetch(endpoint.value + "/api/cms/content/fast/?filters=published&exclude=bot,programs,organizational chart,oer,human resource center,human resource,hero carousel&limit=100");
-      info.value = Array.isArray(res) ? res : [];
-    } catch (fastError) {
-      console.warn("Fast endpoint failed, falling back to list endpoint:", fastError);
-      const res = await $fetch(endpoint.value + "/api/cms/content/list/");
-      info.value = Array.isArray(res) ? res : [];
-    }
-
-    // Start background image preloader as soon as data arrives
-    preloadImages();
-  } catch (error) {
-    console.error("Error fetching list:", error);
-    errorMsg.value = "Failed to load news & updates.";
-  } finally {
-    loading.value = false;
-  }
-
   await nextTick();
 
   if (window.innerWidth < 800) {
@@ -282,6 +337,10 @@ onMounted(async () => {
     itemsPerSlide.value = 2; // Show 2 items on mobile
   } else {
     itemsPerSlide.value = 5; // Show 5 items on desktop
+  }
+
+  if (info.value.length > 0) {
+    preloadImages();
   }
 
   startAutoScroll();
@@ -317,20 +376,118 @@ onBeforeUnmount(() => {
         </a>
       </div>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="flex flex-col items-center justify-center py-20 lg:w-11/12 mx-auto">
-        <div class="relative">
-          <!-- Spinner -->
-          <div class="w-16 h-16 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
-          <!-- Pulse effect -->
-          <div class="absolute inset-0 w-16 h-16 border-4 border-green-300 rounded-full animate-ping opacity-20"></div>
+      <!-- Skeleton Loading State (Fast fetch speed skeleton with zero layout shift) -->
+      <div v-if="loading" class="lg:px-4 px-4">
+        <!-- Desktop Skeleton Grid (5 Cards + Navigation Buttons) -->
+        <div class="lg:flex hidden items-center gap-2">
+          <!-- Left arrows skeleton placeholder -->
+          <div class="flex flex-col gap-2 shrink-0">
+            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200/60 shadow-sm animate-pulse flex items-center justify-center">
+              <div class="w-3.5 h-3.5 rounded bg-slate-200"></div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200/60 shadow-sm animate-pulse flex items-center justify-center">
+              <div class="w-3.5 h-3.5 rounded bg-slate-200"></div>
+            </div>
+          </div>
+
+          <!-- News Grid (desktop: 5 skeleton cards) -->
+          <div class="grid grid-cols-5 gap-3 flex-1">
+            <div
+              v-for="n in 5"
+              :key="'desktop-skel-' + n"
+              class="bg-white border-2 border-green-50 shadow-lg overflow-hidden flex flex-col justify-between"
+            >
+              <!-- Card Image skeleton with shimmer -->
+              <div class="relative overflow-hidden bg-slate-200 min-h-[160px] lg:min-h-[320px] skeleton-box">
+                <div class="skeleton-shimmer"></div>
+              </div>
+
+              <!-- Card Content skeleton -->
+              <div class="lg:p-3 p-2 flex flex-col justify-between flex-1">
+                <!-- Badges skeleton -->
+                <div class="flex items-center justify-between lg:mb-2 mb-1.5">
+                  <div class="h-4 bg-slate-200 rounded-full w-20 relative overflow-hidden skeleton-box">
+                    <div class="skeleton-shimmer"></div>
+                  </div>
+                  <div class="flex gap-1">
+                    <div class="h-4 w-4 bg-slate-200 rounded relative overflow-hidden skeleton-box">
+                      <div class="skeleton-shimmer"></div>
+                    </div>
+                    <div class="h-4 w-4 bg-slate-200 rounded relative overflow-hidden skeleton-box">
+                      <div class="skeleton-shimmer"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Title skeleton -->
+                <div class="space-y-1.5 lg:mb-2 mb-1">
+                  <div class="h-4 bg-slate-300 rounded w-4/5 relative overflow-hidden skeleton-box">
+                    <div class="skeleton-shimmer"></div>
+                  </div>
+                  <div class="h-3.5 bg-slate-200 rounded w-3/5 relative overflow-hidden skeleton-box">
+                    <div class="skeleton-shimmer"></div>
+                  </div>
+                </div>
+
+                <!-- Description skeleton -->
+                <div class="space-y-1.5 mb-3 hidden sm:block">
+                  <div class="h-2.5 bg-slate-100 rounded w-full relative overflow-hidden skeleton-box">
+                    <div class="skeleton-shimmer"></div>
+                  </div>
+                  <div class="h-2.5 bg-slate-100 rounded w-4/5 relative overflow-hidden skeleton-box">
+                    <div class="skeleton-shimmer"></div>
+                  </div>
+                </div>
+
+                <!-- Footer skeleton -->
+                <div class="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <div class="h-3 bg-slate-200 rounded w-20 relative overflow-hidden skeleton-box">
+                    <div class="skeleton-shimmer"></div>
+                  </div>
+                  <div class="h-3 bg-slate-200 rounded w-16 relative overflow-hidden skeleton-box">
+                    <div class="skeleton-shimmer"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right arrows skeleton placeholder -->
+          <div class="flex flex-col gap-2 shrink-0">
+            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200/60 shadow-sm animate-pulse flex items-center justify-center">
+              <div class="w-3.5 h-3.5 rounded bg-slate-200"></div>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200/60 shadow-sm animate-pulse flex items-center justify-center">
+              <div class="w-3.5 h-3.5 rounded bg-slate-200"></div>
+            </div>
+          </div>
         </div>
-        <p class="mt-6 text-green-700 font-semibold text-lg animate-pulse">
-          Loading News & Updates...
-        </p>
-        <p class="mt-2 text-gray-500 text-sm">
-          Please wait while we fetch the latest content
-        </p>
+
+        <!-- Mobile Skeleton Grid (2 Cards matching mobile view) -->
+        <div class="lg:hidden grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div
+            v-for="n in 2"
+            :key="'mobile-skel-' + n"
+            class="bg-white border-2 border-green-50 shadow-lg overflow-hidden"
+          >
+            <div class="relative overflow-hidden bg-slate-200 min-h-[160px] skeleton-box">
+              <div class="skeleton-shimmer"></div>
+            </div>
+            <div class="p-2 space-y-2">
+              <div class="h-3.5 bg-slate-300 rounded w-3/4 relative overflow-hidden skeleton-box">
+                <div class="skeleton-shimmer"></div>
+              </div>
+              <div class="flex items-center justify-between pt-1 border-t border-gray-100 mt-1">
+                <div class="h-3 bg-slate-200 rounded w-20 relative overflow-hidden skeleton-box">
+                  <div class="skeleton-shimmer"></div>
+                </div>
+                <div class="h-3 bg-slate-200 rounded w-14 relative overflow-hidden skeleton-box">
+                  <div class="skeleton-shimmer"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Carousel Container -->
@@ -559,6 +716,35 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* Fast fetch skeleton shimmer effects */
+.skeleton-box {
+  background-color: #f1f5f9;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 1.2s infinite ease-in-out;
+  transform: translateX(-100%);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .bg {
   background: url("https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/banners/green-tones-gradient-background_23-2148374436.png");
   background-repeat: no-repeat;
