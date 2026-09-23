@@ -644,18 +644,6 @@ onBeforeUnmount(() => {
 
         </div><!-- end desktop flex row -->
 
-        <!-- Slide indicator (desktop only) -->
-        <div v-if="totalSlides > 1" class="hidden justify-center items-center gap-2 mt-3">
-          <span
-            v-for="n in totalSlides"
-            :key="n"
-            @click="currentSlide = n - 1"
-            class="w-2 h-2 rounded-full cursor-pointer transition-all duration-300"
-            :class="currentSlide === n - 1 ? 'bg-green-600 w-4' : 'bg-gray-300 hover:bg-green-300'"
-          ></span>
-          <span class="text-xs text-gray-400 ml-2">Page {{ currentSlide + 1 }} of {{ totalSlides }} · {{ highlightedNews.length }} articles</span>
-        </div>
-
         <!-- Mobile Grid -->
         <div class="lg:hidden grid grid-cols-1 gap-2 transition-all duration-500">
           <div v-for="(j, i) in visibleNews" :key="'mob-' + (j.id || i)"
