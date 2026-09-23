@@ -18,7 +18,7 @@
           : 'bg-white/95 text-gray-900 border-gray-200'
       "
     >
-      <div class="w-full pl-8">
+      <div class="w-full px-8">
         <div class="h-[76px] flex items-center justify-between">
 
           <!-- =================================================

@@ -658,7 +658,7 @@ const submitRegistration = async () => {
             <div class="flex-1 min-w-0">
               <h1 class="text-base sm:text-2xl font-black text-white tracking-wide leading-tight flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <span>THE EMERALD RUN 2026</span>
-                <span class="text-emerald-200 font-semibold text-xs sm:text-base">ANIMO RUN</span>
+                <span class="text-emerald-500">ANIMO RUN</span>
               </h1>
              
             </div>
@@ -842,7 +842,7 @@ const submitRegistration = async () => {
             </div>
 
             <!-- Mobile Quick Category Selector Pills -->
-            <div class="lg:hidden flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
+            <!-- <div class="lg:hidden flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
               <button
                 v-for="cat in runCategories"
                 :key="'pill-' + cat.id"
@@ -860,7 +860,7 @@ const submitRegistration = async () => {
                 <span class="opacity-80 font-normal">PHP {{ cat.fee.toLocaleString() }}</span>
                 <span v-if="cat.categoryType === 'pet'" class="text-[9px] px-1 py-0.5 rounded uppercase font-extrabold" style="background:rgba(255,255,255,0.25)">Pet</span>
               </button>
-            </div>
+            </div> -->
 
             <!-- RACE CARDS CONTAINER -->
             <!-- Mobile: Horizontal swipe snap container; Desktop: flex row with sidebar -->
@@ -1018,7 +1018,7 @@ const submitRegistration = async () => {
 
                   <!-- Distance & Fee -->
                   <div class="flex items-baseline justify-between pt-1">
-                    <h2 class="text-6xl font-black tracking-tight"
+                    <h2 class="text-3xl font-black tracking-tight"
                       :style="{ color: currentParticipant.run_category === '1K' ? '#fff' : 'rgba(255,255,255,0.7)' }">PETS</h2>
                     <span class="text-xl font-black"
                       :style="{ color: currentParticipant.run_category === '1K' ? '#93CAC5' : 'rgba(255,255,255,0.5)' }">PHP 1,000</span>
@@ -1030,7 +1030,7 @@ const submitRegistration = async () => {
                       <i class="fas fa-paw" style="color: #2D9F98"></i> Inclusions:
                     </p>
                     <ul class="space-y-1.5">
-                      <li v-for="inc in ['Pet Owner\'s Event Shirt','Pet Bandana & Race Bib','Pet Treat & Post-Meal Snack','Acrylic Finisher Medal']" :key="inc"
+                       <li v-for="(inc, incIdx) in runCategories[0].inclusions" :key="incIdx"
                         class="text-[11px] flex items-center gap-2"
                         style="color: rgba(255,255,255,0.8)">
                         <i class="fas fa-paw text-[10px]" style="color: #2D9F98"></i><span>{{ inc }}</span>
@@ -1926,11 +1926,9 @@ const submitRegistration = async () => {
                         class="sr-only" />
                     </div>
                     <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
-                      Over The Counter / QR / Weekend Cash
+                      QR Payment, Accounting Over The Counter, or Cash at Ozamiz Lifestyle Runners.
                     </span>
-                    <p class="text-xs text-gray-500 mt-1">
-                      Accounting Over The Counter, QR Payment, or Cash at Ozamiz Lifestyle Runners.
-                    </p>
+                 
                   </div>
                 </div>
 
@@ -1996,7 +1994,7 @@ const submitRegistration = async () => {
                         <i class="fas fa-address-card"></i>
                       </span>
                       <input type="text" v-model="currentParticipant.lsu_id_number"
-                        placeholder="e.g. EMP-2024-0012 or 2018-0421" :class="[
+                        placeholder="e.g. LSU210201" :class="[
                           'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
                         ]" />
@@ -2074,7 +2072,7 @@ const submitRegistration = async () => {
                       <span class="absolute left-3.5 top-2.5 text-xs text-gray-400">
                         <i class="fas fa-id-card"></i>
                       </span>
-                      <input type="text" v-model="currentParticipant.lsu_id_number" placeholder="e.g. 2023-10452"
+                      <input type="text" v-model="currentParticipant.lsu_id_number" placeholder="e.g. 240945593"
                         :class="[
                           'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
@@ -2135,7 +2133,7 @@ const submitRegistration = async () => {
       </p>
       <p class="text-gray-500 dark:text-gray-400 text-[10px] font-normal leading-relaxed mt-1">
         Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> to
-        The Emerald Run Official Account. Take a screenshot and upload
+        <strong>The Emerald Run 2026</strong>. Take a screenshot &amp; upload
         your receipt below.
       </p>
     </div>
@@ -2218,23 +2216,7 @@ const submitRegistration = async () => {
 </div>
                 <!-- UPLOAD RECEIPT SECTION (FOR NON-LSU ONLY) -->
                 <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <div class="flex items-center justify-between mb-3">
-                    <div>
-                      <h4 class="text-sm font-bold flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                        <i class="fas fa-file-invoice-dollar text-emerald-600"></i>
-                        Upload Receipt / Proof of Payment
-                      </h4>
-                      <p class="text-xs text-gray-500 mt-0.5">
-                        The Emerald Run Committee will verify the Payment before issuing race bib and confirmation
-                      </p>
-                    </div>
-
-                    <span
-                      class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                      <i class="fas fa-shield-alt mr-1"></i> Admin Verification
-                    </span>
-                  </div>
-
+                 
                   <!-- Receipt Dropzone -->
                   <div :class="[
                     'rounded-2xl border-2 border-dashed p-4 text-center transition-all relative overflow-hidden',
@@ -2276,7 +2258,7 @@ const submitRegistration = async () => {
                     <i class="fas fa-user-check text-amber-600 text-base shrink-0"></i>
                     <span>
                       <strong>Verification Notice:</strong> The Emerald Run Committee will verify the Payment and validate your
-                      registration details before final approval.
+                      registration details before confirmation.
                     </span>
                   </div>
                 </div>
@@ -2286,7 +2268,7 @@ const submitRegistration = async () => {
             <!-- Submit / Action Buttons -->
             <div class="flex flex-col sm:flex-row gap-4">
               <button type="button" @click="submitRegistration" :disabled="isSubmitting"
-                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 text-base cursor-pointer">
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 lg:text-base text-sm cursor-pointer">
                 <i v-if="!isSubmitting" class="fas fa-check-circle text-lg"></i>
                 <i v-else class="fas fa-spinner fa-spin text-lg"></i>
                 <span>{{ isSubmitting ? 'Submitting Registration...' : 'Submit Registration (PHP ' +
