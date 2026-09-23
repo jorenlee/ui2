@@ -13,6 +13,85 @@ const endpoint = ref(config.public.apiUrl);
 
 const isFetching = ref(false);
 const isConfirming = ref(false);
+const isBulkDeleting = ref(false);
+
+// ── Multi-select state ──────────────────────────────────────────────────
+const selectedIds = ref([]);
+
+const allSelected = computed(() => {
+  const visible = filteredRegistrations.value;
+  return visible.length > 0 && visible.every((r) => selectedIds.value.includes(r.id));
+});
+
+const someSelected = computed(() => {
+  return selectedIds.value.length > 0 && !allSelected.value;
+});
+
+const toggleSelectAll = () => {
+  if (allSelected.value) {
+    // Deselect all currently visible
+    const visibleIds = filteredRegistrations.value.map((r) => r.id);
+    selectedIds.value = selectedIds.value.filter((id) => !visibleIds.includes(id));
+  } else {
+    const visibleIds = filteredRegistrations.value.map((r) => r.id);
+    const merged = new Set([...selectedIds.value, ...visibleIds]);
+    selectedIds.value = Array.from(merged);
+  }
+};
+
+const toggleSelectOne = (id) => {
+  if (selectedIds.value.includes(id)) {
+    selectedIds.value = selectedIds.value.filter((i) => i !== id);
+  } else {
+    selectedIds.value = [...selectedIds.value, id];
+  }
+};
+
+const clearSelection = () => {
+  selectedIds.value = [];
+};
+
+// ── Bulk-delete modal ───────────────────────────────────────────────────
+const bulkDeleteModal = ref({ show: false });
+
+const promptBulkDelete = () => {
+  if (!selectedIds.value.length || isBulkDeleting.value) return;
+  bulkDeleteModal.value.show = true;
+};
+
+const closeBulkDeleteModal = () => {
+  bulkDeleteModal.value.show = false;
+};
+
+const executeBulkDelete = async () => {
+  if (!selectedIds.value.length || isBulkDeleting.value) return;
+  isBulkDeleting.value = true;
+  const ids = [...selectedIds.value];
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/bulk-delete/`, {
+      method: "DELETE",
+      body: { ids },
+    });
+    registrations.value = registrations.value.filter((r) => !ids.includes(r.id));
+    clearSelection();
+    closeBulkDeleteModal();
+    showNotice(
+      res.message || `${ids.length} registration(s) deleted successfully.`,
+      "Deleted",
+      "success"
+    );
+  } catch (err) {
+    console.error("Bulk delete error:", err);
+    closeBulkDeleteModal();
+    showNotice(
+      "Failed to delete the selected registrations. Please try again.",
+      "Deletion Failed",
+      "error"
+    );
+  } finally {
+    isBulkDeleting.value = false;
+  }
+};
 
 const confirmModal = ref({
   show: false,
@@ -70,10 +149,10 @@ const closeReceiptModal = () => {
 };
 
 const runCategories = [
-  { id: "1K", name: "1K - EMERALD PAWS", color: "bg-sky-500 text-white" },
-  { id: "3K", name: "3K — EMERALD STARTER", color: "bg-amber-500 text-white" },
-  { id: "10K", name: "10K — EMERALD ENDURANCE", color: "bg-teal-600 text-white" },
-  { id: "20K", name: "20K — EMERALD ULTIMATE", color: "bg-emerald-800 text-white" },
+  { id: "1KM", name: "1 KM", color: "bg-[#6F2A22] text-white" },
+  { id: "3KM", name: "3 KM", color: "bg-[#8A4528] text-white" },
+  { id: "10KM", name: "10 KM", color: "bg-[#1D2735] text-white" },
+  { id: "20KM", name: "20 KM", color: "bg-[#123F38] text-white" },
 ];
 
 const registrations = ref([]);
@@ -105,6 +184,9 @@ const getImageUrl = (val) => {
   return null;
 };
 
+// NOTE: allSelected / someSelected depend on filteredRegistrations so it must be
+// declared before those computed refs — but since Vue 3 computed refs are lazy
+// and the actual .value access is deferred, hoisting the refs is safe here.
 const filteredRegistrations = computed(() => {
   return registrations.value.filter((item) => {
     const q = searchQuery.value.toLowerCase().trim();
@@ -142,11 +224,15 @@ const stats = computed(() => {
 const openDetails = (runner) => {
   selectedRunner.value = runner;
   isDetailModalOpen.value = true;
+  isEditMode.value = false;
+  editForm.value = {};
 };
 
 const closeDetails = () => {
   isDetailModalOpen.value = false;
   selectedRunner.value = null;
+  isEditMode.value = false;
+  editForm.value = {};
 };
 
 const promptConfirmPayment = (runner) => {
@@ -183,7 +269,7 @@ const executeConfirmPayment = async () => {
     }
     closeConfirmModal();
     showNotice(
-      `Registration and payment confirmed successfully for ${runner.firstname} ${runner.lastname}.\n\nAn official confirmation email has been sent to ${runner.contact_email || runner.email}.`,
+      `Registration and payment confirmed successfully for ${runner.firstname} ${runner.lastname}.\n\nAn official confirmation email has been sent to ${runner.contact_email || runner.email} (BCC: animorun@lsu.edu.ph, calendar@lsu.edu.ph, vpal@lsu.edu.ph).`,
       "Payment Confirmed!",
       "success"
     );
@@ -200,6 +286,15 @@ const executeConfirmPayment = async () => {
   }
 };
 
+// Shared input class for edit mode fields
+const inputCls = computed(() =>
+  `w-full px-3 py-2 rounded-xl border text-xs focus:ring-2 focus:ring-amber-400 focus:outline-none transition ${
+    props.darkMode
+      ? 'bg-gray-900 border-gray-600 text-gray-100'
+      : 'bg-white border-gray-300 text-gray-800'
+  }`
+);
+
 const getStatusBadge = (status) => {
   switch (status) {
     case "Confirmed":
@@ -209,6 +304,79 @@ const getStatusBadge = (status) => {
       return "bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700";
     default:
       return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300";
+  }
+};
+
+// ── Inline Edit ──────────────────────────────────────────────────────────────────
+const isEditMode = ref(false);
+const isSaving = ref(false);
+const editForm = ref({});
+
+const openEdit = () => {
+  if (!selectedRunner.value) return;
+  // Deep-clone the relevant editable fields into editForm
+  editForm.value = {
+    firstname: selectedRunner.value.firstname || "",
+    middlename: selectedRunner.value.middlename || "",
+    lastname: selectedRunner.value.lastname || "",
+    suffix: selectedRunner.value.suffix || "",
+    birthdate: selectedRunner.value.birthdate || "",
+    gender: selectedRunner.value.gender || "",
+    contact_number: selectedRunner.value.contact_number || selectedRunner.value.phone || "",
+    contact_email: selectedRunner.value.contact_email || selectedRunner.value.email || "",
+    contact_address: selectedRunner.value.contact_address || selectedRunner.value.address || "",
+    participant_type: selectedRunner.value.participant_type || "",
+    lsu_id_number: selectedRunner.value.lsu_id_number || "",
+    tshirt_size: selectedRunner.value.tshirt_size || "",
+    run_category: selectedRunner.value.run_category || "",
+    run_number: selectedRunner.value.run_number || selectedRunner.value.bib_number || "",
+    payment_status: selectedRunner.value.payment_status || "",
+    college_course: selectedRunner.value.college_course || "",
+    college_year: selectedRunner.value.college_year || "",
+    partner_office: selectedRunner.value.partner_office || "",
+    alumni_batch: selectedRunner.value.alumni_batch || "",
+    organization: selectedRunner.value.organization || "",
+    pet_name: selectedRunner.value.pet_name || "",
+    pet_type: selectedRunner.value.pet_type || "",
+    pet_bandana_size: selectedRunner.value.pet_bandana_size || "",
+  };
+  isEditMode.value = true;
+};
+
+const cancelEdit = () => {
+  isEditMode.value = false;
+  editForm.value = {};
+};
+
+const saveEdit = async () => {
+  if (!selectedRunner.value || isSaving.value) return;
+  isSaving.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/${selectedRunner.value.id}/edit/`, {
+      method: "PUT",
+      body: editForm.value,
+    });
+    // Merge changes back into both the list and the detail view
+    const updated = res.data || editForm.value;
+    Object.assign(selectedRunner.value, updated);
+    const idx = registrations.value.findIndex((r) => r.id === selectedRunner.value.id);
+    if (idx !== -1) Object.assign(registrations.value[idx], updated);
+    isEditMode.value = false;
+    editForm.value = {};
+    showNotice(
+      `Registration info for ${selectedRunner.value.firstname} ${selectedRunner.value.lastname} has been updated successfully.`,
+      "Changes Saved",
+      "success"
+    );
+  } catch (err) {
+    console.error("Save edit error:", err);
+    showNotice(
+      "Failed to save changes. Please check your connection and try again.",
+      "Save Failed",
+      "error"
+    );
+  } finally {
+    isSaving.value = false;
   }
 };
 </script>
@@ -322,10 +490,10 @@ const getStatusBadge = (status) => {
               props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
             ]">
               <option value="All">All Distance Categories</option>
-              <option value="1K">1K - EMERALD PAWS (Pet Run)</option>
-              <option value="3K">3K — EMERALD STARTER</option>
-              <option value="10K">10K — EMERALD ENDURANCE</option>
-              <option value="20K">20K — EMERALD ULTIMATE</option>
+              <option value="1KM">1 KM (Pet Run)</option>
+              <option value="3KM">3 KM</option>
+              <option value="10KM">10 KM</option>
+              <option value="20KM">20 KM</option>
             </select>
           </div>
 
@@ -337,7 +505,6 @@ const getStatusBadge = (status) => {
             ]">
               <option value="All">All Payment Statuses</option>
               <option value="Confirmed">Confirmed</option>
-              <option value="Pending Approval">Pending Approval (Salary Deduction)</option>
               <option value="Pending Payment">Pending Payment</option>
             </select>
           </div>
@@ -349,11 +516,10 @@ const getStatusBadge = (status) => {
               props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
             ]">
               <option value="All">All Classifications</option>
-              <option value="LSU Higher Education Unit Student">LSU HEU Student (College)</option>
-              <option value="LSU Basic Education Unit Student">LSU BEU Student (K-12)</option>
-              <option value="Lasallian Partners">Lasallian Partners (Faculty/Staff)</option>
-              <option value="Alumni">Lasallian Alumni</option>
-              <option value="Non-LSU">Non-LSU Guest</option>
+              <option value="Currently Enrolled Students">Currently Enrolled Students</option>
+              <option value="Employees">Employees</option>
+              <option value="Alumni">Alumni</option>
+              <option value="Open Category">Open Category</option>
             </select>
           </div>
         </div>
@@ -391,12 +557,21 @@ const getStatusBadge = (status) => {
               :key="'m-' + runner.id"
               :class="[
                 'p-4 rounded-2xl border transition-all duration-200 shadow-sm space-y-3',
-                props.darkMode ? 'bg-gray-800/90 border-gray-700 hover:border-gray-600' : 'bg-white border-slate-200 hover:border-emerald-300'
+                selectedIds.includes(runner.id)
+                  ? (props.darkMode ? 'bg-emerald-950/30 border-emerald-700' : 'bg-emerald-50/80 border-emerald-300')
+                  : (props.darkMode ? 'bg-gray-800/90 border-gray-700 hover:border-gray-600' : 'bg-white border-slate-200 hover:border-emerald-300')
               ]"
             >
-              <!-- Card Header: ID, Bib, and Status -->
+              <!-- Card Header: ID, Bib, Checkbox and Status -->
               <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 flex-wrap">
+                  <!-- Mobile checkbox -->
+                  <input
+                    type="checkbox"
+                    :checked="selectedIds.includes(runner.id)"
+                    @change="toggleSelectOne(runner.id)"
+                    class="w-4 h-4 rounded accent-emerald-600 cursor-pointer shrink-0"
+                  />
                   <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</span>
                   <span class="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-[10px] uppercase">
                     RACE BIB {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
@@ -497,6 +672,17 @@ const getStatusBadge = (status) => {
                   ? 'bg-gray-900/80 border-gray-700 text-gray-400'
                   : 'bg-emerald-50/60 border-slate-200 text-emerald-900',
               ]">
+                <!-- Select-all checkbox -->
+                <th class="p-4 w-10">
+                  <input
+                    type="checkbox"
+                    :checked="allSelected"
+                    :indeterminate.prop="someSelected"
+                    @change="toggleSelectAll"
+                    class="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
+                    title="Select all visible"
+                  />
+                </th>
                 <th class="p-4">Reg ID & Bib</th>
                 <th class="p-4">Runner Name</th>
                 <th class="p-4">Classification</th>
@@ -553,12 +739,23 @@ const getStatusBadge = (status) => {
               <template v-else>
                 <tr v-for="runner in filteredRegistrations" :key="runner.id" :class="[
                   'hover:bg-emerald-50/30 dark:hover:bg-gray-700/40 transition',
+                  selectedIds.includes(runner.id) ? (props.darkMode ? 'bg-emerald-950/30' : 'bg-emerald-50/60') : '',
                 ]">
+                  <!-- Row checkbox -->
+                  <td class="p-4 w-10">
+                    <input
+                      type="checkbox"
+                      :checked="selectedIds.includes(runner.id)"
+                      @change="toggleSelectOne(runner.id)"
+                      class="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
+                    />
+                  </td>
+
                   <td class="p-4 font-mono">
-                    <div class="font-bold text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</div>
+                    <!-- <div class="font-bold text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</div> -->
                     <span
                       class="inline-block mt-0.5 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px]">
-                      RACE BIB {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
+                      {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
                     </span>
                   </td>
 
@@ -619,7 +816,7 @@ const getStatusBadge = (status) => {
                 </tr>
 
                 <tr v-if="filteredRegistrations.length === 0">
-                  <td colspan="7" class="p-8 text-center text-gray-500">
+                  <td colspan="8" class="p-8 text-center text-gray-500">
                     <i class="fas fa-search text-3xl mb-2 text-gray-400 block"></i>
                     No registration records match your search criteria.
                   </td>
@@ -630,6 +827,47 @@ const getStatusBadge = (status) => {
         </div>
       </div>
     </div>
+
+    <!-- ── BULK-ACTION TOOLBAR (sticky bottom, appears on selection) ──── -->
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="translate-y-full opacity-0"
+      enter-to-class="translate-y-0 opacity-100"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="translate-y-0 opacity-100"
+      leave-to-class="translate-y-full opacity-0"
+    >
+      <div v-if="selectedIds.length > 0"
+        class="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md"
+        :class="props.darkMode ? 'bg-gray-900/90 border-gray-700 text-gray-100' : 'bg-white/90 border-slate-200 text-gray-800'"
+      >
+        <!-- Count badge -->
+        <span class="flex items-center gap-1.5 text-xs font-bold">
+          <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px] font-black">
+            {{ selectedIds.length }}
+          </span>
+          {{ selectedIds.length === 1 ? 'runner' : 'runners' }} selected
+        </span>
+
+        <div class="w-px h-5 bg-gray-300 dark:bg-gray-600"></div>
+
+        <!-- Clear selection -->
+        <button type="button" @click="clearSelection"
+          class="text-xs font-semibold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition cursor-pointer flex items-center gap-1.5"
+        >
+          <i class="fas fa-times-circle"></i> Clear
+        </button>
+
+        <!-- Delete selected -->
+        <button type="button" @click="promptBulkDelete" :disabled="isBulkDeleting"
+          class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
+        >
+          <i v-if="!isBulkDeleting" class="fas fa-trash"></i>
+          <i v-else class="fas fa-spinner fa-spin"></i>
+          {{ isBulkDeleting ? 'Deleting...' : 'Delete Selected' }}
+        </button>
+      </div>
+    </Transition>
 
     <!-- DETAIL & VERIFICATION MODAL -->
     <div v-if="isDetailModalOpen && selectedRunner"
@@ -643,69 +881,208 @@ const getStatusBadge = (status) => {
           <div>
             <div class="flex items-center gap-2">
               <span class="px-2.5 py-0.5 rounded-md bg-emerald-600 text-white font-bold text-xs uppercase">
-                Race Bib {{ selectedRunner.run_number || selectedRunner.bib_number || ('AR-' + selectedRunner.id) }}
+                {{ selectedRunner.run_number || selectedRunner.bib_number || ('AR-' + selectedRunner.id) }}
               </span>
               <h2 class="text-xl font-black">Runner Registration Details</h2>
+              <!-- Edit mode badge -->
+              <span v-if="isEditMode" class="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-300 dark:border-amber-700 flex items-center gap-1">
+                <i class="fas fa-pen text-[9px]"></i> Editing
+              </span>
             </div>
-            <p class="text-xs text-gray-500 mt-1">Ref ID: #{{ selectedRunner.id }} • {{
+            <p class="text-xs text-gray-500 mt-1">Date Created: {{
               selectedRunner.created_at_formatted || selectedRunner.registration_date }}</p>
           </div>
 
-          <button type="button" @click="closeDetails"
-            class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-rose-500 hover:text-white transition flex items-center justify-center font-bold cursor-pointer">
-            <i class="fas fa-times"></i>
-          </button>
+          <div class="flex items-center gap-2">
+            <!-- Edit / Cancel toggle -->
+            <button v-if="!isEditMode" type="button" @click="openEdit"
+              class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+              <i class="fas fa-pen"></i> Edit Info
+            </button>
+            <button v-else type="button" @click="cancelEdit"
+              class="px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-semibold text-xs transition flex items-center gap-1.5 cursor-pointer">
+              <i class="fas fa-times"></i> Cancel
+            </button>
+            <!-- Close -->
+            <button type="button" @click="closeDetails"
+              class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-rose-500 hover:text-white transition flex items-center justify-center font-bold cursor-pointer">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
         </div>
 
         <div class="lg:flex">
           <!-- Personal Details -->
           <div class="w-full">
-
-
-
-
             <div class="space-y-3 gap-4 text-xs">
-              <div class="lg:flex">
-                <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Full Name</label>
-                <p class="font-semibold">
-                  {{ selectedRunner.firstname }} {{ selectedRunner.middlename }} {{ selectedRunner.lastname }}{{
-                    selectedRunner.suffix ? ' ' + selectedRunner.suffix : '' }}
-                </p>
-              </div>
 
-              <div class="lg:flex">
-                <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Gender & Birthdate</label>
-                <p class="font-semibold">
-                  {{ selectedRunner.gender || 'Not specified' }} • {{ selectedRunner.birthdate || 'N/A' }}
-                </p>
-              </div>
+              <!-- ── VIEW MODE ───────────────────────────────────────────── -->
+              <template v-if="!isEditMode">
+                <div class="lg:flex">
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Full Name</label>
+                  <p class="font-semibold">
+                    {{ selectedRunner.firstname }} {{ selectedRunner.middlename }} {{ selectedRunner.lastname }}{{
+                      selectedRunner.suffix ? ' ' + selectedRunner.suffix : '' }}
+                  </p>
+                </div>
 
-              <div class="lg:flex">
-                <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Contact Phone</label>
-                <p class="font-semibold">{{ selectedRunner.contact_number || selectedRunner.phone || 'N/A' }}</p>
-              </div>
+                <div class="lg:flex">
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Gender &amp; Birthdate</label>
+                  <p class="font-semibold">
+                    {{ selectedRunner.gender || 'Not specified' }} • {{ selectedRunner.birthdate || 'N/A' }}
+                  </p>
+                </div>
 
-              <div class="lg:flex">
-                <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Email Address</label>
-                <p class="font-semibold">{{ selectedRunner.contact_email || selectedRunner.email }}</p>
-              </div>
+                <div class="lg:flex">
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Contact Phone</label>
+                  <p class="font-semibold">{{ selectedRunner.contact_number || selectedRunner.phone || 'N/A' }}</p>
+                </div>
 
-              <div class="lg:flex">
-                <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Classification & LSU ID</label>
-                <p class="font-semibold">{{ selectedRunner.participant_type }} {{ selectedRunner.lsu_id_number ? '(' +
-                  selectedRunner.lsu_id_number + ')' : '' }}</p>
-              </div>
+                <div class="lg:flex">
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Email Address</label>
+                  <p class="font-semibold">{{ selectedRunner.contact_email || selectedRunner.email }}</p>
+                </div>
 
-              <div class="lg:flex">
-                <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">T-Shirt Size</label>
-                <p class="font-semibold">{{ selectedRunner.tshirt_size || 'M' }}</p>
-              </div>
+                <div class="lg:flex">
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Classification</label>
+                  <p class="font-semibold">{{ selectedRunner.participant_type }} {{ selectedRunner.lsu_id_number ? '(' +
+                    selectedRunner.lsu_id_number + ')' : '' }}</p>
+                </div>
 
-              <div class="lg:flex">
-                <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Address</label>
-                <p class="font-semibold">{{ selectedRunner.contact_address || selectedRunner.address || 'Ozamiz City' }}
-                </p>
-              </div>
+                <div class="lg:flex">
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">T-Shirt Size</label>
+                  <p class="font-semibold">{{ selectedRunner.tshirt_size || 'M' }}</p>
+                </div>
+
+                <div class="lg:flex">
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Address</label>
+                  <p class="font-semibold">{{ selectedRunner.contact_address || selectedRunner.address || 'Ozamiz City' }}
+                  </p>
+                </div>
+              </template>
+
+              <!-- ── EDIT MODE ───────────────────────────────────────────── -->
+              <template v-else>
+                <div :class="[
+                  'p-4 rounded-2xl border mb-4',
+                  props.darkMode ? 'bg-amber-950/20 border-amber-800/50' : 'bg-amber-50 border-amber-200'
+                ]">
+                  <p class="text-[11px] text-amber-700 dark:text-amber-300 flex items-center gap-1.5">
+                    <i class="fas fa-info-circle"></i>
+                    You are editing this runner's registration. Click <strong>Save Changes</strong> to apply.
+                  </p>
+                </div>
+
+                <!-- Name row -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">First Name *</label>
+                    <input v-model="editForm.firstname" :class="inputCls" placeholder="First Name" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Middle Name</label>
+                    <input v-model="editForm.middlename" :class="inputCls" placeholder="Middle Name" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Last Name *</label>
+                    <input v-model="editForm.lastname" :class="inputCls" placeholder="Last Name" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Suffix</label>
+                    <select v-model="editForm.suffix" :class="inputCls">
+                      <option value="">None</option>
+                      <option>Jr.</option><option>Sr.</option>
+                      <option>II</option><option>III</option><option>IV</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Gender & Birthdate -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Gender</label>
+                    <select v-model="editForm.gender" :class="inputCls">
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Date of Birth</label>
+                    <input type="date" v-model="editForm.birthdate" :class="inputCls" />
+                  </div>
+                </div>
+
+                <!-- Contact -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Phone *</label>
+                    <input v-model="editForm.contact_number" :class="inputCls" placeholder="0917 123 4567" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Email *</label>
+                    <input v-model="editForm.contact_email" :class="inputCls" placeholder="email@example.com" />
+                  </div>
+                </div>
+
+                <!-- Address -->
+                <div>
+                  <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Address</label>
+                  <input v-model="editForm.contact_address" :class="inputCls" placeholder="Barangay, City, Province" />
+                </div>
+
+                <!-- Classification & LSU ID -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Classification</label>
+                    <select v-model="editForm.participant_type" :class="inputCls">
+                      <option value="">-- Select --</option>
+                      <option value="Currently Enrolled Students">Currently Enrolled Students</option>
+                      <option value="Employees">Employees</option>
+                      <option value="Alumni">Alumni</option>
+                      <option value="Open Category">Open Category</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">LSU ID Number</label>
+                    <input v-model="editForm.lsu_id_number" :class="inputCls" placeholder="e.g. 2021-00001" />
+                  </div>
+                </div>
+
+                <!-- Shirt size & Run category -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">T-Shirt Size</label>
+                    <input v-model="editForm.tshirt_size" :class="inputCls" placeholder="e.g. M, L, XL" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Run Category</label>
+                    <select v-model="editForm.run_category" :class="inputCls">
+                      <option value="">-- Select --</option>
+                      <option value="1KM">1 KM (Pet Run)</option>
+                      <option value="3KM">3 KM</option>
+                      <option value="10KM">10 KM</option>
+                      <option value="20KM">20 KM</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Bib number -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Bib / Run Number</label>
+                    <input v-model="editForm.run_number" :class="inputCls" placeholder="e.g. 10KM-001" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Payment Status</label>
+                    <select v-model="editForm.payment_status" :class="inputCls">
+                      <option value="Pending Payment">Pending Payment</option>
+                      <option value="Pending Approval">Pending Approval</option>
+                      <option value="Confirmed">Confirmed</option>
+                    </select>
+                  </div>
+                </div>
+              </template>
+
             </div>
           </div>
 
@@ -718,7 +1095,7 @@ const getStatusBadge = (status) => {
               <div class="flex items-center justify-between">
                 <span class="font-bold text-emerald-800 dark:text-emerald-300">Run Category</span>
                 <span class="font-black text-sm text-emerald-700 dark:text-emerald-400">
-                  {{ selectedRunner.run_category }}
+                  {{ selectedRunner.run_category }} |   ₱{{ Number(selectedRunner.grand_total_payment || selectedRunner.grand_total || 0).toLocaleString() }}
                 </span>
               </div>
 
@@ -734,12 +1111,7 @@ const getStatusBadge = (status) => {
                   <strong>Vaccinated:</strong> {{ selectedRunner.pet_vaccinated ? 'Yes' : 'No' }}</p>
               </div>
 
-              <div class="flex items-center justify-between pt-2 border-t border-emerald-200/60 dark:border-gray-700">
-                <span class="font-semibold text-gray-600 dark:text-gray-400">Total Registration Fee:</span>
-                <span class="font-black text-base text-emerald-600 dark:text-emerald-400">
-                  ₱{{ Number(selectedRunner.grand_total_payment || selectedRunner.grand_total || 0).toLocaleString() }}
-                </span>
-              </div>
+             
             </div>
 
 
@@ -748,12 +1120,9 @@ const getStatusBadge = (status) => {
               <div
                 class="border rounded-2xl lg:mt-5 p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <img :src="selectedRunner.proof_of_payment" alt="Payment Receipt"
-                    class="w-16 h-16 object-cover rounded-lg border cursor-pointer hover:opacity-85 transition hover:ring-2 hover:ring-emerald-500"
-                    title="Click to view receipt"
-                    @click="openReceiptModal(selectedRunner.proof_of_payment, 'Payment Receipt Proof', selectedRunner)" />
+                 
                   <div>
-                    <p class="font-bold text-xs">Payment Receipt</p>
+                   
                     <p class="font-bold text-xs text-gray-500 dark:text-gray-400">Proof Attached</p>
                   </div>
                 </div>
@@ -761,6 +1130,47 @@ const getStatusBadge = (status) => {
                   @click="openReceiptModal(selectedRunner.proof_of_payment, 'Payment Receipt Proof', selectedRunner)"
                   class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-sm">
                   <i class="fas fa-receipt text-xs"></i> View Receipt
+                </button>
+              </div>
+            </div>
+
+            <!-- Alumni Valid ID (Front and Back) if uploaded -->
+            <div v-if="getImageUrl(selectedRunner.valid_id_front) || getImageUrl(selectedRunner.valid_id_back)" class="space-y-2 mt-3">
+              <p class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                <i class="fas fa-id-card text-emerald-600"></i> Alumni Identification Documents:
+              </p>
+              
+              <div v-if="getImageUrl(selectedRunner.valid_id_front)"
+                class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                 
+                  <div>
+                    <p class="font-bold text-xs">Alumni ID (Front View)</p>
+                  
+                  </div>
+                </div>
+                <button type="button"
+                  @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_front), 'Alumni ID (Front)', selectedRunner)"
+                  class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-sm">
+                  <i class="fas fa-eye text-xs"></i> View Front
+                </button>
+              </div>
+
+              <div v-if="getImageUrl(selectedRunner.valid_id_back)"
+                class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <img :src="getImageUrl(selectedRunner.valid_id_back)" alt="Valid ID Back"
+                    class="w-16 h-16 object-cover rounded-lg border cursor-pointer hover:opacity-85 transition hover:ring-2 hover:ring-emerald-500"
+                    title="Click to view ID back"
+                    @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_back), 'Alumni ID (Back)', selectedRunner)" />
+                  <div>
+                    <p class="font-bold text-xs">Alumni ID (Back View)</p>
+                  </div>
+                </div>
+                <button type="button"
+                  @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_back), 'Alumni ID (Back)', selectedRunner)"
+                  class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-sm">
+                  <i class="fas fa-eye text-xs"></i> View Back
                 </button>
               </div>
             </div>
@@ -780,18 +1190,67 @@ const getStatusBadge = (status) => {
             </span>
           </div>
 
-          <div class="flex items-center gap-2 w-full sm:w-auto">
-            <button v-if="selectedRunner.payment_status !== 'Confirmed'" type="button"
-              @click="promptConfirmPayment(selectedRunner)" :disabled="isConfirming"
-              class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5">
-              <i v-if="!isConfirming" class="fas fa-check"></i>
+          <div class="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+            <!-- Save Changes button (edit mode) -->
+            <button v-if="isEditMode" type="button" @click="saveEdit" :disabled="isSaving"
+              class="flex-1 sm:flex-none px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60">
+              <i v-if="!isSaving" class="fas fa-save"></i>
               <i v-else class="fas fa-spinner fa-spin"></i>
-              <span>{{ isConfirming ? 'Processing...' : 'Approve / Confirm Payment' }}</span>
+              <span>{{ isSaving ? 'Saving...' : 'Save Changes' }}</span>
             </button>
-            <span v-else class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-              <i class="fas fa-check-circle"></i> Registration Confirmed
-            </span>
+
+            <!-- Confirm Payment button (view mode) -->
+            <template v-if="!isEditMode">
+              <button v-if="selectedRunner.payment_status !== 'Confirmed'" type="button"
+                @click="promptConfirmPayment(selectedRunner)" :disabled="isConfirming"
+                class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5">
+                <i v-if="!isConfirming" class="fas fa-check"></i>
+                <i v-else class="fas fa-spinner fa-spin"></i>
+                <span>{{ isConfirming ? 'Processing...' : 'Approve / Confirm Payment' }}</span>
+              </button>
+              <span v-else class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                <i class="fas fa-check-circle"></i> Registration Confirmed
+              </span>
+            </template>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BULK-DELETE CONFIRMATION MODAL ──────────────────────────────── -->
+    <div v-if="bulkDeleteModal.show"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      @click.self="closeBulkDeleteModal">
+      <div :class="[
+        'w-full max-w-sm rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <!-- Red accent bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-rose-500"></div>
+
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400 flex items-center justify-center text-2xl shadow-sm mt-2">
+          <i class="fas fa-trash-alt"></i>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-black tracking-tight">Delete {{ selectedIds.length }} Registration{{ selectedIds.length !== 1 ? 's' : '' }}?</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+            This action is <strong class="text-rose-600">permanent</strong> and cannot be undone.
+            All selected runner records will be removed from the system.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" @click="closeBulkDeleteModal" :disabled="isBulkDeleting"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="button" @click="executeBulkDelete" :disabled="isBulkDeleting"
+            class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60">
+            <i v-if="!isBulkDeleting" class="fas fa-trash"></i>
+            <i v-else class="fas fa-spinner fa-spin"></i>
+            <span>{{ isBulkDeleting ? 'Deleting...' : 'Yes, Delete All' }}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -816,9 +1275,11 @@ const getStatusBadge = (status) => {
             Confirm Payment?
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Are you sure you want to confirm payment?
+            Confirm payment for <strong class="text-emerald-600 dark:text-emerald-400">{{ confirmModal.runner.firstname }} {{ confirmModal.runner.lastname }}</strong>?
           </p>
-        
+          <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 leading-relaxed">
+            An official confirmation email will be sent to <strong>{{ confirmModal.runner.contact_email || confirmModal.runner.email }}</strong> with BCC to <strong>animorun@lsu.edu.ph</strong>, <strong>calendar@lsu.edu.ph</strong>, and <strong>vpal@lsu.edu.ph</strong>.
+          </p>
         </div>
 
        
