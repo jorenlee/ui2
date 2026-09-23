@@ -539,7 +539,7 @@ const subMenuList = [
 
 // ---------------- TOP MENU ----------------
 const menuList = [
-  { label: "Menu", icon: "fa-home", type: "button", view: "Menu" },
+  { label: "Home", icon: "fa-home", type: "button", view: "Menu" },
   { label: "Profile", icon: "fa-user", type: "button", view: "Profile" },
   { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
 ];
