@@ -178,10 +178,38 @@ onMounted(() => {
 const getImageUrl = (val) => {
   if (!val) return null;
   if (typeof val === "string") return val;
+  if (typeof val === "object" && val.url) return val.url;
   if (Array.isArray(val) && val.length > 0) {
+    if (typeof val[0] === "string") return val[0];
     return val[0]?.url || null;
   }
   return null;
+};
+
+const getDocumentUrl = (val) => {
+  return getImageUrl(val);
+};
+
+const getDocumentList = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) {
+    return val
+      .map((item, idx) => {
+        if (!item) return null;
+        if (typeof item === "string") return { name: `Document ${idx + 1}`, url: item };
+        if (typeof item === "object" && item.url) return { name: item.name || `Document ${idx + 1}`, url: item.url };
+        return null;
+      })
+      .filter(Boolean);
+  }
+  if (typeof val === "string") return [{ name: "Document 1", url: val }];
+  if (typeof val === "object" && val.url) return [{ name: val.name || "Document 1", url: val.url }];
+  return [];
+};
+
+const isPdfUrl = (url) => {
+  if (!url || typeof url !== "string") return false;
+  return url.toLowerCase().includes(".pdf") || url.toLowerCase().startsWith("data:application/pdf");
 };
 
 // NOTE: allSelected / someSelected depend on filteredRegistrations so it must be
@@ -1097,15 +1125,52 @@ const saveEdit = async () => {
               </div>
 
               <!-- Pet details if 1K Pet Run -->
-              <div v-if="selectedRunner.pet_name"
-                class="p-3 rounded-xl bg-white/80 dark:bg-gray-800/80 border space-y-1">
-                <span class="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
-                  <i class="fas fa-paw"></i> Pet Runner Details:
-                </span>
-                <p><strong>Name:</strong> {{ selectedRunner.pet_name }} ({{ selectedRunner.pet_type || 'Dog' }}{{
-                  selectedRunner.pet_breed ? ' - ' + selectedRunner.pet_breed : '' }})</p>
-                <p><strong>Bandana Size:</strong> {{ selectedRunner.pet_bandana_size || 'Medium' }} |
-                  <strong>Vaccinated:</strong> {{ selectedRunner.pet_vaccinated ? 'Yes' : 'No' }}</p>
+              <div v-if="selectedRunner.pet_name || selectedRunner.run_category === '1KM' || selectedRunner.run_category === '1K'"
+                class="p-3 rounded-xl bg-white/80 dark:bg-gray-800/80 border space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
+                    <i class="fas fa-paw"></i> Pet Runner Details:
+                  </span>
+                  <span v-if="selectedRunner.pet_vaccinated" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300">
+                    <i class="fas fa-syringe mr-0.5"></i> Vaccinated
+                  </span>
+                </div>
+                <p><strong>Name:</strong> {{ selectedRunner.pet_name || 'N/A' }} ({{ selectedRunner.pet_type || 'Dog' }})</p>
+                <p><strong>Bandana Size:</strong> {{ selectedRunner.pet_bandana_size || 'Medium' }}</p>
+
+                <!-- Pet Vaccine Document -->
+                <div v-if="getDocumentUrl(selectedRunner.pet_vaccine_record)" class="pt-2 border-t dark:border-gray-700">
+                  <div class="flex items-center justify-between bg-emerald-50/70 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200/60 dark:border-emerald-800/50">
+                    <div class="flex items-center gap-1.5 truncate mr-2">
+                      <i class="fas fa-file-medical text-emerald-600"></i>
+                      <span class="text-[11px] font-bold truncate">Vaccine Record / Anti-Rabies</span>
+                    </div>
+                    <button type="button"
+                      @click="openReceiptModal(getDocumentUrl(selectedRunner.pet_vaccine_record), 'Pet Vaccination Record', selectedRunner)"
+                      class="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition shrink-0 cursor-pointer">
+                      <i class="fas fa-eye"></i> View
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Pet Consent Documents (Multi) -->
+                <div v-if="getDocumentList(selectedRunner.pet_consent_documents).length > 0" class="pt-2 border-t dark:border-gray-700 space-y-1.5">
+                  <span class="text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400 block">
+                    <i class="fas fa-file-signature text-amber-600 mr-1"></i> Signed Non-Liability Consent Documents ({{ getDocumentList(selectedRunner.pet_consent_documents).length }}):
+                  </span>
+                  <div v-for="(doc, dIdx) in getDocumentList(selectedRunner.pet_consent_documents)" :key="dIdx"
+                    class="flex items-center justify-between bg-amber-50/70 dark:bg-amber-950/30 p-2 rounded-lg border border-amber-200/60 dark:border-amber-800/40">
+                    <div class="flex items-center gap-1.5 truncate mr-2">
+                      <i class="fas fa-file-pdf text-rose-500"></i>
+                      <span class="text-[11px] font-medium truncate">{{ doc.name }}</span>
+                    </div>
+                    <button type="button"
+                      @click="openReceiptModal(doc.url, `Consent Doc: ${doc.name}`, selectedRunner)"
+                      class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] transition shrink-0 cursor-pointer">
+                      <i class="fas fa-eye"></i> View
+                    </button>
+                  </div>
+                </div>
               </div>
 
              
@@ -1389,9 +1454,10 @@ const saveEdit = async () => {
           </div>
         </div>
 
-        <!-- Image Content Area -->
+        <!-- Document / Image Content Area -->
         <div class="p-3 sm:p-5 overflow-auto flex-1 flex items-center justify-center bg-slate-900/5 dark:bg-black/50 min-h-[260px]">
-          <img :src="receiptModal.url" :alt="receiptModal.title"
+          <iframe v-if="isPdfUrl(receiptModal.url)" :src="receiptModal.url" class="w-full h-[66vh] rounded-xl border border-gray-200 dark:border-gray-800" />
+          <img v-else :src="receiptModal.url" :alt="receiptModal.title"
             class="max-h-[66vh] max-w-full w-auto object-contain rounded-xl border shadow-md border-gray-200 dark:border-gray-800 select-none" />
         </div>
 

@@ -220,9 +220,42 @@ const buildShirtSizeSummary = (participant) => {
   return `${selected}: ${size};`;
 };
 
+const isPetCategory = (category) => category === "1KM" || category === "1K";
+
+const formatPhoneNumberInput = (event, participant) => {
+  let val = event?.target?.value || "";
+  // Strip all non-digits
+  let digits = val.replace(/\D/g, "");
+
+  // If user pasted with leading country code 63 or leading 0, strip it
+  if (digits.startsWith("63") && digits.length > 10) {
+    digits = digits.slice(2);
+  } else if (digits.startsWith("0")) {
+    digits = digits.slice(1);
+  }
+
+  // Max 10 digits
+  digits = digits.slice(0, 10);
+
+  // Format cleanly as 9XX-XXX-XXXX
+  let formatted = "";
+  if (digits.length > 0) {
+    formatted = digits.slice(0, 3);
+    if (digits.length > 3) {
+      formatted += "-" + digits.slice(3, 6);
+    }
+    if (digits.length > 6) {
+      formatted += "-" + digits.slice(6, 10);
+    }
+  }
+
+  participant.contact_number = formatted;
+};
+
 const createEmptyParticipant = (index = 1) => ({
   id: index,
   run_category: "",
+  participantGroup: null, // null | 'LSU' | 'Open'
   participant_type: "",
   lsu_id_number: "",
   firstname: "",
@@ -245,20 +278,34 @@ const createEmptyParticipant = (index = 1) => ({
   alumni_id_back_file: null,
   alumni_id_back_preview: null,
   organization: "",
-  participantGroup: null, // null | 'LSU' | 'Open'
   shirt_type: "event_shirt",
   selected_shirt_tab: "event_shirt",
   tshirt_size: "Event Shirt: M;",
   event_shirt_size: "M",
   singlet_size: "M",
   finisher_shirt_size: "M",
-  // Pet Run fields (active when run_category === '1K')
+  // Pet Run fields (active when run_category === '1KM' or '1K')
   pet_name: "",
   pet_type: "Dog",
-  pet_breed: "N/A",
+  pet_other_type: "",
   pet_bandana_size: "Standard",
   pet_vaccinated: true,
+  pet_vaccine_record_file: null,
+  pet_vaccine_record_preview: null,
+  pet_consent_agreed: true,
+  pet_consent_files: [], // array of { file, name, preview, isPdf }
 });
+
+const selectParticipantGroup = (participant, group) => {
+  participant.participantGroup = group;
+  if (group === "Open") {
+    participant.participant_type = "Open Category";
+  } else if (group === "LSU") {
+    if (!participant.participant_type || participant.participant_type === "Open Category") {
+      participant.participant_type = "Currently Enrolled Students";
+    }
+  }
+};
 
 const participants = ref([createEmptyParticipant(1)]);
 
@@ -321,8 +368,6 @@ watch(
   }
 );
 
-
-
 const handleReceiptUpload = (event) => {
   const file = event.target.files[0];
   if (!file) return;
@@ -359,6 +404,43 @@ const removeAlumniId = (participant, side) => {
   }
 };
 
+// ── Pet Vaccine Record Upload ─────────────────────────────────────────────
+const handlePetVaccineUpload = (event, participant) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  participant.pet_vaccine_record_file = file;
+  participant.pet_vaccine_record_preview = URL.createObjectURL(file);
+};
+
+const removePetVaccine = (participant) => {
+  participant.pet_vaccine_record_file = null;
+  participant.pet_vaccine_record_preview = null;
+};
+
+// ── Pet Consent Documents Upload (Multi-Upload) ───────────────────────────
+const handlePetConsentUpload = (event, participant) => {
+  const files = Array.from(event.target.files || []);
+  if (!files.length) return;
+  if (!participant.pet_consent_files) {
+    participant.pet_consent_files = [];
+  }
+  files.forEach((f) => {
+    participant.pet_consent_files.push({
+      file: f,
+      name: f.name,
+      preview: URL.createObjectURL(f),
+      isPdf: f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
+    });
+  });
+  event.target.value = "";
+};
+
+const removePetConsentDoc = (participant, index) => {
+  if (participant.pet_consent_files && participant.pet_consent_files[index]) {
+    participant.pet_consent_files.splice(index, 1);
+  }
+};
+
 const itemizedFees = computed(() => {
   const items = [];
   participants.value.forEach((p, idx) => {
@@ -366,20 +448,20 @@ const itemizedFees = computed(() => {
       form_type.value === "Group"
         ? `Runner #${idx + 1} (${p.firstname || "Unnamed"}): `
         : "";
-    const cat = runCategories.find((c) => c.id === p.run_category);
+    const cat = runCategories.find((c) => c.id === p.run_category || (p.run_category === '1K' && c.id === '1KM'));
     if (cat) {
-      const shirtDesc =
-        p.run_category === "1K"
-          ? `Size: ${p.tshirt_size || "M"} (Owner) + Bandana (${p.pet_bandana_size || "Medium"})`
-          : p.run_category === "20KM"
-          ? buildShirtSizeSummary(p)
-          : `Size: ${buildShirtSizeSummary(p)}`;
+      const isPet = isPetCategory(p.run_category);
+      const shirtDesc = isPet
+        ? `Size: ${p.tshirt_size || "M"} (Owner) + Bandana (${p.pet_bandana_size || "Standard"})`
+        : p.run_category === "20KM"
+        ? buildShirtSizeSummary(p)
+        : `Size: ${buildShirtSizeSummary(p)}`;
 
       items.push({
-        name: `${labelPrefix}${cat.name} (${cat.id})${p.run_category === "1K" && p.pet_name ? ' - Pet: ' + p.pet_name : ''}`,
+        name: `${labelPrefix}${cat.name} (${cat.id})${isPet && p.pet_name ? ' - Pet: ' + p.pet_name : ''}`,
         shirt: shirtDesc,
         amount: cat.fee,
-        isPet: p.run_category === "1K",
+        isPet: isPet,
       });
     }
   });
@@ -390,6 +472,39 @@ const grandTotal = computed(() => {
   return itemizedFees.value.reduce((sum, item) => sum + item.amount, 0);
 });
 
+const paymentMethodLabel = computed(() => {
+  if (paymentType.value === "salary_deduction") return "Salary Deduction";
+  if (paymentType.value === "add_to_tuition") return "Add to Tuition";
+  if (nonLsuPaymentMethod.value === "qr_payment") return "QR Payment";
+  if (nonLsuPaymentMethod.value === "accounting_otc") return "Accounting OTC";
+  return "Weekend Cash";
+});
+
+const registrationSummary = computed(() => {
+  const runnerSummaries = participants.value.map((participant, index) => {
+    const category = runCategories.find(
+      (item) => item.id === (participant.run_category === "1K" ? "1KM" : participant.run_category)
+    );
+
+    return {
+      name: [participant.firstname, participant.lastname].filter(Boolean).join(" ") || `Runner ${index + 1}`,
+      category: category ? `${category.name} (${category.id})` : participant.run_category || "Not selected",
+      classification:
+        participant.participantGroup === "LSU"
+          ? participant.participant_type || "LSU Exclusive"
+          : "Open Category",
+      payment: paymentMethodLabel.value,
+      fee: category?.fee || 0,
+    };
+  });
+
+  return {
+    runners: runnerSummaries,
+    total: grandTotal.value,
+    payment: paymentMethodLabel.value,
+  };
+});
+
 const copyRunnerOneInfo = () => {
   if (participants.value.length < 2) return;
   const r1 = participants.value[0];
@@ -397,6 +512,7 @@ const copyRunnerOneInfo = () => {
   p.contact_number = r1.contact_number;
   p.contact_email = r1.contact_email;
   p.contact_address = r1.contact_address;
+  p.participantGroup = r1.participantGroup;
   p.participant_type = r1.participant_type;
   p.college_course = r1.college_course;
   p.college_year = r1.college_year;
@@ -411,6 +527,11 @@ const copyRunnerOneInfo = () => {
   p.singlet_size = r1.singlet_size || "M";
   p.finisher_shirt_size = r1.finisher_shirt_size || "M";
   p.tshirt_size = buildShirtSizeSummary(p);
+  p.pet_type = r1.pet_type;
+  p.pet_other_type = r1.pet_other_type;
+  p.pet_bandana_size = r1.pet_bandana_size;
+  p.pet_vaccinated = r1.pet_vaccinated;
+  p.pet_consent_agreed = r1.pet_consent_agreed;
 };
 
 const isSuccessModalOpen = ref(false);
@@ -456,15 +577,19 @@ const submitRegistration = async () => {
       activeParticipantIndex.value = i;
       return;
     }
-    if (!p.contact_number?.trim()) {
+
+    // Phone number validation: must be 10 digits starting with 9
+    const rawDigits = (p.contact_number || "").replace(/\D/g, "");
+    if (rawDigits.length !== 10 || !rawDigits.startsWith("9")) {
       showNotice(
-        `Please provide a valid Contact Number for Runner #${i + 1}.`,
-        "Contact Number Required",
+        `Please provide a valid 10-digit Philippine Mobile Number (e.g. 917-123-4567) starting with 9 for Runner #${i + 1}.`,
+        "Valid Contact Number Required",
         "warning"
       );
       activeParticipantIndex.value = i;
       return;
     }
+
     if (!p.contact_email?.trim() && !user?.value?.email) {
       showNotice(
         `Please provide an Email Address for Runner #${i + 1} to receive your confirmation receipt.`,
@@ -474,34 +599,99 @@ const submitRegistration = async () => {
       activeParticipantIndex.value = i;
       return;
     }
-  }
 
+    // Validate Participant Classification for non-pet categories
+    if (!isPetCategory(p.run_category)) {
+      if (!p.participantGroup) {
+        showNotice(
+          `Please select your Participant Classification (LSU Exclusive or Open Category) for Runner #${i + 1}.`,
+          "Classification Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+      if (p.participantGroup === "LSU" && !p.participant_type) {
+        showNotice(
+          `Please select an LSU Exclusive category (Students, Employees, or Alumni) for Runner #${i + 1}.`,
+          "LSU Category Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+    }
 
+    // Validate Pet fields if Pet Run is selected
+    if (isPetCategory(p.run_category)) {
+      if (!p.pet_name?.trim()) {
+        showNotice(
+          `Please provide your Pet's Name for Runner #${i + 1}.`,
+          "Pet Name Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+      if (p.pet_type === "Other" && !p.pet_other_type?.trim()) {
+        showNotice(
+          `Please specify your Pet's Species / Type for Runner #${i + 1}.`,
+          "Pet Species Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+      if (!p.pet_vaccine_record_file) {
+        showNotice(
+          `Please upload your pet's Valid Vaccination Record / Updated 6-Month Anti-Rabies Certificate for Runner #${i + 1}.`,
+          "Pet Vaccine Record Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+      if (!p.pet_vaccinated) {
+        showNotice(
+          `Please confirm the Pet Safety & Anti-Rabies Vaccination assurance for Runner #${i + 1}.`,
+          "Pet Safety Assurance Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+      if (!p.pet_consent_agreed) {
+        showNotice(
+          `Please agree to the Non-Liability Clause and Pet Owner Responsibility Waiver for Runner #${i + 1}.`,
+          "Non-Liability Consent Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+    }
 
-  // Validate Pet Name if 1K Pet Run category is selected
-  const hasPetWithoutName = participants.value.some(
-    (p) => p.run_category === "1K" && !p.pet_name?.trim()
-  );
-  if (hasPetWithoutName) {
-    showNotice(
-      "Please provide your Pet's Name for the 1K Emerald Paws Pet Run category.",
-      "Pet Name Required",
-      "warning"
-    );
-    return;
-  }
-
-  // Validate Pet vaccination assurance
-  const hasPetWithoutVaccine = participants.value.some(
-    (p) => p.run_category === "1K" && !p.pet_vaccinated
-  );
-  if (hasPetWithoutVaccine) {
-    showNotice(
-      "Please confirm the Pet Safety and Anti-Rabies Vaccination assurance for the 1K Pet Run.",
-      "Pet Safety Assurance Required",
-      "warning"
-    );
-    return;
+    // Validate Alumni ID (front + back) for Alumni participants
+    if (p.participant_type === 'Alumni') {
+      if (!p.alumni_id_front_file) {
+        showNotice(
+          `Please upload the FRONT side of your Alumni ID for Runner #${i + 1}.`,
+          "Alumni ID Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+      if (!p.alumni_id_back_file) {
+        showNotice(
+          `Please upload the BACK side of your Alumni ID for Runner #${i + 1}.`,
+          "Alumni ID Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+    }
   }
 
   // Validate LSU ID Number for salary deduction / add to tuition
@@ -531,31 +721,6 @@ const submitRegistration = async () => {
         "warning"
       );
       return;
-    }
-  }
-
-  // Validate Alumni ID (front + back) for Alumni participants
-  for (let i = 0; i < participants.value.length; i++) {
-    const p = participants.value[i];
-    if (p.participant_type === 'Alumni') {
-      if (!p.alumni_id_front_file) {
-        showNotice(
-          `Please upload the FRONT side of your Alumni ID for Runner #${i + 1}.`,
-          "Alumni ID Required",
-          "warning"
-        );
-        activeParticipantIndex.value = i;
-        return;
-      }
-      if (!p.alumni_id_back_file) {
-        showNotice(
-          `Please upload the BACK side of your Alumni ID for Runner #${i + 1}.`,
-          "Alumni ID Required",
-          "warning"
-        );
-        activeParticipantIndex.value = i;
-        return;
-      }
     }
   }
 
@@ -592,17 +757,41 @@ const submitRegistration = async () => {
             if (p.alumni_id_front_file) idFrontUrl = await uploadSingleFile(p.alumni_id_front_file) || "";
             if (p.alumni_id_back_file) idBackUrl = await uploadSingleFile(p.alumni_id_back_file) || "";
           }
+
+          // Upload Pet Vaccine Record if present
+          let vaccineUrl = "";
+          if (p.pet_vaccine_record_file) {
+            vaccineUrl = await uploadSingleFile(p.pet_vaccine_record_file) || "";
+          }
+
+          // Upload Pet Consent Documents if present
+          let consentDocs = [];
+          if (p.pet_consent_files && p.pet_consent_files.length) {
+            for (const doc of p.pet_consent_files) {
+              const url = await uploadSingleFile(doc.file);
+              if (url) {
+                consentDocs.push({ name: doc.name || 'pet_consent_form', url });
+              }
+            }
+          }
+
+          const resolvedPetType = p.pet_type === "Other" && p.pet_other_type?.trim()
+            ? `Other: ${p.pet_other_type.trim()}`
+            : p.pet_type;
+
+          const formattedPhone = p.contact_number ? `+63 ${p.contact_number}` : "";
+
           return {
             firstname: p.firstname,
             middlename: p.middlename,
             lastname: p.lastname,
             suffix: p.suffix,
-            run_category: p.run_category,
+            run_category: p.run_category === "1K" ? "1KM" : p.run_category,
             participant_type: p.participant_type,
             lsu_id_number: p.lsu_id_number,
             birthdate: p.birthdate,
             gender: p.gender,
-            contact_number: p.contact_number,
+            contact_number: formattedPhone,
             contact_email: p.contact_email || user?.value?.email || "",
             contact_address: p.contact_address,
             college_course: p.college_course,
@@ -614,12 +803,13 @@ const submitRegistration = async () => {
             shirt_type: p.shirt_type,
             tshirt_size: buildShirtSizeSummary(p),
             pet_name: p.pet_name,
-            pet_type: p.pet_type,
-            pet_breed: p.pet_breed,
+            pet_type: resolvedPetType,
             pet_bandana_size: p.pet_bandana_size,
             pet_vaccinated: p.pet_vaccinated,
             valid_id_front: idFrontUrl ? [{ name: 'alumni_id_front', url: idFrontUrl }] : [],
             valid_id_back: idBackUrl ? [{ name: 'alumni_id_back', url: idBackUrl }] : [],
+            pet_vaccine_record: vaccineUrl ? [{ name: 'pet_vaccine_record', url: vaccineUrl }] : [],
+            pet_consent_documents: consentDocs,
           };
         })),
         form_type: "Group",
@@ -644,17 +834,40 @@ const submitRegistration = async () => {
         if (p.alumni_id_back_file) idBackUrl = await uploadSingleFile(p.alumni_id_back_file) || "";
       }
 
+      // Upload Pet Vaccine Record if present
+      let vaccineUrl = "";
+      if (p.pet_vaccine_record_file) {
+        vaccineUrl = await uploadSingleFile(p.pet_vaccine_record_file) || "";
+      }
+
+      // Upload Pet Consent Documents if present
+      let consentDocs = [];
+      if (p.pet_consent_files && p.pet_consent_files.length) {
+        for (const doc of p.pet_consent_files) {
+          const url = await uploadSingleFile(doc.file);
+          if (url) {
+            consentDocs.push({ name: doc.name || 'pet_consent_form', url });
+          }
+        }
+      }
+
+      const resolvedPetType = p.pet_type === "Other" && p.pet_other_type?.trim()
+        ? `Other: ${p.pet_other_type.trim()}`
+        : p.pet_type;
+
+      const formattedPhone = p.contact_number ? `+63 ${p.contact_number}` : "";
+
       const payload = {
         firstname: p.firstname,
         middlename: p.middlename,
         lastname: p.lastname,
         suffix: p.suffix,
-        run_category: p.run_category,
+        run_category: p.run_category === "1K" ? "1KM" : p.run_category,
         participant_type: p.participant_type,
         lsu_id_number: p.lsu_id_number,
         birthdate: p.birthdate,
         gender: p.gender,
-        contact_number: p.contact_number,
+        contact_number: formattedPhone,
         contact_email: p.contact_email || user?.value?.email || "",
         contact_address: p.contact_address,
         college_course: p.college_course,
@@ -666,8 +879,7 @@ const submitRegistration = async () => {
         shirt_type: p.shirt_type,
         tshirt_size: buildShirtSizeSummary(p),
         pet_name: p.pet_name,
-        pet_type: p.pet_type,
-        pet_breed: p.pet_breed,
+        pet_type: resolvedPetType,
         pet_bandana_size: p.pet_bandana_size,
         pet_vaccinated: p.pet_vaccinated,
         form_type: "Individual",
@@ -677,6 +889,8 @@ const submitRegistration = async () => {
         detail_fees: itemizedFees.value,
         valid_id_front: idFrontUrl ? [{ name: 'alumni_id_front', url: idFrontUrl }] : [],
         valid_id_back: idBackUrl ? [{ name: 'alumni_id_back', url: idBackUrl }] : [],
+        pet_vaccine_record: vaccineUrl ? [{ name: 'pet_vaccine_record', url: vaccineUrl }] : [],
+        pet_consent_documents: consentDocs,
       };
 
       res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
@@ -1131,7 +1345,7 @@ const submitRegistration = async () => {
 
             <!-- INTEGRATED PET COMPANION DETAILS (ACTIVATED AUTOMATICALLY WHEN 1K PET RUN IS SELECTED) -->
             <div
-              v-if="currentParticipant.run_category === '1KM'"
+              v-if="isPetCategory(currentParticipant.run_category)"
               class="mt-6 rounded-3xl p-5 sm:p-6 border-2 transition-all duration-300 relative overflow-hidden"
               :style="props.darkMode
                 ? { background: 'rgba(3,87,81,0.15)', borderColor: '#035751', boxShadow: '0 4px 20px rgba(3,87,81,0.2)' }
@@ -1158,7 +1372,7 @@ const submitRegistration = async () => {
                       </span>
                     </h4>
                     <p class="text-xs mt-0.5" :style="{ color: props.darkMode ? '#9ca3af' : '#4b5563' }">
-                      Please provide your pet companion's information for race bib issuance, bandana sizing, and marshaling coordination.
+                      Please provide your pet companion's details, vaccination records, and signed liability consent.
                     </p>
                   </div>
                 </div>
@@ -1169,8 +1383,11 @@ const submitRegistration = async () => {
                 </span>
               </div>
 
-              <!-- Pet Form Fields -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <!-- Pet Basic Form Fields -->
+              <div :class="[
+                'grid gap-4 mb-4',
+                currentParticipant.pet_type === 'Other' ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
+              ]">
                 <div>
                   <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                     Pet's Name <span class="text-rose-500">*</span>
@@ -1182,11 +1399,13 @@ const submitRegistration = async () => {
                       'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:outline-none pet-name-input',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
                     ]"
-                    />
+                  />
                 </div>
 
                 <div>
-                  <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Pet Species / Type</label>
+                  <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                    Pet Species / Type <span class="text-rose-500">*</span>
+                  </label>
                   <select
                     v-model="currentParticipant.pet_type"
                     :class="[
@@ -1195,26 +1414,169 @@ const submitRegistration = async () => {
                     ]">
                     <option value="Dog">Dog</option>
                     <option value="Cat">Cat</option>
-                    <option value="Other">Other Friendly Pet Companion</option>
+                    <option value="Other">Other Pet Companion (Specify)</option>
                   </select>
                 </div>
 
-                
+                <div v-if="currentParticipant.pet_type === 'Other'">
+                  <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                    Specify Pet Species / Type <span class="text-rose-500">*</span>
+                  </label>
+                  <input
+                    v-model="currentParticipant.pet_other_type"
+                    placeholder="e.g. Rabbit, Guinea Pig, Hamster"
+                    :class="[
+                      'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:outline-none pet-name-input',
+                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
+                    ]"
+                  />
+                </div>
               </div>
 
-              <!-- Pet Safety Assurance -->
+              <!-- Pet Document Uploads: Vaccine Record + Consent Documents -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t" style="border-color: rgba(147,202,197,0.4)">
+                
+                <!-- 1. Vaccine Record Upload -->
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                      <i class="fas fa-syringe text-emerald-600"></i>
+                      <span>Vaccine Record / Anti-Rabies Card <span class="text-rose-500">*</span></span>
+                    </label>
+                    <span v-if="currentParticipant.pet_vaccine_record_preview" class="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                      <i class="fas fa-check-circle"></i> Uploaded
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                    Upload valid vaccination certificate or updated (within 6 months) anti-rabies record.
+                  </p>
+
+                  <label :for="'pet_vax_' + activeParticipantIndex" :class="[
+                    'relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
+                    currentParticipant.pet_vaccine_record_preview
+                      ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 h-36'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-24 py-2',
+                    props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
+                  ]">
+                    <input
+                      :id="'pet_vax_' + activeParticipantIndex"
+                      type="file"
+                      accept="image/*,.pdf"
+                      class="sr-only"
+                      @change="handlePetVaccineUpload($event, currentParticipant)"
+                    />
+                    <template v-if="currentParticipant.pet_vaccine_record_preview">
+                      <img
+                        :src="currentParticipant.pet_vaccine_record_preview"
+                        class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition"
+                        alt="Vaccine Record Preview"
+                      />
+                      <div class="absolute inset-0 flex flex-col items-center justify-end pb-2 bg-gradient-to-t from-black/60 to-transparent">
+                        <button
+                          type="button"
+                          @click.prevent="removePetVaccine(currentParticipant)"
+                          class="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10"
+                        >
+                          <i class="fas fa-trash-alt"></i> Remove Record
+                        </button>
+                      </div>
+                    </template>
+                    <template v-else>
+                      <div class="flex flex-col items-center gap-1 py-3 px-2 text-center pointer-events-none">
+                        <i class="fas fa-file-medical text-2xl text-emerald-500 group-hover:scale-110 transition"></i>
+                        <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Upload Vaccine Record</span>
+                        <span class="text-[10px] text-gray-400">JPG, PNG, or PDF up to 5MB</span>
+                      </div>
+                    </template>
+                  </label>
+                </div>
+
+                <!-- 2. Non-Liability Clause & Consent Multi-Document Upload -->
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                      <i class="fas fa-file-signature text-emerald-600"></i>
+                      <span>Consent Form / Waiver Documents</span>
+                    </label>
+                    <span v-if="currentParticipant.pet_consent_files && currentParticipant.pet_consent_files.length" class="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                      <i class="fas fa-check-circle"></i> {{ currentParticipant.pet_consent_files.length }} file(s)
+                    </span>
+                  </div>
+                  <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                    Upload signed consent form, waiver, or veterinary clearance (multi-upload supported).
+                  </p>
+
+                  <label :for="'pet_consent_' + activeParticipantIndex" :class="[
+                    'flex flex-col items-center justify-center rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 p-3.5 text-center group',
+                    'border-gray-300 dark:border-gray-600 hover:border-emerald-500',
+                    props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
+                  ]">
+                    <input
+                      :id="'pet_consent_' + activeParticipantIndex"
+                      type="file"
+                      accept="image/*,.pdf"
+                      multiple
+                      class="sr-only"
+                      @change="handlePetConsentUpload($event, currentParticipant)"
+                    />
+                    <i class="fas fa-cloud-arrow-up text-2xl text-teal-600 group-hover:scale-110 transition mb-1"></i>
+                    <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Add Consent / Waiver Document(s)</span>
+                    <span class="text-[10px] text-gray-400">Select multiple JPG, PNG, or PDF files</span>
+                  </label>
+
+                  <!-- Uploaded Files List -->
+                  <div v-if="currentParticipant.pet_consent_files && currentParticipant.pet_consent_files.length" class="space-y-1.5 max-h-28 overflow-y-auto">
+                    <div
+                      v-for="(doc, dIdx) in currentParticipant.pet_consent_files"
+                      :key="'consent-doc-' + dIdx"
+                      class="flex items-center justify-between p-2 rounded-xl border bg-white/80 dark:bg-gray-800/80 border-emerald-200 dark:border-gray-700 text-xs shadow-2xs"
+                    >
+                      <div class="flex items-center gap-2 min-w-0">
+                        <i :class="doc.isPdf ? 'fas fa-file-pdf text-rose-500' : 'fas fa-file-image text-emerald-500'"></i>
+                        <span class="truncate max-w-[180px] font-semibold text-[11px] text-gray-700 dark:text-gray-300">{{ doc.name }}</span>
+                      </div>
+                      <button
+                        type="button"
+                        @click="removePetConsentDoc(currentParticipant, dIdx)"
+                        class="text-rose-500 hover:text-rose-700 text-xs px-1.5 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                        title="Remove file"
+                      >
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Pet Safety & Non-Liability Clause Assurance Checkbox -->
               <div
-                class="mt-4 p-3.5 rounded-2xl border flex items-start gap-3 text-xs text-gray-700 dark:text-gray-300 shadow-2xs"
+                class="mt-4 p-4 rounded-2xl border space-y-3 text-xs text-gray-700 dark:text-gray-300 shadow-2xs"
                 :style="{ background: props.darkMode ? 'rgba(31,41,55,0.9)' : 'rgba(255,255,255,0.9)', borderColor: 'rgba(147,202,197,0.7)' }">
-                <input
-                  type="checkbox"
-                  v-model="currentParticipant.pet_vaccinated"
-                  class="mt-0.5 w-4 h-4 rounded cursor-pointer shrink-0"
-                  style="accent-color: #02857D"
-                  :id="'pet_vac_' + activeParticipantIndex" />
-                <label :for="'pet_vac_' + activeParticipantIndex" class="cursor-pointer select-none leading-relaxed">
-                  <strong style="color: #035751">Pet Safety & Vaccination Assurance:</strong> I confirm my pet has updated anti-rabies vaccination, is friendly and non-aggressive with other runners and pets, and will remain on a secure leash at all times throughout the 1K run route.
-                </label>
+                
+                <div class="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    v-model="currentParticipant.pet_vaccinated"
+                    class="mt-1 w-4 h-4 rounded cursor-pointer shrink-0"
+                    style="accent-color: #02857D"
+                    :id="'pet_vac_' + activeParticipantIndex" />
+                  <label :for="'pet_vac_' + activeParticipantIndex" class="cursor-pointer select-none leading-relaxed">
+                    <strong style="color: #035751">Pet Safety &amp; Anti-Rabies Vaccination Assurance:</strong> I confirm my pet has updated anti-rabies vaccination (within the last 6 months), is friendly and non-aggressive with other runners and pets, and will remain on a secure leash at all times throughout the 1K run route.
+                  </label>
+                </div>
+
+                <div class="flex items-start gap-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <input
+                    type="checkbox"
+                    v-model="currentParticipant.pet_consent_agreed"
+                    class="mt-1 w-4 h-4 rounded cursor-pointer shrink-0"
+                    style="accent-color: #02857D"
+                    :id="'pet_consent_agree_' + activeParticipantIndex" />
+                  <label :for="'pet_consent_agree_' + activeParticipantIndex" class="cursor-pointer select-none leading-relaxed">
+                    <strong style="color: #035751">Non-Liability Clause &amp; Owner Consent:</strong> I voluntarily assume all risks and full responsibility for my pet's actions, safety, and health during the event. I hereby release and hold harmless La Salle University, event organizers, and volunteers from any liabilities, damages, or claims arising from my pet's participation.
+                  </label>
+                </div>
               </div>
             </div>
           </section>
@@ -1362,23 +1724,41 @@ const submitRegistration = async () => {
                 </div>
               </div>
 
+              <!-- Locked +63 Contact Phone Number -->
               <div class="w-full">
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Contact Phone Number
-                  *</label>
-                <div class="relative">
-                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
-                    <i class="fas fa-phone"></i>
+                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                  Contact Phone Number *
+                </label>
+                <div :class="[
+                  'flex items-center rounded-xl border transition overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500',
+                  props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
+                ]">
+                  <span :class="[
+                    'flex items-center gap-1 px-3 py-2.5 text-xs font-bold border-r select-none shrink-0',
+                    props.darkMode ? 'bg-gray-700/80 text-emerald-400 border-gray-600' : 'bg-slate-100 text-emerald-700 border-gray-300'
+                  ]">
+                    <span>🇵🇭 +63</span>
                   </span>
-                  <input v-model="currentParticipant.contact_number" placeholder="0917 123 4567" :class="[
-                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
-                  ]" />
+                  <input
+                    type="tel"
+                    :value="currentParticipant.contact_number"
+                    @input="formatPhoneNumberInput($event, currentParticipant)"
+                    placeholder="917-123-4567"
+                    maxlength="12"
+                    :class="[
+                      'w-full px-3.5 py-2.5 text-sm font-semibold tracking-wide bg-transparent focus:outline-none',
+                      props.darkMode ? 'text-gray-100 placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'
+                    ]"
+                  />
                 </div>
+                <p class="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                  <i class="fas fa-lock text-[9px] text-emerald-600"></i>
+                  <span>Format: 9XX-XXX-XXXX (10 digits starting with 9)</span>
+                </p>
               </div>
 
               <div class="w-full">
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Complete
-                  Address</label>
+                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Complete Address</label>
                 <div class="relative">
                   <span class="absolute left-3.5 top-3 text-xs text-gray-400">
                     <i class="fas fa-map-marker-alt"></i>
@@ -1393,7 +1773,7 @@ const submitRegistration = async () => {
           </section>
 
           <!-- SECTION 4: SHIRT TYPE & SIZE -->
-          <section v-if="currentParticipant.run_category && currentParticipant.run_category !== '1KM'">
+          <section v-if="currentParticipant.run_category && !isPetCategory(currentParticipant.run_category)">
             <div class="mb-4">
               <div class="flex items-center justify-between">
                 <h3 class="text-lg font-bold flex items-center gap-2">
@@ -1530,357 +1910,396 @@ const submitRegistration = async () => {
             </div>
           </section>
 
-                    <!-- SECTION 5: PARTICIPANT CLASSIFICATION -->
-          <section v-if="currentParticipant.run_category && currentParticipant.run_category !== '1KM'">
-            <div class="mb-4">
-              <h3 class="text-lg font-bold flex items-center gap-2">
-                <span
-                  class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">5</span>
-                Participant Classification
-              </h3>
+          <!-- SECTION 5: PARTICIPANT CLASSIFICATION & PAYMENT SUMMARY -->
+          <section v-if="currentParticipant.run_category && !isPetCategory(currentParticipant.run_category)" class="space-y-4">
+            <div class="mb-1">
+              <div class="flex items-center justify-between gap-3 flex-wrap">
+                <h3 class="text-base font-bold flex items-center gap-2">
+                  <span
+                    class="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">5</span>
+                  Classification & Payment Summary
+                </h3>
+                <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                  {{ currentParticipant.participantGroup === 'LSU' ? (currentParticipant.participant_type || 'LSU Exclusive') : 'Open Category' }} • {{ paymentMethodLabel }}
+                </span>
+              </div>
             </div>
 
-            <div class="space-y-2">
+            <div class="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20 p-3.5 flex items-center justify-between gap-3 text-xs text-emerald-800 dark:text-emerald-300">
+              <div>
+                <div class="font-bold text-[10px] uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">Summary</div>
+                <div class="font-semibold mt-1">
+                  {{ currentParticipant.participantGroup === 'LSU' ? (currentParticipant.participant_type || 'LSU Exclusive') : 'Open Category' }} • {{ paymentMethodLabel }}
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-[10px] uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">Total</div>
+                <div class="font-black text-base text-emerald-700 dark:text-emerald-300">PHP {{ grandTotal.toLocaleString() }}</div>
+              </div>
+            </div>
 
-              <!-- FLAT 4-OPTION CLASSIFICATION -->
-              <!-- 1. Currently Enrolled Students -->
-              <div @click="currentParticipant.participant_type = 'Currently Enrolled Students'" :class="[
-                'rounded-2xl border p-4 transition-all duration-200 cursor-pointer text-left',
-                currentParticipant.participant_type === 'Currently Enrolled Students'
-                  ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm ring-1 ring-emerald-500/40'
-                  : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800 hover:border-gray-600'
-                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-emerald-200',
-              ]">
-                <div class="flex items-center gap-3.5 w-full">
-                  <div :class="[
-                    'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                    currentParticipant.participant_type === 'Currently Enrolled Students'
-                      ? 'border-emerald-600 bg-emerald-600 shadow-sm shadow-emerald-600/30'
-                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800',
-                  ]">
-                    <div v-if="currentParticipant.participant_type === 'Currently Enrolled Students'"
-                      class="w-2 h-2 rounded-full bg-white"></div>
+            <!-- PRIMARY 2 COMPACT CARDS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              
+              <!-- OPTION 1: LSU EXCLUSIVE -->
+              <div
+                @click="selectParticipantGroup(currentParticipant, 'LSU')"
+                :class="[
+                  'rounded-2xl border-2 p-3 sm:p-3.5 cursor-pointer transition-all duration-200 text-left relative flex items-center justify-between gap-3',
+                  currentParticipant.participantGroup === 'LSU'
+                    ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 ring-2 ring-emerald-500/30 shadow-xs'
+                    : props.darkMode
+                      ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800'
+                      : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
+                ]"
+              >
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-bold shrink-0">
+                    <i class="fas fa-university"></i>
                   </div>
-                  <input type="radio" value="Currently Enrolled Students"
-                    v-model="currentParticipant.participant_type" class="sr-only" />
-                  <div class="flex-1 min-w-0">
-                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
-                      <i class="fas fa-user-graduate mr-1 text-emerald-600"></i> Currently Enrolled Students
-                    </span>
-                    <span class="text-xs text-gray-500 block mt-0.5">College / Graduate School · Grade School / JHS / SHS</span>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                        LSU Exclusive
+                      </h4>
+                      <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">
+                        Students · Staff · Alumni
+                      </span>
+                    </div>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                      Enrolled students, university employees, and alumni
+                    </p>
                   </div>
                 </div>
-                <div v-if="currentParticipant.participant_type === 'Currently Enrolled Students'" @click.stop
-                  class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pl-8 pt-3.5 border-t border-emerald-200/80 dark:border-gray-700">
-                  <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Course / Program *</label>
-                    <select v-model="currentParticipant.college_course" :class="[
-                      'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                    ]">
-                      <option value="">Select Course / Level</option>
-                      <option value="BSIT">BS Information Technology (BSIT)</option>
-                      <option value="BSCS">BS Computer Science (BSCS)</option>
-                      <option value="BSEd">BS Secondary Education (BSEd)</option>
-                      <option value="BSN">BS Nursing (BSN)</option>
-                      <option value="BSBA">BS Business Administration (BSBA)</option>
-                      <option value="BSA">BS Accountancy (BSA)</option>
-                      <option value="BSCrim">BS Criminology (BSCrim)</option>
-                      <option value="BSTM">BS Tourism Management (BSTM)</option>
-                      <option value="BSHM">BS Hospitality Management (BSHM)</option>
-                      <option value="Grade School">Grade School</option>
-                      <option value="JHS">Junior High School (JHS)</option>
-                      <option value="SHS">Senior High School (SHS)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Year / Grade Level *</label>
-                    <select v-model="currentParticipant.college_year" :class="[
-                      'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                    ]">
-                      <option value="">Select Level</option>
-                      <option value="1st Year">1st Year</option>
-                      <option value="2nd Year">2nd Year</option>
-                      <option value="3rd Year">3rd Year</option>
-                      <option value="4th Year">4th Year</option>
-                      <option value="5th Year">5th Year</option>
-                      <option value="Grade 1">Grade 1</option>
-                      <option value="Grade 2">Grade 2</option>
-                      <option value="Grade 3">Grade 3</option>
-                      <option value="Grade 4">Grade 4</option>
-                      <option value="Grade 5">Grade 5</option>
-                      <option value="Grade 6">Grade 6</option>
-                      <option value="Grade 7">Grade 7</option>
-                      <option value="Grade 8">Grade 8</option>
-                      <option value="Grade 9">Grade 9</option>
-                      <option value="Grade 10">Grade 10</option>
-                      <option value="Grade 11">Grade 11</option>
-                      <option value="Grade 12">Grade 12</option>
-                    </select>
-                  </div>
+                <div :class="[
+                  'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                  currentParticipant.participantGroup === 'LSU'
+                    ? 'border-emerald-600 bg-emerald-600'
+                    : 'border-gray-300 dark:border-gray-600'
+                ]">
+                  <div v-if="currentParticipant.participantGroup === 'LSU'" class="w-2 h-2 rounded-full bg-white"></div>
                 </div>
               </div>
 
-              <!-- 2. Employees -->
-              <div @click="currentParticipant.participant_type = 'Employees'" :class="[
-                'rounded-2xl border p-4 transition-all duration-200 cursor-pointer text-left',
-                currentParticipant.participant_type === 'Employees'
-                  ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm ring-1 ring-emerald-500/40'
-                  : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800 hover:border-gray-600'
-                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-emerald-200',
-              ]">
-                <div class="flex items-center gap-3.5 w-full">
-                  <div :class="[
-                    'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                    currentParticipant.participant_type === 'Employees'
-                      ? 'border-emerald-600 bg-emerald-600 shadow-sm shadow-emerald-600/30'
-                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800',
-                  ]">
-                    <div v-if="currentParticipant.participant_type === 'Employees'"
-                      class="w-2 h-2 rounded-full bg-white"></div>
+              <!-- OPTION 2: OPEN CATEGORY -->
+              <div
+                @click="selectParticipantGroup(currentParticipant, 'Open')"
+                :class="[
+                  'rounded-2xl border-2 p-3 sm:p-3.5 cursor-pointer transition-all duration-200 text-left relative flex items-center justify-between gap-3',
+                  currentParticipant.participantGroup === 'Open'
+                    ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 ring-2 ring-emerald-500/30 shadow-xs'
+                    : props.darkMode
+                      ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800'
+                      : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
+                ]"
+              >
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center text-base font-bold shrink-0">
+                    <i class="fas fa-globe-asia"></i>
                   </div>
-                  <input type="radio" value="Employees" v-model="currentParticipant.participant_type"
-                    class="sr-only" />
-                  <div class="flex-1 min-w-0">
-                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
-                      <i class="fas fa-briefcase mr-1 text-emerald-600"></i> Employees
-                    </span>
-                    <span class="text-xs text-gray-500 block mt-0.5">Faculty, Staff, Administrators, and University Employees</span>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                        Open Category
+                      </h4>
+                      <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        General Public
+                      </span>
+                    </div>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                      Public runners, running clubs, and visiting enthusiasts
+                    </p>
                   </div>
                 </div>
-                <div v-if="currentParticipant.participant_type === 'Employees'" @click.stop
-                  class="mt-4 pl-8 pt-3.5 border-t border-emerald-200/80 dark:border-gray-700 max-w-md">
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Office / Department *</label>
-                  <select v-model="currentParticipant.partner_office" :class="[
+                <div :class="[
+                  'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                  currentParticipant.participantGroup === 'Open'
+                    ? 'border-emerald-600 bg-emerald-600'
+                    : 'border-gray-300 dark:border-gray-600'
+                ]">
+                  <div v-if="currentParticipant.participantGroup === 'Open'" class="w-2 h-2 rounded-full bg-white"></div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- COMPRESSED LSU EXCLUSIVE AFFILIATION DETAILS -->
+            <div
+              v-if="currentParticipant.participantGroup === 'LSU'"
+              class="p-3.5 sm:p-4 rounded-2xl border bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-900/60 space-y-3 transition-all duration-300"
+            >
+              <!-- 3-Button Segmented Affiliation Selector -->
+              <div>
+                <div class="flex items-center justify-between mb-2">
+                  <label class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fas fa-list-check"></i>
+                    <span>Select Your LSU Affiliation:</span>
+                  </label>
+                  <span class="text-[11px] text-gray-500 dark:text-gray-400">Choose one</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <!-- 1. Students Button -->
+                  <button
+                    type="button"
+                    @click="currentParticipant.participant_type = 'Currently Enrolled Students'"
+                    :class="[
+                      'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
+                      currentParticipant.participant_type === 'Currently Enrolled Students'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
+                        : props.darkMode
+                          ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
+                          : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
+                    ]"
+                  >
+                    <i class="fas fa-user-graduate text-sm"></i>
+                    <span>Enrolled Students</span>
+                  </button>
+
+                  <!-- 2. Employees Button -->
+                  <button
+                    type="button"
+                    @click="currentParticipant.participant_type = 'Employees'"
+                    :class="[
+                      'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
+                      currentParticipant.participant_type === 'Employees'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
+                        : props.darkMode
+                          ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
+                          : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
+                    ]"
+                  >
+                    <i class="fas fa-briefcase text-sm"></i>
+                    <span>Employees / Faculty</span>
+                  </button>
+
+                  <!-- 3. Alumni Button -->
+                  <button
+                    type="button"
+                    @click="currentParticipant.participant_type = 'Alumni'"
+                    :class="[
+                      'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
+                      currentParticipant.participant_type === 'Alumni'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
+                        : props.darkMode
+                          ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
+                          : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
+                    ]"
+                  >
+                    <i class="fas fa-graduation-cap text-sm"></i>
+                    <span>LSU / ICC Alumni</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 1. Enrolled Students Form -->
+              <div v-if="currentParticipant.participant_type === 'Currently Enrolled Students'"
+                class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Course / Program *</label>
+                  <select v-model="currentParticipant.college_course" :class="[
                     'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                     props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                   ]">
-                    <option value="">Select Office / Department</option>
-                    <option value="Office of the Chancellor">Office of the Chancellor</option>
-                    <option value="College of Computer Studies">College of Computer Studies</option>
-                    <option value="College of Arts and Sciences">College of Arts and Sciences</option>
-                    <option value="College of Business and Accountancy">College of Business and Accountancy</option>
-                    <option value="College of Education">College of Education</option>
-                    <option value="College of Nursing">College of Nursing</option>
-                    <option value="College of Law">College of Law</option>
-                    <option value="General Services Office">General Services Office</option>
-                    <option value="University Registrar">University Registrar</option>
-                    <option value="Human Resource Center">Human Resource Center</option>
-                    <option value="Accounting Office">Accounting Office</option>
+                    <option value="">Select Course / Level</option>
+                    <option value="BSIT">BS Information Technology (BSIT)</option>
+                    <option value="BSCS">BS Computer Science (BSCS)</option>
+                    <option value="BSEd">BS Secondary Education (BSEd)</option>
+                    <option value="BSN">BS Nursing (BSN)</option>
+                    <option value="BSBA">BS Business Administration (BSBA)</option>
+                    <option value="BSA">BS Accountancy (BSA)</option>
+                    <option value="BSCrim">BS Criminology (BSCrim)</option>
+                    <option value="BSTM">BS Tourism Management (BSTM)</option>
+                    <option value="BSHM">BS Hospitality Management (BSHM)</option>
+                    <option value="Grade School">Grade School</option>
+                    <option value="JHS">Junior High School (JHS)</option>
+                    <option value="SHS">Senior High School (SHS)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Year / Grade Level *</label>
+                  <select v-model="currentParticipant.college_year" :class="[
+                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                  ]">
+                    <option value="">Select Level</option>
+                    <option value="1st Year">1st Year</option>
+                    <option value="2nd Year">2nd Year</option>
+                    <option value="3rd Year">3rd Year</option>
+                    <option value="4th Year">4th Year</option>
+                    <option value="5th Year">5th Year</option>
+                    <option value="Grade 1">Grade 1</option>
+                    <option value="Grade 2">Grade 2</option>
+                    <option value="Grade 3">Grade 3</option>
+                    <option value="Grade 4">Grade 4</option>
+                    <option value="Grade 5">Grade 5</option>
+                    <option value="Grade 6">Grade 6</option>
+                    <option value="Grade 7">Grade 7</option>
+                    <option value="Grade 8">Grade 8</option>
+                    <option value="Grade 9">Grade 9</option>
+                    <option value="Grade 10">Grade 10</option>
+                    <option value="Grade 11">Grade 11</option>
+                    <option value="Grade 12">Grade 12</option>
                   </select>
                 </div>
               </div>
 
-              <!-- 3. Alumni -->
-              <div @click="currentParticipant.participant_type = 'Alumni'" :class="[
-                'rounded-2xl border p-4 transition-all duration-200 cursor-pointer text-left',
-                currentParticipant.participant_type === 'Alumni'
-                  ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm ring-1 ring-emerald-500/40'
-                  : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800 hover:border-gray-600'
-                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-emerald-200',
-              ]">
-                <div class="flex items-center gap-3.5 w-full">
-                  <div :class="[
-                    'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                    currentParticipant.participant_type === 'Alumni'
-                      ? 'border-emerald-600 bg-emerald-600 shadow-sm shadow-emerald-600/30'
-                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800',
-                  ]">
-                    <div v-if="currentParticipant.participant_type === 'Alumni'" class="w-2 h-2 rounded-full bg-white"></div>
-                  </div>
-                  <input type="radio" value="Alumni" v-model="currentParticipant.participant_type" class="sr-only" />
-                  <div class="flex-1 min-w-0">
-                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
-                      <i class="fas fa-graduation-cap mr-1 text-emerald-600"></i> Alumni
-                    </span>
-                    <span class="text-xs text-gray-500 block mt-0.5">Graduates of LSU / ICC</span>
-                  </div>
-                </div>
-                <div v-if="currentParticipant.participant_type === 'Alumni'" @click.stop
-                  class="mt-4 pl-8 pt-3.5 border-t border-emerald-200/80 dark:border-gray-700 space-y-4">
-                  <div class="max-w-md">
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Batch / Graduation Year</label>
-                    <input type="text" v-model="currentParticipant.alumni_batch"
-                      placeholder="e.g. Batch 2024 / 2023" :class="[
-                        'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                        props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                      ]" />
-                  </div>
-
-                  <!-- Alumni ID Upload: Front & Back -->
-                  <div>
-                    <div class="flex items-center gap-1.5 mb-2">
-                      <i class="fas fa-id-card text-emerald-600 text-sm"></i>
-                      <label class="text-xs font-bold text-gray-700 dark:text-gray-300">
-                        Alumni ID — Front &amp; Back <span class="text-rose-500">*</span>
-                      </label>
-                    </div>
-
-                    <div :class="[
-                      'mb-3 px-3 py-2.5 rounded-xl border flex items-start gap-2 text-[11px]',
-                      props.darkMode ? 'bg-emerald-950/30 border-emerald-900/60 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
-                    ]">
-                      <i class="fas fa-info-circle mt-0.5 shrink-0 text-emerald-600"></i>
-                      <span>
-                        <strong>Alumni only:</strong> Currently Enrolled Students and Employees are already on record and do not need to upload an ID.
-                        Please upload both sides of your valid Alumni ID (within 1 year of issue or fresh graduate).
-                      </span>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <!-- FRONT -->
-                      <div>
-                        <p class="text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1.5 flex items-center gap-1">
-                          <i class="fas fa-arrow-up text-[9px] text-emerald-600"></i> Front Side
-                          <span v-if="currentParticipant.alumni_id_front_preview"
-                            class="ml-auto text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                            <i class="fas fa-check-circle text-[10px]"></i> Uploaded
-                          </span>
-                        </p>
-                        <label :for="'alumni_front_' + activeParticipantIndex" :class="[
-                          'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
-                          currentParticipant.alumni_id_front_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-36' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-28',
-                          props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-gray-50 hover:bg-emerald-50/30',
-                        ]">
-                          <input :id="'alumni_front_' + activeParticipantIndex" type="file" accept="image/*,.pdf"
-                            class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'front')" />
-                          <template v-if="currentParticipant.alumni_id_front_preview">
-                            <img :src="currentParticipant.alumni_id_front_preview"
-                              class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Front" />
-                            <div class="absolute inset-0 flex flex-col items-center justify-end pb-2 bg-gradient-to-t from-black/50 to-transparent">
-                              <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'front')"
-                                class="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
-                                <i class="fas fa-trash-alt"></i> Remove
-                              </button>
-                            </div>
-                          </template>
-                          <template v-else>
-                            <div class="flex flex-col items-center gap-1 py-3 px-2 text-center pointer-events-none">
-                              <i class="fas fa-cloud-upload-alt text-2xl text-gray-400 group-hover:text-emerald-500 transition"></i>
-                              <span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Upload Front</span>
-                              <span class="text-[9px] text-gray-400">JPG, PNG or PDF</span>
-                            </div>
-                          </template>
-                        </label>
-                      </div>
-                      <!-- BACK -->
-                      <div>
-                        <p class="text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1.5 flex items-center gap-1">
-                          <i class="fas fa-arrow-down text-[9px] text-emerald-600"></i> Back Side
-                          <span v-if="currentParticipant.alumni_id_back_preview"
-                            class="ml-auto text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                            <i class="fas fa-check-circle text-[10px]"></i> Uploaded
-                          </span>
-                        </p>
-                        <label :for="'alumni_back_' + activeParticipantIndex" :class="[
-                          'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
-                          currentParticipant.alumni_id_back_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-36' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-28',
-                          props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-gray-50 hover:bg-emerald-50/30',
-                        ]">
-                          <input :id="'alumni_back_' + activeParticipantIndex" type="file" accept="image/*,.pdf"
-                            class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'back')" />
-                          <template v-if="currentParticipant.alumni_id_back_preview">
-                            <img :src="currentParticipant.alumni_id_back_preview"
-                              class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Back" />
-                            <div class="absolute inset-0 flex flex-col items-center justify-end pb-2 bg-gradient-to-t from-black/50 to-transparent">
-                              <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'back')"
-                                class="px-2.5 py-1 rounded-lg bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
-                                <i class="fas fa-trash-alt"></i> Remove
-                              </button>
-                            </div>
-                          </template>
-                          <template v-else>
-                            <div class="flex flex-col items-center gap-1 py-3 px-2 text-center pointer-events-none">
-                              <i class="fas fa-cloud-upload-alt text-2xl text-gray-400 group-hover:text-emerald-500 transition"></i>
-                              <span class="text-[11px] font-semibold text-gray-500 dark:text-gray-400">Upload Back</span>
-                              <span class="text-[9px] text-gray-400">JPG, PNG or PDF</span>
-                            </div>
-                          </template>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div class="mt-2.5 flex items-center gap-2">
-                      <div :class="[
-                        'flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all',
-                        currentParticipant.alumni_id_front_preview
-                          ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-400'
-                          : 'bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700'
-                      ]">
-                        <i :class="currentParticipant.alumni_id_front_preview ? 'fas fa-check-circle text-emerald-500' : 'far fa-circle'"></i>
-                        Front
-                      </div>
-                      <div :class="[
-                        'flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all',
-                        currentParticipant.alumni_id_back_preview
-                          ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-400'
-                          : 'bg-gray-50 border-gray-200 text-gray-400 dark:bg-gray-800 dark:border-gray-700'
-                      ]">
-                        <i :class="currentParticipant.alumni_id_back_preview ? 'fas fa-check-circle text-emerald-500' : 'far fa-circle'"></i>
-                        Back
-                      </div>
-                      <span class="text-[10px] text-gray-400 ml-auto">Both sides required</span>
-                    </div>
-                    <p class="text-[10px] text-amber-600 dark:text-amber-400 mt-2 flex items-start gap-1">
-                      <i class="fas fa-info-circle mt-0.5 shrink-0"></i>
-                      <span>Valid Alumni ID required — must be within 1 year of issue or fresh graduate. ID will be verified before kit claiming.</span>
-                    </p>
-                  </div>
-                </div>
+              <!-- 2. Employees Form -->
+              <div v-if="currentParticipant.participant_type === 'Employees'"
+                class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 max-w-md">
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Office / Department *</label>
+                <select v-model="currentParticipant.partner_office" :class="[
+                  'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                  props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                ]">
+                  <option value="">Select Office / Department</option>
+                  <option value="Office of the Chancellor">Office of the Chancellor</option>
+                  <option value="College of Computer Studies">College of Computer Studies</option>
+                  <option value="College of Arts and Sciences">College of Arts and Sciences</option>
+                  <option value="College of Business and Accountancy">College of Business and Accountancy</option>
+                  <option value="College of Education">College of Education</option>
+                  <option value="College of Nursing">College of Nursing</option>
+                  <option value="College of Law">College of Law</option>
+                  <option value="General Services Office">General Services Office</option>
+                  <option value="University Registrar">University Registrar</option>
+                  <option value="Human Resource Center">Human Resource Center</option>
+                  <option value="Accounting Office">Accounting Office</option>
+                </select>
               </div>
 
-              <!-- 4. Open Category -->
-              <div @click="currentParticipant.participant_type = 'Open Category'" :class="[
-                'rounded-2xl border p-4 transition-all duration-200 cursor-pointer text-left',
-                currentParticipant.participant_type === 'Open Category'
-                  ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/40 shadow-sm ring-1 ring-emerald-500/40'
-                  : props.darkMode
-                    ? 'border-gray-700 bg-gray-800/40 hover:bg-gray-800 hover:border-gray-600'
-                    : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-emerald-200',
-              ]">
-                <div class="flex items-center gap-3.5 w-full">
-                  <div :class="[
-                    'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                    currentParticipant.participant_type === 'Open Category'
-                      ? 'border-emerald-600 bg-emerald-600 shadow-sm shadow-emerald-600/30'
-                      : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800',
-                  ]">
-                    <div v-if="currentParticipant.participant_type === 'Open Category'" class="w-2 h-2 rounded-full bg-white"></div>
-                  </div>
-                  <input type="radio" value="Open Category" v-model="currentParticipant.participant_type" class="sr-only" />
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between gap-2 flex-wrap">
-                      <span class="font-bold text-sm text-gray-900 dark:text-gray-100">
-                        <i class="fas fa-globe-asia mr-1 text-emerald-600"></i> Open Category
-                      </span>
-                      <span class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
-                        Physical ID upon kit claiming
-                      </span>
-                    </div>
-                    <span class="text-xs text-gray-500 block mt-0.5">Open to public runners, community enthusiasts, and visiting teams</span>
-                  </div>
-                </div>
-                <div v-if="currentParticipant.participant_type === 'Open Category'" @click.stop
-                  class="mt-4 pl-8 pt-3.5 border-t border-emerald-200/80 dark:border-gray-700 max-w-md">
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Organization / Running Club / Company</label>
-                  <input type="text" v-model="currentParticipant.organization"
-                    placeholder="e.g. Ozamiz Lifestyle Runners Club" :class="[
+              <!-- 3. Alumni Form -->
+              <div v-if="currentParticipant.participant_type === 'Alumni'"
+                class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
+                <div class="max-w-md">
+                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Batch / Graduation Year</label>
+                  <input type="text" v-model="currentParticipant.alumni_batch"
+                    placeholder="e.g. Batch 2024 / 2023" :class="[
                       'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                     ]" />
                 </div>
-                <div v-if="currentParticipant.participant_type === 'Open Category'" class="mt-3 pl-8">
-                  <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex items-start gap-2 text-[11px] text-amber-800 dark:text-amber-300">
-                    <i class="fas fa-id-card text-amber-600 text-xs mt-0.5 shrink-0"></i>
-                    <span><strong>Physical ID Verification:</strong> No online ID upload required. Present a valid physical ID when claiming your race bib and event kit.</span>
+
+                <!-- Alumni ID Upload: Front & Back (Compact) -->
+                <div>
+                  <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                    <label class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                      <i class="fas fa-id-card text-emerald-600"></i>
+                      <span>Alumni ID — Front &amp; Back <span class="text-rose-500">*</span></span>
+                    </label>
+                    <span class="text-[10px] text-gray-500 dark:text-gray-400">Within 1 year of issue or fresh grad</span>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- FRONT -->
+                    <div>
+                      <p class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
+                        <span><i class="fas fa-arrow-up text-[9px] text-emerald-600 mr-0.5"></i> Front Side</span>
+                        <span v-if="currentParticipant.alumni_id_front_preview" class="text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <i class="fas fa-check-circle text-[9px]"></i> Uploaded
+                        </span>
+                      </p>
+                      <label :for="'alumni_front_' + activeParticipantIndex" :class="[
+                        'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
+                        currentParticipant.alumni_id_front_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-28' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-20',
+                        props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
+                      ]">
+                        <input :id="'alumni_front_' + activeParticipantIndex" type="file" accept="image/*,.pdf"
+                          class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'front')" />
+                        <template v-if="currentParticipant.alumni_id_front_preview">
+                          <img :src="currentParticipant.alumni_id_front_preview"
+                            class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Front" />
+                          <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
+                            <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'front')"
+                              class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
+                              <i class="fas fa-trash-alt"></i> Remove
+                            </button>
+                          </div>
+                        </template>
+                        <template v-else>
+                          <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
+                            <i class="fas fa-cloud-upload-alt text-lg text-gray-400 group-hover:text-emerald-500 transition"></i>
+                            <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300">Upload Front</span>
+                            <span class="text-[8px] text-gray-400">JPG, PNG or PDF</span>
+                          </div>
+                        </template>
+                      </label>
+                    </div>
+
+                    <!-- BACK -->
+                    <div>
+                      <p class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
+                        <span><i class="fas fa-arrow-down text-[9px] text-emerald-600 mr-0.5"></i> Back Side</span>
+                        <span v-if="currentParticipant.alumni_id_back_preview" class="text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <i class="fas fa-check-circle text-[9px]"></i> Uploaded
+                        </span>
+                      </p>
+                      <label :for="'alumni_back_' + activeParticipantIndex" :class="[
+                        'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
+                        currentParticipant.alumni_id_back_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-28' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-20',
+                        props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
+                      ]">
+                        <input :id="'alumni_back_' + activeParticipantIndex" type="file" accept="image/*,.pdf"
+                          class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'back')" />
+                        <template v-if="currentParticipant.alumni_id_back_preview">
+                          <img :src="currentParticipant.alumni_id_back_preview"
+                            class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Back" />
+                          <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
+                            <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'back')"
+                              class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
+                              <i class="fas fa-trash-alt"></i> Remove
+                            </button>
+                          </div>
+                        </template>
+                        <template v-else>
+                          <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
+                            <i class="fas fa-cloud-upload-alt text-lg text-gray-400 group-hover:text-emerald-500 transition"></i>
+                            <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300">Upload Back</span>
+                            <span class="text-[8px] text-gray-400">JPG, PNG or PDF</span>
+                          </div>
+                        </template>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
 
+            <!-- COMPRESSED OPEN CATEGORY DETAILS -->
+            <div
+              v-if="currentParticipant.participantGroup === 'Open'"
+              class="p-3.5 sm:p-4 rounded-2xl border bg-slate-50 dark:bg-gray-800/60 border-slate-200 dark:border-gray-700 space-y-3 transition-all duration-300"
+            >
+              <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-gray-700">
+                <span class="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <i class="fas fa-running text-teal-600"></i>
+                  <span>Open Category Details</span>
+                </span>
+                <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                  Physical ID upon kit claiming
+                </span>
+              </div>
+
+              <div class="max-w-md">
+                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                  Organization / Running Club / Company <span class="text-gray-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  v-model="currentParticipant.organization"
+                  placeholder="e.g. Ozamiz Lifestyle Runners Club"
+                  :class="[
+                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                  ]"
+                />
+              </div>
+
+              <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
+                <i class="fas fa-id-card text-amber-600 shrink-0"></i>
+                <span class="leading-tight text-[11px]">
+                  <strong>Physical Valid ID Verification:</strong> Please present a physical government or valid ID when claiming your race bib and event kit on race day.
+                </span>
+              </div>
             </div>
           </section>
 
@@ -2385,24 +2804,45 @@ const submitRegistration = async () => {
 
         <div>
           <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
-            Registration Successful
+            Successfully Sent Registration
           </span>
           <h2 class="text-2xl font-black mt-2">
-            Registration Submitted!
+            Registration success
           </h2>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {{ form_type === 'Group' ? `Successfully registered ${number_of_participants_per_group} runner(s).` : `Thank you, ${participants[0].firstname}! Your registration has been received.` }}
+            {{ form_type === 'Group' ? `Your group registration has been successfully sent for ${number_of_participants_per_group} runner(s).` : `Thank you, ${participants[0].firstname}! Your registration has been successfully sent.` }}
           </p>
         </div>
 
-        <div class="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-left text-xs space-y-2.5">
+        <div class="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-left text-xs space-y-3">
           <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
             <i class="fas fa-envelope-circle-check text-emerald-600 text-base"></i>
-            <span>Confirmation Receipt Sent!</span>
+            <span>Registration Summary</span>
           </div>
-          <p class="text-emerald-700 dark:text-emerald-400">
-            A confirmation receipt with your registration details and payment instructions has been sent to:
-          </p>
+
+          <div class="space-y-2.5">
+            <div v-for="(runner, idx) in registrationSummary.runners" :key="idx" class="rounded-xl bg-white dark:bg-gray-900 px-3 py-2.5 border border-emerald-100 dark:border-emerald-800">
+              <div class="flex items-center justify-between gap-2">
+                <div class="font-bold text-emerald-900 dark:text-emerald-200">{{ runner.name }}</div>
+                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">{{ runner.classification }}</span>
+              </div>
+              <div class="mt-1 text-[11px] text-gray-600 dark:text-gray-300">
+                {{ runner.category }}
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl bg-white dark:bg-gray-900 px-3 py-2.5 border border-emerald-100 dark:border-emerald-800">
+            <div class="flex items-center justify-between text-[11px] text-gray-600 dark:text-gray-300">
+              <span>Payment method</span>
+              <span class="font-bold text-emerald-700 dark:text-emerald-300">{{ registrationSummary.payment }}</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-gray-600 dark:text-gray-300 mt-2">
+              <span>Grand total</span>
+              <span class="font-black text-emerald-700 dark:text-emerald-300">PHP {{ registrationSummary.total.toLocaleString() }}</span>
+            </div>
+          </div>
+
           <div class="bg-white dark:bg-gray-900 px-3.5 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-2 font-medium">
               <i class="fas fa-envelope text-emerald-600"></i>
@@ -2410,24 +2850,20 @@ const submitRegistration = async () => {
             </div>
             <span class="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md font-semibold">Sent</span>
           </div>
-          <p class="text-[11px] text-emerald-600/80 dark:text-emerald-400/80 italic">
-            * An official copy has also been sent to <strong>calendar@lsu.edu.ph</strong> for event records.
-          </p>
         </div>
 
-        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-gray-900/50 border border-slate-200 dark:border-gray-700 text-left text-xs space-y-1.5 text-gray-600 dark:text-gray-300">
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-gray-900/50 border border-slate-200 dark:border-gray-700 text-left text-xs space-y-2 text-gray-600 dark:text-gray-300">
           <p class="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-            <i class="fas fa-info-circle text-emerald-600"></i> Next Steps & Verification:
+            <i class="fas fa-info-circle text-emerald-600"></i> Follow official updates
           </p>
-          <p v-if="paymentType === 'salary_deduction'">
-            • Your salary deduction authorization will be verified by LSU HR & Accounting for payroll processing.
+          <p class="leading-relaxed">
+            Please follow for the official Facebook page and website for the updates:
           </p>
-          <p v-else-if="paymentType === 'add_to_tuition'">
-            • Your registration fee will be billed to your LSU student account by the LSU Accounting Office.
-          </p>
-          <p v-else>
-            • The Emerald Run Committee will verify your uploaded payment receipt.
-          </p>
+          <div class="space-y-1.5 text-emerald-700 dark:text-emerald-300 font-medium">
+            <div><a href="https://www.facebook.com/lsuanimorun" target="_blank" rel="noopener noreferrer" class="hover:underline">https://www.facebook.com/lsuanimorun</a></div>
+            <div><a href="https://lsu.edu.ph" target="_blank" rel="noopener noreferrer" class="hover:underline">lsu.edu.ph | www.lsu.edu.ph</a></div>
+            <div><a href="https://animorun.lsu.edu.ph" target="_blank" rel="noopener noreferrer" class="hover:underline">animorun.lsu.edu.ph</a></div>
+          </div>
           <p class="text-gray-500 dark:text-gray-400 pt-1">
             Once verified by the event admin, you will receive your <strong>Official Race Confirmation Email</strong> containing your assigned bib number and kit claiming instructions. <em>Please bring and present a physical Valid ID when claiming your race bib and event kit.</em>
           </p>
@@ -2438,7 +2874,7 @@ const submitRegistration = async () => {
           @click="resetForm"
           class="w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition cursor-pointer flex items-center justify-center gap-2"
         >
-          <i class="fas fa-check"></i> Done & Register Another Runner
+          <i class="fas fa-check"></i> Done
         </button>
       </div>
     </div>
