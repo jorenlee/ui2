@@ -669,7 +669,7 @@ const logOut = () => logout();
           </div>
         </div>
       
-        <div v-if="currentView === 'Menu'" class="lg:px-2 pb-80">
+        <div v-if="currentView === 'Menu'" class="lg:px-2 pt-5 pb-80">
           <!-- <SuperAdminDashboardWelcome :darkMode="darkMode" /> -->
           <template v-if="initialLoading">
             <div class="mt-4 space-y-3 px-2 animate-pulse">
