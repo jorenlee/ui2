@@ -212,6 +212,13 @@ const buildShirtSizeSummary = (participant) => {
     return `Event Shirt: ${eventSize}; Singlet: ${singletSize}; Finisher Shirt: ${finisherSize};`;
   }
 
+  // 3KM and 10KM: both Event Shirt and Singlet included
+  if (participant.run_category === "3KM" || participant.run_category === "10KM") {
+    const eventSize = participant.event_shirt_size || "M";
+    const singletSize = participant.singlet_size || "M";
+    return `Event Shirt: ${eventSize}; Singlet: ${singletSize};`;
+  }
+
   const selected = participant.shirt_type === "singlet" ? "Singlet" : "Event Shirt";
   const size = participant.shirt_type === "singlet"
     ? participant.singlet_size || participant.tshirt_size || "M"
@@ -368,9 +375,28 @@ watch(
   }
 );
 
+const MAX_FILE_SIZE_MB = 1;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
+const checkFileSize = (file, label = "File") => {
+  if (file && file.size > MAX_FILE_SIZE_BYTES) {
+    showNotice(
+      `${label} exceeds the maximum allowed size of ${MAX_FILE_SIZE_MB}MB. Please compress or resize the file before uploading.`,
+      "File Too Large",
+      "error"
+    );
+    return false;
+  }
+  return true;
+};
+
 const handleReceiptUpload = (event) => {
   const file = event.target.files[0];
   if (!file) return;
+  if (!checkFileSize(file, "Payment receipt")) {
+    event.target.value = "";
+    return;
+  }
   receiptFile.value = file;
   receiptPreview.value = URL.createObjectURL(file);
 };
@@ -384,6 +410,11 @@ const removeReceipt = () => {
 const handleAlumniIdUpload = (event, participant, side) => {
   const file = event.target.files[0];
   if (!file) return;
+  const sideLabel = side === 'front' ? 'Alumni ID (Front)' : 'Alumni ID (Back)';
+  if (!checkFileSize(file, sideLabel)) {
+    event.target.value = "";
+    return;
+  }
   const preview = URL.createObjectURL(file);
   if (side === 'front') {
     participant.alumni_id_front_file = file;
@@ -408,6 +439,10 @@ const removeAlumniId = (participant, side) => {
 const handlePetVaccineUpload = (event, participant) => {
   const file = event.target.files[0];
   if (!file) return;
+  if (!checkFileSize(file, "Pet vaccine record")) {
+    event.target.value = "";
+    return;
+  }
   participant.pet_vaccine_record_file = file;
   participant.pet_vaccine_record_preview = URL.createObjectURL(file);
 };
@@ -423,6 +458,16 @@ const handlePetConsentUpload = (event, participant) => {
   if (!files.length) return;
   if (!participant.pet_consent_files) {
     participant.pet_consent_files = [];
+  }
+  const oversized = files.filter((f) => f.size > MAX_FILE_SIZE_BYTES);
+  if (oversized.length) {
+    showNotice(
+      `The following file(s) exceed ${MAX_FILE_SIZE_MB}MB and were not added: ${oversized.map((f) => f.name).join(", ")}. Please compress or resize them before uploading.`,
+      "File Too Large",
+      "error"
+    );
+    event.target.value = "";
+    return;
   }
   files.forEach((f) => {
     participant.pet_consent_files.push({
@@ -720,6 +765,34 @@ const submitRegistration = async () => {
         "Payment Receipt Required",
         "warning"
       );
+      return;
+    }
+  }
+
+  // Final guard: ensure no uploaded file exceeds 1MB before submitting
+  if (receiptFile.value && receiptFile.value.size > MAX_FILE_SIZE_BYTES) {
+    showNotice(
+      `Your payment receipt exceeds the maximum allowed size of ${MAX_FILE_SIZE_MB}MB. Please compress or resize the file and re-upload.`,
+      "File Too Large",
+      "error"
+    );
+    return;
+  }
+  for (let i = 0; i < participants.value.length; i++) {
+    const p = participants.value[i];
+    if (p.alumni_id_front_file && p.alumni_id_front_file.size > MAX_FILE_SIZE_BYTES) {
+      showNotice(`Alumni ID (Front) for Runner #${i + 1} exceeds ${MAX_FILE_SIZE_MB}MB. Please re-upload a smaller file.`, "File Too Large", "error");
+      activeParticipantIndex.value = i;
+      return;
+    }
+    if (p.alumni_id_back_file && p.alumni_id_back_file.size > MAX_FILE_SIZE_BYTES) {
+      showNotice(`Alumni ID (Back) for Runner #${i + 1} exceeds ${MAX_FILE_SIZE_MB}MB. Please re-upload a smaller file.`, "File Too Large", "error");
+      activeParticipantIndex.value = i;
+      return;
+    }
+    if (p.pet_vaccine_record_file && p.pet_vaccine_record_file.size > MAX_FILE_SIZE_BYTES) {
+      showNotice(`Pet vaccine record for Runner #${i + 1} exceeds ${MAX_FILE_SIZE_MB}MB. Please re-upload a smaller file.`, "File Too Large", "error");
+      activeParticipantIndex.value = i;
       return;
     }
   }
@@ -1779,134 +1852,292 @@ const submitRegistration = async () => {
                 <h3 class="text-lg font-bold flex items-center gap-2">
                   <span
                     class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">4</span>
-                  Shirt Selection
+                  Shirt Size Selection
                 </h3>
-                <span
-                  class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                  Selected: <span class="font-black">{{ currentParticipant.selected_shirt_tab ? (currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : currentParticipant.selected_shirt_tab === 'finisher_shirt' ? 'Finisher Shirt' : 'Event Shirt') : 'Event Shirt' }}</span>
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                  <span v-if="currentParticipant.run_category === '20KM'" class="font-black">3 Shirts</span>
+                  <span v-else-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'" class="font-black">2 Shirts</span>
+                  <span v-else class="font-black">1 Shirt</span>
                 </span>
               </div>
               <p class="text-xs text-gray-500 ml-9">
-                Prioritize your preferred shirt type and size for Runner #{{ activeParticipantIndex + 1 }}
+                <span v-if="currentParticipant.run_category === '20KM'">Select sizes for your Event Shirt, Singlet, and Finisher Shirt</span>
+                <span v-else-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'">Select sizes for your Event Shirt and Singlet — both included in your registration</span>
+                <span v-else>Select your preferred shirt size for Runner #{{ activeParticipantIndex + 1 }}</span>
               </p>
             </div>
 
-            <div
-              :class="[
-                'grid gap-3 mb-5',
-                currentParticipant.run_category === '20KM' ? 'grid-cols-3' : 'grid-cols-2'
-              ]"
-            >
-              <button
-                v-if="currentParticipant.run_category === '20KM' || currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'"
-                type="button"
-                @click="currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.shirt_type = 'event_shirt'"
-                :class="[
-                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                  currentParticipant.selected_shirt_tab === 'event_shirt'
-                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                ]"
-              >
-                <i class="fas fa-shirt"></i>
-                <span>Event Shirt</span>
-              </button>
+            <!-- ── 3KM / 10KM: two side-by-side pickers ── -->
+            <div v-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'" class="space-y-5">
 
-              <button
-                type="button"
-                @click="currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.shirt_type = 'singlet'"
-                :class="[
-                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                  currentParticipant.selected_shirt_tab === 'singlet'
-                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                ]"
-              >
-                <i class="fas fa-tshirt"></i>
-                <span>Singlet</span>
-              </button>
-
-              <button
-                v-if="currentParticipant.run_category === '20KM'"
-                type="button"
-                @click="currentParticipant.selected_shirt_tab = 'finisher_shirt'"
-                :class="[
-                  'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                  currentParticipant.selected_shirt_tab === 'finisher_shirt'
-                    ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                      : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                ]"
-              >
-                <i class="fas fa-medal"></i>
-                <span>Finisher Shirt</span>
-              </button>
-            </div>
-
-            <div class="space-y-4">
-              <div>
-                <div class="flex items-center justify-between mb-2">
-                  <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                    {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? 'Finisher Shirt' : currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : 'Event Shirt' }} Size
+              <!-- Event Shirt Size -->
+              <div :class="['p-4 rounded-2xl border-2 space-y-3', props.darkMode ? 'border-gray-700 bg-gray-800/40' : 'border-emerald-200 bg-emerald-50/40']">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-sm font-bold flex items-center gap-2">
+                    <i class="fas fa-shirt text-emerald-600"></i> Event Shirt Size
                   </h4>
-                  <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                    {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size || 'M') : currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M') }}
+                  <span class="text-xs font-black text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/60">
+                    {{ currentParticipant.event_shirt_size || 'M' }}
                   </span>
                 </div>
-
                 <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
                   <label
                     v-for="size in tshirtSizes"
-                    :key="currentParticipant.selected_shirt_tab + '-' + size"
-                    @click="
-                      if (currentParticipant.selected_shirt_tab === 'finisher_shirt') {
-                        currentParticipant.finisher_shirt_size = size;
-                      } else if (currentParticipant.selected_shirt_tab === 'singlet') {
-                        currentParticipant.singlet_size = size;
-                        currentParticipant.shirt_type = 'singlet';
-                      } else {
-                        currentParticipant.event_shirt_size = size;
-                        currentParticipant.shirt_type = 'event_shirt';
-                      }
-                      currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)
-                    "
+                    :key="'event-' + size"
+                    @click="currentParticipant.event_shirt_size = size; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
                     :class="[
                       'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
-                      (currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size)
+                      currentParticipant.event_shirt_size === size
                         ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
                         : props.darkMode
                           ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
                           : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
                     ]"
                   >
-                    <input
-                      type="radio"
-                      :name="'shirt_size_' + currentParticipant.selected_shirt_tab"
-                      :value="size"
-                      :checked="currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size"
-                      class="sr-only"
-                    />
-                    <i :class="[
-                      'mb-1 text-sm transition',
-                      currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size === size ? 'fas fa-medal text-white' : 'fas fa-medal text-gray-400') : (currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size === size ? 'fas fa-tshirt text-white' : 'fas fa-tshirt text-gray-400') : (currentParticipant.event_shirt_size === size ? 'fas fa-shirt text-white' : 'fas fa-shirt text-gray-400'))
-                    ]"></i>
+                    <input type="radio" name="event_shirt_size" :value="size" :checked="currentParticipant.event_shirt_size === size" class="sr-only" />
+                    <i :class="['mb-1 text-sm transition', currentParticipant.event_shirt_size === size ? 'fas fa-shirt text-white' : 'fas fa-shirt text-gray-400']"></i>
                     <span class="text-xs font-bold">{{ size }}</span>
                   </label>
                 </div>
               </div>
+
+              <!-- Singlet Size -->
+              <div :class="['p-4 rounded-2xl border-2 space-y-3', props.darkMode ? 'border-gray-700 bg-gray-800/40' : 'border-teal-200 bg-teal-50/40']">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-sm font-bold flex items-center gap-2">
+                    <i class="fas fa-tshirt text-teal-600"></i> Singlet Size
+                  </h4>
+                  <span class="text-xs font-black text-teal-700 dark:text-teal-300 px-2 py-0.5 rounded-lg bg-teal-100 dark:bg-teal-900/60">
+                    {{ currentParticipant.singlet_size || 'M' }}
+                  </span>
+                </div>
+                <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
+                  <label
+                    v-for="size in tshirtSizes"
+                    :key="'singlet-' + size"
+                    @click="currentParticipant.singlet_size = size; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
+                    :class="[
+                      'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
+                      currentParticipant.singlet_size === size
+                        ? 'border-teal-600 bg-teal-600 text-white shadow-md shadow-teal-600/30 scale-[1.03] font-black ring-2 ring-teal-500/30'
+                        : props.darkMode
+                          ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-teal-500 hover:bg-gray-800'
+                          : 'border-slate-200 bg-white text-gray-700 hover:border-teal-400 hover:bg-teal-50/40',
+                    ]"
+                  >
+                    <input type="radio" name="singlet_size" :value="size" :checked="currentParticipant.singlet_size === size" class="sr-only" />
+                    <i :class="['mb-1 text-sm transition', currentParticipant.singlet_size === size ? 'fas fa-tshirt text-white' : 'fas fa-tshirt text-gray-400']"></i>
+                    <span class="text-xs font-bold">{{ size }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+                <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
+                <span>Your {{ currentParticipant.run_category }} registration includes both an Event Shirt and a Singlet. Please select sizes for each.</span>
+              </div>
             </div>
 
-            <div
-              class="mt-4 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
-              <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
-              <span>
-                {{ currentParticipant.run_category === '20KM' ? 'Your 20KM registration includes the event shirt, singlet, and finisher shirt sizes listed above.' : 'Includes your selected shirt type in the size above.' }}
-              </span>
+            <!-- ── 20KM: three tab-switched pickers (unchanged) ── -->
+            <div v-else-if="currentParticipant.run_category === '20KM'">
+              <div class="grid grid-cols-3 gap-3 mb-5">
+                <button
+                  type="button"
+                  @click="currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.shirt_type = 'event_shirt'"
+                  :class="[
+                    'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                    currentParticipant.selected_shirt_tab === 'event_shirt'
+                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                      : props.darkMode
+                        ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                        : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                  ]"
+                >
+                  <i class="fas fa-shirt"></i>
+                  <span>Event Shirt</span>
+                </button>
+
+                <button
+                  type="button"
+                  @click="currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.shirt_type = 'singlet'"
+                  :class="[
+                    'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                    currentParticipant.selected_shirt_tab === 'singlet'
+                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                      : props.darkMode
+                        ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                        : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                  ]"
+                >
+                  <i class="fas fa-tshirt"></i>
+                  <span>Singlet</span>
+                </button>
+
+                <button
+                  type="button"
+                  @click="currentParticipant.selected_shirt_tab = 'finisher_shirt'"
+                  :class="[
+                    'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                    currentParticipant.selected_shirt_tab === 'finisher_shirt'
+                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                      : props.darkMode
+                        ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                        : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                  ]"
+                >
+                  <i class="fas fa-medal"></i>
+                  <span>Finisher Shirt</span>
+                </button>
+              </div>
+
+              <div class="space-y-4">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">
+                      {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? 'Finisher Shirt' : currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : 'Event Shirt' }} Size
+                    </h4>
+                    <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                      {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size || 'M') : currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M') }}
+                    </span>
+                  </div>
+
+                  <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
+                    <label
+                      v-for="size in tshirtSizes"
+                      :key="currentParticipant.selected_shirt_tab + '-' + size"
+                      @click="
+                        if (currentParticipant.selected_shirt_tab === 'finisher_shirt') {
+                          currentParticipant.finisher_shirt_size = size;
+                        } else if (currentParticipant.selected_shirt_tab === 'singlet') {
+                          currentParticipant.singlet_size = size;
+                          currentParticipant.shirt_type = 'singlet';
+                        } else {
+                          currentParticipant.event_shirt_size = size;
+                          currentParticipant.shirt_type = 'event_shirt';
+                        }
+                        currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)
+                      "
+                      :class="[
+                        'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
+                        (currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size)
+                          ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
+                          : props.darkMode
+                            ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
+                            : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
+                      ]"
+                    >
+                      <input
+                        type="radio"
+                        :name="'shirt_size_' + currentParticipant.selected_shirt_tab"
+                        :value="size"
+                        :checked="currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size"
+                        class="sr-only"
+                      />
+                      <i :class="['mb-1 text-sm transition',
+                        currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size === size ? 'fas fa-medal text-white' : 'fas fa-medal text-gray-400') : (currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size === size ? 'fas fa-tshirt text-white' : 'fas fa-tshirt text-gray-400') : (currentParticipant.event_shirt_size === size ? 'fas fa-shirt text-white' : 'fas fa-shirt text-gray-400'))]"></i>
+                      <span class="text-xs font-bold">{{ size }}</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+                <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
+                <span>Your 20KM registration includes the Event Shirt, Singlet, and Finisher Shirt — select sizes for each using the tabs above.</span>
+              </div>
+            </div>
+
+            <!-- ── Other categories (1KM non-pet handler not needed here, fallback) ── -->
+            <div v-else>
+              <div class="grid grid-cols-2 gap-3 mb-5">
+                <button
+                  type="button"
+                  @click="currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.shirt_type = 'event_shirt'"
+                  :class="[
+                    'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                    currentParticipant.selected_shirt_tab === 'event_shirt' || !currentParticipant.selected_shirt_tab
+                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                      : props.darkMode
+                        ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                        : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                  ]"
+                >
+                  <i class="fas fa-shirt"></i>
+                  <span>Event Shirt</span>
+                </button>
+
+                <button
+                  type="button"
+                  @click="currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.shirt_type = 'singlet'"
+                  :class="[
+                    'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
+                    currentParticipant.selected_shirt_tab === 'singlet'
+                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
+                      : props.darkMode
+                        ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
+                        : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
+                  ]"
+                >
+                  <i class="fas fa-tshirt"></i>
+                  <span>Singlet</span>
+                </button>
+              </div>
+
+              <div class="space-y-4">
+                <div>
+                  <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">
+                      {{ currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : 'Event Shirt' }} Size
+                    </h4>
+                    <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                      {{ currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M') }}
+                    </span>
+                  </div>
+
+                  <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
+                    <label
+                      v-for="size in tshirtSizes"
+                      :key="currentParticipant.selected_shirt_tab + '-' + size"
+                      @click="
+                        if (currentParticipant.selected_shirt_tab === 'singlet') {
+                          currentParticipant.singlet_size = size;
+                          currentParticipant.shirt_type = 'singlet';
+                        } else {
+                          currentParticipant.event_shirt_size = size;
+                          currentParticipant.shirt_type = 'event_shirt';
+                        }
+                        currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)
+                      "
+                      :class="[
+                        'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
+                        (currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size)
+                          ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
+                          : props.darkMode
+                            ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
+                            : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
+                      ]"
+                    >
+                      <input
+                        type="radio"
+                        :name="'shirt_size_' + currentParticipant.selected_shirt_tab"
+                        :value="size"
+                        :checked="currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size"
+                        class="sr-only"
+                      />
+                      <i :class="[
+                        'mb-1 text-sm transition',
+                        currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size === size ? 'fas fa-tshirt text-white' : 'fas fa-tshirt text-gray-400') : (currentParticipant.event_shirt_size === size ? 'fas fa-shirt text-white' : 'fas fa-shirt text-gray-400')
+                      ]"></i>
+                      <span class="text-xs font-bold">{{ size }}</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+                <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
+                <span>Select your preferred shirt type and size above.</span>
+              </div>
             </div>
           </section>
 

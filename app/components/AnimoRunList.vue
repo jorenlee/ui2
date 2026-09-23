@@ -936,7 +936,7 @@ const saveEdit = async () => {
           </div>
         </div>
 
-        <div class="lg:flex">
+        <div class="lg:flex lg:gap-x-10">
           <!-- Personal Details -->
           <div class="w-full">
             <div class="space-y-3 gap-4 text-xs">
@@ -1111,7 +1111,7 @@ const saveEdit = async () => {
             </div>
           </div>
 
-          <div class="lg:w-6/12">
+          <div class="lg:w-10/12">
             <!-- Category & Addons / Pet Details -->
             <div :class="[
               'p-4 rounded-2xl border space-y-3 text-xs',
@@ -1197,17 +1197,15 @@ const saveEdit = async () => {
             </div>
 
             <!-- Alumni Valid ID (Front and Back) if uploaded -->
-            <div v-if="getImageUrl(selectedRunner.valid_id_front) || getImageUrl(selectedRunner.valid_id_back)" class="space-y-2 mt-3">
-              <p class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                <i class="fas fa-id-card text-emerald-600"></i> Alumni Identification Documents:
-              </p>
+            <div v-if="getImageUrl(selectedRunner.valid_id_front) || getImageUrl(selectedRunner.valid_id_back)" class="lg:flex mt-3 gap-x-2">
+              
               
               <div v-if="getImageUrl(selectedRunner.valid_id_front)"
-                class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between">
+                class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between w-full">
                 <div class="flex items-center gap-3">
                  
                   <div>
-                    <p class="font-bold text-xs">Alumni ID (Front View)</p>
+                    <p class="font-bold text-xs">Alumni ID</p>
                   
                   </div>
                 </div>
@@ -1219,14 +1217,11 @@ const saveEdit = async () => {
               </div>
 
               <div v-if="getImageUrl(selectedRunner.valid_id_back)"
-                class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between">
+                class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between w-full">
                 <div class="flex items-center gap-3">
-                  <img :src="getImageUrl(selectedRunner.valid_id_back)" alt="Valid ID Back"
-                    class="w-16 h-16 object-cover rounded-lg border cursor-pointer hover:opacity-85 transition hover:ring-2 hover:ring-emerald-500"
-                    title="Click to view ID back"
-                    @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_back), 'Alumni ID (Back)', selectedRunner)" />
+                
                   <div>
-                    <p class="font-bold text-xs">Alumni ID (Back View)</p>
+                    <p class="font-bold text-xs">Alumni ID </p>
                   </div>
                 </div>
                 <button type="button"
@@ -1436,17 +1431,17 @@ const saveEdit = async () => {
                 {{ receiptModal.title }}
               </h3>
               <p v-if="receiptModal.runner" class="text-[11px] text-gray-500 dark:text-gray-400">
-                Runner: <span class="font-semibold text-emerald-600 dark:text-emerald-400">{{ receiptModal.runner.firstname }} {{ receiptModal.runner.lastname }}</span>
-                <span v-if="receiptModal.runner.run_number || receiptModal.runner.bib_number"> • Bib {{ receiptModal.runner.run_number || receiptModal.runner.bib_number }}</span>
+                Runner: <span class="font-semibold text-emerald-600 dark:text-emerald-400 uppercase">{{ receiptModal.runner.firstname }} {{ receiptModal.runner.lastname }}</span>
+                <span v-if="receiptModal.runner.run_number || receiptModal.runner.bib_number"> • {{ receiptModal.runner.run_number || receiptModal.runner.bib_number }}</span>
               </p>
             </div>
           </div>
 
           <div class="flex items-center gap-2">
-            <a :href="receiptModal.url" target="_blank" title="Open full image in new tab if needed"
+            <!-- <a :href="receiptModal.url" target="_blank" title="Open full image in new tab if needed"
               class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition flex items-center justify-center text-xs cursor-pointer">
               <i class="fas fa-external-link-alt"></i>
-            </a>
+            </a> -->
             <button type="button" @click="closeReceiptModal"
               class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-rose-500 hover:text-white text-gray-600 dark:text-gray-300 transition flex items-center justify-center text-xs font-bold cursor-pointer">
               <i class="fas fa-times"></i>
