@@ -785,7 +785,7 @@ const saveEdit = async () => {
                   </td>
 
                   <td class="p-4">
-                    <div class="font-bold text-gray-900 dark:text-gray-100">
+                    <div class="font-bold text-gray-900 dark:text-gray-100 uppercase">
                       {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname
                       }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
                     </div>
@@ -945,7 +945,7 @@ const saveEdit = async () => {
               <template v-if="!isEditMode">
                 <div class="lg:flex">
                   <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Full Name</label>
-                  <p class="font-semibold">
+                  <p class="font-semibold uppercase">
                     {{ selectedRunner.firstname }} {{ selectedRunner.middlename }} {{ selectedRunner.lastname }}{{
                       selectedRunner.suffix ? ' ' + selectedRunner.suffix : '' }}
                   </p>
