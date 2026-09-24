@@ -18,19 +18,17 @@
           : 'bg-white/95 text-gray-900 border-gray-200'
       "
     >
-      <div class="w-full px-8">
+      <div class="w-full pl-5 pr-8">
         <div class="h-[76px] flex items-center justify-between">
 
           <!-- =================================================
-               LEFT: LSU LOGO + BRAND
-               ================================================= -->
+              LEFT: LSU LOGO + BRAND
+              ================================================= -->
           <div class="flex items-center gap-3 shrink-0">
-<a href="/dashboard">
-  
-  <i class="fa fa-bars"></i>
-</a>
+           
             <!-- LSU SEAL -->
-            <div
+            <a
+              href="/"
               class="
                 w-12 h-12
                 flex items-center justify-center
@@ -46,7 +44,7 @@
                   object-contain
                 "
               />
-            </div>
+            </a>
 
             <!-- BRAND -->
             <div class="leading-tight">
@@ -64,16 +62,17 @@
                 La Salle University Ozamiz, Inc.
               </p>
 
-                            <h2
+              <a
+                href="/dashboard"
                 class="font-bold text-base -ml-[1.5px]"
                 :class="
                   darkMode
                     ? 'text-white'
-                    : 'text-gray-800'
+                    : 'text-gray-800 hover:text-green-900'
                 "
               >
                 LSU Central
-              </h2>
+              </a>
 
               <!-- POWERED BY -->
               <p
