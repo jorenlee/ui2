@@ -198,7 +198,7 @@ const subMenuList = [
         view: "ViewAnimoRunRegistration",
       },
       {
-        label: "Payment Verification & Status",
+        label: "Payment Verification",
         icon: "fa-list",
         type: "button",
         view: "ViewAnimoRunList",

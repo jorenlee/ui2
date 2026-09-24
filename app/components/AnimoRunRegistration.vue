@@ -56,7 +56,7 @@ const runCategories = [
     id: "1KM",
     categoryType: "pet",
     categoryTypeLabel: "Pet & Runner Duo",
-    name: "1 KM EMERALD PAWS",
+    name: "1 KM",
     tagline: "Run together with your best furry friend.",
     fee: 1000,
     time: "5:00 AM",
@@ -1016,8 +1016,8 @@ const submitRegistration = async () => {
             <div class="flex-1 min-w-0">
               <h1
                 class="text-base sm:text-2xl font-black text-white tracking-wide leading-tight flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <span>THE EMERALD RUN 2026</span>
-                <span class="text-emerald-500">ANIMO RUN</span>
+                <span>THE EMERALD RUN</span>
+                <span class="text-emerald-500">ANIMO RUN 2026</span>
               </h1>
             </div>
           </div>
@@ -1267,7 +1267,7 @@ const submitRegistration = async () => {
                           </div>
 
                           <!-- Distance label -->
-                          <h2 class="text-5xl font-black tracking-tight lg:pl-4"
+                          <h2 class="text-4xl font-black tracking-tight"
                             :style="{ color: currentParticipant.run_category === cat.id ? '#fff' : 'rgba(255,255,255,0.7)' }">
                             {{ cat.id }}
                           </h2>
@@ -1452,9 +1452,10 @@ const submitRegistration = async () => {
                       <i class="fas fa-paw"></i>
                     </div>
                     <div>
+
                       <h4 class="text-sm sm:text-base font-black flex items-center gap-2 flex-wrap"
                         style="color: #035751">
-                        <span>1K EMERALD PAWS: Pet Companion Registration</span>
+                        <span>1 KM Pet Registration</span>
                         <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full text-white shadow-2xs"
                           style="background: #02857D">
                           Runner + Pet Duo
@@ -2415,13 +2416,6 @@ const submitRegistration = async () => {
                         props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                       ]" />
                   </div>
-
-                  <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
-                    <i class="fas fa-id-card text-amber-600 shrink-0"></i>
-                    <span class="leading-tight text-[11px]">
-                      <strong>Physical Valid ID Verification:</strong> Please present a physical government or valid ID when claiming your race bib and event kit on race day.
-                    </span>
-                  </div>
                 </div>
 
                 <!-- DIRECT PAYMENT METHODS & RECEIPT UPLOAD (For Open Category & Alumni) -->
@@ -2539,7 +2533,7 @@ const submitRegistration = async () => {
                   <div class="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-700">
                     <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
                       <i class="fas fa-paw text-emerald-600"></i>
-                      <span>1K Emerald Paws — Direct Payment</span>
+                      <span>1 KM Direct Payment</span>
                     </span>
                     <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
                       QR / OTC / Cash
@@ -2683,9 +2677,6 @@ const submitRegistration = async () => {
             class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
             Successfully Sent Registration
           </span>
-          <h2 class="text-2xl font-black mt-2">
-            Registration success
-          </h2>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {{ form_type === 'Group' ? `Your group registration has been successfully sent for
             ${number_of_participants_per_group} runner(s).` : `Thank you, ${participants[0].firstname}! Your
