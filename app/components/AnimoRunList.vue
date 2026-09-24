@@ -802,6 +802,9 @@ const saveEdit = async () => {
                       {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname
                       }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
                     </div>
+                    <div v-if="runner.organization" class="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold truncate max-w-[180px]">
+                      <i class="fas fa-running mr-1"></i>{{ runner.organization }}
+                    </div>
                     <div class="text-[11px] text-gray-500 truncate max-w-[180px]">
                       {{ runner.contact_email || runner.email }}
                     </div>
@@ -977,6 +980,11 @@ const saveEdit = async () => {
                     selectedRunner.lsu_id_number + ')' : '' }}</p>
                 </div>
 
+                <div v-if="selectedRunner.organization" class="lg:flex">
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Running Club / Org</label>
+                  <p class="font-semibold text-emerald-600 dark:text-emerald-400 font-bold">{{ selectedRunner.organization }}</p>
+                </div>
+
                 <div class="lg:flex">
                   <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">T-Shirt Size</label>
                   <p class="font-semibold">{{ selectedRunner.tshirt_size || 'M' }}</p>
@@ -1098,7 +1106,7 @@ const saveEdit = async () => {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Bib / Run Number</label>
-                    <input v-model="editForm.run_number" :class="inputCls" placeholder="e.g. 10KM-001" />
+                    <input v-model="editForm.run_number" :class="inputCls" placeholder="e.g. 10-0001" />
                   </div>
                   <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Payment Status</label>
@@ -1107,6 +1115,18 @@ const saveEdit = async () => {
                       <option value="Pending Approval">Pending Approval</option>
                       <option value="Confirmed">Confirmed</option>
                     </select>
+                  </div>
+                </div>
+
+                <!-- Running Club & Batch -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Running Club / Organization</label>
+                    <input v-model="editForm.organization" :class="inputCls" placeholder="e.g. Ozamiz Lifestyle Runners" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Affiliation / Batch</label>
+                    <input v-model="editForm.alumni_batch" :class="inputCls" placeholder="e.g. Batch 2024 or Dept" />
                   </div>
                 </div>
               </template>

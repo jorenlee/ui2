@@ -375,7 +375,7 @@ watch(
   { immediate: true }
 );
 
-const MAX_FILE_SIZE_MB = 1;
+const MAX_FILE_SIZE_MB = 5;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const checkFileSize = (file, label = "File") => {
@@ -716,20 +716,11 @@ const submitRegistration = async () => {
       }
     }
 
-    // Validate Alumni ID (front + back) for Alumni participants
+    // Validate Alumni ID (front only, up to 5MB) for Alumni participants
     if (p.participant_type === 'Alumni') {
       if (!p.alumni_id_front_file) {
         showNotice(
-          `Please upload the FRONT side of your Alumni ID for Runner #${i + 1}.`,
-          "Alumni ID Required",
-          "warning"
-        );
-        activeParticipantIndex.value = i;
-        return;
-      }
-      if (!p.alumni_id_back_file) {
-        showNotice(
-          `Please upload the BACK side of your Alumni ID for Runner #${i + 1}.`,
+          `Please upload the front side of your Alumni ID for Runner #${i + 1}.`,
           "Alumni ID Required",
           "warning"
         );
@@ -785,11 +776,6 @@ const submitRegistration = async () => {
       activeParticipantIndex.value = i;
       return;
     }
-    if (p.alumni_id_back_file && p.alumni_id_back_file.size > MAX_FILE_SIZE_BYTES) {
-      showNotice(`Alumni ID (Back) for Runner #${i + 1} exceeds ${MAX_FILE_SIZE_MB}MB. Please re-upload a smaller file.`, "File Too Large", "error");
-      activeParticipantIndex.value = i;
-      return;
-    }
     if (p.pet_vaccine_record_file && p.pet_vaccine_record_file.size > MAX_FILE_SIZE_BYTES) {
       showNotice(`Pet vaccine record for Runner #${i + 1} exceeds ${MAX_FILE_SIZE_MB}MB. Please re-upload a smaller file.`, "File Too Large", "error");
       activeParticipantIndex.value = i;
@@ -823,12 +809,11 @@ const submitRegistration = async () => {
     if (form_type.value === "Group") {
       const payload = {
         participants: await Promise.all(participants.value.map(async (p) => {
-          // Upload Alumni ID if present
+          // Upload Alumni ID front if present (up to 5MB)
           let idFrontUrl = "";
           let idBackUrl = "";
           if (p.participant_type === 'Alumni') {
             if (p.alumni_id_front_file) idFrontUrl = await uploadSingleFile(p.alumni_id_front_file) || "";
-            if (p.alumni_id_back_file) idBackUrl = await uploadSingleFile(p.alumni_id_back_file) || "";
           }
 
           // Upload Pet Vaccine Record if present
@@ -899,12 +884,11 @@ const submitRegistration = async () => {
     } else {
       const p = participants.value[0];
 
-      // Upload Alumni ID front + back if participant is Alumni
+      // Upload Alumni ID front if participant is Alumni (up to 5MB)
       let idFrontUrl = "";
       let idBackUrl = "";
       if (p.participant_type === 'Alumni') {
         if (p.alumni_id_front_file) idFrontUrl = await uploadSingleFile(p.alumni_id_front_file) || "";
-        if (p.alumni_id_back_file) idBackUrl = await uploadSingleFile(p.alumni_id_back_file) || "";
       }
 
       // Upload Pet Vaccine Record if present
@@ -2204,6 +2188,18 @@ const submitRegistration = async () => {
                         </div>
                       </div>
                     </div>
+
+                    <!-- Running Club / Organization (Students) -->
+                    <div>
+                      <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Running Club / Organization <span class="text-gray-400 font-normal">(Optional)</span>
+                      </label>
+                      <input type="text" v-model="currentParticipant.organization"
+                        placeholder="e.g. Ozamiz Lifestyle Runners Club" :class="[
+                          'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                        ]" />
+                    </div>
                   </div>
 
                   <!-- 2. Employees Form + Integrated Salary Deduction Payment -->
@@ -2253,6 +2249,18 @@ const submitRegistration = async () => {
                         </div>
                       </div>
                     </div>
+
+                    <!-- Running Club / Organization (Employees) -->
+                    <div>
+                      <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        Running Club / Organization <span class="text-gray-400 font-normal">(Optional)</span>
+                      </label>
+                      <input type="text" v-model="currentParticipant.organization"
+                        placeholder="e.g. Ozamiz Lifestyle Runners Club" :class="[
+                          'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                        ]" />
+                    </div>
                   </div>
 
                   <!-- 3. Alumni Form + Integrated Direct Payment -->
@@ -2266,87 +2274,66 @@ const submitRegistration = async () => {
                       <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">Alumni Direct</span>
                     </div>
 
-                    <div class="max-w-md">
-                      <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Batch / Graduation Year</label>
-                      <input type="text" v-model="currentParticipant.alumni_batch" placeholder="e.g. Batch 2024 / 2023"
-                        :class="[
-                          'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                        ]" />
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Batch / Graduation Year</label>
+                        <input type="text" v-model="currentParticipant.alumni_batch" placeholder="e.g. Batch 2024 / 2023"
+                          :class="[
+                            'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                            props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                          ]" />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                          Running Club / Organization <span class="text-gray-400 font-normal">(Optional)</span>
+                        </label>
+                        <input type="text" v-model="currentParticipant.organization"
+                          placeholder="e.g. Ozamiz Lifestyle Runners Club" :class="[
+                            'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                            props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                          ]" />
+                      </div>
                     </div>
 
-                    <!-- Alumni ID Upload: Front & Back -->
+                    <!-- Alumni ID Upload: Front Only (Up to 5MB) -->
                     <div>
                       <div class="flex items-center justify-between gap-1.5 mb-1.5">
                         <label class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                           <i class="fas fa-id-card text-emerald-600"></i>
-                          <span>Alumni ID — Front &amp; Back <span class="text-rose-500">*</span></span>
+                          <span>Alumni ID — Front <span class="text-rose-500">*</span></span>
                         </label>
-                        <span class="text-[10px] text-gray-500 dark:text-gray-400">Within 1 year of issue or fresh grad</span>
+                        <span class="text-[10px] text-gray-500 dark:text-gray-400">Within 1 year of issue or fresh grad • Max 5 MB</span>
                       </div>
 
-                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <!-- FRONT -->
-                        <div>
-                          <p class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
-                            <span><i class="fas fa-arrow-up text-[9px] text-emerald-600 mr-0.5"></i> Front Side</span>
-                            <span v-if="currentParticipant.alumni_id_front_preview" class="text-emerald-600 dark:text-emerald-400 font-semibold">
-                              <i class="fas fa-check-circle text-[9px]"></i> Uploaded
-                            </span>
-                          </p>
-                          <label :for="'alumni_front_' + activeParticipantIndex" :class="[
-                            'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
-                            currentParticipant.alumni_id_front_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-24' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-16',
-                            props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
-                          ]">
-                            <input :id="'alumni_front_' + activeParticipantIndex" type="file" accept="image/*,.pdf" class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'front')" />
-                            <template v-if="currentParticipant.alumni_id_front_preview">
-                              <img :src="currentParticipant.alumni_id_front_preview" class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Front" />
-                              <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
-                                <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'front')" class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
-                                  <i class="fas fa-trash-alt"></i> Remove
-                                </button>
-                              </div>
-                            </template>
-                            <template v-else>
-                              <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
-                                <i class="fas fa-cloud-upload-alt text-base text-gray-400 group-hover:text-emerald-500 transition"></i>
-                                <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300">Upload Front</span>
-                              </div>
-                            </template>
-                          </label>
-                        </div>
-
-                        <!-- BACK -->
-                        <div>
-                          <p class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
-                            <span><i class="fas fa-arrow-down text-[9px] text-emerald-600 mr-0.5"></i> Back Side</span>
-                            <span v-if="currentParticipant.alumni_id_back_preview" class="text-emerald-600 dark:text-emerald-400 font-semibold">
-                              <i class="fas fa-check-circle text-[9px]"></i> Uploaded
-                            </span>
-                          </p>
-                          <label :for="'alumni_back_' + activeParticipantIndex" :class="[
-                            'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
-                            currentParticipant.alumni_id_back_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-24' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-16',
-                            props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
-                          ]">
-                            <input :id="'alumni_back_' + activeParticipantIndex" type="file" accept="image/*,.pdf" class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'back')" />
-                            <template v-if="currentParticipant.alumni_id_back_preview">
-                              <img :src="currentParticipant.alumni_id_back_preview" class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Back" />
-                              <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
-                                <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'back')" class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
-                                  <i class="fas fa-trash-alt"></i> Remove
-                                </button>
-                              </div>
-                            </template>
-                            <template v-else>
-                              <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
-                                <i class="fas fa-cloud-upload-alt text-base text-gray-400 group-hover:text-emerald-500 transition"></i>
-                                <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300">Upload Back</span>
-                              </div>
-                            </template>
-                          </label>
-                        </div>
+                      <div class="max-w-md">
+                        <p class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
+                          <span><i class="fas fa-id-badge text-[10px] text-emerald-600 mr-0.5"></i> Front Side</span>
+                          <span v-if="currentParticipant.alumni_id_front_preview" class="text-emerald-600 dark:text-emerald-400 font-semibold">
+                            <i class="fas fa-check-circle text-[9px]"></i> Uploaded
+                          </span>
+                        </p>
+                        <label :for="'alumni_front_' + activeParticipantIndex" :class="[
+                          'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
+                          currentParticipant.alumni_id_front_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-28' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-20',
+                          props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
+                        ]">
+                          <input :id="'alumni_front_' + activeParticipantIndex" type="file" accept="image/*,.pdf" class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'front')" />
+                          <template v-if="currentParticipant.alumni_id_front_preview">
+                            <img :src="currentParticipant.alumni_id_front_preview" class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Front" />
+                            <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
+                              <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'front')" class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
+                                <i class="fas fa-trash-alt"></i> Remove
+                              </button>
+                            </div>
+                          </template>
+                          <template v-else>
+                            <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
+                              <i class="fas fa-cloud-upload-alt text-lg text-gray-400 group-hover:text-emerald-500 transition"></i>
+                              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Upload Front of Alumni ID</span>
+                              <span class="text-[10px] text-gray-400">JPG, PNG, PDF up to 5MB</span>
+                            </div>
+                          </template>
+                        </label>
                       </div>
                     </div>
                   </div>
