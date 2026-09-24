@@ -202,26 +202,17 @@ const getShirtTypeLabel = (shirtType) => {
 const buildShirtSizeSummary = (participant) => {
   if (!participant) return "Event Shirt: M;";
 
-  if (participant.run_category === "20KM") {
-    const eventSize = participant.event_shirt_size || "M";
-    const singletSize = participant.singlet_size || "M";
-    const finisherSize = participant.finisher_shirt_size || "M";
-    return `Event Shirt: ${eventSize}; Singlet: ${singletSize}; Finisher Shirt: ${finisherSize};`;
-  }
-
-  // 3KM and 10KM: both Event Shirt and Singlet included
-  if (participant.run_category === "3KM" || participant.run_category === "10KM") {
-    const eventSize = participant.event_shirt_size || "M";
-    const singletSize = participant.singlet_size || "M";
-    return `Event Shirt: ${eventSize}; Singlet: ${singletSize};`;
-  }
-
   const selected = participant.shirt_type === "singlet" ? "Singlet" : "Event Shirt";
-  const size = participant.shirt_type === "singlet"
-    ? participant.singlet_size || participant.tshirt_size || "M"
-    : participant.event_shirt_size || participant.tshirt_size || "M";
+  const raceShirtSize = participant.shirt_type === "singlet"
+    ? (participant.singlet_size || participant.tshirt_size || "M")
+    : (participant.event_shirt_size || participant.tshirt_size || "M");
 
-  return `${selected}: ${size};`;
+  if (participant.run_category === "20KM") {
+    const finisherSize = participant.finisher_shirt_size || "M";
+    return `${selected}: ${raceShirtSize}; Finisher Shirt: ${finisherSize};`;
+  }
+
+  return `${selected}: ${raceShirtSize};`;
 };
 
 const isPetCategory = (category) => category === "1KM" || category === "1K";
@@ -750,7 +741,7 @@ const submitRegistration = async () => {
       return;
     }
   } else if (paymentType.value === "non_lsu_payment") {
-    if (!receiptFile.value) {
+    if (nonLsuPaymentMethod.value === "qr_payment" && !receiptFile.value) {
       showNotice(
         "Please upload your proof of payment or deposit transfer screenshot before submitting.",
         "Payment Receipt Required",
@@ -1199,7 +1190,7 @@ const submitRegistration = async () => {
                     <i class="fas fa-running"
                       :style="{ color: runCategories.find(c => c.id === currentParticipant.run_category)?.colors?.primary }"></i>
                     Selected: {{ currentParticipant.run_category }} (PHP {{runCategories.find(c => c.id ===
-                      currentParticipant.run_category)?.fee?.toLocaleString() || 0 }})
+                      currentParticipant.run_category)?.fee?.toLocaleString() || 0}})
                   </span>
                 </div>
               </div>
@@ -1258,7 +1249,7 @@ const submitRegistration = async () => {
 
 
                         </div>
-                          <!-- Fee -->
+                        <!-- Fee -->
                         <!-- <div>
                         
                           <span class="text-xl font-black mt-1 block whitespace-nowrap"
@@ -1294,7 +1285,8 @@ const submitRegistration = async () => {
                         <i class="fas fa-flag-checkered"
                           :style="{ color: cat.colors.highlight || cat.colors.accent }"></i> Gun Time:
                       </span> -->
-                      <span class="font-black" :style="{ color: cat.colors.highlight || '#fff' }">PHP {{ cat.fee.toLocaleString() }}</span>
+                      <span class="font-black" :style="{ color: cat.colors.highlight || '#fff' }">PHP {{
+                        cat.fee.toLocaleString() }}</span>
                     </div>
                   </div>
                 </div>
@@ -1588,7 +1580,7 @@ const submitRegistration = async () => {
                             :class="doc.isPdf ? 'fas fa-file-pdf text-rose-500' : 'fas fa-file-image text-emerald-500'"></i>
                           <span
                             class="truncate max-w-[180px] font-semibold text-[11px] text-gray-700 dark:text-gray-300">{{
-                            doc.name
+                              doc.name
                             }}</span>
                         </div>
                         <button type="button" @click="removePetConsentDoc(currentParticipant, dIdx)"
@@ -1656,20 +1648,16 @@ const submitRegistration = async () => {
               </div>
             </div>
 
-
-
             <!-- SECTION 2: PERSONAL INFORMATION -->
             <section v-if="currentParticipant.run_category">
               <div class="mb-4">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                   <span
                     class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">2</span>
-                  <span>{{ currentParticipant.run_category === '1K' ? 'Pet Owner / Runner Personal Information' :'Personal Information' }}</span>
+                  <span>{{ currentParticipant.run_category === '1K' ? 'Pet Owner / Runner Personal Information':'Personal Information' }}</span>
                 </h3>
                 <p class="text-xs text-gray-500 ml-9">
-                  {{ currentParticipant.run_category === '1K' ? 'Personal details of the pet owner / runner' : `Personal
-                  details for
-                  Runner #${activeParticipantIndex + 1}` }}
+                  {{ currentParticipant.run_category === '1K' ? 'Personal details of the pet owner / runner' : `Personal details for Runner #${activeParticipantIndex + 1}` }}
                 </p>
               </div>
 
@@ -1833,13 +1821,13 @@ const submitRegistration = async () => {
             </section>
 
             <!-- SECTION 4: SHIRT TYPE & SIZE -->
-            <section v-if="currentParticipant.run_category" class="flex gap-4">
+            <section v-if="currentParticipant.run_category" class="space-y-3">
               <div class="mb-4">
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-bold flex items-center gap-2">
                     <span
                       class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">4</span>
-                  Size Selection
+                    Size Selection
                   </h3>
                   <span
                     class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
@@ -1848,104 +1836,111 @@ const submitRegistration = async () => {
                   </span>
                 </div>
                 <p class="text-xs text-gray-500 ml-9">
-                  <span v-if="currentParticipant.run_category === '20KM'">Choose sizes for your 2 included shirts</span>
+                  <span v-if="currentParticipant.run_category === '20KM'">Select your Race Shirt (Singlet or Event
+                    Shirt) and
+                    Finisher Shirt sizes</span>
                   <span v-else>Choose your shirt type and size</span>
                 </p>
               </div>
 
-              <!-- ── 1 shirt — choose type + size dropdown ── -->
-              <div>
-                <div :class="[
-                  'flex flex-wrap items-center gap-3 p-3 rounded-2xl border',
-                  props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
-                ]">
-                  <!-- Shirt type toggle -->
-                  <div class="flex items-center gap-1 shrink-0">
-                    <button type="button"
-                      @click="currentParticipant.shirt_type = 'singlet'; currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
-                      :class="[
-                        'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
-                        currentParticipant.shirt_type === 'singlet'
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                          : props.darkMode
-                            ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
-                            : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
-                      ]">
-                      <i class="fas fa-tshirt text-[11px]"></i> Singlet
-                    </button>
-                    <button type="button"
-                      @click="currentParticipant.shirt_type = 'event_shirt'; currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
-                      :class="[
-                        'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
-                        currentParticipant.shirt_type === 'event_shirt'
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                          : props.darkMode
-                            ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
-                            : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
-                      ]">
-                      <i class="fas fa-shirt text-[11px]"></i> Event Shirt
-                    </button>
-                  </div>
+              <!-- ── 1. Race Shirt Choice (Singlet or Event Shirt) + Size ── -->
+              <div :class="[
+                'flex flex-wrap items-center gap-3 p-3 rounded-2xl border',
+                props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
+              ]">
+                <!-- Shirt type toggle -->
+                <div class="flex items-center gap-1 shrink-0">
+                  <button type="button"
+                    @click="currentParticipant.shirt_type = 'singlet'; currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
+                    :class="[
+                      'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
+                      currentParticipant.shirt_type === 'singlet'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : props.darkMode
+                          ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
+                    ]">
+                    <i class="fas fa-tshirt text-[11px]"></i> Singlet
+                  </button>
+                  <button type="button"
+                    @click="currentParticipant.shirt_type = 'event_shirt'; currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
+                    :class="[
+                      'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
+                      currentParticipant.shirt_type === 'event_shirt'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : props.darkMode
+                          ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
+                    ]">
+                    <i class="fas fa-shirt text-[11px]"></i> Event Shirt
+                  </button>
+                </div>
 
-                  <!-- Divider -->
-                  <div :class="['w-px h-6 shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
+                <!-- Divider -->
+                <div :class="['w-px h-6 shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
 
-                  <!-- Size dropdown -->
-                  <div class="flex items-center gap-2 min-w-0">
-                    <label class="text-xs font-semibold shrink-0"
-                      :class="props.darkMode ? 'text-gray-400' : 'text-gray-500'">Size</label>
-                    <select
-                      :value="currentParticipant.shirt_type === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M')"
-                      @change="(e) => {
-                        if (currentParticipant.shirt_type === 'singlet') {
-                          currentParticipant.singlet_size = e.target.value;
-                        } else {
-                          currentParticipant.event_shirt_size = e.target.value;
-                        }
-                        currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant);
-                      }" :class="[
+                <!-- Size dropdown -->
+                <div class="flex items-center gap-2 min-w-0">
+                  <label class="text-xs font-semibold shrink-0"
+                    :class="props.darkMode ? 'text-gray-400' : 'text-gray-500'">
+                    {{ currentParticipant.shirt_type === 'singlet' ? 'Singlet Size' : 'Event Shirt Size' }}
+                  </label>
+                  <select
+                    :value="currentParticipant.shirt_type === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M')"
+                    @change="(e) => {
+                      if (currentParticipant.shirt_type === 'singlet') {
+                        currentParticipant.singlet_size = e.target.value;
+                      } else {
+                        currentParticipant.event_shirt_size = e.target.value;
+                      }
+                      currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant);
+                    }" :class="[
                       'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
                       props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
                     ]">
-                      <option v-for="size in tshirtSizes" :key="size" :value="size">{{ size }}</option>
-                    </select>
-                  </div>
-
-                  <!-- Summary badge -->
-                  <span
-                    class="ml-auto text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0">
-                    {{ currentParticipant.shirt_type === 'singlet' ? 'Singlet' : 'Event Shirt' }} · {{
-                      currentParticipant.shirt_type
-                        === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size ||
-                    'M') }}
-                  </span>
+                    <option v-for="size in tshirtSizes" :key="size" :value="size">{{ size }}</option>
+                  </select>
                 </div>
+
+                <!-- Summary badge -->
+                <span
+                  class="ml-auto text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0">
+                  {{ currentParticipant.shirt_type === 'singlet' ? 'Singlet' : 'Event Shirt' }} · {{
+                    currentParticipant.shirt_type === 'singlet' ? (currentParticipant.singlet_size || 'M') :
+                      (currentParticipant.event_shirt_size || 'M')
+                  }}
+                </span>
               </div>
 
-              <!-- ── 20KM: 3 dropdown pickers in one row ── -->
-              <div v-if="currentParticipant.run_category === '20KM'">
-                <div :class="[
-                  'flex flex-wrap gap-3 p-3 rounded-2xl border',
-                  props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
-                ]">
-                  
-
-                  <!-- Finisher Shirt -->
-                  <div class="flex items-center gap-2">
-                    <i class="fas fa-medal text-amber-500 text-xs shrink-0"></i>
-                    <label class="text-xs font-semibold shrink-0"
-                      :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Finisher Shirt</label>
-                    <select v-model="currentParticipant.finisher_shirt_size"
-                      @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)" :class="[
-                        'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
-                        props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
-                      ]">
-                      <option v-for="size in tshirtSizes" :key="'fn-' + size" :value="size">{{ size }}</option>
-                    </select>
-                  </div>
-
-                
+              <!-- ── 2. Finisher Shirt Selection (FOR 20KM ONLY) ── -->
+              <div v-if="currentParticipant.run_category === '20KM'" :class="[
+                'flex flex-wrap items-center gap-3 p-3 rounded-2xl border',
+                props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
+              ]">
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-medal text-amber-500 text-sm shrink-0"></i>
+                  <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Finisher Shirt</span>
                 </div>
+
+                <div :class="['w-px h-6 shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
+
+                <div class="flex items-center gap-2">
+                  <label class="text-xs font-semibold shrink-0"
+                    :class="props.darkMode ? 'text-gray-400' : 'text-gray-500'">Finisher
+                    Size</label>
+                  <select v-model="currentParticipant.finisher_shirt_size"
+                    @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)" :class="[
+                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
+                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
+                    ]">
+                    <option v-for="size in tshirtSizes" :key="'fn-' + size" :value="size">{{ size }}</option>
+                  </select>
+                </div>
+
+                <span
+                  class="ml-auto text-[11px] font-black px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 shrink-0">
+                  Finisher Shirt · {{ currentParticipant.finisher_shirt_size || 'M' }}
+                </span>
               </div>
             </section>
 
@@ -1961,8 +1956,7 @@ const submitRegistration = async () => {
                   </h3>
                   <span
                     class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
-                    {{ isPetCategory(currentParticipant.run_category) ? 'Pet Run Direct Payment' :
-                      (currentParticipant.participantGroup === 'LSU' ? (currentParticipant.participant_type || 'LSU Exclusive') : 'Open Category') }} • {{ paymentMethodLabel }}
+                    {{ isPetCategory(currentParticipant.run_category) ? 'Pet Run Direct Payment' : (currentParticipant.participantGroup === 'LSU' ? (currentParticipant.participant_type || 'LSU Exclusive') : 'Open Category') }} • {{ paymentMethodLabel }}
                   </span>
                 </div>
                 <p class="text-xs text-gray-500 ml-9 mt-0.5">
@@ -2116,17 +2110,21 @@ const submitRegistration = async () => {
                   <!-- 1. Enrolled Students Form + Integrated Add-to-Tuition Payment -->
                   <div v-if="currentParticipant.participant_type === 'Currently Enrolled Students'"
                     class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
-                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300">
+                    <div
+                      class="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300">
                       <div class="flex items-center gap-2 font-bold">
                         <i class="fas fa-file-invoice-dollar text-blue-600"></i>
                         <span>Payment Method: Add to Tuition</span>
                       </div>
-                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">LSU Student Account</span>
+                      <span
+                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">LSU
+                        Student Account</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Course / Program *</label>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Course /
+                          Program *</label>
                         <select v-model="currentParticipant.college_course" :class="[
                           'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
@@ -2148,7 +2146,9 @@ const submitRegistration = async () => {
                       </div>
 
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Year / Grade Level *</label>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Year / Grade
+                          Level
+                          *</label>
                         <select v-model="currentParticipant.college_year" :class="[
                           'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
@@ -2175,7 +2175,9 @@ const submitRegistration = async () => {
                       </div>
 
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">LSU Student ID Number *</label>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">LSU Student ID
+                          Number
+                          *</label>
                         <div class="relative">
                           <span class="absolute left-3 top-2.5 text-xs text-gray-400">
                             <i class="fas fa-id-card"></i>
@@ -2205,17 +2207,22 @@ const submitRegistration = async () => {
                   <!-- 2. Employees Form + Integrated Salary Deduction Payment -->
                   <div v-if="currentParticipant.participant_type === 'Employees'"
                     class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
-                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-800 dark:text-emerald-300">
+                    <div
+                      class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-800 dark:text-emerald-300">
                       <div class="flex items-center gap-2 font-bold">
                         <i class="fas fa-money-check-alt text-emerald-600"></i>
                         <span>Payment Method: Payroll Salary Deduction</span>
                       </div>
-                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">Employee Payroll</span>
+                      <span
+                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">Employee
+                        Payroll</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Office / Department *</label>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Office /
+                          Department
+                          *</label>
                         <select v-model="currentParticipant.partner_office" :class="[
                           'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
@@ -2224,7 +2231,8 @@ const submitRegistration = async () => {
                           <option value="Office of the Chancellor">Office of the Chancellor</option>
                           <option value="College of Computer Studies">College of Computer Studies</option>
                           <option value="College of Arts and Sciences">College of Arts and Sciences</option>
-                          <option value="College of Business and Accountancy">College of Business and Accountancy</option>
+                          <option value="College of Business and Accountancy">College of Business and Accountancy
+                          </option>
                           <option value="College of Education">College of Education</option>
                           <option value="College of Nursing">College of Nursing</option>
                           <option value="College of Law">College of Law</option>
@@ -2236,7 +2244,9 @@ const submitRegistration = async () => {
                       </div>
 
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">LSU Employee ID Number *</label>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">LSU Employee ID
+                          Number
+                          *</label>
                         <div class="relative">
                           <span class="absolute left-3 top-2.5 text-xs text-gray-400">
                             <i class="fas fa-address-card"></i>
@@ -2266,19 +2276,24 @@ const submitRegistration = async () => {
                   <!-- 3. Alumni Form + Integrated Direct Payment -->
                   <div v-if="currentParticipant.participant_type === 'Alumni'"
                     class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
-                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 text-xs text-purple-800 dark:text-purple-300">
+                    <div
+                      class="flex items-center justify-between p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 text-xs text-purple-800 dark:text-purple-300">
                       <div class="flex items-center gap-2 font-bold">
                         <i class="fas fa-wallet text-purple-600"></i>
                         <span>Payment Method: Direct Payment (QR / OTC / Cash)</span>
                       </div>
-                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">Alumni Direct</span>
+                      <span
+                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">Alumni
+                        Direct</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Batch / Graduation Year</label>
-                        <input type="text" v-model="currentParticipant.alumni_batch" placeholder="e.g. Batch 2024 / 2023"
-                          :class="[
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Batch /
+                          Graduation
+                          Year</label>
+                        <input type="text" v-model="currentParticipant.alumni_batch"
+                          placeholder="e.g. Batch 2024 / 2023" :class="[
                             'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                             props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                           ]" />
@@ -2302,13 +2317,17 @@ const submitRegistration = async () => {
                           <i class="fas fa-id-card text-emerald-600"></i>
                           <span>Alumni ID — Front <span class="text-rose-500">*</span></span>
                         </label>
-                        <span class="text-[10px] text-gray-500 dark:text-gray-400">Within 1 year of issue or fresh grad • Max 5 MB</span>
+                        <span class="text-[10px] text-gray-500 dark:text-gray-400">Within 1 year of issue or fresh grad
+                          • Max 5
+                          MB</span>
                       </div>
 
                       <div class="max-w-md">
-                        <p class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
+                        <p
+                          class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
                           <span><i class="fas fa-id-badge text-[10px] text-emerald-600 mr-0.5"></i> Front Side</span>
-                          <span v-if="currentParticipant.alumni_id_front_preview" class="text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <span v-if="currentParticipant.alumni_id_front_preview"
+                            class="text-emerald-600 dark:text-emerald-400 font-semibold">
                             <i class="fas fa-check-circle text-[9px]"></i> Uploaded
                           </span>
                         </p>
@@ -2317,19 +2336,26 @@ const submitRegistration = async () => {
                           currentParticipant.alumni_id_front_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-28' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-20',
                           props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
                         ]">
-                          <input :id="'alumni_front_' + activeParticipantIndex" type="file" accept="image/*,.pdf" class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'front')" />
+                          <input :id="'alumni_front_' + activeParticipantIndex" type="file" accept="image/*,.pdf"
+                            class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'front')" />
                           <template v-if="currentParticipant.alumni_id_front_preview">
-                            <img :src="currentParticipant.alumni_id_front_preview" class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Front" />
-                            <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
-                              <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'front')" class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
+                            <img :src="currentParticipant.alumni_id_front_preview"
+                              class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition"
+                              alt="Alumni ID Front" />
+                            <div
+                              class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
+                              <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'front')"
+                                class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
                                 <i class="fas fa-trash-alt"></i> Remove
                               </button>
                             </div>
                           </template>
                           <template v-else>
                             <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
-                              <i class="fas fa-cloud-upload-alt text-lg text-gray-400 group-hover:text-emerald-500 transition"></i>
-                              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Upload Front of Alumni ID</span>
+                              <i
+                                class="fas fa-cloud-upload-alt text-lg text-gray-400 group-hover:text-emerald-500 transition"></i>
+                              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Upload Front of Alumni
+                                ID</span>
                               <span class="text-[10px] text-gray-400">JPG, PNG, PDF up to 5MB</span>
                             </div>
                           </template>
@@ -2342,12 +2368,15 @@ const submitRegistration = async () => {
                 <!-- INTEGRATED OPEN CATEGORY DETAILS & PAYMENT FORM -->
                 <div v-if="currentParticipant.participantGroup === 'Open'"
                   class="p-3.5 sm:p-4 rounded-2xl border bg-slate-50 dark:bg-gray-800/60 border-slate-200 dark:border-gray-700 space-y-3 transition-all duration-300">
-                  <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-gray-700">
-                    <span class="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
+                  <div
+                    class="flex items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-gray-700">
+                    <span
+                      class="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
                       <i class="fas fa-running text-teal-600"></i>
                       <span>Open Category Details</span>
                     </span>
-                    <span class="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded-md">
+                    <span
+                      class="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded-md">
                       Direct Payment (QR / OTC / Cash)
                     </span>
                   </div>
@@ -2387,8 +2416,11 @@ const submitRegistration = async () => {
                         </div>
                       </div>
 
-                      <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-gray-600 dark:text-gray-300">
-                        Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> via QR and upload your transfer receipt screenshot below.
+                      <div v-if="nonLsuPaymentMethod === 'qr_payment'"
+                        class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-gray-600 dark:text-gray-300">
+                        Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> via QR and upload your transfer
+                        receipt
+                        screenshot below.
                       </div>
                     </div>
 
@@ -2407,8 +2439,11 @@ const submitRegistration = async () => {
                         </div>
                       </div>
 
-                      <div v-if="nonLsuPaymentMethod === 'accounting_otc'" class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-gray-600 dark:text-gray-300">
-                        Visit LSU Accounting (Mon-Fri, 8AM-5PM) and upload official receipt slip below.
+                      <div v-if="nonLsuPaymentMethod === 'accounting_otc'"
+                        class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-emerald-700 dark:text-emerald-300 font-medium leading-snug">
+                        Visit LSU Accounting Window (Mon-Fri, 8AM-5PM). <strong>Please wait for the confirmation to be
+                          paid and
+                          confirmed by the admin.</strong>
                       </div>
                     </div>
 
@@ -2427,14 +2462,17 @@ const submitRegistration = async () => {
                         </div>
                       </div>
 
-                      <div v-if="nonLsuPaymentMethod === 'weekend_cash'" class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-gray-600 dark:text-gray-300">
-                        Pay at Ozamiz Lifestyle Runners weekend booth and upload receipt acknowledgment.
+                      <div v-if="nonLsuPaymentMethod === 'weekend_cash'"
+                        class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-emerald-700 dark:text-emerald-300 font-medium leading-snug">
+                        Pay at Ozamiz Lifestyle Runners weekend booth. <strong>Please wait for the confirmation to be
+                          paid and
+                          confirmed by the admin.</strong>
                       </div>
                     </div>
                   </div>
 
-                  <!-- RECEIPT DROPZONE -->
-                  <div class="pt-2">
+                  <!-- RECEIPT DROPZONE (Only for QR Payment) -->
+                  <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-2">
                     <div :class="[
                       'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden',
                       receiptPreview
@@ -2458,7 +2496,8 @@ const submitRegistration = async () => {
                         <img :src="receiptPreview" alt="Receipt Preview"
                           class="h-32 w-full object-cover rounded-xl border shadow-sm" />
                         <div class="mt-2 flex items-center justify-between text-xs">
-                          <span class="truncate max-w-[160px] font-medium text-emerald-600 dark:text-emerald-400 text-[11px]">
+                          <span
+                            class="truncate max-w-[160px] font-medium text-emerald-600 dark:text-emerald-400 text-[11px]">
                             <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
                           </span>
                           <button type="button" @click="removeReceipt"
@@ -2469,19 +2508,45 @@ const submitRegistration = async () => {
                       </div>
                     </div>
                   </div>
+
+                  <!-- TEXT INSTRUCTION (For Accounting OTC & Weekend Cash) -->
+                  <div v-else
+                    class="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                    <div class="font-bold flex items-center gap-1.5">
+                      <i class="fas fa-clock text-amber-600"></i> Payment Instruction
+                    </div>
+                    <p class="text-[11px] leading-relaxed">
+                      <span v-if="nonLsuPaymentMethod === 'accounting_otc'">
+                        Please proceed to the LSU Accounting window to settle your fee of <strong>PHP {{
+                          grandTotal.toLocaleString()
+                          }}</strong>.
+                      </span>
+                      <span v-else>
+                        Please proceed to the Ozamiz Lifestyle Runners weekend booth to settle your fee of <strong>PHP
+                          {{
+                          grandTotal.toLocaleString() }}</strong>.
+                      </span>
+                      <strong class="text-amber-700 dark:text-amber-300 block mt-0.5">Please wait for the confirmation
+                        to be paid
+                        and confirmed by the admin.</strong>
+                    </p>
+                  </div>
                 </div>
 
               </div>
 
               <!-- FOR PET RUN RUNNERS (1KM PET RUN DIRECT PAYMENT) -->
               <div v-else class="space-y-4">
-                <div class="p-4 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-200 dark:border-gray-700 space-y-4">
+                <div
+                  class="p-4 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-200 dark:border-gray-700 space-y-4">
                   <div class="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-700">
-                    <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <span
+                      class="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
                       <i class="fas fa-paw text-emerald-600"></i>
                       <span>1 KM Direct Payment</span>
                     </span>
-                    <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                    <span
+                      class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
                       QR / OTC / Cash
                     </span>
                   </div>
@@ -2536,8 +2601,8 @@ const submitRegistration = async () => {
                     </div>
                   </div>
 
-                  <!-- RECEIPT DROPZONE -->
-                  <div class="pt-2">
+                  <!-- RECEIPT DROPZONE (Only for QR Payment) -->
+                  <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-2">
                     <div :class="[
                       'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden',
                       receiptPreview
@@ -2561,7 +2626,8 @@ const submitRegistration = async () => {
                         <img :src="receiptPreview" alt="Receipt Preview"
                           class="h-32 w-full object-cover rounded-xl border shadow-sm" />
                         <div class="mt-2 flex items-center justify-between text-xs">
-                          <span class="truncate max-w-[160px] font-medium text-emerald-600 dark:text-emerald-400 text-[11px]">
+                          <span
+                            class="truncate max-w-[160px] font-medium text-emerald-600 dark:text-emerald-400 text-[11px]">
                             <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
                           </span>
                           <button type="button" @click="removeReceipt"
@@ -2571,6 +2637,29 @@ const submitRegistration = async () => {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  <!-- TEXT INSTRUCTION (For Accounting OTC & Weekend Cash) -->
+                  <div v-else
+                    class="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                    <div class="font-bold flex items-center gap-1.5">
+                      <i class="fas fa-clock text-amber-600"></i> Payment Instruction
+                    </div>
+                    <p class="text-[11px] leading-relaxed">
+                      <span v-if="nonLsuPaymentMethod === 'accounting_otc'">
+                        Please proceed to the LSU Accounting window to settle your fee of <strong>PHP {{
+                          grandTotal.toLocaleString()
+                          }}</strong>.
+                      </span>
+                      <span v-else>
+                        Please proceed to the Ozamiz Lifestyle Runners weekend booth to settle your fee of <strong>PHP
+                          {{
+                          grandTotal.toLocaleString() }}</strong>.
+                      </span>
+                      <strong class="text-amber-700 dark:text-amber-300 block mt-0.5">Please wait for the confirmation
+                        to be paid
+                        and confirmed by the admin.</strong>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2606,108 +2695,158 @@ const submitRegistration = async () => {
       </div>
     </div>
 
-    <!-- SUCCESS CONFIRMATION MODAL -->
-    <div v-if="isSuccessModalOpen"
-      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div :class="[
-        'w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border transition-all text-center space-y-5',
-        props.darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-gray-800'
-      ]">
-        <div
-          class="w-20 h-20 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-3xl shadow-inner">
-          <i class="fas fa-check"></i>
-        </div>
 
-        <div>
-          <span
-            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
-            Successfully Sent Registration
-          </span>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {{ form_type === 'Group' ? `Your group registration has been successfully sent for
-            ${number_of_participants_per_group} runner(s).` : `Thank you, ${participants[0].firstname}! Your
-            registration
-            has been successfully sent.` }}
-          </p>
-        </div>
 
-        <div
-          class="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-left text-xs space-y-3">
-          <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
-            <i class="fas fa-envelope-circle-check text-emerald-600 text-base"></i>
-            <span>Registration Summary</span>
-          </div>
 
-          <div class="space-y-2.5">
-            <div v-for="(runner, idx) in registrationSummary.runners" :key="idx"
-              class="rounded-xl bg-white dark:bg-gray-900 px-3 py-2.5 border border-emerald-100 dark:border-emerald-800">
-              <div class="flex items-center justify-between gap-2">
-                <div class="font-bold text-emerald-900 dark:text-emerald-200">{{ runner.name }}</div>
-                <span
-                  class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">{{
-                    runner.classification }}</span>
-              </div>
-              <div class="mt-1 text-[11px] text-gray-600 dark:text-gray-300">
-                {{ runner.category }}
-              </div>
-            </div>
-          </div>
 
-          <div
-            class="rounded-xl bg-white dark:bg-gray-900 px-3 py-2.5 border border-emerald-100 dark:border-emerald-800">
-            <div class="flex items-center justify-between text-[11px] text-gray-600 dark:text-gray-300">
-              <span>Payment method</span>
-              <span class="font-bold text-emerald-700 dark:text-emerald-300">{{ registrationSummary.payment }}</span>
-            </div>
-            <div class="flex items-center justify-between text-[11px] text-gray-600 dark:text-gray-300 mt-2">
-              <span>Grand total</span>
-              <span class="font-black text-emerald-700 dark:text-emerald-300">PHP {{
-                registrationSummary.total.toLocaleString() }}</span>
-            </div>
-          </div>
 
-          <div
-            class="bg-white dark:bg-gray-900 px-3.5 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs flex items-center justify-between shadow-sm">
-            <div class="flex items-center gap-2 font-medium">
-              <i class="fas fa-envelope text-emerald-600"></i>
-              <span>{{ participants[0].contact_email || user?.email }}</span>
-            </div>
-            <span
-              class="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md font-semibold">Sent</span>
-          </div>
-        </div>
 
-        <div
-          class="p-4 rounded-2xl bg-slate-50 dark:bg-gray-900/50 border border-slate-200 dark:border-gray-700 text-left text-xs space-y-2 text-gray-600 dark:text-gray-300">
-          <p class="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
-            <i class="fas fa-info-circle text-emerald-600"></i> Follow official updates
-          </p>
-          <p class="leading-relaxed">
-            Please follow for the official Facebook page and website for the updates:
-          </p>
-          <div class="space-y-1.5 text-emerald-700 dark:text-emerald-300 font-medium">
-            <div><a href="https://www.facebook.com/lsuanimorun" target="_blank" rel="noopener noreferrer"
-                class="hover:underline">https://www.facebook.com/lsuanimorun</a></div>
-            <div><a href="https://lsu.edu.ph" target="_blank" rel="noopener noreferrer"
-                class="hover:underline">lsu.edu.ph |
-                www.lsu.edu.ph</a></div>
-            <div><a href="https://animorun.lsu.edu.ph" target="_blank" rel="noopener noreferrer"
-                class="hover:underline">animorun.lsu.edu.ph</a></div>
-          </div>
-          <p class="text-gray-500 dark:text-gray-400 pt-1">
-            Once verified by the event admin, you will receive your <strong>Official Race Confirmation Email</strong>
-            containing your assigned bib number and kit claiming instructions. <em>Please bring and present a physical
-              Valid
-              ID when claiming your race bib and event kit.</em>
-          </p>
-        </div>
 
-        <button type="button" @click="resetForm"
-          class="w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition cursor-pointer flex items-center justify-center gap-2">
-          <i class="fas fa-check"></i> Done
-        </button>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- SUCCESS CONFIRMATION MODAL -->
+<div
+v-if="isSuccessModalOpen"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-6 backdrop-blur-sm overflow-y-auto"
+>
+  <div
+    :class="[
+      'w-full max-w-lg rounded-3xl p-5 sm:p-7 shadow-2xl border text-center',
+      props.darkMode
+        ? 'bg-gray-800 border-gray-700 text-white'
+        : 'bg-white border-slate-200 text-gray-800'
+    ]"
+  >
+    <!-- Success Icon -->
+    <div
+      class="mx-auto mb-4 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/70 dark:text-emerald-400 shadow-inner"
+    >
+      <i class="fas fa-check text-2xl sm:text-3xl"></i>
+    </div>
+
+    <!-- Title -->
+    <h2 class="text-xl sm:text-2xl font-black tracking-tight">
+      Registration Sent!
+    </h2>
+
+    <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+      Thank you{{ participants[0]?.firstname ? `, ${participants[0].firstname}` : '' }}!
+    </p>
+
+    <!-- Short Message -->
+    <div
+      class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 dark:border-emerald-800 dark:bg-emerald-950/30"
+    >
+      <div class="flex items-center justify-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
+        <i class="fas fa-envelope-circle-check"></i>
+        <span>Check your email for the details.</span>
+      </div>
+
+      <p class="mt-2 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+        Your registration summary and payment details have been sent to
+        <strong class="text-emerald-700 dark:text-emerald-300">
+          {{ participants[0]?.contact_email || user?.email }}
+        </strong>.
+      </p>
+    </div>
+
+    <!-- Follow Socials -->
+    <div
+      class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-900/50"
+    >
+      <p class="text-sm font-bold text-gray-800 dark:text-white">
+        <i class="fas fa-bell text-emerald-600 mr-1"></i>
+        Follow our socials for more info
+      </p>
+
+      <div class="mt-3 flex flex-col gap-2 text-xs font-semibold">
+        <a
+          href="https://www.facebook.com/lsuanimorun"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
+        >
+          <i class="fab fa-facebook"></i>
+          LSU Animo Run
+        </a>
+
+        <a
+          href="https://animorun.lsu.edu.ph"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
+        >
+          <i class="fas fa-globe"></i>
+          animorun.lsu.edu.ph
+        </a>
       </div>
     </div>
+
+    <!-- Verification Note -->
+ <p class="mt-4 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
+      Once your payment is verified, you’ll receive your
+      <strong class="text-gray-700 dark:text-gray-200">
+        Official Confirmation Email.
+      </strong>
+    </p>
+    <p class="text-xs">Thank you!</p>
+
+    <!-- Done -->
+    <button
+      type="button"
+      @click="resetForm"
+      class="mt-5 w-full rounded-2xl bg-emerald-600 py-3.5 px-6 text-sm font-bold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700 active:scale-[0.98]"
+    >
+      <i class="fas fa-check mr-1.5"></i>
+      Done
+    </button>
+  </div>
+</div>
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     <!-- TOAST / VALIDATION NOTIFICATION MODAL (REPLACES BROWSER ALERT) -->
     <div v-if="toastModal.show"
