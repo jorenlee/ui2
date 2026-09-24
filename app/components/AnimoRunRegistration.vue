@@ -1009,13 +1009,12 @@ const submitRegistration = async () => {
           <div class="flex items-center gap-3 sm:gap-5">
             <img
               src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/Corporate%20Logo%20New/Corporate%20Logo%20White.png"
-              alt="LSU Logo" class="w-11 sm:w-16 h-auto object-contain shrink-0" />
+              alt="LSU Logo" class="w-auto lg:h-12 h-10 object-contain shrink-0" />
             <div class="flex-1 min-w-0">
               <h1 class="text-base sm:text-2xl font-black text-white tracking-wide leading-tight flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <span>THE EMERALD RUN 2026</span>
                 <span class="text-emerald-500">ANIMO RUN</span>
               </h1>
-             
             </div>
           </div>
         </div>
@@ -1035,12 +1034,25 @@ const submitRegistration = async () => {
             ? 'bg-gray-800/80 border-gray-700'
             : 'bg-gradient-to-r from-emerald-50/60 to-slate-50 border-slate-200',
         ]">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5">
+          <div class=" items-start sm:items-center gap-3 sm:gap-5 lg:w-fit">
 
-            <!-- Individual / Group Radio Cards — LEFTMOST -->
-            <div class="lg:flex gap-2 shrink-0" v-if="currentParticipant.run_category !== '1K'">
+           
+
+            <!-- Title & Description -->
+            <div class="flex-1 min-w-0 mb-3">
+              <h2 class="text-base sm:text-lg font-bold flex items-center gap-2">
+                <i class="fas fa-users text-emerald-600"></i>
+                Select Registration Type
+              </h2>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Choose whether you are registering for yourself or a team/group
+              </p>
+            </div>
+
+             <!-- Individual / Group Radio Cards — LEFTMOST -->
+            <div class="flex gap-2 shrink-0" v-if="currentParticipant.run_category !== '1K'">
               <div @click="form_type = 'Individual'" :class="[
-                'flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
+                'lg:w-fit w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
                 form_type === 'Individual'
                   ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/30'
                   : props.darkMode
@@ -1053,7 +1065,7 @@ const submitRegistration = async () => {
               </div>
 
               <div @click="form_type = 'Group'" :class="[
-                'flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
+                'lg:w-fit w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
                 form_type === 'Group'
                   ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/30'
                   : props.darkMode
@@ -1067,17 +1079,6 @@ const submitRegistration = async () => {
 
 
 
-            </div>
-
-            <!-- Title & Description -->
-            <div class="flex-1 min-w-0">
-              <h2 class="text-base sm:text-lg font-bold flex items-center gap-2">
-                <i class="fas fa-users text-emerald-600"></i>
-                Select Registration Type
-              </h2>
-              <p class="text-xs text-gray-500 mt-0.5">
-                Choose whether you are registering for yourself or a team/group
-              </p>
             </div>
 
            
@@ -1142,11 +1143,19 @@ const submitRegistration = async () => {
               ]"
             >
               <div class="flex items-center justify-between w-full gap-1">
-                <span class="flex items-center gap-1.5 whitespace-nowrap">
-                  <i class="fas fa-running text-xs"></i>
-                  <span class="font-bold">Runner #{{ pIdx + 1 }}</span>
+                <span class="flex items-center text-[10px] gap-1.5 whitespace-nowrap">
+                  <i class="fas fa-running"></i>
+                  <!-- runner: -->
+                  <span>#{{ pIdx + 1 }}</span>
                 </span>
-                <span
+                   <span v-if="p.firstname" class="truncate w-full flex text-xs uppercase opacity-80 pl-1">
+                {{ p.firstname }} {{ p.lastname }}
+               
+              
+              </span>
+
+
+               <span
                   v-if="participants.length > 1"
                   @click.stop="removeParticipant(pIdx)"
                   class="hover:text-rose-300 p-0.5 rounded-full"
@@ -1155,9 +1164,8 @@ const submitRegistration = async () => {
                   <i class="fas fa-times text-[10px]"></i>
                 </span>
 
-                 <span v-if="p.firstname" class="truncate w-full text-[10px] opacity-80 pl-4">
-                {{ p.firstname }} {{ p.lastname }}
-              </span>
+
+
               </div>
              
             </button>
@@ -1229,26 +1237,7 @@ const submitRegistration = async () => {
               </div>
             </div>
 
-            <!-- Mobile Quick Category Selector Pills -->
-            <!-- <div class="lg:hidden flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
-              <button
-                v-for="cat in runCategories"
-                :key="'pill-' + cat.id"
-                type="button"
-                @click="currentParticipant.run_category = cat.id"
-                class="px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 shrink-0 select-none cursor-pointer"
-                :style="currentParticipant.run_category === cat.id
-                  ? { background: cat.colors.primary, color: '#fff', borderColor: cat.colors.primary, boxShadow: `0 4px 12px ${cat.colors.ringColor}` }
-                  : props.darkMode
-                    ? { background: '#1f2937', color: '#d1d5db', borderColor: '#374151' }
-                    : { background: '#fff', color: '#374151', borderColor: '#e2e8f0' }"
-              >
-                <i :class="['fas text-[11px]', cat.icon]"></i>
-                <span>{{ cat.id }}</span>
-                <span class="opacity-80 font-normal">PHP {{ cat.fee.toLocaleString() }}</span>
-                <span v-if="cat.categoryType === 'pet'" class="text-[9px] px-1 py-0.5 rounded uppercase font-extrabold" style="background:rgba(255,255,255,0.25)">Pet</span>
-              </button>
-            </div> -->
+        
 
             <!-- RACE CARDS CONTAINER -->
             <!-- Mobile: Horizontal swipe snap container; Desktop: flex row with sidebar -->
@@ -1894,282 +1883,143 @@ const submitRegistration = async () => {
                 </span>
               </div>
               <p class="text-xs text-gray-500 ml-9">
-                <span v-if="currentParticipant.run_category === '20KM'">Select sizes for your Event Shirt, Singlet, and Finisher Shirt</span>
-                <span v-else-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'">Select sizes for your Event Shirt and Singlet — both included in your registration</span>
-                <span v-else>Select your preferred shirt size for Runner #{{ activeParticipantIndex + 1 }}</span>
+                <span v-if="currentParticipant.run_category === '20KM'">Choose sizes for your 3 included shirts</span>
+                <span v-else>Choose your shirt type and size</span>
               </p>
             </div>
 
-            <!-- ── 3KM / 10KM: two side-by-side pickers ── -->
-            <div v-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'" class="space-y-5">
-
-              <!-- Event Shirt Size -->
-              <div :class="['p-4 rounded-2xl border-2 space-y-3', props.darkMode ? 'border-gray-700 bg-gray-800/40' : 'border-emerald-200 bg-emerald-50/40']">
-                <div class="flex items-center justify-between">
-                  <h4 class="text-sm font-bold flex items-center gap-2">
-                    <i class="fas fa-shirt text-emerald-600"></i> Event Shirt Size
-                  </h4>
-                  <span class="text-xs font-black text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/60">
-                    {{ currentParticipant.event_shirt_size || 'M' }}
-                  </span>
-                </div>
-                <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
-                  <label
-                    v-for="size in tshirtSizes"
-                    :key="'event-' + size"
-                    @click="currentParticipant.event_shirt_size = size; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
+            <!-- ── 3KM / 10KM: 1 shirt — choose type + size dropdown ── -->
+            <div v-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'">
+              <div :class="[
+                'flex flex-wrap items-center gap-3 p-3 rounded-2xl border',
+                props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
+              ]">
+                <!-- Shirt type toggle -->
+                <div class="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    @click="currentParticipant.shirt_type = 'singlet'; currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
                     :class="[
-                      'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
-                      currentParticipant.event_shirt_size === size
-                        ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
+                      'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
+                      currentParticipant.shirt_type === 'singlet'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                         : props.darkMode
-                          ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
-                          : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
+                          ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
                     ]"
                   >
-                    <input type="radio" name="event_shirt_size" :value="size" :checked="currentParticipant.event_shirt_size === size" class="sr-only" />
-                    <i :class="['mb-1 text-sm transition', currentParticipant.event_shirt_size === size ? 'fas fa-shirt text-white' : 'fas fa-shirt text-gray-400']"></i>
-                    <span class="text-xs font-bold">{{ size }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <!-- Singlet Size -->
-              <div :class="['p-4 rounded-2xl border-2 space-y-3', props.darkMode ? 'border-gray-700 bg-gray-800/40' : 'border-teal-200 bg-teal-50/40']">
-                <div class="flex items-center justify-between">
-                  <h4 class="text-sm font-bold flex items-center gap-2">
-                    <i class="fas fa-tshirt text-teal-600"></i> Singlet Size
-                  </h4>
-                  <span class="text-xs font-black text-teal-700 dark:text-teal-300 px-2 py-0.5 rounded-lg bg-teal-100 dark:bg-teal-900/60">
-                    {{ currentParticipant.singlet_size || 'M' }}
-                  </span>
-                </div>
-                <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
-                  <label
-                    v-for="size in tshirtSizes"
-                    :key="'singlet-' + size"
-                    @click="currentParticipant.singlet_size = size; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
+                    <i class="fas fa-tshirt text-[11px]"></i> Singlet
+                  </button>
+                  <button
+                    type="button"
+                    @click="currentParticipant.shirt_type = 'event_shirt'; currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
                     :class="[
-                      'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
-                      currentParticipant.singlet_size === size
-                        ? 'border-teal-600 bg-teal-600 text-white shadow-md shadow-teal-600/30 scale-[1.03] font-black ring-2 ring-teal-500/30'
+                      'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
+                      currentParticipant.shirt_type === 'event_shirt'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                         : props.darkMode
-                          ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-teal-500 hover:bg-gray-800'
-                          : 'border-slate-200 bg-white text-gray-700 hover:border-teal-400 hover:bg-teal-50/40',
+                          ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                          : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
                     ]"
                   >
-                    <input type="radio" name="singlet_size" :value="size" :checked="currentParticipant.singlet_size === size" class="sr-only" />
-                    <i :class="['mb-1 text-sm transition', currentParticipant.singlet_size === size ? 'fas fa-tshirt text-white' : 'fas fa-tshirt text-gray-400']"></i>
-                    <span class="text-xs font-bold">{{ size }}</span>
-                  </label>
+                    <i class="fas fa-shirt text-[11px]"></i> Event Shirt
+                  </button>
                 </div>
-              </div>
 
-              <div class="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
-                <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
-                <span>Your {{ currentParticipant.run_category }} registration includes both an Event Shirt and a Singlet. Please select sizes for each.</span>
+                <!-- Divider -->
+                <div :class="['w-px h-6 shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
+
+                <!-- Size dropdown -->
+                <div class="flex items-center gap-2 min-w-0">
+                  <label class="text-xs font-semibold shrink-0" :class="props.darkMode ? 'text-gray-400' : 'text-gray-500'">Size</label>
+                  <select
+                    :value="currentParticipant.shirt_type === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M')"
+                    @change="(e) => {
+                      if (currentParticipant.shirt_type === 'singlet') {
+                        currentParticipant.singlet_size = e.target.value;
+                      } else {
+                        currentParticipant.event_shirt_size = e.target.value;
+                      }
+                      currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant);
+                    }"
+                    :class="[
+                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
+                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
+                    ]"
+                  >
+                    <option v-for="size in tshirtSizes" :key="size" :value="size">{{ size }}</option>
+                  </select>
+                </div>
+
+                <!-- Summary badge -->
+                <span class="ml-auto text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0">
+                  {{ currentParticipant.shirt_type === 'singlet' ? 'Singlet' : 'Event Shirt' }} · {{ currentParticipant.shirt_type === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M') }}
+                </span>
               </div>
             </div>
 
-            <!-- ── 20KM: three tab-switched pickers (unchanged) ── -->
+            <!-- ── 20KM: 3 dropdown pickers in one row ── -->
             <div v-else-if="currentParticipant.run_category === '20KM'">
-              <div class="grid grid-cols-3 gap-3 mb-5">
-                <button
-                  type="button"
-                  @click="currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.shirt_type = 'event_shirt'"
-                  :class="[
-                    'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                    currentParticipant.selected_shirt_tab === 'event_shirt'
-                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                      : props.darkMode
-                        ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                        : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                  ]"
-                >
-                  <i class="fas fa-shirt"></i>
-                  <span>Event Shirt</span>
-                </button>
-
-                <button
-                  type="button"
-                  @click="currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.shirt_type = 'singlet'"
-                  :class="[
-                    'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                    currentParticipant.selected_shirt_tab === 'singlet'
-                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                      : props.darkMode
-                        ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                        : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                  ]"
-                >
-                  <i class="fas fa-tshirt"></i>
-                  <span>Singlet</span>
-                </button>
-
-                <button
-                  type="button"
-                  @click="currentParticipant.selected_shirt_tab = 'finisher_shirt'"
-                  :class="[
-                    'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                    currentParticipant.selected_shirt_tab === 'finisher_shirt'
-                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                      : props.darkMode
-                        ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                        : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                  ]"
-                >
-                  <i class="fas fa-medal"></i>
-                  <span>Finisher Shirt</span>
-                </button>
-              </div>
-
-              <div class="space-y-4">
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                      {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? 'Finisher Shirt' : currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : 'Event Shirt' }} Size
-                    </h4>
-                    <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                      {{ currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size || 'M') : currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M') }}
-                    </span>
-                  </div>
-
-                  <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
-                    <label
-                      v-for="size in tshirtSizes"
-                      :key="currentParticipant.selected_shirt_tab + '-' + size"
-                      @click="
-                        if (currentParticipant.selected_shirt_tab === 'finisher_shirt') {
-                          currentParticipant.finisher_shirt_size = size;
-                        } else if (currentParticipant.selected_shirt_tab === 'singlet') {
-                          currentParticipant.singlet_size = size;
-                          currentParticipant.shirt_type = 'singlet';
-                        } else {
-                          currentParticipant.event_shirt_size = size;
-                          currentParticipant.shirt_type = 'event_shirt';
-                        }
-                        currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)
-                      "
-                      :class="[
-                        'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
-                        (currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size)
-                          ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
-                          : props.darkMode
-                            ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
-                            : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
-                      ]"
-                    >
-                      <input
-                        type="radio"
-                        :name="'shirt_size_' + currentParticipant.selected_shirt_tab"
-                        :value="size"
-                        :checked="currentParticipant.selected_shirt_tab === 'finisher_shirt' ? currentParticipant.finisher_shirt_size === size : currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size"
-                        class="sr-only"
-                      />
-                      <i :class="['mb-1 text-sm transition',
-                        currentParticipant.selected_shirt_tab === 'finisher_shirt' ? (currentParticipant.finisher_shirt_size === size ? 'fas fa-medal text-white' : 'fas fa-medal text-gray-400') : (currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size === size ? 'fas fa-tshirt text-white' : 'fas fa-tshirt text-gray-400') : (currentParticipant.event_shirt_size === size ? 'fas fa-shirt text-white' : 'fas fa-shirt text-gray-400'))]"></i>
-                      <span class="text-xs font-bold">{{ size }}</span>
-                    </label>
-                  </div>
+              <div :class="[
+                'flex flex-wrap gap-3 p-3 rounded-2xl border',
+                props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
+              ]">
+                <!-- Event Shirt -->
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-shirt text-emerald-600 text-xs shrink-0"></i>
+                  <label class="text-xs font-semibold shrink-0" :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Event Shirt</label>
+                  <select
+                    v-model="currentParticipant.event_shirt_size"
+                    @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
+                    :class="[
+                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
+                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
+                    ]"
+                  >
+                    <option v-for="size in tshirtSizes" :key="'ev-' + size" :value="size">{{ size }}</option>
+                  </select>
                 </div>
-              </div>
 
-              <div class="mt-4 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
-                <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
-                <span>Your 20KM registration includes the Event Shirt, Singlet, and Finisher Shirt — select sizes for each using the tabs above.</span>
-              </div>
-            </div>
+                <div :class="['w-px h-6 self-center shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
 
-            <!-- ── Other categories (1KM non-pet handler not needed here, fallback) ── -->
-            <div v-else>
-              <div class="grid grid-cols-2 gap-3 mb-5">
-                <button
-                  type="button"
-                  @click="currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.shirt_type = 'event_shirt'"
-                  :class="[
-                    'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                    currentParticipant.selected_shirt_tab === 'event_shirt' || !currentParticipant.selected_shirt_tab
-                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                      : props.darkMode
-                        ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                        : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                  ]"
-                >
-                  <i class="fas fa-shirt"></i>
-                  <span>Event Shirt</span>
-                </button>
-
-                <button
-                  type="button"
-                  @click="currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.shirt_type = 'singlet'"
-                  :class="[
-                    'flex items-center justify-center gap-2 rounded-2xl border-2 px-4 py-3 text-sm font-bold transition-all duration-200',
-                    currentParticipant.selected_shirt_tab === 'singlet'
-                      ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/25'
-                      : props.darkMode
-                        ? 'border-gray-700 bg-gray-800 text-gray-300 hover:border-emerald-500 hover:bg-gray-700'
-                        : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50',
-                  ]"
-                >
-                  <i class="fas fa-tshirt"></i>
-                  <span>Singlet</span>
-                </button>
-              </div>
-
-              <div class="space-y-4">
-                <div>
-                  <div class="flex items-center justify-between mb-2">
-                    <h4 class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                      {{ currentParticipant.selected_shirt_tab === 'singlet' ? 'Singlet' : 'Event Shirt' }} Size
-                    </h4>
-                    <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                      {{ currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M') }}
-                    </span>
-                  </div>
-
-                  <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
-                    <label
-                      v-for="size in tshirtSizes"
-                      :key="currentParticipant.selected_shirt_tab + '-' + size"
-                      @click="
-                        if (currentParticipant.selected_shirt_tab === 'singlet') {
-                          currentParticipant.singlet_size = size;
-                          currentParticipant.shirt_type = 'singlet';
-                        } else {
-                          currentParticipant.event_shirt_size = size;
-                          currentParticipant.shirt_type = 'event_shirt';
-                        }
-                        currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)
-                      "
-                      :class="[
-                        'relative flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border-2 cursor-pointer transition-all duration-200 select-none text-center',
-                        (currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size)
-                          ? 'border-emerald-600 bg-emerald-600 text-white shadow-md shadow-emerald-600/30 scale-[1.03] font-black ring-2 ring-emerald-500/30'
-                          : props.darkMode
-                            ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-emerald-500 hover:bg-gray-800'
-                            : 'border-slate-200 bg-white text-gray-700 hover:border-emerald-400 hover:bg-emerald-50/40',
-                      ]"
-                    >
-                      <input
-                        type="radio"
-                        :name="'shirt_size_' + currentParticipant.selected_shirt_tab"
-                        :value="size"
-                        :checked="currentParticipant.selected_shirt_tab === 'singlet' ? currentParticipant.singlet_size === size : currentParticipant.event_shirt_size === size"
-                        class="sr-only"
-                      />
-                      <i :class="[
-                        'mb-1 text-sm transition',
-                        currentParticipant.selected_shirt_tab === 'singlet' ? (currentParticipant.singlet_size === size ? 'fas fa-tshirt text-white' : 'fas fa-tshirt text-gray-400') : (currentParticipant.event_shirt_size === size ? 'fas fa-shirt text-white' : 'fas fa-shirt text-gray-400')
-                      ]"></i>
-                      <span class="text-xs font-bold">{{ size }}</span>
-                    </label>
-                  </div>
+                <!-- Singlet -->
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-tshirt text-teal-500 text-xs shrink-0"></i>
+                  <label class="text-xs font-semibold shrink-0" :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Singlet</label>
+                  <select
+                    v-model="currentParticipant.singlet_size"
+                    @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
+                    :class="[
+                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer',
+                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
+                    ]"
+                  >
+                    <option v-for="size in tshirtSizes" :key="'sg-' + size" :value="size">{{ size }}</option>
+                  </select>
                 </div>
-              </div>
 
-              <div class="mt-4 p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
-                <i class="fas fa-info-circle text-emerald-600 shrink-0"></i>
-                <span>Select your preferred shirt type and size above.</span>
+                <div :class="['w-px h-6 self-center shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
+
+                <!-- Finisher Shirt -->
+                <div class="flex items-center gap-2">
+                  <i class="fas fa-medal text-amber-500 text-xs shrink-0"></i>
+                  <label class="text-xs font-semibold shrink-0" :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Finisher Shirt</label>
+                  <select
+                    v-model="currentParticipant.finisher_shirt_size"
+                    @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
+                    :class="[
+                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
+                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
+                    ]"
+                  >
+                    <option v-for="size in tshirtSizes" :key="'fn-' + size" :value="size">{{ size }}</option>
+                  </select>
+                </div>
+
+                <!-- Summary badge -->
+                <span class="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0 self-center">
+                  {{ currentParticipant.event_shirt_size || 'M' }} · {{ currentParticipant.singlet_size || 'M' }} · {{ currentParticipant.finisher_shirt_size || 'M' }}
+                </span>
               </div>
             </div>
           </section>
@@ -2720,39 +2570,15 @@ const submitRegistration = async () => {
                       <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
                         LSU Employee Institutional Verification
                       </h4>
-                      <p class="text-xs text-gray-500">
-                        No receipt upload required. Verified through your LSU Account and Employee ID.
-                      </p>
+                   
                     </div>
                   </div>
 
-                  <span
-                    class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 flex items-center gap-1.5">
-                    <i class="fas fa-check-circle text-emerald-500"></i> No Receipt Needed
-                  </span>
+                
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-700">
-                  <!-- Verified LSU Email -->
-                  <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Authenticated LSU Email Address
-                    </label>
-                    <div class="relative">
-                      <span class="absolute left-3.5 top-2.5 text-xs text-emerald-600">
-                        <i class="fas fa-envelope-circle-check"></i>
-                      </span>
-                      <input type="email"
-                        :value="user?.email || currentParticipant.contact_email || 'runner@lsu.edu.ph'" readonly
-                        class="w-full pl-9 pr-24 py-2.5 rounded-xl border text-xs font-semibold bg-gray-50 dark:bg-gray-900/60 border-emerald-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 cursor-not-allowed" />
-                      <span
-                        class="absolute right-2.5 top-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                        <i class="fas fa-lock text-[9px] mr-1"></i> Verified
-                      </span>
-                    </div>
-                    <p class="text-[10px] text-gray-400 mt-1">LSU Google Workspace credentials from your active
-                      dashboard session</p>
-                  </div>
+                 
 
                   <!-- LSU Employee ID Number -->
                   <div>
@@ -2769,21 +2595,11 @@ const submitRegistration = async () => {
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
                         ]" />
                     </div>
-                    <p class="text-[10px] text-gray-400 mt-1">Enter your official LSU Faculty / Staff Employee ID Number
-                    </p>
+                  
                   </div>
                 </div>
 
-                <!-- Payroll Authorization Notice -->
-                <div
-                  class="p-3 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 flex items-start gap-2.5 text-xs text-emerald-800 dark:text-emerald-300">
-                  <i class="fas fa-file-signature text-emerald-600 text-sm mt-0.5 shrink-0"></i>
-                  <div class="leading-relaxed">
-                    <strong>Salary Deduction Authorization:</strong> By submitting, you authorize the LSU Human Resource
-                    Center and Accounting Office to process the total registration fee of <strong>PHP {{
-                      grandTotal.toLocaleString() }}</strong> via automatic payroll salary deduction.
-                  </div>
-                </div>
+               
               </div>
 
               <!-- 2. LSU STUDENT INSTITUTIONAL VERIFICATION (ADD TO TUITION) -->
@@ -2799,39 +2615,15 @@ const submitRegistration = async () => {
                       <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
                         LSU Student Account Verification
                       </h4>
-                      <p class="text-xs text-gray-500">
-                        No receipt upload required. Fee is charged directly to your student tuition assessment ledger.
-                      </p>
+                     
                     </div>
                   </div>
 
-                  <span
-                    class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800 flex items-center gap-1.5">
-                    <i class="fas fa-check-circle text-blue-500"></i> No Receipt Needed
-                  </span>
+                
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-700">
-                  <!-- Verified LSU Student Email -->
-                  <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      Authenticated LSU Student Email
-                    </label>
-                    <div class="relative">
-                      <span class="absolute left-3.5 top-2.5 text-xs text-blue-600">
-                        <i class="fas fa-envelope-circle-check"></i>
-                      </span>
-                      <input type="email"
-                        :value="user?.email || currentParticipant.contact_email || 'student@lsu.edu.ph'" readonly
-                        class="w-full pl-9 pr-24 py-2.5 rounded-xl border text-xs font-semibold bg-gray-50 dark:bg-gray-900/60 border-blue-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 cursor-not-allowed" />
-                      <span
-                        class="absolute right-2.5 top-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                        <i class="fas fa-lock text-[9px] mr-1"></i> Verified
-                      </span>
-                    </div>
-                    <p class="text-[10px] text-gray-400 mt-1">LSU Student Google Workspace credentials from your active
-                      dashboard session</p>
-                  </div>
+                 
 
                   <!-- LSU Student ID Number -->
                   <div>
@@ -2848,20 +2640,11 @@ const submitRegistration = async () => {
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
                         ]" />
                     </div>
-                    <p class="text-[10px] text-gray-400 mt-1">Enter your official LSU Student ID Number</p>
+                   
                   </div>
                 </div>
 
-                <!-- Student Ledger Notice -->
-                <div
-                  class="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/50 flex items-start gap-2.5 text-xs text-blue-800 dark:text-blue-300">
-                  <i class="fas fa-receipt text-blue-600 text-sm mt-0.5 shrink-0"></i>
-                  <div class="leading-relaxed">
-                    <strong>Student Account Billing:</strong> The registration fee of <strong>PHP {{
-                      grandTotal.toLocaleString() }}</strong> will be charged directly to your student ledger upon
-                    verification. You may settle this together with your semester tuition fees.
-                  </div>
-                </div>
+               
               </div>
 
               <!-- 3. NON-LSU / GENERAL PAYMENT SUB-OPTIONS & DETAILS WITH RECEIPT UPLOAD -->
