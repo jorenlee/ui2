@@ -165,8 +165,7 @@ const runCategories = [
       ringColor: "rgba(7,95,134,0.25)",
     },
     inclusions: [
-      "Event Shirt",
-      "Singlet",
+      "Event Shirt or Singlet",
       "Finisher Shirt",
       "Post-Meal",
       "Race Bib",
@@ -1850,31 +1849,28 @@ const submitRegistration = async () => {
             </section>
 
             <!-- SECTION 4: SHIRT TYPE & SIZE -->
-            <section v-if="currentParticipant.run_category && !isPetCategory(currentParticipant.run_category)">
+            <section v-if="currentParticipant.run_category" class="flex gap-4">
               <div class="mb-4">
                 <div class="flex items-center justify-between">
                   <h3 class="text-lg font-bold flex items-center gap-2">
                     <span
                       class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">4</span>
-                    Shirt Size Selection
+                  Size Selection
                   </h3>
                   <span
                     class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                    <span v-if="currentParticipant.run_category === '20KM'" class="font-black">3 Shirts</span>
-                    <span
-                      v-else-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'"
-                      class="font-black">2 Shirts</span>
+                    <span v-if="currentParticipant.run_category === '20KM'" class="font-black">2 Shirts</span>
                     <span v-else class="font-black">1 Shirt</span>
                   </span>
                 </div>
                 <p class="text-xs text-gray-500 ml-9">
-                  <span v-if="currentParticipant.run_category === '20KM'">Choose sizes for your 3 included shirts</span>
+                  <span v-if="currentParticipant.run_category === '20KM'">Choose sizes for your 2 included shirts</span>
                   <span v-else>Choose your shirt type and size</span>
                 </p>
               </div>
 
-              <!-- ── 3KM / 10KM: 1 shirt — choose type + size dropdown ── -->
-              <div v-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'">
+              <!-- ── 1 shirt — choose type + size dropdown ── -->
+              <div>
                 <div :class="[
                   'flex flex-wrap items-center gap-3 p-3 rounded-2xl border',
                   props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
@@ -1943,45 +1939,12 @@ const submitRegistration = async () => {
               </div>
 
               <!-- ── 20KM: 3 dropdown pickers in one row ── -->
-              <div v-else-if="currentParticipant.run_category === '20KM'">
+              <div v-if="currentParticipant.run_category === '20KM'">
                 <div :class="[
                   'flex flex-wrap gap-3 p-3 rounded-2xl border',
                   props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
                 ]">
-                  <!-- Event Shirt -->
-                  <div class="flex items-center gap-2">
-                    <i class="fas fa-shirt text-emerald-600 text-xs shrink-0"></i>
-                    <label class="text-xs font-semibold shrink-0"
-                      :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Event
-                      Shirt</label>
-                    <select v-model="currentParticipant.event_shirt_size"
-                      @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)" :class="[
-                        'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
-                        props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
-                      ]">
-                      <option v-for="size in tshirtSizes" :key="'ev-' + size" :value="size">{{ size }}</option>
-                    </select>
-                  </div>
-
-                  <div :class="['w-px h-6 self-center shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']">
-                  </div>
-
-                  <!-- Singlet -->
-                  <div class="flex items-center gap-2">
-                    <i class="fas fa-tshirt text-teal-500 text-xs shrink-0"></i>
-                    <label class="text-xs font-semibold shrink-0"
-                      :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Singlet</label>
-                    <select v-model="currentParticipant.singlet_size"
-                      @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)" :class="[
-                        'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer',
-                        props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
-                      ]">
-                      <option v-for="size in tshirtSizes" :key="'sg-' + size" :value="size">{{ size }}</option>
-                    </select>
-                  </div>
-
-                  <div :class="['w-px h-6 self-center shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']">
-                  </div>
+                  
 
                   <!-- Finisher Shirt -->
                   <div class="flex items-center gap-2">
@@ -1997,12 +1960,7 @@ const submitRegistration = async () => {
                     </select>
                   </div>
 
-                  <!-- Summary badge -->
-                  <span
-                    class="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0 self-center">
-                    {{ currentParticipant.event_shirt_size || 'M' }} · {{ currentParticipant.singlet_size || 'M' }} · {{
-                      currentParticipant.finisher_shirt_size || 'M' }}
-                  </span>
+                
                 </div>
               </div>
             </section>
