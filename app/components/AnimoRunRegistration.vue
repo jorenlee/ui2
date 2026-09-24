@@ -1035,10 +1035,42 @@ const submitRegistration = async () => {
             ? 'bg-gray-800/80 border-gray-700'
             : 'bg-gradient-to-r from-emerald-50/60 to-slate-50 border-slate-200',
         ]">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-5">
-           <div>
+          <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-5">
 
-             <div>
+            <!-- Individual / Group Radio Cards — LEFTMOST -->
+            <div class="lg:flex gap-2 shrink-0" v-if="currentParticipant.run_category !== '1K'">
+              <div @click="form_type = 'Individual'" :class="[
+                'flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
+                form_type === 'Individual'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/30'
+                  : props.darkMode
+                    ? 'bg-gray-700/60 text-gray-300 border-gray-600 hover:bg-gray-700'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-emerald-50',
+              ]">
+                <input type="radio" name="form_type" value="Individual" v-model="form_type" class="sr-only" />
+                <i class="fas fa-user text-xs"></i>
+                <span>Individual</span>
+              </div>
+
+              <div @click="form_type = 'Group'" :class="[
+                'flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
+                form_type === 'Group'
+                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/30'
+                  : props.darkMode
+                    ? 'bg-gray-700/60 text-gray-300 border-gray-600 hover:bg-gray-700'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-emerald-50',
+              ]">
+                <input type="radio" name="form_type" value="Group" v-model="form_type" class="sr-only" />
+                <i class="fas fa-users-cog text-xs"></i>
+                <span>Group</span>
+              </div>
+
+
+
+            </div>
+
+            <!-- Title & Description -->
+            <div class="flex-1 min-w-0">
               <h2 class="text-base sm:text-lg font-bold flex items-center gap-2">
                 <i class="fas fa-users text-emerald-600"></i>
                 Select Registration Type
@@ -1048,118 +1080,119 @@ const submitRegistration = async () => {
               </p>
             </div>
 
-             <!-- Individual / Group Radio Cards -->
-              <div class="grid grid-cols-2 gap-3 w-full sm:w-auto mt-5"   v-if="currentParticipant.run_category !== '1K'">
-                <div @click="form_type = 'Individual'" :class="[
-                  'flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
-                  form_type === 'Individual'
-                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/30'
-                    : props.darkMode
-                      ? 'bg-gray-700/60 text-gray-300 border-gray-600 hover:bg-gray-700'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-emerald-50',
-                ]">
-                  <input type="radio" name="form_type" value="Individual" v-model="form_type" class="sr-only" />
-                  <i class="fas fa-user text-xs"></i>
-                  <span>Individual</span>
-                </div>
+           
 
-                <div @click="form_type = 'Group'" :class="[
-                  'flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
-                  form_type === 'Group'
-                    ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/30'
-                    : props.darkMode
-                      ? 'bg-gray-700/60 text-gray-300 border-gray-600 hover:bg-gray-700'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-emerald-50',
-                ]">
-                  <input type="radio" name="form_type" value="Group" v-model="form_type" class="sr-only" />
-                  <i class="fas fa-users-cog text-xs"></i>
-                  <span>Group</span>
-                </div>
-              </div>
-           </div>
+          </div>
+        </div>
+
+        <!-- FORM CONTENT AREA -->
+        <div class="flex">
 
 
+          
 
-            <div class="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-             
+          <!-- Vertical Participant Sidebar for Group Mode -->
+          <div v-if="form_type === 'Group'" :class="[
+            'flex flex-col gap-2 p-3 border-r shrink-0 min-w-[120px] max-w-[300px]',
+            props.darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-emerald-50/40 border-slate-200',
+          ]" style="min-height: 100%;">
+            <div class="text-[10px] font-bold uppercase tracking-widest mb-1 px-1" :class="props.darkMode ? 'text-emerald-400' : 'text-emerald-700'">
+              Runners
+            </div>
 
-              <!-- Group Participant Stepper -->
-              <div v-if="form_type === 'Group'" :class="[
-                'flex items-center justify-between gap-3 px-4 py-2 rounded-2xl border w-full sm:w-auto',
-                props.darkMode
-                  ? 'bg-gray-900/80 border-gray-700'
-                  : 'bg-white border-emerald-200 shadow-sm',
-              ]">
-                <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
-                  Participants:
-                </span>
 
-                <div class="flex items-center gap-2">
-                  <button type="button"
-                    @click="number_of_participants_per_group = Math.max(1, number_of_participants_per_group - 1)"
-                    class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold hover:bg-emerald-200 transition flex items-center justify-center text-sm">
-                    -
-                  </button>
-
-                  <input type="number" min="1" max="50" v-model="number_of_participants_per_group"
-                    class="w-12 text-center font-bold text-base bg-transparent focus:outline-none" />
-
-                  <button type="button" @click="addParticipant"
-                    class="w-8 h-8 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition flex items-center justify-center text-sm shadow-sm">
-                    +
-                  </button>
-                </div>
+             <!-- Group Participant Stepper -->
+            <div v-if="form_type === 'Group'" :class="[
+              'flex items-center justify-between gap-3 px-4 py-2 rounded-2xl border shrink-0',
+              props.darkMode
+                ? 'bg-gray-900/80 border-gray-700'
+                : 'bg-white border-emerald-200 shadow-sm',
+            ]">
+              <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                Participants:
+              </span>
+              <div class="flex items-center gap-2">
+                <button type="button"
+                  @click="number_of_participants_per_group = Math.max(1, number_of_participants_per_group - 1)"
+                  class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold hover:bg-emerald-200 transition flex items-center justify-center text-sm">
+                  -
+                </button>
+                <input type="number" min="1" max="50" v-model="number_of_participants_per_group"
+                  class="w-12 text-center font-bold text-base bg-transparent focus:outline-none" />
+                <button type="button" @click="addParticipant"
+                  class="w-8 h-8 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition flex items-center justify-center text-sm shadow-sm">
+                  +
+                </button>
               </div>
             </div>
-          </div>
 
-          <!-- Participant Tabs for Group Mode -->
-          <div v-if="form_type === 'Group'" class="mt-6 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
-            <button v-for="(p, pIdx) in participants" :key="pIdx" type="button" @click="activeParticipantIndex = pIdx"
+
+            <button
+              v-for="(p, pIdx) in participants"
+              :key="pIdx"
+              type="button"
+              @click="activeParticipantIndex = pIdx"
               :class="[
-                'flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-xs whitespace-nowrap transition-all duration-200 border',
+                'flex flex-col items-start gap-0.5 w-full px-3 py-2.5 rounded-xl font-medium text-xs transition-all duration-200 border text-left',
                 activeParticipantIndex === pIdx
                   ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-600/20 font-bold'
                   : props.darkMode
                     ? 'bg-gray-700/60 text-gray-300 border-gray-600 hover:bg-gray-700'
                     : 'bg-white text-gray-600 border-slate-200 hover:bg-slate-100',
-              ]">
-              <i class="fas fa-running text-xs"></i>
-              <span>Runner #{{ pIdx + 1 }}</span>
-              <span v-if="p.firstname" class="max-w-[90px] truncate text-[11px] opacity-90">
-                ({{ p.firstname }})
+              ]"
+            >
+              <div class="flex items-center justify-between w-full gap-1">
+                <span class="flex items-center gap-1.5 whitespace-nowrap">
+                  <i class="fas fa-running text-xs"></i>
+                  <span class="font-bold">Runner #{{ pIdx + 1 }}</span>
+                </span>
+                <span
+                  v-if="participants.length > 1"
+                  @click.stop="removeParticipant(pIdx)"
+                  class="hover:text-rose-300 p-0.5 rounded-full"
+                  title="Remove runner"
+                >
+                  <i class="fas fa-times text-[10px]"></i>
+                </span>
+
+                 <span v-if="p.firstname" class="truncate w-full text-[10px] opacity-80 pl-4">
+                {{ p.firstname }} {{ p.lastname }}
               </span>
-              <span v-if="participants.length > 1" @click.stop="removeParticipant(pIdx)"
-                class="ml-1 hover:text-rose-300 p-0.5 rounded-full" title="Remove runner">
-                <i class="fas fa-times"></i>
-              </span>
+              </div>
+             
             </button>
 
-            <button type="button" @click="addParticipant"
-              class="flex items-center gap-1.5 px-3 py-2.5 rounded-xl border border-dashed border-emerald-500 text-emerald-600 dark:text-emerald-400 font-semibold text-xs hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition whitespace-nowrap">
-              <i class="fas fa-plus text-xs"></i> Add Runner
+            <button
+              type="button"
+              @click="addParticipant"
+              :class="[
+                'flex items-center justify-center gap-1 w-full px-3 py-2 rounded-xl border border-dashed font-semibold text-xs transition',
+                props.darkMode
+                  ? 'border-emerald-700 text-emerald-400 hover:bg-emerald-950/40'
+                  : 'border-emerald-400 text-emerald-600 hover:bg-emerald-50',
+              ]"
+            >
+              <i class="fas fa-plus text-xs"></i> Add
             </button>
           </div>
-        </div>
 
-        <!-- FORM CONTENT AREA -->
-        <div class="p-3 sm:p-5 space-y-6 sm:space-y-8">
+          <!-- Actual Form Content -->
+          <div class="flex-1 p-3 sm:p-5 space-y-6 sm:space-y-8 min-w-0">
 
-          <!-- GROUP HELPER TOOLBAR -->
-          <div v-if="form_type === 'Group' && activeParticipantIndex > 0" :class="[
-            'p-4 rounded-2xl border flex items-center justify-between flex-wrap gap-3',
-            props.darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-emerald-50/70 border-emerald-200',
-          ]">
-            <div class="flex items-center gap-2 text-xs font-medium text-emerald-800 dark:text-emerald-300">
-              <i class="fas fa-info-circle text-emerald-600 text-sm"></i>
-              <span>Filling details for Runner #{{ activeParticipantIndex + 1 }}</span>
+            <!-- GROUP HELPER TOOLBAR -->
+            <div v-if="form_type === 'Group' && activeParticipantIndex > 0" :class="[
+              'p-4 rounded-2xl border flex items-center justify-between flex-wrap gap-3',
+              props.darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-emerald-50/70 border-emerald-200',
+            ]">
+              <div class="flex items-center gap-2 text-xs font-medium text-emerald-800 dark:text-emerald-300">
+                <i class="fas fa-info-circle text-emerald-600 text-sm"></i>
+                <span>Filling details for Runner #{{ activeParticipantIndex + 1 }}</span>
+              </div>
+              <button type="button" @click="copyRunnerOneInfo"
+                class="px-3 py-1.5 bg-white dark:bg-gray-800 border border-emerald-300 dark:border-gray-600 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                <i class="fas fa-copy text-xs"></i> Copy Contact/Classification from Runner #1
+              </button>
             </div>
-
-            <button type="button" @click="copyRunnerOneInfo"
-              class="px-3 py-1.5 bg-white dark:bg-gray-800 border border-emerald-300 dark:border-gray-600 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
-              <i class="fas fa-copy text-xs"></i> Copy Contact/Classification from Runner #1
-            </button>
-          </div>
 
           <!-- SECTION 1: RUN CATEGORY (3 MAIN DISTANCES) -->
           <section>
@@ -3014,7 +3047,8 @@ const submitRegistration = async () => {
             </div>
           </section>
 
-        </div>
+          </div><!-- end actual form content -->
+        </div><!-- end flex row -->
       </div>
     </div>
 
