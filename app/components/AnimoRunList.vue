@@ -426,7 +426,8 @@ const saveEdit = async () => {
           <div class="space-y-1">
           
             <h1 class="text-sm sm:text-base text-white font-black tracking-tight leading-snug">
-              Animo Run 2026 — Participant Status
+              THE EMERALD RUN — Participant Status
+              
               <span class="font-normal text-xs sm:text-sm text-emerald-200 block sm:inline sm:ml-1"> <i class="fas fa-list text-amber-300"></i> Track, verify & manage runner registrations</span>
             </h1>
           </div>
