@@ -281,7 +281,7 @@ const createEmptyParticipant = (index = 1) => ({
   finisher_shirt_size: "M",
   // Pet Run fields (active when run_category === '1KM' or '1K')
   pet_name: "",
-  pet_type: "Dog",
+  pet_type: "",
   pet_other_type: "",
   pet_bandana_size: "Standard",
   pet_vaccinated: true,
