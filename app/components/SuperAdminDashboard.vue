@@ -33,7 +33,7 @@ const openGroups = ref([
   "External Links",
   "General Services Office",
   "Lasalle Alumni Association",
-  "Emerald Run",
+  "The Emerald Run",
   "Super Admin",
   "Juris Doctor Admin",
   "Juris Doctor Examinee",
@@ -188,11 +188,11 @@ const filteredMenuList = computed(() => {
 // ---------------- MENU ----------------
 const subMenuList = [
   {
-    group: "Emerald Run",
-    allowedRole: ["Emerald Run Admin", "Emerald Run"],
+    group: "The Emerald Run",
+    allowedRole: ["The Emerald Run Admin", "The Emerald Run"],
     items: [
       {
-        label: "Walk-In Registration",
+        label: "Registration",
         icon: "fa-running",
         type: "button",
         view: "ViewAnimoRunRegistration",

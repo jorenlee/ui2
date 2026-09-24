@@ -106,8 +106,7 @@ const runCategories = [
       ringColor: "rgba(198,34,22,0.25)",
     },
     inclusions: [
-      "Event Shirt",
-      "Singlet",
+      "Event Shirt or Singlet",
       "Post-Meal",
       "Race Bib",
       "Acrylic Finisher Medal",
@@ -136,8 +135,7 @@ const runCategories = [
       ringColor: "rgba(196,90,25,0.25)",
     },
     inclusions: [
-      "Event Shirt",
-      "Singlet",
+      "Event Shirt or Singlet",
       "Post-Meal",
       "Race Bib",
       "Acrylic Finisher Medal",
@@ -1306,14 +1304,14 @@ const submitRegistration = async () => {
                     </div>
 
                     <!-- Gun Time -->
-                    <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
+                    <!-- <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
                       :style="{ borderColor: 'rgba(255,255,255,0.15)' }">
                       <span class="font-medium flex items-center gap-1" style="color: rgba(255,255,255,0.6)">
                         <i class="fas fa-flag-checkered"
                           :style="{ color: cat.colors.highlight || cat.colors.accent }"></i> Gun Time:
                       </span>
                       <span class="font-black" :style="{ color: cat.colors.highlight || '#fff' }">{{ cat.time }}</span>
-                    </div>
+                    </div> -->
                   </div>
                 </div>
 
@@ -1410,13 +1408,13 @@ const submitRegistration = async () => {
                   </div>
 
                   <!-- Gun Time -->
-                  <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
+                  <!-- <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
                     style="border-color: rgba(255,255,255,0.15)">
                     <span class="font-medium flex items-center gap-1" style="color: rgba(255,255,255,0.6)">
                       <i class="fas fa-clock" style="color: #93CAC5"></i> Gun Time:
                     </span>
                     <span class="font-black" style="color: #93CAC5">5:00 AM</span>
-                  </div>
+                  </div> -->
                 </div>
 
 
@@ -2153,7 +2151,7 @@ const submitRegistration = async () => {
                             : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
                       ]">
                         <i class="fas fa-briefcase text-sm"></i>
-                        <span>Employees / Faculty</span>
+                        <span>Employees</span>
                       </button>
 
                       <!-- 3. Alumni Button -->
