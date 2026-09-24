@@ -64,14 +64,14 @@ const runCategories = [
     badge: "Pet Run (1K)",
     icon: "fa-paw",
     colors: {
-      primary:   "#02857D",
+      primary: "#02857D",
       secondary: "#035751",
-      accent:    "#2D9F98",
+      accent: "#2D9F98",
       highlight: "#93CAC5",
-      dark:      "#0B0A09",
-      text:      "#FFFFFF",
-      cardBg:    "#f0fbfa",
-      cardBorder:"#93CAC5",
+      dark: "#0B0A09",
+      text: "#FFFFFF",
+      cardBg: "#f0fbfa",
+      cardBorder: "#93CAC5",
       ringColor: "rgba(45,159,152,0.35)",
     },
     inclusions: [
@@ -95,14 +95,14 @@ const runCategories = [
     badge: "Starter (3KM)",
     icon: "fa-running",
     colors: {
-      primary:   "#C62216",
+      primary: "#C62216",
       secondary: "#8E100B",
-      accent:    "#D93625",
-      dark:      "#160B0A",
-      light:     "#F4F4F2",
-      neutral:   "#A3A3A3",
-      cardBg:    "#fff5f5",
-      cardBorder:"#C62216",
+      accent: "#D93625",
+      dark: "#160B0A",
+      light: "#F4F4F2",
+      neutral: "#A3A3A3",
+      cardBg: "#fff5f5",
+      cardBorder: "#C62216",
       ringColor: "rgba(198,34,22,0.25)",
     },
     inclusions: [
@@ -125,14 +125,14 @@ const runCategories = [
     badge: "Endurance (10KM)",
     icon: "fa-running",
     colors: {
-      primary:   "#C45A19",
+      primary: "#C45A19",
       secondary: "#9E3D12",
-      accent:    "#D87828",
-      dark:      "#35120A",
+      accent: "#D87828",
+      dark: "#35120A",
       highlight: "#E9C98E",
-      text:      "#F3F1E9",
-      cardBg:    "#fff8f0",
-      cardBorder:"#C45A19",
+      text: "#F3F1E9",
+      cardBg: "#fff8f0",
+      cardBorder: "#C45A19",
       ringColor: "rgba(196,90,25,0.25)",
     },
     inclusions: [
@@ -155,15 +155,15 @@ const runCategories = [
     badge: "Ultimate (20KM)",
     icon: "fa-running",
     colors: {
-      primary:   "#075F86",
+      primary: "#075F86",
       secondary: "#0B1C2E",
-      accent:    "#0788B5",
-      dark:      "#080D15",
+      accent: "#0788B5",
+      dark: "#080D15",
       highlight: "#10AFC5",
-      lighthl:   "#B9E5E8",
-      text:      "#F1F3F2",
-      cardBg:    "#f0f8ff",
-      cardBorder:"#075F86",
+      lighthl: "#B9E5E8",
+      text: "#F1F3F2",
+      cardBg: "#f0f8ff",
+      cardBorder: "#075F86",
       ringColor: "rgba(7,95,134,0.25)",
     },
     inclusions: [
@@ -361,18 +361,21 @@ const currentParticipant = computed(() => {
   );
 });
 
-// Automatically adjust recommended paymentType when participant classification changes
+// Automatically adjust recommended paymentType when participant classification or category changes
 watch(
-  () => currentParticipant.value.participant_type,
-  (newType) => {
-    if (newType === "Employees") {
+  [() => currentParticipant.value?.participant_type, () => currentParticipant.value?.run_category],
+  ([newType, newCat]) => {
+    if (newCat === "1KM" || newCat === "1K") {
+      paymentType.value = "non_lsu_payment";
+    } else if (newType === "Employees") {
       paymentType.value = "salary_deduction";
     } else if (newType === "Currently Enrolled Students") {
       paymentType.value = "add_to_tuition";
     } else if (newType === "Open Category" || newType === "Alumni") {
       paymentType.value = "non_lsu_payment";
     }
-  }
+  },
+  { immediate: true }
 );
 
 const MAX_FILE_SIZE_MB = 1;
@@ -499,8 +502,8 @@ const itemizedFees = computed(() => {
       const shirtDesc = isPet
         ? `Size: ${p.tshirt_size || "M"} (Owner) + Bandana (${p.pet_bandana_size || "Standard"})`
         : p.run_category === "20KM"
-        ? buildShirtSizeSummary(p)
-        : `Size: ${buildShirtSizeSummary(p)}`;
+          ? buildShirtSizeSummary(p)
+          : `Size: ${buildShirtSizeSummary(p)}`;
 
       items.push({
         name: `${labelPrefix}${cat.name} (${cat.id})${isPet && p.pet_name ? ' - Pet: ' + p.pet_name : ''}`,
@@ -1001,8 +1004,10 @@ const submitRegistration = async () => {
           : 'bg-gradient-to-br from-green-800 via-emerald-700 to-teal-800 border-green-600 text-white',
       ]">
         <!-- Background decorative elements -->
-        <div class="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none">
+        </div>
+        <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl pointer-events-none">
+        </div>
 
         <div class="relative px-4 py-3 sm:px-8 sm:py-5">
           <!-- Mobile: compact row layout -->
@@ -1011,7 +1016,8 @@ const submitRegistration = async () => {
               src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/Corporate%20Logo%20New/Corporate%20Logo%20White.png"
               alt="LSU Logo" class="w-auto lg:h-12 h-10 object-contain shrink-0" />
             <div class="flex-1 min-w-0">
-              <h1 class="text-base sm:text-2xl font-black text-white tracking-wide leading-tight flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <h1
+                class="text-base sm:text-2xl font-black text-white tracking-wide leading-tight flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 <span>THE EMERALD RUN 2026</span>
                 <span class="text-emerald-500">ANIMO RUN</span>
               </h1>
@@ -1036,7 +1042,7 @@ const submitRegistration = async () => {
         ]">
           <div class=" items-start sm:items-center gap-3 sm:gap-5 lg:w-fit">
 
-           
+
 
             <!-- Title & Description -->
             <div class="flex-1 min-w-0 mb-3">
@@ -1049,7 +1055,7 @@ const submitRegistration = async () => {
               </p>
             </div>
 
-             <!-- Individual / Group Radio Cards — LEFTMOST -->
+            <!-- Individual / Group Radio Cards — LEFTMOST -->
             <div class="flex gap-2 shrink-0" v-if="currentParticipant.run_category !== '1K'">
               <div @click="form_type = 'Individual'" :class="[
                 'lg:w-fit w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
@@ -1081,28 +1087,29 @@ const submitRegistration = async () => {
 
             </div>
 
-           
+
 
           </div>
         </div>
 
         <!-- FORM CONTENT AREA -->
-        <div class="flex">
+        <div class="lg:flex">
 
 
-          
+
 
           <!-- Vertical Participant Sidebar for Group Mode -->
           <div v-if="form_type === 'Group'" :class="[
             'flex flex-col gap-2 p-3 border-r shrink-0 min-w-[120px] max-w-[300px]',
             props.darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-emerald-50/40 border-slate-200',
           ]" style="min-height: 100%;">
-            <div class="text-[10px] font-bold uppercase tracking-widest mb-1 px-1" :class="props.darkMode ? 'text-emerald-400' : 'text-emerald-700'">
+            <div class="text-[10px] font-bold uppercase tracking-widest mb-1 px-1"
+              :class="props.darkMode ? 'text-emerald-400' : 'text-emerald-700'">
               Runners
             </div>
 
 
-             <!-- Group Participant Stepper -->
+            <!-- Group Participant Stepper -->
             <div v-if="form_type === 'Group'" :class="[
               'flex items-center justify-between gap-3 px-4 py-2 rounded-2xl border shrink-0',
               props.darkMode
@@ -1128,11 +1135,7 @@ const submitRegistration = async () => {
             </div>
 
 
-            <button
-              v-for="(p, pIdx) in participants"
-              :key="pIdx"
-              type="button"
-              @click="activeParticipantIndex = pIdx"
+            <button v-for="(p, pIdx) in participants" :key="pIdx" type="button" @click="activeParticipantIndex = pIdx"
               :class="[
                 'flex flex-col items-start gap-0.5 w-full px-3 py-2.5 rounded-xl font-medium text-xs transition-all duration-200 border text-left',
                 activeParticipantIndex === pIdx
@@ -1140,46 +1143,29 @@ const submitRegistration = async () => {
                   : props.darkMode
                     ? 'bg-gray-700/60 text-gray-300 border-gray-600 hover:bg-gray-700'
                     : 'bg-white text-gray-600 border-slate-200 hover:bg-slate-100',
-              ]"
-            >
+              ]">
               <div class="flex items-center justify-between w-full gap-1">
                 <span class="flex items-center text-[10px] gap-1.5 whitespace-nowrap">
                   <i class="fas fa-running"></i>
                   <!-- runner: -->
                   <span>#{{ pIdx + 1 }}</span>
                 </span>
-                   <span v-if="p.firstname" class="truncate w-full flex text-xs uppercase opacity-80 pl-1">
-                {{ p.firstname }} {{ p.lastname }}
-               
-              
-              </span>
-
-
-               <span
-                  v-if="participants.length > 1"
-                  @click.stop="removeParticipant(pIdx)"
-                  class="hover:text-rose-300 p-0.5 rounded-full"
-                  title="Remove runner"
-                >
+                <span v-if="p.firstname" class="truncate w-full flex text-xs uppercase opacity-80 pl-1">
+                  {{ p.firstname }} {{ p.lastname }}
+                </span>
+                <span v-if="participants.length > 1" @click.stop="removeParticipant(pIdx)"
+                  class="hover:text-rose-300 p-0.5 rounded-full" title="Remove runner">
                   <i class="fas fa-times text-[10px]"></i>
                 </span>
-
-
-
               </div>
-             
             </button>
 
-            <button
-              type="button"
-              @click="addParticipant"
-              :class="[
-                'flex items-center justify-center gap-1 w-full px-3 py-2 rounded-xl border border-dashed font-semibold text-xs transition',
-                props.darkMode
-                  ? 'border-emerald-700 text-emerald-400 hover:bg-emerald-950/40'
-                  : 'border-emerald-400 text-emerald-600 hover:bg-emerald-50',
-              ]"
-            >
+            <button type="button" @click="addParticipant" :class="[
+              'flex items-center justify-center gap-1 w-full px-3 py-2 rounded-xl border border-dashed font-semibold text-xs transition',
+              props.darkMode
+                ? 'border-emerald-700 text-emerald-400 hover:bg-emerald-950/40'
+                : 'border-emerald-400 text-emerald-600 hover:bg-emerald-50',
+            ]">
               <i class="fas fa-plus text-xs"></i> Add
             </button>
           </div>
@@ -1202,119 +1188,222 @@ const submitRegistration = async () => {
               </button>
             </div>
 
-          <!-- SECTION 1: RUN CATEGORY (3 MAIN DISTANCES) -->
-          <section>
-            <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-              <div>
-                <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
-                  <span
-                    class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">1</span>
-                  Run Category
-                </h3>
-                <p class="text-xs text-gray-500 ml-9">
-                  Choose race distance for Runner #{{ activeParticipantIndex + 1 }}
-                </p>
+            <!-- SECTION 1: RUN CATEGORY (3 MAIN DISTANCES) -->
+            <section>
+              <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <div>
+                  <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
+                    <span
+                      class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">1</span>
+                    Run Category
+                  </h3>
+                  <p class="text-xs text-gray-500 ml-9">
+                    Choose race distance for Runner #{{ activeParticipantIndex + 1 }}
+                  </p>
+                </div>
+
+                <div>
+                  <span v-if="currentParticipant.run_category === '1K'"
+                    class="text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs border"
+                    :style="{ background: '#e8faf9', color: '#035751', borderColor: '#2D9F98' }">
+                    <i class="fas fa-paw" :style="{ color: '#02857D' }"></i> Selected: 1K (PHP 1,000)
+                  </span>
+                  <span v-else
+                    class="text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs border"
+                    :style="{
+                      background: runCategories.find(c => c.id === currentParticipant.run_category)?.colors?.cardBg || '#f5f5f5',
+                      color: runCategories.find(c => c.id === currentParticipant.run_category)?.colors?.secondary || '#333',
+                      borderColor: runCategories.find(c => c.id === currentParticipant.run_category)?.colors?.primary || '#999'
+                    }">
+                    <i class="fas fa-running"
+                      :style="{ color: runCategories.find(c => c.id === currentParticipant.run_category)?.colors?.primary }"></i>
+                    Selected: {{ currentParticipant.run_category }} (PHP {{runCategories.find(c => c.id ===
+                      currentParticipant.run_category)?.fee?.toLocaleString() || 0 }})
+                  </span>
+                </div>
               </div>
 
-              <div>
-                <span
-                  v-if="currentParticipant.run_category === '1K'"
-                  class="text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs border"
-                  :style="{ background: '#e8faf9', color: '#035751', borderColor: '#2D9F98' }">
-                  <i class="fas fa-paw" :style="{ color: '#02857D' }"></i> Selected: 1K (PHP 1,000)
-                </span>
-                <span
-                  v-else
-                  class="text-xs font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-xs border"
-                  :style="{
-                    background: runCategories.find(c => c.id === currentParticipant.run_category)?.colors?.cardBg || '#f5f5f5',
-                    color: runCategories.find(c => c.id === currentParticipant.run_category)?.colors?.secondary || '#333',
-                    borderColor: runCategories.find(c => c.id === currentParticipant.run_category)?.colors?.primary || '#999'
-                  }">
-                  <i class="fas fa-running" :style="{ color: runCategories.find(c => c.id === currentParticipant.run_category)?.colors?.primary }"></i>
-                  Selected: {{ currentParticipant.run_category }} (PHP {{ runCategories.find(c => c.id === currentParticipant.run_category)?.fee?.toLocaleString() || 0 }})
-                </span>
-              </div>
-            </div>
 
-        
 
-            <!-- RACE CARDS CONTAINER -->
-            <!-- Mobile: Horizontal swipe snap container; Desktop: flex row with sidebar -->
-            <div class="flex lg:flex-row gap-3 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scrollbar-none items-stretch -mx-2 px-2 sm:mx-0 sm:px-0">
+              <!-- RACE CARDS CONTAINER -->
+              <!-- Mobile: Horizontal swipe snap container; Desktop: flex row with sidebar -->
+              <div
+                class="flex lg:flex-row gap-3 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scrollbar-none items-stretch -mx-2 px-2 sm:mx-0 sm:px-0">
 
 
 
-              <!-- HUMAN RUN CARDS -->
-                          <div class="contents lg:flex-1 lg:grid lg:grid-cols-3 lg:gap-4">
-                <div
-                  v-for="cat in runCategories.filter(c => c.categoryType === 'human')"
-                  :key="cat.id"
-                  @click="currentParticipant.run_category = cat.id"
-                  class="relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between overflow-hidden select-none w-full lg:w-auto shrink-0 snap-center lg:shrink"
-                  :style="currentParticipant.run_category === cat.id
-                    ? {
+                <!-- HUMAN RUN CARDS -->
+                <div class="contents lg:flex-1 lg:grid lg:grid-cols-3 lg:gap-4">
+                  <div v-for="cat in runCategories.filter(c => c.categoryType === 'human')" :key="cat.id"
+                    @click="currentParticipant.run_category = cat.id"
+                    class="relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between overflow-hidden select-none w-full lg:w-auto shrink-0 snap-center lg:shrink"
+                    :style="currentParticipant.run_category === cat.id
+                      ? {
                         background: `linear-gradient(145deg, ${cat.colors.secondary}, ${cat.colors.primary})`,
                         borderColor: cat.colors.accent,
                         boxShadow: `0 10px 40px ${cat.colors.ringColor}, 0 0 0 3px ${cat.colors.ringColor}`,
                         transform: 'scale(1.03)',
                       }
-                    : {
+                      : {
                         background: `linear-gradient(145deg, ${cat.colors.dark}, ${cat.colors.secondary})`,
                         borderColor: cat.colors.primary + '55',
                         opacity: '0.92',
                       }">
 
+                    <!-- Watermark -->
+                    <div class="absolute -right-3 -bottom-3 text-8xl pointer-events-none"
+                      :style="{ color: 'rgba(255,255,255,0.06)' }">
+                      <i :class="['fas', cat.icon]"></i>
+                    </div>
+
+                    <div>
+                      <!-- Check circle + Distance -->
+                      <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                          <div
+                            class="w-6 h-6 rounded-full flex items-center justify-center border-2 text-xs font-bold transition shrink-0"
+                            :style="currentParticipant.run_category === cat.id
+                              ? { background: '#fff', color: cat.colors.primary, borderColor: '#fff' }
+                              : { background: 'transparent', color: 'transparent', borderColor: 'rgba(255,255,255,0.35)' }">
+                            <i class="fas fa-check"></i>
+                          </div>
+
+                          <!-- Distance label -->
+                          <h2 class="text-5xl font-black tracking-tight lg:pl-4"
+                            :style="{ color: currentParticipant.run_category === cat.id ? '#fff' : 'rgba(255,255,255,0.7)' }">
+                            {{ cat.id }}
+                          </h2>
+
+
+
+                        </div>
+                        <div>
+                          <!-- Fee -->
+                          <span class="text-xl font-black mt-1 block"
+                            :style="{ color: currentParticipant.run_category === cat.id ? cat.colors.highlight || '#fff' : 'rgba(255,255,255,0.55)' }">
+                            PHP {{ cat.fee.toLocaleString() }}
+                          </span>
+                        </div>
+
+                      </div>
+
+
+                      <!-- Inclusions -->
+                      <div class="mt-4 pt-3 border-t" :style="{ borderColor: 'rgba(255,255,255,0.15)' }">
+                        <p class="text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1"
+                          :style="{ color: cat.colors.highlight || cat.colors.accent || 'rgba(255,255,255,0.7)' }">
+                          <i class="fas fa-check-circle"></i> Inclusions:
+                        </p>
+                        <ul class="space-y-1.5">
+                          <li v-for="(inc, incIdx) in cat.inclusions" :key="incIdx"
+                            class="text-[11px] flex items-center gap-2" style="color: rgba(255,255,255,0.8)">
+                            <i class="fas fa-check text-[10px]"
+                              :style="{ color: cat.colors.highlight || cat.colors.accent }"></i>
+                            <span>{{ inc }}</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+
+                    <!-- Gun Time -->
+                    <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
+                      :style="{ borderColor: 'rgba(255,255,255,0.15)' }">
+                      <span class="font-medium flex items-center gap-1" style="color: rgba(255,255,255,0.6)">
+                        <i class="fas fa-flag-checkered"
+                          :style="{ color: cat.colors.highlight || cat.colors.accent }"></i> Gun Time:
+                      </span>
+                      <span class="font-black" :style="{ color: cat.colors.highlight || '#fff' }">{{ cat.time }}</span>
+                    </div>
+                  </div>
+                </div>
+
+
+
+                <!-- VERTICAL DIVIDER (Desktop only) -->
+                <div class="hidden lg:flex flex-col items-center justify-center px-3 shrink-0">
+                  <div
+                    class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent">
+                  </div>
+                  <div :class="[
+                    'my-2 px-2 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm shrink-0 flex flex-col items-center gap-1',
+                    props.darkMode ? 'bg-gray-800 border-gray-700 text-gray-500' : 'bg-white border-gray-200 text-gray-400 shadow-gray-100/80'
+                  ]" style="writing-mode: vertical-rl; text-orientation: mixed;">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-500 inline-block mt-1"></span>
+
+                    Pet
+
+                    <span class="my-0.5 opacity-30">·</span>
+
+
+
+
+                    Human
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mb-1"></span>
+                  </div>
+                  <div
+                    class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent">
+                  </div>
+                </div>
+
+
+                <!-- PET RUN CARD -->
+                <div
+                  class="relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 overflow-hidden select-none flex flex-col justify-between w-[84vw] max-w-[320px] lg:w-[26%] shrink-0 snap-center"
+                  :style="currentParticipant.run_category === '1K'
+                    ? {
+                      background: 'linear-gradient(145deg, #035751, #02857D)',
+                      borderColor: '#2D9F98',
+                      boxShadow: '0 10px 40px rgba(45,159,152,0.4), 0 0 0 3px rgba(45,159,152,0.3)',
+                      transform: 'scale(1.03)',
+                    }
+                    : {
+                      background: 'linear-gradient(145deg, #0B0A09, #035751)',
+                      borderColor: 'rgba(2,133,125,0.4)',
+                    }" @click="currentParticipant.run_category = '1K'">
+
                   <!-- Watermark -->
-                  <div class="absolute -right-3 -bottom-3 text-8xl pointer-events-none" :style="{ color: 'rgba(255,255,255,0.06)' }">
-                    <i :class="['fas', cat.icon]"></i>
+                  <div class="absolute -right-4 -bottom-4 text-8xl pointer-events-none select-none"
+                    style="color: rgba(255,255,255,0.05)">
+                    <i class="fas fa-paw"></i>
                   </div>
 
                   <div>
-                    <!-- Check circle + Distance -->
-                    <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-2">
-  <div
+                    <!-- Badge row -->
+                    <div class="flex items-center justify-between mb-3">
+                      <span
+                        class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm"
+                        style="background: rgba(255,255,255,0.15); color: #93CAC5; border: 1px solid rgba(147,202,197,0.4)">
+                        <i class="fas fa-paw text-[9px]"></i> Pet Run
+                      </span>
+                      <div
                         class="w-6 h-6 rounded-full flex items-center justify-center border-2 text-xs font-bold transition shrink-0"
-                        :style="currentParticipant.run_category === cat.id
-                          ? { background: '#fff', color: cat.colors.primary, borderColor: '#fff' }
+                        :style="currentParticipant.run_category === '1K'
+                          ? { background: '#fff', color: '#02857D', borderColor: '#fff' }
                           : { background: 'transparent', color: 'transparent', borderColor: 'rgba(255,255,255,0.35)' }">
                         <i class="fas fa-check"></i>
                       </div>
-
-                      <!-- Distance label -->
-                      <h2
-                        class="text-5xl font-black tracking-tight lg:pl-4"
-                        :style="{ color: currentParticipant.run_category === cat.id ? '#fff' : 'rgba(255,255,255,0.7)' }">
-                        {{ cat.id }}
-                      </h2>
-
-
-
-                  </div>
-                         <div>
-                            <!-- Fee -->
-                    <span class="text-xl font-black mt-1 block"
-                      :style="{ color: currentParticipant.run_category === cat.id ? cat.colors.highlight || '#fff' : 'rgba(255,255,255,0.55)' }">
-                      PHP {{ cat.fee.toLocaleString() }}
-                    </span>
-                          </div>
-
                     </div>
 
-               
+                    <!-- Distance & Fee -->
+                    <div class="flex items-baseline justify-between pt-1">
+                      <h2 class="text-3xl font-black tracking-tight"
+                        :style="{ color: currentParticipant.run_category === '1K' ? '#fff' : 'rgba(255,255,255,0.7)' }">
+                        PETS</h2>
+                      <span class="text-xl font-black"
+                        :style="{ color: currentParticipant.run_category === '1K' ? '#93CAC5' : 'rgba(255,255,255,0.5)' }">PHP
+                        1,000</span>
+                    </div>
+
                     <!-- Inclusions -->
-                    <div class="mt-4 pt-3 border-t" :style="{ borderColor: 'rgba(255,255,255,0.15)' }">
+                    <div class="mt-4 pt-3 border-t" style="border-color: rgba(255,255,255,0.15)">
                       <p class="text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1"
-                        :style="{ color: cat.colors.highlight || cat.colors.accent || 'rgba(255,255,255,0.7)' }">
-                        <i class="fas fa-check-circle"></i> Inclusions:
+                        style="color: #93CAC5">
+                        <i class="fas fa-paw" style="color: #2D9F98"></i> Inclusions:
                       </p>
                       <ul class="space-y-1.5">
-                        <li v-for="(inc, incIdx) in cat.inclusions" :key="incIdx"
-                          class="text-[11px] flex items-center gap-2"
-                          style="color: rgba(255,255,255,0.8)">
-                          <i class="fas fa-check text-[10px]" :style="{ color: cat.colors.highlight || cat.colors.accent }" ></i>
-                          <span>{{ inc }}</span>
+                        <li v-for="(inc, incIdx) in runCategories[0].inclusions" :key="incIdx"
+                          class="text-[11px] flex items-center gap-2" style="color: rgba(255,255,255,0.8)">
+                          <i class="fas fa-paw text-[10px]" style="color: #2D9F98"></i><span>{{ inc }}</span>
                         </li>
                       </ul>
                     </div>
@@ -1322,1513 +1411,1257 @@ const submitRegistration = async () => {
 
                   <!-- Gun Time -->
                   <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
-                    :style="{ borderColor: 'rgba(255,255,255,0.15)' }">
+                    style="border-color: rgba(255,255,255,0.15)">
                     <span class="font-medium flex items-center gap-1" style="color: rgba(255,255,255,0.6)">
-                      <i class="fas fa-flag-checkered" :style="{ color: cat.colors.highlight || cat.colors.accent }"></i> Gun Time:
+                      <i class="fas fa-clock" style="color: #93CAC5"></i> Gun Time:
                     </span>
-                    <span class="font-black" :style="{ color: cat.colors.highlight || '#fff' }">{{ cat.time }}</span>
+                    <span class="font-black" style="color: #93CAC5">5:00 AM</span>
                   </div>
                 </div>
+
+
+
+
               </div>
 
-
-
- <!-- VERTICAL DIVIDER (Desktop only) -->
-              <div class="hidden lg:flex flex-col items-center justify-center px-3 shrink-0">
-                <div class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
-                <div :class="[
-                  'my-2 px-2 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm shrink-0 flex flex-col items-center gap-1',
-                  props.darkMode ? 'bg-gray-800 border-gray-700 text-gray-500' : 'bg-white border-gray-200 text-gray-400 shadow-gray-100/80'
-                ]" style="writing-mode: vertical-rl; text-orientation: mixed;">
-                   <span class="w-1.5 h-1.5 rounded-full bg-sky-500 inline-block mt-1"></span>
-
-                    Pet
-
-                  <span class="my-0.5 opacity-30">·</span>
-                 
-
-
-                 
-                  Human
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mb-1"></span>
-                </div>
-                <div class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
-              </div>
-
-
-             <!-- PET RUN CARD -->
+              <!-- Mobile Swipe Hint -->
               <div
-                class="relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 overflow-hidden select-none flex flex-col justify-between w-[84vw] max-w-[320px] lg:w-[26%] shrink-0 snap-center"
-                :style="currentParticipant.run_category === '1K'
-                  ? {
-                      background: 'linear-gradient(145deg, #035751, #02857D)',
-                      borderColor: '#2D9F98',
-                      boxShadow: '0 10px 40px rgba(45,159,152,0.4), 0 0 0 3px rgba(45,159,152,0.3)',
-                      transform: 'scale(1.03)',
-                    }
-                  : {
-                      background: 'linear-gradient(145deg, #0B0A09, #035751)',
-                      borderColor: 'rgba(2,133,125,0.4)',
-                    }"
-                @click="currentParticipant.run_category = '1K'">
+                class="lg:hidden flex items-center justify-center gap-1.5 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
+                <i class="fas fa-arrows-left-right text-[10px]"></i>
+                <span>Swipe cards horizontally to explore all race distances</span>
+              </div>
 
-                <!-- Watermark -->
-                <div class="absolute -right-4 -bottom-4 text-8xl pointer-events-none select-none" style="color: rgba(255,255,255,0.05)">
+
+              <!-- INTEGRATED PET COMPANION DETAILS (ACTIVATED AUTOMATICALLY WHEN 1K PET RUN IS SELECTED) -->
+              <div v-if="isPetCategory(currentParticipant.run_category)"
+                class="mt-6 rounded-3xl p-5 sm:p-6 border-2 transition-all duration-300 relative overflow-hidden"
+                :style="props.darkMode
+                  ? { background: 'rgba(3,87,81,0.15)', borderColor: '#035751', boxShadow: '0 4px 20px rgba(3,87,81,0.2)' }
+                  : { background: 'linear-gradient(135deg, #f0fbfa 0%, #ffffff 60%, #f0faf9 100%)', borderColor: '#2D9F98', boxShadow: '0 4px 16px rgba(45,159,152,0.12)' }">
+                <!-- Paw Watermark Background -->
+                <div class="absolute -right-6 -bottom-6 text-9xl pointer-events-none"
+                  style="color: rgba(2,133,125,0.05)">
                   <i class="fas fa-paw"></i>
                 </div>
 
-                <div>
-                  <!-- Badge row -->
-                  <div class="flex items-center justify-between mb-3">
-                    <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm"
-                      style="background: rgba(255,255,255,0.15); color: #93CAC5; border: 1px solid rgba(147,202,197,0.4)">
-                      <i class="fas fa-paw text-[9px]"></i> Pet Run
-                    </span>
+                <!-- Header -->
+                <div class="flex items-center justify-between flex-wrap gap-3 mb-5 pb-3.5 border-b"
+                  style="border-color: rgba(147,202,197,0.6)">
+                  <div class="flex items-center gap-3">
                     <div
-                      class="w-6 h-6 rounded-full flex items-center justify-center border-2 text-xs font-bold transition shrink-0"
-                      :style="currentParticipant.run_category === '1K'
-                        ? { background: '#fff', color: '#02857D', borderColor: '#fff' }
-                        : { background: 'transparent', color: 'transparent', borderColor: 'rgba(255,255,255,0.35)' }">
-                      <i class="fas fa-check"></i>
+                      class="w-11 h-11 rounded-2xl text-white flex items-center justify-center text-xl shadow-md shrink-0"
+                      style="background: linear-gradient(135deg, #02857D, #2D9F98); box-shadow: 0 4px 12px rgba(2,133,125,0.3)">
+                      <i class="fas fa-paw"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-sm sm:text-base font-black flex items-center gap-2 flex-wrap"
+                        style="color: #035751">
+                        <span>1K EMERALD PAWS: Pet Companion Registration</span>
+                        <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full text-white shadow-2xs"
+                          style="background: #02857D">
+                          Runner + Pet Duo
+                        </span>
+                      </h4>
+                      <p class="text-xs mt-0.5" :style="{ color: props.darkMode ? '#9ca3af' : '#4b5563' }">
+                        Please provide your pet companion's details, vaccination records, and signed liability consent.
+                      </p>
                     </div>
                   </div>
 
-                  <!-- Distance & Fee -->
-                  <div class="flex items-baseline justify-between pt-1">
-                    <h2 class="text-3xl font-black tracking-tight"
-                      :style="{ color: currentParticipant.run_category === '1K' ? '#fff' : 'rgba(255,255,255,0.7)' }">PETS</h2>
-                    <span class="text-xl font-black"
-                      :style="{ color: currentParticipant.run_category === '1K' ? '#93CAC5' : 'rgba(255,255,255,0.5)' }">PHP 1,000</span>
-                  </div>
-
-                  <!-- Inclusions -->
-                  <div class="mt-4 pt-3 border-t" style="border-color: rgba(255,255,255,0.15)">
-                    <p class="text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1" style="color: #93CAC5">
-                      <i class="fas fa-paw" style="color: #2D9F98"></i> Inclusions:
-                    </p>
-                    <ul class="space-y-1.5">
-                       <li v-for="(inc, incIdx) in runCategories[0].inclusions" :key="incIdx"
-                        class="text-[11px] flex items-center gap-2"
-                        style="color: rgba(255,255,255,0.8)">
-                        <i class="fas fa-paw text-[10px]" style="color: #2D9F98"></i><span>{{ inc }}</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <!-- Gun Time -->
-                <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
-                  style="border-color: rgba(255,255,255,0.15)">
-                  <span class="font-medium flex items-center gap-1" style="color: rgba(255,255,255,0.6)">
-                    <i class="fas fa-clock" style="color: #93CAC5"></i> Gun Time:
+                  <span class="text-xs font-bold px-3 py-1 rounded-full border shadow-2xs flex items-center gap-1"
+                    :style="{ background: props.darkMode ? '#1f2937' : 'rgba(255,255,255,0.9)', color: '#035751', borderColor: '#2D9F98' }">
+                    <i class="fas fa-check-circle" style="color: #02857D"></i> Standalone Race Category
                   </span>
-                  <span class="font-black" style="color: #93CAC5">5:00 AM</span>
                 </div>
-              </div>
 
-
-
-
-            </div>
-
-            <!-- Mobile Swipe Hint -->
-            <div class="lg:hidden flex items-center justify-center gap-1.5 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
-              <i class="fas fa-arrows-left-right text-[10px]"></i>
-              <span>Swipe cards horizontally to explore all race distances</span>
-            </div>
-
-
-            <!-- INTEGRATED PET COMPANION DETAILS (ACTIVATED AUTOMATICALLY WHEN 1K PET RUN IS SELECTED) -->
-            <div
-              v-if="isPetCategory(currentParticipant.run_category)"
-              class="mt-6 rounded-3xl p-5 sm:p-6 border-2 transition-all duration-300 relative overflow-hidden"
-              :style="props.darkMode
-                ? { background: 'rgba(3,87,81,0.15)', borderColor: '#035751', boxShadow: '0 4px 20px rgba(3,87,81,0.2)' }
-                : { background: 'linear-gradient(135deg, #f0fbfa 0%, #ffffff 60%, #f0faf9 100%)', borderColor: '#2D9F98', boxShadow: '0 4px 16px rgba(45,159,152,0.12)' }">
-              <!-- Paw Watermark Background -->
-              <div class="absolute -right-6 -bottom-6 text-9xl pointer-events-none" style="color: rgba(2,133,125,0.05)">
-                <i class="fas fa-paw"></i>
-              </div>
-
-              <!-- Header -->
-              <div class="flex items-center justify-between flex-wrap gap-3 mb-5 pb-3.5 border-b" style="border-color: rgba(147,202,197,0.6)">
-                <div class="flex items-center gap-3">
-                  <div
-                    class="w-11 h-11 rounded-2xl text-white flex items-center justify-center text-xl shadow-md shrink-0"
-                    style="background: linear-gradient(135deg, #02857D, #2D9F98); box-shadow: 0 4px 12px rgba(2,133,125,0.3)">
-                    <i class="fas fa-paw"></i>
-                  </div>
+                <!-- Pet Basic Form Fields -->
+                <div :class="[
+                  'grid gap-4 mb-4',
+                  currentParticipant.pet_type === 'Other' ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
+                ]">
                   <div>
-                    <h4 class="text-sm sm:text-base font-black flex items-center gap-2 flex-wrap" style="color: #035751">
-                      <span>1K EMERALD PAWS: Pet Companion Registration</span>
-                      <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full text-white shadow-2xs"
-                        style="background: #02857D">
-                        Runner + Pet Duo
-                      </span>
-                    </h4>
-                    <p class="text-xs mt-0.5" :style="{ color: props.darkMode ? '#9ca3af' : '#4b5563' }">
-                      Please provide your pet companion's details, vaccination records, and signed liability consent.
-                    </p>
-                  </div>
-                </div>
-
-                <span class="text-xs font-bold px-3 py-1 rounded-full border shadow-2xs flex items-center gap-1"
-                  :style="{ background: props.darkMode ? '#1f2937' : 'rgba(255,255,255,0.9)', color: '#035751', borderColor: '#2D9F98' }">
-                  <i class="fas fa-check-circle" style="color: #02857D"></i> Standalone Race Category
-                </span>
-              </div>
-
-              <!-- Pet Basic Form Fields -->
-              <div :class="[
-                'grid gap-4 mb-4',
-                currentParticipant.pet_type === 'Other' ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
-              ]">
-                <div>
-                  <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Pet's Name <span class="text-rose-500">*</span>
-                  </label>
-                  <input
-                    v-model="currentParticipant.pet_name"
-                    placeholder="e.g. Milo / Barkley / Brownie"
-                    :class="[
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                      Pet's Name <span class="text-rose-500">*</span>
+                    </label>
+                    <input v-model="currentParticipant.pet_name" placeholder="e.g. Milo / Barkley / Brownie" :class="[
                       'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:outline-none pet-name-input',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
-                    ]"
-                  />
-                </div>
+                    ]" />
+                  </div>
 
-                <div>
-                  <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Pet Species / Type <span class="text-rose-500">*</span>
-                  </label>
-                  <select
-                    v-model="currentParticipant.pet_type"
-                    :class="[
+                  <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                      Pet Species / Type <span class="text-rose-500">*</span>
+                    </label>
+                    <select v-model="currentParticipant.pet_type" :class="[
                       'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:outline-none',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
                     ]">
-                    <option value="Dog">Dog</option>
-                    <option value="Cat">Cat</option>
-                    <option value="Other">Other Pet Companion (Specify)</option>
-                  </select>
-                </div>
-
-                <div v-if="currentParticipant.pet_type === 'Other'">
-                  <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Specify Pet Species / Type <span class="text-rose-500">*</span>
-                  </label>
-                  <input
-                    v-model="currentParticipant.pet_other_type"
-                    placeholder="e.g. Rabbit, Guinea Pig, Hamster"
-                    :class="[
-                      'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:outline-none pet-name-input',
-                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
-                    ]"
-                  />
-                </div>
-              </div>
-
-              <!-- Pet Document Uploads: Vaccine Record + Consent Documents -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t" style="border-color: rgba(147,202,197,0.4)">
-                
-                <!-- 1. Vaccine Record Upload -->
-                <div class="space-y-2">
-                  <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
-                      <i class="fas fa-syringe text-emerald-600"></i>
-                      <span>Vaccine Record / Anti-Rabies Card <span class="text-rose-500">*</span></span>
-                    </label>
-                    <span v-if="currentParticipant.pet_vaccine_record_preview" class="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                      <i class="fas fa-check-circle"></i> Uploaded
-                    </span>
+                      <option value="Dog">Dog</option>
+                      <option value="Cat">Cat</option>
+                      <option value="Other">Other Pet Companion (Specify)</option>
+                    </select>
                   </div>
-                  <p class="text-[11px] text-gray-500 dark:text-gray-400">
-                    Upload valid vaccination certificate or updated (within 6 months) anti-rabies record.
-                  </p>
 
-                  <label :for="'pet_vax_' + activeParticipantIndex" :class="[
-                    'relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
-                    currentParticipant.pet_vaccine_record_preview
-                      ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 h-36'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-24 py-2',
-                    props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
-                  ]">
-                    <input
-                      :id="'pet_vax_' + activeParticipantIndex"
-                      type="file"
-                      accept="image/*,.pdf"
-                      class="sr-only"
-                      @change="handlePetVaccineUpload($event, currentParticipant)"
-                    />
-                    <template v-if="currentParticipant.pet_vaccine_record_preview">
-                      <img
-                        :src="currentParticipant.pet_vaccine_record_preview"
-                        class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition"
-                        alt="Vaccine Record Preview"
-                      />
-                      <div class="absolute inset-0 flex flex-col items-center justify-end pb-2 bg-gradient-to-t from-black/60 to-transparent">
-                        <button
-                          type="button"
-                          @click.prevent="removePetVaccine(currentParticipant)"
-                          class="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10"
-                        >
-                          <i class="fas fa-trash-alt"></i> Remove Record
+                  <div v-if="currentParticipant.pet_type === 'Other'">
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                      Specify Pet Species / Type <span class="text-rose-500">*</span>
+                    </label>
+                    <input v-model="currentParticipant.pet_other_type" placeholder="e.g. Rabbit, Guinea Pig, Hamster"
+                      :class="[
+                        'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:outline-none pet-name-input',
+                        props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
+                      ]" />
+                  </div>
+                </div>
+
+                <!-- Pet Document Uploads: Vaccine Record + Consent Documents -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t"
+                  style="border-color: rgba(147,202,197,0.4)">
+
+                  <!-- 1. Vaccine Record Upload -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <label class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                        <i class="fas fa-syringe text-emerald-600"></i>
+                        <span>Vaccine Record / Anti-Rabies Card <span class="text-rose-500">*</span></span>
+                      </label>
+                      <span v-if="currentParticipant.pet_vaccine_record_preview"
+                        class="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                        <i class="fas fa-check-circle"></i> Uploaded
+                      </span>
+                    </div>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                      Upload valid vaccination certificate or updated (within 6 months) anti-rabies record.
+                    </p>
+
+                    <label :for="'pet_vax_' + activeParticipantIndex" :class="[
+                      'relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
+                      currentParticipant.pet_vaccine_record_preview
+                        ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 h-36'
+                        : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-24 py-2',
+                      props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
+                    ]">
+                      <input :id="'pet_vax_' + activeParticipantIndex" type="file" accept="image/*,.pdf" class="sr-only"
+                        @change="handlePetVaccineUpload($event, currentParticipant)" />
+                      <template v-if="currentParticipant.pet_vaccine_record_preview">
+                        <img :src="currentParticipant.pet_vaccine_record_preview"
+                          class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition"
+                          alt="Vaccine Record Preview" />
+                        <div
+                          class="absolute inset-0 flex flex-col items-center justify-end pb-2 bg-gradient-to-t from-black/60 to-transparent">
+                          <button type="button" @click.prevent="removePetVaccine(currentParticipant)"
+                            class="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
+                            <i class="fas fa-trash-alt"></i> Remove Record
+                          </button>
+                        </div>
+                      </template>
+                      <template v-else>
+                        <div class="flex flex-col items-center gap-1 py-3 px-2 text-center pointer-events-none">
+                          <i class="fas fa-file-medical text-2xl text-emerald-500 group-hover:scale-110 transition"></i>
+                          <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Upload Vaccine Record</span>
+                          <span class="text-[10px] text-gray-400">JPG, PNG, or PDF up to 5MB</span>
+                        </div>
+                      </template>
+                    </label>
+                  </div>
+
+                  <!-- 2. Non-Liability Clause & Consent Multi-Document Upload -->
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                      <label class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                        <i class="fas fa-file-signature text-emerald-600"></i>
+                        <span>Consent Form / Waiver Documents</span>
+                      </label>
+                      <span v-if="currentParticipant.pet_consent_files && currentParticipant.pet_consent_files.length"
+                        class="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                        <i class="fas fa-check-circle"></i> {{ currentParticipant.pet_consent_files.length }} file(s)
+                      </span>
+                    </div>
+                    <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                      Upload signed consent form, waiver, or veterinary clearance (multi-upload supported).
+                    </p>
+
+                    <label :for="'pet_consent_' + activeParticipantIndex" :class="[
+                      'flex flex-col items-center justify-center rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 p-3.5 text-center group',
+                      'border-gray-300 dark:border-gray-600 hover:border-emerald-500',
+                      props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
+                    ]">
+                      <input :id="'pet_consent_' + activeParticipantIndex" type="file" accept="image/*,.pdf" multiple
+                        class="sr-only" @change="handlePetConsentUpload($event, currentParticipant)" />
+                      <i class="fas fa-cloud-arrow-up text-2xl text-teal-600 group-hover:scale-110 transition mb-1"></i>
+                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Add Consent / Waiver
+                        Document(s)</span>
+                      <span class="text-[10px] text-gray-400">Select multiple JPG, PNG, or PDF files</span>
+                    </label>
+
+                    <!-- Uploaded Files List -->
+                    <div v-if="currentParticipant.pet_consent_files && currentParticipant.pet_consent_files.length"
+                      class="space-y-1.5 max-h-28 overflow-y-auto">
+                      <div v-for="(doc, dIdx) in currentParticipant.pet_consent_files" :key="'consent-doc-' + dIdx"
+                        class="flex items-center justify-between p-2 rounded-xl border bg-white/80 dark:bg-gray-800/80 border-emerald-200 dark:border-gray-700 text-xs shadow-2xs">
+                        <div class="flex items-center gap-2 min-w-0">
+                          <i
+                            :class="doc.isPdf ? 'fas fa-file-pdf text-rose-500' : 'fas fa-file-image text-emerald-500'"></i>
+                          <span
+                            class="truncate max-w-[180px] font-semibold text-[11px] text-gray-700 dark:text-gray-300">{{
+                            doc.name
+                            }}</span>
+                        </div>
+                        <button type="button" @click="removePetConsentDoc(currentParticipant, dIdx)"
+                          class="text-rose-500 hover:text-rose-700 text-xs px-1.5 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                          title="Remove file">
+                          <i class="fas fa-times"></i>
                         </button>
                       </div>
-                    </template>
-                    <template v-else>
-                      <div class="flex flex-col items-center gap-1 py-3 px-2 text-center pointer-events-none">
-                        <i class="fas fa-file-medical text-2xl text-emerald-500 group-hover:scale-110 transition"></i>
-                        <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Upload Vaccine Record</span>
-                        <span class="text-[10px] text-gray-400">JPG, PNG, or PDF up to 5MB</span>
-                      </div>
-                    </template>
-                  </label>
+                    </div>
+                  </div>
+
                 </div>
 
-                <!-- 2. Non-Liability Clause & Consent Multi-Document Upload -->
-                <div class="space-y-2">
-                  <div class="flex items-center justify-between">
-                    <label class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
-                      <i class="fas fa-file-signature text-emerald-600"></i>
-                      <span>Consent Form / Waiver Documents</span>
+                <!-- Pet Safety & Non-Liability Clause Assurance Checkbox -->
+                <div class="mt-4 p-4 rounded-2xl border space-y-3 text-xs text-gray-700 dark:text-gray-300 shadow-2xs"
+                  :style="{ background: props.darkMode ? 'rgba(31,41,55,0.9)' : 'rgba(255,255,255,0.9)', borderColor: 'rgba(147,202,197,0.7)' }">
+
+                  <div class="flex items-start gap-3">
+                    <input type="checkbox" v-model="currentParticipant.pet_vaccinated"
+                      class="mt-1 w-4 h-4 rounded cursor-pointer shrink-0" style="accent-color: #02857D"
+                      :id="'pet_vac_' + activeParticipantIndex" />
+                    <label :for="'pet_vac_' + activeParticipantIndex"
+                      class="cursor-pointer select-none leading-relaxed">
+                      <strong style="color: #035751">Pet Safety &amp; Anti-Rabies Vaccination Assurance:</strong> I
+                      confirm my pet has
+                      updated anti-rabies vaccination (within the last 6 months), is friendly and non-aggressive with
+                      other runners and
+                      pets, and will remain on a secure leash at all times throughout the 1K run route.
                     </label>
-                    <span v-if="currentParticipant.pet_consent_files && currentParticipant.pet_consent_files.length" class="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                      <i class="fas fa-check-circle"></i> {{ currentParticipant.pet_consent_files.length }} file(s)
-                    </span>
                   </div>
-                  <p class="text-[11px] text-gray-500 dark:text-gray-400">
-                    Upload signed consent form, waiver, or veterinary clearance (multi-upload supported).
-                  </p>
 
-                  <label :for="'pet_consent_' + activeParticipantIndex" :class="[
-                    'flex flex-col items-center justify-center rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 p-3.5 text-center group',
-                    'border-gray-300 dark:border-gray-600 hover:border-emerald-500',
-                    props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
-                  ]">
-                    <input
-                      :id="'pet_consent_' + activeParticipantIndex"
-                      type="file"
-                      accept="image/*,.pdf"
-                      multiple
-                      class="sr-only"
-                      @change="handlePetConsentUpload($event, currentParticipant)"
-                    />
-                    <i class="fas fa-cloud-arrow-up text-2xl text-teal-600 group-hover:scale-110 transition mb-1"></i>
-                    <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Add Consent / Waiver Document(s)</span>
-                    <span class="text-[10px] text-gray-400">Select multiple JPG, PNG, or PDF files</span>
-                  </label>
-
-                  <!-- Uploaded Files List -->
-                  <div v-if="currentParticipant.pet_consent_files && currentParticipant.pet_consent_files.length" class="space-y-1.5 max-h-28 overflow-y-auto">
-                    <div
-                      v-for="(doc, dIdx) in currentParticipant.pet_consent_files"
-                      :key="'consent-doc-' + dIdx"
-                      class="flex items-center justify-between p-2 rounded-xl border bg-white/80 dark:bg-gray-800/80 border-emerald-200 dark:border-gray-700 text-xs shadow-2xs"
-                    >
-                      <div class="flex items-center gap-2 min-w-0">
-                        <i :class="doc.isPdf ? 'fas fa-file-pdf text-rose-500' : 'fas fa-file-image text-emerald-500'"></i>
-                        <span class="truncate max-w-[180px] font-semibold text-[11px] text-gray-700 dark:text-gray-300">{{ doc.name }}</span>
-                      </div>
-                      <button
-                        type="button"
-                        @click="removePetConsentDoc(currentParticipant, dIdx)"
-                        class="text-rose-500 hover:text-rose-700 text-xs px-1.5 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                        title="Remove file"
-                      >
-                        <i class="fas fa-times"></i>
-                      </button>
-                    </div>
+                  <div class="flex items-start gap-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <input type="checkbox" v-model="currentParticipant.pet_consent_agreed"
+                      class="mt-1 w-4 h-4 rounded cursor-pointer shrink-0" style="accent-color: #02857D"
+                      :id="'pet_consent_agree_' + activeParticipantIndex" />
+                    <label :for="'pet_consent_agree_' + activeParticipantIndex"
+                      class="cursor-pointer select-none leading-relaxed">
+                      <strong style="color: #035751">Non-Liability Clause &amp; Owner Consent:</strong> I voluntarily
+                      assume all risks
+                      and full responsibility for my pet's actions, safety, and health during the event. I hereby
+                      release and hold
+                      harmless La Salle University, event organizers, and volunteers from any liabilities, damages, or
+                      claims arising
+                      from my pet's participation.
+                    </label>
                   </div>
                 </div>
-
               </div>
+            </section>
 
-              <!-- Pet Safety & Non-Liability Clause Assurance Checkbox -->
+            <!-- UNLOCK HINT: shown when no run category is selected yet -->
+            <div v-if="!currentParticipant.run_category"
+              class="flex flex-col items-center justify-center gap-3 py-10 text-center">
               <div
-                class="mt-4 p-4 rounded-2xl border space-y-3 text-xs text-gray-700 dark:text-gray-300 shadow-2xs"
-                :style="{ background: props.darkMode ? 'rgba(31,41,55,0.9)' : 'rgba(255,255,255,0.9)', borderColor: 'rgba(147,202,197,0.7)' }">
-                
-                <div class="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    v-model="currentParticipant.pet_vaccinated"
-                    class="mt-1 w-4 h-4 rounded cursor-pointer shrink-0"
-                    style="accent-color: #02857D"
-                    :id="'pet_vac_' + activeParticipantIndex" />
-                  <label :for="'pet_vac_' + activeParticipantIndex" class="cursor-pointer select-none leading-relaxed">
-                    <strong style="color: #035751">Pet Safety &amp; Anti-Rabies Vaccination Assurance:</strong> I confirm my pet has updated anti-rabies vaccination (within the last 6 months), is friendly and non-aggressive with other runners and pets, and will remain on a secure leash at all times throughout the 1K run route.
-                  </label>
-                </div>
-
-                <div class="flex items-start gap-3 pt-2 border-t border-gray-200 dark:border-gray-700">
-                  <input
-                    type="checkbox"
-                    v-model="currentParticipant.pet_consent_agreed"
-                    class="mt-1 w-4 h-4 rounded cursor-pointer shrink-0"
-                    style="accent-color: #02857D"
-                    :id="'pet_consent_agree_' + activeParticipantIndex" />
-                  <label :for="'pet_consent_agree_' + activeParticipantIndex" class="cursor-pointer select-none leading-relaxed">
-                    <strong style="color: #035751">Non-Liability Clause &amp; Owner Consent:</strong> I voluntarily assume all risks and full responsibility for my pet's actions, safety, and health during the event. I hereby release and hold harmless La Salle University, event organizers, and volunteers from any liabilities, damages, or claims arising from my pet's participation.
-                  </label>
-                </div>
+                class="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-2xl">
+                <i class="fas fa-running"></i>
+              </div>
+              <div>
+                <p class="font-black text-base text-gray-800 dark:text-gray-200">Select a Race Category above</p>
+                <p class="text-xs text-gray-500 mt-1">Your registration form will appear once you pick a category.</p>
+              </div>
+              <div
+                class="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold animate-bounce mt-1">
+                <i class="fas fa-chevron-up text-[10px]"></i> Choose Category
               </div>
             </div>
-          </section>
-
-          <!-- UNLOCK HINT: shown when no run category is selected yet -->
-          <div v-if="!currentParticipant.run_category"
-            class="flex flex-col items-center justify-center gap-3 py-10 text-center">
-            <div class="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-2xl">
-              <i class="fas fa-running"></i>
-            </div>
-            <div>
-              <p class="font-black text-base text-gray-800 dark:text-gray-200">Select a Race Category above</p>
-              <p class="text-xs text-gray-500 mt-1">Your registration form will appear once you pick a category.</p>
-            </div>
-            <div class="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold animate-bounce mt-1">
-              <i class="fas fa-chevron-up text-[10px]"></i> Choose Category
-            </div>
-          </div>
 
 
 
-          <!-- SECTION 2: PERSONAL INFORMATION -->
-          <section v-if="currentParticipant.run_category">
-            <div class="mb-4">
-              <h3 class="text-lg font-bold flex items-center gap-2">
-                <span
-                  class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">2</span>
-                <span>{{ currentParticipant.run_category === '1K' ? 'Pet Owner / Runner Personal Information' : 'Personal Information' }}</span>
-              </h3>
-              <p class="text-xs text-gray-500 ml-9">
-                {{ currentParticipant.run_category === '1K' ? 'Personal details of the pet owner / runner' : `Personal details for Runner #${activeParticipantIndex + 1}` }}
-              </p>
-            </div>
-
-            <div class="">
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">First Name *</label>
-                  <input v-model="currentParticipant.firstname" placeholder="Juan" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]" />
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Middle Name</label>
-                  <input v-model="currentParticipant.middlename" placeholder="Santos" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]" />
-                </div>
-
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Last Name *</label>
-                  <input v-model="currentParticipant.lastname" placeholder="Dela Cruz" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]" />
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Suffix</label>
-                  <select v-model="currentParticipant.suffix" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]">
-                    <option value="">None</option>
-                    <option value="Jr.">Jr.</option>
-                    <option value="Sr.">Sr.</option>
-                    <option value="II">II</option>
-                    <option value="III">III</option>
-                    <option value="IV">IV</option>
-                  </select>
-                </div>
-
-                <!-- Date of Birth (1/4 column) -->
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Date of Birth
-                    *</label>
-                  <input type="date" v-model="currentParticipant.birthdate" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]" />
-                </div>
-
-                <!-- Gender (1/4 column) -->
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Gender *</label>
-                  <div class="grid grid-cols-2 gap-2">
-                    <div @click="currentParticipant.gender = 'Male'" :class="[
-                      'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
-                      currentParticipant.gender === 'Male'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : props.darkMode
-                          ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-slate-50',
-                    ]">
-                      <input type="radio" value="Male" v-model="currentParticipant.gender" class="sr-only" />
-                      <i class="fas fa-mars"></i> Male
-                    </div>
-
-                    <div @click="currentParticipant.gender = 'Female'" :class="[
-                      'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
-                      currentParticipant.gender === 'Female'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : props.darkMode
-                          ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:bg-slate-50',
-                    ]">
-                      <input type="radio" value="Female" v-model="currentParticipant.gender" class="sr-only" />
-                      <i class="fas fa-venus"></i> Female
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- SECTION 3: CONTACT DETAILS -->
-          <section v-if="currentParticipant.run_category">
-            <div class="mb-4">
-              <h3 class="text-lg font-bold flex items-center gap-2">
-                <span
-                  class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">3</span>
-                Contact Details
-              </h3>
-              <p class="text-xs text-gray-500 ml-9">
-                Used for registration confirmation and race notifications
-              </p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div class="w-full">
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Email Address *</label>
-                <div class="relative">
-                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
-                    <i class="fas fa-envelope"></i>
-                  </span>
-                  <input v-model="currentParticipant.contact_email" placeholder="runner@lsu.edu.ph" :class="[
-                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
-                  ]" />
-                </div>
-              </div>
-
-              <!-- Locked +63 Contact Phone Number -->
-              <div class="w-full">
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                  Contact Phone Number *
-                </label>
-                <div :class="[
-                  'flex items-center rounded-xl border transition overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500',
-                  props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
-                ]">
-                  <span :class="[
-                    'flex items-center gap-1 px-3 py-2.5 text-xs font-bold border-r select-none shrink-0',
-                    props.darkMode ? 'bg-gray-700/80 text-emerald-400 border-gray-600' : 'bg-slate-100 text-emerald-700 border-gray-300'
-                  ]">
-                    <span>🇵🇭 +63</span>
-                  </span>
-                  <input
-                    type="tel"
-                    :value="currentParticipant.contact_number"
-                    @input="formatPhoneNumberInput($event, currentParticipant)"
-                    placeholder="917-123-4567"
-                    maxlength="12"
-                    :class="[
-                      'w-full px-3.5 py-2.5 text-sm font-semibold tracking-wide bg-transparent focus:outline-none',
-                      props.darkMode ? 'text-gray-100 placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'
-                    ]"
-                  />
-                </div>
-                <p class="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
-                  <i class="fas fa-lock text-[9px] text-emerald-600"></i>
-                  <span>Format: 9XX-XXX-XXXX (10 digits starting with 9)</span>
+            <!-- SECTION 2: PERSONAL INFORMATION -->
+            <section v-if="currentParticipant.run_category">
+              <div class="mb-4">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                  <span
+                    class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">2</span>
+                  <span>{{ currentParticipant.run_category === '1K' ? 'Pet Owner / Runner Personal Information' :'Personal Information' }}</span>
+                </h3>
+                <p class="text-xs text-gray-500 ml-9">
+                  {{ currentParticipant.run_category === '1K' ? 'Personal details of the pet owner / runner' : `Personal
+                  details for
+                  Runner #${activeParticipantIndex + 1}` }}
                 </p>
               </div>
 
-              <div class="w-full">
-                <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Complete Address</label>
-                <div class="relative">
-                  <span class="absolute left-3.5 top-3 text-xs text-gray-400">
-                    <i class="fas fa-map-marker-alt"></i>
-                  </span>
-                  <input v-model="currentParticipant.contact_address" placeholder="Barangay, City, Province" :class="[
-                    'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
-                  ]" />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- SECTION 4: SHIRT TYPE & SIZE -->
-          <section v-if="currentParticipant.run_category && !isPetCategory(currentParticipant.run_category)">
-            <div class="mb-4">
-              <div class="flex items-center justify-between">
-                <h3 class="text-lg font-bold flex items-center gap-2">
-                  <span
-                    class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">4</span>
-                  Shirt Size Selection
-                </h3>
-                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                  <span v-if="currentParticipant.run_category === '20KM'" class="font-black">3 Shirts</span>
-                  <span v-else-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'" class="font-black">2 Shirts</span>
-                  <span v-else class="font-black">1 Shirt</span>
-                </span>
-              </div>
-              <p class="text-xs text-gray-500 ml-9">
-                <span v-if="currentParticipant.run_category === '20KM'">Choose sizes for your 3 included shirts</span>
-                <span v-else>Choose your shirt type and size</span>
-              </p>
-            </div>
-
-            <!-- ── 3KM / 10KM: 1 shirt — choose type + size dropdown ── -->
-            <div v-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'">
-              <div :class="[
-                'flex flex-wrap items-center gap-3 p-3 rounded-2xl border',
-                props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
-              ]">
-                <!-- Shirt type toggle -->
-                <div class="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    @click="currentParticipant.shirt_type = 'singlet'; currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
-                    :class="[
-                      'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
-                      currentParticipant.shirt_type === 'singlet'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : props.darkMode
-                          ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
-                          : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
-                    ]"
-                  >
-                    <i class="fas fa-tshirt text-[11px]"></i> Singlet
-                  </button>
-                  <button
-                    type="button"
-                    @click="currentParticipant.shirt_type = 'event_shirt'; currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
-                    :class="[
-                      'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
-                      currentParticipant.shirt_type === 'event_shirt'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : props.darkMode
-                          ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
-                          : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
-                    ]"
-                  >
-                    <i class="fas fa-shirt text-[11px]"></i> Event Shirt
-                  </button>
-                </div>
-
-                <!-- Divider -->
-                <div :class="['w-px h-6 shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
-
-                <!-- Size dropdown -->
-                <div class="flex items-center gap-2 min-w-0">
-                  <label class="text-xs font-semibold shrink-0" :class="props.darkMode ? 'text-gray-400' : 'text-gray-500'">Size</label>
-                  <select
-                    :value="currentParticipant.shirt_type === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M')"
-                    @change="(e) => {
-                      if (currentParticipant.shirt_type === 'singlet') {
-                        currentParticipant.singlet_size = e.target.value;
-                      } else {
-                        currentParticipant.event_shirt_size = e.target.value;
-                      }
-                      currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant);
-                    }"
-                    :class="[
-                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
-                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
-                    ]"
-                  >
-                    <option v-for="size in tshirtSizes" :key="size" :value="size">{{ size }}</option>
-                  </select>
-                </div>
-
-                <!-- Summary badge -->
-                <span class="ml-auto text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0">
-                  {{ currentParticipant.shirt_type === 'singlet' ? 'Singlet' : 'Event Shirt' }} · {{ currentParticipant.shirt_type === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M') }}
-                </span>
-              </div>
-            </div>
-
-            <!-- ── 20KM: 3 dropdown pickers in one row ── -->
-            <div v-else-if="currentParticipant.run_category === '20KM'">
-              <div :class="[
-                'flex flex-wrap gap-3 p-3 rounded-2xl border',
-                props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
-              ]">
-                <!-- Event Shirt -->
-                <div class="flex items-center gap-2">
-                  <i class="fas fa-shirt text-emerald-600 text-xs shrink-0"></i>
-                  <label class="text-xs font-semibold shrink-0" :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Event Shirt</label>
-                  <select
-                    v-model="currentParticipant.event_shirt_size"
-                    @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
-                    :class="[
-                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
-                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
-                    ]"
-                  >
-                    <option v-for="size in tshirtSizes" :key="'ev-' + size" :value="size">{{ size }}</option>
-                  </select>
-                </div>
-
-                <div :class="['w-px h-6 self-center shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
-
-                <!-- Singlet -->
-                <div class="flex items-center gap-2">
-                  <i class="fas fa-tshirt text-teal-500 text-xs shrink-0"></i>
-                  <label class="text-xs font-semibold shrink-0" :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Singlet</label>
-                  <select
-                    v-model="currentParticipant.singlet_size"
-                    @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
-                    :class="[
-                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer',
-                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
-                    ]"
-                  >
-                    <option v-for="size in tshirtSizes" :key="'sg-' + size" :value="size">{{ size }}</option>
-                  </select>
-                </div>
-
-                <div :class="['w-px h-6 self-center shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
-
-                <!-- Finisher Shirt -->
-                <div class="flex items-center gap-2">
-                  <i class="fas fa-medal text-amber-500 text-xs shrink-0"></i>
-                  <label class="text-xs font-semibold shrink-0" :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Finisher Shirt</label>
-                  <select
-                    v-model="currentParticipant.finisher_shirt_size"
-                    @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
-                    :class="[
-                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
-                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
-                    ]"
-                  >
-                    <option v-for="size in tshirtSizes" :key="'fn-' + size" :value="size">{{ size }}</option>
-                  </select>
-                </div>
-
-                <!-- Summary badge -->
-                <span class="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0 self-center">
-                  {{ currentParticipant.event_shirt_size || 'M' }} · {{ currentParticipant.singlet_size || 'M' }} · {{ currentParticipant.finisher_shirt_size || 'M' }}
-                </span>
-              </div>
-            </div>
-          </section>
-
-          <!-- SECTION 5: PARTICIPANT CLASSIFICATION & PAYMENT SUMMARY -->
-          <section v-if="currentParticipant.run_category && !isPetCategory(currentParticipant.run_category)" class="space-y-4">
-            <div class="mb-1">
-              <div class="flex items-center justify-between gap-3 flex-wrap">
-                <h3 class="text-base font-bold flex items-center gap-2">
-                  <span
-                    class="w-6 h-6 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">5</span>
-                  Classification & Payment Summary
-                </h3>
-                <span class="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                  {{ currentParticipant.participantGroup === 'LSU' ? (currentParticipant.participant_type || 'LSU Exclusive') : 'Open Category' }} • {{ paymentMethodLabel }}
-                </span>
-              </div>
-            </div>
-
-            <div class="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20 p-3.5 flex items-center justify-between gap-3 text-xs text-emerald-800 dark:text-emerald-300">
-              <div>
-                <div class="font-bold text-[10px] uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">Summary</div>
-                <div class="font-semibold mt-1">
-                  {{ currentParticipant.participantGroup === 'LSU' ? (currentParticipant.participant_type || 'LSU Exclusive') : 'Open Category' }} • {{ paymentMethodLabel }}
-                </div>
-              </div>
-              <div class="text-right">
-                <div class="text-[10px] uppercase tracking-[0.16em] text-emerald-600 dark:text-emerald-400">Total</div>
-                <div class="font-black text-base text-emerald-700 dark:text-emerald-300">PHP {{ grandTotal.toLocaleString() }}</div>
-              </div>
-            </div>
-
-            <!-- PRIMARY 2 COMPACT CARDS -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-              
-              <!-- OPTION 1: LSU EXCLUSIVE -->
-              <div
-                @click="selectParticipantGroup(currentParticipant, 'LSU')"
-                :class="[
-                  'rounded-2xl border-2 p-3 sm:p-3.5 cursor-pointer transition-all duration-200 text-left relative flex items-center justify-between gap-3',
-                  currentParticipant.participantGroup === 'LSU'
-                    ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 ring-2 ring-emerald-500/30 shadow-xs'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800'
-                      : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
-                ]"
-              >
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-bold shrink-0">
-                    <i class="fas fa-university"></i>
-                  </div>
-                  <div class="min-w-0">
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                      <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
-                        LSU Exclusive
-                      </h4>
-                      <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">
-                        Students · Staff · Alumni
-                      </span>
-                    </div>
-                    <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                      Enrolled students, university employees, and alumni
-                    </p>
-                  </div>
-                </div>
-                <div :class="[
-                  'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                  currentParticipant.participantGroup === 'LSU'
-                    ? 'border-emerald-600 bg-emerald-600'
-                    : 'border-gray-300 dark:border-gray-600'
-                ]">
-                  <div v-if="currentParticipant.participantGroup === 'LSU'" class="w-2 h-2 rounded-full bg-white"></div>
-                </div>
-              </div>
-
-              <!-- OPTION 2: OPEN CATEGORY -->
-              <div
-                @click="selectParticipantGroup(currentParticipant, 'Open')"
-                :class="[
-                  'rounded-2xl border-2 p-3 sm:p-3.5 cursor-pointer transition-all duration-200 text-left relative flex items-center justify-between gap-3',
-                  currentParticipant.participantGroup === 'Open'
-                    ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 ring-2 ring-emerald-500/30 shadow-xs'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800'
-                      : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
-                ]"
-              >
-                <div class="flex items-center gap-2.5 min-w-0">
-                  <div class="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center text-base font-bold shrink-0">
-                    <i class="fas fa-globe-asia"></i>
-                  </div>
-                  <div class="min-w-0">
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                      <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
-                        Open Category
-                      </h4>
-                      <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                        General Public
-                      </span>
-                    </div>
-                    <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
-                      Public runners, running clubs, and visiting enthusiasts
-                    </p>
-                  </div>
-                </div>
-                <div :class="[
-                  'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                  currentParticipant.participantGroup === 'Open'
-                    ? 'border-emerald-600 bg-emerald-600'
-                    : 'border-gray-300 dark:border-gray-600'
-                ]">
-                  <div v-if="currentParticipant.participantGroup === 'Open'" class="w-2 h-2 rounded-full bg-white"></div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- COMPRESSED LSU EXCLUSIVE AFFILIATION DETAILS -->
-            <div
-              v-if="currentParticipant.participantGroup === 'LSU'"
-              class="p-3.5 sm:p-4 rounded-2xl border bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-900/60 space-y-3 transition-all duration-300"
-            >
-              <!-- 3-Button Segmented Affiliation Selector -->
-              <div>
-                <div class="flex items-center justify-between mb-2">
-                  <label class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <i class="fas fa-list-check"></i>
-                    <span>Select Your LSU Affiliation:</span>
-                  </label>
-                  <span class="text-[11px] text-gray-500 dark:text-gray-400">Choose one</span>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <!-- 1. Students Button -->
-                  <button
-                    type="button"
-                    @click="currentParticipant.participant_type = 'Currently Enrolled Students'"
-                    :class="[
-                      'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
-                      currentParticipant.participant_type === 'Currently Enrolled Students'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
-                        : props.darkMode
-                          ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
-                          : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
-                    ]"
-                  >
-                    <i class="fas fa-user-graduate text-sm"></i>
-                    <span>Enrolled Students</span>
-                  </button>
-
-                  <!-- 2. Employees Button -->
-                  <button
-                    type="button"
-                    @click="currentParticipant.participant_type = 'Employees'"
-                    :class="[
-                      'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
-                      currentParticipant.participant_type === 'Employees'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
-                        : props.darkMode
-                          ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
-                          : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
-                    ]"
-                  >
-                    <i class="fas fa-briefcase text-sm"></i>
-                    <span>Employees / Faculty</span>
-                  </button>
-
-                  <!-- 3. Alumni Button -->
-                  <button
-                    type="button"
-                    @click="currentParticipant.participant_type = 'Alumni'"
-                    :class="[
-                      'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
-                      currentParticipant.participant_type === 'Alumni'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
-                        : props.darkMode
-                          ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
-                          : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
-                    ]"
-                  >
-                    <i class="fas fa-graduation-cap text-sm"></i>
-                    <span>LSU / ICC Alumni</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- 1. Enrolled Students Form -->
-              <div v-if="currentParticipant.participant_type === 'Currently Enrolled Students'"
-                class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Course / Program *</label>
-                  <select v-model="currentParticipant.college_course" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]">
-                    <option value="">Select Course / Level</option>
-                    <option value="BSIT">BS Information Technology (BSIT)</option>
-                    <option value="BSCS">BS Computer Science (BSCS)</option>
-                    <option value="BSEd">BS Secondary Education (BSEd)</option>
-                    <option value="BSN">BS Nursing (BSN)</option>
-                    <option value="BSBA">BS Business Administration (BSBA)</option>
-                    <option value="BSA">BS Accountancy (BSA)</option>
-                    <option value="BSCrim">BS Criminology (BSCrim)</option>
-                    <option value="BSTM">BS Tourism Management (BSTM)</option>
-                    <option value="BSHM">BS Hospitality Management (BSHM)</option>
-                    <option value="Grade School">Grade School</option>
-                    <option value="JHS">Junior High School (JHS)</option>
-                    <option value="SHS">Senior High School (SHS)</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Year / Grade Level *</label>
-                  <select v-model="currentParticipant.college_year" :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]">
-                    <option value="">Select Level</option>
-                    <option value="1st Year">1st Year</option>
-                    <option value="2nd Year">2nd Year</option>
-                    <option value="3rd Year">3rd Year</option>
-                    <option value="4th Year">4th Year</option>
-                    <option value="5th Year">5th Year</option>
-                    <option value="Grade 1">Grade 1</option>
-                    <option value="Grade 2">Grade 2</option>
-                    <option value="Grade 3">Grade 3</option>
-                    <option value="Grade 4">Grade 4</option>
-                    <option value="Grade 5">Grade 5</option>
-                    <option value="Grade 6">Grade 6</option>
-                    <option value="Grade 7">Grade 7</option>
-                    <option value="Grade 8">Grade 8</option>
-                    <option value="Grade 9">Grade 9</option>
-                    <option value="Grade 10">Grade 10</option>
-                    <option value="Grade 11">Grade 11</option>
-                    <option value="Grade 12">Grade 12</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- 2. Employees Form -->
-              <div v-if="currentParticipant.participant_type === 'Employees'"
-                class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 max-w-md">
-                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Office / Department *</label>
-                <select v-model="currentParticipant.partner_office" :class="[
-                  'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                  props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                ]">
-                  <option value="">Select Office / Department</option>
-                  <option value="Office of the Chancellor">Office of the Chancellor</option>
-                  <option value="College of Computer Studies">College of Computer Studies</option>
-                  <option value="College of Arts and Sciences">College of Arts and Sciences</option>
-                  <option value="College of Business and Accountancy">College of Business and Accountancy</option>
-                  <option value="College of Education">College of Education</option>
-                  <option value="College of Nursing">College of Nursing</option>
-                  <option value="College of Law">College of Law</option>
-                  <option value="General Services Office">General Services Office</option>
-                  <option value="University Registrar">University Registrar</option>
-                  <option value="Human Resource Center">Human Resource Center</option>
-                  <option value="Accounting Office">Accounting Office</option>
-                </select>
-              </div>
-
-              <!-- 3. Alumni Form -->
-              <div v-if="currentParticipant.participant_type === 'Alumni'"
-                class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
-                <div class="max-w-md">
-                  <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Batch / Graduation Year</label>
-                  <input type="text" v-model="currentParticipant.alumni_batch"
-                    placeholder="e.g. Batch 2024 / 2023" :class="[
+              <div class="">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">First Name
+                      *</label>
+                    <input v-model="currentParticipant.firstname" placeholder="Juan" :class="[
                       'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                     ]" />
-                </div>
-
-                <!-- Alumni ID Upload: Front & Back (Compact) -->
-                <div>
-                  <div class="flex items-center justify-between gap-1.5 mb-1.5">
-                    <label class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                      <i class="fas fa-id-card text-emerald-600"></i>
-                      <span>Alumni ID — Front &amp; Back <span class="text-rose-500">*</span></span>
-                    </label>
-                    <span class="text-[10px] text-gray-500 dark:text-gray-400">Within 1 year of issue or fresh grad</span>
                   </div>
 
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <!-- FRONT -->
-                    <div>
-                      <p class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
-                        <span><i class="fas fa-arrow-up text-[9px] text-emerald-600 mr-0.5"></i> Front Side</span>
-                        <span v-if="currentParticipant.alumni_id_front_preview" class="text-emerald-600 dark:text-emerald-400 font-semibold">
-                          <i class="fas fa-check-circle text-[9px]"></i> Uploaded
-                        </span>
-                      </p>
-                      <label :for="'alumni_front_' + activeParticipantIndex" :class="[
-                        'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
-                        currentParticipant.alumni_id_front_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-28' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-20',
-                        props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
-                      ]">
-                        <input :id="'alumni_front_' + activeParticipantIndex" type="file" accept="image/*,.pdf"
-                          class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'front')" />
-                        <template v-if="currentParticipant.alumni_id_front_preview">
-                          <img :src="currentParticipant.alumni_id_front_preview"
-                            class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Front" />
-                          <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
-                            <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'front')"
-                              class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
-                              <i class="fas fa-trash-alt"></i> Remove
-                            </button>
-                          </div>
-                        </template>
-                        <template v-else>
-                          <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
-                            <i class="fas fa-cloud-upload-alt text-lg text-gray-400 group-hover:text-emerald-500 transition"></i>
-                            <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300">Upload Front</span>
-                            <span class="text-[8px] text-gray-400">JPG, PNG or PDF</span>
-                          </div>
-                        </template>
-                      </label>
-                    </div>
-
-                    <!-- BACK -->
-                    <div>
-                      <p class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
-                        <span><i class="fas fa-arrow-down text-[9px] text-emerald-600 mr-0.5"></i> Back Side</span>
-                        <span v-if="currentParticipant.alumni_id_back_preview" class="text-emerald-600 dark:text-emerald-400 font-semibold">
-                          <i class="fas fa-check-circle text-[9px]"></i> Uploaded
-                        </span>
-                      </p>
-                      <label :for="'alumni_back_' + activeParticipantIndex" :class="[
-                        'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
-                        currentParticipant.alumni_id_back_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-28' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-20',
-                        props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
-                      ]">
-                        <input :id="'alumni_back_' + activeParticipantIndex" type="file" accept="image/*,.pdf"
-                          class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'back')" />
-                        <template v-if="currentParticipant.alumni_id_back_preview">
-                          <img :src="currentParticipant.alumni_id_back_preview"
-                            class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Back" />
-                          <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
-                            <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'back')"
-                              class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
-                              <i class="fas fa-trash-alt"></i> Remove
-                            </button>
-                          </div>
-                        </template>
-                        <template v-else>
-                          <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
-                            <i class="fas fa-cloud-upload-alt text-lg text-gray-400 group-hover:text-emerald-500 transition"></i>
-                            <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300">Upload Back</span>
-                            <span class="text-[8px] text-gray-400">JPG, PNG or PDF</span>
-                          </div>
-                        </template>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- COMPRESSED OPEN CATEGORY DETAILS -->
-            <div
-              v-if="currentParticipant.participantGroup === 'Open'"
-              class="p-3.5 sm:p-4 rounded-2xl border bg-slate-50 dark:bg-gray-800/60 border-slate-200 dark:border-gray-700 space-y-3 transition-all duration-300"
-            >
-              <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-gray-700">
-                <span class="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
-                  <i class="fas fa-running text-teal-600"></i>
-                  <span>Open Category Details</span>
-                </span>
-                <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
-                  Physical ID upon kit claiming
-                </span>
-              </div>
-
-              <div class="max-w-md">
-                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                  Organization / Running Club / Company <span class="text-gray-400 font-normal">(Optional)</span>
-                </label>
-                <input
-                  type="text"
-                  v-model="currentParticipant.organization"
-                  placeholder="e.g. Ozamiz Lifestyle Runners Club"
-                  :class="[
-                    'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                    props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
-                  ]"
-                />
-              </div>
-
-              <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
-                <i class="fas fa-id-card text-amber-600 shrink-0"></i>
-                <span class="leading-tight text-[11px]">
-                  <strong>Physical Valid ID Verification:</strong> Please present a physical government or valid ID when claiming your race bib and event kit on race day.
-                </span>
-              </div>
-            </div>
-          </section>
-
-
-
-          <!-- SECTION 6: PAYMENT SUMMARY & OPTIONS -->
-          <section v-if="currentParticipant.run_category" :class="[
-            'rounded-2xl p-4 sm:p-6 border shadow-lg transition-all',
-            props.darkMode
-              ? 'bg-gray-900/90 border-gray-700'
-              : 'bg-gradient-to-br from-slate-50 to-emerald-50/40 border-emerald-200',
-          ]">
-            <h3 class="text-xl font-black mb-4 flex items-center gap-2 text-emerald-800 dark:text-emerald-300">
-              <i class="fas fa-receipt text-emerald-600"></i>
-              Payment & Checkout Summary
-            </h3>
-
-           
-
-            <!-- Total -->
-            <div class="flex items-center justify-between text-base sm:text-lg font-black mb-8">
-              <span class="text-gray-800 dark:text-gray-200">Grand Total Fee</span>
-              <span class="text-2xl font-black text-emerald-700 dark:text-emerald-400">
-                PHP {{ grandTotal.toLocaleString() }}
-              </span>
-            </div>
-
-            <!-- Payment Type Selection -->
-            <div class="space-y-4 mb-8 ">
-             <div>
-               <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 mb-4">
-                Select Payment Option
-              </label>
-
-              <!-- Dynamic payment option grid -->
-              <div>
-
-                <!-- 1. Employees - Salary Deduction -->
-                <div v-if="currentParticipant.participant_type === 'Employees'"
-                  @click="paymentType = 'salary_deduction'" :class="[
-                  'p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between text-left relative',
-                  paymentType === 'salary_deduction'
-                    ? 'border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/40 ring-2 ring-emerald-500/40 shadow-sm'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600'
-                      : 'border-slate-200 bg-white hover:bg-slate-50',
-                ]">
                   <div>
-                    <div class="flex items-center justify-between mb-2">
-                      <span
-                        class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                        Employees
-                      </span>
-                      <div :class="[
-                        'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                        paymentType === 'salary_deduction'
-                          ? 'border-emerald-600 bg-emerald-600'
-                          : 'border-gray-300 dark:border-gray-600',
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Middle Name</label>
+                    <input v-model="currentParticipant.middlename" placeholder="Santos" :class="[
+                      'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                    ]" />
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Last Name *</label>
+                    <input v-model="currentParticipant.lastname" placeholder="Dela Cruz" :class="[
+                      'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                    ]" />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Suffix</label>
+                    <select v-model="currentParticipant.suffix" :class="[
+                      'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                    ]">
+                      <option value="">None</option>
+                      <option value="Jr.">Jr.</option>
+                      <option value="Sr.">Sr.</option>
+                      <option value="II">II</option>
+                      <option value="III">III</option>
+                      <option value="IV">IV</option>
+                    </select>
+                  </div>
+
+                  <!-- Date of Birth (1/4 column) -->
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Date of Birth
+                      *</label>
+                    <input type="date" v-model="currentParticipant.birthdate" :class="[
+                      'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                      props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                    ]" />
+                  </div>
+
+                  <!-- Gender (1/4 column) -->
+                  <div>
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Gender *</label>
+                    <div class="grid grid-cols-2 gap-2">
+                      <div @click="currentParticipant.gender = 'Male'" :class="[
+                        'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
+                        currentParticipant.gender === 'Male'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : props.darkMode
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                            : 'bg-white border-gray-300 text-gray-700 hover:bg-slate-50',
                       ]">
-                        <div v-if="paymentType === 'salary_deduction'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                        <input type="radio" value="Male" v-model="currentParticipant.gender" class="sr-only" />
+                        <i class="fas fa-mars"></i> Male
                       </div>
-                      <input type="radio" name="paymentType" value="salary_deduction" v-model="paymentType"
-                        class="sr-only" />
-                    </div>
-                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
-                      Salary Deduction
-                    </span>
-                  </div>
-                </div>
 
-                <!-- 2. Currently Enrolled Students - Add to Tuition -->
-                <div v-if="currentParticipant.participant_type === 'Currently Enrolled Students'"
-                  @click="paymentType = 'add_to_tuition'" :class="[
-                  'p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between text-left relative',
-                  paymentType === 'add_to_tuition'
-                    ? 'border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/40 ring-2 ring-emerald-500/40 shadow-sm'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600'
-                      : 'border-slate-200 bg-white hover:bg-slate-50',
-                ]">
-                  <div>
-                    <div class="flex items-center justify-between mb-2">
-                      <span
-                        class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
-                        LSU Students
-                      </span>
-                      <div :class="[
-                        'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                        paymentType === 'add_to_tuition'
-                          ? 'border-emerald-600 bg-emerald-600'
-                          : 'border-gray-300 dark:border-gray-600',
+                      <div @click="currentParticipant.gender = 'Female'" :class="[
+                        'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
+                        currentParticipant.gender === 'Female'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : props.darkMode
+                            ? 'bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700'
+                            : 'bg-white border-gray-300 text-gray-700 hover:bg-slate-50',
                       ]">
-                        <div v-if="paymentType === 'add_to_tuition'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
+                        <input type="radio" value="Female" v-model="currentParticipant.gender" class="sr-only" />
+                        <i class="fas fa-venus"></i> Female
                       </div>
-                      <input type="radio" name="paymentType" value="add_to_tuition" v-model="paymentType"
-                        class="sr-only" />
                     </div>
-                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
-                      Add to Tuition
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- SECTION 3: CONTACT DETAILS -->
+            <section v-if="currentParticipant.run_category">
+              <div class="mb-4">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                  <span
+                    class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">3</span>
+                  Contact Details
+                </h3>
+                <p class="text-xs text-gray-500 ml-9">
+                  Used for registration confirmation and race notifications
+                </p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="w-full">
+                  <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Email Address
+                    *</label>
+                  <div class="relative">
+                    <span class="absolute left-3.5 top-3 text-xs text-gray-400">
+                      <i class="fas fa-envelope"></i>
                     </span>
-                  
+                    <input v-model="currentParticipant.contact_email" placeholder="runner@lsu.edu.ph" :class="[
+                      'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                      props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                    ]" />
                   </div>
                 </div>
 
-                <!-- 3. OTC / QR / Cash (for Open Category, Alumni, 1KM Pet Run, and any unclassified) -->
-                <div v-if="currentParticipant.participant_type === 'Open Category' || currentParticipant.participant_type === 'Alumni' || currentParticipant.run_category === '1KM' || !currentParticipant.participant_type"
-                  @click="paymentType = 'non_lsu_payment'" :class="[
-                  'p-4 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between text-left relative',
-                  paymentType === 'non_lsu_payment'
-                    ? 'border-emerald-600 bg-emerald-50/60 dark:bg-emerald-950/40 ring-2 ring-emerald-500/40 shadow-sm'
-                    : props.darkMode
-                      ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600'
-                      : 'border-slate-200 bg-white hover:bg-slate-50',
-                ]">
-                  <div>
-                    <div class="flex items-center justify-between mb-2">
-                      <span
-                        class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300">
-                        {{ currentParticipant.participant_type === 'Alumni' ? 'Alumni' : 'Open Category' }}
-                      </span>
-                      <div :class="[
-                        'w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
-                        paymentType === 'non_lsu_payment'
-                          ? 'border-emerald-600 bg-emerald-600'
-                          : 'border-gray-300 dark:border-gray-600',
-                      ]">
-                        <div v-if="paymentType === 'non_lsu_payment'" class="w-1.5 h-1.5 rounded-full bg-white"></div>
-                      </div>
-                      <input type="radio" name="paymentType" value="non_lsu_payment" v-model="paymentType"
-                        class="sr-only" />
-                    </div>
-                    <span class="font-bold text-sm text-gray-900 dark:text-gray-100 block">
-                      QR Payment, Accounting Over The Counter, or Cash at Ozamiz Lifestyle Runners.
-                    </span>
-                 
-                  </div>
-                </div>
-
-              </div>
-             </div>
-
-         
-
-              <!-- 1. LSU EMPLOYEE INSTITUTIONAL VERIFICATION (SALARY DEDUCTION) -->
-              <div v-if="paymentType === 'salary_deduction'"
-                class="mt-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-300 dark:border-emerald-800/60 space-y-4 shadow-sm">
-                <div class="flex items-center justify-between flex-wrap gap-2">
-                  <div class="flex items-center gap-2.5">
-                    <div
-                      class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm font-bold">
-                      <i class="fas fa-id-badge"></i>
-                    </div>
-                    <div>
-                      <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
-                        LSU Employee Institutional Verification
-                      </h4>
-                   
-                    </div>
-                  </div>
-
-                
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-700">
-                 
-
-                  <!-- LSU Employee ID Number -->
-                  <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      LSU Employee ID Number *
-                    </label>
-                    <div class="relative">
-                      <span class="absolute left-3.5 top-2.5 text-xs text-gray-400">
-                        <i class="fas fa-address-card"></i>
-                      </span>
-                      <input type="text" v-model="currentParticipant.lsu_id_number"
-                        placeholder="e.g. LSU210201" :class="[
-                          'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
-                        ]" />
-                    </div>
-                  
-                  </div>
-                </div>
-
-               
-              </div>
-
-              <!-- 2. LSU STUDENT INSTITUTIONAL VERIFICATION (ADD TO TUITION) -->
-              <div v-if="paymentType === 'add_to_tuition'"
-                class="mt-4 p-5 sm:p-6 rounded-2xl bg-white dark:bg-gray-800/90 border border-blue-300 dark:border-blue-800/60 space-y-4 shadow-sm">
-                <div class="flex items-center justify-between flex-wrap gap-2">
-                  <div class="flex items-center gap-2.5">
-                    <div
-                      class="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 flex items-center justify-center text-sm font-bold">
-                      <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <div>
-                      <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
-                        LSU Student Account Verification
-                      </h4>
-                     
-                    </div>
-                  </div>
-
-                
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-gray-100 dark:border-gray-700">
-                 
-
-                  <!-- LSU Student ID Number -->
-                  <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
-                      LSU Student ID Number *
-                    </label>
-                    <div class="relative">
-                      <span class="absolute left-3.5 top-2.5 text-xs text-gray-400">
-                        <i class="fas fa-id-card"></i>
-                      </span>
-                      <input type="text" v-model="currentParticipant.lsu_id_number" placeholder="e.g. 240945593"
-                        :class="[
-                          'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none',
-                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
-                        ]" />
-                    </div>
-                   
-                  </div>
-                </div>
-
-               
-              </div>
-
-              <!-- 3. NON-LSU / GENERAL PAYMENT SUB-OPTIONS & DETAILS WITH RECEIPT UPLOAD -->
-              <div v-if="paymentType === 'non_lsu_payment'"
-                class="mt-4 p-5 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-200 dark:border-gray-700 space-y-4">
-                <div class="font-bold text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                  Select Non-LSU Payment Method:
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-  <!-- QR Payment -->
-  <div
-    @click="nonLsuPaymentMethod = 'qr_payment'"
-    :class="[
-      'p-3.5 rounded-xl border cursor-pointer transition text-xs font-semibold',
-      nonLsuPaymentMethod === 'qr_payment'
-        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
-        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
-    ]"
-  >
-    <div class="flex items-center gap-2.5">
-      <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
-      <div>
-        <div class="font-bold">QR Payment</div>
-        <div class="text-[10px] font-normal text-gray-500">
-          GCash / Maya / Online Bank
-        </div>
-      </div>
-    </div>
-
-    <!-- Guidance -->
-    <div
-      v-if="nonLsuPaymentMethod === 'qr_payment'"
-      class="mt-3 pt-3 border-t border-emerald-200 dark:border-emerald-800"
-    >
-      <p class="font-bold text-gray-800 dark:text-gray-200 text-[11px]">
-        <i class="fas fa-mobile-alt text-emerald-600 mr-1"></i>
-        GCash / Maya / QR Payment
-      </p>
-      <p class="text-gray-500 dark:text-gray-400 text-[10px] font-normal leading-relaxed mt-1">
-        Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> to
-        <strong>The Emerald Run 2026</strong>. Take a screenshot &amp; upload
-        your receipt below.
-      </p>
-    </div>
-  </div>
-
-  <!-- Accounting Over The Counter -->
-  <div
-    @click="nonLsuPaymentMethod = 'accounting_otc'"
-    :class="[
-      'p-3.5 rounded-xl border cursor-pointer transition text-xs font-semibold',
-      nonLsuPaymentMethod === 'accounting_otc'
-        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
-        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
-    ]"
-  >
-    <div class="flex items-center gap-2.5">
-      <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
-      <div>
-        <div class="font-bold">Accounting Over The Counter</div>
-        <div class="text-[10px] font-normal text-gray-500">
-          LSU Accounting Window
-        </div>
-      </div>
-    </div>
-
-    <!-- Guidance -->
-    <div
-      v-if="nonLsuPaymentMethod === 'accounting_otc'"
-      class="mt-3 pt-3 border-t border-emerald-200 dark:border-emerald-800"
-    >
-      <p class="font-bold text-gray-800 dark:text-gray-200 text-[11px]">
-        <i class="fas fa-cash-register text-emerald-600 mr-1"></i>
-        LSU Accounting Office
-      </p>
-      <p class="text-gray-500 dark:text-gray-400 text-[10px] font-normal leading-relaxed mt-1">
-        Visit the LSU Accounting Office
-        <strong>Mon-Fri, 8:00 AM - 5:00 PM</strong>. State that the
-        payment is for <strong>The Emerald Run 2026</strong> and upload
-        the official receipt slip below.
-      </p>
-    </div>
-  </div>
-
-  <!-- Weekend Cash -->
-  <div
-    @click="nonLsuPaymentMethod = 'weekend_cash'"
-    :class="[
-      'p-3.5 rounded-xl border cursor-pointer transition text-xs font-semibold',
-      nonLsuPaymentMethod === 'weekend_cash'
-        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
-        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
-    ]"
-  >
-    <div class="flex items-center gap-2.5">
-      <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
-      <div>
-        <div class="font-bold">Weekend Cash</div>
-        <div class="text-[10px] font-normal text-gray-500">
-          Ozamiz Lifestyle Runners Organizers
-        </div>
-      </div>
-    </div>
-
-    <!-- Guidance -->
-    <div
-      v-if="nonLsuPaymentMethod === 'weekend_cash'"
-      class="mt-3 pt-3 border-t border-emerald-200 dark:border-emerald-800"
-    >
-      <p class="font-bold text-gray-800 dark:text-gray-200 text-[11px]">
-        <i class="fas fa-map-pin text-emerald-600 mr-1"></i>
-        Cash Payment
-      </p>
-      <p class="text-gray-500 dark:text-gray-400 text-[10px] font-normal leading-relaxed mt-1">
-        Pay directly at the Ozamiz Lifestyle Runners booth every weekend
-        during scheduled fun runs or meetups. Upload your organizer
-        acknowledgment receipt below.
-      </p>
-    </div>
-  </div>
-</div>
-                <!-- UPLOAD RECEIPT SECTION (FOR NON-LSU ONLY) -->
-                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                 
-                  <!-- Receipt Dropzone -->
+                <!-- Locked +63 Contact Phone Number -->
+                <div class="w-full">
+                  <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                    Contact Phone Number *
+                  </label>
                   <div :class="[
-                    'rounded-2xl border-2 border-dashed p-4 text-center transition-all relative overflow-hidden',
-                    receiptPreview
-                      ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
-                      : props.darkMode
-                        ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
-                        : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
+                    'flex items-center rounded-xl border transition overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500',
+                    props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'
                   ]">
-                    <div v-if="!receiptPreview">
-                      <i class="fas fa-cloud-upload-alt text-3xl text-emerald-500 mb-2"></i>
-                      <p class="text-xs font-bold mb-1">Upload Receipt or Deposit / Transfer Screenshot</p>
-                      <p class="text-[10px] text-gray-400 mb-3">PNG, JPG, or PDF up to 1MB</p>
-                      <label
-                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
-                        <i class="fas fa-upload"></i> Browse Receipt File
-                        <input type="file" accept="image/*,.pdf" class="hidden" @change="handleReceiptUpload" />
-                      </label>
-                    </div>
+                    <span :class="[
+                      'flex items-center gap-1 px-3 py-2.5 text-xs font-bold border-r select-none shrink-0',
+                      props.darkMode ? 'bg-gray-700/80 text-emerald-400 border-gray-600' : 'bg-slate-100 text-emerald-700 border-gray-300'
+                    ]">
+                      <span>🇵🇭 +63</span>
+                    </span>
+                    <input type="tel" :value="currentParticipant.contact_number"
+                      @input="formatPhoneNumberInput($event, currentParticipant)" placeholder="917-123-4567"
+                      maxlength="12" :class="[
+                        'w-full px-3.5 py-2.5 text-sm font-semibold tracking-wide bg-transparent focus:outline-none',
+                        props.darkMode ? 'text-gray-100 placeholder-gray-500' : 'text-gray-800 placeholder-gray-400'
+                      ]" />
+                  </div>
+                  <p class="text-[10px] text-gray-400 mt-1 flex items-center gap-1">
+                    <i class="fas fa-lock text-[9px] text-emerald-600"></i>
+                    <span>Format: 9XX-XXX-XXXX (10 digits starting with 9)</span>
+                  </p>
+                </div>
 
-                    <div v-else class="relative group max-w-sm mx-auto">
-                      <img :src="receiptPreview" alt="Receipt Preview"
-                        class="h-40 w-full object-cover rounded-xl border shadow-sm" />
-                      <div class="mt-2 flex items-center justify-between text-xs">
-                        <span class="truncate max-w-[200px] font-medium text-emerald-600 dark:text-emerald-400">
-                          <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
-                        </span>
-                        <button type="button" @click="removeReceipt"
-                          class="px-2.5 py-1 bg-rose-500 text-white rounded-lg text-xs font-bold hover:bg-rose-600 transition cursor-pointer">
-                          Remove
-                        </button>
+                <div class="w-full">
+                  <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Complete
+                    Address</label>
+                  <div class="relative">
+                    <span class="absolute left-3.5 top-3 text-xs text-gray-400">
+                      <i class="fas fa-map-marker-alt"></i>
+                    </span>
+                    <input v-model="currentParticipant.contact_address" placeholder="Barangay, City, Province" :class="[
+                      'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                      props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                    ]" />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- SECTION 4: SHIRT TYPE & SIZE -->
+            <section v-if="currentParticipant.run_category && !isPetCategory(currentParticipant.run_category)">
+              <div class="mb-4">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-lg font-bold flex items-center gap-2">
+                    <span
+                      class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">4</span>
+                    Shirt Size Selection
+                  </h3>
+                  <span
+                    class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                    <span v-if="currentParticipant.run_category === '20KM'" class="font-black">3 Shirts</span>
+                    <span
+                      v-else-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'"
+                      class="font-black">2 Shirts</span>
+                    <span v-else class="font-black">1 Shirt</span>
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 ml-9">
+                  <span v-if="currentParticipant.run_category === '20KM'">Choose sizes for your 3 included shirts</span>
+                  <span v-else>Choose your shirt type and size</span>
+                </p>
+              </div>
+
+              <!-- ── 3KM / 10KM: 1 shirt — choose type + size dropdown ── -->
+              <div v-if="currentParticipant.run_category === '3KM' || currentParticipant.run_category === '10KM'">
+                <div :class="[
+                  'flex flex-wrap items-center gap-3 p-3 rounded-2xl border',
+                  props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
+                ]">
+                  <!-- Shirt type toggle -->
+                  <div class="flex items-center gap-1 shrink-0">
+                    <button type="button"
+                      @click="currentParticipant.shirt_type = 'singlet'; currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
+                      :class="[
+                        'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
+                        currentParticipant.shirt_type === 'singlet'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : props.darkMode
+                            ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                            : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
+                      ]">
+                      <i class="fas fa-tshirt text-[11px]"></i> Singlet
+                    </button>
+                    <button type="button"
+                      @click="currentParticipant.shirt_type = 'event_shirt'; currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
+                      :class="[
+                        'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
+                        currentParticipant.shirt_type === 'event_shirt'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : props.darkMode
+                            ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                            : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
+                      ]">
+                      <i class="fas fa-shirt text-[11px]"></i> Event Shirt
+                    </button>
+                  </div>
+
+                  <!-- Divider -->
+                  <div :class="['w-px h-6 shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
+
+                  <!-- Size dropdown -->
+                  <div class="flex items-center gap-2 min-w-0">
+                    <label class="text-xs font-semibold shrink-0"
+                      :class="props.darkMode ? 'text-gray-400' : 'text-gray-500'">Size</label>
+                    <select
+                      :value="currentParticipant.shirt_type === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M')"
+                      @change="(e) => {
+                        if (currentParticipant.shirt_type === 'singlet') {
+                          currentParticipant.singlet_size = e.target.value;
+                        } else {
+                          currentParticipant.event_shirt_size = e.target.value;
+                        }
+                        currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant);
+                      }" :class="[
+                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
+                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
+                    ]">
+                      <option v-for="size in tshirtSizes" :key="size" :value="size">{{ size }}</option>
+                    </select>
+                  </div>
+
+                  <!-- Summary badge -->
+                  <span
+                    class="ml-auto text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0">
+                    {{ currentParticipant.shirt_type === 'singlet' ? 'Singlet' : 'Event Shirt' }} · {{
+                      currentParticipant.shirt_type
+                        === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size ||
+                    'M') }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- ── 20KM: 3 dropdown pickers in one row ── -->
+              <div v-else-if="currentParticipant.run_category === '20KM'">
+                <div :class="[
+                  'flex flex-wrap gap-3 p-3 rounded-2xl border',
+                  props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
+                ]">
+                  <!-- Event Shirt -->
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-shirt text-emerald-600 text-xs shrink-0"></i>
+                    <label class="text-xs font-semibold shrink-0"
+                      :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Event
+                      Shirt</label>
+                    <select v-model="currentParticipant.event_shirt_size"
+                      @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)" :class="[
+                        'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
+                        props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
+                      ]">
+                      <option v-for="size in tshirtSizes" :key="'ev-' + size" :value="size">{{ size }}</option>
+                    </select>
+                  </div>
+
+                  <div :class="['w-px h-6 self-center shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']">
+                  </div>
+
+                  <!-- Singlet -->
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-tshirt text-teal-500 text-xs shrink-0"></i>
+                    <label class="text-xs font-semibold shrink-0"
+                      :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Singlet</label>
+                    <select v-model="currentParticipant.singlet_size"
+                      @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)" :class="[
+                        'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer',
+                        props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
+                      ]">
+                      <option v-for="size in tshirtSizes" :key="'sg-' + size" :value="size">{{ size }}</option>
+                    </select>
+                  </div>
+
+                  <div :class="['w-px h-6 self-center shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']">
+                  </div>
+
+                  <!-- Finisher Shirt -->
+                  <div class="flex items-center gap-2">
+                    <i class="fas fa-medal text-amber-500 text-xs shrink-0"></i>
+                    <label class="text-xs font-semibold shrink-0"
+                      :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">Finisher Shirt</label>
+                    <select v-model="currentParticipant.finisher_shirt_size"
+                      @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)" :class="[
+                        'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
+                        props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
+                      ]">
+                      <option v-for="size in tshirtSizes" :key="'fn-' + size" :value="size">{{ size }}</option>
+                    </select>
+                  </div>
+
+                  <!-- Summary badge -->
+                  <span
+                    class="ml-auto text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0 self-center">
+                    {{ currentParticipant.event_shirt_size || 'M' }} · {{ currentParticipant.singlet_size || 'M' }} · {{
+                      currentParticipant.finisher_shirt_size || 'M' }}
+                  </span>
+                </div>
+              </div>
+            </section>
+
+            <!-- SECTION 5: CLASSIFICATION & PAYMENT OPTION (COMBINED & MINIMAL) -->
+            <section v-if="currentParticipant.run_category" class="space-y-4">
+              <!-- Section Header -->
+              <div class="mb-2">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                  <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
+                    <span
+                      class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">5</span>
+                    <span>Classification & Payment Option</span>
+                  </h3>
+                  <span
+                    class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
+                    {{ isPetCategory(currentParticipant.run_category) ? 'Pet Run Direct Payment' :
+                      (currentParticipant.participantGroup === 'LSU' ? (currentParticipant.participant_type || 'LSU Exclusive') : 'Open Category') }} • {{ paymentMethodLabel }}
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 ml-9 mt-0.5">
+                  Select participant category to configure available payment options
+                </p>
+              </div>
+
+              <!-- FOR HUMAN RUN CATEGORIES (3KM, 10KM, 20KM) -->
+              <div v-if="!isPetCategory(currentParticipant.run_category)" class="space-y-4">
+
+                <!-- PRIMARY 2 CATEGORY CARDS (LSU EXCLUSIVE vs OPEN CATEGORY) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <!-- OPTION 1: LSU EXCLUSIVE -->
+                  <div @click="selectParticipantGroup(currentParticipant, 'LSU')" :class="[
+                    'rounded-2xl border-2 p-3 sm:p-3.5 cursor-pointer transition-all duration-200 text-left relative flex items-center justify-between gap-3',
+                    currentParticipant.participantGroup === 'LSU'
+                      ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 ring-2 ring-emerald-500/30 shadow-xs'
+                      : props.darkMode
+                        ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800'
+                        : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
+                  ]">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <div
+                        class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-bold shrink-0">
+                        <i class="fas fa-university"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                            LSU Exclusive
+                          </h4>
+                          <span
+                            class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">
+                            Students · Staff · Alumni
+                          </span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                          Enrolled students, university employees, and alumni
+                        </p>
+                      </div>
+                    </div>
+                    <div :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                      currentParticipant.participantGroup === 'LSU'
+                        ? 'border-emerald-600 bg-emerald-600'
+                        : 'border-gray-300 dark:border-gray-600'
+                    ]">
+                      <div v-if="currentParticipant.participantGroup === 'LSU'" class="w-2 h-2 rounded-full bg-white">
                       </div>
                     </div>
                   </div>
 
-                  <!-- Admin verification badge -->
-                  <div
-                    class="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
-                    <i class="fas fa-user-check text-amber-600 text-base shrink-0"></i>
-                    <span>
-                      <strong>Verification Notice:</strong> The Emerald Run Committee will verify the Payment and validate your
-                      registration details before confirmation.
+                  <!-- OPTION 2: OPEN CATEGORY -->
+                  <div @click="selectParticipantGroup(currentParticipant, 'Open')" :class="[
+                    'rounded-2xl border-2 p-3 sm:p-3.5 cursor-pointer transition-all duration-200 text-left relative flex items-center justify-between gap-3',
+                    currentParticipant.participantGroup === 'Open'
+                      ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 ring-2 ring-emerald-500/30 shadow-xs'
+                      : props.darkMode
+                        ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800'
+                        : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
+                  ]">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <div
+                        class="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center text-base font-bold shrink-0">
+                        <i class="fas fa-globe-asia"></i>
+                      </div>
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                          <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                            Open Category
+                          </h4>
+                          <span
+                            class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                            General Public
+                          </span>
+                        </div>
+                        <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                          Public runners, running clubs, and visiting enthusiasts
+                        </p>
+                      </div>
+                    </div>
+                    <div :class="[
+                      'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                      currentParticipant.participantGroup === 'Open'
+                        ? 'border-emerald-600 bg-emerald-600'
+                        : 'border-gray-300 dark:border-gray-600'
+                    ]">
+                      <div v-if="currentParticipant.participantGroup === 'Open'" class="w-2 h-2 rounded-full bg-white">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- INTEGRATED LSU EXCLUSIVE AFFILIATION & PAYMENT FORM -->
+                <div v-if="currentParticipant.participantGroup === 'LSU'"
+                  class="p-3.5 sm:p-4 rounded-2xl border bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-900/60 space-y-4 transition-all duration-300">
+                  <!-- 3-Button Segmented Affiliation Selector -->
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <label
+                        class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fas fa-list-check"></i>
+                        <span>Select Your LSU Affiliation:</span>
+                      </label>
+                      <span class="text-[11px] text-gray-500 dark:text-gray-400">Choose one</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <!-- 1. Students Button -->
+                      <button type="button" @click="currentParticipant.participant_type = 'Currently Enrolled Students'"
+                        :class="[
+                          'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
+                          currentParticipant.participant_type === 'Currently Enrolled Students'
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
+                            : props.darkMode
+                              ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
+                              : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
+                        ]">
+                        <i class="fas fa-user-graduate text-sm"></i>
+                        <span>Enrolled Students</span>
+                      </button>
+
+                      <!-- 2. Employees Button -->
+                      <button type="button" @click="currentParticipant.participant_type = 'Employees'" :class="[
+                        'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
+                        currentParticipant.participant_type === 'Employees'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
+                          : props.darkMode
+                            ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
+                            : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
+                      ]">
+                        <i class="fas fa-briefcase text-sm"></i>
+                        <span>Employees / Faculty</span>
+                      </button>
+
+                      <!-- 3. Alumni Button -->
+                      <button type="button" @click="currentParticipant.participant_type = 'Alumni'" :class="[
+                        'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
+                        currentParticipant.participant_type === 'Alumni'
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
+                          : props.darkMode
+                            ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
+                            : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
+                      ]">
+                        <i class="fas fa-graduation-cap text-sm"></i>
+                        <span>LSU / ICC Alumni</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- 1. Enrolled Students Form + Integrated Add-to-Tuition Payment -->
+                  <div v-if="currentParticipant.participant_type === 'Currently Enrolled Students'"
+                    class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300">
+                      <div class="flex items-center gap-2 font-bold">
+                        <i class="fas fa-file-invoice-dollar text-blue-600"></i>
+                        <span>Payment Method: Add to Tuition</span>
+                      </div>
+                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">LSU Student Account</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Course / Program *</label>
+                        <select v-model="currentParticipant.college_course" :class="[
+                          'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                        ]">
+                          <option value="">Select Course / Level</option>
+                          <option value="BSIT">BS Information Technology (BSIT)</option>
+                          <option value="BSCS">BS Computer Science (BSCS)</option>
+                          <option value="BSEd">BS Secondary Education (BSEd)</option>
+                          <option value="BSN">BS Nursing (BSN)</option>
+                          <option value="BSBA">BS Business Administration (BSBA)</option>
+                          <option value="BSA">BS Accountancy (BSA)</option>
+                          <option value="BSCrim">BS Criminology (BSCrim)</option>
+                          <option value="BSTM">BS Tourism Management (BSTM)</option>
+                          <option value="BSHM">BS Hospitality Management (BSHM)</option>
+                          <option value="Grade School">Grade School</option>
+                          <option value="JHS">Junior High School (JHS)</option>
+                          <option value="SHS">Senior High School (SHS)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Year / Grade Level *</label>
+                        <select v-model="currentParticipant.college_year" :class="[
+                          'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                        ]">
+                          <option value="">Select Level</option>
+                          <option value="1st Year">1st Year</option>
+                          <option value="2nd Year">2nd Year</option>
+                          <option value="3rd Year">3rd Year</option>
+                          <option value="4th Year">4th Year</option>
+                          <option value="5th Year">5th Year</option>
+                          <option value="Grade 1">Grade 1</option>
+                          <option value="Grade 2">Grade 2</option>
+                          <option value="Grade 3">Grade 3</option>
+                          <option value="Grade 4">Grade 4</option>
+                          <option value="Grade 5">Grade 5</option>
+                          <option value="Grade 6">Grade 6</option>
+                          <option value="Grade 7">Grade 7</option>
+                          <option value="Grade 8">Grade 8</option>
+                          <option value="Grade 9">Grade 9</option>
+                          <option value="Grade 10">Grade 10</option>
+                          <option value="Grade 11">Grade 11</option>
+                          <option value="Grade 12">Grade 12</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">LSU Student ID Number *</label>
+                        <div class="relative">
+                          <span class="absolute left-3 top-2.5 text-xs text-gray-400">
+                            <i class="fas fa-id-card"></i>
+                          </span>
+                          <input type="text" v-model="currentParticipant.lsu_id_number" placeholder="e.g. 240945593"
+                            :class="[
+                              'w-full pl-8 pr-3 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none',
+                              props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
+                            ]" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 2. Employees Form + Integrated Salary Deduction Payment -->
+                  <div v-if="currentParticipant.participant_type === 'Employees'"
+                    class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-800 dark:text-emerald-300">
+                      <div class="flex items-center gap-2 font-bold">
+                        <i class="fas fa-money-check-alt text-emerald-600"></i>
+                        <span>Payment Method: Payroll Salary Deduction</span>
+                      </div>
+                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">Employee Payroll</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Office / Department *</label>
+                        <select v-model="currentParticipant.partner_office" :class="[
+                          'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                        ]">
+                          <option value="">Select Office / Department</option>
+                          <option value="Office of the Chancellor">Office of the Chancellor</option>
+                          <option value="College of Computer Studies">College of Computer Studies</option>
+                          <option value="College of Arts and Sciences">College of Arts and Sciences</option>
+                          <option value="College of Business and Accountancy">College of Business and Accountancy</option>
+                          <option value="College of Education">College of Education</option>
+                          <option value="College of Nursing">College of Nursing</option>
+                          <option value="College of Law">College of Law</option>
+                          <option value="General Services Office">General Services Office</option>
+                          <option value="University Registrar">University Registrar</option>
+                          <option value="Human Resource Center">Human Resource Center</option>
+                          <option value="Accounting Office">Accounting Office</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">LSU Employee ID Number *</label>
+                        <div class="relative">
+                          <span class="absolute left-3 top-2.5 text-xs text-gray-400">
+                            <i class="fas fa-address-card"></i>
+                          </span>
+                          <input type="text" v-model="currentParticipant.lsu_id_number" placeholder="e.g. LSU210201"
+                            :class="[
+                              'w-full pl-8 pr-3 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                              props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
+                            ]" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 3. Alumni Form + Integrated Direct Payment -->
+                  <div v-if="currentParticipant.participant_type === 'Alumni'"
+                    class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 text-xs text-purple-800 dark:text-purple-300">
+                      <div class="flex items-center gap-2 font-bold">
+                        <i class="fas fa-wallet text-purple-600"></i>
+                        <span>Payment Method: Direct Payment (QR / OTC / Cash)</span>
+                      </div>
+                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">Alumni Direct</span>
+                    </div>
+
+                    <div class="max-w-md">
+                      <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Batch / Graduation Year</label>
+                      <input type="text" v-model="currentParticipant.alumni_batch" placeholder="e.g. Batch 2024 / 2023"
+                        :class="[
+                          'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                        ]" />
+                    </div>
+
+                    <!-- Alumni ID Upload: Front & Back -->
+                    <div>
+                      <div class="flex items-center justify-between gap-1.5 mb-1.5">
+                        <label class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                          <i class="fas fa-id-card text-emerald-600"></i>
+                          <span>Alumni ID — Front &amp; Back <span class="text-rose-500">*</span></span>
+                        </label>
+                        <span class="text-[10px] text-gray-500 dark:text-gray-400">Within 1 year of issue or fresh grad</span>
+                      </div>
+
+                      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- FRONT -->
+                        <div>
+                          <p class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
+                            <span><i class="fas fa-arrow-up text-[9px] text-emerald-600 mr-0.5"></i> Front Side</span>
+                            <span v-if="currentParticipant.alumni_id_front_preview" class="text-emerald-600 dark:text-emerald-400 font-semibold">
+                              <i class="fas fa-check-circle text-[9px]"></i> Uploaded
+                            </span>
+                          </p>
+                          <label :for="'alumni_front_' + activeParticipantIndex" :class="[
+                            'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
+                            currentParticipant.alumni_id_front_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-24' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-16',
+                            props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
+                          ]">
+                            <input :id="'alumni_front_' + activeParticipantIndex" type="file" accept="image/*,.pdf" class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'front')" />
+                            <template v-if="currentParticipant.alumni_id_front_preview">
+                              <img :src="currentParticipant.alumni_id_front_preview" class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Front" />
+                              <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
+                                <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'front')" class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
+                                  <i class="fas fa-trash-alt"></i> Remove
+                                </button>
+                              </div>
+                            </template>
+                            <template v-else>
+                              <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
+                                <i class="fas fa-cloud-upload-alt text-base text-gray-400 group-hover:text-emerald-500 transition"></i>
+                                <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300">Upload Front</span>
+                              </div>
+                            </template>
+                          </label>
+                        </div>
+
+                        <!-- BACK -->
+                        <div>
+                          <p class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
+                            <span><i class="fas fa-arrow-down text-[9px] text-emerald-600 mr-0.5"></i> Back Side</span>
+                            <span v-if="currentParticipant.alumni_id_back_preview" class="text-emerald-600 dark:text-emerald-400 font-semibold">
+                              <i class="fas fa-check-circle text-[9px]"></i> Uploaded
+                            </span>
+                          </p>
+                          <label :for="'alumni_back_' + activeParticipantIndex" :class="[
+                            'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
+                            currentParticipant.alumni_id_back_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-24' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-16',
+                            props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
+                          ]">
+                            <input :id="'alumni_back_' + activeParticipantIndex" type="file" accept="image/*,.pdf" class="sr-only" @change="handleAlumniIdUpload($event, currentParticipant, 'back')" />
+                            <template v-if="currentParticipant.alumni_id_back_preview">
+                              <img :src="currentParticipant.alumni_id_back_preview" class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition" alt="Alumni ID Back" />
+                              <div class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
+                                <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'back')" class="px-2 py-0.5 rounded-md bg-rose-600 text-white text-[10px] font-bold flex items-center gap-1 shadow z-10">
+                                  <i class="fas fa-trash-alt"></i> Remove
+                                </button>
+                              </div>
+                            </template>
+                            <template v-else>
+                              <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
+                                <i class="fas fa-cloud-upload-alt text-base text-gray-400 group-hover:text-emerald-500 transition"></i>
+                                <span class="text-[10px] font-bold text-gray-600 dark:text-gray-300">Upload Back</span>
+                              </div>
+                            </template>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- INTEGRATED OPEN CATEGORY DETAILS & PAYMENT FORM -->
+                <div v-if="currentParticipant.participantGroup === 'Open'"
+                  class="p-3.5 sm:p-4 rounded-2xl border bg-slate-50 dark:bg-gray-800/60 border-slate-200 dark:border-gray-700 space-y-3 transition-all duration-300">
+                  <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-gray-700">
+                    <span class="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
+                      <i class="fas fa-running text-teal-600"></i>
+                      <span>Open Category Details</span>
+                    </span>
+                    <span class="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded-md">
+                      Direct Payment (QR / OTC / Cash)
+                    </span>
+                  </div>
+
+                  <div class="max-w-md">
+                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      Organization / Running Club / Company <span class="text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <input type="text" v-model="currentParticipant.organization"
+                      placeholder="e.g. Ozamiz Lifestyle Runners Club" :class="[
+                        'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
+                        props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
+                      ]" />
+                  </div>
+
+                  <div class="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 flex items-center gap-2 text-xs text-amber-800 dark:text-amber-300">
+                    <i class="fas fa-id-card text-amber-600 shrink-0"></i>
+                    <span class="leading-tight text-[11px]">
+                      <strong>Physical Valid ID Verification:</strong> Please present a physical government or valid ID when claiming your race bib and event kit on race day.
                     </span>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            <!-- Submit / Action Buttons -->
-            <div class="flex flex-col sm:flex-row gap-4">
-              <button type="button" @click="submitRegistration" :disabled="isSubmitting"
-                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 lg:text-base text-sm cursor-pointer">
-                <i v-if="!isSubmitting" class="fas fa-check-circle text-lg"></i>
-                <i v-else class="fas fa-spinner fa-spin text-lg"></i>
-                <span>{{ isSubmitting ? 'Submitting Registration...' : 'Submit Registration (PHP ' +
-                  grandTotal.toLocaleString() + ')' }}</span>
-              </button>
-            </div>
-          </section>
+                <!-- DIRECT PAYMENT METHODS & RECEIPT UPLOAD (For Open Category & Alumni) -->
+                <div v-if="paymentType === 'non_lsu_payment'"
+                  class="p-4 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-200 dark:border-gray-700 space-y-4">
+                  <div class="font-bold text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    Select Non-LSU Payment Method:
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <!-- QR Payment -->
+                    <div @click="nonLsuPaymentMethod = 'qr_payment'" :class="[
+                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                      nonLsuPaymentMethod === 'qr_payment'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
+                        <div>
+                          <div class="font-bold text-xs">QR Payment</div>
+                          <div class="text-[10px] font-normal text-gray-500">GCash / Maya</div>
+                        </div>
+                      </div>
+
+                      <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-gray-600 dark:text-gray-300">
+                        Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> via QR and upload your transfer receipt screenshot below.
+                      </div>
+                    </div>
+
+                    <!-- Accounting Over The Counter -->
+                    <div @click="nonLsuPaymentMethod = 'accounting_otc'" :class="[
+                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                      nonLsuPaymentMethod === 'accounting_otc'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
+                        <div>
+                          <div class="font-bold text-xs">Accounting OTC</div>
+                          <div class="text-[10px] font-normal text-gray-500">LSU Accounting Window</div>
+                        </div>
+                      </div>
+
+                      <div v-if="nonLsuPaymentMethod === 'accounting_otc'" class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-gray-600 dark:text-gray-300">
+                        Visit LSU Accounting (Mon-Fri, 8AM-5PM) and upload official receipt slip below.
+                      </div>
+                    </div>
+
+                    <!-- Weekend Cash -->
+                    <div @click="nonLsuPaymentMethod = 'weekend_cash'" :class="[
+                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                      nonLsuPaymentMethod === 'weekend_cash'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
+                        <div>
+                          <div class="font-bold text-xs">Weekend Cash</div>
+                          <div class="text-[10px] font-normal text-gray-500">Lifestyle Runners</div>
+                        </div>
+                      </div>
+
+                      <div v-if="nonLsuPaymentMethod === 'weekend_cash'" class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-gray-600 dark:text-gray-300">
+                        Pay at Ozamiz Lifestyle Runners weekend booth and upload receipt acknowledgment.
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- RECEIPT DROPZONE -->
+                  <div class="pt-2">
+                    <div :class="[
+                      'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden',
+                      receiptPreview
+                        ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
+                        : props.darkMode
+                          ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
+                          : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
+                    ]">
+                      <div v-if="!receiptPreview">
+                        <i class="fas fa-cloud-upload-alt text-2xl text-emerald-500 mb-1"></i>
+                        <p class="text-xs font-bold mb-0.5">Upload Receipt or Deposit Transfer Screenshot *</p>
+                        <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 1MB</p>
+                        <label
+                          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
+                          <i class="fas fa-upload text-xs"></i> Browse Receipt File
+                          <input type="file" accept="image/*,.pdf" class="hidden" @change="handleReceiptUpload" />
+                        </label>
+                      </div>
+
+                      <div v-else class="relative group max-w-xs mx-auto">
+                        <img :src="receiptPreview" alt="Receipt Preview"
+                          class="h-32 w-full object-cover rounded-xl border shadow-sm" />
+                        <div class="mt-2 flex items-center justify-between text-xs">
+                          <span class="truncate max-w-[160px] font-medium text-emerald-600 dark:text-emerald-400 text-[11px]">
+                            <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
+                          </span>
+                          <button type="button" @click="removeReceipt"
+                            class="px-2 py-0.5 bg-rose-500 text-white rounded-lg text-[10px] font-bold hover:bg-rose-600 transition cursor-pointer">
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- FOR PET RUN RUNNERS (1KM PET RUN DIRECT PAYMENT) -->
+              <div v-else class="space-y-4">
+                <div class="p-4 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-200 dark:border-gray-700 space-y-4">
+                  <div class="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <i class="fas fa-paw text-emerald-600"></i>
+                      <span>1K Emerald Paws — Direct Payment</span>
+                    </span>
+                    <span class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                      QR / OTC / Cash
+                    </span>
+                  </div>
+
+                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <!-- QR Payment -->
+                    <div @click="nonLsuPaymentMethod = 'qr_payment'" :class="[
+                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                      nonLsuPaymentMethod === 'qr_payment'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
+                        <div>
+                          <div class="font-bold text-xs">QR Payment</div>
+                          <div class="text-[10px] font-normal text-gray-500">GCash / Maya</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Accounting OTC -->
+                    <div @click="nonLsuPaymentMethod = 'accounting_otc'" :class="[
+                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                      nonLsuPaymentMethod === 'accounting_otc'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
+                        <div>
+                          <div class="font-bold text-xs">Accounting OTC</div>
+                          <div class="text-[10px] font-normal text-gray-500">LSU Accounting</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Weekend Cash -->
+                    <div @click="nonLsuPaymentMethod = 'weekend_cash'" :class="[
+                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                      nonLsuPaymentMethod === 'weekend_cash'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                    ]">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
+                        <div>
+                          <div class="font-bold text-xs">Weekend Cash</div>
+                          <div class="text-[10px] font-normal text-gray-500">Lifestyle Runners</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- RECEIPT DROPZONE -->
+                  <div class="pt-2">
+                    <div :class="[
+                      'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden',
+                      receiptPreview
+                        ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
+                        : props.darkMode
+                          ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
+                          : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
+                    ]">
+                      <div v-if="!receiptPreview">
+                        <i class="fas fa-cloud-upload-alt text-2xl text-emerald-500 mb-1"></i>
+                        <p class="text-xs font-bold mb-0.5">Upload Receipt or Deposit Transfer Screenshot *</p>
+                        <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 1MB</p>
+                        <label
+                          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
+                          <i class="fas fa-upload text-xs"></i> Browse Receipt File
+                          <input type="file" accept="image/*,.pdf" class="hidden" @change="handleReceiptUpload" />
+                        </label>
+                      </div>
+
+                      <div v-else class="relative group max-w-xs mx-auto">
+                        <img :src="receiptPreview" alt="Receipt Preview"
+                          class="h-32 w-full object-cover rounded-xl border shadow-sm" />
+                        <div class="mt-2 flex items-center justify-between text-xs">
+                          <span class="truncate max-w-[160px] font-medium text-emerald-600 dark:text-emerald-400 text-[11px]">
+                            <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
+                          </span>
+                          <button type="button" @click="removeReceipt"
+                            class="px-2 py-0.5 bg-rose-500 text-white rounded-lg text-[10px] font-bold hover:bg-rose-600 transition cursor-pointer">
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CHECKOUT SUMMARY & SUBMIT BUTTON -->
+              <div :class="[
+                'rounded-2xl p-4 sm:p-5 border shadow-md transition-all mt-4',
+                props.darkMode
+                  ? 'bg-gray-900/90 border-gray-700'
+                  : 'bg-gradient-to-br from-slate-50 to-emerald-50/50 border-emerald-200',
+              ]">
+                <div class="flex items-center justify-between text-base sm:text-lg font-black mb-4">
+                  <span class="text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                    <i class="fas fa-receipt text-emerald-600"></i> Grand Total Fee
+                  </span>
+                  <span class="text-2xl font-black text-emerald-700 dark:text-emerald-400">
+                    PHP {{ grandTotal.toLocaleString() }}
+                  </span>
+                </div>
+
+                <button type="button" @click="submitRegistration" :disabled="isSubmitting"
+                  class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 lg:text-base text-sm cursor-pointer">
+                  <i v-if="!isSubmitting" class="fas fa-check-circle text-lg"></i>
+                  <i v-else class="fas fa-spinner fa-spin text-lg"></i>
+                  <span>{{ isSubmitting ? 'Submitting Registration...' : 'Submit Registration (PHP ' +
+                    grandTotal.toLocaleString() + ')' }}</span>
+                </button>
+              </div>
+            </section>
 
           </div><!-- end actual form content -->
         </div><!-- end flex row -->
@@ -2836,43 +2669,48 @@ const submitRegistration = async () => {
     </div>
 
     <!-- SUCCESS CONFIRMATION MODAL -->
-    <div
-      v-if="isSuccessModalOpen"
-      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
-    >
-      <div
-        :class="[
-          'w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border transition-all text-center space-y-5',
-          props.darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-gray-800'
-        ]"
-      >
-        <div class="w-20 h-20 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-3xl shadow-inner">
+    <div v-if="isSuccessModalOpen"
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+      <div :class="[
+        'w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border transition-all text-center space-y-5',
+        props.darkMode ? 'bg-gray-800 border-gray-700 text-white' : 'bg-white border-slate-200 text-gray-800'
+      ]">
+        <div
+          class="w-20 h-20 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-3xl shadow-inner">
           <i class="fas fa-check"></i>
         </div>
 
         <div>
-          <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
+          <span
+            class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">
             Successfully Sent Registration
           </span>
           <h2 class="text-2xl font-black mt-2">
             Registration success
           </h2>
           <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            {{ form_type === 'Group' ? `Your group registration has been successfully sent for ${number_of_participants_per_group} runner(s).` : `Thank you, ${participants[0].firstname}! Your registration has been successfully sent.` }}
+            {{ form_type === 'Group' ? `Your group registration has been successfully sent for
+            ${number_of_participants_per_group} runner(s).` : `Thank you, ${participants[0].firstname}! Your
+            registration
+            has been successfully sent.` }}
           </p>
         </div>
 
-        <div class="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-left text-xs space-y-3">
+        <div
+          class="p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-left text-xs space-y-3">
           <div class="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-sm">
             <i class="fas fa-envelope-circle-check text-emerald-600 text-base"></i>
             <span>Registration Summary</span>
           </div>
 
           <div class="space-y-2.5">
-            <div v-for="(runner, idx) in registrationSummary.runners" :key="idx" class="rounded-xl bg-white dark:bg-gray-900 px-3 py-2.5 border border-emerald-100 dark:border-emerald-800">
+            <div v-for="(runner, idx) in registrationSummary.runners" :key="idx"
+              class="rounded-xl bg-white dark:bg-gray-900 px-3 py-2.5 border border-emerald-100 dark:border-emerald-800">
               <div class="flex items-center justify-between gap-2">
                 <div class="font-bold text-emerald-900 dark:text-emerald-200">{{ runner.name }}</div>
-                <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">{{ runner.classification }}</span>
+                <span
+                  class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300">{{
+                    runner.classification }}</span>
               </div>
               <div class="mt-1 text-[11px] text-gray-600 dark:text-gray-300">
                 {{ runner.category }}
@@ -2880,27 +2718,32 @@ const submitRegistration = async () => {
             </div>
           </div>
 
-          <div class="rounded-xl bg-white dark:bg-gray-900 px-3 py-2.5 border border-emerald-100 dark:border-emerald-800">
+          <div
+            class="rounded-xl bg-white dark:bg-gray-900 px-3 py-2.5 border border-emerald-100 dark:border-emerald-800">
             <div class="flex items-center justify-between text-[11px] text-gray-600 dark:text-gray-300">
               <span>Payment method</span>
               <span class="font-bold text-emerald-700 dark:text-emerald-300">{{ registrationSummary.payment }}</span>
             </div>
             <div class="flex items-center justify-between text-[11px] text-gray-600 dark:text-gray-300 mt-2">
               <span>Grand total</span>
-              <span class="font-black text-emerald-700 dark:text-emerald-300">PHP {{ registrationSummary.total.toLocaleString() }}</span>
+              <span class="font-black text-emerald-700 dark:text-emerald-300">PHP {{
+                registrationSummary.total.toLocaleString() }}</span>
             </div>
           </div>
 
-          <div class="bg-white dark:bg-gray-900 px-3.5 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs flex items-center justify-between shadow-sm">
+          <div
+            class="bg-white dark:bg-gray-900 px-3.5 py-2.5 rounded-xl border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-2 font-medium">
               <i class="fas fa-envelope text-emerald-600"></i>
               <span>{{ participants[0].contact_email || user?.email }}</span>
             </div>
-            <span class="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md font-semibold">Sent</span>
+            <span
+              class="text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded-md font-semibold">Sent</span>
           </div>
         </div>
 
-        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-gray-900/50 border border-slate-200 dark:border-gray-700 text-left text-xs space-y-2 text-gray-600 dark:text-gray-300">
+        <div
+          class="p-4 rounded-2xl bg-slate-50 dark:bg-gray-900/50 border border-slate-200 dark:border-gray-700 text-left text-xs space-y-2 text-gray-600 dark:text-gray-300">
           <p class="font-bold text-gray-800 dark:text-white flex items-center gap-1.5">
             <i class="fas fa-info-circle text-emerald-600"></i> Follow official updates
           </p>
@@ -2908,67 +2751,61 @@ const submitRegistration = async () => {
             Please follow for the official Facebook page and website for the updates:
           </p>
           <div class="space-y-1.5 text-emerald-700 dark:text-emerald-300 font-medium">
-            <div><a href="https://www.facebook.com/lsuanimorun" target="_blank" rel="noopener noreferrer" class="hover:underline">https://www.facebook.com/lsuanimorun</a></div>
-            <div><a href="https://lsu.edu.ph" target="_blank" rel="noopener noreferrer" class="hover:underline">lsu.edu.ph | www.lsu.edu.ph</a></div>
-            <div><a href="https://animorun.lsu.edu.ph" target="_blank" rel="noopener noreferrer" class="hover:underline">animorun.lsu.edu.ph</a></div>
+            <div><a href="https://www.facebook.com/lsuanimorun" target="_blank" rel="noopener noreferrer"
+                class="hover:underline">https://www.facebook.com/lsuanimorun</a></div>
+            <div><a href="https://lsu.edu.ph" target="_blank" rel="noopener noreferrer"
+                class="hover:underline">lsu.edu.ph |
+                www.lsu.edu.ph</a></div>
+            <div><a href="https://animorun.lsu.edu.ph" target="_blank" rel="noopener noreferrer"
+                class="hover:underline">animorun.lsu.edu.ph</a></div>
           </div>
           <p class="text-gray-500 dark:text-gray-400 pt-1">
-            Once verified by the event admin, you will receive your <strong>Official Race Confirmation Email</strong> containing your assigned bib number and kit claiming instructions. <em>Please bring and present a physical Valid ID when claiming your race bib and event kit.</em>
+            Once verified by the event admin, you will receive your <strong>Official Race Confirmation Email</strong>
+            containing your assigned bib number and kit claiming instructions. <em>Please bring and present a physical
+              Valid
+              ID when claiming your race bib and event kit.</em>
           </p>
         </div>
 
-        <button
-          type="button"
-          @click="resetForm"
-          class="w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition cursor-pointer flex items-center justify-center gap-2"
-        >
+        <button type="button" @click="resetForm"
+          class="w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition cursor-pointer flex items-center justify-center gap-2">
           <i class="fas fa-check"></i> Done
         </button>
       </div>
     </div>
 
     <!-- TOAST / VALIDATION NOTIFICATION MODAL (REPLACES BROWSER ALERT) -->
-    <div
-      v-if="toastModal.show"
+    <div v-if="toastModal.show"
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-      @click.self="closeNotice"
-    >
-      <div
-        :class="[
-          'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
-          props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
-        ]"
-      >
-        <div
-          :class="[
-            'absolute top-0 left-0 right-0 h-1.5',
-            toastModal.type === 'error'
-              ? 'bg-rose-500'
-              : toastModal.type === 'success'
+      @click.self="closeNotice">
+      <div :class="[
+        'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <div :class="[
+          'absolute top-0 left-0 right-0 h-1.5',
+          toastModal.type === 'error'
+            ? 'bg-rose-500'
+            : toastModal.type === 'success'
               ? 'bg-emerald-500'
               : 'bg-amber-500'
-          ]"
-        ></div>
+        ]"></div>
 
-        <div
-          :class="[
-            'w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-sm mt-2',
-            toastModal.type === 'error'
-              ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400'
-              : toastModal.type === 'success'
+        <div :class="[
+          'w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-sm mt-2',
+          toastModal.type === 'error'
+            ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400'
+            : toastModal.type === 'success'
               ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400'
               : 'bg-amber-100 text-amber-600 dark:bg-amber-950/80 dark:text-amber-400'
-          ]"
-        >
-          <i
-            :class="[
-              toastModal.type === 'error'
-                ? 'fas fa-exclamation-circle'
-                : toastModal.type === 'success'
+        ]">
+          <i :class="[
+            toastModal.type === 'error'
+              ? 'fas fa-exclamation-circle'
+              : toastModal.type === 'success'
                 ? 'fas fa-check-circle'
                 : 'fas fa-exclamation-triangle'
-            ]"
-          ></i>
+          ]"></i>
         </div>
 
         <div>
@@ -2981,18 +2818,14 @@ const submitRegistration = async () => {
         </div>
 
         <div class="pt-2">
-          <button
-            type="button"
-            @click="closeNotice"
-            :class="[
-              'w-full py-3 px-5 rounded-2xl font-bold text-xs transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 text-white',
-              toastModal.type === 'error'
-                ? 'bg-rose-600 hover:bg-rose-700'
-                : toastModal.type === 'success'
+          <button type="button" @click="closeNotice" :class="[
+            'w-full py-3 px-5 rounded-2xl font-bold text-xs transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 text-white',
+            toastModal.type === 'error'
+              ? 'bg-rose-600 hover:bg-rose-700'
+              : toastModal.type === 'success'
                 ? 'bg-emerald-600 hover:bg-emerald-700'
                 : 'bg-amber-600 hover:bg-amber-700'
-            ]"
-          >
+          ]">
             <span>Understood</span>
           </button>
         </div>
@@ -3023,6 +2856,7 @@ input[type="checkbox"] {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
 .scrollbar-none {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -3030,5 +2864,6 @@ input[type="checkbox"] {
 
 .pet-name-input:focus {
   box-shadow: 0 0 0 2px rgba(2, 133, 125, 0.25);
-  border-color: #02857D !important;}
+  border-color: #02857D !important;
+}
 </style>
