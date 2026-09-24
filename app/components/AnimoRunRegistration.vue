@@ -138,7 +138,7 @@ const runCategories = [
       "Event Shirt or Singlet",
       "Post-Meal",
       "Race Bib",
-      "Acrylic Finisher Medal",
+      "Metal Finisher Medal",
     ],
   },
   {
@@ -170,7 +170,7 @@ const runCategories = [
       "Finisher Shirt",
       "Post-Meal",
       "Race Bib",
-      "Acrylic Finisher Medal",
+      "Metal Finisher Medal",
     ],
   },
 ];

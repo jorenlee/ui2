@@ -52,7 +52,7 @@ const openGroups = ref([
 // these groups are hidden from non-@lsu.edu.ph accounts.
 // Using a Set for O(1) lookups instead of Array.includes O(n).
 const lsuOnlyMenuGroups = new Set([
-  "Emerald Run",
+  "The Emerald Run",
   "External Links",
   "Lasalle Alumni Association",
   "Commission on Election",
@@ -158,11 +158,11 @@ const filteredMenuList = computed(() => {
   // role grant — it's a narrowing check, not a way to bypass the role
   // requirement.
   const roleFiltered = subMenuList.filter((menu) => {
-    // IT Services Feedback & Emerald Run are open to any @gmail.com or @lsu.edu.ph account,
+    // IT Services Feedback & The Emerald Run are open to any @gmail.com or @lsu.edu.ph account,
     // regardless of what's set in Role Permissions.
     if (
       menu.group === "IT Services Feedback" ||
-      menu.group === "Emerald Run"
+      menu.group === "The Emerald Run"
     ) {
       return (
         email?.endsWith("@gmail.com") || email?.endsWith("@lsu.edu.ph")
@@ -206,8 +206,8 @@ const subMenuList = [
     ],
   },
   // {
-  //   group: "Emerald Run",
-  //   allowedRole: ["Emerald Run", "Animo Run"],
+  //   group: "The Emerald Run",
+  //   allowedRole: ["The Emerald Run", "The Animo Run"],
   //   items: [
   //     {
   //       label: "Registration",
