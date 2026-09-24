@@ -426,7 +426,7 @@ const saveEdit = async () => {
           <div class="space-y-1">
           
             <h1 class="text-sm sm:text-base text-white font-black tracking-tight leading-snug">
-              THE EMERALD RUN — Participant Status
+              THE EMERALD RUN
               
               <span class="font-normal text-xs sm:text-sm text-emerald-200 block sm:inline sm:ml-1"> <i class="fas fa-list text-amber-300"></i> Track, verify & manage runner registrations</span>
             </h1>
@@ -711,10 +711,10 @@ const saveEdit = async () => {
                 </th>
                 <th class="p-4">Reg ID & Bib</th>
                 <th class="p-4">Runner Name</th>
-                <th class="p-4">Classification</th>
-                <th class="p-4">Category</th>
+           
+               
                 <th class="p-4">Payment Option</th>
-                <th class="p-4">Status</th>
+          
                 <th class="p-4 text-center">Actions</th>
               </tr>
             </thead>
@@ -726,6 +726,13 @@ const saveEdit = async () => {
                   'animate-pulse',
                   props.darkMode ? 'bg-gray-800' : 'bg-white',
                 ]">
+
+                   <!-- Category -->
+                  <td class="p-4">
+                    <div :class="['h-5 w-16 rounded-full', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                  </td>
+
+
                   <!-- Reg ID & Bib -->
                   <td class="p-4">
                     <div :class="['h-3 w-10 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
@@ -736,15 +743,7 @@ const saveEdit = async () => {
                     <div :class="['h-3 w-32 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
                     <div :class="['h-2.5 w-40 rounded', props.darkMode ? 'bg-gray-600' : 'bg-slate-100']"></div>
                   </td>
-                  <!-- Classification -->
-                  <td class="p-4">
-                    <div :class="['h-3 w-28 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                    <div :class="['h-2.5 w-16 rounded', props.darkMode ? 'bg-gray-600' : 'bg-slate-100']"></div>
-                  </td>
-                  <!-- Category -->
-                  <td class="p-4">
-                    <div :class="['h-5 w-16 rounded-full', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                  </td>
+       
                   <!-- Payment Option -->
                   <td class="p-4">
                     <div :class="['h-3 w-24 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
@@ -764,11 +763,13 @@ const saveEdit = async () => {
               <!-- ACTUAL DATA ROWS -->
               <template v-else>
                 <tr v-for="runner in filteredRegistrations" :key="runner.id" :class="[
-                  'hover:bg-emerald-50/30 dark:hover:bg-gray-700/40 transition',
+                  'hover:bg-emerald-300 dark:hover:bg-gray-700/40 transition',
                   selectedIds.includes(runner.id) ? (props.darkMode ? 'bg-emerald-950/30' : 'bg-emerald-50/60') : '',
                 ]">
+
+                
                   <!-- Row checkbox -->
-                  <td class="p-4 w-10">
+                  <td class="px-4 w-10">
                     <input
                       type="checkbox"
                       :checked="selectedIds.includes(runner.id)"
@@ -777,15 +778,26 @@ const saveEdit = async () => {
                     />
                   </td>
 
-                  <td class="p-4 font-mono">
-                    <!-- <div class="font-bold text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</div> -->
-                    <span
+
+                    <td class="px-4">
+                    <span :class="[
+                      'px-2.5 py-1 min-w-[60px] font-black text-[11px] inline-block shadow-sm',
+                      runCategories.find(c => runner.run_category && runner.run_category.startsWith(c.id))?.color || 'bg-emerald-700 text-white',
+                    ]">
+                      {{ runner.run_category }}    
+                    </span>
+
+
+
+                       <span
                       class="inline-block mt-0.5 px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px]">
                       {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
                     </span>
                   </td>
 
-                  <td class="p-4">
+
+
+                  <td class="px-4">
                     <div class="font-bold text-gray-900 dark:text-gray-100 uppercase">
                       {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname
                       }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
@@ -795,45 +807,35 @@ const saveEdit = async () => {
                     </div>
                   </td>
 
-                  <td class="p-4">
-                    <span class="font-medium text-gray-700 dark:text-gray-300 block">
-                      {{ runner.participant_type || 'Individual' }}
-                    </span>
-                    <span class="text-[10px] text-gray-400 block mt-0.5">
-                      {{ runner.college_course || runner.beu_grade || runner.partner_office || runner.alumni_batch ||
-                        runner.organization || 'General' }}
-                    </span>
-                  </td>
+      
 
-                  <td class="p-4">
-                    <span :class="[
-                      'px-2.5 py-1 rounded-full font-black text-[11px] inline-block shadow-sm',
-                      runCategories.find(c => runner.run_category && runner.run_category.startsWith(c.id))?.color || 'bg-emerald-700 text-white',
-                    ]">
-                      {{ runner.run_category }}
-                    </span>
-                  </td>
+                
+                  <td class="px-4 lg:flex gap-x-3">
 
-                  <td class="p-4">
-                    <div class="font-medium capitalize">
-                      {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type ===
-                        'add_to_tuition' ? 'Add to Tuition' : 'Over the Counter / QR' }}
-                    </div>
-                    <div class="text-[10px] text-gray-400 font-bold mt-0.5">
-                      ₱{{ Number(runner.grand_total_payment || runner.grand_total || 0).toLocaleString() }}
-                    </div>
-                  </td>
-
-                  <td class="p-4">
-                    <span :class="[
-                      'px-2.5 py-1 rounded-xl text-[10px] font-bold border inline-block',
+                        <div :class="[
+                      'px-2.5 py-1 text-[10px] font-bold border min-w-[110px] items-center flex justify-center',
                       getStatusBadge(runner.payment_status),
                     ]">
                       {{ runner.payment_status }}
-                    </span>
+                    </div>
+                    
+                    <div>
+                      <div class="font-medium capitalize">
+                      {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type ===
+                        'add_to_tuition' ? 'Add to Tuition' : 'Over the Counter / QR' }}
+                    </div>
+                    <div class="text-[10px] text-gray-400 font-bold">
+                      ₱{{ Number(runner.grand_total_payment || runner.grand_total || 0).toLocaleString() }}
+                    </div>
+
+                    </div>
+                  
+
                   </td>
 
-                  <td class="p-4 text-center">
+               
+
+                  <td class="px-4 text-center">
                     <button type="button" @click="openDetails(runner)"
                       class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition inline-flex items-center gap-1 cursor-pointer">
                       <i class="fas fa-eye"></i> View

@@ -1267,21 +1267,22 @@ const submitRegistration = async () => {
                           </div>
 
                           <!-- Distance label -->
-                          <h2 class="text-4xl font-black tracking-tight"
+                          <h2 class="text-4xl font-black tracking-tight whitespace-nowrap"
                             :style="{ color: currentParticipant.run_category === cat.id ? '#fff' : 'rgba(255,255,255,0.7)' }">
-                            {{ cat.id }}
+                            {{ cat.name }}
                           </h2>
 
 
 
                         </div>
-                        <div>
                           <!-- Fee -->
-                          <span class="text-xl font-black mt-1 block"
+                        <!-- <div>
+                        
+                          <span class="text-xl font-black mt-1 block whitespace-nowrap"
                             :style="{ color: currentParticipant.run_category === cat.id ? cat.colors.highlight || '#fff' : 'rgba(255,255,255,0.55)' }">
                             PHP {{ cat.fee.toLocaleString() }}
                           </span>
-                        </div>
+                        </div> -->
 
                       </div>
 
@@ -1303,15 +1304,15 @@ const submitRegistration = async () => {
                       </div>
                     </div>
 
-                    <!-- Gun Time -->
-                    <!-- <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
+                    <!-- Price -->
+                    <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
                       :style="{ borderColor: 'rgba(255,255,255,0.15)' }">
-                      <span class="font-medium flex items-center gap-1" style="color: rgba(255,255,255,0.6)">
+                      <!-- <span class="font-medium flex items-center gap-1" style="color: rgba(255,255,255,0.6)">
                         <i class="fas fa-flag-checkered"
                           :style="{ color: cat.colors.highlight || cat.colors.accent }"></i> Gun Time:
-                      </span>
-                      <span class="font-black" :style="{ color: cat.colors.highlight || '#fff' }">{{ cat.time }}</span>
-                    </div> -->
+                      </span> -->
+                      <span class="font-black" :style="{ color: cat.colors.highlight || '#fff' }">PHP {{ cat.fee.toLocaleString() }}</span>
+                    </div>
                   </div>
                 </div>
 
