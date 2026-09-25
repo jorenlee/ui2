@@ -1072,7 +1072,7 @@ const submitRegistration = async () => {
 
           <!-- Vertical Participant Sidebar for Group Mode -->
           <div v-if="form_type === 'Group'" :class="[
-            'flex flex-col gap-2 p-3 border-r shrink-0 min-w-[120px] max-w-[300px]',
+            'flex flex-col gap-2 p-3 border-r shrink-0 w-full lg:min-w-[120px] lg:max-w-[300px]',
             props.darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-emerald-50/40 border-slate-200',
           ]" style="min-height: 100%;">
             <div class="text-[10px] font-bold uppercase tracking-widest mb-1 px-1"
@@ -1499,7 +1499,7 @@ const submitRegistration = async () => {
                     <div class="flex items-center justify-between">
                       <label class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
                         <i class="fas fa-syringe text-emerald-600"></i>
-                        <span>Vaccine Record / Anti-Rabies Card <span class="text-rose-500">*</span></span>
+                        <span>Updated Vaccination Record<span class="text-rose-500">*</span></span>
                       </label>
                       <span v-if="currentParticipant.pet_vaccine_record_preview"
                         class="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
@@ -1507,7 +1507,7 @@ const submitRegistration = async () => {
                       </span>
                     </div>
                     <p class="text-[11px] text-gray-500 dark:text-gray-400">
-                      Upload valid vaccination certificate or updated (within 6 months) anti-rabies record.
+                      Anti-Rabies and 5-in-1 Vaccine.
                     </p>
 
                     <label :for="'pet_vax_' + activeParticipantIndex" :class="[
@@ -2411,17 +2411,16 @@ const submitRegistration = async () => {
                       <div class="flex items-center gap-2">
                         <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
                         <div>
-                          <div class="font-bold text-xs">QR Payment</div>
-                          <div class="text-[10px] font-normal text-gray-500">GCash / Maya</div>
+                          <div class="font-bold text-xs">QR Payment: GCash / Maya</div>
+                        
+                          <div>
+                            Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> via QR and upload your transfer
+                        receipt
+                        screenshot below.
+                          </div>
                         </div>
                       </div>
 
-                      <div v-if="nonLsuPaymentMethod === 'qr_payment'"
-                        class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-gray-600 dark:text-gray-300">
-                        Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> via QR and upload your transfer
-                        receipt
-                        screenshot below.
-                      </div>
                     </div>
 
                     <!-- Accounting Over The Counter -->
@@ -2434,17 +2433,15 @@ const submitRegistration = async () => {
                       <div class="flex items-center gap-2">
                         <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
                         <div>
-                          <div class="font-bold text-xs">Accounting OTC</div>
-                          <div class="text-[10px] font-normal text-gray-500">LSU Accounting Window</div>
+                          <div class="font-bold text-xs">Accounting OTC: LSU Accounting Window</div>
+                      
+                          <div>
+                             Visit LSU Accounting Window (Mon-Fri, 8AM-5PM). 
+                          </div>
                         </div>
                       </div>
 
-                      <div v-if="nonLsuPaymentMethod === 'accounting_otc'"
-                        class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-emerald-700 dark:text-emerald-300 font-medium leading-snug">
-                        Visit LSU Accounting Window (Mon-Fri, 8AM-5PM). <strong>Please wait for the confirmation to be
-                          paid and
-                          confirmed by the admin.</strong>
-                      </div>
+                    
                     </div>
 
                     <!-- Weekend Cash -->
@@ -2457,17 +2454,15 @@ const submitRegistration = async () => {
                       <div class="flex items-center gap-2">
                         <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
                         <div>
-                          <div class="font-bold text-xs">Weekend Cash</div>
-                          <div class="text-[10px] font-normal text-gray-500">Lifestyle Runners</div>
+                          <div class="font-bold text-xs">Weekend Cash : Lifestyle Runners</div>
+                        
+                          <div>
+                             Pay at Ozamiz Lifestyle Runners weekend booth. 
+                          </div>
                         </div>
                       </div>
 
-                      <div v-if="nonLsuPaymentMethod === 'weekend_cash'"
-                        class="mt-2 pt-2 border-t border-emerald-200 dark:border-emerald-800 text-[10px] text-emerald-700 dark:text-emerald-300 font-medium leading-snug">
-                        Pay at Ozamiz Lifestyle Runners weekend booth. <strong>Please wait for the confirmation to be
-                          paid and
-                          confirmed by the admin.</strong>
-                      </div>
+                  
                     </div>
                   </div>
 
@@ -2816,7 +2811,7 @@ v-if="isSuccessModalOpen"
     </button>
   </div>
 </div>
-```
+
 
 
 
