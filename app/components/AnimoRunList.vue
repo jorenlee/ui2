@@ -136,7 +136,7 @@ const openReceiptModal = (url, title = "Payment Receipt", runner = null) => {
   if (!url) return;
   receiptModal.value = {
     show: true,
-    url,
+    url: cleanURL(url),
     title,
     runner: runner || selectedRunner.value,
   };
@@ -146,6 +146,14 @@ const closeReceiptModal = () => {
   receiptModal.value.show = false;
   receiptModal.value.url = "";
   receiptModal.value.runner = null;
+};
+
+// Strip everything after the file extension (removes query strings, tokens, extra params)
+const cleanURL = (url) => {
+  if (!url) return url;
+  // Match the URL up to and including the file extension (e.g. .jpg, .png, .pdf, .jpeg, .webp, .gif)
+  const match = url.match(/^(.*\.(?:jpg|jpeg|png|gif|webp|bmp|svg|pdf|heic|heif))/i);
+  return match ? match[1] : url;
 };
 
 const runCategories = [
