@@ -379,11 +379,11 @@ const additionalImages = computed(() => galleryImages.value.slice(1));
                   </div>
                 </div>
 
-                <hr class="border-gray-100 mb-6" />
+                
 
                 <!-- Body -->
                 <div v-if="item.descriptions" class="prose prose-green max-w-none">
-                  <div class="text-black leading-relaxed text-base whitespace-pre-wrap">
+                  <div class="text-black leading-relaxed text-base whitespace-pre-wrap text-justify">
                     {{ item.descriptions }}
                   </div>
                 </div>
@@ -524,7 +524,7 @@ const additionalImages = computed(() => galleryImages.value.slice(1));
               <div v-if="additionalImages.length > 0" class="px-4 pb-4">
                 <div class="grid grid-cols-3 gap-1.5">
                   <div
-                    v-for="(file, idx) in additionalImages"
+                    v-for="(file, idx) in additionalImages.slice(0, 9)"
                     :key="idx"
                     class="relative aspect-square cursor-pointer group overflow-hidden rounded-lg"
                     @click="openModal(file, idx + 1)"
@@ -535,7 +535,17 @@ const additionalImages = computed(() => galleryImages.value.slice(1));
                       class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                       @error="(e) => { e.target.style.display = 'none'; e.target.parentElement.classList.add('bg-gray-100'); }"
                     />
-                    <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 rounded-lg flex items-center justify-center">
+                    <!-- +N overlay on the last visible thumbnail when there are hidden images -->
+                    <div
+                      v-if="idx === 8 && additionalImages.length > 9"
+                      class="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center"
+                    >
+                      <span class="text-white text-2xl font-bold">+{{ additionalImages.length - 9 }}</span>
+                    </div>
+                    <div
+                      v-else
+                      class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 rounded-lg flex items-center justify-center"
+                    >
                       <i class="fas fa-search-plus text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></i>
                     </div>
                   </div>
@@ -585,54 +595,7 @@ const additionalImages = computed(() => galleryImages.value.slice(1));
               </div>
             </div>
 
-            <!-- SDG WIDGET -->
-            <div
-              v-if="getSdgBadges(item).length > 0"
-              class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
-            >
-              <div class="h-1.5 w-full bg-gradient-to-r from-emerald-700 via-green-500 to-teal-400"></div>
-              <div class="p-5">
-                <div class="flex items-center gap-2 mb-4">
-                  <img
-                    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/E_SDG_logo_Square_WEB.png.png"
-                    alt="UN SDGs"
-                    class="h-8 object-contain"
-                  />
-                  <div>
-                    <p class="text-xs font-extrabold text-gray-800 leading-tight">Related SDGs</p>
-                    <p class="text-[10px] text-gray-400">UN Agenda 2030</p>
-                  </div>
-                </div>
-                <div class="grid grid-cols-4 gap-2">
-                  <NuxtLink
-                    v-for="badge in getSdgBadges(item)"
-                    :key="badge.number"
-                    :to="`/sdgs/${getSdgSlug(badge.number)}`"
-                    :title="`SDG ${badge.number}`"
-                    class="group relative aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-                  >
-                    <img
-                      :src="`https://lsu-media-styles.sgp1.digitaloceanspaces.com/SDGsV1/TheGlobalGoals_Icons_Color_Goal_${badge.number}.png`"
-                      :alt="`SDG ${badge.number}`"
-                      class="w-full h-full object-cover"
-                    />
-                    <div
-                      class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
-                      :style="{ backgroundColor: badge.color + 'CC' }"
-                    >
-                      <span class="text-white text-[9px] font-bold">{{ badge.number }}</span>
-                    </div>
-                  </NuxtLink>
-                </div>
-                <NuxtLink
-                  to="/sdgs"
-                  class="mt-4 flex items-center justify-center gap-1.5 text-xs font-semibold text-green-700 hover:text-green-900 transition-colors duration-200"
-                >
-                  Explore all SDG initiatives
-                  <i class="fas fa-arrow-right text-[10px]"></i>
-                </NuxtLink>
-              </div>
-            </div>
+
 
             <!-- Article Meta -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
