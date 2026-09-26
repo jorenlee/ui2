@@ -1,1664 +1,617 @@
 <template>
-    <section
-        class="emerald-run-banner relative min-h-[420px] overflow-hidden bg-[#02150e] px-4 py-8 shadow-lg sm:py-10 lg:px-0"
-    >
-        <!-- ========================================================= -->
-        <!-- BACKGROUND -->
-        <!-- ========================================================= -->
-        <div class="pointer-events-none absolute inset-0 overflow-hidden">
+  <div class="poster w-full h-screen">
+    <!-- Background wash + grain -->
+    <div class="bg-wash"></div>
+    <div class="grain"></div>
 
-            <!-- Deep Emerald Base -->
-            <div
-                class="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,#0b8f67_0%,#08704f_22%,#064e3b_43%,#032d20_70%,#02150e_100%)]"
-            ></div>
+    <!-- Lens flare -->
+    <div class="lens-flare">
+      <div class="beam"></div>
+      <div class="beam-glow"></div>
 
-            <!-- Emerald Ambient Glow -->
-            <div
-                class="emerald-core absolute left-1/2 top-1/2 h-[650px] w-[650px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-            ></div>
+      <!-- Primary and secondary aperture rings -->
+      <div class="ring ring-main"></div>
+      <!-- <div class="ring ring-upper"></div> -->
+      <div class="ring-inner -ml-44"></div>
 
-            <!-- Left Emerald Glow -->
-            <div
-                class="emerald-cloud emerald-cloud-left absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full"
-            ></div>
+      <!-- Core radiance -->
+      <div class="bloom -ml-20"></div>
+      <div class="core"></div>
 
-            <!-- Right Emerald Glow -->
-            <div
-                class="emerald-cloud emerald-cloud-right absolute -bottom-40 -right-40 h-[520px] w-[520px] rounded-full"
-            ></div>
+      <!-- Lower-left ghost glare trail -->
+      <!-- <div class="ghost ghost1"></div>
+      <div class="ghost ghost2"></div>
+      <div class="ghost ghost3"></div> -->
+      <!-- <div class="ghost ghost4"></div> -->
+      <!-- <div class="ghost ghost5"></div> -->
+      <!-- <div class="ghost ghost6"></div>  -->
 
-            <!-- ===================================================== -->
-            <!-- CINEMATIC DIAGONAL LENS FLARE -->
-            <!-- ===================================================== -->
+      <!-- Upper-right opposite glare circles (other side) -->
+      <!-- <div class="ghost ghost-opp1"></div> -->
+      <!-- <div class="ghost ghost-opp2"></div>
+      <div class="ghost ghost-opp3"></div> -->
+    </div>
 
-            <div class="cinematic-flare cinematic-flare-1">
+    <!-- Content -->
+    <div class="content">
+      <img class="lg:w-2/12 w-8/12"
+        src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/20th%20Anniversary%20Emerald%20Logos-20260618T012425Z-3-001/20th%20Anniversary%20Emerald%20Logos/Emerald%20%26%20Theme%20with%20Corp%20Logo.png"
+        alt="La Salle Ozamiz 20 Years" />
 
-                <!-- Long diagonal light beam -->
-                <div class="flare-diagonal-beam"></div>
+      <h1 class="headline text-9xl">The Emerald Run</h1>
+      <p class="subtitle text-7xl">ANIMO Run 2026</p>
 
-                <!-- Secondary soft beam -->
-                <div class="flare-soft-beam"></div>
+      <div class="date-badge">November 14, 2026</div>
 
-                <!-- Horizontal rays -->
-                <div class="flare-ray flare-ray-horizontal"></div>
-
-                <!-- Vertical rays -->
-                <div class="flare-ray flare-ray-vertical"></div>
-
-                <!-- Diagonal rays -->
-                <div class="flare-ray flare-ray-diagonal-1"></div>
-                <div class="flare-ray flare-ray-diagonal-2"></div>
-
-                <!-- Main glow -->
-                <div class="flare-bloom"></div>
-
-                <!-- Hot white center -->
-                <div class="flare-core"></div>
-
-                <!-- Lens ghost reflections -->
-                <div class="flare-ghost flare-ghost-1"></div>
-                <div class="flare-ghost flare-ghost-2"></div>
-                <div class="flare-ghost flare-ghost-3"></div>
-                <div class="flare-ghost flare-ghost-4"></div>
-            </div>
-
-            <!-- Secondary subtle flare -->
-            <div class="cinematic-flare cinematic-flare-2">
-                <div class="flare-diagonal-beam"></div>
-                <div class="flare-bloom"></div>
-                <div class="flare-core"></div>
-            </div>
-
-            <!-- ===================================================== -->
-            <!-- LARGE GLASS SHINE -->
-            <!-- ===================================================== -->
-
-            <div class="glass-shine glass-shine-1">
-                <div class="glass-reflection"></div>
-                <div class="glass-light"></div>
-                <div class="glass-beam-horizontal"></div>
-                <div class="glass-beam-vertical"></div>
-                <div class="glass-core"></div>
-            </div>
-
-            <!-- Second Glass Reflection -->
-            <div class="glass-shine glass-shine-2">
-                <div class="glass-reflection"></div>
-                <div class="glass-light"></div>
-                <div class="glass-beam-horizontal"></div>
-                <div class="glass-core"></div>
-            </div>
-
-            <!-- ===================================================== -->
-            <!-- MOVING CINEMATIC GLARE -->
-            <!-- ===================================================== -->
-
-            <div class="moving-glare moving-glare-1"></div>
-            <div class="moving-glare moving-glare-2"></div>
-
-            <!-- ===================================================== -->
-            <!-- SMALL GLASS LIGHTS -->
-            <!-- ===================================================== -->
-
-            <span class="glass-dot glass-dot-1"></span>
-            <span class="glass-dot glass-dot-2"></span>
-            <span class="glass-dot glass-dot-3"></span>
-            <span class="glass-dot glass-dot-4"></span>
-            <span class="glass-dot glass-dot-5"></span>
-            <span class="glass-dot glass-dot-6"></span>
-            <span class="glass-dot glass-dot-7"></span>
-            <span class="glass-dot glass-dot-8"></span>
-            <span class="glass-dot glass-dot-9"></span>
-            <span class="glass-dot glass-dot-10"></span>
-
-            <!-- ===================================================== -->
-            <!-- SOFT GLASS RINGS -->
-            <!-- ===================================================== -->
-
-            <div
-                class="glass-ring glass-ring-1 absolute left-1/2 top-1/2 h-[340px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-            ></div>
-
-            <div
-                class="glass-ring glass-ring-2 absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 rounded-full"
-            ></div>
-
-            <!-- Fine Light Particles -->
-            <div
-                class="absolute inset-0 opacity-20"
-                style="
-                    background-image: radial-gradient(
-                        circle,
-                        rgba(236, 253, 245, 0.7) 0.7px,
-                        transparent 0.8px
-                    );
-                    background-size: 30px 30px;
-                "
-            ></div>
-
-            <!-- Vignette -->
-            <div
-                class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_15%,rgba(0,10,6,0.76)_100%)]"
-            ></div>
-        </div>
-
-        <!-- ========================================================= -->
-        <!-- CONTENT -->
-        <!-- ========================================================= -->
-
-        <div
-            class="relative z-10 mx-auto flex max-w-6xl flex-col items-center text-center"
-        >
-
-            <!-- LSU 20th Anniversary Emerald Logo -->
-            <div class="logo-power mb-6 flex justify-center">
-                <div class="relative">
-
-                    <!-- Logo Glass Aura -->
-                    <div
-                        class="absolute inset-0 scale-75 rounded-full bg-emerald-200/20 blur-[65px]"
-                    ></div>
-
-                    <img
-                        src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/20th%20Anniversary%20Emerald%20Logos-20260618T012425Z-3-001/20th%20Anniversary%20Emerald%20Logos/Emerald%20%26%20Theme%20with%20Corp%20Logo.png"
-                        alt="La Salle University Ozamiz 20th Anniversary Emerald Logo"
-                        class="relative h-auto w-[190px] object-contain drop-shadow-[0_5px_30px_rgba(167,243,208,0.38)] sm:w-[220px] lg:w-[250px]"
-                    />
-                </div>
-            </div>
-
-            <!-- Main Title -->
-            <div class="relative">
-
-                <div
-                    class="absolute left-1/2 top-1/2 -z-10 h-36 w-[90%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-300/15 blur-[85px]"
-                ></div>
-
-                <h2
-                    class="text-5xl font-black leading-[0.9] tracking-[-0.04em] text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.08)] sm:text-6xl lg:text-8xl"
-                >
-                    The Emerald Run
-                </h2>
-
-                <h3
-                    class="mt-4 text-3xl font-bold tracking-[-0.02em] text-emerald-100 sm:text-4xl lg:text-5xl"
-                >
-                    ANIMO Run 2026
-                </h3>
-            </div>
-
-            <!-- Date -->
-            <div
-                class="date-power mt-6 inline-flex items-center rounded-md border border-white/20 bg-white px-5 py-2 text-sm font-black text-[#064e3b] shadow-[0_0_35px_rgba(167,243,208,0.18)] sm:text-base"
-            >
-                <i class="fa-solid fa-calendar-days mr-2"></i>
-                November 14, 2026
-            </div>
-
-            <!-- Registration Notice -->
-            <div class="mt-7 max-w-2xl">
-                <p
-                    class="text-sm font-medium leading-relaxed text-emerald-100/90 sm:text-base"
-                >
-                    The official online registration platform will be ready
-                    soon. Registration announcements will follow. Please ensure
-                    you can access your Gmail account before registration opens.
-                </p>
-            </div>
-
-            <!-- Status -->
-            <div
-                class="status-power mt-5 inline-flex items-center gap-2 rounded-full border border-yellow-300/20 bg-yellow-300/10 px-4 py-2 backdrop-blur-sm"
-            >
-                <span class="relative flex h-2.5 w-2.5">
-                    <span
-                        class="absolute inline-flex h-full w-full animate-ping rounded-full bg-yellow-300 opacity-75"
-                    ></span>
-
-                    <span
-                        class="relative inline-flex h-2.5 w-2.5 rounded-full bg-yellow-300 shadow-[0_0_14px_rgba(253,224,71,0.9)]"
-                    ></span>
-                </span>
-
-                <span
-                    class="text-xs font-bold uppercase tracking-wider text-yellow-200"
-                >
-                    Registration Coming Soon
-                </span>
-            </div>
-
-            <!-- Contact -->
-            <div
-                class="mt-8 flex flex-col items-center justify-center gap-4 text-sm font-semibold text-white/90 sm:flex-row sm:gap-10"
-            >
-                <a
-                    href="https://www.facebook.com/lsuanimorun"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="contact-link flex items-center gap-2 transition duration-300 hover:-translate-y-1 hover:text-yellow-300"
-                >
-                    <span
-                        class="contact-icon flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#064e3b]"
-                    >
-                        <i class="fa-brands fa-facebook-f"></i>
-                    </span>
-
-                    <span>fb.com/lsuanimorun</span>
-                </a>
-
-                <a
-                    href="mailto:animorun@lsu.edu.ph"
-                    class="contact-link flex items-center gap-2 transition duration-300 hover:-translate-y-1 hover:text-yellow-300"
-                >
-                    <span
-                        class="contact-icon flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#064e3b]"
-                    >
-                        <i class="fa-solid fa-envelope"></i>
-                    </span>
-
-                    <span>animorun@lsu.edu.ph</span>
-                </a>
-            </div>
-        </div>
-
-        <!-- Bottom Emerald Light -->
-        <div
-            class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-300 to-transparent opacity-90"
-        ></div>
-
-        <div
-            class="bottom-glow absolute bottom-0 left-1/2 h-24 w-[75%] -translate-x-1/2"
-        ></div>
-    </section>
+      <div class="social-row">
+        <a class="social-item" href="https://fb.com/lsuanimorun" target="_blank" rel="noopener">
+          <span class="social-icon">
+            <svg viewBox="0 0 24 24" width="60%" height="60%">
+              <path fill="currentColor"
+                d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z" />
+            </svg>
+          </span>
+          <span class="social-label">fb.com/lsuanimorun</span>
+        </a>
+        <a class="social-item" href="mailto:animorun@lsu.edu.ph">
+          <span class="social-icon">
+            <svg viewBox="0 0 24 24" width="55%" height="55%">
+              <path fill="currentColor"
+                d="M3 5.5A1.5 1.5 0 0 1 4.5 4h15A1.5 1.5 0 0 1 21 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-13zm2.1.5 6.9 5.4 6.9-5.4H5.1zM19 7.4l-6.53 5.12a1.5 1.5 0 0 1-1.85 0L4.09 7.4v10.6a.5.5 0 0 0 .5.5h14.82a.5.5 0 0 0 .5-.5V7.4z" />
+            </svg>
+          </span>
+          <span class="social-label">animorun@lsu.edu.ph</span>
+        </a>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-/* =========================================================
-   EMERALD RUN
-   PREMIUM CINEMATIC GLASS + LENS FLARE
-   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,600&display=swap');
 
+.poster {
+  position: relative;
 
-/* =========================================================
-   EMERALD CORE
-   ========================================================= */
-
-.emerald-core {
-    background: radial-gradient(
-        circle,
-        rgba(52, 211, 153, 0.28) 0%,
-        rgba(16, 185, 129, 0.16) 28%,
-        rgba(6, 78, 59, 0.06) 60%,
-        transparent 76%
-    );
-
-    filter: blur(50px);
-
-    animation: emeraldPulse 7s ease-in-out infinite;
+  overflow: hidden;
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  container-type: size;
+  container-name: poster;
+  background-color: #06160c;
 }
-
-@keyframes emeraldPulse {
-    0%,
-    100% {
-        opacity: 0.45;
-        transform: translate(-50%, -50%) scale(0.9);
-    }
-
-    50% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.12);
-    }
-}
-
 
 /* =========================================================
-   EMERALD BACKGROUND CLOUDS
-   ========================================================= */
+   Background: Lush emerald gradients + dark corner fade circles + film grain
+========================================================= */
+.bg-wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    /* 4 Smooth dark circular fades in the corner areas */
+    radial-gradient(circle 500px at 10% 20%, rgba(2, 8, 4, 0.82) 0%, rgba(3, 12, 6, 0.45) 45%, transparent 72%),
+    radial-gradient(circle 520px at 88% 20%, rgba(2, 8, 4, 0.82) 0%, rgba(3, 12, 6, 0.45) 45%, transparent 72%),
+    radial-gradient(circle 500px at 10% 82%, rgba(2, 8, 4, 0.80) 0%, rgba(3, 12, 6, 0.42) 45%, transparent 72%),
+    radial-gradient(circle 540px at 88% 82%, rgba(2, 8, 4, 0.85) 0%, rgba(3, 12, 6, 0.48) 45%, transparent 72%),
 
-.emerald-cloud {
-    filter: blur(20px);
-    pointer-events: none;
+    /* Luminous emerald center and flare highlights */
+    radial-gradient(circle 520px at 33.5% 37%, rgba(45, 160, 90, 0.55) 0%, rgba(26, 115, 60, 0.25) 48%, transparent 75%),
+    radial-gradient(ellipse 70% 60% at 82% 48%, rgba(32, 125, 68, 0.42) 0%, transparent 68%),
+    radial-gradient(ellipse 70% 55% at 50% 50%, transparent 35%, rgba(4, 16, 9, 0.55) 80%, #030f06 100%),
+    radial-gradient(ellipse 95% 80% at 50% 45%, #18522e 0%, #10381e 52%, #05140a 100%);
 }
 
-.emerald-cloud-left {
-    background: rgba(16, 185, 129, 0.24);
-
-    animation:
-        cloudLeft 9s ease-in-out infinite alternate;
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: .11;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-
-.emerald-cloud-right {
-    background: rgba(52, 211, 153, 0.20);
-
-    animation:
-        cloudRight 11s ease-in-out infinite alternate;
-}
-
-@keyframes cloudLeft {
-    from {
-        transform: scale(0.8);
-        opacity: 0.25;
-    }
-
-    to {
-        transform: scale(1.15);
-        opacity: 0.65;
-    }
-}
-
-@keyframes cloudRight {
-    from {
-        transform: scale(0.85);
-        opacity: 0.2;
-    }
-
-    to {
-        transform: scale(1.2);
-        opacity: 0.6;
-    }
-}
-
 
 /* =========================================================
-   NEW CINEMATIC LENS FLARE
-   Inspired by the uploaded diagonal light reference
-   ========================================================= */
-
-.cinematic-flare {
-    position: absolute;
-
-    width: 200px;
-    height: 200px;
-
-    pointer-events: none;
-
-    z-index: 2;
-
-    transform-origin: center;
+   Content: centered flex column, full screen
+========================================================= */
+.content {
+  position: relative;
+  z-index: 3;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
 }
 
 
-/*
-   Main flare position.
-   The light travels diagonally:
-   bottom-left → top-right
-*/
+.headline {
+  margin: 4.2cqmin 0 0;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
 
-.cinematic-flare-1 {
-    left: 52%;
-    top: 10%;
-
-    animation:
-        cinematicFlareMove 12s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  line-height: 1.05;
+  letter-spacing: -.015em;
+  text-align: center;
+  text-shadow: 0 .35cqmin 1.4cqmin rgba(0, 0, 0, .45), 0 .15cqmin .4cqmin rgba(0, 0, 0, .3);
+  white-space: nowrap;
 }
 
-
-@keyframes cinematicFlareMove {
-    0% {
-        transform:
-            translate(-42vw, 28vh)
-            rotate(-3deg)
-            scale(0.72);
-        opacity: 0;
-    }
-
-    28% {
-        opacity: 1;
-    }
-
-    55% {
-        opacity: 1;
-    }
-
-    82% {
-        opacity: 0.12;
-    }
-
-    100% {
-        transform:
-            translate(42vw, -28vh)
-            rotate(3deg)
-            scale(1.15);
-        opacity: 0;
-    }
+.subtitle {
+  margin-bottom: 70px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  letter-spacing: .015em;
+  text-align: center;
+  text-shadow: 0 .2cqmin .9cqmin rgba(0, 0, 0, .4);
+  white-space: nowrap;
 }
 
-/* Secondary flare */
-
-.cinematic-flare-2 {
-    left: -15%;
-    top: 45%;
-
-    width: 280px;
-    height: 280px;
-
-    opacity: 0.28;
-
-    animation:
-        secondaryFlareMove 15s ease-in-out infinite;
+.date-badge {
+  margin-top: 2.1cqmin;
+  background: #fff;
+  color: #113824;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 2.35cqmin;
+  padding: .6cqmin 1.8cqmin;
+  border-radius: .45cqmin;
+  white-space: nowrap;
+  box-shadow: 0 .25cqmin .8cqmin rgba(0, 0, 0, .22);
 }
 
+.social-row {
+  margin-top: 5.6cqmin;
+  display: flex;
+  align-items: center;
+  gap: 3.4cqmin;
+}
+
+.social-item {
+  display: flex;
+  align-items: center;
+  gap: .9cqmin;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity .2s ease;
+}
+
+.social-item:hover {
+  opacity: .85;
+}
+
+.social-icon {
+  width: 2.6cqmin;
+  height: 2.6cqmin;
+  min-width: 22px;
+  min-height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  color: #113824;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 .2cqmin .6cqmin rgba(0, 0, 0, .2);
+}
+
+.social-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.65cqmin;
+  font-weight: 500;
+  letter-spacing: .01em;
+}
 
 /* =========================================================
-   LONG DIAGONAL LIGHT BEAM
-   ========================================================= */
+   Lens flare & Smooth Organic Light Animation
+   Anchored at top-left of center (above "The")
+========================================================= */
+.lens-flare {
+  position: absolute;
+  left: 35%;
+  top: 40%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 2;
+  animation: flare-sway 8s ease-in-out infinite alternate;
+  will-change: transform;
+  rotate: 330deg;
+}
 
-.flare-diagonal-beam {
-    position: absolute;
+@keyframes flare-sway {
+  0% {
+    transform: translate(0, 0);
+  }
 
-    left: 50%;
-    top: 50%;
+  50% {
+    transform: translate(4px, -3px);
+  }
 
-    width: 2000px;
-    height: 1000px;
+  100% {
+    transform: translate(-3px, 2px);
+  }
+}
 
-    transform:
-        translate(-50%, -50%)
-        rotate(-38deg);
+/* Controlled horizontal flare glint with smooth gleam */
+.beam {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 320px;
+  max-width: 32vw;
+  height: 1.5px;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, .05) 15%,
+      rgba(255, 255, 255, .4) 38%,
+      rgba(255, 255, 255, .95) 48%,
+      #ffffff 50%,
+      rgba(255, 255, 255, .95) 52%,
+      rgba(255, 255, 255, .4) 62%,
+      rgba(255, 255, 255, .05) 85%,
+      transparent 100%);
+  filter: blur(.3px);
+  box-shadow:
+    0 0 6px rgba(255, 255, 255, .85),
+    0 0 14px rgba(255, 255, 255, .45),
+    0 0 25px rgba(180, 255, 215, .25);
+  animation: beam-pulse 6s ease-in-out infinite alternate;
+}
 
-    transform-origin: center;
+.beam-glow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 260px;
+  max-width: 28vw;
+  height: 14px;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, .08) 22%,
+      rgba(255, 255, 255, .28) 45%,
+      rgba(255, 255, 255, .50) 50%,
+      rgba(255, 255, 255, .28) 55%,
+      rgba(255, 255, 255, .08) 78%,
+      transparent 100%);
+  filter: blur(6px);
+  opacity: .75;
+  animation: beam-pulse 6s ease-in-out infinite alternate;
+}
 
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.02) 8%,
-        rgba(255, 255, 255, 0.08) 22%,
-        rgba(255, 255, 255, 0.20) 35%,
-        rgba(255, 255, 255, 0.62) 46%,
-        #ffffff 50%,
-        rgba(255, 255, 255, 0.62) 54%,
-        rgba(255, 255, 255, 0.20) 65%,
-        rgba(255, 255, 255, 0.08) 78%,
-        rgba(255, 255, 255, 0.02) 92%,
-        transparent 100%
-    );
+@keyframes beam-pulse {
+  0% {
+    opacity: .70;
+    transform: translate(-50%, -50%) scaleX(.94);
+  }
 
-    filter: blur(2px);
+  50% {
+    opacity: .95;
+    transform: translate(-50%, -50%) scaleX(1.05);
+  }
 
+  100% {
+    opacity: .75;
+    transform: translate(-50%, -50%) scaleX(.98);
+  }
+}
+
+/* Main outer aperture ring */
+.ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ring-main {
+  transform: translate(-50%, -50%);
+  width: 460px;
+  height: 460px;
+  border: 0 solid rgba(255, 255, 255, .55);
+  box-shadow:
+    0 0 12px rgba(255, 255, 255, .16),
+    inset 0 0 20px rgba(255, 255, 255, .04);
+  opacity: .8;
+  animation: ring-breathe 7s ease-in-out infinite alternate;
+}
+
+/* Secondary upper ring reaching into the top-right / logo region */
+.ring-upper {
+  transform: translate(calc(-50% + 45px), calc(-50% - 35px));
+  width: 530px;
+  height: 530px;
+  border: 1px solid rgba(255, 255, 255, .32);
+  box-shadow:
+    0 0 14px rgba(255, 255, 255, .12),
+    inset 0 0 25px rgba(255, 255, 255, .03);
+  opacity: .65;
+  animation: ring-breathe 8s ease-in-out infinite alternate reverse;
+}
+
+/* Inner concentric halo */
+.ring-inner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px;
+  height: 700px;
+  border-radius: 50%;
+  border: 0px solid rgba(255, 255, 255, .2);
+  /* box-shadow:0 0 16px rgba(255,255,255,.1); */
+  opacity: .5;
+  animation: ring-breathe 6s ease-in-out infinite alternate;
+}
+
+@keyframes ring-breathe {
+  0% {
+    opacity: .6;
+    transform: translate(var(--tx, -50%), var(--ty, -50%)) scale(.99);
+  }
+
+  100% {
+    opacity: .85;
+    transform: translate(var(--tx, -50%), var(--ty, -50%)) scale(1.02);
+  }
+}
+
+.ring-upper {
+  --tx: calc(-50% + 45px);
+  --ty: calc(-50% - 35px);
+}
+
+/* Radiant bloom and bright hot core */
+.bloom {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 700px;
+  height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle,
+      rgba(255, 255, 255, .95) 0%,
+      rgba(200, 255, 225, .65) 25%,
+      rgba(90, 215, 150, .22) 55%,
+      transparent 75%);
+  filter: blur(15px);
+  animation: bloom-pulse 1s ease-in-out infinite alternate;
+}
+
+.core {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow:
+    0 0 8px #fff,
+    0 0 20px #fff,
+    0 0 45px rgba(255, 255, 255, .95),
+    0 0 80px rgba(140, 250, 180, .5);
+  animation: core-gleam 4s ease-in-out infinite alternate;
+}
+
+@keyframes bloom-pulse {
+  0% {
+    opacity: .85;
+    transform: translate(-50%, -50%) scale(.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+@keyframes core-gleam {
+  0% {
     box-shadow:
-        0 0 8px rgba(255, 255, 255, 0.9),
-        0 0 20px rgba(255, 255, 255, 0.6),
-        0 0 45px rgba(255, 255, 255, 0.35),
-        0 0 80px rgba(167, 243, 208, 0.18);
+      0 0 8px #fff,
+      0 0 18px #fff,
+      0 0 40px rgba(255, 255, 255, .9),
+      0 0 70px rgba(140, 250, 180, 0.13);
+  }
 
-    animation:
-        beamPulse 3.8s ease-in-out infinite;
-}
-
-
-/* Larger soft beam behind the main beam */
-
-.flare-soft-beam {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    width: 850px;
-    height: 28px;
-
-    transform:
-        translate(-50%, -50%)
-        rotate(-38deg);
-
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.05) 25%,
-        rgba(255, 255, 255, 0.22) 50%,
-        rgba(255, 255, 255, 0.05) 75%,
-        transparent
-    );
-
-    filter: blur(15px);
-
-    opacity: 0.55;
-
-    animation:
-        softBeamPulse 4.5s ease-in-out infinite;
-}
-
-
-/* =========================================================
-   FLARE BLOOM
-   ========================================================= */
-
-.flare-bloom {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    width: 230px;
-    height: 230px;
-
-    transform: translate(-50%, -50%);
-
-    border-radius: 9999px;
-
-    background: radial-gradient(
-        circle,
-        rgba(255, 255, 255, 0.92) 0%,
-        rgba(255, 255, 255, 0.68) 5%,
-        rgba(255, 255, 255, 0.42) 13%,
-        rgba(255, 255, 255, 0.22) 26%,
-        rgba(255, 255, 255, 0.10) 42%,
-        rgba(236, 253, 245, 0.04) 58%,
-        transparent 76%
-    );
-
-    filter: blur(13px);
-
-    animation:
-        flareBloom 3.2s ease-in-out infinite;
-}
-
-
-/* =========================================================
-   HOT WHITE CORE
-   ========================================================= */
-
-.flare-core {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    width: 20px;
-    height: 20px;
-
-    transform: translate(-50%, -50%);
-
-    border-radius: 9999px;
-
-    background: #ffffff;
-
-    z-index: 10;
-
+  100% {
     box-shadow:
-        0 0 3px #ffffff,
-        0 0 8px #ffffff,
-        0 0 16px #ffffff,
-        0 0 30px #ffffff,
-        0 0 50px rgba(255, 255, 255, 0.95),
-        0 0 85px rgba(255, 255, 255, 0.75),
-        0 0 130px rgba(255, 255, 255, 0.45),
-        0 0 190px rgba(255, 255, 255, 0.22);
-
-    animation:
-        flareCorePulse 2.5s ease-in-out infinite;
+      0 0 10px #fff,
+      0 0 24px #fff,
+      0 0 55px rgba(255, 255, 255, 1),
+      0 0 95px rgba(140, 250, 180, 0.247);
+  }
 }
-
 
 /* =========================================================
-   RADIAL RAYS
-   ========================================================= */
-
-.flare-ray {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    transform-origin: center;
-
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.35),
-        #ffffff,
-        rgba(255, 255, 255, 0.35),
-        transparent
-    );
-
-    filter: blur(1px);
-
-    opacity: 0.75;
-
-    pointer-events: none;
+   Ghost glare circles (Lower-Left & Upper-Right Opposite)
+========================================================= */
+.ghost {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: ghost-drift 7s ease-in-out infinite alternate;
 }
 
-
-/* Horizontal */
-
-.flare-ray-horizontal {
-    width: 420px;
-    height: 2px;
-
-    transform:
-        translate(-50%, -50%)
-        rotate(0deg);
+/* Ghost 1: large soft halo disc near core/under "The" */
+.ghost1 {
+  width: 125px;
+  height: 125px;
+  transform: translate(calc(-50% - 30px), calc(-50% + 100px));
+  background: radial-gradient(circle,
+      rgba(160, 245, 195, .22) 0%,
+      rgba(255, 255, 255, .14) 60%,
+      rgba(255, 255, 255, .04) 85%,
+      transparent 100%);
+  border: 1px solid rgba(255, 255, 255, .26);
+  box-shadow: 0 0 16px rgba(120, 230, 165, .18);
+  filter: blur(1px);
+  animation-delay: 0.2s;
 }
 
-
-/* Vertical */
-
-.flare-ray-vertical {
-    width: 2px;
-    height: 420px;
-
-    transform:
-        translate(-50%, -50%)
-        rotate(0deg);
-
-    background: linear-gradient(
-        180deg,
-        transparent,
-        rgba(255, 255, 255, 0.35),
-        #ffffff,
-        rgba(255, 255, 255, 0.35),
-        transparent
-    );
+/* Ghost 2: clearly visible disc */
+.ghost2 {
+  width: 88px;
+  height: 88px;
+  transform: translate(calc(-50% - 100px), calc(-70% + 200px));
+  background: radial-gradient(circle,
+      rgba(200, 255, 225, .28) 0%,
+      rgba(255, 255, 255, .20) 65%,
+      rgba(255, 255, 255, .05) 88%,
+      transparent 100%);
+  border: 1.2px solid rgba(255, 255, 255, 0.13);
+  box-shadow: 0 0 16px rgba(130, 240, 180, .24);
+  filter: blur(1px);
+  animation-delay: 0.5s;
 }
 
-
-/* Diagonal rays */
-
-.flare-ray-diagonal-1 {
-    width: 360px;
-    height: 2px;
-
-    transform:
-        translate(-50%, -50%)
-        rotate(42deg);
-
-    opacity: 0.45;
+/* Ghost 3: clearly visible medium disc */
+.ghost3 {
+  width: 68px;
+  height: 68px;
+  transform: translate(calc(-50% - 96px), calc(-50% + 215px));
+  background: radial-gradient(circle,
+      rgba(255, 255, 255, .30) 0%,
+      rgba(170, 245, 200, .20) 65%,
+      transparent 100%);
+  border: 1.2px solid rgba(255, 255, 255, 0.137);
+  box-shadow: 0 0 14px rgba(130, 240, 180, .2);
+  filter: blur(1px);
+  animation-delay: 0.8s;
 }
 
-.flare-ray-diagonal-2 {
-    width: 330px;
-    height: 2px;
-
-    transform:
-        translate(-50%, -50%)
-        rotate(-42deg);
-
-    opacity: 0.38;
+/* Ghost 4: smaller glowing disc */
+.ghost4 {
+  width: 48px;
+  height: 48px;
+  transform: translate(calc(-50% - 130px), calc(-50% + 285px));
+  background: radial-gradient(circle,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(180, 255, 215, .22) 70%,
+      transparent 100%);
+  border: 1px solid rgba(255, 255, 255, 0.151);
+  box-shadow: 0 0 12px rgba(255, 255, 255, .22);
+  animation-delay: 1.1s;
 }
 
+/* Ghost 5: compact glare orb */
+.ghost5 {
+  width: 32px;
+  height: 32px;
+  transform: translate(calc(-50% - 165px), calc(-50% + 355px));
+  background: radial-gradient(circle,
+      rgba(255, 255, 255, .40) 0%,
+      rgba(255, 255, 255, .15) 75%,
+      transparent 100%);
+  border: .8px solid rgba(255, 255, 255, 0.089);
+  box-shadow: 0 0 8px rgba(255, 255, 255, .18);
+  animation-delay: 1.4s;
+}
+
+/* Ghost 6: subtle tail orb */
+.ghost6 {
+  width: 22px;
+  height: 22px;
+  transform: translate(calc(-50% - 195px), calc(-50% + 420px));
+  background: radial-gradient(circle,
+      rgba(255, 255, 255, 0.041),
+      rgba(255, 255, 255, .1) 70%,
+      transparent 100%);
+  filter: blur(.8px);
+  animation-delay: 1.7s;
+}
 
 /* =========================================================
-   LENS GHOSTS
-   Hexagonal reflections similar to the reference image
-   ========================================================= */
-
-.flare-ghost {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    border: 1px solid rgba(255, 255, 255, 0.12);
-
-    background: radial-gradient(
-        circle,
-        rgba(255, 255, 255, 0.14),
-        rgba(255, 255, 255, 0.035) 55%,
-        transparent 75%
-    );
-
-    backdrop-filter: blur(2px);
-
-    clip-path: polygon(
-        25% 6%,
-        75% 6%,
-        100% 50%,
-        75% 94%,
-        25% 94%,
-        0% 50%
-    );
-
-    filter: blur(0.5px);
-
-    opacity: 0.35;
+   Opposite side glare (Upper-Right inside red-box region)
+========================================================= */
+/* Opposite Ghost 1: luminous soft aperture disc */
+.ghost-opp1 {
+  width: 95px;
+  height: 95px;
+  transform: translate(calc(-50% + 55px), calc(-50% - 105px));
+  background: radial-gradient(circle,
+      rgba(180, 255, 220, .24) 0%,
+      rgba(255, 255, 255, .15) 60%,
+      rgba(255, 255, 255, .04) 85%,
+      transparent 100%);
+  border: 1px solid rgba(255, 255, 255, .26);
+  box-shadow: 0 0 16px rgba(120, 230, 165, .18);
+  filter: blur(1.6px);
+  animation-delay: 0.3s;
 }
 
-
-/* Large ghost */
-
-.flare-ghost-1 {
-    width: 95px;
-    height: 95px;
-
-    transform:
-        translate(-50%, -50%)
-        translate(-260px, 155px)
-        rotate(-10deg);
-
-    animation:
-        ghostFloat1 5s ease-in-out infinite;
+/* Opposite Ghost 2: medium glare circle in the upper zone */
+.ghost-opp2 {
+  width: 65px;
+  height: 65px;
+  transform: translate(calc(-50% + 110px), calc(-50% - 170px));
+  background: radial-gradient(circle,
+      rgba(255, 255, 255, .28) 0%,
+      rgba(165, 245, 195, .18) 65%,
+      transparent 100%);
+  border: 1.1px solid rgba(255, 255, 255, .32);
+  box-shadow: 0 0 12px rgba(130, 240, 180, .2);
+  filter: blur(1.2px);
+  animation-delay: 0.7s;
 }
 
-
-/* Medium ghost */
-
-.flare-ghost-2 {
-    width: 58px;
-    height: 58px;
-
-    transform:
-        translate(-50%, -50%)
-        translate(-180px, 108px);
-
-    opacity: 0.24;
-
-    animation:
-        ghostFloat2 4.5s ease-in-out infinite;
+/* Opposite Ghost 3: upper subtle glare orb */
+.ghost-opp3 {
+  width: 42px;
+  height: 42px;
+  transform: translate(calc(-50% + 160px), calc(-50% - 225px));
+  background: radial-gradient(circle,
+      rgba(255, 255, 255, .35) 0%,
+      rgba(190, 255, 225, .18) 70%,
+      transparent 100%);
+  border: .9px solid rgba(255, 255, 255, .3);
+  box-shadow: 0 0 10px rgba(255, 255, 255, .2);
+  animation-delay: 1.1s;
 }
 
+@keyframes ghost-drift {
+  0% {
+    opacity: .75;
+    filter: blur(var(--b, 1px)) brightness(.95);
+  }
 
-/* Small ghost */
+  50% {
+    opacity: 1;
+    filter: blur(var(--b, 1px)) brightness(1.1);
+  }
 
-.flare-ghost-3 {
-    width: 38px;
-    height: 38px;
-
-    transform:
-        translate(-50%, -50%)
-        translate(-110px, 65px);
-
-    opacity: 0.22;
+  100% {
+    opacity: .85;
+    filter: blur(var(--b, 1px)) brightness(1);
+  }
 }
-
-
-/* Tiny ghost */
-
-.flare-ghost-4 {
-    width: 24px;
-    height: 24px;
-
-    transform:
-        translate(-50%, -50%)
-        translate(80px, -50px);
-
-    opacity: 0.18;
-}
-
 
 /* =========================================================
-   LENS FLARE ANIMATIONS
-   ========================================================= */
-
-@keyframes cinematicFlareMove {
-
-    0% {
-        transform:
-            translate(-42vw, 28vh)
-            rotate(-3deg)
-            scale(0.72);
-
-        opacity: 0;
-    }
-
-    8% {
-        opacity: 0.35;
-    }
-
-    18% {
-        opacity: 0.9;
-    }
-
-    28% {
-        opacity: 1;
-    }
-
-    42% {
-        opacity: 0.82;
-    }
-
-    55% {
-        opacity: 1;
-    }
-
-    70% {
-        opacity: 0.45;
-    }
-
-    82% {
-        opacity: 0.12;
-    }
-
-    100% {
-        transform:
-            translate(42vw, -28vh)
-            rotate(3deg)
-            scale(1.15);
-
-        opacity: 0;
-    }
-}
-
-
-@keyframes secondaryFlareMove {
-
-    0%,
-    100% {
-        transform:
-            translate(-5vw, 10vh)
-            scale(0.65);
-
-        opacity: 0;
-    }
-
-    30% {
-        opacity: 0.18;
-    }
-
-    50% {
-        transform:
-            translate(18vw, -10vh)
-            scale(0.9);
-
-        opacity: 0.3;
-    }
-
-    70% {
-        opacity: 0.1;
-    }
-}
-
-
-@keyframes flareBloom {
-
-    0%,
-    100% {
-        transform:
-            translate(-50%, -50%)
-            scale(0.72);
-
-        opacity: 0.55;
-    }
-
-    50% {
-        transform:
-            translate(-50%, -50%)
-            scale(1.25);
-
-        opacity: 1;
-    }
-}
-
-
-@keyframes flareCorePulse {
-
-    0%,
-    100% {
-        transform:
-            translate(-50%, -50%)
-            scale(0.72);
-
-        opacity: 0.78;
-    }
-
-    50% {
-        transform:
-            translate(-50%, -50%)
-            scale(1.3);
-
-        opacity: 1;
-    }
-}
-
-
-@keyframes beamPulse {
-
-    0%,
-    100% {
-        opacity: 0.45;
-    }
-
-    50% {
-        opacity: 1;
-    }
-}
-
-
-@keyframes softBeamPulse {
-
-    0%,
-    100% {
-        opacity: 0.25;
-    }
-
-    50% {
-        opacity: 0.7;
-    }
-}
-
-
-@keyframes ghostFloat1 {
-
-    0%,
-    100% {
-        opacity: 0.12;
-        transform:
-            translate(-50%, -50%)
-            translate(-260px, 155px)
-            rotate(-10deg)
-            scale(0.85);
-    }
-
-    50% {
-        opacity: 0.45;
-        transform:
-            translate(-50%, -50%)
-            translate(-260px, 155px)
-            rotate(-10deg)
-            scale(1.08);
-    }
-}
-
-
-@keyframes ghostFloat2 {
-
-    0%,
-    100% {
-        opacity: 0.08;
-        transform:
-            translate(-50%, -50%)
-            translate(-180px, 108px)
-            scale(0.8);
-    }
-
-    50% {
-        opacity: 0.32;
-        transform:
-            translate(-50%, -50%)
-            translate(-180px, 108px)
-            scale(1.12);
-    }
-}
-
-
-/* =========================================================
-   LARGE GLASS SHINE
-   ========================================================= */
-
-.glass-shine {
-    position: absolute;
-
-    width: 360px;
-    height: 360px;
-
-    pointer-events: none;
-
-    opacity: 0;
-
-    transform: scale(0.2);
-
-    animation:
-        glassShine 8s ease-in-out infinite;
-}
-
-.glass-shine-1 {
-    left: 4%;
-    top: 5%;
-}
-
-.glass-shine-2 {
-    right: 5%;
-    top: 8%;
-
-    width: 300px;
-    height: 300px;
-
-    animation-delay: 4s;
-}
-
-
-/* =========================================================
-   LARGE SOFT GLASS REFLECTION
-   ========================================================= */
-
-.glass-reflection {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    width: 340px;
-    height: 340px;
-
-    transform: translate(-50%, -50%);
-
-    border-radius: 9999px;
-
-    background: radial-gradient(
-        circle,
-        rgba(255, 255, 255, 0.30) 0%,
-        rgba(255, 255, 255, 0.22) 10%,
-        rgba(236, 253, 245, 0.16) 24%,
-        rgba(209, 250, 229, 0.11) 40%,
-        rgba(167, 243, 208, 0.05) 58%,
-        transparent 76%
-    );
-
-    filter: blur(20px);
-
-    animation:
-        reflectionPulse 8s ease-in-out infinite;
-}
-
-@keyframes reflectionPulse {
-
-    0%,
-    100% {
-        transform:
-            translate(-50%, -50%)
-            scale(0.65);
-
-        opacity: 0.28;
-    }
-
-    50% {
-        transform:
-            translate(-50%, -50%)
-            scale(1.2);
-
-        opacity: 1;
-    }
-}
-
-
-/* =========================================================
-   INNER WHITE LIGHT BLOOM
-   ========================================================= */
-
-.glass-light {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    width: 220px;
-    height: 220px;
-
-    transform: translate(-50%, -50%);
-
-    border-radius: 9999px;
-
-    background: radial-gradient(
-        circle,
-        rgba(255, 255, 255, 0.50) 0%,
-        rgba(255, 255, 255, 0.34) 12%,
-        rgba(236, 253, 245, 0.22) 28%,
-        rgba(209, 250, 229, 0.11) 48%,
-        transparent 74%
-    );
-
-    filter: blur(16px);
-
-    animation:
-        lightBloom 5s ease-in-out infinite;
-}
-
-@keyframes lightBloom {
-
-    0%,
-    100% {
-        opacity: 0.55;
-
-        transform:
-            translate(-50%, -50%)
-            scale(0.8);
-    }
-
-    50% {
-        opacity: 1;
-
-        transform:
-            translate(-50%, -50%)
-            scale(1.12);
-    }
-}
-
-
-/* =========================================================
-   WHITE GLASS HORIZONTAL REFLECTION
-   ========================================================= */
-
-.glass-beam-horizontal {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    width: 340px;
-    height: 7px;
-
-    transform: translate(-50%, -50%);
-
-    background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.08) 18%,
-        rgba(255, 255, 255, 0.28) 35%,
-        rgba(255, 255, 255, 0.65) 45%,
-        #ffffff 50%,
-        rgba(255, 255, 255, 0.65) 55%,
-        rgba(255, 255, 255, 0.28) 65%,
-        rgba(255, 255, 255, 0.08) 82%,
-        transparent 100%
-    );
-
-    filter: blur(3px);
-
-    box-shadow:
-        0 0 12px rgba(255, 255, 255, 0.65),
-        0 0 30px rgba(255, 255, 255, 0.40),
-        0 0 55px rgba(255, 255, 255, 0.20);
-}
-
-
-/* =========================================================
-   WHITE GLASS VERTICAL REFLECTION
-   ========================================================= */
-
-.glass-beam-vertical {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    width: 7px;
-    height: 340px;
-
-    transform: translate(-50%, -50%);
-
-    background: linear-gradient(
-        180deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.08) 18%,
-        rgba(255, 255, 255, 0.28) 35%,
-        rgba(255, 255, 255, 0.65) 45%,
-        #ffffff 50%,
-        rgba(255, 255, 255, 0.65) 55%,
-        rgba(255, 255, 255, 0.28) 65%,
-        rgba(255, 255, 255, 0.08) 82%,
-        transparent 100%
-    );
-
-    filter: blur(3px);
-
-    box-shadow:
-        0 0 12px rgba(255, 255, 255, 0.65),
-        0 0 30px rgba(255, 255, 255, 0.40),
-        0 0 55px rgba(255, 255, 255, 0.20);
-}
-
-
-/* =========================================================
-   HOT WHITE GLASS CORE
-   ========================================================= */
-
-.glass-core {
-    position: absolute;
-
-    left: 50%;
-    top: 50%;
-
-    width: 18px;
-    height: 18px;
-
-    transform: translate(-50%, -50%);
-
-    border-radius: 9999px;
-
-    background: #ffffff;
-
-    box-shadow:
-        0 0 5px #ffffff,
-        0 0 12px #ffffff,
-        0 0 24px #ffffff,
-        0 0 42px rgba(255, 255, 255, 0.95),
-        0 0 70px rgba(255, 255, 255, 0.75),
-        0 0 110px rgba(255, 255, 255, 0.48),
-        0 0 160px rgba(255, 255, 255, 0.25),
-        0 0 210px rgba(255, 255, 255, 0.12);
-
-    z-index: 5;
-
-    animation:
-        corePulse 3s ease-in-out infinite;
-}
-
-@keyframes corePulse {
-
-    0%,
-    100% {
-        transform:
-            translate(-50%, -50%)
-            scale(0.75);
-
-        opacity: 0.75;
-    }
-
-    50% {
-        transform:
-            translate(-50%, -50%)
-            scale(1.2);
-
-        opacity: 1;
-    }
-}
-
-
-/* =========================================================
-   GLASS SHINE MAIN ANIMATION
-   ========================================================= */
-
-@keyframes glassShine {
-
-    0% {
-        transform: scale(0.2);
-        opacity: 0;
-    }
-
-    12% {
-        transform: scale(0.35);
-        opacity: 0.12;
-    }
-
-    25% {
-        transform: scale(0.8);
-        opacity: 0.65;
-    }
-
-    35% {
-        transform: scale(1.08);
-        opacity: 1;
-    }
-
-    45% {
-        transform: scale(0.94);
-        opacity: 0.82;
-    }
-
-    55% {
-        transform: scale(1.12);
-        opacity: 1;
-    }
-
-    68% {
-        transform: scale(0.78);
-        opacity: 0.48;
-    }
-
-    82% {
-        transform: scale(0.38);
-        opacity: 0.08;
-    }
-
-    100% {
-        transform: scale(0.2);
-        opacity: 0;
-    }
-}
-
-
-/* =========================================================
-   SMALL WHITE GLASS PARTICLES
-   ========================================================= */
-
-.glass-dot {
-    position: absolute;
-
-    width: 3px;
-    height: 3px;
-
-    border-radius: 9999px;
-
-    background: #ffffff;
-
-    box-shadow:
-        0 0 5px #ffffff,
-        0 0 12px rgba(255, 255, 255, 0.95),
-        0 0 24px rgba(255, 255, 255, 0.55);
-
-    animation:
-        dotShine 4s ease-in-out infinite;
-}
-
-.glass-dot-1 {
-    left: 11%;
-    top: 50%;
-}
-
-.glass-dot-2 {
-    left: 22%;
-    top: 17%;
-    animation-delay: 1s;
-}
-
-.glass-dot-3 {
-    left: 31%;
-    top: 72%;
-    animation-delay: 2s;
-}
-
-.glass-dot-4 {
-    left: 40%;
-    top: 25%;
-    animation-delay: 0.5s;
-}
-
-.glass-dot-5 {
-    left: 52%;
-    top: 78%;
-    animation-delay: 2.5s;
-}
-
-.glass-dot-6 {
-    left: 63%;
-    top: 22%;
-    animation-delay: 1.4s;
-}
-
-.glass-dot-7 {
-    left: 73%;
-    top: 70%;
-    animation-delay: 3s;
-}
-
-.glass-dot-8 {
-    left: 82%;
-    top: 38%;
-    animation-delay: 1.8s;
-}
-
-.glass-dot-9 {
-    left: 91%;
-    top: 62%;
-    animation-delay: 2.8s;
-}
-
-.glass-dot-10 {
-    left: 47%;
-    top: 38%;
-    animation-delay: 3.4s;
-}
-
-@keyframes dotShine {
-
-    0%,
-    100% {
-        transform: scale(0.3);
-        opacity: 0.08;
-    }
-
-    50% {
-        transform: scale(2);
-        opacity: 1;
-    }
-}
-
-
-/* =========================================================
-   GLASS RINGS
-   ========================================================= */
-
-.glass-ring {
-    border: 1px solid rgba(255, 255, 255, 0.06);
-
-    box-shadow:
-        0 0 20px rgba(255, 255, 255, 0.02),
-        inset 0 0 20px rgba(255, 255, 255, 0.015);
-
-    animation:
-        ringFloat 10s ease-in-out infinite;
-}
-
-.glass-ring-2 {
-    animation-delay: 3s;
-}
-
-@keyframes ringFloat {
-
-    0%,
-    100% {
-        opacity: 0.12;
-
-        transform:
-            translate(-50%, -50%)
-            scale(0.95);
-    }
-
-    50% {
-        opacity: 0.42;
-
-        transform:
-            translate(-50%, -50%)
-            scale(1.04);
-    }
-}
-
-
-/* =========================================================
-   LOGO FLOAT
-   ========================================================= */
-
-.logo-power {
-    animation:
-        logoFloat 5s ease-in-out infinite;
-}
-
-@keyframes logoFloat {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-6px);
-    }
-}
-
-
-/* =========================================================
-   DATE CARD WHITE GLOW
-   ========================================================= */
-
-.date-power {
-    animation:
-        dateGlow 4s ease-in-out infinite;
-}
-
-@keyframes dateGlow {
-
-    0%,
-    100% {
-        box-shadow:
-            0 0 20px rgba(255, 255, 255, 0.10);
-    }
-
-    50% {
-        box-shadow:
-            0 0 30px rgba(255, 255, 255, 0.25),
-            0 0 55px rgba(255, 255, 255, 0.12);
-    }
-}
-
-
-/* =========================================================
-   STATUS GLOW
-   ========================================================= */
-
-.status-power {
-    animation:
-        statusGlow 3s ease-in-out infinite;
-}
-
-@keyframes statusGlow {
-
-    0%,
-    100% {
-        box-shadow:
-            0 0 0 rgba(255, 255, 255, 0);
-    }
-
-    50% {
-        box-shadow:
-            0 0 22px rgba(255, 255, 255, 0.06);
-    }
-}
-
-
-/* =========================================================
-   CONTACT ICON HOVER
-   ========================================================= */
-
-.contact-link:hover .contact-icon {
-    box-shadow:
-        0 0 15px rgba(255, 255, 255, 0.45),
-        0 0 30px rgba(255, 255, 255, 0.20);
-}
-
-
-/* =========================================================
-   BOTTOM EMERALD-WHITE GLOW
-   ========================================================= */
-
-.bottom-glow {
-    background: radial-gradient(
-        ellipse,
-        rgba(255, 255, 255, 0.18) 0%,
-        rgba(52, 211, 153, 0.22) 25%,
-        rgba(16, 185, 129, 0.10) 45%,
-        transparent 70%
-    );
-
-    filter: blur(25px);
-
-    animation:
-        bottomGlow 5s ease-in-out infinite;
-}
-
-@keyframes bottomGlow {
-
-    0%,
-    100% {
-        opacity: 0.3;
-
-        transform:
-            translateX(-50%)
-            scaleX(0.8);
-    }
-
-    50% {
-        opacity: 0.8;
-
-        transform:
-            translateX(-50%)
-            scaleX(1.15);
-    }
-}
-
-
-/* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 640px) {
-
-    .glass-shine-1 {
-        left: -18%;
-        top: 5%;
-    }
-
-    .glass-shine-2 {
-        right: -18%;
-        top: 10%;
-    }
-
-    .glass-shine {
-        width: 320px;
-        height: 320px;
-    }
-
-    .glass-reflection {
-        width: 300px;
-        height: 300px;
-    }
-
-    .glass-beam-horizontal {
-        width: 300px;
-    }
-
-    .glass-beam-vertical {
-        height: 300px;
-    }
-
-
-    /* Lens flare mobile adjustment */
-
-    .cinematic-flare-1 {
-        left: 42%;
-        top: 15%;
-    }
-
-    .cinematic-flare-2 {
-        left: -30%;
-        top: 40%;
-    }
-
-    .flare-diagonal-beam {
-        width: 600px;
-    }
-
-    .flare-soft-beam {
-        width: 650px;
-    }
-
-    .flare-ray-horizontal {
-        width: 300px;
-    }
-
-    .flare-ray-vertical {
-        height: 300px;
-    }
-
-    .flare-ghost-1 {
-        transform:
-            translate(-50%, -50%)
-            translate(-190px, 110px)
-            scale(0.7);
-    }
-
-    .flare-ghost-2 {
-        transform:
-            translate(-50%, -50%)
-            translate(-130px, 75px)
-            scale(0.7);
-    }
-}
-
-
-/* =========================================================
-   ACCESSIBILITY
-   ========================================================= */
-
-@media (prefers-reduced-motion: reduce) {
-
-    .emerald-core,
-    .emerald-cloud,
-    .cinematic-flare,
-    .flare-diagonal-beam,
-    .flare-soft-beam,
-    .flare-bloom,
-    .flare-core,
-    .flare-ghost,
-    .glass-shine,
-    .glass-reflection,
-    .glass-light,
-    .glass-core,
-    .glass-dot,
-    .glass-ring,
-    .logo-power,
-    .date-power,
-    .status-power,
-    .bottom-glow {
-        animation: none !important;
-    }
+   Small-screen floor
+========================================================= */
+@media (max-width:480px) {
+  .headline {
+    font-size: 11cqmin;
+    white-space: normal;
+  }
+
+  .subtitle {
+    font-size: 5.5cqmin;
+  }
+
+  .social-row {
+    flex-direction: column;
+    gap: 1.4cqmin;
+  }
 }
 </style>

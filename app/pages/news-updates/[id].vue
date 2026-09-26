@@ -594,48 +594,7 @@ const additionalImages = computed(() => galleryImages.value.slice(1));
                 </div>
               </div>
             </div>
-
-
-
-            <!-- Article Meta -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-              <div class="h-1.5 w-full bg-gradient-to-r from-green-700 via-green-500 to-teal-400"></div>
-              <div class="p-5">
-                <p class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Article Info</p>
-                <div class="space-y-3">
-                  <div v-if="item.date" class="flex items-start gap-3">
-                    <span class="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-green-50 rounded-lg">
-                      <i class="fas fa-calendar-alt text-green-600 text-xs"></i>
-                    </span>
-                    <div>
-                      <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Published</p>
-                      <p class="font-medium text-gray-800 text-xs">{{ formatDate(item.date) }}</p>
-                    </div>
-                  </div>
-                  <div v-if="item.authors" class="flex items-start gap-3">
-                    <span class="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-green-50 rounded-lg">
-                      <i class="fas fa-user text-green-600 text-xs"></i>
-                    </span>
-                    <div>
-                      <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Author</p>
-                      <p class="font-medium text-gray-800 text-xs">{{ item.authors }}</p>
-                    </div>
-                  </div>
-                  <div v-if="item.content_id" class="flex items-start gap-3">
-                    <span class="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-green-50 rounded-lg">
-                      <i class="fas fa-tag text-green-600 text-xs"></i>
-                    </span>
-                    <div>
-                      <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Category</p>
-                      <p class="font-medium text-gray-800 text-xs">{{ item.content_id }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
           </aside>
-
         </div>
       </div>
     </div>
