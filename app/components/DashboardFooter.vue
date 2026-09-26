@@ -9,7 +9,7 @@
 </script>
 <template>
   <div class="">
-    <UniversityFeedbackWidget />
+    <!-- <UniversityFeedbackWidget /> -->
     <div class="flex justify-between px-3 py-1.5 text-white"
      :class="[darkMode ? 'bg-green-950' : 'bg-green-900']"
     >
