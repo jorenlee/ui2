@@ -38,32 +38,49 @@
         src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/20th%20Anniversary%20Emerald%20Logos-20260618T012425Z-3-001/20th%20Anniversary%20Emerald%20Logos/Emerald%20%26%20Theme%20with%20Corp%20Logo.png"
         alt="La Salle Ozamiz 20 Years" />
 
-      <h1 class="headline text-9xl">The Emerald Run</h1>
+     
+<h1 class="headline text-9xl typing-title">
+  <span class="typing-text">The Emerald Run</span><span class="typing-cursor">|</span>
+</h1>
+
+
       <p class="subtitle text-7xl">ANIMO Run 2026</p>
 
       <div class="date-badge">November 14, 2026</div>
 
-      <div class="social-row">
-        <a class="social-item" href="https://fb.com/lsuanimorun" target="_blank" rel="noopener">
-          <span class="social-icon">
-            <svg viewBox="0 0 24 24" width="60%" height="60%">
-              <path fill="currentColor"
-                d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12z" />
-            </svg>
-          </span>
-          <span class="social-label">fb.com/lsuanimorun</span>
-        </a>
-        <a class="social-item" href="mailto:animorun@lsu.edu.ph">
-          <span class="social-icon">
-            <svg viewBox="0 0 24 24" width="55%" height="55%">
-              <path fill="currentColor"
-                d="M3 5.5A1.5 1.5 0 0 1 4.5 4h15A1.5 1.5 0 0 1 21 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-13zm2.1.5 6.9 5.4 6.9-5.4H5.1zM19 7.4l-6.53 5.12a1.5 1.5 0 0 1-1.85 0L4.09 7.4v10.6a.5.5 0 0 0 .5.5h14.82a.5.5 0 0 0 .5-.5V7.4z" />
-            </svg>
-          </span>
-          <span class="social-label">animorun@lsu.edu.ph</span>
-        </a>
-      </div>
+     <div
+                class="mt-8 flex flex-col items-center justify-center gap-4 text-sm font-semibold text-white/90 sm:flex-row sm:gap-10"
+            >
+                <a
+                    href="https://www.facebook.com/lsuanimorun"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="contact-link flex items-center gap-2 transition duration-300 hover:-translate-y-1 hover:text-yellow-300"
+                >
+                    <span
+                        class="contact-icon flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#064e3b]"
+                    >
+                        <i class="fa-brands fa-facebook-f"></i>
+                    </span>
+
+                    <span>fb.com/lsuanimorun</span>
+                </a>
+
+                <a
+                    href="mailto:animorun@lsu.edu.ph"
+                    class="contact-link flex items-center gap-2 transition duration-300 hover:-translate-y-1 hover:text-yellow-300"
+                >
+                    <span
+                        class="contact-icon flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#064e3b]"
+                    >
+                        <i class="fa-solid fa-envelope"></i>
+                    </span>
+
+                    <span>animorun@lsu.edu.ph</span>
+                </a>
+            </div>
     </div>
+    
   </div>
 </template>
 
@@ -72,7 +89,6 @@
 
 .poster {
   position: relative;
-
   overflow: hidden;
   color: #fff;
   font-family: 'Poppins', sans-serif;
@@ -93,7 +109,6 @@
     radial-gradient(circle 500px at 10% 20%, rgba(2, 8, 4, 0.82) 0%, rgba(3, 12, 6, 0.45) 45%, transparent 72%),
     radial-gradient(circle 520px at 88% 20%, rgba(2, 8, 4, 0.82) 0%, rgba(3, 12, 6, 0.45) 45%, transparent 72%),
     radial-gradient(circle 500px at 10% 82%, rgba(2, 8, 4, 0.80) 0%, rgba(3, 12, 6, 0.42) 45%, transparent 72%),
-    radial-gradient(circle 540px at 88% 82%, rgba(2, 8, 4, 0.85) 0%, rgba(3, 12, 6, 0.48) 45%, transparent 72%),
 
     /* Luminous emerald center and flare highlights */
     radial-gradient(circle 520px at 33.5% 37%, rgba(45, 160, 90, 0.55) 0%, rgba(26, 115, 60, 0.25) 48%, transparent 75%),
@@ -613,5 +628,73 @@
     flex-direction: column;
     gap: 1.4cqmin;
   }
+}
+
+
+/* =========================================================
+   Headline Typewriter Effect
+   ========================================================= */
+
+.typing-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.typing-text {
+  display: inline-block;
+  overflow: hidden;
+  width: 0;
+  white-space: nowrap;
+  animation: typing 2.8s steps(15, end) forwards;
+}
+
+.typing-cursor {
+  display: inline-block;
+  margin-left: 6px;
+  font-weight: 400;
+  color: #ffffff;
+  animation:
+    cursor-blink 0.75s step-end infinite,
+    cursor-hide 0s 3.1s forwards;
+}
+
+/* Types "The Emerald Run" from left to right */
+@keyframes typing {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: 15ch;
+  }
+}
+
+/* Blinking cursor */
+@keyframes cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Hide cursor after typing finishes */
+@keyframes cursor-hide {
+  to {
+    opacity: 0;
+  }
+}
+
+.typing-text {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 0;
+  animation: typing 4.5s steps(15, end) forwards;
 }
 </style>

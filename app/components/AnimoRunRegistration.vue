@@ -1249,7 +1249,7 @@ const submitRegistration = async () => {
                 <div class="contents">
                   <div v-for="cat in runCategories.filter(c => c.categoryType === 'human')" :key="cat.id"
                     @click="currentParticipant.run_category = cat.id"
-                    class="relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between overflow-hidden select-none w-full lg:w-auto shrink-0 snap-center lg:shrink"
+                    class="relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between overflow-hidden select-none w-full shrink-0 snap-center lg:shrink"
                     :style="currentParticipant.run_category === cat.id
                       ? {
                         background: `linear-gradient(145deg, ${cat.colors.secondary}, ${cat.colors.primary})`,
