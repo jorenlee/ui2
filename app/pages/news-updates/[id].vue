@@ -383,7 +383,7 @@ const additionalImages = computed(() => galleryImages.value.slice(1));
 
                 <!-- Body -->
                 <div v-if="item.descriptions" class="prose prose-green max-w-none">
-                  <div class="text-gray-700 leading-relaxed text-[15px] whitespace-pre-wrap">
+                  <div class="text-black leading-relaxed text-base whitespace-pre-wrap">
                     {{ item.descriptions }}
                   </div>
                 </div>
