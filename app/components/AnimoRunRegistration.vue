@@ -51,6 +51,41 @@ const receiptFile = ref(null);
 const receiptPreview = ref(null);
 const isSubmitting = ref(false);
 
+// ── Race-cards swipe (desktop drag-to-scroll) ──────────────────────────────
+const raceCardsRef = ref(null);
+const isDragging = ref(false);
+let dragStartX = 0;
+let dragScrollLeft = 0;
+
+const onCardsDragStart = (e) => {
+  const el = raceCardsRef.value;
+  if (!el) return;
+  isDragging.value = true;
+  dragStartX = e.pageX - el.offsetLeft;
+  dragScrollLeft = el.scrollLeft;
+  el.style.cursor = 'grabbing';
+  el.style.userSelect = 'none';
+};
+
+const onCardsDragMove = (e) => {
+  if (!isDragging.value) return;
+  const el = raceCardsRef.value;
+  if (!el) return;
+  e.preventDefault();
+  const x = e.pageX - el.offsetLeft;
+  const walk = (x - dragStartX) * 1.4; // multiply for faster scroll feel
+  el.scrollLeft = dragScrollLeft - walk;
+};
+
+const onCardsDragEnd = () => {
+  isDragging.value = false;
+  const el = raceCardsRef.value;
+  if (el) {
+    el.style.cursor = 'grab';
+    el.style.userSelect = '';
+  }
+};
+
 const runCategories = [
   {
     id: "1KM",
@@ -1200,12 +1235,18 @@ const submitRegistration = async () => {
               <!-- RACE CARDS CONTAINER -->
               <!-- Mobile: Horizontal swipe snap container; Desktop: flex row with sidebar -->
               <div
-                class="flex lg:flex-row gap-3 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scrollbar-none items-stretch -mx-2 px-2 sm:mx-0 sm:px-0">
+                ref="raceCardsRef"
+                class="flex gap-3 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scrollbar-none items-stretch -mx-2 px-2 sm:mx-0 sm:px-0 select-none"
+                style="cursor: grab"
+                @mousedown="onCardsDragStart"
+                @mousemove="onCardsDragMove"
+                @mouseup="onCardsDragEnd"
+                @mouseleave="onCardsDragEnd">
 
 
 
                 <!-- HUMAN RUN CARDS -->
-                <div class="contents lg:flex-1 lg:grid lg:grid-cols-3 lg:gap-4">
+                <div class="contents">
                   <div v-for="cat in runCategories.filter(c => c.categoryType === 'human')" :key="cat.id"
                     @click="currentParticipant.run_category = cat.id"
                     class="relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between overflow-hidden select-none w-full lg:w-auto shrink-0 snap-center lg:shrink"
@@ -1398,11 +1439,12 @@ const submitRegistration = async () => {
 
               </div>
 
-              <!-- Mobile Swipe Hint -->
+              <!-- Swipe / Drag Hint -->
               <div
-                class="lg:hidden flex items-center justify-center gap-1.5 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
+                class="flex items-center justify-center gap-1.5 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
                 <i class="fas fa-arrows-left-right text-[10px]"></i>
-                <span>Swipe cards horizontally to explore all race distances</span>
+                <span class="hidden sm:inline">Drag or swipe cards horizontally to explore all race distances</span>
+                <span class="sm:hidden">Swipe cards horizontally to explore all race distances</span>
               </div>
 
 
@@ -2668,7 +2710,7 @@ const submitRegistration = async () => {
               ]">
                 <div class="flex items-center justify-between text-base sm:text-lg font-black mb-4">
                   <span class="text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                    <i class="fas fa-receipt text-emerald-600"></i> Grand Total Fee
+                    <i class="fas fa-receipt text-emerald-600"></i>Total Fee
                   </span>
                   <span class="text-2xl font-black text-emerald-700 dark:text-emerald-400">
                     PHP {{ grandTotal.toLocaleString() }}
@@ -2689,19 +2731,6 @@ const submitRegistration = async () => {
         </div><!-- end flex row -->
       </div>
     </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -2763,7 +2792,7 @@ v-if="isSuccessModalOpen"
     <div
       class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-900/50"
     >
-      <p class="text-sm font-bold text-gray-800 dark:text-white">
+      <p class="text-sm font-bold text-gray-800 dark:text-white text-left px-2">
         <i class="fas fa-bell text-emerald-600 mr-1"></i>
         Follow our socials for more info
       </p>
@@ -2773,17 +2802,29 @@ v-if="isSuccessModalOpen"
           href="https://www.facebook.com/lsuanimorun"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
         >
           <i class="fab fa-facebook"></i>
           LSU Animo Run
         </a>
 
+         <a
+          href="https://www.facebook.com/olr"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
+        >
+          <i class="fab fa-facebook"></i>
+          Ozamiz Lifestyle Runners
+        </a>
+
+
+
         <a
           href="https://animorun.lsu.edu.ph"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
         >
           <i class="fas fa-globe"></i>
           animorun.lsu.edu.ph
@@ -2794,11 +2835,13 @@ v-if="isSuccessModalOpen"
     <!-- Verification Note -->
  <p class="mt-4 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
       Once your payment is verified, you’ll receive your
-      <strong class="text-gray-700 dark:text-gray-200">
+     
+    </p>
+    <p class="text-xs">
+       <strong class="text-gray-700 dark:text-gray-200">
         Official Confirmation Email.
       </strong>
-    </p>
-    <p class="text-xs">Thank you!</p>
+      Thank you!</p>
 
     <!-- Done -->
     <button
