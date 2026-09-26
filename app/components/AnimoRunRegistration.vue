@@ -2809,7 +2809,7 @@ v-if="isSuccessModalOpen"
         </a>
 
          <a
-          href="https://www.facebook.com/olr"
+          href="https://www.facebook.com/ozamizlifestylerunners"
           target="_blank"
           rel="noopener noreferrer"
           class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
