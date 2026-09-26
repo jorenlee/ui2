@@ -548,7 +548,7 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
   const cleanId = String(cmsId || "").toLowerCase().trim();
 
   // 1. Direct ID matching
-  const knownAbbrs = ["cas", "cba", "ccje", "ccsea", "con", "cte", "cthm", "cmls", "sgs"];
+  const knownAbbrs = ["cas", "cba", "ccje", "ccsea", "col", "con", "cte", "cthm", "cmls", "sgs"];
   for (const k of knownAbbrs) {
     if (cleanId === k || cleanId === `lsu-${k}`) return k.toUpperCase();
   }
@@ -659,12 +659,23 @@ const resolveCollegeAbbr = (cmsItem, cmsId) => {
     return "CAS";
   }
 
-  // 10. SGS (School of Graduate Studies)
+  // 10. COL (College of Law)
+  if (
+    t.includes("college of law") ||
+    t.includes("juris doctor") ||
+    t.includes("law school") ||
+    /\b(col|lsu-col|jd)\b/i.test(t) ||
+    /\b(col|lsu-col|college of law)\b/i.test(f) ||
+    /\b(college of law|col)\b/i.test(a)
+  ) {
+    return "COL";
+  }
+
+  // 11. SGS (School of Graduate Studies)
   if (
     t.includes("graduate studies") ||
     t.includes("doctor") ||
     t.includes("master") ||
-    t.includes("juris doctor") ||
     /\b(sgs|lsu-sgs|phd|dba|mba|mpa|maed|med|msn|mit|msit|mscs)\b/i.test(t) ||
     /\b(sgs|lsu-sgs)\b/i.test(f) ||
     /\b(school of graduate|sgs)\b/i.test(a)
@@ -730,6 +741,12 @@ const collegeMeta = {
     title: "School of Graduate Studies",
     logoFile: "sgs.png",
     cdnUrl: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/colleges/sgs.png",
+  },
+  col: {
+    abbr: "COL",
+    title: "College of Law",
+    logoFile: "col.png",
+    cdnUrl: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/lsu-public-images/banners/logo/colleges/col.png",
   },
 };
 
@@ -865,7 +882,9 @@ const isAcademicCourseOrVmgContent = (cmsItem) => {
     "college of tourism and hospitality management",
     "cthm",
     "college of medical laboratory science",
-    "cmls"
+    "cmls",
+    "college of law",
+    "col"
   ];
   if (knownColleges.some((c) => t === c || t === `${c} vision mission goal` || t === `${c} vmg` || t === `${c} overview`)) {
     return true;
@@ -1079,12 +1098,25 @@ const isNewsRelatedToCollegeOrProgram = (cmsItem, matchedCollegeAbbr, currentIte
     return false;
   }
 
-  // 9. School of Graduate Studies (SGS)
+  // 9. College of Law (COL)
+  if (colAbbr === "col" || progTitle.includes("college of law") || progTitle.includes("juris doctor") || progTitle.includes("law")) {
+    const colKeywords = [
+      "college of law", "lsu-col", "law school", "lsu college of law",
+      "juris doctor", "bar exam", "bar passer", "bar passers", "bar topnotcher",
+      "bar examination", "lawyer", "attorneys", "legal", "abogado"
+    ];
+    if (filterTags.some((t) => t === "col" || t === "lsu-col" || t === "college of law" || colKeywords.includes(t))) return true;
+    if (authors.includes("college of law") || authors.includes("lsu-col") || authors.includes("dean of law")) return true;
+    if (colKeywords.some((k) => title.includes(k) || descriptions.includes(k))) return true;
+    if (/\bcol\b/i.test(title) && !title.includes("school") && !title.includes("collection") && !title.includes("color") && !title.includes("colorful")) return true;
+    return false;
+  }
+
+  // 10. School of Graduate Studies (SGS)
   if (colAbbr === "sgs" || progTitle.includes("graduate studies") || progTitle.includes("master") || progTitle.includes("doctor")) {
     const sgsKeywords = [
       "school of graduate studies", "graduate studies", "graduate school", "lsu-sgs",
-      "mba", "mpa", "maed", "med", "msn", "mit", "msit", "mscs", "phd", "dba", "edd",
-      "juris doctor"
+      "mba", "mpa", "maed", "med", "msn", "mit", "msit", "mscs", "phd", "dba", "edd"
     ];
     if (filterTags.some((t) => t === "sgs" || t === "lsu-sgs" || t === "graduate studies" || sgsKeywords.includes(t))) return true;
     if (authors.includes("school of graduate studies") || authors.includes("sgs")) return true;
@@ -1093,7 +1125,7 @@ const isNewsRelatedToCollegeOrProgram = (cmsItem, matchedCollegeAbbr, currentIte
     return false;
   }
 
-  // 10. General Program Title & Abbreviation Match (for any specific program)
+  // 11. General Program Title & Abbreviation Match (for any specific program)
   if (progAbbr && progAbbr.length >= 2) {
     if (filterTags.includes(progAbbr)) return true;
     const regexProg = new RegExp(`(^|[^a-zA-Z0-9])${progAbbr}([^a-zA-Z0-9]|$)`, "i");
