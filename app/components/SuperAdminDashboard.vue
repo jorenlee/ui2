@@ -138,9 +138,9 @@ const filteredMenuList = computed(() => {
   }
 
   const roleFiltered = subMenuList.filter((menu) => {
-    if (menu.group === "IT Services Feedback") {
-      return unratedTicketsCount.value > 0;
-    }
+if (menu.group === "IT Services Feedback") {
+  return unratedTicketsCount.value > 0;
+}
 
     const hasRole = Array.isArray(menu.allowedRole)
       ? menu.allowedRole.some((r) => roles.includes(r))
@@ -170,9 +170,9 @@ const checkForUnratedTickets = async () => {
       return;
     }
 
-    const res = await $fetch(
-      endpoint.value + "/api/cits/request-ticket/list/",
-    );
+const res = await $fetch(
+  `${endpoint}/api/cits/request-ticket/list/`
+);
 
     if (!Array.isArray(res)) {
       unratedTicketsCount.value = 0;
@@ -183,21 +183,18 @@ const checkForUnratedTickets = async () => {
       (ticket) => ticket.requestor_lsu_email === email,
     );
 
-    const unratedTickets = userTickets.filter((ticket) => {
-      const hasNoRating =
-        !ticket.evaluation_feedback_client_star_rating ||
-        ticket.evaluation_feedback_client_star_rating === "" ||
-        ticket.evaluation_feedback_client_star_rating === null;
+const unratedTickets = userTickets.filter((ticket) => {
+  const hasNoRating =
+    !ticket.evaluation_feedback_client_star_rating;
 
-      const hasNoFeedback =
-        !ticket.evaluation_feedback_client_comment ||
-        ticket.evaluation_feedback_client_comment === "" ||
-        ticket.evaluation_feedback_client_comment === null;
+  const hasNoFeedback =
+    !ticket.evaluation_feedback_client_comment;
 
-      return hasNoRating && hasNoFeedback;
-    });
+  return hasNoRating || hasNoFeedback;
+});
 
-    unratedTicketsCount.value = unratedTickets.length;
+unratedTicketsCount.value = unratedTickets.length;
+
   } catch (error) {
     console.error("Error checking unrated tickets:", error);
     unratedTicketsCount.value = 0;
