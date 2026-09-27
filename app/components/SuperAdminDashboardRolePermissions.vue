@@ -120,6 +120,7 @@ const pageSizeOptions = [10, 25, 50, 100, 250, 500, 1000, 2000, 5000, 10000];
 
 // ---------------- ROLES ----------------
 const availableRoles = [
+  "Animo Run Admin",
   "Super Admin",
   "NPCC Menu",
   "OCH Admin",
