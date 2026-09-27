@@ -14,9 +14,9 @@
      :class="[darkMode ? 'bg-green-950' : 'bg-green-900']"
     >
       <div class="flex gap-x-3 lg:w-fit mx-auto">
-        <div class="flex items-center">
+        <a href="/" class="flex items-center">
           <img :src="profileImageUrl" class="w-6 h-6 mx-auto" />
-        </div>
+        </a>
         <div class="w-full flex items-center">
           <div>
             <h2 class="text-left text-white text-[10px] leading-0 whitespace-nowrap">
