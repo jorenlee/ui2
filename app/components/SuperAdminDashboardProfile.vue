@@ -85,28 +85,32 @@ const currentHour = computed(() => {
 </script>
 
 <template>
-  <div>
+  <div class="mb-6">
     <!-- HEADER -->
-    <div class="relative overflow-hidden shadow-2xl px-5 py-3" :class="[
-      darkMode ? 'bg-green-950 text-white' : 'bg-green-900 text-white',
+    <div class="relative overflow-hidden lg:py-3 lg:px-10 px-4 py-2 mb-4" :class="[
+      darkMode ? 'bg-green-950 text-white' : 'bg-green-600 text-white',
     ]">
-      <div class="relative z-10 flex items-center gap-x-8">
-        <div class="w-full gap-4">
-            <h1 class="text-xl lg:text-2xl font-bold">
-              {{ currentHour }}
-            </h1>
-            <p class="text-white/90 text-xs lg:text-base">
-              Welcome back to your dashboard
-            </p>
-        </div>
-        <!-- CLOCK -->
-        <div class="w-auto">
-          <div class="flex items-center gap-2 text-white/80 w-fit lg:mx-auto">
-            <i class="fa fa-calendar text-sm"></i>
-            <span class="text-xs lg:text-sm whitespace-nowrap">{{ currentDate }}</span>
-          </div>
-          <div class="text-xs lg:text-xl font-bold font-mono whitespace-nowrap">
-            <i class="fa fa-clock text-sm"></i>  {{ currentTime }}
+      <div class="relative z-10 lg:flex items-center justify-between gap-8">
+        
+        <div class="w-full lg:w-3/12">
+          <div class="flex items-center gap-3 text-white/90">
+            <!-- Avatar -->
+            <div
+              class="w-16 h-16 lg:w-20 lg:h-20 bg-white/20 rounded-2xl flex items-center justify-center border-2 border-white/30">
+              <span class="text-2xl lg:text-3xl font-bold">
+                <img :src="userProfileImage" :alt="userInitials"
+                  class="lg:w-20 lg:h-20 rounded-2xl border-white/30" /></span>
+            </div>
+            <div>
+              <p class="font-semibold text-sm lg:text-base uppercase">
+                {{ userName }}
+                <!-- SUPER ADMIN -->
+              </p>
+              <p class="text-xs text-white/80">
+                {{ userEmail }}
+                <!-- lsu.edu.ph | www.lsu.edu.ph -->
+              </p>
+            </div>
           </div>
         </div>
       </div>

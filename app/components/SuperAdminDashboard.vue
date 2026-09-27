@@ -30,7 +30,6 @@ const openGroups = ref([
   "Office of The Chancellor",
   "Commission on Election",
   "Commission on Election BEU",
-  "External Links",
   "General Services Office",
   "Lasalle Alumni Association",
   "The Emerald Run",
@@ -39,21 +38,7 @@ const openGroups = ref([
   "Juris Doctor Examinee",
 ]);
 
-// ---------------- MENU PERMISSION ----------------
-// Access is default-deny: every menu group below must have an `allowedRole`
-// (see subMenuList), and a user only sees it once that role has been
-// explicitly granted to their email in Role Permissions. There is no more
-// "public" menu concept and no "no allowedRole = visible to everyone"
-// fallback — nothing is shown unless it was added in Role Permissions.
-// Super Admin is the sole exception and sees every group regardless.
-
-// lsuOnlyMenuGroups is an *additional* restriction layered on top of the
-// role check below (not a grant on its own): even with the matching role,
-// these groups are hidden from non-@lsu.edu.ph accounts.
-// Using a Set for O(1) lookups instead of Array.includes O(n).
 const lsuOnlyMenuGroups = new Set([
-  "The Emerald Run",
-  "External Links",
   "Lasalle Alumni Association",
   "Commission on Election",
   "Commission on Election BEU",
@@ -152,21 +137,9 @@ const filteredMenuList = computed(() => {
     return processMenu(subMenuList);
   }
 
-  // Default-deny: a group only shows up if its allowedRole has been granted
-  // to this user in Role Permissions. Groups that additionally require an
-  // @lsu.edu.ph account (lsuOnlyMenuGroups) still need that on top of the
-  // role grant — it's a narrowing check, not a way to bypass the role
-  // requirement.
   const roleFiltered = subMenuList.filter((menu) => {
-    // IT Services Feedback & The Emerald Run are open to any @gmail.com or @lsu.edu.ph account,
-    // regardless of what's set in Role Permissions.
-    if (
-      menu.group === "IT Services Feedback" ||
-      menu.group === "The Emerald Run"
-    ) {
-      return (
-        email?.endsWith("@gmail.com") || email?.endsWith("@lsu.edu.ph")
-      );
+    if (menu.group === "IT Services Feedback") {
+      return unratedTicketsCount.value > 0;
     }
 
     const hasRole = Array.isArray(menu.allowedRole)
@@ -184,6 +157,62 @@ const filteredMenuList = computed(() => {
 
   return processMenu(roleFiltered);
 });
+
+// ---------------- UNRATED TICKETS ----------------
+const unratedTicketsCount = ref(0);
+
+const checkForUnratedTickets = async () => {
+  try {
+    const email = user.value?.email;
+
+    if (!email) {
+      unratedTicketsCount.value = 0;
+      return;
+    }
+
+    const res = await $fetch(
+      endpoint.value + "/api/cits/request-ticket/list/",
+    );
+
+    if (!Array.isArray(res)) {
+      unratedTicketsCount.value = 0;
+      return;
+    }
+
+    const userTickets = res.filter(
+      (ticket) => ticket.requestor_lsu_email === email,
+    );
+
+    const unratedTickets = userTickets.filter((ticket) => {
+      const hasNoRating =
+        !ticket.evaluation_feedback_client_star_rating ||
+        ticket.evaluation_feedback_client_star_rating === "" ||
+        ticket.evaluation_feedback_client_star_rating === null;
+
+      const hasNoFeedback =
+        !ticket.evaluation_feedback_client_comment ||
+        ticket.evaluation_feedback_client_comment === "" ||
+        ticket.evaluation_feedback_client_comment === null;
+
+      return hasNoRating && hasNoFeedback;
+    });
+
+    unratedTicketsCount.value = unratedTickets.length;
+  } catch (error) {
+    console.error("Error checking unrated tickets:", error);
+    unratedTicketsCount.value = 0;
+  }
+};
+
+watch(
+  () => user.value?.email,
+  (email) => {
+    if (email) {
+      checkForUnratedTickets();
+    }
+  },
+  { immediate: true },
+);
 
 // ---------------- MENU ----------------
 const subMenuList = [
@@ -205,18 +234,6 @@ const subMenuList = [
       },
     ],
   },
-  // {
-  //   group: "The Emerald Run",
-  //   allowedRole: ["The Emerald Run", "The Animo Run"],
-  //   items: [
-  //     {
-  //       label: "Registration",
-  //       icon: "fa-running",
-  //       type: "button",
-  //       view: "ViewAnimoRunRegistration",
-  //     },
-  //   ],
-  // },
   {
     group: "Commission on Election",
     allowedRole: "Commission on Election",
@@ -500,18 +517,6 @@ const subMenuList = [
     ],
   },
   {
-    group: "External Links",
-    allowedRole: "External Links",
-    items: [
-      {
-        label: "LSU Home Page",
-        icon: "fa-home",
-        type: "link",
-        view: "https://lsu.edu.ph",
-      },
-    ],
-  },
-  {
     group: "Juris Doctor Admin",
     allowedRole: "Juris Doctor Admin",
     items: [
@@ -539,7 +544,7 @@ const subMenuList = [
 
 // ---------------- TOP MENU ----------------
 const menuList = [
-  { label: "Home", icon: "fa-home", type: "button", view: "Menu" },
+  { label: "Menu", icon: "fa-list", type: "button", view: "Menu" },
   { label: "Profile", icon: "fa-user", type: "button", view: "Profile" },
   { label: "Logout", icon: "fa-sign-out", type: "button", view: "Logout" },
 ];
@@ -669,8 +674,8 @@ const logOut = () => logout();
           </div>
         </div>
       
-        <div v-if="currentView === 'Menu'" class="lg:px-2 pt-5 pb-80">
-          <!-- <SuperAdminDashboardWelcome :darkMode="darkMode" /> -->
+        <div v-if="currentView === 'Menu'">
+          <SuperAdminDashboardWelcome :darkMode="darkMode" v-if="unratedTicketsCount === 0"/>
           <template v-if="initialLoading">
             <div class="mt-4 space-y-3 px-2 animate-pulse">
               <div v-for="n in 5" :key="'sk-group-' + n"
@@ -695,8 +700,9 @@ const logOut = () => logout();
             @menu-click="handleMenuClick"
           />
         </div>
-        <div v-if="currentView === 'Profile'" class="w-full p-4">
+        <div v-if="currentView === 'Profile'">
           <SuperAdminDashboardWelcome :darkMode="darkMode" />
+          <SuperAdminDashboardProfile />
           <ToggleDarkLightMode
             :darkMode="darkMode"
             @toggle-dark-mode="toggleDarkMode"
@@ -713,13 +719,3 @@ const logOut = () => logout();
     </div>
   </div>
 </template>
-
-<style scoped>
-:global(.theme-transition),
-:global(.theme-transition *) {
-  transition:
-    background-color 0.3s ease,
-    border-color 0.3s ease,
-    color 0.3s ease !important;
-}
-</style>

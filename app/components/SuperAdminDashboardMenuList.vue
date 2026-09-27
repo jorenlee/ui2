@@ -1,7 +1,7 @@
 <template>
   <!-- Modern Grid Layout with Better Spacing -->
   <div
-    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 lg:gap-6"
+    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 lg:gap-6 mt-5"
   >
     <div
       v-for="menu in filteredMenuList"
