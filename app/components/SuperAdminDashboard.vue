@@ -215,7 +215,7 @@ watch(
 const subMenuList = [
   {
     group: "The Emerald Run",
-    allowedRole: ["The Emerald Run Admin", "The Emerald Run"],
+    allowedRole: ["The Emerald Run"],
     items: [
       {
         label: "Registration",

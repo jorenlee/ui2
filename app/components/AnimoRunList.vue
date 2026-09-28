@@ -157,10 +157,10 @@ const cleanURL = (url) => {
 };
 
 const runCategories = [
-  { id: "1KM", name: "1 KM", color: "bg-[#6F2A22] text-white" },
-  { id: "3KM", name: "3 KM", color: "bg-[#8A4528] text-white" },
-  { id: "10KM", name: "10 KM", color: "bg-[#1D2735] text-white" },
-  { id: "20KM", name: "20 KM", color: "bg-[#123F38] text-white" },
+  { id: "1KM", name: "1 KM", color: "bg-[#123F38] text-white" }, // Green
+  { id: "3KM", name: "3 KM", color: "bg-[#6F2A22] text-white" }, // Red
+  { id: "10KM", name: "10 KM", color: "bg-[#8A4528] text-white" }, // Brown
+  { id: "20KM", name: "20 KM", color: "bg-[#1D2735] text-white" }, // Navy
 ];
 
 const registrations = ref([]);
@@ -2169,9 +2169,9 @@ onMounted(() => {
           <h3 class="text-lg font-black tracking-tight">
             {{ toastModal.title }}
           </h3>
-          <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 leading-relaxed whitespace-pre-line px-2">
-            {{ toastModal.message }}
-          </p>
+          <!-- <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 leading-relaxed whitespace-pre-line px-2">
+            {{ toastModal.message }} 
+          </p> -->
         </div>
 
         <div class="pt-2">
@@ -2329,26 +2329,24 @@ onMounted(() => {
             </div>
 
             <!-- Categories breakdown -->
-            <div>
-              <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Distance Categories:</span>
-              <div class="flex flex-wrap gap-1.5">
-                <span v-for="(cnt, cat) in batchBreakdown.categories" :key="cat"
-                  class="px-2.5 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold text-[11px] border border-emerald-300 dark:border-emerald-700">
-                  {{ cat }}: <strong>{{ cnt }}</strong>
-                </span>
-              </div>
-            </div>
+<div>
+  <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Distance Categories:</span>
+  <div class="flex flex-wrap gap-1.5">
+    <span 
+      v-for="(cnt, cat) in batchBreakdown.categories" 
+      :key="cat" 
+      :class="[
+        runCategories.find(c => c.id === cat || c.name === cat)?.color || 'bg-gray-700 text-white', 
+        'px-2.5 py-1 rounded-xl font-bold text-[11px] border border-white/20'
+      ]"
+    >
+      {{ cat }}: <strong>{{ cnt }}</strong>
+    </span>
+  </div>
+</div>
 
             <!-- T-Shirt sizes breakdown -->
-            <div>
-              <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">T-Shirt Size Quantities (Suppliers):</span>
-              <div class="flex flex-wrap gap-1.5">
-                <span v-for="(cnt, sz) in batchBreakdown.tshirts" :key="sz"
-                  class="px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-extrabold text-[11px] border border-amber-300 dark:border-amber-700">
-                  {{ sz }}: <strong>{{ cnt }}</strong>
-                </span>
-              </div>
-            </div>
+
 
             <!-- Pet Bandana sizes breakdown (if any) -->
             <div v-if="Object.keys(batchBreakdown.bandanas).length > 0">
@@ -2439,11 +2437,7 @@ onMounted(() => {
               </div>
 
               <div class="flex items-center gap-2">
-                <!-- Re-download CSV button -->
-                <button type="button" @click="downloadBatchCsv(b)"
-                  class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center gap-1 shadow-sm cursor-pointer">
-                  <i class="fas fa-download"></i> Download CSV
-                </button>
+            
                 <!-- Superadmin Toggle Lock -->
                 <button type="button" @click="openUnlockPrompt(b, 'batch')"
                   class="px-3 py-1.5 rounded-xl border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-950 font-bold text-xs transition flex items-center gap-1 cursor-pointer">
@@ -2461,14 +2455,7 @@ onMounted(() => {
               <div><strong>Date:</strong> {{ b.created_at_formatted || b.created_at }}</div>
             </div>
 
-            <!-- Size breakdown pills -->
-            <div class="pt-1 border-t dark:border-gray-700/60 flex items-center gap-2 flex-wrap text-[10px]">
-              <span class="font-bold text-gray-400 uppercase">T-Shirt Breakdown:</span>
-              <span v-for="(cnt, sz) in (b.tshirt_breakdown || {})" :key="sz"
-                class="px-2 py-0.5 rounded bg-white dark:bg-gray-800 border font-bold text-gray-700 dark:text-gray-200">
-                {{ sz }}: {{ cnt }}
-              </span>
-            </div>
+           
           </div>
         </div>
 
