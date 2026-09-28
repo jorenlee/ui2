@@ -127,7 +127,7 @@ const runCategories = [
     fee: 1000,
     time: "4:55 AM",
     description: "Perfect for beginners, families, and casual runners.",
-    badge: "Starter (3KM)",
+    badge: "3KM",
     icon: "fa-running",
     colors: {
       primary: "#C62216",
@@ -156,7 +156,7 @@ const runCategories = [
     fee: 1400,
     time: "4:40 AM",
     description: "For intermediate runners pushing their endurance limits.",
-    badge: "Endurance (10KM)",
+    badge: "10KM",
     icon: "fa-running",
     colors: {
       primary: "#C45A19",
@@ -185,7 +185,7 @@ const runCategories = [
     fee: 1800,
     time: "4:00 AM",
     description: "The premier distance for competitive runners and veterans.",
-    badge: "Ultimate (20KM)",
+    badge: "20KM",
     icon: "fa-running",
     colors: {
       primary: "#075F86",
@@ -223,16 +223,6 @@ const tshirtSizes = [
   "4XL",
   "5XL",
 ];
-
-const shirtTypeOptions = [
-  { value: "singlet", label: "Singlet", icon: "fas fa-tshirt" },
-  { value: "event_shirt", label: "Event Shirt", icon: "fas fa-shirt" },
-];
-
-const getShirtTypeLabel = (shirtType) => {
-  if (shirtType === "singlet") return "Singlet";
-  return "Event Shirt";
-};
 
 const buildShirtSizeSummary = (participant) => {
   if (!participant) return "Event Shirt: M;";
@@ -293,7 +283,7 @@ const createEmptyParticipant = (index = 1) => ({
   lastname: "",
   suffix: "",
   birthdate: "",
-  gender: "Male",
+  gender: "",
   contact_number: "",
   contact_email: user?.value?.email || "",
   contact_address: "",
@@ -318,7 +308,7 @@ const createEmptyParticipant = (index = 1) => ({
   pet_name: "",
   pet_type: "",
   pet_other_type: "",
-  pet_bandana_size: "Standard",
+  pet_bandana_size: "",
   pet_vaccinated: true,
   pet_vaccine_record_file: null,
   pet_vaccine_record_preview: null,
