@@ -1,5 +1,5 @@
 <template>
-  <div class="relative mx-auto w-9/12 overflow-hidden">
+  <div class="relative mx-auto lg:w-9/12 min-h-5/6 lg:pb-16 overflow-hidden">
     <!-- Slides -->
     <div class="relative">
       <Transition name="fade" mode="out-in">
