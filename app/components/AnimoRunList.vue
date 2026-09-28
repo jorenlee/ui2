@@ -1001,11 +1001,7 @@ onMounted(() => {
           </div>
 
           <div class="flex items-center gap-2 flex-wrap shrink-0 self-end sm:self-auto">
-            <!-- Finalize Supplier Batch button -->
-            <button type="button" @click="openBatchFinalizeModal"
-              class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md border border-amber-400/40 cursor-pointer">
-              <i class="fas fa-layer-group"></i> Finalize Supplier Batch (CSV)
-            </button>
+
 
             <!-- Supplier Batches History button -->
             <button type="button" @click="openBatchHistoryModal"
@@ -1017,17 +1013,17 @@ onMounted(() => {
             </button>
 
             <!-- Export CSV button -->
-            <button type="button" @click="exportCurrentFilteredCsv"
+            <!-- <button type="button" @click="exportCurrentFilteredCsv"
               class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm border border-emerald-500 cursor-pointer">
               <i class="fas fa-file-csv"></i> Download CSV
-            </button>
+            </button> -->
 
             <!-- Refresh button -->
-            <button type="button" @click="() => { fetchRegistrations(); fetchBatches(); }" :disabled="isFetching"
+            <!-- <button type="button" @click="() => { fetchRegistrations(); fetchBatches(); }" :disabled="isFetching"
               class="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
               <i :class="['fas fa-sync-alt', isFetching ? 'fa-spin' : '']"></i>
               {{ isFetching ? 'Refreshing...' : 'Refresh' }}
-            </button>
+            </button> -->
           </div>
         </div>
       </div>
@@ -1604,13 +1600,22 @@ onMounted(() => {
           <i class="fas fa-times-circle"></i> Clear
         </button>
 
+
+                    <!-- Finalize Supplier Batch button -->
+            <button type="button" @click="openBatchFinalizeModal"
+              class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md border border-amber-400/40 cursor-pointer">
+              <i class="fas fa-layer-group"></i> Finalize Supplier Batch (CSV)
+            </button>
+
+
+
         <!-- Delete selected -->
         <button type="button" @click="promptBulkDelete" :disabled="isBulkDeleting"
           class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
         >
           <i v-if="!isBulkDeleting" class="fas fa-trash"></i>
           <i v-else class="fas fa-spinner fa-spin"></i>
-          {{ isBulkDeleting ? 'Deleting...' : 'Delete Selected' }}
+          {{ isBulkDeleting ? 'Deleting...' : '' }}
         </button>
       </div>
     </Transition>
@@ -2269,61 +2274,45 @@ onMounted(() => {
 
         <div class="space-y-4 text-xs">
           <!-- Selection Scope radio options -->
-          <div class="space-y-2">
-            <label class="font-bold text-gray-500 uppercase text-[10px] block">Include Runners In Batch:</label>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <label :class="[
-                'p-3 rounded-2xl border cursor-pointer transition flex items-center gap-2',
-                batchFinalizeModal.scope === 'unbatched'
-                  ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-400'
-              ]">
-                <input type="radio" v-model="batchFinalizeModal.scope" value="unbatched" class="accent-emerald-600" />
-                <div>
-                  <span class="block">Unbatched Confirmed</span>
-                  <span class="text-[10px] text-gray-400 font-normal">Only confirmed without batch</span>
-                </div>
-              </label>
+<div class="space-y-5">
 
-              <label :class="[
-                'p-3 rounded-2xl border cursor-pointer transition flex items-center gap-2',
-                batchFinalizeModal.scope === 'filtered'
-                  ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-400'
-              ]">
-                <input type="radio" v-model="batchFinalizeModal.scope" value="filtered" class="accent-emerald-600" />
-                <div>
-                  <span class="block">Current Filtered View</span>
-                  <span class="text-[10px] text-gray-400 font-normal">Respects search &amp; date range</span>
-                </div>
-              </label>
+ 
 
-              <label v-if="selectedIds.length > 0" :class="[
-                'p-3 rounded-2xl border cursor-pointer transition flex items-center gap-2',
-                batchFinalizeModal.scope === 'selected'
-                  ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-bold'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-400'
-              ]">
-                <input type="radio" v-model="batchFinalizeModal.scope" value="selected" class="accent-emerald-600" />
-                <div>
-                  <span class="block">Selected Runners ({{ selectedIds.length }})</span>
-                  <span class="text-[10px] text-gray-400 font-normal">Checkbox selection</span>
-                </div>
-              </label>
-            </div>
-          </div>
+  <!-- Batch Details -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-          <!-- Batch Name & Operator fields -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label class="font-bold text-gray-500 uppercase text-[10px] block mb-1">Batch Group Name *</label>
-              <input v-model="batchFinalizeModal.batchName" :class="inputCls" placeholder="e.g. Batch 1, Batch 2" />
-            </div>
-            <div>
-              <label class="font-bold text-gray-500 uppercase text-[10px] block mb-1">Finalized &amp; Locked By</label>
-              <input v-model="batchFinalizeModal.lockedBy" :class="inputCls" placeholder="Operator Email" />
-            </div>
-          </div>
+    <!-- Batch Name -->
+    <div>
+      <label class="font-bold text-gray-500 uppercase text-[10px] block mb-1">
+        Batch Group Name <span class="text-red-500">*</span>
+      </label>
+
+      <input
+        v-model="batchFinalizeModal.batchName"
+        :class="inputCls"
+        class="w-full"
+        placeholder="e.g. Batch 1, Batch 2"
+      />
+    </div>
+
+    <!-- Locked By -->
+    <div>
+      <label class="font-bold text-gray-500 uppercase text-[10px] block mb-1">
+        Finalized &amp; Locked By
+      </label>
+
+      <input
+        v-model="batchFinalizeModal.lockedBy"
+        :class="inputCls"
+        class="w-full bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
+        placeholder="Operator Email"
+        disabled
+      />
+    </div>
+
+  </div>
+
+</div>
 
           <!-- Live Breakdown Summary Box -->
           <div :class="[
@@ -2384,17 +2373,7 @@ onMounted(() => {
             </p>
           </div>
 
-          <!-- Email notification list notice -->
-          <div class="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 text-[11px] text-emerald-800 dark:text-emerald-300 flex items-start gap-2">
-            <i class="fas fa-paper-plane text-emerald-600 mt-0.5"></i>
-            <div>
-              <span class="font-bold block">Automatic Email Dispatch:</span>
-              <span class="text-[10px] leading-snug block mt-0.5">
-                The breakdown and attached supplier CSV spreadsheet will be sent to:
-                <strong class="underline">jorenlee.luna@lsu.edu.ph</strong>, <strong>calendar@lsu.edu.ph</strong>, <strong>vpal@lsu.edu.ph</strong>, <strong>animorun@lsu.edu.ph</strong>.
-              </span>
-            </div>
-          </div>
+         
         </div>
 
         <div class="flex items-center gap-2 pt-2 border-t dark:border-gray-700">

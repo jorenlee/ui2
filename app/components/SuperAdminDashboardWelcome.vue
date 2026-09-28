@@ -90,17 +90,17 @@ const currentHour = computed(() => {
     <div class="relative overflow-hidden shadow-2xl px-5 py-3" :class="[
       darkMode ? 'bg-green-950 text-white' : 'bg-green-900 text-white',
     ]">
-      <div class="relative z-10 flex items-center gap-x-8">
+      <div class="relative z-10 lg:flex items-center gap-x-8">
         <div class="w-full gap-4">
             <h1 class="text-xl lg:text-2xl font-bold">
-              {{ currentHour }}
+              {{ currentHour }}!
             </h1>
             <p class="text-white/90 text-xs lg:text-base">
               Welcome back to your dashboard
             </p>
         </div>
         <!-- CLOCK -->
-        <div class="w-auto">
+        <div class="w-auto lg:block hidden">
           <div class="flex items-center gap-2 text-white/80 w-fit lg:mx-auto">
             <i class="fa fa-calendar text-sm"></i>
             <span class="text-xs lg:text-sm whitespace-nowrap">{{ currentDate }}</span>

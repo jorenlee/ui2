@@ -121,7 +121,7 @@ const runCategories = [
   {
     id: "3KM",
     categoryType: "human",
-    categoryTypeLabel: "Human Category",
+    categoryTypeLabel: "",
     name: "3 KM",
     tagline: "Start your journey.",
     fee: 1000,
@@ -144,13 +144,13 @@ const runCategories = [
       "Event Shirt or Singlet",
       "Post-Meal",
       "Race Bib",
-      "Acrylic Finisher Medal",
+      "Metal Finisher Medal",
     ],
   },
   {
     id: "10KM",
     categoryType: "human",
-    categoryTypeLabel: "Human Category",
+    categoryTypeLabel: "",
     name: "10 KM",
     tagline: "Go farther. Go stronger.",
     fee: 1400,
@@ -179,7 +179,7 @@ const runCategories = [
   {
     id: "20KM",
     categoryType: "human",
-    categoryTypeLabel: "Human Category",
+    categoryTypeLabel: "",
     name: "20 KM",
     tagline: "Conquer the ultimate challenge.",
     fee: 1800,
@@ -1005,15 +1005,15 @@ const submitRegistration = async () => {
     <div class="">
       <!-- HERO / HEADER -->
       <div :class="[
-        'relative overflow-hidden rounded-2xl shadow-xl mb-2 border transition-all duration-300',
+        'relative overflow-hidden shadow-xl mb-2 border transition-all duration-300',
         props.darkMode
           ? 'bg-gradient-to-br from-green-950 via-emerald-900 to-gray-900 border-green-800/40'
           : 'bg-gradient-to-br from-green-800 via-emerald-700 to-teal-800 border-green-600 text-white',
       ]">
         <!-- Background decorative elements -->
-        <div class="absolute -right-16 -top-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none">
+        <div class="absolute -right-16 -top-16 w-64 h-64 bg-emerald-900 rounded-full blur-3xl pointer-events-none">
         </div>
-        <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-teal-400/10 rounded-full blur-3xl pointer-events-none">
+        <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-teal-800 rounded-full blur-3xl pointer-events-none">
         </div>
 
         <div class="relative px-4 py-3 sm:px-8 sm:py-5">
@@ -1441,7 +1441,7 @@ const submitRegistration = async () => {
 
               <!-- Swipe / Drag Hint -->
               <div
-                class="flex items-center justify-center gap-1.5 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
+                class="lg:hidden flex items-center justify-center gap-1.5 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
                 <i class="fas fa-arrows-left-right text-[10px]"></i>
                 <span class="hidden sm:inline">Drag or swipe cards horizontally to explore all race distances</span>
                 <span class="sm:hidden">Swipe cards horizontally to explore all race distances</span>
@@ -2452,15 +2452,26 @@ const submitRegistration = async () => {
                     ]">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
-                        <div>
+
+
+
+
+
+
+                         <div>
                           <div class="font-bold text-xs">QR Payment: GCash / Maya</div>
-                        
-                          <div>
-                            Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> via QR and upload your transfer
+                          <div class="text-[10px] font-normal text-gray-500">
+ Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> via QR and upload your transfer
                         receipt
                         screenshot below.
+
                           </div>
                         </div>
+
+
+
+
+
                       </div>
 
                     </div>
@@ -2474,13 +2485,15 @@ const submitRegistration = async () => {
                     ]">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
-                        <div>
-                          <div class="font-bold text-xs">Accounting OTC: LSU Accounting Window</div>
-                      
-                          <div>
-                             Visit LSU Accounting Window (Mon-Fri, 8AM-5PM). 
-                          </div>
+                       
+
+                   <div>
+                          <div class="font-bold text-xs">Weekdays Cash : Over-The-Counter</div>
+                          <div class="text-[10px] font-normal text-gray-500">Visit LSU Accounting Window (Mon-Fri, 8AM-5PM). </div>
                         </div>
+
+
+
                       </div>
 
                     
@@ -2496,11 +2509,8 @@ const submitRegistration = async () => {
                       <div class="flex items-center gap-2">
                         <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
                         <div>
-                          <div class="font-bold text-xs">Weekend Cash : Lifestyle Runners</div>
-                        
-                          <div>
-                             Pay at Ozamiz Lifestyle Runners weekend booth. 
-                          </div>
+                          <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth.</div>
+                          <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 to 9:00 PM).</div>
                         </div>
                       </div>
 
@@ -2509,18 +2519,70 @@ const submitRegistration = async () => {
                   </div>
 
                   <!-- RECEIPT DROPZONE (Only for QR Payment) -->
-                  <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-2">
+                  <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-2 lg:flex lg:gap-x-5">
+
+                    <div class="lg:flex lg:w-auto">
+<div class="text-center w-full items-center gap-4 rounded-xl border border-green-200 bg-white p-5 shadow-sm lg:mb-0 mb-3">
+  <img
+    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/LSU-SB-QR.jpg"
+    alt="LSU Security Bank QR Payment"
+    class="w-32 mx-auto rounded-lg border border-gray-200"
+  />
+
+  <div class="flex flex-col gap-x-3 gap-y-1">
+    <div>
+      <h3 class="text-sm font-bold text-green-900 lg:whitespace-nowrap">
+        Security Bank QR Code Payment
+      </h3>
+
+    </div>
+
+    <a
+      href="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/LSU-SB-QR.jpg"
+      download="LSU-SB-QR.jpg"
+      class="inline-flex items-center justify-center lg:whitespace-nowrap gap-2 rounded-lg bg-green-800 px-5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
+    >
+      <i class="fa fa-download" aria-hidden="true"></i>
+      Download
+    </a>
+  </div>
+</div>
+
+
+  <!-- <a download class="w-full lg:w-1/4" v-if="currentParticipant.run_category === 'pet-run'">
+    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/PET-QR-PAYMENT.jpg"/>
+  </a> -->
+
+    <!-- <a download class="w-full lg:w-1/4" v-if="currentParticipant.run_category === '3k'">
+    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/3K-QR-PAYMENT.jpg"/>
+  </a>
+
+    <a download class="w-full lg:w-1/4" v-if="currentParticipant.run_category === '10k'">
+    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/10K-QR-PAYMENT.jpg"/>
+  </a>
+
+    <a download class="w-full lg:w-1/4" v-if="currentParticipant.run_category === '20k'">
+    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/20K-QR-PAYMENT.jpg"/>
+  </a>
+ -->
+
+  
+</div>
+
+
                     <div :class="[
-                      'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden',
+                      'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden w-full flex items-center',
                       receiptPreview
                         ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
                         : props.darkMode
                           ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
                           : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
                     ]">
-                      <div v-if="!receiptPreview">
+                     <div class="w-full">
+
+                       <div v-if="!receiptPreview">
                         <i class="fas fa-cloud-upload-alt text-2xl text-emerald-500 mb-1"></i>
-                        <p class="text-xs font-bold mb-0.5">Upload Receipt or Deposit Transfer Screenshot *</p>
+                        <p class="text-xs font-bold mb-0.5">Upload Receipt or Screenshot *</p>
                         <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 1MB</p>
                         <label
                           class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
@@ -2543,6 +2605,7 @@ const submitRegistration = async () => {
                           </button>
                         </div>
                       </div>
+                     </div>
                     </div>
                   </div>
 
@@ -2598,10 +2661,26 @@ const submitRegistration = async () => {
                     ]">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
-                        <div>
-                          <div class="font-bold text-xs">QR Payment</div>
-                          <div class="text-[10px] font-normal text-gray-500">GCash / Maya</div>
+
+
+
+
+
+
+                         <div>
+                          <div class="font-bold text-xs">QR Payment: GCash / Maya</div>
+                          <div class="text-[10px] font-normal text-gray-500">
+ Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> via QR and upload your transfer
+                        receipt
+                        screenshot below.
+
+                          </div>
                         </div>
+
+
+
+
+
                       </div>
                     </div>
 
@@ -2615,8 +2694,8 @@ const submitRegistration = async () => {
                       <div class="flex items-center gap-2">
                         <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
                         <div>
-                          <div class="font-bold text-xs">Accounting OTC</div>
-                          <div class="text-[10px] font-normal text-gray-500">LSU Accounting</div>
+                          <div class="font-bold text-xs">Weekdays Cash : Over-The-Counter</div>
+                          <div class="text-[10px] font-normal text-gray-500">Visit LSU Accounting Window (Mon-Fri, 8AM-5PM). </div>
                         </div>
                       </div>
                     </div>
@@ -2631,15 +2710,45 @@ const submitRegistration = async () => {
                       <div class="flex items-center gap-2">
                         <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
                         <div>
-                          <div class="font-bold text-xs">Weekend Cash</div>
-                          <div class="text-[10px] font-normal text-gray-500">Lifestyle Runners</div>
+                          <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth.</div>
+                            <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 to 9:00 PM).</div>
                         </div>
                       </div>
                     </div>
                   </div>
 
+
+
                   <!-- RECEIPT DROPZONE (Only for QR Payment) -->
                   <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-2">
+
+
+<div>
+  <a download> 
+<!-- PET RUN -->
+    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/PET-QR-PAYMENT.jpg"/>
+  </a>
+
+    <a download> 
+<!-- 3k -->
+    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/3K-QR-PAYMENT.jpg"/>
+  </a>
+
+    <a download> 
+<!-- 10k -->
+    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/10K-QR-PAYMENT.jpg"/>
+  </a>
+
+    <a download> 
+<!-- 20k -->
+    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/20K-QR-PAYMENT.jpg"/>
+  </a>
+
+
+  
+</div>
+
+
                     <div :class="[
                       'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden',
                       receiptPreview
@@ -2743,6 +2852,8 @@ const submitRegistration = async () => {
 
 
 <!-- SUCCESS CONFIRMATION MODAL -->
+
+<!-- v-if="isSuccessModalOpen" -->
 <div
 v-if="isSuccessModalOpen"
   class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-6 backdrop-blur-sm overflow-y-auto"
@@ -2757,32 +2868,57 @@ v-if="isSuccessModalOpen"
   >
     <!-- Success Icon -->
     <div
-      class="mx-auto mb-4 flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/70 dark:text-emerald-400 shadow-inner"
+      class="mx-auto mb-4 flex  items-center justify-center   dark:bg-blue-950/70 dark:text-blue-400 "
     >
-      <i class="fas fa-check text-2xl sm:text-3xl"></i>
+      <i class="fas fa-clock text-2xl sm:text-3xl text-blue-500 bg-blue-100 h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center  shadow-inner" v-if="nonLsuPaymentMethod === 'qr_payment'"></i>
+      <i class="fas fa-clock text-2xl sm:text-3xl text-yellow-600 bg-yellow-100 h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center shadow-inner" v-if="nonLsuPaymentMethod !== 'qr_payment'"></i>
     </div>
 
     <!-- Title -->
-    <h2 class="text-xl sm:text-2xl font-black tracking-tight">
-      Registration Sent!
+
+    
+        <h2 v-if="nonLsuPaymentMethod === 'qr_payment'" class="text-xl sm:text-2xl font-black tracking-tight text-blue-600">
+      Confirmation Pending
     </h2>
 
-    <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
-      Thank you{{ participants[0]?.firstname ? `, ${participants[0].firstname}` : '' }}!
+    <h2 v-else class="text-xl sm:text-2xl font-black tracking-tight text-yellow-600">
+      Registration Pending
+    </h2>
+
+    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400" v-if="nonLsuPaymentMethod === 'qr_payment'">
+    
+
+    Your registration fee of PHP {{ grandTotal.toLocaleString() }} is now pending confirmation. Please wait for the admin to verify your payment. A confirmation email will be sent once your payment has been verified.
     </p>
+
+    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400" v-if="nonLsuPaymentMethod !== 'qr_payment'">
+ 
+
+Please pay your registration fee of 
+
+<strong>PHP  {{ grandTotal.toLocaleString() }} </strong>
+at the
+
+<strong>Registration Booth or LSU Accounting Office</strong>
+on or before the next <strong>Saturday</strong> to avoid cancellation of your registration.
+    </p>
+
+
+
 
     <!-- Short Message -->
     <div
-      class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-4 dark:border-emerald-800 dark:bg-emerald-950/30"
+    v-if="nonLsuPaymentMethod === 'qr_payment'"
+      class="mt-5 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-800 dark:bg-blue-950/30"
     >
-      <div class="flex items-center justify-center gap-2 text-sm font-bold text-emerald-700 dark:text-emerald-300">
+      <div class="flex items-center justify-center gap-2 text-sm font-bold text-blue-700 dark:text-blue-300">
         <i class="fas fa-envelope-circle-check"></i>
         <span>Check your email for the details.</span>
       </div>
 
       <p class="mt-2 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
         Your registration summary and payment details have been sent to
-        <strong class="text-emerald-700 dark:text-emerald-300">
+        <strong class="text-blue-700 dark:text-blue-300">
           {{ participants[0]?.contact_email || user?.email }}
         </strong>.
       </p>
@@ -2793,7 +2929,7 @@ v-if="isSuccessModalOpen"
       class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-900/50"
     >
       <p class="text-sm font-bold text-gray-800 dark:text-white text-left px-2">
-        <i class="fas fa-bell text-emerald-600 mr-1"></i>
+        <i class="fas fa-bell mr-1"></i>
         Follow our socials for more info
       </p>
 
@@ -2802,7 +2938,7 @@ v-if="isSuccessModalOpen"
           href="https://www.facebook.com/lsuanimorun"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
         >
           <i class="fab fa-facebook"></i>
           LSU Animo Run
@@ -2812,7 +2948,7 @@ v-if="isSuccessModalOpen"
           href="https://www.facebook.com/ozamizlifestylerunners"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
         >
           <i class="fab fa-facebook"></i>
           Ozamiz Lifestyle Runners
@@ -2824,7 +2960,7 @@ v-if="isSuccessModalOpen"
           href="https://animorun.lsu.edu.ph"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5 text-emerald-700 shadow-sm transition hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
         >
           <i class="fas fa-globe"></i>
           animorun.lsu.edu.ph
@@ -2833,11 +2969,11 @@ v-if="isSuccessModalOpen"
     </div>
 
     <!-- Verification Note -->
- <p class="mt-4 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400">
+ <p class="mt-4 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400" v-if="nonLsuPaymentMethod !== 'qr_payment'">
       Once your payment is verified, you’ll receive your
      
     </p>
-    <p class="text-xs">
+    <p class="text-xs" v-if="nonLsuPaymentMethod !== 'qr_payment'">
        <strong class="text-gray-700 dark:text-gray-200">
         Official Confirmation Email.
       </strong>
@@ -2845,13 +2981,27 @@ v-if="isSuccessModalOpen"
 
     <!-- Done -->
     <button
+    v-if="nonLsuPaymentMethod === 'qr_payment'"
       type="button"
       @click="resetForm"
-      class="mt-5 w-full rounded-2xl bg-emerald-600 py-3.5 px-6 text-sm font-bold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-700 active:scale-[0.98]"
+      class="mt-5 w-full rounded-2xl bg-blue-500 py-3.5 px-6 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:bg-blue-700 active:scale-[0.98]"
     >
       <i class="fas fa-check mr-1.5"></i>
-      Done
+      Okay
     </button>
+
+
+    <button
+       v-if="nonLsuPaymentMethod !== 'qr_payment'"
+      type="button"
+      @click="resetForm"
+      class="mt-5 w-full rounded-2xl bg-yellow-600 py-3.5 px-6 text-sm font-bold text-white shadow-lg shadow-yellow-600/30 transition hover:bg-yellow-700 active:scale-[0.98]"
+    >
+      <i class="fas fa-check mr-1.5"></i>
+      Proceed to Payment
+    </button>
+<p class="italic text-xs text-center mt-6 text-gray-500 w-full">Disclaimer: Non-refundable once payment is made.</p>
+
   </div>
 </div>
 
@@ -2908,7 +3058,7 @@ v-if="isSuccessModalOpen"
           toastModal.type === 'error'
             ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400'
             : toastModal.type === 'success'
-              ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400'
+              ? 'bg-emerald-100 text-blue-500 dark:bg-emerald-950/80 dark:text-emerald-400'
               : 'bg-amber-100 text-amber-600 dark:bg-amber-950/80 dark:text-amber-400'
         ]">
           <i :class="[
@@ -2935,7 +3085,7 @@ v-if="isSuccessModalOpen"
             toastModal.type === 'error'
               ? 'bg-rose-600 hover:bg-rose-700'
               : toastModal.type === 'success'
-                ? 'bg-emerald-600 hover:bg-emerald-700'
+                ? 'bg-blue-500 hover:bg-emerald-700'
                 : 'bg-amber-600 hover:bg-amber-700'
           ]">
             <span>Understood</span>
