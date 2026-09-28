@@ -35,9 +35,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
       <Header class="hidden lg:block" />
 
       <!-- Full Widescreen Edge-to-Edge Student Banner Image -->
-      <div class="relative w-full overflow-hidden bg-white">
-        
-        <!-- Banner Image -->
+      <!-- <div class="relative w-full overflow-hidden bg-white">
         <img
           src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LANDSCAPE%20CROPPED.jpg"
           alt="La Salle Students Banner"
@@ -45,12 +43,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
           loading="eager"
           fetchpriority="high"
         />
-
-        <!-- Logos Container Overlay (Proportionately scaled for mobile, tablet, & desktop) -->
         <div class="absolute inset-x-0 top-0 pt-2 sm:pt-6 lg:pt-12 px-2 sm:px-8 z-10">
           <div class="max-w-7xl mx-auto flex items-center justify-center gap-2 sm:gap-6 lg:pl-48">
-            
-            <!-- 20th Anniversary Emblem -->
             <div class="flex items-center shrink-0">
               <img
                 src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/20th%20Anniversary%20Emerald%20Logos-20260618T012425Z-3-001/20th%20Anniversary%20Emerald%20Logos/Emerald%20with%20Theme%20-%20Green.png"
@@ -58,8 +52,6 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
                 class="h-6 sm:h-12 lg:h-24 w-auto object-contain transition-transform duration-300 hover:scale-105"
               />
             </div>
-
-            <!-- La Salle Corporate Tagline Logo -->
             <div class="text-center shrink-0">
               <img
                 src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/Corporate%20Logo%20New/Corporate%20Logo-Tagline.png"
@@ -69,12 +61,19 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
             </div>
           </div>
         </div>
-
-        <!-- Subtle bottom shadow gradient over image -->
         <div class="absolute inset-x-0 bottom-0 h-12 sm:h-24 bg-gradient-to-t from-slate-900/15 to-transparent pointer-events-none"></div>
-      </div>
+      </div> -->
 
-      <!-- Shortcuts bar: absolute on desktop, stacked on mobile -->
+
+<div class="bg-[#a7d4aa]">
+<HeroLanding/>
+</div>
+
+
+
+
+
+
       <div class="lg:absolute bottom-0 w-full z-20 shadow-2xl">
         <Shortcuts />
       </div>
