@@ -427,11 +427,13 @@ const createEmptyParticipant = (index = 1) => ({
 
 const selectParticipantGroup = (participant, group) => {
   participant.participantGroup = group;
-  if (group === "Open") {
+  if (isPetCategory(participant.run_category)) {
+    participant.participant_type = "Pet";
+  } else if (group === "Open") {
     participant.participant_type = "Open Category";
   } else if (group === "LSU") {
-    if (!participant.participant_type || participant.participant_type === "Open Category") {
-      participant.participant_type = "Currently Enrolled Students";
+    if (!participant.participant_type || participant.participant_type === "Open Category" || participant.participant_type === "Pet") {
+      participant.participant_type = "LSU Exclusive - Enrolled Student";
     }
   }
 };
@@ -507,13 +509,13 @@ watch(
 watch(
   [() => currentParticipant.value?.participant_type, () => currentParticipant.value?.run_category],
   ([newType, newCat]) => {
-    if (newCat === "1KM" || newCat === "1K") {
+    if (newCat === "1KM" || newCat === "1K" || newType === "Pet") {
       paymentType.value = "non_lsu_payment";
-    } else if (newType === "Employees") {
+    } else if (newType === "LSU Exclusive - Employee" || newType === "Employees") {
       paymentType.value = "salary_deduction";
-    } else if (newType === "Currently Enrolled Students") {
+    } else if (newType === "LSU Exclusive - Enrolled Student" || newType === "Currently Enrolled Students") {
       paymentType.value = "add_to_tuition";
-    } else if (newType === "Open Category" || newType === "Alumni") {
+    } else if (newType === "Open Category" || newType === "LSU Exclusive - Alumni" || newType === "Alumni") {
       paymentType.value = "non_lsu_payment";
     }
   },
@@ -642,7 +644,7 @@ const itemizedFees = computed(() => {
     if (cat) {
       const isPet = isPetCategory(p.run_category);
       const shirtDesc = isPet
-        ? `Size: ${p.tshirt_size || "M"} (Owner) + Bandana (${p.pet_bandana_size || "Standard"})`
+        ? `Size: ${p.tshirt_size || "M"} (Owner) + Bandana (Standard)`
         : p.run_category === "20KM"
           ? buildShirtSizeSummary(p)
           : `Size: ${buildShirtSizeSummary(p)}`;
@@ -679,9 +681,10 @@ const registrationSummary = computed(() => {
     return {
       name: [participant.firstname, participant.lastname].filter(Boolean).join(" ") || `Runner ${index + 1}`,
       category: category ? `${category.name} (${category.id})` : participant.run_category || "Not selected",
-      classification:
-        participant.participantGroup === "LSU"
-          ? participant.participant_type || "LSU Exclusive"
+      classification: isPetCategory(participant.run_category)
+        ? "Pet"
+        : participant.participantGroup === "LSU"
+          ? participant.participant_type || "LSU Exclusive - Enrolled Student"
           : "Open Category",
       payment: paymentMethodLabel.value,
       fee: category?.fee || 0,

@@ -685,7 +685,7 @@ const CSV_ALL_COLUMNS = [
   { key: 'tshirt_size',    label: 'T-Shirt Size' },
   { key: 'pet_name',       label: 'Pet Name' },
   { key: 'pet_type',       label: 'Pet Type' },
-  { key: 'pet_bandana',    label: 'Pet Bandana Size' },
+  { key: 'pet_bandana',    label: 'Pet Bandana' },
   { key: 'pet_vaccinated', label: 'Pet Vaccinated' },
   { key: 'payment_option', label: 'Payment Option' },
   { key: 'payment_status', label: 'Payment Status' },
@@ -700,7 +700,7 @@ const CSV_ALL_COLUMNS = [
 // Default checked columns
 const selectedCsvColumns = ref([
   'race_bib', 'category', 'full_name', 'classification', 'batch',
-  'tshirt_size', 'organization', 'payment_status', 'total_amount',
+  'tshirt_size', 'organization'
 ]);
 
 const toggleAllCsvColumns = (checked) => {
@@ -751,7 +751,7 @@ const generateCsvFromList = (list, batchLabel = "Export") => {
       tshirt_size:    escapeCsv(r.tshirt_size || "M"),
       pet_name:       escapeCsv(r.pet_name || ""),
       pet_type:       escapeCsv(r.pet_type || ""),
-      pet_bandana:    escapeCsv(r.pet_bandana_size || ""),
+      pet_bandana:    escapeCsv((r.run_category || "").toUpperCase().startsWith("1K") || r.pet_name || r.pet_bandana_size || r.pet_bandana ? "Standard" : ""),
       pet_vaccinated: escapeCsv(r.pet_vaccinated ? "Yes" : "No"),
       payment_option: escapeCsv(r.payment_type || ""),
       payment_status: escapeCsv(r.payment_status || ""),
@@ -857,9 +857,9 @@ const batchBreakdown = computed(() => {
     const sz = (r.tshirt_size || "M").trim().toUpperCase();
     tshirts[sz] = (tshirts[sz] || 0) + 1;
 
-    if (r.pet_bandana_size) {
-      const bsz = r.pet_bandana_size.trim();
-      bandanas[bsz] = (bandanas[bsz] || 0) + 1;
+    const is1KM = (r.run_category || "").toUpperCase().startsWith("1K") || Boolean(r.pet_name);
+    if (is1KM || r.pet_bandana_size || r.pet_bandana) {
+      bandanas["Standard"] = (bandanas["Standard"] || 0) + 1;
     }
 
     totalAmount += Number(r.grand_total_payment || r.grand_total || 0);
@@ -902,11 +902,11 @@ const executeFinalizeBatch = async () => {
 
     // Auto-download the supplier CSV spreadsheet using selected custom columns
     const filename = `${(res.batch?.batch_name || batchFinalizeModal.value.batchName || "Batch").replace(/\s+/g, "_")}_Supplier_Orders_${new Date().toISOString().split("T")[0]}.csv`;
-    if (selectedCsvColumns.value && selectedCsvColumns.value.length > 0) {
+    if (res.csv_content) {
+      downloadCsvFile(res.csv_content, filename);
+    } else if (selectedCsvColumns.value && selectedCsvColumns.value.length > 0) {
       const customCsv = generateCsvFromList(runners, res.batch?.batch_name || batchFinalizeModal.value.batchName);
       downloadCsvFile(customCsv, filename);
-    } else if (res.csv_content) {
-      downloadCsvFile(res.csv_content, filename);
     }
 
     // Refresh registrations and batch history
@@ -1211,10 +1211,11 @@ onMounted(() => {
               props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
             ]">
               <option value="All">All Classifications</option>
-              <option value="Currently Enrolled Students">LSU Exclusive - Enrolled Students</option>
-              <option value="Employees">LSU Exclusive - Employees</option>
-              <option value="Alumni">LSU Exclusive - Alumni</option>
+              <option value="LSU Exclusive - Enrolled Student">LSU Exclusive - Enrolled Student</option>
+              <option value="LSU Exclusive - Employee">LSU Exclusive - Employee</option>
+              <option value="LSU Exclusive - Alumni">LSU Exclusive - Alumni</option>
               <option value="Open Category">Open Category</option>
+              <option value="Pet">Pet</option>
             </select>
           </div>
 
@@ -1598,7 +1599,7 @@ onMounted(() => {
                     </div>
                   </td>
 
-                  <!-- Category & Shirt Size -->
+                  <!-- Category & Shirt Size / Bandana -->
                   <td class="px-3 py-3 space-y-1">
                     <span :class="[
                       'px-2 py-0.5 rounded font-black text-[10px] text-white shadow-2xs inline-block',
@@ -1606,7 +1607,10 @@ onMounted(() => {
                     ]">
                       {{ runner.run_category }}
                     </span>
-                    <div class="text-[10px] font-bold text-gray-500">Size: <span class="text-gray-800 dark:text-gray-200 uppercase">{{ runner.tshirt_size || 'M' }}</span></div>
+                    <div v-if="(runner.run_category || '').toUpperCase().startsWith('1K') || runner.pet_name" class="text-[10px] font-bold text-gray-500">
+                      Pet Bandana: <span class="text-gray-800 dark:text-gray-200">Standard</span>
+                    </div>
+                    <div v-else class="text-[10px] font-bold text-gray-500">Size: <span class="text-gray-800 dark:text-gray-200 uppercase">{{ runner.tshirt_size || 'M' }}</span></div>
                   </td>
 
                   <!-- Date Created -->
@@ -1786,7 +1790,7 @@ onMounted(() => {
 
                 <div v-if="selectedRunner.organization" class="lg:flex">
                   <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Running Club / Org</label>
-                  <p class="font-semibold text-emerald-600 dark:text-emerald-400 font-bold">{{ selectedRunner.organization }}</p>
+                  <p class="font-semibold text-emerald-600 dark:text-emerald-400">{{ selectedRunner.organization }}</p>
                 </div>
 
                 <div class="lg:flex">
@@ -1876,10 +1880,11 @@ onMounted(() => {
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Classification</label>
                     <select v-model="editForm.participant_type" :class="inputCls">
                       <option value="">-- Select --</option>
-                      <option value="Currently Enrolled Students">Currently Enrolled Students</option>
-                      <option value="Employees">Employees</option>
-                      <option value="Alumni">Alumni</option>
+                      <option value="LSU Exclusive - Enrolled Student">LSU Exclusive - Enrolled Student</option>
+                      <option value="LSU Exclusive - Employee">LSU Exclusive - Employee</option>
+                      <option value="LSU Exclusive - Alumni">LSU Exclusive - Alumni</option>
                       <option value="Open Category">Open Category</option>
+                      <option value="Pet">Pet</option>
                     </select>
                   </div>
                   <div>
@@ -1963,7 +1968,7 @@ onMounted(() => {
                   </span>
                 </div>
                 <p><strong>Name:</strong> {{ selectedRunner.pet_name || 'N/A' }} ({{ selectedRunner.pet_type || 'Dog' }})</p>
-                <p><strong>Bandana Size:</strong> {{ selectedRunner.pet_bandana_size || 'Medium' }}</p>
+                <p><strong>Bandana:</strong> Standard</p>
 
                 <!-- Pet Vaccine Document -->
                 <div v-if="getDocumentUrl(selectedRunner.pet_vaccine_record)" class="pt-2 border-t dark:border-gray-700">
