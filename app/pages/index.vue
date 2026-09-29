@@ -35,7 +35,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
       <Header class="hidden lg:block" />
 
       <!-- Full Widescreen Edge-to-Edge Student Banner Image -->
-      <!-- <div class="relative w-full overflow-hidden bg-white">
+      <div class="relative w-full overflow-hidden bg-white">
         <img
           src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LANDSCAPE%20CROPPED.jpg"
           alt="La Salle Students Banner"
@@ -62,12 +62,12 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
           </div>
         </div>
         <div class="absolute inset-x-0 bottom-0 h-12 sm:h-24 bg-gradient-to-t from-slate-900/15 to-transparent pointer-events-none"></div>
-      </div> -->
+      </div>
 
 
-<div class="bg-[#a7d4aa]">
+<!-- <div class="bg-[#a7d4aa]">
 <HeroLanding/>
-</div>
+</div> -->
 
 
 
