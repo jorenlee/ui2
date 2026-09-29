@@ -3064,7 +3064,7 @@ v-if="isSuccessModalOpen"
           href="https://www.facebook.com/lsuanimorun"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
         >
           <i class="fab fa-facebook"></i>
           LSU Animo Run
@@ -3074,7 +3074,7 @@ v-if="isSuccessModalOpen"
           href="https://www.facebook.com/ozamizlifestylerunners"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
         >
           <i class="fab fa-facebook"></i>
           Ozamiz Lifestyle Runners
@@ -3086,7 +3086,7 @@ v-if="isSuccessModalOpen"
           href="https://animorun.lsu.edu.ph"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
         >
           <i class="fas fa-globe"></i>
           animorun.lsu.edu.ph
