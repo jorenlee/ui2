@@ -697,11 +697,23 @@ const CSV_ALL_COLUMNS = [
   { key: 'locked_at',      label: 'Batch Locked At' },
 ];
 
-// Default checked columns
-const selectedCsvColumns = ref([
-  'race_bib', 'category', 'full_name', 'classification', 'batch',
-  'tshirt_size', 'organization'
-]);
+const DEFAULT_COLUMNS = [
+  'race_bib', 'full_name', 'batch', 'category', 'tshirt_size', 'classification', 'reg_date', 'payment_status'
+];
+
+// Default checked columns - controls both CSV export and live table column display
+const selectedCsvColumns = ref([...DEFAULT_COLUMNS]);
+
+const isColumnPickerModalOpen = ref(false);
+
+const activeTableColumns = computed(() => {
+  const selected = selectedCsvColumns.value || [];
+  return CSV_ALL_COLUMNS.filter(c => selected.includes(c.key));
+});
+
+const resetToDefaultColumns = () => {
+  selectedCsvColumns.value = [...DEFAULT_COLUMNS];
+};
 
 const toggleAllCsvColumns = (checked) => {
   selectedCsvColumns.value = checked ? CSV_ALL_COLUMNS.map(c => c.key) : [];
@@ -1082,6 +1094,15 @@ onMounted(() => {
               <i class="fas fa-boxes"></i> Batches
               <span v-if="batchesList.length" class="px-1.5 py-0.2 rounded-full bg-amber-400 text-gray-900 font-black text-[10px]">
                 {{ batchesList.length }}
+              </span>
+            </button>
+
+            <!-- Table Columns Customizer button -->
+            <button type="button" @click="isColumnPickerModalOpen = true"
+              class="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+              <i class="fas fa-table-columns text-amber-300"></i> Columns
+              <span class="px-1.5 py-0.2 rounded-full bg-emerald-400 text-gray-900 font-black text-[10px]">
+                {{ selectedCsvColumns.length }}
               </span>
             </button>
 
@@ -1472,36 +1493,33 @@ onMounted(() => {
                     title="Select all visible"
                   />
                 </th>
-                <th class="p-3 cursor-pointer hover:text-emerald-500 transition" @click="toggleSort('bib')">
-                  Reg ID &amp; Bib
-                  <i :class="[
+
+                <!-- Dynamic Columns Header driven by selectedCsvColumns -->
+                <th v-for="col in activeTableColumns" :key="col.key"
+                  :class="[
+                    'p-3 transition select-none',
+                    ['race_bib', 'reg_id', 'full_name', 'firstname', 'lastname', 'batch', 'reg_date'].includes(col.key) ? 'cursor-pointer hover:text-emerald-500' : ''
+                  ]"
+                  @click="['race_bib', 'reg_id'].includes(col.key) ? toggleSort('bib') : ['full_name', 'firstname', 'lastname'].includes(col.key) ? toggleSort('name') : col.key === 'batch' ? toggleSort('batch') : col.key === 'reg_date' ? toggleSort('date') : null">
+                  {{ col.label }}
+                  <i v-if="['race_bib', 'reg_id'].includes(col.key)" :class="[
                     'fas ml-1 text-[10px]',
                     sortBy === 'bib_asc' ? 'fa-sort-up text-emerald-600' : 'fa-sort text-gray-400'
                   ]"></i>
-                </th>
-                <th class="p-3 cursor-pointer hover:text-emerald-500 transition" @click="toggleSort('name')">
-                  Runner Name
-                  <i :class="[
+                  <i v-else-if="['full_name', 'firstname', 'lastname'].includes(col.key)" :class="[
                     'fas ml-1 text-[10px]',
                     sortBy === 'name_asc' ? 'fa-sort-alpha-down text-emerald-600' : sortBy === 'name_desc' ? 'fa-sort-alpha-up text-emerald-600' : 'fa-sort text-gray-400'
                   ]"></i>
-                </th>
-                <th class="p-3 cursor-pointer hover:text-emerald-500 transition" @click="toggleSort('batch')">
-                  Supplier Batch &amp; Lock
-                  <i :class="[
+                  <i v-else-if="col.key === 'batch'" :class="[
                     'fas ml-1 text-[10px]',
                     sortBy === 'batch_asc' ? 'fa-sort-amount-down text-emerald-600' : 'fa-sort text-gray-400'
                   ]"></i>
-                </th>
-                <th class="p-3">Category &amp; Size</th>
-                <th class="p-3 cursor-pointer hover:text-emerald-500 transition" @click="toggleSort('date')">
-                  Date Created
-                  <i :class="[
+                  <i v-else-if="col.key === 'reg_date'" :class="[
                     'fas ml-1 text-[10px]',
                     sortBy === 'date_desc' ? 'fa-sort-numeric-down text-emerald-600' : sortBy === 'date_asc' ? 'fa-sort-numeric-up text-emerald-600' : 'fa-sort text-gray-400'
                   ]"></i>
                 </th>
-                <th class="p-3">Payment &amp; Status</th>
+
                 <th class="p-3 text-center">Actions</th>
               </tr>
             </thead>
@@ -1514,25 +1532,8 @@ onMounted(() => {
                   props.darkMode ? 'bg-gray-800' : 'bg-white',
                 ]">
                   <td class="p-3 w-10"></td>
-                  <td class="p-3">
-                    <div :class="['h-3 w-10 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                    <div :class="['h-2.5 w-20 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                  </td>
-                  <td class="p-3">
-                    <div :class="['h-3 w-32 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                    <div :class="['h-2.5 w-40 rounded', props.darkMode ? 'bg-gray-600' : 'bg-slate-100']"></div>
-                  </td>
-                  <td class="p-3">
-                    <div :class="['h-5 w-20 rounded-full', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                  </td>
-                  <td class="p-3">
-                    <div :class="['h-5 w-16 rounded-full', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                  </td>
-                  <td class="p-3">
-                    <div :class="['h-3 w-20 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                  </td>
-                  <td class="p-3">
-                    <div :class="['h-3 w-24 rounded mb-1.5', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+                  <td v-for="col in activeTableColumns" :key="'sk-c-' + col.key" class="p-3">
+                    <div :class="['h-3.5 w-24 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
                   </td>
                   <td class="p-3 text-center">
                     <div :class="['h-6 w-14 rounded-xl mx-auto', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
@@ -1557,87 +1558,243 @@ onMounted(() => {
                     />
                   </td>
 
-                  <!-- Reg ID & Bib -->
-                  <td class="px-3 py-3">
-                    <div class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</div>
-                    <span class="inline-block px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px] uppercase">
-                      {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
-                    </span>
-                  </td>
-
-                  <!-- Runner Name -->
-                  <td class="px-3 py-3">
-                    <div class="font-bold text-gray-900 dark:text-gray-100 uppercase leading-snug">
-                      {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
-                    </div>
-                    <div class="text-[11px] text-gray-500 truncate max-w-[180px]">
-                      {{ runner.contact_email || runner.email }}
-                    </div>
-                  </td>
-
-                  <!-- Supplier Batch & Lock -->
-                  <td class="px-3 py-3">
-                    <div v-if="runner.batch_name" class="flex items-center gap-1">
-                      <span :class="[
-                        'px-2.5 py-1 rounded-xl text-[10px] font-bold border flex items-center gap-1 shadow-2xs',
-                        runner.batch_locked
-                          ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700'
-                          : 'bg-slate-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-slate-300'
-                      ]">
-                        <i :class="['fas', runner.batch_locked ? 'fa-lock text-purple-600 dark:text-purple-400' : 'fa-unlock text-emerald-500']"></i>
-                        {{ runner.batch_name }}
+                  <!-- Dynamic columns rendered based on col.key -->
+                  <td v-for="col in activeTableColumns" :key="col.key" class="px-3 py-3">
+                    <!-- race_bib -->
+                    <template v-if="col.key === 'race_bib'">
+                      <div class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</div>
+                      <span class="inline-block px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px] uppercase">
+                        {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
                       </span>
-                      <!-- Quick superadmin lock toggle button -->
-                      <button type="button" @click="openUnlockPrompt(runner, 'runner')"
-                        class="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-purple-200 dark:hover:bg-purple-900 text-gray-600 dark:text-gray-300 flex items-center justify-center transition cursor-pointer text-[10px]"
-                        :title="runner.batch_locked ? 'Superadmin Bypass: Click to unlock order' : 'Click to lock order for supplier'">
-                        <i :class="['fas', runner.batch_locked ? 'fa-unlock' : 'fa-lock']"></i>
-                      </button>
-                    </div>
-                    <div v-else class="text-[11px] text-gray-400 italic flex items-center gap-1">
-                      <span>Unbatched</span>
-                    </div>
-                  </td>
+                    </template>
 
-                  <!-- Category & Shirt Size / Bandana -->
-                  <td class="px-3 py-3 space-y-1">
-                    <span :class="[
-                      'px-2 py-0.5 rounded font-black text-[10px] text-white shadow-2xs inline-block',
-                      runCategories.find(c => runner.run_category && runner.run_category.startsWith(c.id))?.color || 'bg-emerald-700'
-                    ]">
-                      {{ runner.run_category }}
-                    </span>
-                    <div v-if="(runner.run_category || '').toUpperCase().startsWith('1K') || runner.pet_name" class="text-[10px] font-bold text-gray-500">
-                      Pet Bandana: <span class="text-gray-800 dark:text-gray-200">Standard</span>
-                    </div>
-                    <div v-else class="text-[10px] font-bold text-gray-500">Size: <span class="text-gray-800 dark:text-gray-200 uppercase">{{ runner.tshirt_size || 'M' }}</span></div>
-                  </td>
+                    <!-- reg_id -->
+                    <template v-else-if="col.key === 'reg_id'">
+                      <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</span>
+                    </template>
 
-                  <!-- Date Created -->
-                  <td class="px-3 py-3 text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                    {{ runner.created_at_formatted || (runner.created_at ? new Date(runner.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A') }}
-                  </td>
+                    <!-- full_name -->
+                    <template v-else-if="col.key === 'full_name'">
+                      <div class="font-bold text-gray-900 dark:text-gray-100 uppercase leading-snug">
+                        {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
+                      </div>
+                      <div class="text-[11px] text-gray-500 truncate max-w-[180px]">
+                        {{ runner.contact_email || runner.email }}
+                      </div>
+                    </template>
 
-                  <!-- Payment & Status -->
-                  <td class="px-3 py-3">
-                    <div class="flex items-center gap-2">
+                    <!-- firstname -->
+                    <template v-else-if="col.key === 'firstname'">
+                      <span class="font-semibold text-gray-900 dark:text-gray-100">{{ runner.firstname || '-' }}</span>
+                    </template>
+
+                    <!-- middlename -->
+                    <template v-else-if="col.key === 'middlename'">
+                      <span class="text-gray-700 dark:text-gray-300">{{ runner.middlename || '-' }}</span>
+                    </template>
+
+                    <!-- lastname -->
+                    <template v-else-if="col.key === 'lastname'">
+                      <span class="font-semibold text-gray-900 dark:text-gray-100">{{ runner.lastname || '-' }}</span>
+                    </template>
+
+                    <!-- suffix -->
+                    <template v-else-if="col.key === 'suffix'">
+                      <span class="text-gray-700 dark:text-gray-300">{{ runner.suffix || '-' }}</span>
+                    </template>
+
+                    <!-- batch -->
+                    <template v-else-if="col.key === 'batch'">
+                      <div v-if="runner.batch_name" class="flex items-center gap-1">
+                        <span :class="[
+                          'px-2.5 py-1 rounded-xl text-[10px] font-bold border flex items-center gap-1 shadow-2xs',
+                          runner.batch_locked
+                            ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700'
+                            : 'bg-slate-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-slate-300'
+                        ]">
+                          <i :class="['fas', runner.batch_locked ? 'fa-lock text-purple-600 dark:text-purple-400' : 'fa-unlock text-emerald-500']"></i>
+                          {{ runner.batch_name }}
+                        </span>
+                        <button type="button" @click="openUnlockPrompt(runner, 'runner')"
+                          class="w-6 h-6 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-purple-200 dark:hover:bg-purple-900 text-gray-600 dark:text-gray-300 flex items-center justify-center transition cursor-pointer text-[10px]"
+                          :title="runner.batch_locked ? 'Superadmin Bypass: Click to unlock order' : 'Click to lock order for supplier'">
+                          <i :class="['fas', runner.batch_locked ? 'fa-unlock' : 'fa-lock']"></i>
+                        </button>
+                      </div>
+                      <div v-else class="text-[11px] text-gray-400 italic">Unbatched</div>
+                    </template>
+
+                    <!-- lock_status -->
+                    <template v-else-if="col.key === 'lock_status'">
                       <span :class="[
-                        'px-2.5 py-0.5 rounded-xl text-[10px] font-bold border shrink-0',
-                        getStatusBadge(runner.payment_status)
+                        'px-2 py-0.5 rounded text-[10px] font-bold uppercase',
+                        runner.batch_locked ? 'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300' : 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-300'
                       ]">
-                        {{ runner.payment_status }}
+                        {{ runner.batch_locked ? 'Locked' : 'Open' }}
                       </span>
-                      <div class="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                    </template>
+
+                    <!-- category -->
+                    <template v-else-if="col.key === 'category'">
+                      <span :class="[
+                        'px-2 py-0.5 rounded font-black text-[10px] text-white shadow-2xs inline-block',
+                        runCategories.find(c => runner.run_category && runner.run_category.startsWith(c.id))?.color || 'bg-emerald-700'
+                      ]">
+                        {{ runner.run_category }}
+                      </span>
+                    </template>
+
+                    <!-- tshirt_size -->
+                    <template v-else-if="col.key === 'tshirt_size'">
+                      <div v-if="(runner.run_category || '').toUpperCase().startsWith('1K') || runner.pet_name" class="text-[10px] font-bold text-gray-500">
+                        Pet Bandana: <span class="text-gray-800 dark:text-gray-200">Standard</span>
+                      </div>
+                      <div v-else class="text-[10px] font-bold text-gray-500">Size: <span class="text-gray-800 dark:text-gray-200 uppercase">{{ runner.tshirt_size || 'M' }}</span></div>
+                    </template>
+
+                    <!-- classification -->
+                    <template v-else-if="col.key === 'classification'">
+                      <span class="inline-block px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-[10px] font-semibold">
+                        {{ runner.participant_type || 'Open Category' }}
+                      </span>
+                    </template>
+
+                    <!-- pet_bandana -->
+                    <template v-else-if="col.key === 'pet_bandana'">
+                      <span v-if="(runner.run_category || '').toUpperCase().startsWith('1K') || runner.pet_name || runner.pet_bandana_size" class="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Standard</span>
+                      <span v-else class="text-gray-400 text-[11px]">-</span>
+                    </template>
+
+                    <!-- pet_name -->
+                    <template v-else-if="col.key === 'pet_name'">
+                      <span class="text-gray-800 dark:text-gray-200 font-medium">{{ runner.pet_name || '-' }}</span>
+                    </template>
+
+                    <!-- pet_type -->
+                    <template v-else-if="col.key === 'pet_type'">
+                      <span class="text-gray-700 dark:text-gray-300 capitalize">{{ runner.pet_type ? runner.pet_type.replace('_', ' ') : '-' }}</span>
+                    </template>
+
+                    <!-- pet_vaccinated -->
+                    <template v-else-if="col.key === 'pet_vaccinated'">
+                      <span :class="runner.pet_vaccinated ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-gray-400'">
+                        {{ runner.pet_vaccinated ? 'Yes' : 'No' }}
+                      </span>
+                    </template>
+
+                    <!-- gender -->
+                    <template v-else-if="col.key === 'gender'">
+                      <span class="text-gray-700 dark:text-gray-300 capitalize">{{ runner.gender || '-' }}</span>
+                    </template>
+
+                    <!-- age -->
+                    <template v-else-if="col.key === 'age'">
+                      <span class="text-gray-700 dark:text-gray-300">{{ computeAge(runner.birthdate) !== null ? computeAge(runner.birthdate) : '-' }}</span>
+                    </template>
+
+                    <!-- birthdate -->
+                    <template v-else-if="col.key === 'birthdate'">
+                      <span class="text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ runner.birthdate || '-' }}</span>
+                    </template>
+
+                    <!-- contact_number -->
+                    <template v-else-if="col.key === 'contact_number'">
+                      <span class="text-gray-700 dark:text-gray-300 font-mono text-[11px]">{{ runner.contact_number || '-' }}</span>
+                    </template>
+
+                    <!-- email -->
+                    <template v-else-if="col.key === 'email'">
+                      <span class="text-gray-700 dark:text-gray-300 text-[11px]">{{ runner.contact_email || runner.email || '-' }}</span>
+                    </template>
+
+                    <!-- address -->
+                    <template v-else-if="col.key === 'address'">
+                      <span class="text-gray-700 dark:text-gray-300 text-[11px] line-clamp-1 max-w-[200px]" :title="runner.contact_address">{{ runner.contact_address || '-' }}</span>
+                    </template>
+
+                    <!-- lsu_id -->
+                    <template v-else-if="col.key === 'lsu_id'">
+                      <span class="font-mono text-gray-700 dark:text-gray-300 text-[11px]">{{ runner.lsu_id_number || '-' }}</span>
+                    </template>
+
+                    <!-- organization -->
+                    <template v-else-if="col.key === 'organization'">
+                      <span class="text-gray-700 dark:text-gray-300 text-[11px]">{{ runner.organization || '-' }}</span>
+                    </template>
+
+                    <!-- affiliation -->
+                    <template v-else-if="col.key === 'affiliation'">
+                      <span class="text-gray-700 dark:text-gray-300 text-[11px]">{{ runner.alumni_batch || '-' }}</span>
+                    </template>
+
+                    <!-- payment_option -->
+                    <template v-else-if="col.key === 'payment_option'">
+                      <span class="text-[10px] text-gray-600 dark:text-gray-300 capitalize">
+                        {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' : 'Over-the-Counter / QR' }}
+                      </span>
+                    </template>
+
+                    <!-- payment_status -->
+                    <template v-else-if="col.key === 'payment_status'">
+                      <div class="flex items-center gap-1.5">
+                        <span :class="[
+                          'px-2.5 py-0.5 rounded-xl text-[10px] font-bold border shrink-0',
+                          getStatusBadge(runner.payment_status)
+                        ]">
+                          {{ runner.payment_status }}
+                        </span>
+                        <div class="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400">
+                          ₱{{ Number(runner.grand_total_payment || runner.grand_total || 0).toLocaleString() }}
+                        </div>
+                      </div>
+                    </template>
+
+                    <!-- total_amount -->
+                    <template v-else-if="col.key === 'total_amount'">
+                      <div class="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
                         ₱{{ Number(runner.grand_total_payment || runner.grand_total || 0).toLocaleString() }}
                       </div>
-                    </div>
-                    <div class="text-[10px] text-gray-400 capitalize mt-0.5">
-                      {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' : 'Over-the-Counter / QR' }}
-                    </div>
+                    </template>
+
+                    <!-- reg_date -->
+                    <template v-else-if="col.key === 'reg_date'">
+                      <span class="text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                        {{ runner.created_at_formatted || (runner.created_at ? new Date(runner.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A') }}
+                      </span>
+                    </template>
+
+                    <!-- confirmed_date -->
+                    <template v-else-if="col.key === 'confirmed_date'">
+                      <span class="text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                        {{ runner.confirmed_at ? new Date(runner.confirmed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-' }}
+                      </span>
+                    </template>
+
+                    <!-- confirmed_by -->
+                    <template v-else-if="col.key === 'confirmed_by'">
+                      <span class="text-[11px] text-gray-700 dark:text-gray-300">{{ runner.confirmed_by || '-' }}</span>
+                    </template>
+
+                    <!-- locked_by -->
+                    <template v-else-if="col.key === 'locked_by'">
+                      <span class="text-[11px] text-gray-700 dark:text-gray-300">{{ runner.batch_locked_by || '-' }}</span>
+                    </template>
+
+                    <!-- locked_at -->
+                    <template v-else-if="col.key === 'locked_at'">
+                      <span class="text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                        {{ runner.batch_locked_at ? new Date(runner.batch_locked_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-' }}
+                      </span>
+                    </template>
+
+                    <!-- fallback -->
+                    <template v-else>
+                      <span class="text-gray-700 dark:text-gray-300 text-[11px]">{{ runner[col.key] || '-' }}</span>
+                    </template>
                   </td>
 
-                  <!-- Actions -->
-                  <td class="px-3 py-3 text-center">
+                  <!-- Fixed Actions column -->
+                  <td class="px-3 py-3 text-center whitespace-nowrap">
                     <button type="button" @click="openDetails(runner)"
                       class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition inline-flex items-center gap-1 cursor-pointer">
                       <i class="fas fa-eye"></i> View
@@ -1646,7 +1803,7 @@ onMounted(() => {
                 </tr>
 
                 <tr v-if="filteredRegistrations.length === 0">
-                  <td colspan="8" class="p-8 text-center text-gray-500">
+                  <td :colspan="activeTableColumns.length + 2" class="p-8 text-center text-gray-500">
                     <i class="fas fa-search text-3xl mb-2 text-gray-400 block"></i>
                     No registration records match your search criteria.
                   </td>
@@ -2439,7 +2596,7 @@ onMounted(() => {
 
             <!-- Pet Bandana sizes breakdown (if any) -->
             <div v-if="Object.keys(batchBreakdown.bandanas).length > 0">
-              <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Pet Bandana Sizes:</span>
+              <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Pet Bandana (Standard):</span>
               <div class="flex flex-wrap gap-1.5">
                 <span v-for="(cnt, bsz) in batchBreakdown.bandanas" :key="bsz"
                   class="px-2 py-0.5 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 font-bold text-[11px]">
@@ -2644,6 +2801,71 @@ onMounted(() => {
             <i v-if="!isTogglingLock" :class="['fas', unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked ? 'fa-unlock' : 'fa-lock']"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
             <span>{{ isTogglingLock ? 'Updating...' : (unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked ? 'Yes, Bypass & Unlock' : 'Yes, Lock Order') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── COLUMN PICKER MODAL (FOLLOW LIVE TABLE & CSV) ────────────────── -->
+    <div v-if="isColumnPickerModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+      <div :class="[
+        'relative max-w-2xl w-full rounded-3xl shadow-2xl border p-4 sm:p-6 space-y-4 transition',
+        props.darkMode ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <div class="flex items-center justify-between border-b pb-3 dark:border-gray-700">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm">
+              <i class="fas fa-table-columns"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm sm:text-base">Customize Table Columns</h3>
+              <p class="text-[11px] text-gray-500 dark:text-gray-400">Select which columns display on the table &amp; export in CSV</p>
+            </div>
+          </div>
+          <button type="button" @click="isColumnPickerModalOpen = false"
+            class="w-7 h-7 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer">
+            <i class="fas fa-times text-xs"></i>
+          </button>
+        </div>
+
+        <div class="flex items-center justify-between px-1">
+          <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            {{ selectedCsvColumns.length }} of {{ CSV_ALL_COLUMNS.length }} columns visible
+          </span>
+          <div class="flex items-center gap-2 text-xs">
+            <button type="button" @click="toggleAllCsvColumns(true)" class="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold cursor-pointer">
+              Select All
+            </button>
+            <span class="text-gray-300">|</span>
+            <button type="button" @click="toggleAllCsvColumns(false)" class="text-rose-500 hover:underline font-semibold cursor-pointer">
+              Deselect All
+            </button>
+            <span class="text-gray-300">|</span>
+            <button type="button" @click="resetToDefaultColumns" class="text-gray-500 hover:underline font-semibold cursor-pointer">
+              Reset Default
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-[60vh] overflow-y-auto p-1">
+          <label v-for="col in CSV_ALL_COLUMNS" :key="col.key"
+            :class="[
+              'flex items-center gap-2 px-2.5 py-2 rounded-xl border cursor-pointer transition text-xs select-none',
+              selectedCsvColumns.includes(col.key)
+                ? (props.darkMode ? 'bg-emerald-950/40 border-emerald-600 text-emerald-300' : 'bg-emerald-50 border-emerald-400 text-emerald-800')
+                : (props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-400' : 'bg-white border-slate-200 text-gray-600 hover:border-emerald-300')
+            ]">
+            <input type="checkbox" :value="col.key" v-model="selectedCsvColumns"
+              class="w-3.5 h-3.5 rounded accent-emerald-600 cursor-pointer shrink-0" />
+            <span class="font-medium truncate">{{ col.label }}</span>
+          </label>
+        </div>
+
+        <div class="flex justify-end pt-3 border-t dark:border-gray-700">
+          <button type="button" @click="isColumnPickerModalOpen = false"
+            class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition cursor-pointer">
+            Done &amp; Apply
           </button>
         </div>
       </div>

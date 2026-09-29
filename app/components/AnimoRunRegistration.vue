@@ -417,7 +417,7 @@ const createEmptyParticipant = (index = 1) => ({
   pet_name: "",
   pet_type: "",
   pet_other_type: "",
-  pet_bandana_size: "",
+  pet_bandana_size: "Standard",
   pet_vaccinated: true,
   pet_vaccine_record_file: null,
   pet_vaccine_record_preview: null,
@@ -873,7 +873,7 @@ const submitRegistration = async () => {
     }
 
     // Validate Alumni ID (front only, up to 5MB) for Alumni participants
-    if (p.participant_type === 'Alumni') {
+    if (p.participant_type === 'LSU Exclusive - Alumni' || p.participant_type === 'Alumni') {
       if (!p.alumni_id_front_file) {
         showNotice(
           `Please upload the front side of your LSU ID for Runner #${i + 1}.`,
@@ -968,7 +968,7 @@ const submitRegistration = async () => {
           // Upload Alumni ID front if present (up to 5MB)
           let idFrontUrl = "";
           let idBackUrl = "";
-          if (p.participant_type === 'Alumni') {
+          if (p.participant_type === 'LSU Exclusive - Alumni' || p.participant_type === 'Alumni') {
             if (p.alumni_id_front_file) idFrontUrl = await uploadSingleFile(p.alumni_id_front_file) || "";
           }
 
@@ -1018,7 +1018,7 @@ const submitRegistration = async () => {
             tshirt_size: buildShirtSizeSummary(p),
             pet_name: p.pet_name,
             pet_type: resolvedPetType,
-            pet_bandana_size: p.pet_bandana_size,
+            pet_bandana_size: (isPetCategory(p.run_category) || p.pet_name) ? "Standard" : (p.pet_bandana_size || ""),
             pet_vaccinated: p.pet_vaccinated,
             valid_id_front: idFrontUrl ? [{ name: 'alumni_id_front', url: idFrontUrl }] : [],
             valid_id_back: idBackUrl ? [{ name: 'alumni_id_back', url: idBackUrl }] : [],
@@ -1043,7 +1043,7 @@ const submitRegistration = async () => {
       // Upload Alumni ID front if participant is Alumni (up to 5MB)
       let idFrontUrl = "";
       let idBackUrl = "";
-      if (p.participant_type === 'Alumni') {
+      if (p.participant_type === 'LSU Exclusive - Alumni' || p.participant_type === 'Alumni') {
         if (p.alumni_id_front_file) idFrontUrl = await uploadSingleFile(p.alumni_id_front_file) || "";
       }
 
@@ -1093,7 +1093,7 @@ const submitRegistration = async () => {
         tshirt_size: buildShirtSizeSummary(p),
         pet_name: p.pet_name,
         pet_type: resolvedPetType,
-        pet_bandana_size: p.pet_bandana_size,
+        pet_bandana_size: (isPetCategory(p.run_category) || p.pet_name) ? "Standard" : (p.pet_bandana_size || ""),
         pet_vaccinated: p.pet_vaccinated,
         form_type: "Individual",
         payment_type: effectivePaymentType,
@@ -2241,10 +2241,10 @@ const submitRegistration = async () => {
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <!-- 1. Students Button -->
-                      <button type="button" @click="currentParticipant.participant_type = 'Currently Enrolled Students'"
+                      <button type="button" @click="currentParticipant.participant_type = 'LSU Exclusive - Enrolled Student'"
                         :class="[
                           'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
-                          currentParticipant.participant_type === 'Currently Enrolled Students'
+                          ['LSU Exclusive - Enrolled Student', 'Currently Enrolled Students'].includes(currentParticipant.participant_type)
                             ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
                             : props.darkMode
                               ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
@@ -2255,9 +2255,9 @@ const submitRegistration = async () => {
                       </button>
 
                       <!-- 2. Employees Button -->
-                      <button type="button" @click="currentParticipant.participant_type = 'Employees'" :class="[
+                      <button type="button" @click="currentParticipant.participant_type = 'LSU Exclusive - Employee'" :class="[
                         'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
-                        currentParticipant.participant_type === 'Employees'
+                        ['LSU Exclusive - Employee', 'Employees'].includes(currentParticipant.participant_type)
                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
                           : props.darkMode
                             ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
@@ -2268,9 +2268,9 @@ const submitRegistration = async () => {
                       </button>
 
                       <!-- 3. Alumni Button -->
-                      <button type="button" @click="currentParticipant.participant_type = 'Alumni'" :class="[
+                      <button type="button" @click="currentParticipant.participant_type = 'LSU Exclusive - Alumni'" :class="[
                         'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
-                        currentParticipant.participant_type === 'Alumni'
+                        ['LSU Exclusive - Alumni', 'Alumni'].includes(currentParticipant.participant_type)
                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
                           : props.darkMode
                             ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
@@ -2283,7 +2283,7 @@ const submitRegistration = async () => {
                   </div>
 
                   <!-- 1. Enrolled Students Form + Integrated Add-to-Tuition Payment -->
-                  <div v-if="currentParticipant.participant_type === 'Currently Enrolled Students'"
+                  <div v-if="['LSU Exclusive - Enrolled Student', 'Currently Enrolled Students'].includes(currentParticipant.participant_type)"
                     class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
                     <div
                       class="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300">
@@ -2380,7 +2380,7 @@ const submitRegistration = async () => {
                   </div>
 
                   <!-- 2. Employees Form + Integrated Salary Deduction Payment -->
-                  <div v-if="currentParticipant.participant_type === 'Employees'"
+                  <div v-if="['LSU Exclusive - Employee', 'Employees'].includes(currentParticipant.participant_type)"
                     class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
                     <div
                       class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-800 dark:text-emerald-300">
@@ -2449,7 +2449,7 @@ const submitRegistration = async () => {
                   </div>
 
                   <!-- 3. Alumni Form + Integrated Direct Payment -->
-                  <div v-if="currentParticipant.participant_type === 'Alumni'"
+                  <div v-if="['LSU Exclusive - Alumni', 'Alumni'].includes(currentParticipant.participant_type)"
                     class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
                     <div
                       class="flex items-center justify-between p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 text-xs text-purple-800 dark:text-purple-300">
