@@ -122,6 +122,30 @@ const searchQuery = ref("");
 const selectedCategory = ref("All");
 const selectedStatus = ref("All");
 const selectedParticipantType = ref("All");
+const selectedAgeGroup = ref("All");
+
+// Helper: compute age from birthdate string
+const computeAge = (birthdate) => {
+  if (!birthdate) return null;
+  const birth = new Date(birthdate);
+  if (isNaN(birth)) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age;
+};
+
+const getAgeGroup = (birthdate) => {
+  const age = computeAge(birthdate);
+  if (age === null) return null;
+  if (age < 18) return 'Under 18';
+  if (age <= 24) return '18–24';
+  if (age <= 34) return '25–34';
+  if (age <= 44) return '35–44';
+  if (age <= 54) return '45–54';
+  return '55+';
+};
 const selectedRunner = ref(null);
 const isDetailModalOpen = ref(false);
 
@@ -237,6 +261,8 @@ const toggleSort = (field) => {
     sortBy.value = sortBy.value === "bib_asc" ? "date_desc" : "bib_asc";
   } else if (field === "batch") {
     sortBy.value = sortBy.value === "batch_asc" ? "date_desc" : "batch_asc";
+  } else if (field === "shirt") {
+    sortBy.value = sortBy.value === "shirt_asc" ? "date_desc" : "shirt_asc";
   }
 };
 
@@ -311,6 +337,13 @@ const filteredRegistrations = computed(() => {
     const matchesStatus = selectedStatus.value === "All" || item.payment_status === selectedStatus.value;
     const matchesType = selectedParticipantType.value === "All" || item.participant_type === selectedParticipantType.value;
 
+    // Age group filter
+    let matchesAge = true;
+    if (selectedAgeGroup.value !== "All") {
+      const ag = getAgeGroup(item.birthdate);
+      matchesAge = ag === selectedAgeGroup.value;
+    }
+
     // Batch filter
     let matchesBatch = true;
     if (selectedBatch.value === "Unbatched") {
@@ -339,7 +372,7 @@ const filteredRegistrations = computed(() => {
       }
     }
 
-    return matchesQuery && matchesCategory && matchesStatus && matchesType && matchesBatch && matchesLock && matchesDate;
+    return matchesQuery && matchesCategory && matchesStatus && matchesType && matchesAge && matchesBatch && matchesLock && matchesDate;
   });
 
   // Sorting
@@ -365,6 +398,14 @@ const filteredRegistrations = computed(() => {
     }
     if (sortBy.value === "batch_asc") {
       return (a.batch_name || "ZZZ").localeCompare(b.batch_name || "ZZZ");
+    }
+    if (sortBy.value === "shirt_asc") {
+      const sizeOrder = ['3XS','2XS','XS','S','M','L','XL','2XL','3XL','4XL','5XL'];
+      const szA = (a.tshirt_size || 'M').trim().toUpperCase().split(';')[0].split(':').pop().trim();
+      const szB = (b.tshirt_size || 'M').trim().toUpperCase().split(';')[0].split(':').pop().trim();
+      const idxA = sizeOrder.indexOf(szA);
+      const idxB = sizeOrder.indexOf(szB);
+      return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
     }
     return 0;
   });
@@ -619,110 +660,133 @@ const downloadCsvFile = (csvContent, filename) => {
   URL.revokeObjectURL(url);
 };
 
-const generateCsvFromList = (list, batchLabel = "Export") => {
-  const headers = [
-    "Batch Group",
-    "Lock Status",
-    "Reg ID",
-    "Race Bib",
-    "Category",
-    "Full Name",
-    "First Name",
-    "Middle Name",
-    "Last Name",
-    "Suffix",
-    "Gender",
-    "Birthdate",
-    "Contact Number",
-    "Email Address",
-    "Address",
-    "Classification",
-    "LSU ID Number",
-    "Club / Organization",
-    "Batch / Affiliation",
-    "T-Shirt Size",
-    "Pet Name",
-    "Pet Type",
-    "Pet Bandana Size",
-    "Pet Vaccinated",
-    "Payment Option",
-    "Payment Status",
-    "Total Amount (PHP)",
-    "Registration Date",
-    "Confirmed Date",
-    "Confirmed By",
-    "Batch Locked By",
-    "Batch Locked At",
-  ];
+// ── CSV Column Picker for Supplier Fulfillment ──────────────────────────────────
+const CSV_ALL_COLUMNS = [
+  { key: 'batch',          label: 'Batch Group' },
+  { key: 'lock_status',    label: 'Lock Status' },
+  { key: 'reg_id',         label: 'Reg ID' },
+  { key: 'race_bib',       label: 'Race BIB Number' },
+  { key: 'category',       label: 'Category' },
+  { key: 'full_name',      label: 'Full Name' },
+  { key: 'firstname',      label: 'First Name' },
+  { key: 'middlename',     label: 'Middle Name' },
+  { key: 'lastname',       label: 'Last Name' },
+  { key: 'suffix',         label: 'Suffix' },
+  { key: 'gender',         label: 'Gender' },
+  { key: 'age',            label: 'Age' },
+  { key: 'birthdate',      label: 'Birthdate' },
+  { key: 'contact_number', label: 'Contact Number' },
+  { key: 'email',          label: 'Email Address' },
+  { key: 'address',        label: 'Address' },
+  { key: 'classification', label: 'Classification' },
+  { key: 'lsu_id',         label: 'LSU ID Number' },
+  { key: 'organization',   label: 'Club / Organization' },
+  { key: 'affiliation',    label: 'Batch / Affiliation' },
+  { key: 'tshirt_size',    label: 'T-Shirt Size' },
+  { key: 'pet_name',       label: 'Pet Name' },
+  { key: 'pet_type',       label: 'Pet Type' },
+  { key: 'pet_bandana',    label: 'Pet Bandana Size' },
+  { key: 'pet_vaccinated', label: 'Pet Vaccinated' },
+  { key: 'payment_option', label: 'Payment Option' },
+  { key: 'payment_status', label: 'Payment Status' },
+  { key: 'total_amount',   label: 'Total Amount (PHP)' },
+  { key: 'reg_date',       label: 'Registration Date' },
+  { key: 'confirmed_date', label: 'Confirmed Date' },
+  { key: 'confirmed_by',   label: 'Confirmed By' },
+  { key: 'locked_by',      label: 'Batch Locked By' },
+  { key: 'locked_at',      label: 'Batch Locked At' },
+];
 
-  const escapeCsv = (val) => {
-    if (val === null || val === undefined) return '""';
-    const str = String(val).replace(/"/g, '""');
-    return `"${str}"`;
-  };
+// Default checked columns
+const selectedCsvColumns = ref([
+  'race_bib', 'category', 'full_name', 'classification', 'batch',
+  'tshirt_size', 'organization', 'payment_status', 'total_amount',
+]);
+
+const toggleAllCsvColumns = (checked) => {
+  selectedCsvColumns.value = checked ? CSV_ALL_COLUMNS.map(c => c.key) : [];
+};
+
+const allCsvColumnsSelected = computed(() =>
+  selectedCsvColumns.value.length === CSV_ALL_COLUMNS.length
+);
+
+const escapeCsv = (val) => {
+  if (val === null || val === undefined) return '""';
+  const str = String(val).replace(/"/g, '""');
+  return `"${str}"`;
+};
+
+const generateCsvFromList = (list, batchLabel = "Export") => {
+  const activeCols = CSV_ALL_COLUMNS.filter(c => selectedCsvColumns.value.includes(c.key));
+  const headers = activeCols.map(c => `"${c.label}"`);
 
   const rows = list.map((r) => {
     const fullName = `${r.firstname || ""} ${r.middlename || ""} ${r.lastname || ""}${r.suffix ? " " + r.suffix : ""}`.trim();
     const batchStr = r.batch_name || batchLabel;
     const lockStr = r.batch_locked ? "LOCKED" : "OPEN";
+    const age = computeAge(r.birthdate);
 
-    return [
-      escapeCsv(batchStr),
-      escapeCsv(lockStr),
-      escapeCsv(r.id),
-      escapeCsv(r.run_number || r.bib_number || `AR-${r.id}`),
-      escapeCsv(r.run_category || ""),
-      escapeCsv(fullName),
-      escapeCsv(r.firstname || ""),
-      escapeCsv(r.middlename || ""),
-      escapeCsv(r.lastname || ""),
-      escapeCsv(r.suffix || ""),
-      escapeCsv(r.gender || ""),
-      escapeCsv(r.birthdate || ""),
-      escapeCsv(r.contact_number || r.phone || ""),
-      escapeCsv(r.contact_email || r.email || ""),
-      escapeCsv(r.contact_address || r.address || ""),
-      escapeCsv(r.participant_type || ""),
-      escapeCsv(r.lsu_id_number || ""),
-      escapeCsv(r.organization || ""),
-      escapeCsv(r.alumni_batch || ""),
-      escapeCsv(r.tshirt_size || "M"),
-      escapeCsv(r.pet_name || ""),
-      escapeCsv(r.pet_type || ""),
-      escapeCsv(r.pet_bandana_size || ""),
-      escapeCsv(r.pet_vaccinated ? "Yes" : "No"),
-      escapeCsv(r.payment_type || ""),
-      escapeCsv(r.payment_status || ""),
-      escapeCsv(r.grand_total_payment || r.grand_total || 0),
-      escapeCsv(r.created_at_formatted || r.created_at || ""),
-      escapeCsv(r.confirmed_at || ""),
-      escapeCsv(r.confirmed_by || ""),
-      escapeCsv(r.batch_locked_by || ""),
-      escapeCsv(r.batch_locked_at || ""),
-    ].join(",");
+    const colMap = {
+      batch:          escapeCsv(batchStr),
+      lock_status:    escapeCsv(lockStr),
+      reg_id:         escapeCsv(r.id),
+      race_bib:       escapeCsv(r.run_number || r.bib_number || `AR-${r.id}`),
+      category:       escapeCsv(r.run_category || ""),
+      full_name:      escapeCsv(fullName),
+      firstname:      escapeCsv(r.firstname || ""),
+      middlename:     escapeCsv(r.middlename || ""),
+      lastname:       escapeCsv(r.lastname || ""),
+      suffix:         escapeCsv(r.suffix || ""),
+      gender:         escapeCsv(r.gender || ""),
+      age:            escapeCsv(age !== null ? age : ""),
+      birthdate:      escapeCsv(r.birthdate || ""),
+      contact_number: escapeCsv(r.contact_number || r.phone || ""),
+      email:          escapeCsv(r.contact_email || r.email || ""),
+      address:        escapeCsv(r.contact_address || r.address || ""),
+      classification: escapeCsv(r.participant_type || ""),
+      lsu_id:         escapeCsv(r.lsu_id_number || ""),
+      organization:   escapeCsv(r.organization || ""),
+      affiliation:    escapeCsv(r.alumni_batch || ""),
+      tshirt_size:    escapeCsv(r.tshirt_size || "M"),
+      pet_name:       escapeCsv(r.pet_name || ""),
+      pet_type:       escapeCsv(r.pet_type || ""),
+      pet_bandana:    escapeCsv(r.pet_bandana_size || ""),
+      pet_vaccinated: escapeCsv(r.pet_vaccinated ? "Yes" : "No"),
+      payment_option: escapeCsv(r.payment_type || ""),
+      payment_status: escapeCsv(r.payment_status || ""),
+      total_amount:   escapeCsv(r.grand_total_payment || r.grand_total || 0),
+      reg_date:       escapeCsv(r.created_at_formatted || r.created_at || ""),
+      confirmed_date: escapeCsv(r.confirmed_at || ""),
+      confirmed_by:   escapeCsv(r.confirmed_by || ""),
+      locked_by:      escapeCsv(r.batch_locked_by || ""),
+      locked_at:      escapeCsv(r.batch_locked_at || ""),
+    };
+
+    return activeCols.map(c => colMap[c.key] || '""').join(",");
   });
 
-  return [headers.map((h) => `"${h}"`).join(","), ...rows].join("\r\n");
+  return [headers.join(","), ...rows].join("\r\n");
 };
 
-const exportCurrentFilteredCsv = () => {
-  const targetList = selectedIds.value.length > 0
-    ? registrations.value.filter((r) => selectedIds.value.includes(r.id))
-    : filteredRegistrations.value;
-
-  if (!targetList.length) {
-    showNotice("No runner records to export based on current filters.", "Notice", "info");
+const downloadBatchCsvPreview = () => {
+  const runners = eligibleBatchRunners.value;
+  if (!runners.length) {
+    showNotice("No eligible runners found for this batch selection.", "Cannot Export CSV", "error");
     return;
   }
-
-  const csv = generateCsvFromList(targetList, selectedBatch.value === "All" ? "Export" : selectedBatch.value);
+  if (!selectedCsvColumns.value.length) {
+    showNotice("Please select at least one column to export.", "No Columns Selected", "error");
+    return;
+  }
+  const batchName = batchFinalizeModal.value.batchName || "Supplier_Batch";
+  const customCsv = generateCsvFromList(runners, batchName);
   const dateStr = new Date().toISOString().split("T")[0];
-  const filename = `EmeraldRun_${targetList.length}_Runners_${dateStr}.csv`;
-  downloadCsvFile(csv, filename);
-
+  const filename = `${batchName.replace(/\s+/g, "_")}_Supplier_Orders_${dateStr}.csv`;
+  downloadCsvFile(customCsv, filename);
   showNotice(
-    `Successfully exported ${targetList.length} registration record(s) to CSV spreadsheet.\n\nFile downloaded: ${filename}`,
-    "CSV Downloaded",
+    `Successfully exported ${runners.length} supplier batch order(s) to CSV spreadsheet (${selectedCsvColumns.value.length} column(s)).\n\nFile downloaded: ${filename}`,
+    "Supplier CSV Exported",
     "success"
   );
 };
@@ -817,6 +881,11 @@ const executeFinalizeBatch = async () => {
     return;
   }
 
+  if (!selectedCsvColumns.value.length) {
+    showNotice("Please select at least one column for the supplier CSV export.", "No Columns Selected", "error");
+    return;
+  }
+
   isFinalizingBatch.value = true;
   try {
     const res = await $fetch(`${endpoint.value}/api/animorun/batch/create/`, {
@@ -827,12 +896,16 @@ const executeFinalizeBatch = async () => {
         date_from: dateFrom.value || null,
         date_to: dateTo.value || null,
         locked_by: batchFinalizeModal.value.lockedBy || currentOperator.value,
+        csv_columns: selectedCsvColumns.value,
       },
     });
 
-    // Auto-download the CSV spreadsheet immediately
-    if (res.csv_content) {
-      const filename = `${(res.batch?.batch_name || "Batch").replace(/\s+/g, "_")}_EmeraldRun_Orders_${new Date().toISOString().split("T")[0]}.csv`;
+    // Auto-download the supplier CSV spreadsheet using selected custom columns
+    const filename = `${(res.batch?.batch_name || batchFinalizeModal.value.batchName || "Batch").replace(/\s+/g, "_")}_Supplier_Orders_${new Date().toISOString().split("T")[0]}.csv`;
+    if (selectedCsvColumns.value && selectedCsvColumns.value.length > 0) {
+      const customCsv = generateCsvFromList(runners, res.batch?.batch_name || batchFinalizeModal.value.batchName);
+      downloadCsvFile(customCsv, filename);
+    } else if (res.csv_content) {
       downloadCsvFile(res.csv_content, filename);
     }
 
@@ -843,7 +916,7 @@ const executeFinalizeBatch = async () => {
 
     showNotice(
       `🎉 ${res.batch?.batch_name || "Supplier Batch"} finalized with ${res.batch?.total_runners || runners.length} orders!\n\n` +
-      `📥 Supplier CSV has been automatically downloaded.\n\n` +
+      `📥 Supplier CSV has been automatically downloaded (${selectedCsvColumns.value.length} columns).\n\n` +
       `📧 Breakdown and CSV have been emailed to:\n` +
       `• jorenlee.luna@lsu.edu.ph\n• calendar@lsu.edu.ph\n• vpal@lsu.edu.ph\n• animorun@lsu.edu.ph\n\n` +
       `🔒 Orders are now LOCKED for supplier production (Strictly no return / no upgrade / no downgrade). Superadmin bypass is required to modify.`,
@@ -1012,12 +1085,6 @@ onMounted(() => {
               </span>
             </button>
 
-            <!-- Export CSV button -->
-            <!-- <button type="button" @click="exportCurrentFilteredCsv"
-              class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm border border-emerald-500 cursor-pointer">
-              <i class="fas fa-file-csv"></i> Download CSV
-            </button> -->
-
             <!-- Refresh button -->
             <!-- <button type="button" @click="() => { fetchRegistrations(); fetchBatches(); }" :disabled="isFetching"
               class="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
@@ -1144,10 +1211,26 @@ onMounted(() => {
               props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
             ]">
               <option value="All">All Classifications</option>
-              <option value="Currently Enrolled Students">Currently Enrolled Students</option>
-              <option value="Employees">Employees</option>
-              <option value="Alumni">Alumni</option>
+              <option value="Currently Enrolled Students">LSU Exclusive - Enrolled Students</option>
+              <option value="Employees">LSU Exclusive - Employees</option>
+              <option value="Alumni">LSU Exclusive - Alumni</option>
               <option value="Open Category">Open Category</option>
+            </select>
+          </div>
+
+          <!-- Age Group Filter -->
+          <div>
+            <select v-model="selectedAgeGroup" :class="[
+              'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+              props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+            ]">
+              <option value="All">All Age Groups</option>
+              <option value="Under 18">Under 18</option>
+              <option value="18–24">18–24</option>
+              <option value="25–34">25–34</option>
+              <option value="35–44">35–44</option>
+              <option value="45–54">45–54</option>
+              <option value="55+">55+</option>
             </select>
           </div>
         </div>
@@ -1224,6 +1307,7 @@ onMounted(() => {
               <option value="name_desc">👤 Name: Descending (Z-A)</option>
               <option value="bib_asc">🔢 Race Bib #: Ascending</option>
               <option value="batch_asc">📦 Supplier Batch: Ascending</option>
+              <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
             </select>
           </div>
         </div>
@@ -2360,6 +2444,41 @@ onMounted(() => {
             </div>
           </div>
 
+          <!-- CSV Column Picker for Supplier Batch Export -->
+          <div :class="[
+            'p-3 rounded-2xl border space-y-2.5',
+            props.darkMode ? 'bg-gray-900/70 border-gray-700' : 'bg-slate-50 border-slate-200'
+          ]">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-gray-600 dark:text-gray-300 uppercase text-[10px] flex items-center gap-1.5">
+                <i class="fas fa-table-columns text-emerald-500"></i>
+                CSV Columns to Export
+              </span>
+              <label class="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold">
+                <input type="checkbox"
+                  :checked="allCsvColumnsSelected"
+                  @change="e => toggleAllCsvColumns(e.target.checked)"
+                  class="w-3.5 h-3.5 rounded accent-amber-500 cursor-pointer"
+                />
+                <span class="text-gray-500 dark:text-gray-400">Select All ({{ CSV_ALL_COLUMNS.length }})</span>
+                <span class="text-amber-600 dark:text-amber-400 font-black">{{ selectedCsvColumns.length }} selected</span>
+              </label>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-1">
+              <label v-for="col in CSV_ALL_COLUMNS" :key="col.key"
+                :class="[
+                  'flex items-center gap-1.5 px-2 py-1.5 rounded-lg border cursor-pointer transition text-[11px]',
+                  selectedCsvColumns.includes(col.key)
+                    ? (props.darkMode ? 'bg-amber-900/30 border-amber-600 text-amber-300' : 'bg-amber-50 border-amber-400 text-amber-800')
+                    : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-400 hover:border-gray-500' : 'bg-white border-slate-200 text-gray-600 hover:border-amber-300')
+                ]">
+                <input type="checkbox" :value="col.key" v-model="selectedCsvColumns"
+                  class="w-3 h-3 rounded accent-amber-500 cursor-pointer shrink-0" />
+                <span class="font-medium leading-tight truncate">{{ col.label }}</span>
+              </label>
+            </div>
+          </div>
+
           <!-- Strict Policy Warning -->
           <div class="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300 text-[11px] space-y-1">
             <p class="font-bold flex items-center gap-1.5">
@@ -2376,14 +2495,19 @@ onMounted(() => {
 
         <div class="flex items-center gap-2 pt-2 border-t dark:border-gray-700">
           <button type="button" @click="closeBatchFinalizeModal" :disabled="isFinalizingBatch"
-            class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
+            class="py-2.5 px-3.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
             Cancel
           </button>
-          <button type="button" @click="executeFinalizeBatch" :disabled="isFinalizingBatch || batchBreakdown.count === 0"
+          <button type="button" @click="downloadBatchCsvPreview" :disabled="isFinalizingBatch || batchBreakdown.count === 0 || selectedCsvColumns.length === 0"
+            class="py-2.5 px-3.5 rounded-xl border border-emerald-500/50 hover:border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 text-xs font-bold transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50">
+            <i class="fas fa-file-csv"></i>
+            <span>Export CSV Only</span>
+          </button>
+          <button type="button" @click="executeFinalizeBatch" :disabled="isFinalizingBatch || batchBreakdown.count === 0 || selectedCsvColumns.length === 0"
             class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50">
             <i v-if="!isFinalizingBatch" class="fas fa-lock"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
-            <span>{{ isFinalizingBatch ? 'Finalizing &amp; Sending...' : 'Finalize, Lock &amp; Email CSV' }}</span>
+            <span>{{ isFinalizingBatch ? 'Finalizing &amp; Sending...' : `Finalize, Lock &amp; Email CSV (${selectedCsvColumns.length} cols)` }}</span>
           </button>
         </div>
       </div>
@@ -2520,6 +2644,8 @@ onMounted(() => {
       </div>
     </div>
   </div>
+
+
 </template>
 
 <style scoped></style>

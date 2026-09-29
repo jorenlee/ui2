@@ -144,7 +144,7 @@ const runCategories = [
       "Event Shirt or Singlet",
       "Post-Meal",
       "Race Bib",
-      "Metal Finisher Medal",
+      "Acrylic Finisher Medal",
     ],
   },
   {
@@ -209,35 +209,142 @@ const runCategories = [
   },
 ];
 
-const tshirtSizes = [
-  "4XS",
-  "3XS",
-  "2XS",
-  "XS",
-  "S",
-  "M",
-  "L",
-  "XL",
-  "2XL",
-  "3XL",
-  "4XL",
-  "5XL",
+const OFFICIAL_SHIRT_CONFIGS = [
+  {
+    id: "singlet",
+    label: "Singlet",
+    shortLabel: "Singlet",
+    icon: "fa-tshirt",
+    sizesGroupLabel: "ADULTS - SINGLET",
+    defaultSize: "M",
+    sizes: ["XS", "S", "M", "L"],
+  },
+  {
+    id: "event_shirt",
+    label: "Event Shirt",
+    shortLabel: "Event Shirt",
+    icon: "fa-shirt",
+    sizesGroupLabel: "ADULTS - SHIRT",
+    defaultSize: "M",
+    sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+  },
+  {
+    id: "event_shirt_crop",
+    label: "Event Shirt - Crop Top",
+    shortLabel: "Crop Top",
+    icon: "fa-shirt",
+    sizesGroupLabel: "ADULTS - CROP TOP",
+    defaultSize: "M",
+    sizes: ["XS", "S", "M", "L"],
+  },
+  {
+    id: "event_shirt_semi_crop",
+    label: "Event Shirt - Semi Crop Top",
+    shortLabel: "Semi-Crop Top",
+    icon: "fa-shirt",
+    sizesGroupLabel: "ADULTS - SEMI-CROP TOP",
+    defaultSize: "M",
+    sizes: ["XS", "S", "M", "L"],
+  },
+  {
+    id: "kids_shirt",
+    label: "Kids Shirt",
+    shortLabel: "Kids Shirt",
+    icon: "fa-child",
+    sizesGroupLabel: "KIDS - SHIRT",
+    defaultSize: "7-8",
+    sizes: ["1-2", "3-4", "5-6", "7-8", "9-11"],
+    isKidsStyle: true,
+  },
 ];
+
+const FINISHER_SHIRT_CONFIG = {
+  id: "finisher_shirt",
+  label: "Finisher Shirt",
+  sizesGroupLabel: "ADULTS - SHIRT",
+  defaultSize: "M",
+  sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+};
+
+const getShirtConfig = (shirtTypeId) => {
+  return OFFICIAL_SHIRT_CONFIGS.find((c) => c.id === shirtTypeId) || OFFICIAL_SHIRT_CONFIGS[1];
+};
+
+const calculateAge = (birthdateStr) => {
+  if (!birthdateStr) return null;
+  const birthDate = new Date(birthdateStr);
+  if (isNaN(birthDate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+};
+
+const isKidParticipant = (participant) => {
+  const age = calculateAge(participant?.birthdate);
+  return age !== null && age < 18;
+};
+
+const getSelectedRaceShirtSize = (participant) => {
+  if (!participant) return "M";
+  const typeId = participant.shirt_type || "event_shirt";
+  if (participant.shirt_sizes && participant.shirt_sizes[typeId]) {
+    return participant.shirt_sizes[typeId];
+  }
+  if (typeId === "singlet") return participant.singlet_size || "M";
+  if (typeId === "event_shirt_crop") return participant.crop_top_size || "M";
+  if (typeId === "event_shirt_semi_crop") return participant.semi_crop_top_size || "M";
+  if (typeId === "kids_shirt") return participant.kids_shirt_size || "7-8";
+  return participant.event_shirt_size || "M";
+};
+
+const setSelectedRaceShirtSize = (participant, size) => {
+  if (!participant) return;
+  const typeId = participant.shirt_type || "event_shirt";
+  if (!participant.shirt_sizes) participant.shirt_sizes = {};
+  participant.shirt_sizes[typeId] = size;
+
+  if (typeId === "singlet") participant.singlet_size = size;
+  else if (typeId === "event_shirt_crop") participant.crop_top_size = size;
+  else if (typeId === "event_shirt_semi_crop") participant.semi_crop_top_size = size;
+  else if (typeId === "kids_shirt") participant.kids_shirt_size = size;
+  else participant.event_shirt_size = size;
+
+  participant.tshirt_size = buildShirtSizeSummary(participant);
+};
+
+const selectShirtType = (participant, typeId, isManual = false) => {
+  if (!participant) return;
+  participant.shirt_type = typeId;
+  participant.selected_shirt_tab = typeId;
+  if (isManual) {
+    participant.shirt_type_manually_selected = true;
+  }
+
+  const config = getShirtConfig(typeId);
+  const currentSize = getSelectedRaceShirtSize(participant);
+  if (!config.sizes.includes(currentSize)) {
+    setSelectedRaceShirtSize(participant, config.defaultSize);
+  } else {
+    participant.tshirt_size = buildShirtSizeSummary(participant);
+  }
+};
 
 const buildShirtSizeSummary = (participant) => {
   if (!participant) return "Event Shirt: M;";
 
-  const selected = participant.shirt_type === "singlet" ? "Singlet" : "Event Shirt";
-  const raceShirtSize = participant.shirt_type === "singlet"
-    ? (participant.singlet_size || participant.tshirt_size || "M")
-    : (participant.event_shirt_size || participant.tshirt_size || "M");
+  const config = getShirtConfig(participant.shirt_type || "event_shirt");
+  const size = getSelectedRaceShirtSize(participant);
 
   if (participant.run_category === "20KM") {
-    const finisherSize = participant.finisher_shirt_size || "M";
-    return `${selected}: ${raceShirtSize}; Finisher Shirt: ${finisherSize};`;
+    const finisherSize = participant.finisher_shirt_size || FINISHER_SHIRT_CONFIG.defaultSize;
+    return `${config.label}: ${size}; Finisher Shirt: ${finisherSize};`;
   }
 
-  return `${selected}: ${raceShirtSize};`;
+  return `${config.label}: ${size};`;
 };
 
 const isPetCategory = (category) => category === "1KM" || category === "1K";
@@ -303,6 +410,8 @@ const createEmptyParticipant = (index = 1) => ({
   tshirt_size: "Event Shirt: M;",
   event_shirt_size: "M",
   singlet_size: "M",
+  crop_top_size: "M",
+  semi_crop_top_size: "M",
   finisher_shirt_size: "M",
   // Pet Run fields (active when run_category === '1KM' or '1K')
   pet_name: "",
@@ -373,6 +482,26 @@ const currentParticipant = computed(() => {
     participants.value[activeParticipantIndex.value] || participants.value[0]
   );
 });
+
+// Watch birthdate to automatically select Kids Shirt for minors (<18 yrs old)
+watch(
+  () => currentParticipant.value?.birthdate,
+  (newBirthdate) => {
+    if (!newBirthdate || !currentParticipant.value) return;
+    const age = calculateAge(newBirthdate);
+    if (age !== null) {
+      if (age < 18) {
+        if (!currentParticipant.value.shirt_type_manually_selected) {
+          selectShirtType(currentParticipant.value, "kids_shirt");
+        }
+      } else {
+        if (currentParticipant.value.shirt_type === "kids_shirt" && !currentParticipant.value.shirt_type_manually_selected) {
+          selectShirtType(currentParticipant.value, "event_shirt");
+        }
+      }
+    }
+  }
+);
 
 // Automatically adjust recommended paymentType when participant classification or category changes
 watch(
@@ -586,6 +715,8 @@ const copyRunnerOneInfo = () => {
   p.selected_shirt_tab = r1.selected_shirt_tab || p.shirt_type || "event_shirt";
   p.event_shirt_size = r1.event_shirt_size || r1.tshirt_size || "M";
   p.singlet_size = r1.singlet_size || "M";
+  p.crop_top_size = r1.crop_top_size || "M";
+  p.semi_crop_top_size = r1.semi_crop_top_size || "M";
   p.finisher_shirt_size = r1.finisher_shirt_size || "M";
   p.tshirt_size = buildShirtSizeSummary(p);
   p.pet_type = r1.pet_type;
@@ -623,6 +754,12 @@ const resetForm = () => {
   receiptPreview.value = null;
   isSuccessModalOpen.value = false;
   registrationResult.value = null;
+
+  if (typeof window !== "undefined") {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    document.documentElement?.scrollTo?.({ top: 0, behavior: "smooth" });
+    document.body?.scrollTo?.({ top: 0, behavior: "smooth" });
+  }
 };
 
 const submitRegistration = async () => {
@@ -736,8 +873,8 @@ const submitRegistration = async () => {
     if (p.participant_type === 'Alumni') {
       if (!p.alumni_id_front_file) {
         showNotice(
-          `Please upload the front side of your Alumni ID for Runner #${i + 1}.`,
-          "Alumni ID Required",
+          `Please upload the front side of your LSU ID for Runner #${i + 1}.`,
+          "Alumni / ICC / ICC-LSU / Any Previous LSU ID Required",
           "warning"
         );
         activeParticipantIndex.value = i;
@@ -751,7 +888,7 @@ const submitRegistration = async () => {
     if (!currentParticipant.value.lsu_id_number?.trim()) {
       showNotice(
         "Please provide your LSU Employee ID Number for Salary Deduction verification.",
-        "LSU Employee ID Required",
+        "LSU Employee ID Number Required",
         "warning"
       );
       return;
@@ -760,7 +897,7 @@ const submitRegistration = async () => {
     if (!currentParticipant.value.lsu_id_number?.trim()) {
       showNotice(
         "Please provide your LSU Student ID Number for Add to Tuition verification.",
-        "LSU Student ID Required",
+        "LSU Student ID Number Required",
         "warning"
       );
       return;
@@ -1316,7 +1453,7 @@ const submitRegistration = async () => {
                         <i class="fas fa-flag-checkered"
                           :style="{ color: cat.colors.highlight || cat.colors.accent }"></i> Gun Time:
                       </span> -->
-                      <span class="font-black" :style="{ color: cat.colors.highlight || '#fff' }">PHP {{
+                      <span class="font-black text-xl" :style="{ color: cat.colors.highlight || '#fff' }">PHP {{
                         cat.fee.toLocaleString() }}</span>
                     </div>
                   </div>
@@ -1855,117 +1992,120 @@ const submitRegistration = async () => {
             <!-- SECTION 4: SHIRT TYPE & SIZE -->
             <section v-if="currentParticipant.run_category" class="space-y-3">
               <div class="mb-4">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between flex-wrap gap-2">
                   <h3 class="text-lg font-bold flex items-center gap-2">
                     <span
                       class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">4</span>
                     Size Selection
                   </h3>
-                  <span
-                    class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
-                    <span v-if="currentParticipant.run_category === '20KM'" class="font-black">2 Shirts</span>
-                    <span v-else class="font-black">1 Shirt</span>
-                  </span>
+                  <div class="flex items-center gap-2">
+                    <span v-if="calculateAge(currentParticipant.birthdate) !== null"
+                      :class="[
+                        'text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-all',
+                        isKidParticipant(currentParticipant)
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200'
+                          : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                      ]">
+                      <i :class="isKidParticipant(currentParticipant) ? 'fas fa-child' : 'fas fa-user'"></i>
+                      <span>Age: {{ calculateAge(currentParticipant.birthdate) }} yrs</span>
+                      <span v-if="isKidParticipant(currentParticipant)" class="text-[10px] font-semibold bg-blue-200 dark:bg-blue-900 px-1.5 py-0.5 rounded">Kids Shirt Auto-Selected</span>
+                    </span>
+                    <span
+                      class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                      <span v-if="currentParticipant.run_category === '20KM'" class="font-black">2 Shirts</span>
+                      <span v-else class="font-black">1 Shirt</span>
+                    </span>
+                  </div>
                 </div>
                 <p class="text-xs text-gray-500 ml-9">
-                  <span v-if="currentParticipant.run_category === '20KM'">Select your Race Shirt (Singlet or Event
-                    Shirt) and
-                    Finisher Shirt sizes</span>
-                  <span v-else>Choose your shirt type and size</span>
+                  <span v-if="currentParticipant.run_category === '20KM'">Select your Race Shirt (Singlet, Event Shirt, Crop Top, Semi Crop Top, or Kids Shirt) and Finisher Shirt sizes</span>
+                  <span v-else>Choose your shirt style and size (Kids Shirt is automatically selected based on Date of Birth)</span>
                 </p>
               </div>
 
-              <!-- ── 1. Race Shirt Choice (Singlet or Event Shirt) + Size ── -->
+              <!-- ── 1. Race Shirt Choice + Size ── -->
               <div :class="[
-                'flex flex-wrap items-center gap-3 p-3 rounded-2xl border',
+                'p-3.5 sm:p-4 rounded-2xl border space-y-3',
                 props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
               ]">
-                <!-- Shirt type toggle -->
-                <div class="flex items-center gap-1 shrink-0">
-                  <button type="button"
-                    @click="currentParticipant.shirt_type = 'singlet'; currentParticipant.selected_shirt_tab = 'singlet'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
-                    :class="[
-                      'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
-                      currentParticipant.shirt_type === 'singlet'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : props.darkMode
-                          ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
-                          : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
-                    ]">
-                    <i class="fas fa-tshirt text-[11px]"></i> Singlet
-                  </button>
-                  <button type="button"
-                    @click="currentParticipant.shirt_type = 'event_shirt'; currentParticipant.selected_shirt_tab = 'event_shirt'; currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)"
-                    :class="[
-                      'flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-all duration-150',
-                      currentParticipant.shirt_type === 'event_shirt'
-                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                        : props.darkMode
-                          ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
-                          : 'bg-white text-gray-600 border-gray-300 hover:bg-slate-100',
-                    ]">
-                    <i class="fas fa-shirt text-[11px]"></i> Event Shirt
-                  </button>
+                <!-- Shirt style buttons (Rendered from OFFICIAL_SHIRT_CONFIGS) -->
+                <div>
+                  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                    <button type="button"
+                      v-for="config in OFFICIAL_SHIRT_CONFIGS"
+                      :key="config.id"
+                      @click="selectShirtType(currentParticipant, config.id, true)"
+                      :class="[
+                        'flex items-center justify-center gap-1.5 px-2.5 py-2.5 rounded-xl border text-xs font-bold transition-all duration-150 cursor-pointer text-center relative',
+                        currentParticipant.shirt_type === config.id
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                          : props.darkMode
+                            ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                            : 'bg-white text-gray-700 border-gray-200 hover:bg-slate-100',
+                      ]">
+                      <i :class="['fas', config.icon, 'text-[11px]']"></i>
+                      <span class="truncate">{{ config.label }}</span>
+                      <span v-if="config.id === 'kids_shirt' && isKidParticipant(currentParticipant)"
+                        class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white"></span>
+                    </button>
+                  </div>
                 </div>
 
-                <!-- Divider -->
-                <div :class="['w-px h-6 shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
+                <!-- Size dropdown for selected shirt style -->
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-gray-700">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <label class="text-xs font-bold shrink-0"
+                      :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">
+                      {{ getShirtConfig(currentParticipant.shirt_type).label }} Size *
+                    </label>
+                    <select
+                      :value="getSelectedRaceShirtSize(currentParticipant)"
+                      @change="(e) => setSelectedRaceShirtSize(currentParticipant, e.target.value)"
+                      :class="[
+                        'px-3.5 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
+                        props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
+                      ]">
+                      <optgroup :label="getShirtConfig(currentParticipant.shirt_type).sizesGroupLabel">
+                        <option v-for="size in getShirtConfig(currentParticipant.shirt_type).sizes"
+                          :key="currentParticipant.shirt_type + '-' + size"
+                          :value="size">
+                          {{ size }}
+                        </option>
+                      </optgroup>
+                    </select>
+                  </div>
 
-                <!-- Size dropdown -->
-                <div class="flex items-center gap-2 min-w-0">
-                  <label class="text-xs font-semibold shrink-0"
-                    :class="props.darkMode ? 'text-gray-400' : 'text-gray-500'">
-                    {{ currentParticipant.shirt_type === 'singlet' ? 'Singlet Size' : 'Event Shirt Size' }}
-                  </label>
-                  <select
-                    :value="currentParticipant.shirt_type === 'singlet' ? (currentParticipant.singlet_size || 'M') : (currentParticipant.event_shirt_size || 'M')"
-                    @change="(e) => {
-                      if (currentParticipant.shirt_type === 'singlet') {
-                        currentParticipant.singlet_size = e.target.value;
-                      } else {
-                        currentParticipant.event_shirt_size = e.target.value;
-                      }
-                      currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant);
-                    }" :class="[
-                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
-                      props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
-                    ]">
-                    <option v-for="size in tshirtSizes" :key="size" :value="size">{{ size }}</option>
-                  </select>
+                  <!-- Summary badge -->
+                  <span
+                    class="text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0">
+                    {{ getShirtConfig(currentParticipant.shirt_type).label }} · {{ getSelectedRaceShirtSize(currentParticipant) }}
+                  </span>
                 </div>
-
-                <!-- Summary badge -->
-                <span
-                  class="ml-auto text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0">
-                  {{ currentParticipant.shirt_type === 'singlet' ? 'Singlet' : 'Event Shirt' }} · {{
-                    currentParticipant.shirt_type === 'singlet' ? (currentParticipant.singlet_size || 'M') :
-                      (currentParticipant.event_shirt_size || 'M')
-                  }}
-                </span>
               </div>
 
               <!-- ── 2. Finisher Shirt Selection (FOR 20KM ONLY) ── -->
               <div v-if="currentParticipant.run_category === '20KM'" :class="[
-                'flex flex-wrap items-center gap-3 p-3 rounded-2xl border',
-                props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
+                'flex flex-wrap items-center gap-3 p-3.5 sm:p-4 rounded-2xl border',
+                props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-amber-50/50 border-amber-200/80'
               ]">
                 <div class="flex items-center gap-2">
                   <i class="fas fa-medal text-amber-500 text-sm shrink-0"></i>
-                  <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Finisher Shirt</span>
+                  <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Finisher Shirt (20KM Only)</span>
                 </div>
 
-                <div :class="['w-px h-6 shrink-0', props.darkMode ? 'bg-gray-600' : 'bg-slate-300']"></div>
+                <div :class="['w-px h-6 shrink-0 hidden sm:block', props.darkMode ? 'bg-gray-600' : 'bg-amber-200']"></div>
 
                 <div class="flex items-center gap-2">
                   <label class="text-xs font-semibold shrink-0"
-                    :class="props.darkMode ? 'text-gray-400' : 'text-gray-500'">Finisher
-                    Size</label>
+                    :class="props.darkMode ? 'text-gray-400' : 'text-gray-600'">Finisher Size *</label>
                   <select v-model="currentParticipant.finisher_shirt_size"
                     @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)" :class="[
-                      'px-3 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
+                      'px-3.5 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
                       props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
                     ]">
-                    <option v-for="size in tshirtSizes" :key="'fn-' + size" :value="size">{{ size }}</option>
+                    <optgroup :label="FINISHER_SHIRT_CONFIG.sizesGroupLabel">
+                      <option v-for="size in FINISHER_SHIRT_CONFIG.sizes" :key="'fn-' + size" :value="size">{{ size }}</option>
+                    </optgroup>
                   </select>
                 </div>
 
@@ -2243,7 +2383,7 @@ const submitRegistration = async () => {
                       class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-800 dark:text-emerald-300">
                       <div class="flex items-center gap-2 font-bold">
                         <i class="fas fa-money-check-alt text-emerald-600"></i>
-                        <span>Payment Method: Payroll Salary Deduction</span>
+                        <span>Payment Method: Payroll Salary Deduction (4 Gives)</span>
                       </div>
                       <span
                         class="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">Employee
@@ -2479,7 +2619,7 @@ const submitRegistration = async () => {
 
                    <div>
                           <div class="font-bold text-xs">Weekdays Cash : Over-The-Counter</div>
-                          <div class="text-[10px] font-normal text-gray-500">Visit LSU Accounting Window (Mon-Fri, 8AM-5PM). </div>
+                          <div class="text-[10px] font-normal text-gray-500">Visit LSU Accounting Window (Mon-Fri, 8:00 AM - 12:00 PM and 1:30 PM - 4:30 PM)</div>
                         </div>
 
 
@@ -2499,8 +2639,8 @@ const submitRegistration = async () => {
                       <div class="flex items-center gap-2">
                         <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
                         <div>
-                          <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth.</div>
-                          <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 to 9:00 PM).</div>
+                          <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth</div>
+                          <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 to 9:00 PM)</div>
                         </div>
                       </div>
 
@@ -2573,7 +2713,7 @@ const submitRegistration = async () => {
                        <div v-if="!receiptPreview">
                         <i class="fas fa-cloud-upload-alt text-2xl text-emerald-500 mb-1"></i>
                         <p class="text-xs font-bold mb-0.5">Upload Receipt or Screenshot *</p>
-                        <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 1MB</p>
+                        <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 5MB</p>
                         <label
                           class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
                           <i class="fas fa-upload text-xs"></i> Browse Receipt File
@@ -2606,20 +2746,18 @@ const submitRegistration = async () => {
                       <i class="fas fa-clock text-amber-600"></i> Payment Instruction
                     </div>
                     <p class="text-[11px] leading-relaxed">
-                      <span v-if="nonLsuPaymentMethod === 'accounting_otc'">
-                        Please proceed to the LSU Accounting window to settle your fee of <strong>PHP {{
-                          grandTotal.toLocaleString()
-                          }}</strong>.
-                      </span>
-                      <span v-else>
-                        Please proceed to the Ozamiz Lifestyle Runners weekend booth to settle your fee of <strong>PHP
-                          {{
-                          grandTotal.toLocaleString() }}</strong>.
-                      </span>
-                      <strong class="text-amber-700 dark:text-amber-300 block mt-0.5">Please wait for the confirmation
-                        to be paid
-                        and confirmed by the admin.</strong>
-                    </p>
+  <span v-if="nonLsuPaymentMethod === 'accounting_otc'">
+    Please proceed to the LSU Accounting window to settle your fee of
+    <strong>PHP {{ grandTotal.toLocaleString() }}</strong>
+  </span>
+  <span v-else>
+    Please proceed to the Ozamiz Lifestyle Runners weekend booth to settle your fee of
+    <strong>PHP {{ grandTotal.toLocaleString() }}</strong>
+  </span>
+  <span class="text-amber-700 dark:text-amber-300">
+    on or before the next <strong>Saturday</strong> to avoid cancellation of your registration.
+  </span>
+</p>
                   </div>
                 </div>
 
@@ -2685,7 +2823,7 @@ const submitRegistration = async () => {
                         <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
                         <div>
                           <div class="font-bold text-xs">Weekdays Cash : Over-The-Counter</div>
-                          <div class="text-[10px] font-normal text-gray-500">Visit LSU Accounting Window (Mon-Fri, 8AM-5PM). </div>
+                          <div class="text-[10px] font-normal text-gray-500">Visit LSU Accounting Window (Mon-Fri, 8:00 AM - 12:00 PM and 1:30 PM - 4:30 PM)</div>
                         </div>
                       </div>
                     </div>
@@ -2700,8 +2838,8 @@ const submitRegistration = async () => {
                       <div class="flex items-center gap-2">
                         <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
                         <div>
-                          <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth.</div>
-                            <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 to 9:00 PM).</div>
+                          <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth</div>
+                            <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 PM to 9:00 PM)</div>
                         </div>
                       </div>
                     </div>
@@ -2713,7 +2851,7 @@ const submitRegistration = async () => {
                   <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-2 lg:flex lg:gap-x-5">
 
 
-<div class="text-center w-full items-center gap-4 rounded-xl border border-green-200 bg-white p-5 shadow-sm lg:mb-0 mb-3">
+<div class="text-center w-full lg:w-fit items-center gap-4 rounded-xl border border-green-200 bg-white p-5 shadow-sm lg:mb-0 mb-3">
   <img
     src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/LSU-SB-QR.jpg"
     alt="LSU Security Bank QR Payment"
@@ -2742,17 +2880,19 @@ const submitRegistration = async () => {
 
 
                     <div :class="[
-                      'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden',
+                      'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden w-full flex items-center justify-center',
                       receiptPreview
                         ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
                         : props.darkMode
                           ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
                           : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
                     ]">
-                      <div v-if="!receiptPreview">
+                      <div>
+
+<div v-if="!receiptPreview">
                         <i class="fas fa-cloud-upload-alt text-2xl text-emerald-500 mb-1"></i>
-                        <p class="text-xs font-bold mb-0.5">Upload Receipt or Deposit Transfer Screenshot *</p>
-                        <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 1MB</p>
+                        <p class="text-xs font-bold mb-0.5">Upload Receipt *</p>
+                        <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 5MB</p>
                         <label
                           class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
                           <i class="fas fa-upload text-xs"></i> Browse Receipt File
@@ -2773,6 +2913,8 @@ const submitRegistration = async () => {
                             Remove
                           </button>
                         </div>
+                      </div>
+
                       </div>
                     </div>
                   </div>
@@ -2852,47 +2994,36 @@ v-if="isSuccessModalOpen"
 >
   <div
     :class="[
-      'w-full max-w-lg rounded-3xl p-5 sm:p-7 shadow-2xl border text-center',
+      'w-full max-w-xl rounded-3xl p-5 sm:p-7 shadow-2xl border text-center',
       props.darkMode
         ? 'bg-gray-800 border-gray-700 text-white'
         : 'bg-white border-slate-200 text-gray-800'
     ]"
   >
-    <!-- Success Icon -->
-    <div
-      class="mx-auto mb-4 flex  items-center justify-center   dark:bg-blue-950/70 dark:text-blue-400 "
-    >
-      <i class="fas fa-clock text-2xl sm:text-3xl text-blue-500 bg-blue-100 h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center  shadow-inner" v-if="nonLsuPaymentMethod === 'qr_payment'"></i>
-      <i class="fas fa-clock text-2xl sm:text-3xl text-yellow-600 bg-yellow-100 h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center shadow-inner" v-if="nonLsuPaymentMethod !== 'qr_payment'"></i>
-    </div>
+
 
     <!-- Title -->
 
     
-        <h2 v-if="nonLsuPaymentMethod === 'qr_payment'" class="text-xl sm:text-2xl font-black tracking-tight text-blue-600">
-      Confirmation Pending
+        <h2 v-if="nonLsuPaymentMethod === 'qr_payment'" class="flex text-xl sm:text-2xl font-black tracking-tight text-blue-600 gap-x-3 w-fit mx-auto">
+        <i class="fas fa-clock text-2xl sm:text-3xl text-blue-500   rounded-full flex items-center justify-center  "></i> Confirmation Pending
     </h2>
 
-    <h2 v-else class="text-xl sm:text-2xl font-black tracking-tight text-yellow-600">
-      Registration Pending
+    <h2 v-else class="flex text-xl sm:text-2xl font-black tracking-tight text-yellow-600 gap-x-3 w-fit mx-auto">
+      <i class="fas fa-clock text-2xl sm:text-3xl text-yellow-600   rounded-full flex items-center justify-center "></i>  Registration Pending
     </h2>
 
-    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400" v-if="nonLsuPaymentMethod === 'qr_payment'">
-    
-
-    Your registration fee of PHP {{ grandTotal.toLocaleString() }} is now pending confirmation. Please wait for the admin to verify your payment. A confirmation email will be sent once your payment has been verified.
-    </p>
-
-    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400" v-if="nonLsuPaymentMethod !== 'qr_payment'">
  
 
-Please pay your registration fee of 
+    <p class="text-xs text-gray-500 dark:text-gray-400" v-if="nonLsuPaymentMethod === 'qr_payment'">A confirmation email will be sent once your <strong>PHP {{ grandTotal.toLocaleString() }}</strong> payment  has been verified.</p>
 
-<strong>PHP  {{ grandTotal.toLocaleString() }} </strong>
-at the
-
-<strong>Registration Booth or LSU Accounting Office</strong>
-on or before the next <strong>Saturday</strong> to avoid cancellation of your registration.
+    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400" v-if="nonLsuPaymentMethod !== 'qr_payment'">
+      Please pay your registration fee of 
+      <strong>PHP {{ grandTotal.toLocaleString() }}</strong>
+      at
+      <strong v-if="nonLsuPaymentMethod === 'weekend_cash'">Wellness Park Ozamiz</strong>
+      <strong v-else>LSU Campus Accounting Office</strong>
+      on or before the next <strong>Saturday</strong> to avoid cancellation of your registration.
     </p>
 
 
@@ -2925,7 +3056,7 @@ on or before the next <strong>Saturday</strong> to avoid cancellation of your re
         Follow our socials for more info
       </p>
 
-      <div class="mt-3 flex flex-col gap-2 text-xs font-semibold">
+      <div class="mt-3 lg:flex gap-2 text-xs font-semibold">
         <a
           href="https://www.facebook.com/lsuanimorun"
           target="_blank"
