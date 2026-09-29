@@ -2710,33 +2710,35 @@ const submitRegistration = async () => {
 
 
                   <!-- RECEIPT DROPZONE (Only for QR Payment) -->
-                  <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-2">
+                  <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-2 lg:flex lg:gap-x-5">
 
 
-<div>
-  <a download> 
-<!-- PET RUN -->
-    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/PET-QR-PAYMENT.jpg"/>
-  </a>
+<div class="text-center w-full items-center gap-4 rounded-xl border border-green-200 bg-white p-5 shadow-sm lg:mb-0 mb-3">
+  <img
+    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/LSU-SB-QR.jpg"
+    alt="LSU Security Bank QR Payment"
+    class="w-32 mx-auto rounded-lg border border-gray-200"
+  />
 
-    <a download> 
-<!-- 3k -->
-    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/3K-QR-PAYMENT.jpg"/>
-  </a>
+  <div class="flex flex-col gap-x-3 gap-y-1">
+    <div>
+      <h3 class="text-sm font-bold text-green-900 lg:whitespace-nowrap">
+        Security Bank QR Code Payment
+      </h3>
 
-    <a download> 
-<!-- 10k -->
-    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/10K-QR-PAYMENT.jpg"/>
-  </a>
+    </div>
 
-    <a download> 
-<!-- 20k -->
-    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/20K-QR-PAYMENT.jpg"/>
-  </a>
-
-
-  
+    <a
+      href="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/LSU-SB-QR.jpg"
+      download="LSU-SB-QR.jpg"
+      class="inline-flex items-center justify-center lg:whitespace-nowrap gap-2 rounded-lg bg-green-800 px-5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
+    >
+      <i class="fa fa-download" aria-hidden="true"></i>
+      Download
+    </a>
+  </div>
 </div>
+
 
 
                     <div :class="[
