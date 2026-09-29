@@ -94,6 +94,7 @@ const toasts = ref([]);
 
 const defaultForm = {
   fullname: "",
+  lsu_idnumber: "",
   email: "",
   role_filter_permissions: [],
   updated_at: "",
@@ -141,9 +142,8 @@ const availableRoles = [
   "Safety and Security Center",
   "Juris Doctor Admin",
   "Juris Doctor Examinee",
-  "Student",
-  "Faculty",
-  "Staff",
+  "Enrolled Student",
+  "Employee",
 ].map((r) => ({ value: r, label: r }));
 
 // ---------------- PRE-INDEXED SEARCH & FAST LOOKUPS ----------------
@@ -152,7 +152,7 @@ const prepareItemSearchIndex = (item) => {
   const roles = Array.isArray(item.role_filter_permissions)
     ? item.role_filter_permissions.join(" ")
     : "";
-  item._searchKey = `${item.fullname || ""} ${item.email || ""} ${roles} ${item.created_at || ""} ${item.updated_at || ""}`.toLowerCase();
+  item._searchKey = `${item.fullname || ""} ${item.lsu_idnumber || ""} ${item.email || ""} ${roles} ${item.created_at || ""} ${item.updated_at || ""}`.toLowerCase();
 };
 
 // ---------------- FETCH ----------------
@@ -228,6 +228,10 @@ const filteredList = computed(() => {
     if (field === "fullname") {
       const valA = a.fullname || "";
       const valB = b.fullname || "";
+      diff = valA < valB ? -1 : (valA > valB ? 1 : 0);
+    } else if (field === "lsu_idnumber") {
+      const valA = a.lsu_idnumber || "";
+      const valB = b.lsu_idnumber || "";
       diff = valA < valB ? -1 : (valA > valB ? 1 : 0);
     } else if (field === "email") {
       const valA = a.email || "";
@@ -942,8 +946,11 @@ const openForm = (item = null) => {
   formData.value = item
     ? {
       fullname: item.fullname || "",
+      lsu_idnumber: item.lsu_idnumber || "",
       email: item.email || "",
       role_filter_permissions: [...(item.role_filter_permissions || [])],
+      updated_at: item.updated_at || "",
+      created_at: item.created_at_formatted ? item.created_at_formatted() : (item.created_at || ""),
     }
     : { ...defaultForm };
 
@@ -1063,6 +1070,15 @@ const parseCsvRows = (text) => {
           h === "completename" ||
           h === "userfullname",
       ),
+      lsuIdNumber: headerCols.findIndex(
+        (h) =>
+          h === "lsuidnumber" ||
+          h === "lsuid" ||
+          h === "idnumber" ||
+          h === "id_number" ||
+          h === "studentid" ||
+          h === "employeeid",
+      ),
       firstName: headerCols.findIndex(
         (h) =>
           h === "firstname" ||
@@ -1091,6 +1107,7 @@ const parseCsvRows = (text) => {
     const cols = parseCsvLine(line);
     let email = "";
     let fullname = "";
+    let lsu_idnumber = "";
 
     if (headerMap && headerMap.email !== -1 && cols[headerMap.email]) {
       const match = cols[headerMap.email].match(emailRegex);
@@ -1121,6 +1138,10 @@ const parseCsvRows = (text) => {
           headerMap.lastName !== -1 ? (cols[headerMap.lastName] || "").trim() : "";
         fullname = `${f} ${l}`.trim();
       }
+
+      if (headerMap.lsuIdNumber !== -1 && cols[headerMap.lsuIdNumber]) {
+        lsu_idnumber = cols[headerMap.lsuIdNumber].trim();
+      }
     }
 
     if (!fullname && cols.length > 1) {
@@ -1137,6 +1158,7 @@ const parseCsvRows = (text) => {
     results.push({
       email,
       fullname: fullname || "",
+      lsu_idnumber: lsu_idnumber || "",
     });
   }
 
@@ -1212,6 +1234,7 @@ const submitCsvUpload = async () => {
       const now = new Date();
       const payload = {
         fullname: item.fullname || "",
+        lsu_idnumber: item.lsu_idnumber || "",
         email: item.email,
         role_filter_permissions: ["External Links"],
         updated_at: now.toString(),
@@ -1222,14 +1245,17 @@ const submitCsvUpload = async () => {
           body: payload,
         });
         addedCount++;
-        listItems.value.unshift({
+        const newItem = {
           id: res?.id || Date.now() + Math.random(),
           fullname: item.fullname || "",
+          lsu_idnumber: item.lsu_idnumber || "",
           email: item.email,
           role_filter_permissions: ["External Links"],
           created_at: now.toISOString(),
           updated_at: now.toString(),
-        });
+        };
+        prepareItemSearchIndex(newItem);
+        listItems.value.unshift(newItem);
         existingEmailsSet.add(item.email.toLowerCase());
         return true;
       } catch (err) {
@@ -1281,11 +1307,11 @@ const submitCsvUpload = async () => {
 
 // ---------------- DOWNLOAD CSV TEMPLATE ----------------
 const downloadCsvTemplate = () => {
-  const headers = ["Full Name", "First Name", "Last Name", "Email Address"];
+  const headers = ["Full Name", "LSU ID Number", "First Name", "Last Name", "Email Address"];
   const sampleRows = [
-    ["Juan Dela Cruz", "Juan", "Dela Cruz", "juan.delacruz@lsu.edu.ph"],
-    ["Maria Santos", "Maria", "Santos", "maria.santos@lsu.edu.ph"],
-    ["Pedro Penduko", "Pedro", "Penduko", "pedro.penduko@lsu.edu.ph"],
+    ["Juan Dela Cruz", "2020-0001", "Juan", "Dela Cruz", "juan.delacruz@lsu.edu.ph"],
+    ["Maria Santos", "2021-0042", "Maria", "Santos", "maria.santos@lsu.edu.ph"],
+    ["Pedro Penduko", "2022-0105", "Pedro", "Penduko", "pedro.penduko@lsu.edu.ph"],
   ];
 
   const csvContent =
@@ -1325,6 +1351,7 @@ const submitForm = async () => {
   const currentEditingId = editingItem.value?.id;
   const payload = {
     fullname: (formData.value.fullname || "").trim(),
+    lsu_idnumber: (formData.value.lsu_idnumber || "").trim(),
     email: formData.value.email.trim(),
     role_filter_permissions: [...formData.value.role_filter_permissions],
     updated_at: new Date().toString(),
@@ -1354,20 +1381,25 @@ const submitForm = async () => {
         listItems.value[idx] = {
           ...listItems.value[idx],
           fullname: payload.fullname,
+          lsu_idnumber: payload.lsu_idnumber,
           email: payload.email,
           role_filter_permissions: [...payload.role_filter_permissions],
           updated_at: payload.updated_at,
         };
+        prepareItemSearchIndex(listItems.value[idx]);
       }
     } else {
-      listItems.value.unshift({
+      const newItem = {
         id: res?.id || Date.now(),
         fullname: payload.fullname,
+        lsu_idnumber: payload.lsu_idnumber,
         email: payload.email,
         role_filter_permissions: [...payload.role_filter_permissions],
         created_at: new Date().toISOString(),
         updated_at: payload.updated_at,
-      });
+      };
+      prepareItemSearchIndex(newItem);
+      listItems.value.unshift(newItem);
     }
 
     // Immediately close modal
@@ -1491,7 +1523,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="min-h-screen" :class="darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-900'">
+  <div class="min-h-screen mt-5" :class="darkMode ? 'bg-gray-900 text-gray-200' : ''">
     <!-- HEADER -->
     <div class="lg:flex items-center w-full px-2 mb-3 space-y-2 lg:space-y-0 gap-3">
       <div class="w-full">
@@ -1505,7 +1537,7 @@ onMounted(async () => {
           </span>
         </div>
         <span class="text-gray-600 text-xs -mt-1 flex">
-          Manage user roles and permissions
+          Manage user roles and permissions | LSU Master List
         </span>
       </div>
 
@@ -1663,6 +1695,11 @@ onMounted(async () => {
                   </div>
                 </th>
 
+                           <!-- Actions Column -->
+                <th scope="col" class="w-28 px-4 py-3.5 text-right whitespace-nowrap">
+                  Actions
+                </th>
+
                 <!-- Fullname Column -->
                 <th scope="col" @click="sortBy('fullname')"
                   class="px-4 py-3.5 cursor-pointer hover:bg-gray-200/70 transition" title="Click to sort by Fullname">
@@ -1689,36 +1726,33 @@ onMounted(async () => {
                   </div>
                 </th>
 
-                <!-- Roles Column -->
+                
+
+                <!-- LSU ID Number Column -->
+                <th scope="col" @click="sortBy('lsu_idnumber')"
+                  class="px-4 py-3.5 cursor-pointer hover:bg-gray-200/70 transition" title="Click to sort by LSU ID Number">
+                  <div class="flex items-center gap-1.5">
+                    <span>LSU ID Number</span>
+                    <span class="text-xs">
+                      <i v-if="sortField === 'lsu_idnumber'" class="fa"
+                        :class="sortOrder === 'asc' ? 'fa-sort-up text-green-700 font-bold' : 'fa-sort-down text-green-700 font-bold'"></i>
+                      <i v-else class="fa fa-sort text-gray-400 opacity-60"></i>
+                    </span>
+                  </div>
+                </th>
+
+
+                <!-- Roles / Permissions Column -->
                 <th scope="col" @click="sortBy('roles')"
                   class="px-4 py-3.5 cursor-pointer hover:bg-gray-200/70 transition" title="Click to sort by Roles">
                   <div class="flex items-center gap-1.5">
-                    <span>Roles</span>
+                    <span>Roles / Permissions</span>
                     <span class="text-xs">
                       <i v-if="sortField === 'roles'" class="fa"
                         :class="sortOrder === 'asc' ? 'fa-sort-up text-green-700 font-bold' : 'fa-sort-down text-green-700 font-bold'"></i>
                       <i v-else class="fa fa-sort text-gray-400 opacity-60"></i>
                     </span>
                   </div>
-                </th>
-
-                <!-- Created / Updated Column -->
-                <th scope="col" @click="sortBy('created_at')"
-                  class="px-4 py-3.5 whitespace-nowrap cursor-pointer hover:bg-gray-200/70 transition"
-                  title="Click to sort by Date">
-                  <div class="flex items-center gap-1.5">
-                    <span>Created / Updated</span>
-                    <span class="text-xs">
-                      <i v-if="sortField === 'created_at'" class="fa"
-                        :class="sortOrder === 'asc' ? 'fa-sort-up text-green-700 font-bold' : 'fa-sort-down text-green-700 font-bold'"></i>
-                      <i v-else class="fa fa-sort text-gray-400 opacity-60"></i>
-                    </span>
-                  </div>
-                </th>
-
-                <!-- Actions Column -->
-                <th scope="col" class="w-28 px-4 py-3.5 text-right whitespace-nowrap">
-                  Actions
                 </th>
               </tr>
             </thead>
@@ -1751,28 +1785,48 @@ onMounted(async () => {
                     : 'bg-gray-50/50 hover:bg-gray-100/70',
               ]">
                 <!-- Checkbox Column (Properly Spaced & Centered) -->
-                <td class="w-12 px-3 py-3 text-center shrink-0 border-r border-gray-100/80">
+                <td class="w-12 px-3 py-0.5 text-center shrink-0 border-r border-gray-100/80">
                   <div class="flex items-center justify-center">
                     <input type="checkbox" :checked="isItemSelected(item.id)" @change="toggleSelectItem(item.id)"
                       class="w-4 h-4 rounded text-green-600 focus:ring-green-500 cursor-pointer accent-green-600" />
                   </div>
                 </td>
 
+                                <!-- Actions Column -->
+                <td class="px-4 py-0.5 text-right whitespace-nowrap">
+                  <div class="flex items-center justify-center gap-1.5">
+                    <button @click="openForm(item)"
+                      class="p-1.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg shadow-2xs transition cursor-pointer"
+                      title="Edit Roles">
+                      <i class="fa fa-edit w-3.5 h-3.5 flex items-center justify-center"></i>
+                    </button>
+
+                    
+                  </div>
+                </td>
+
+
                 <!-- Fullname Column -->
-                <td class="px-4 py-3 font-medium text-gray-900 break-all">
+                <td class="px-4 py-0.5 font-medium text-gray-900 break-all">
                   {{ item.fullname || '-' }}
                 </td>
 
                 <!-- Email Column -->
-                <td class="px-4 py-3 font-medium text-gray-900 break-all">
+                <td class="px-4 py-0.5 font-medium text-gray-900 break-all">
                   {{ item.email }}
                 </td>
 
+                <!-- LSU ID Number Column -->
+                <td class="px-4 py-0.5 font-mono text-gray-800 break-all">
+                  {{ item.lsu_idnumber || '-' }}
+                </td>
+
+                
                 <!-- Roles Column -->
-                <td class="px-4 py-3">
+                <td class="px-4 py-0.5">
                   <div class="flex flex-wrap gap-1">
                     <span v-for="role in item.role_filter_permissions" :key="role"
-                      class="px-2 py-0.5 text-[10px] rounded-lg bg-green-600 text-white font-medium shadow-xs">
+                      class="px-2 py-0.5 text-[10px] rounded-lg border shadow border-green-600 text-green-700 bg-green-100 font-medium shadow-xs">
                       {{ role }}
                     </span>
                     <span v-if="!item.role_filter_permissions || item.role_filter_permissions.length === 0"
@@ -1782,28 +1836,8 @@ onMounted(async () => {
                   </div>
                 </td>
 
-                <!-- Created / Updated Column -->
-                <td class="px-4 py-3 text-[11px] text-gray-500 whitespace-nowrap">
-                  <div>Created: {{ formatDate(item.created_at) }}</div>
-                  <div>Updated: {{ formatDate(item.updated_at) }}</div>
-                </td>
 
-                <!-- Actions Column -->
-                <td class="px-4 py-3 text-right whitespace-nowrap">
-                  <div class="flex items-center justify-end gap-1.5">
-                    <button @click="openForm(item)"
-                      class="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-2xs transition cursor-pointer"
-                      title="Edit Roles">
-                      <i class="fa fa-edit w-3.5 h-3.5 flex items-center justify-center"></i>
-                    </button>
 
-                    <button @click="deleteItem(item.id)"
-                      class="p-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-2xs transition cursor-pointer"
-                      title="Delete Role Permission">
-                      <i class="fa fa-trash w-3.5 h-3.5 flex items-center justify-center"></i>
-                    </button>
-                  </div>
-                </td>
               </tr>
 
               <!-- Progressive Chunk Loader (Active for huge page sizes like 10,000) -->
@@ -2684,7 +2718,7 @@ onMounted(async () => {
 
     <!-- CREATE / EDIT MODAL -->
     <div v-if="showForm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white w-full lg:w-11/12 p-6 rounded-xl shadow-2xl">
+      <div class="bg-white w-fit  p-6 rounded-xl shadow-2xl">
         <h2 class="text-xl font-bold mb-4 text-gray-900">
           {{
             editingItem ? "Edit Role Permission" : "Create Role Permission"
@@ -2699,14 +2733,29 @@ onMounted(async () => {
           </div>
 
           <div>
+            <label class="block text-xs font-semibold text-gray-700 mb-1">LSU ID Number</label>
+            <input v-model="formData.lsu_idnumber" type="text" placeholder="LSU ID Number"
+              class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:outline-none bg-white text-gray-800" />
+          </div>
+
+          <div>
             <label class="block text-xs font-semibold text-gray-700 mb-1">User Email <span class="text-red-500">*</span></label>
             <input v-model="formData.email" type="email" placeholder="User Email (e.g. name@lsu.edu.ph)"
               class="w-full border border-gray-300 p-3 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:outline-none bg-white text-gray-800" />
           </div>
 
+          <div class="w-full gap-x-2">
+            <div class="flex items-center gap-x-2 text-xs text-gray-300">
+              <p>Date Created: {{ formatDate(formData.created_at) }}</p>
+            </div>
+            <div class="flex items-center gap-x-2 text-xs text-gray-300">
+              <p>Date Updated: {{ formatDate(formData.updated_at) }}</p>
+            </div>
+          </div>
+
           <div>
-            <p class="font-semibold mb-2 text-sm text-gray-800">Select Roles</p>
-            <div class="grid grid-cols-4 gap-2 max-h-60 overflow-y-auto p-1">
+            <p class="font-semibold mb-2 text-sm text-gray-800">Filters / Role Permissions</p>
+            <div class=" max-h-60 overflow-y-auto">
               <label v-for="role in availableRoles" :key="role.value"
                 class="flex items-center gap-2 text-xs text-gray-700 hover:bg-gray-50 p-1 rounded cursor-pointer">
                 <input type="checkbox" :checked="formData.role_filter_permissions.includes(role.value)
@@ -2715,6 +2764,8 @@ onMounted(async () => {
               </label>
             </div>
           </div>
+
+
         </div>
 
         <div class="flex justify-end gap-2 mt-6">
