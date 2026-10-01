@@ -7,10 +7,19 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  rolePermissions: {
+    type: Object,
+    default: () => ({}),
+  },
+  isDashboard: {
+    type: Boolean,
+    default: false,
+  },
 });
 
+const route = useRoute();
 const config = useRuntimeConfig();
-const endpoint = ref(config.public.apiUrl);
+const endpoint = ref(config.public.apiUrl || "http://127.0.0.1:8000");
 
 const toastModal = ref({
   show: false,
@@ -32,14 +41,104 @@ const closeNotice = () => {
   toastModal.value.show = false;
 };
 
-const { user, init } = useAuth();
+const { user, init, isLoggedIn } = useAuth();
+if (process.client && init) {
+  init();
+}
 
-onMounted(() => {
-  if (init) init();
-  if (user?.value?.email && !participants.value[0].contact_email) {
-    participants.value[0].contact_email = user.value.email;
-  }
+const isDashboard = computed(() => {
+  if (props.isDashboard) return true;
+  if (props.rolePermissions && Object.keys(props.rolePermissions).length > 0) return true;
+  if (route?.path && (route.path.startsWith('/dashboard') || route.path.startsWith('/control-box'))) return true;
+  if (user?.value?.email || isLoggedIn?.value) return true;
+  return false;
 });
+
+// OTP Verification state for Public Form
+const otpCode = ref("");
+const otpSent = ref(false);
+const isSendingOtp = ref(false);
+const isVerifyingOtp = ref(false);
+const isOtpVerified = ref(false);
+const verifiedEmail = ref("");
+const otpCooldown = ref(0);
+let otpInterval = null;
+
+const isValidEmail = (val) => {
+  if (!val) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+};
+
+const startOtpCooldown = (seconds = 60) => {
+  otpCooldown.value = seconds;
+  if (otpInterval) clearInterval(otpInterval);
+  otpInterval = setInterval(() => {
+    if (otpCooldown.value > 0) {
+      otpCooldown.value--;
+    } else {
+      clearInterval(otpInterval);
+      otpInterval = null;
+    }
+  }, 1000);
+};
+
+const sendOtp = async () => {
+  const email = (participants.value?.[0]?.contact_email || "").trim().toLowerCase();
+  if (!isValidEmail(email)) {
+    showNotice("Please enter a valid email address before requesting an OTP code.", "Invalid Email", "warning");
+    return;
+  }
+  isSendingOtp.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/otp/send/`, {
+      method: "POST",
+      body: { email },
+    });
+    otpSent.value = true;
+    startOtpCooldown(res.cooldown || 60);
+    showNotice(res.message || `A 6-digit verification code has been sent to ${email}.`, "Verification Code Sent", "info");
+  } catch (err) {
+    console.error("OTP send error:", err);
+    const msg = err?.data?.message || err?.response?._data?.message || "Failed to send verification code. Please try again.";
+    const cooldown = err?.data?.cooldown || err?.response?._data?.cooldown;
+    if (cooldown) startOtpCooldown(cooldown);
+    showNotice(msg, "OTP Notice", "warning");
+  } finally {
+    isSendingOtp.value = false;
+  }
+};
+
+const verifyOtp = async () => {
+  const email = (participants.value?.[0]?.contact_email || "").trim().toLowerCase();
+  const code = (otpCode.value || "").trim();
+  if (!code || code.length !== 6) {
+    showNotice("Please enter the complete 6-digit verification code.", "Invalid Code", "warning");
+    return;
+  }
+  isVerifyingOtp.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/otp/verify/`, {
+      method: "POST",
+      body: { email, otp: code },
+    });
+    isOtpVerified.value = true;
+    verifiedEmail.value = email;
+    showNotice(res.message || "Email verified successfully! You can now proceed with your registration.", "Email Verified", "success");
+  } catch (err) {
+    console.error("OTP verify error:", err);
+    const msg = err?.data?.message || err?.response?._data?.message || "Invalid or expired verification code. Please try again.";
+    showNotice(msg, "Verification Failed", "error");
+  } finally {
+    isVerifyingOtp.value = false;
+  }
+};
+
+const resetOtpVerification = () => {
+  isOtpVerified.value = false;
+  otpSent.value = false;
+  otpCode.value = "";
+  verifiedEmail.value = "";
+};
 
 const form_type = ref("Individual");
 const number_of_participants_per_group = ref(1);
@@ -440,6 +539,35 @@ const selectParticipantGroup = (participant, group) => {
 
 const participants = ref([createEmptyParticipant(1)]);
 
+onMounted(() => {
+  if (init) init();
+  if (isDashboard.value && user?.value?.email && participants.value[0]) {
+    participants.value[0].contact_email = user.value.email;
+  }
+});
+
+watch(
+  () => user?.value?.email,
+  (email) => {
+    if (isDashboard.value && email && participants.value && participants.value[0]) {
+      participants.value[0].contact_email = email;
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  () => participants.value?.[0]?.contact_email,
+  (newEmail) => {
+    if (!isDashboard.value && verifiedEmail.value) {
+      const clean = (newEmail || "").trim().toLowerCase();
+      if (clean !== verifiedEmail.value) {
+        isOtpVerified.value = false;
+      }
+    }
+  }
+);
+
 watch(form_type, (newVal) => {
   if (newVal === "Individual") {
     number_of_participants_per_group.value = 1;
@@ -757,6 +885,10 @@ const resetForm = () => {
   receiptPreview.value = null;
   isSuccessModalOpen.value = false;
   registrationResult.value = null;
+  resetOtpVerification();
+  if (isDashboard.value && user?.value?.email) {
+    participants.value[0].contact_email = user.value.email;
+  }
 
   if (typeof window !== "undefined") {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -939,6 +1071,20 @@ const submitRegistration = async () => {
     }
   }
 
+  // For Public Form, Runner #1 (or single runner) must have verified email via OTP
+  if (!isDashboard.value) {
+    const listerEmail = (participants.value[0]?.contact_email || "").trim().toLowerCase();
+    if (!isOtpVerified.value || verifiedEmail.value !== listerEmail) {
+      showNotice(
+        `Please verify your email address (${listerEmail || "Runner #1"}) via OTP before submitting your registration.`,
+        "OTP Verification Required",
+        "warning"
+      );
+      activeParticipantIndex.value = 0;
+      return;
+    }
+  }
+
   isSubmitting.value = true;
 
   try {
@@ -964,7 +1110,8 @@ const submitRegistration = async () => {
     let res;
     if (form_type.value === "Group") {
       const payload = {
-        participants: await Promise.all(participants.value.map(async (p) => {
+        is_dashboard: isDashboard.value,
+        participants: await Promise.all(participants.value.map(async (p, idx) => {
           // Upload Alumni ID front if present (up to 5MB)
           let idFrontUrl = "";
           let idBackUrl = "";
@@ -994,6 +1141,9 @@ const submitRegistration = async () => {
             : p.pet_type;
 
           const formattedPhone = p.contact_number ? `+63 ${p.contact_number}` : "";
+          const emailVal = (idx === 0 && isDashboard.value && user?.value?.email)
+            ? user.value.email
+            : (p.contact_email || user?.value?.email || "");
 
           return {
             firstname: p.firstname,
@@ -1006,7 +1156,7 @@ const submitRegistration = async () => {
             birthdate: p.birthdate,
             gender: p.gender,
             contact_number: formattedPhone,
-            contact_email: p.contact_email || user?.value?.email || "",
+            contact_email: emailVal,
             contact_address: p.contact_address,
             college_course: p.college_course,
             college_year: p.college_year,
@@ -1069,8 +1219,12 @@ const submitRegistration = async () => {
         : p.pet_type;
 
       const formattedPhone = p.contact_number ? `+63 ${p.contact_number}` : "";
+      const emailVal = (isDashboard.value && user?.value?.email)
+        ? user.value.email
+        : (p.contact_email || user?.value?.email || "");
 
       const payload = {
+        is_dashboard: isDashboard.value,
         firstname: p.firstname,
         middlename: p.middlename,
         lastname: p.lastname,
@@ -1081,7 +1235,7 @@ const submitRegistration = async () => {
         birthdate: p.birthdate,
         gender: p.gender,
         contact_number: formattedPhone,
-        contact_email: p.contact_email || user?.value?.email || "",
+        contact_email: emailVal,
         contact_address: p.contact_address,
         college_course: p.college_course,
         college_year: p.college_year,
@@ -1116,8 +1270,9 @@ const submitRegistration = async () => {
     isSuccessModalOpen.value = true;
   } catch (error) {
     console.error("Registration submission error:", error);
+    const serverMessage = error?.data?.message || error?.response?._data?.message || error?.data?.error || error?.message;
     showNotice(
-      "We were unable to process your registration. Please check your network connection or try again in a few moments.",
+      serverMessage || "We were unable to process your registration. Please check your network connection or try again in a few moments.",
       "Submission Error",
       "error"
     );
@@ -1935,17 +2090,108 @@ const submitRegistration = async () => {
 
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="w-full">
-                  <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Email Address
-                    *</label>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                      Email Address *
+                    </label>
+                    <span v-if="isDashboard" class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                      <i class="fas fa-shield-alt text-emerald-600"></i> Auth Account
+                    </span>
+                  </div>
                   <div class="relative">
                     <span class="absolute left-3.5 top-3 text-xs text-gray-400">
                       <i class="fas fa-envelope"></i>
                     </span>
-                    <input v-model="currentParticipant.contact_email" placeholder="runner@lsu.edu.ph" :class="[
-                      'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                      props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
-                    ]" />
+                    <input
+                      v-model="currentParticipant.contact_email"
+                      :readonly="isDashboard ? false : (activeParticipantIndex === 0 && isOtpVerified && verifiedEmail === (currentParticipant.contact_email || '').trim().toLowerCase())"
+                      placeholder="runner@lsu.edu.ph"
+                      :class="[
+                        'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                        props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
+                        (!isDashboard && activeParticipantIndex === 0 && isOtpVerified && verifiedEmail === (currentParticipant.contact_email || '').trim().toLowerCase()) ? 'border-emerald-500 bg-emerald-50/30 font-semibold text-emerald-800 dark:text-emerald-300' : ''
+                      ]"
+                    />
                   </div>
+
+                  <!-- Dashboard Form: Auth config info badge -->
+                  <p v-if="isDashboard" class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                    <i class="fas fa-check-circle"></i> Authenticated via Dashboard ({{ user?.email || 'Logged In' }}). OTP is not required.
+                  </p>
+
+                  <!-- Public Form: OTP Verification for Runner #1 (Primary Registrant / Lister) -->
+                  <div v-else-if="activeParticipantIndex === 0" class="mt-2 space-y-2">
+                    <!-- Verified State Badge -->
+                    <div
+                      v-if="isOtpVerified && verifiedEmail === (currentParticipant.contact_email || '').trim().toLowerCase()"
+                      class="flex items-center justify-between p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800"
+                    >
+                      <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                        <i class="fas fa-check-circle text-emerald-500 text-sm"></i>
+                        <span>Email Verified with OTP</span>
+                      </div>
+                      <button
+                        type="button"
+                        @click="resetOtpVerification"
+                        class="text-[11px] text-emerald-800 dark:text-emerald-400 hover:text-red-500 underline font-semibold transition cursor-pointer"
+                      >
+                        Change Email
+                      </button>
+                    </div>
+
+                    <!-- Unverified State: Send OTP Button -->
+                    <div v-else class="space-y-2">
+                      <button
+                        type="button"
+                        @click="sendOtp"
+                        :disabled="isSendingOtp || otpCooldown > 0 || !isValidEmail(currentParticipant.contact_email)"
+                        class="w-full py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <i v-if="isSendingOtp" class="fas fa-spinner fa-spin"></i>
+                        <i v-else class="fas fa-paper-plane"></i>
+                        <span>{{ otpCooldown > 0 ? `Resend code in ${otpCooldown}s` : (otpSent ? 'Resend Verification Code' : 'Send Verification Code (OTP)') }}</span>
+                      </button>
+
+                      <!-- OTP Input & Verify Section -->
+                      <div v-if="otpSent" class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                          <span class="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                            <i class="fas fa-key text-amber-600"></i>
+                            Enter 6-Digit OTP Code
+                          </span>
+                          <span class="text-[11px] text-gray-500">Expires in 10 mins</span>
+                        </div>
+                        <div class="flex gap-2">
+                          <input
+                            v-model="otpCode"
+                            type="text"
+                            inputmode="numeric"
+                            maxlength="6"
+                            placeholder="000000"
+                            class="w-32 px-3 py-2 text-center text-base tracking-widest font-mono font-bold rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            @click="verifyOtp"
+                            :disabled="isVerifyingOtp || !otpCode || otpCode.trim().length !== 6"
+                            class="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <i v-if="isVerifyingOtp" class="fas fa-spinner fa-spin"></i>
+                            <i v-else class="fas fa-check"></i>
+                            <span>Verify Code</span>
+                          </button>
+                        </div>
+                        <p class="text-[10px] text-amber-700 dark:text-amber-400">
+                          A 6-digit OTP code has been dispatched to your email. Check inbox or spam.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Public Form: Runner #2+ (optional notification email) -->
+                  <p v-else class="text-[10px] text-gray-400 mt-1">
+                    Runner #{{ activeParticipantIndex + 1 }} notification email (Runner #1 is the group authorized lister).
+                  </p>
                 </div>
 
                 <!-- Locked +63 Contact Phone Number -->
