@@ -119,6 +119,502 @@ const currentPage = ref(1);
 const pageSize = ref(25);
 const pageSizeOptions = [10, 25, 50, 100, 250, 500, 1000, 2000, 5000, 10000];
 
+// ---------------- ROLE QUICK FILTER ----------------
+const activeRoleFilter = ref(""); // e.g. 'Employee', 'Super Admin', etc.
+
+// ---------------- LSU EMPLOYEE ROSTER (Dynamic - loaded from CSV upload) ----------------
+// Populated by uploading the LSU Employees CSV (ID NO. + EMPLOYEE NAME columns)
+const employeeRoster = ref([]); // Array of { id, name }
+
+// Helper to sanitize strings to lowercase alphanumeric only
+const cleanStr = (s) => (s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+// Parse employee name into last name, first name, and all valid first name variants
+const parseEmployeeName = (empName) => {
+  if (!empName) return null;
+  let rawLast = "";
+  let rawFirst = "";
+
+  const commaIdx = empName.indexOf(",");
+  if (commaIdx !== -1) {
+    rawLast = empName.substring(0, commaIdx).trim();
+    rawFirst = empName.substring(commaIdx + 1).trim();
+  } else {
+    const tokens = empName.trim().split(/\s+/);
+    if (tokens.length >= 2) {
+      rawLast = tokens[tokens.length - 1];
+      rawFirst = tokens.slice(0, tokens.length - 1).join(" ");
+    } else {
+      rawLast = tokens[0] || "";
+      rawFirst = "";
+    }
+  }
+
+  const lastNorm = cleanStr(rawLast);
+  if (!lastNorm) return null;
+
+  // Split first name tokens (e.g. "Jo Renlee" -> ["jo", "renlee"], "Ernie Crausus" -> ["ernie", "crausus"])
+  const firstWords = rawFirst
+    .split(/[\s,._-]+/)
+    .map(w => cleanStr(w))
+    .filter(Boolean);
+
+  const validFirstNorms = new Set();
+  if (firstWords.length > 0) {
+    // 1. Primary given name (first word e.g. "ernie", "jo", "theodora")
+    validFirstNorms.add(firstWords[0]);
+    // 2. Full combined first + middle (e.g. "jorenlee", "erniecrausus")
+    validFirstNorms.add(firstWords.join(""));
+    // 3. Given name without middle name (if 2 or more words)
+    if (firstWords.length >= 2) {
+      validFirstNorms.add(firstWords.slice(0, -1).join(""));
+    }
+    if (firstWords.length >= 3) {
+      validFirstNorms.add(firstWords.slice(0, 2).join(""));
+    }
+  }
+
+  return {
+    rawLast,
+    rawFirst,
+    lastNorm,
+    validFirstNorms,
+  };
+};
+
+// Computed parsed roster with tokenized names
+const employeeRosterParsed = computed(() => {
+  return employeeRoster.value
+    .map(emp => {
+      const parsed = parseEmployeeName(emp.name);
+      return {
+        id: (emp.id || "").trim().toUpperCase(),
+        name: (emp.name || "").trim(),
+        parsed,
+      };
+    })
+    .filter(e => e.parsed !== null && e.id.length > 0);
+});
+
+// Fast index by normalized last name for O(1) matching
+const employeeRosterByLastname = computed(() => {
+  const map = new Map();
+  for (const emp of employeeRosterParsed.value) {
+    const key = emp.parsed.lastNorm;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(emp);
+  }
+  return map;
+});
+
+// Fast index by LSU ID
+const employeeById = computed(() => {
+  const map = new Map();
+  for (const emp of employeeRoster.value) {
+    if (emp.id) map.set(emp.id.trim().toUpperCase(), emp);
+  }
+  return map;
+});
+
+// Set of all normalized roster employee names to detect falsely assigned names
+const rosterNamesSet = computed(() => {
+  const set = new Set();
+  for (const emp of employeeRoster.value) {
+    if (emp.name) {
+      set.add(cleanStr(emp.name));
+      const ci = emp.name.indexOf(",");
+      if (ci !== -1) {
+        const last = emp.name.substring(0, ci).trim();
+        const first = emp.name.substring(ci + 1).trim();
+        set.add(cleanStr(`${first} ${last}`));
+        set.add(cleanStr(`${last} ${first}`));
+      }
+    }
+  }
+  return set;
+});
+
+// Check if a record's fullname was falsely copied from the employee roster
+const isFalselyAssignedRosterName = (item, matchedEmp) => {
+  if (!item || !item.fullname) return false;
+  const itemNorm = cleanStr(item.fullname);
+  if (matchedEmp && itemNorm === cleanStr(matchedEmp.name)) return false;
+  return rosterNamesSet.value.has(itemNorm);
+};
+
+// Power Detection state
+const showPowerDetectModal = ref(false);
+const isPowerDetecting = ref(false);
+const powerDetectProgressText = ref("");
+const powerDetectResults = ref(null); // { matched: [], unmatched: [], alreadyHaveId: [], invalidEmployees: [], duplicateEmailRecords: [] }
+
+// Strict employee matcher:
+// 1. MUST be @lsu.edu.ph email
+// 2. Format: firstname.lastname@lsu.edu.ph
+// 3. Matches firstname and lastname with employee roster
+// 4. Skips if fullname and email do not match
+const findEmployeeMatch = (item) => {
+  if (!item || !item.email) return null;
+  const email = item.email.trim().toLowerCase();
+
+  // RULE 1: All LSU employees have an @lsu.edu.ph email.
+  // Non-lsu.edu.ph emails (e.g. aprilrosegulbe@gmail.com) are NEVER LSU employees.
+  if (!email.endsWith("@lsu.edu.ph")) {
+    return null;
+  }
+
+  const username = email.replace(/@lsu\.edu\.ph$/i, "").trim();
+  if (!username) return null;
+
+  const byLastname = employeeRosterByLastname.value;
+  if (!byLastname || byLastname.size === 0) return null;
+
+  // RULE 2 & 3: Template firstname.lastname@lsu.edu.ph
+  // Extract firstname and lastname candidate parts from email username
+  const candidates = [];
+
+  if (username.includes(".") || username.includes("_")) {
+    const sep = username.includes(".") ? "." : "_";
+    const rawParts = username.split(sep).filter(Boolean);
+
+    // Standard format: firstname.lastname (e.g. jorenlee.luna or jo.renlee.luna)
+    const emailLast = cleanStr(rawParts[rawParts.length - 1]);
+    const emailFirst = cleanStr(rawParts.slice(0, -1).join(""));
+    candidates.push({ last: emailLast, first: emailFirst });
+
+    // Handle middle initial (e.g. jorenlee.r.luna -> first: jorenlee, last: luna)
+    if (rawParts.length >= 3) {
+      const nonInitialParts = rawParts.filter(p => p.length > 1);
+      if (nonInitialParts.length >= 2) {
+        const lastNoInit = cleanStr(nonInitialParts[nonInitialParts.length - 1]);
+        const firstNoInit = cleanStr(nonInitialParts.slice(0, -1).join(""));
+        candidates.push({ last: lastNoInit, first: firstNoInit });
+      }
+    }
+
+    // Inverted format: lastname.firstname (e.g. luna.jorenlee)
+    const invertedLast = cleanStr(rawParts[0]);
+    const invertedFirst = cleanStr(rawParts.slice(1).join(""));
+    candidates.push({ last: invertedLast, first: invertedFirst });
+  } else {
+    // No separator, e.g. jorenleeluna
+    const cleanUser = cleanStr(username);
+    for (const [lastNorm, emps] of byLastname.entries()) {
+      if (cleanUser.endsWith(lastNorm) || cleanUser.startsWith(lastNorm)) {
+        for (const emp of emps) {
+          const userFirst = cleanUser.endsWith(lastNorm)
+            ? cleanUser.substring(0, cleanUser.length - lastNorm.length)
+            : cleanUser.substring(lastNorm.length);
+          if (userFirst && emp.parsed.validFirstNorms.has(userFirst)) {
+            // Verify existing fullname doesn't conflict
+            if (item.fullname) {
+              const itemParsed = parseEmployeeName(item.fullname);
+              if (itemParsed && itemParsed.lastNorm !== emp.parsed.lastNorm) continue;
+            }
+            return { id: emp.id, name: emp.name };
+          }
+        }
+      }
+    }
+  }
+
+  // Check candidates against roster
+  for (const { last, first } of candidates) {
+    if (!last || !first) continue;
+    const emps = byLastname.get(last);
+    if (!emps || emps.length === 0) continue;
+
+    for (const emp of emps) {
+      // First name must match one of validFirstNorms
+      let firstMatched = false;
+      for (const fn of emp.parsed.validFirstNorms) {
+        if (first === fn) {
+          firstMatched = true;
+          break;
+        }
+      }
+
+      if (firstMatched) {
+        // "skip the not same fullname and email"
+        // If the item already has a fullname, make sure its last name matches this employee
+        if (item.fullname) {
+          const itemParsed = parseEmployeeName(item.fullname);
+          if (itemParsed && itemParsed.lastNorm !== emp.parsed.lastNorm) {
+            continue;
+          }
+        }
+        return { id: emp.id, name: emp.name };
+      }
+    }
+  }
+
+  return null;
+};
+
+const runPowerDetection = async () => {
+  isPowerDetecting.value = true;
+  powerDetectProgressText.value = "Analyzing 20,000+ records for employee matches, redundant IDs & duplicate emails...";
+  powerDetectResults.value = null;
+  await new Promise(r => setTimeout(r, 100)); // let UI update
+
+  // 1. Check duplicate emails ("the em email is unique")
+  const emailBuckets = new Map();
+  for (const item of listItems.value) {
+    if (!item.email) continue;
+    const em = item.email.trim().toLowerCase();
+    if (!emailBuckets.has(em)) emailBuckets.set(em, []);
+    emailBuckets.get(em).push(item);
+  }
+
+  const duplicateEmailRecords = [];
+  for (const [em, items] of emailBuckets.entries()) {
+    if (items.length > 1) {
+      // Keep best record at index 0, mark the rest as redundant duplicates
+      items.sort((a, b) => {
+        const aEmp = findEmployeeMatch(a) ? 10 : 0;
+        const bEmp = findEmployeeMatch(b) ? 10 : 0;
+        const aScore = aEmp + (a.lsu_idnumber ? 3 : 0) + (a.role_filter_permissions?.length || 0);
+        const bScore = bEmp + (b.lsu_idnumber ? 3 : 0) + (b.role_filter_permissions?.length || 0);
+        return bScore - aScore;
+      });
+      for (let i = 1; i < items.length; i++) {
+        duplicateEmailRecords.push(items[i]);
+      }
+    }
+  }
+  const dupIdSet = new Set(duplicateEmailRecords.map(d => d.id));
+
+  // 2. Scan records for matches and redundant/invalid assignments
+  const matched = [];
+  const unmatched = [];
+  const alreadyHaveId = [];
+  const invalidEmployees = [];
+
+  for (const item of listItems.value) {
+    if (dupIdSet.has(item.id)) continue; // Handled in duplicate removals
+
+    const isLsuEmail = !!item.email && item.email.trim().toLowerCase().endsWith("@lsu.edu.ph");
+    const hasEmployeeRole = Array.isArray(item.role_filter_permissions) && item.role_filter_permissions.includes("Employee");
+    const emp = findEmployeeMatch(item);
+
+    if (emp) {
+      // Double checked: email and name really match the employee!
+      const hasId = item.lsu_idnumber === emp.id;
+      const hasName = item.fullname === emp.name;
+      const hasRole = hasEmployeeRole;
+      if (hasId && hasName && hasRole) {
+        alreadyHaveId.push({ item, emp, action: "already_complete" });
+      } else {
+        matched.push({
+          item,
+          emp,
+          missingId: !hasId,
+          missingName: !hasName,
+          missingRole: !hasRole,
+        });
+      }
+    } else {
+      // Email does NOT match any employee in the roster
+      const hasLsuId = !!item.lsu_idnumber;
+      const hasRosterName = isFalselyAssignedRosterName(item, null);
+
+      if (hasEmployeeRole || hasLsuId || hasRosterName) {
+        let reason = "";
+        if (!isLsuEmail) {
+          reason = "Non-LSU email (@lsu.edu.ph required)";
+        } else if (hasLsuId && hasRosterName) {
+          reason = `Redundant ID (${item.lsu_idnumber}) & false name (${item.fullname})`;
+        } else if (hasLsuId) {
+          reason = `Redundant ID Number (${item.lsu_idnumber})`;
+        } else if (hasEmployeeRole) {
+          reason = "Invalid Employee filter tag";
+        } else {
+          reason = `Falsely assigned roster name (${item.fullname})`;
+        }
+
+        invalidEmployees.push({
+          item,
+          reason,
+          clearId: hasLsuId,
+          clearName: hasRosterName,
+          stripRole: hasEmployeeRole,
+        });
+      } else {
+        unmatched.push({ item });
+      }
+    }
+  }
+
+  powerDetectResults.value = {
+    matched,
+    unmatched,
+    alreadyHaveId,
+    invalidEmployees,
+    duplicateEmailRecords,
+  };
+  isPowerDetecting.value = false;
+  powerDetectProgressText.value = "";
+};
+
+// Clean up redundant IDs, falsely assigned roster names, and strip the Employee role tag
+const cleanUpInvalidEmployees = async () => {
+  const toClean = powerDetectResults.value?.invalidEmployees || [];
+  const toDelete = powerDetectResults.value?.duplicateEmailRecords || [];
+  if (!toClean.length && !toDelete.length) {
+    showToast("No redundant or invalid records found to clean", "info");
+    return;
+  }
+
+  isPowerDetecting.value = true;
+  let cleanedCount = 0;
+  let deletedDups = 0;
+  const CONCURRENCY = 6;
+
+  // 1. Delete redundant duplicate email records ("the em email is unique")
+  if (toDelete.length > 0) {
+    powerDetectProgressText.value = `Deleting ${toDelete.length.toLocaleString()} redundant duplicate email records...`;
+    for (const dup of toDelete) {
+      try {
+        await $fetch(`${endpoint}/api/cits/role-permissions/${dup.id}/delete/`, {
+          method: "DELETE",
+        });
+        const idx = listItems.value.findIndex(x => x.id === dup.id);
+        if (idx !== -1) listItems.value.splice(idx, 1);
+        deletedDups++;
+      } catch (err) {
+        console.error(`Failed deleting duplicate item ${dup.email}:`, err);
+      }
+    }
+  }
+
+  // 2. Clean redundant IDs, false names, and strip Employee filter tag
+  const totalClean = toClean.length;
+  for (let i = 0; i < totalClean; i += CONCURRENCY) {
+    const chunk = toClean.slice(i, i + CONCURRENCY);
+    powerDetectProgressText.value = `Cleaning redundant IDs and Employee tags (${Math.min(i + chunk.length, totalClean)} of ${totalClean})...`;
+
+    await Promise.all(chunk.map(async ({ item, clearId, clearName, stripRole }) => {
+      const newRoles = stripRole
+        ? (item.role_filter_permissions || []).filter(r => r !== "Employee")
+        : (item.role_filter_permissions || []);
+      const newId = clearId ? "" : (item.lsu_idnumber || "");
+      const newFullname = clearName ? "" : (item.fullname || "");
+
+      try {
+        await $fetch(`${endpoint}/api/cits/role-permissions/${item.id}/edit/`, {
+          method: "PUT",
+          body: {
+            fullname: newFullname,
+            lsu_idnumber: newId,
+            email: item.email,
+            role_filter_permissions: newRoles,
+            updated_at: new Date().toString(),
+          },
+        });
+        const idx = listItems.value.findIndex(x => x.id === item.id);
+        if (idx !== -1) {
+          listItems.value[idx] = {
+            ...listItems.value[idx],
+            fullname: newFullname,
+            lsu_idnumber: newId,
+            role_filter_permissions: newRoles,
+          };
+          prepareItemSearchIndex(listItems.value[idx]);
+        }
+        cleanedCount++;
+      } catch (err) {
+        console.error(`Failed to clean up record for ${item.email}:`, err);
+      }
+    }));
+    await new Promise(r => setTimeout(r, 40));
+  }
+
+  // Remove Employee filter in UI if active so user sees all items
+  if (activeRoleFilter.value === "Employee") {
+    activeRoleFilter.value = "";
+  }
+
+  showToast(
+    `Cleaned ${cleanedCount} redundant record(s)` +
+    (deletedDups > 0 ? ` and deleted ${deletedDups} duplicate email(s)!` : "!"),
+    "success",
+    6000
+  );
+  isPowerDetecting.value = false;
+  powerDetectProgressText.value = "";
+  await runPowerDetection();
+};
+
+const applyPowerDetectionMatches = async () => {
+  if (!powerDetectResults.value?.matched?.length) return;
+  isPowerDetecting.value = true;
+
+  const toUpdate = powerDetectResults.value.matched;
+  let updatedCount = 0;
+  const CONCURRENCY = 6;
+
+  for (let i = 0; i < toUpdate.length; i += CONCURRENCY) {
+    const chunk = toUpdate.slice(i, i + CONCURRENCY);
+    powerDetectProgressText.value = `Applying valid matches (${Math.min(i + chunk.length, toUpdate.length)} of ${toUpdate.length})...`;
+
+    await Promise.all(chunk.map(async ({ item, emp }) => {
+      const newName = emp.name || item.fullname;
+      const newId = emp.id || item.lsu_idnumber;
+      const newRoles = item.role_filter_permissions?.includes("Employee")
+        ? item.role_filter_permissions
+        : [...(item.role_filter_permissions || []), "Employee"];
+
+      try {
+        await $fetch(`${endpoint}/api/cits/role-permissions/${item.id}/edit/`, {
+          method: "PUT",
+          body: {
+            fullname: newName,
+            lsu_idnumber: newId,
+            email: item.email,
+            role_filter_permissions: newRoles,
+            updated_at: new Date().toString(),
+          },
+        });
+        const idx = listItems.value.findIndex(x => x.id === item.id);
+        if (idx !== -1) {
+          listItems.value[idx] = {
+            ...listItems.value[idx],
+            fullname: newName,
+            lsu_idnumber: newId,
+            role_filter_permissions: newRoles,
+          };
+          prepareItemSearchIndex(listItems.value[idx]);
+        }
+        updatedCount++;
+      } catch (err) {
+        console.error(`Power detect update failed for ${item.email}:`, err);
+      }
+    }));
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  // Remove Employee filter in UI
+  if (activeRoleFilter.value === "Employee") {
+    activeRoleFilter.value = "";
+  }
+
+  showToast(`Power Detection: Updated ${updatedCount} record(s) with Employee data & role!`, "success", 5000);
+  isPowerDetecting.value = false;
+  powerDetectProgressText.value = "";
+  showPowerDetectModal.value = false;
+  powerDetectResults.value = null;
+};
+
+// 1-Click Action: Clean all redundant records, delete duplicate emails, and apply valid matches
+const applyAllAndClean = async () => {
+  await cleanUpInvalidEmployees();
+  if (powerDetectResults.value?.matched?.length > 0) {
+    await applyPowerDetectionMatches();
+  }
+};
+
+
+
 // ---------------- ROLES ----------------
 const availableRoles = [
   "Animo Run",
@@ -207,12 +703,21 @@ watch(searchQuery, (newVal) => {
 // ---------------- FILTER & SORT COMPUTED ----------------
 const filteredList = computed(() => {
   const q = debouncedSearchQuery.value.toLowerCase();
+  const roleF = activeRoleFilter.value;
   const list = listItems.value;
   if (!list || !list.length) return [];
 
   let result = list;
+
+  // Role quick-filter
+  if (roleF) {
+    result = result.filter(i =>
+      Array.isArray(i.role_filter_permissions) && i.role_filter_permissions.includes(roleF)
+    );
+  }
+
   if (q) {
-    result = list.filter((i) => {
+    result = result.filter((i) => {
       if (!i._searchKey) prepareItemSearchIndex(i);
       return i._searchKey.includes(q);
     });
@@ -249,6 +754,13 @@ const filteredList = computed(() => {
     return isAsc ? diff : -diff;
   });
 });
+
+// Employee count (Power Detection stats)
+const employeeCount = computed(() =>
+  listItems.value.filter(i =>
+    Array.isArray(i.role_filter_permissions) && i.role_filter_permissions.includes("Employee")
+  ).length
+);
 
 // ---------------- PAGINATION COMPUTED ----------------
 const totalItems = computed(() => filteredList.value.length);
@@ -1172,6 +1684,161 @@ const cancelCsvProcessing = () => {
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Detected CSV type shown in modal UI: '' | 'email' | 'employee_roster'
+const csvDetectedType = ref("");
+
+watch(csvFile, () => { csvDetectedType.value = ""; });
+
+// Detect whether a CSV is an Employee Roster (ID NO. + EMPLOYEE NAME) or an Email list
+const detectCsvType = (text) => {
+  if (!text) return "email";
+  const firstLine = text.split(/\r?\n/)[0] || "";
+  const lowerFirst = firstLine.toLowerCase().replace(/[^a-z0-9,]/g, "");
+  // Recognise employee roster headers
+  if (
+    (lowerFirst.includes("idno") || lowerFirst.includes("id,") || lowerFirst.startsWith("id")) &&
+    (lowerFirst.includes("employee") || lowerFirst.includes("name"))
+  ) return "employee_roster";
+  // Check first 5 data lines for LSU ID pattern (LSU followed by 6 digits) without @ signs
+  const lines = text.split(/\r?\n/).slice(1, 6);
+  const lsuIdPattern = /^[Ll][Ss][Uu]\d{6}/;
+  const emailPattern = /@/;
+  const rosterLines = lines.filter(l => lsuIdPattern.test(l.trim()) && !emailPattern.test(l));
+  if (rosterLines.length >= Math.min(2, lines.filter(l => l.trim()).length)) return "employee_roster";
+  return "email";
+};
+
+// Parse employee roster CSV rows → [{ id, name }]
+const parseEmployeeRosterRows = (text) => {
+  if (!text) return [];
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  if (lines.length === 0) return [];
+
+  const parseCsvLine = (line) => {
+    const row = [];
+    let insideQuote = false;
+    let entry = "";
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') { insideQuote = !insideQuote; }
+      else if (c === "," && !insideQuote) { row.push(entry.trim().replace(/^"|"$/g, "")); entry = ""; }
+      else { entry += c; }
+    }
+    row.push(entry.trim().replace(/^"|"$/g, ""));
+    return row;
+  };
+
+  const lsuIdPattern = /^[Ll][Ss][Uu]\d{5,8}$/;
+  const results = [];
+  const seen = new Set();
+  // Skip header row
+  const startIdx = lsuIdPattern.test(parseCsvLine(lines[0])[0]?.trim()) ? 0 : 1;
+
+  for (let i = startIdx; i < lines.length; i++) {
+    const cols = parseCsvLine(lines[i]);
+    const idRaw = (cols[0] || "").trim();
+    const nameRaw = (cols[1] || "").trim();
+    if (!idRaw || !nameRaw) continue;
+    if (!lsuIdPattern.test(idRaw)) continue;
+    const key = idRaw.toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    results.push({ id: idRaw.toUpperCase(), name: nameRaw });
+  }
+  return results;
+};
+
+// Process Employee Roster CSV: match existing records and fill LSU ID + Name + Employee role
+const processEmployeeRosterUpload = async (fileText) => {
+  uploadProgressText.value = "Parsing employee roster...";
+  const rosterRows = parseEmployeeRosterRows(fileText);
+
+  if (rosterRows.length === 0) {
+    showToast("No valid LSU ID / Employee Name rows found in the file.", "error");
+    isUploadingCsv.value = false;
+    return;
+  }
+
+  // Load roster into reactive state so Power Detection can use it
+  employeeRoster.value = rosterRows;
+
+  uploadProgressText.value = `Matching ${listItems.value.length.toLocaleString()} records against ${rosterRows.length.toLocaleString()} employees...`;
+  await sleep(80);
+
+  const toUpdate = [];
+  for (const item of listItems.value) {
+    const emp = findEmployeeMatch(item);
+    if (emp) {
+      const hasId = item.lsu_idnumber === emp.id;
+      const hasName = item.fullname === emp.name;
+      const hasRole = item.role_filter_permissions?.includes("Employee");
+      if (!hasId || !hasName || !hasRole) {
+        toUpdate.push({ item, emp });
+      }
+    }
+  }
+
+  if (toUpdate.length === 0) {
+    csvUploadResult.value = {
+      mode: "employee_roster",
+      total_rows: rosterRows.length,
+      added_count: 0,
+      skipped_count: listItems.value.length,
+      message: `Roster loaded (${rosterRows.length.toLocaleString()} employees). All matching @lsu.edu.ph records already have their Employee role and LSU ID.`,
+    };
+    showToast(csvUploadResult.value.message, "info", 6000);
+    isUploadingCsv.value = false;
+    return;
+  }
+
+  let updatedCount = 0;
+  let failedCount = 0;
+  const CONCURRENCY = 4;
+
+  for (let i = 0; i < toUpdate.length; i += CONCURRENCY) {
+    if (shouldCancelUpload.value) {
+      showToast("Upload stopped by user", "warning");
+      break;
+    }
+    const chunk = toUpdate.slice(i, i + CONCURRENCY);
+    await Promise.all(chunk.map(async ({ item, emp }) => {
+      const newName = emp.name || item.fullname;
+      const newId = emp.id || item.lsu_idnumber;
+      const newRoles = item.role_filter_permissions?.includes("Employee")
+        ? item.role_filter_permissions
+        : [...(item.role_filter_permissions || []), "Employee"];
+      try {
+        await $fetch(`${endpoint}/api/cits/role-permissions/${item.id}/edit/`, {
+          method: "PUT",
+          body: { fullname: newName, lsu_idnumber: newId, email: item.email, role_filter_permissions: newRoles, updated_at: new Date().toString() },
+        });
+        const idx = listItems.value.findIndex(x => x.id === item.id);
+        if (idx !== -1) {
+          listItems.value[idx] = { ...listItems.value[idx], fullname: newName, lsu_idnumber: newId, role_filter_permissions: newRoles };
+          prepareItemSearchIndex(listItems.value[idx]);
+        }
+        updatedCount++;
+      } catch (err) {
+        console.error(`Roster match update failed for ${item.email}:`, err);
+        failedCount++;
+      }
+    }));
+    const processed = Math.min(i + chunk.length, toUpdate.length);
+    uploadProgressPercent.value = Math.round((processed / toUpdate.length) * 100);
+    uploadProgressText.value = `Updating ${processed.toLocaleString()} of ${toUpdate.length.toLocaleString()} matched records...`;
+    await sleep(100);
+  }
+
+  csvUploadResult.value = {
+    mode: "employee_roster",
+    total_rows: rosterRows.length,
+    added_count: updatedCount,
+    skipped_count: listItems.value.length - toUpdate.length,
+    message: `Roster matched & updated ${updatedCount.toLocaleString()} record(s) with LSU ID, Name, and "Employee" role. ${listItems.value.length - toUpdate.length} records had no match in the roster.`,
+  };
+  showToast(`Updated ${updatedCount} record(s) from employee roster!`, "success", 5000);
+};
+
 const submitCsvUpload = async () => {
   if (!csvFile.value) {
     showToast("Please select a CSV file first", "warning");
@@ -1185,6 +1852,16 @@ const submitCsvUpload = async () => {
 
   try {
     const fileText = await readFileAsText(csvFile.value);
+    const detectedType = detectCsvType(fileText);
+    csvDetectedType.value = detectedType;
+
+    // ── EMPLOYEE ROSTER MODE ──────────────────────────────────────
+    if (detectedType === "employee_roster") {
+      await processEmployeeRosterUpload(fileText);
+      return;
+    }
+
+    // ── EMAIL IMPORT MODE (default) ───────────────────────────────
     const extractedRows = parseCsvRows(fileText);
 
     if (extractedRows.length === 0) {
@@ -1215,6 +1892,7 @@ const submitCsvUpload = async () => {
 
     if (itemsToCreate.length === 0) {
       csvUploadResult.value = {
+        mode: "email",
         total_rows: extractedRows.length,
         added_count: 0,
         skipped_count: skippedCount,
@@ -1290,6 +1968,7 @@ const submitCsvUpload = async () => {
     }
 
     csvUploadResult.value = {
+      mode: "email",
       total_rows: extractedRows.length,
       added_count: addedCount,
       skipped_count: skippedCount + failedCount,
@@ -1549,7 +2228,31 @@ onMounted(async () => {
       </div>
 
       <!-- ACTION BUTTONS -->
-      <div class="lg:w-fit flex items-center gap-2">
+      <div class="lg:w-fit flex items-center gap-2 flex-wrap">
+
+        <!-- ROLE QUICK FILTER: Employee -->
+        <button @click="activeRoleFilter = activeRoleFilter === 'Employee' ? '' : 'Employee'"
+          class="px-3 lg:py-2 py-1 rounded-lg flex items-center gap-2 shadow-xs hover:shadow transition whitespace-nowrap text-xs lg:text-sm font-medium cursor-pointer border"
+          :class="activeRoleFilter === 'Employee'
+            ? 'bg-teal-600 text-white border-teal-600 shadow-md'
+            : 'bg-white hover:bg-teal-50 text-teal-700 border-teal-300'"
+          title="Filter: Show only users with Employee role">
+          <i class="fa fa-id-badge text-sm"></i>
+          <span>Employee</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+            :class="activeRoleFilter === 'Employee' ? 'bg-white/25 text-white' : 'bg-teal-100 text-teal-800'">
+            {{ employeeCount.toLocaleString() }}
+          </span>
+        </button>
+
+        <!-- POWER DETECTION BUTTON -->
+        <button @click="showPowerDetectModal = true"
+          class="px-3 lg:py-2 py-1 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 active:from-violet-800 text-white rounded-lg flex items-center gap-2 shadow-md hover:shadow-lg transition whitespace-nowrap text-xs lg:text-sm font-semibold cursor-pointer"
+          title="Power Detection: Match employees from LSU roster by name/ID">
+          <i class="fa fa-bolt text-sm text-yellow-300"></i>
+          <span>Power Detection</span>
+        </button>
+
         <button @click="downloadCsvTemplate()"
           class="px-3 lg:py-2 py-1 bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-700 border border-gray-300 rounded-lg flex items-center gap-2 shadow-xs hover:shadow transition whitespace-nowrap text-xs lg:text-sm font-medium cursor-pointer"
           title="Download sample CSV template">
@@ -1613,6 +2316,18 @@ onMounted(async () => {
           <i class="fa fa-times"></i> Deselect
         </button>
       </div>
+    </div>
+
+    <!-- ACTIVE ROLE FILTER INDICATOR -->
+    <div v-if="activeRoleFilter" class="mx-2 mb-2 px-3 py-2 bg-teal-50 border border-teal-200 rounded-xl flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2 text-teal-800 font-medium">
+        <i class="fa fa-filter text-teal-600"></i>
+        <span>Filtered by role: <strong class="font-bold">{{ activeRoleFilter }}</strong></span>
+        <span class="bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-bold">{{ totalItems.toLocaleString() }} matching</span>
+      </div>
+      <button @click="activeRoleFilter = ''" class="text-teal-600 hover:text-teal-900 font-semibold flex items-center gap-1 cursor-pointer">
+        <i class="fa fa-times"></i> Clear Filter
+      </button>
     </div>
 
     <!-- TABLE SECTION -->
@@ -2582,8 +3297,8 @@ onMounted(async () => {
               <i class="fa fa-file-csv text-xl"></i>
             </div>
             <div>
-              <h2 class="text-lg font-bold text-gray-900">Upload CSV Emails</h2>
-              <p class="text-xs text-gray-500">Bulk import LSU Google Workspace user emails</p>
+              <h2 class="text-lg font-bold text-gray-900">Upload CSV</h2>
+              <p class="text-xs text-gray-500">Import emails <strong>or</strong> LSU Employee Roster (auto-detected)</p>
             </div>
           </div>
           <button @click="closeCsvModal" :disabled="isUploadingCsv"
@@ -2596,7 +3311,7 @@ onMounted(async () => {
         <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900 space-y-1.5">
           <div class="flex items-center justify-between">
             <div class="font-semibold flex items-center gap-1.5">
-              <i class="fa fa-info-circle text-blue-600"></i> Import Rules & Defaults:
+              <i class="fa fa-info-circle text-blue-600"></i> Two CSV Modes (Auto-Detected):
             </div>
             <button type="button" @click="downloadCsvTemplate()"
               class="text-blue-700 hover:text-blue-900 underline font-medium flex items-center gap-1 text-[11px] cursor-pointer"
@@ -2606,17 +3321,32 @@ onMounted(async () => {
           </div>
           <ul class="list-disc pl-5 space-y-1 text-blue-800">
             <li>
-              <strong>Default Permission:</strong> New users are assigned
-              <span class="bg-blue-200 text-blue-900 px-1.5 py-0.2 rounded font-medium">External Links</span> only.
+              <strong>📧 Email Import (Google Workspace CSV):</strong> Creates new records with
+              <span class="bg-blue-200 text-blue-900 px-1.5 rounded font-medium">External Links</span> role. Skips existing emails.
             </li>
             <li>
-              <strong>Skip Existing:</strong> Any email already present in the table will be <strong>skipped</strong> —
-              keeping their existing roles intact.
+              <strong>🏷️ Employee Roster CSV (ID NO. + EMPLOYEE NAME):</strong> Finds existing records by name/ID and fills in the
+              LSU ID Number, Full Name, and adds the
+              <span class="bg-teal-100 text-teal-800 px-1.5 rounded font-medium">Employee</span> role. Also loads roster for Power Detection.
             </li>
             <li>
-              <strong>Bulk Ready:</strong> Optimized to process <strong>25,000+</strong> emails efficiently.
+              <strong>Bulk Ready:</strong> Optimized to process <strong>25,000+</strong> rows efficiently.
             </li>
           </ul>
+        </div>
+
+        <!-- Detected Type Badge (shown once a file is selected) -->
+        <div v-if="csvFile && csvDetectedType" class="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border"
+          :class="csvDetectedType === 'employee_roster'
+            ? 'bg-teal-50 border-teal-300 text-teal-800'
+            : 'bg-blue-50 border-blue-300 text-blue-800'">
+          <i :class="csvDetectedType === 'employee_roster' ? 'fa fa-id-badge text-teal-600' : 'fa fa-envelope text-blue-600'"></i>
+          <span v-if="csvDetectedType === 'employee_roster'">
+            🏷️ Detected: <strong>LSU Employee Roster</strong> — will match existing records and fill ID / Name / Employee role
+          </span>
+          <span v-else>
+            📧 Detected: <strong>Email Import</strong> — will add new records with External Links role
+          </span>
         </div>
 
         <!-- Drag and Drop Dropzone -->
@@ -2675,28 +3405,42 @@ onMounted(async () => {
         </div>
 
         <!-- Results Summary Card -->
-        <div v-if="csvUploadResult" class="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-2">
-          <div class="flex items-center gap-2 text-emerald-800 font-semibold text-sm">
-            <i class="fa fa-check-circle text-emerald-600 text-base"></i>
-            Import Completed Successfully!
+        <div v-if="csvUploadResult" class="p-4 border rounded-xl space-y-2"
+          :class="csvUploadResult.mode === 'employee_roster'
+            ? 'bg-teal-50 border-teal-200'
+            : 'bg-emerald-50 border-emerald-200'">
+          <div class="flex items-center gap-2 font-semibold text-sm"
+            :class="csvUploadResult.mode === 'employee_roster' ? 'text-teal-800' : 'text-emerald-800'">
+            <i class="fa fa-check-circle text-base"
+              :class="csvUploadResult.mode === 'employee_roster' ? 'text-teal-600' : 'text-emerald-600'"></i>
+            <span v-if="csvUploadResult.mode === 'employee_roster'">🏷️ Employee Roster Processed!</span>
+            <span v-else>📧 Email Import Completed!</span>
           </div>
           <div class="grid grid-cols-3 gap-2 text-center text-xs">
-            <div class="p-2 bg-white rounded-lg border border-emerald-100">
-              <p class="text-gray-500 text-[10px] uppercase font-semibold">Total Rows</p>
+            <div class="p-2 bg-white rounded-lg border"
+              :class="csvUploadResult.mode === 'employee_roster' ? 'border-teal-100' : 'border-emerald-100'">
+              <p class="text-gray-500 text-[10px] uppercase font-semibold">
+                {{ csvUploadResult.mode === 'employee_roster' ? 'Roster Size' : 'Total Rows' }}
+              </p>
               <p class="text-sm font-bold text-gray-800">{{ (csvUploadResult.total_rows || 0).toLocaleString() }}</p>
             </div>
-            <div class="p-2 bg-white rounded-lg border border-emerald-100">
-              <p class="text-gray-500 text-[10px] uppercase font-semibold">Added New</p>
-              <p class="text-sm font-bold text-emerald-600">+{{ (csvUploadResult.added_count || 0).toLocaleString() }}
+            <div class="p-2 bg-white rounded-lg border"
+              :class="csvUploadResult.mode === 'employee_roster' ? 'border-teal-100' : 'border-emerald-100'">
+              <p class="text-gray-500 text-[10px] uppercase font-semibold">
+                {{ csvUploadResult.mode === 'employee_roster' ? 'Updated' : 'Added New' }}
+              </p>
+              <p class="text-sm font-bold"
+                :class="csvUploadResult.mode === 'employee_roster' ? 'text-teal-600' : 'text-emerald-600'">
+                {{ csvUploadResult.mode === 'employee_roster' ? '' : '+' }}{{ (csvUploadResult.added_count || 0).toLocaleString() }}
               </p>
             </div>
-            <div class="p-2 bg-white rounded-lg border border-emerald-100">
-              <p class="text-gray-500 text-[10px] uppercase font-semibold">Skipped</p>
-              <p class="text-sm font-bold text-amber-600">{{ (csvUploadResult.skipped_count || 0).toLocaleString() }}
-              </p>
+            <div class="p-2 bg-white rounded-lg border"
+              :class="csvUploadResult.mode === 'employee_roster' ? 'border-teal-100' : 'border-emerald-100'">
+              <p class="text-gray-500 text-[10px] uppercase font-semibold">No Match / Skipped</p>
+              <p class="text-sm font-bold text-amber-600">{{ (csvUploadResult.skipped_count || 0).toLocaleString() }}</p>
             </div>
           </div>
-          <p class="text-xs text-emerald-700 pt-1">{{ csvUploadResult.message }}</p>
+          <p class="text-xs pt-1" :class="csvUploadResult.mode === 'employee_roster' ? 'text-teal-700' : 'text-emerald-700'">{{ csvUploadResult.message }}</p>
         </div>
 
         <!-- Actions -->
@@ -2778,6 +3522,235 @@ onMounted(async () => {
             class="px-5 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-xs font-medium rounded shadow transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
             <i v-if="isSaving" class="fa fa-spinner fa-spin"></i>
             <span>{{ isSaving ? "Saving..." : "Save" }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- POWER DETECTION MODAL -->
+    <div v-if="showPowerDetectModal" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      @click.self="!isPowerDetecting && (showPowerDetectModal = false)">
+      <div class="bg-white w-full max-w-2xl p-6 rounded-2xl shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b pb-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-violet-600 to-purple-500 text-white flex items-center justify-center text-lg shadow-md">
+              <i class="fa fa-bolt"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-extrabold text-gray-900">Power Detection</h2>
+              <p class="text-xs text-gray-500">
+                Match records with LSU Employee Roster
+                <span v-if="employeeRoster.length > 0" class="text-violet-700 font-semibold">({{ employeeRoster.length.toLocaleString() }} employees loaded)</span>
+                <span v-else class="text-amber-600 font-semibold">— No roster loaded yet</span>
+              </p>
+            </div>
+          </div>
+          <button @click="showPowerDetectModal = false" :disabled="isPowerDetecting"
+            class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100 transition cursor-pointer disabled:opacity-40">
+            <i class="fa fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Info Card -->
+        <div class="bg-violet-50 border border-violet-200 rounded-xl p-3.5 text-xs text-violet-900 space-y-1.5">
+          <div class="font-bold flex items-center gap-1.5">
+            <i class="fa fa-info-circle text-violet-600"></i> LSU Employee Detection Rules:
+          </div>
+          <ul class="list-disc pl-5 space-y-1">
+            <li><strong>LSU Domain Required:</strong> Only <code>@lsu.edu.ph</code> emails are matched. Non-LSU emails (e.g. <code>@gmail.com</code>) are automatically skipped.</li>
+            <li><strong>Template:</strong> Evaluates <code>firstname.lastname@lsu.edu.ph</code>. Both first name and last name must match the employee roster.</li>
+            <li><strong>Name Consistency:</strong> Records where the existing full name and email do not match are skipped.</li>
+            <li><strong>Auto-Fill:</strong> Valid matches receive their official LSU ID, Full Name, and <span class="bg-teal-100 text-teal-800 px-1 rounded font-semibold">Employee</span> role tag.</li>
+          </ul>
+          <div v-if="employeeRoster.length === 0" class="mt-1.5 flex items-center gap-1.5 text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
+            <i class="fa fa-exclamation-triangle text-amber-600"></i>
+            <span><strong>No roster loaded.</strong> Upload your LSU Employees CSV first using the <strong>CSV Upload</strong> button to enable matching.</span>
+          </div>
+        </div>
+
+        <!-- Stats before scan -->
+        <div v-if="!powerDetectResults && !isPowerDetecting" class="grid grid-cols-3 gap-3 text-center text-xs">
+          <div class="p-3 bg-gray-50 rounded-xl border border-gray-200">
+            <p class="text-gray-500 text-[10px] uppercase font-semibold mb-1">Total Records</p>
+            <p class="text-xl font-extrabold text-gray-800">{{ listItems.length.toLocaleString() }}</p>
+          </div>
+          <div class="p-3 bg-teal-50 rounded-xl border border-teal-200">
+            <p class="text-teal-700 text-[10px] uppercase font-semibold mb-1">Have Employee Role</p>
+            <p class="text-xl font-extrabold text-teal-700">{{ employeeCount.toLocaleString() }}</p>
+          </div>
+          <div class="p-3 bg-violet-50 rounded-xl border border-violet-200">
+            <p class="text-violet-700 text-[10px] uppercase font-semibold mb-1">LSU Roster Loaded</p>
+            <p class="text-xl font-extrabold" :class="employeeRoster.length > 0 ? 'text-violet-700' : 'text-amber-500'">
+              {{ employeeRoster.length > 0 ? employeeRoster.length.toLocaleString() : 'None' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Scanning indicator -->
+        <div v-if="isPowerDetecting" class="py-8 text-center space-y-3">
+          <div class="relative inline-flex items-center justify-center">
+            <div class="absolute w-16 h-16 rounded-full bg-violet-400/20 animate-ping"></div>
+            <div class="relative w-12 h-12 rounded-xl bg-gradient-to-tr from-violet-600 to-purple-500 text-white flex items-center justify-center text-xl shadow-lg">
+              <i class="fa fa-bolt animate-pulse"></i>
+            </div>
+          </div>
+          <p class="text-sm font-bold text-violet-800">Processing Employee Detection...</p>
+          <p class="text-xs text-gray-500">
+            {{ powerDetectProgressText || `Scanning ${listItems.length.toLocaleString()} records against LSU employee roster` }}
+          </p>
+        </div>
+
+        <!-- Results -->
+        <div v-if="powerDetectResults && !isPowerDetecting" class="space-y-4">
+          <!-- Summary cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center text-xs">
+            <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+              <p class="text-emerald-700 text-[10px] uppercase font-semibold mb-1">✅ Valid Matches</p>
+              <p class="text-xl font-extrabold text-emerald-700">{{ powerDetectResults.matched.length.toLocaleString() }}</p>
+              <p class="text-[10px] text-gray-500 mt-0.5">Ready to verify</p>
+            </div>
+            <div class="p-3 bg-blue-50 rounded-xl border border-blue-200">
+              <p class="text-blue-700 text-[10px] uppercase font-semibold mb-1">🔵 Complete</p>
+              <p class="text-xl font-extrabold text-blue-700">{{ powerDetectResults.alreadyHaveId.length.toLocaleString() }}</p>
+              <p class="text-[10px] text-gray-500 mt-0.5">Already verified</p>
+            </div>
+            <div class="p-3 rounded-xl border" :class="powerDetectResults.invalidEmployees?.length > 0 ? 'bg-rose-50 border-rose-200' : 'bg-gray-50 border-gray-200'">
+              <p class="text-[10px] uppercase font-semibold mb-1" :class="powerDetectResults.invalidEmployees?.length > 0 ? 'text-rose-700' : 'text-gray-500'">⚠️ Redundant / False</p>
+              <p class="text-xl font-extrabold" :class="powerDetectResults.invalidEmployees?.length > 0 ? 'text-rose-700' : 'text-gray-700'">
+                {{ (powerDetectResults.invalidEmployees?.length || 0).toLocaleString() }}
+              </p>
+              <p class="text-[10px] text-gray-500 mt-0.5">Redundant IDs & false roles</p>
+            </div>
+            <div v-if="powerDetectResults.duplicateEmailRecords?.length > 0" class="p-3 bg-amber-50 rounded-xl border border-amber-200">
+              <p class="text-amber-700 text-[10px] uppercase font-semibold mb-1">🗑️ Duplicate Emails</p>
+              <p class="text-xl font-extrabold text-amber-700">{{ powerDetectResults.duplicateEmailRecords.length.toLocaleString() }}</p>
+              <p class="text-[10px] text-gray-500 mt-0.5">Emails must be unique</p>
+            </div>
+            <div v-else class="p-3 bg-gray-50 rounded-xl border border-gray-200">
+              <p class="text-gray-600 text-[10px] uppercase font-semibold mb-1">⚪ Unmatched</p>
+              <p class="text-xl font-extrabold text-gray-600">{{ powerDetectResults.unmatched.length.toLocaleString() }}</p>
+              <p class="text-[10px] text-gray-500 mt-0.5">Students / external</p>
+            </div>
+          </div>
+
+          <!-- Duplicate emails warning -->
+          <div v-if="powerDetectResults.duplicateEmailRecords?.length > 0"
+            class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <i class="fa fa-clone text-amber-600 text-sm"></i>
+              <div>
+                <span class="font-bold">{{ powerDetectResults.duplicateEmailRecords.length }} redundant duplicate email(s) detected.</span>
+                <span class="text-amber-700 block text-[11px]">Emails must be unique. Redundant duplicate entries will be removed on cleanup.</span>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-semibold text-[10px] shrink-0">Auto-Removes</span>
+          </div>
+
+          <!-- Matched list preview -->
+          <div v-if="powerDetectResults.matched.length > 0" class="space-y-1.5">
+            <p class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+              <i class="fa fa-check-circle text-emerald-600"></i>
+              Double-Checked Matches (Verified firstname & lastname in email):
+            </p>
+            <div class="max-h-36 overflow-y-auto space-y-1 bg-emerald-50/60 rounded-xl border border-emerald-100 p-2">
+              <div v-for="{ item, emp, missingId, missingName, missingRole } in powerDetectResults.matched.slice(0, 30)" :key="item.id"
+                class="flex items-center justify-between text-[11px] bg-white rounded-lg px-2.5 py-1.5 border border-emerald-100 shadow-2xs">
+                <div class="flex-1 min-w-0">
+                  <span class="font-semibold text-gray-800 truncate block">{{ item.email }}</span>
+                  <span class="text-gray-500">{{ emp.name }}</span>
+                </div>
+                <div class="flex items-center gap-1 shrink-0 ml-2">
+                  <span class="px-1.5 py-0.5 bg-violet-100 text-violet-800 rounded text-[10px] font-mono font-bold">{{ emp.id }}</span>
+                  <span v-if="missingId" class="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">+ID</span>
+                  <span v-if="missingName" class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-medium">+Name</span>
+                  <span v-if="missingRole" class="px-1.5 py-0.5 bg-teal-100 text-teal-700 rounded text-[10px] font-medium">+Employee</span>
+                </div>
+              </div>
+              <div v-if="powerDetectResults.matched.length > 30" class="text-center text-[10px] text-gray-500 py-1">
+                ...and {{ powerDetectResults.matched.length - 30 }} more
+              </div>
+            </div>
+          </div>
+
+          <!-- Redundant & Invalid Records warning & cleanup list -->
+          <div v-if="powerDetectResults.invalidEmployees?.length > 0" class="space-y-1.5 pt-1">
+            <div class="flex items-center justify-between">
+              <p class="text-xs font-bold text-rose-700 flex items-center gap-1.5">
+                <i class="fa fa-exclamation-triangle text-rose-600"></i>
+                Redundant IDs & False Roles to Clean ({{ powerDetectResults.invalidEmployees.length }}):
+              </p>
+              <button type="button" @click="cleanUpInvalidEmployees" :disabled="isPowerDetecting"
+                class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-50">
+                <i v-if="isPowerDetecting" class="fa fa-spinner fa-spin"></i>
+                <i v-else class="fa fa-broom"></i>
+                <span>Clean Redundant IDs & Remove Employee Tag</span>
+              </button>
+            </div>
+            <div class="max-h-40 overflow-y-auto space-y-1 bg-rose-50/60 rounded-xl border border-rose-100 p-2 text-[11px]">
+              <div v-for="{ item, reason, clearId, clearName, stripRole } in powerDetectResults.invalidEmployees.slice(0, 30)" :key="item.id"
+                class="flex items-center justify-between bg-white rounded-lg px-2.5 py-1.5 border border-rose-100 shadow-2xs">
+                <div class="truncate flex-1 min-w-0">
+                  <span class="font-semibold text-gray-800">{{ item.email || '(No email)' }}</span>
+                  <span v-if="item.fullname" class="text-gray-500 ml-1.5">— {{ item.fullname }}</span>
+                  <span v-if="item.lsu_idnumber" class="text-violet-700 font-mono text-[10px] ml-1.5">[{{ item.lsu_idnumber }}]</span>
+                </div>
+                <div class="flex items-center gap-1 shrink-0 ml-2">
+                  <span v-if="clearId" class="px-1 py-0.5 bg-rose-100 text-rose-800 rounded text-[9.5px] font-semibold">Remove ID</span>
+                  <span v-if="clearName" class="px-1 py-0.5 bg-amber-100 text-amber-800 rounded text-[9.5px] font-semibold">Clear Name</span>
+                  <span v-if="stripRole" class="px-1 py-0.5 bg-red-100 text-red-800 rounded text-[9.5px] font-semibold">-Employee</span>
+                </div>
+              </div>
+              <div v-if="powerDetectResults.invalidEmployees.length > 30" class="text-center text-[10px] text-gray-500 py-1">
+                ...and {{ powerDetectResults.invalidEmployees.length - 30 }} more
+              </div>
+            </div>
+          </div>
+
+          <div v-else-if="powerDetectResults.matched.length === 0" class="text-center text-xs text-gray-500 py-3 bg-gray-50 rounded-xl border">
+            <i class="fa fa-search text-gray-400 text-lg mb-1 block"></i>
+            No redundant records found and no new matches. Everything is clean and up to date.
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-2 pt-3 border-t">
+          <button @click="showPowerDetectModal = false" :disabled="isPowerDetecting"
+            class="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition cursor-pointer disabled:opacity-40">
+            Close
+          </button>
+
+          <button v-if="!powerDetectResults" @click="runPowerDetection" :disabled="isPowerDetecting"
+            class="px-5 py-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white text-xs font-bold rounded-lg shadow-md transition flex items-center gap-2 disabled:opacity-50 cursor-pointer">
+            <i v-if="isPowerDetecting" class="fa fa-spinner fa-spin"></i>
+            <i v-else class="fa fa-bolt text-yellow-300"></i>
+            <span>{{ isPowerDetecting ? "Scanning..." : "Run Power Detection" }}</span>
+          </button>
+
+          <!-- 1-Click: Clean Redundant Records & Apply Matches -->
+          <button v-if="powerDetectResults && (powerDetectResults.invalidEmployees?.length > 0 || powerDetectResults.matched?.length > 0)"
+            @click="applyAllAndClean" :disabled="isPowerDetecting"
+            class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs font-bold rounded-lg shadow-md transition flex items-center gap-2 disabled:opacity-50 cursor-pointer">
+            <i v-if="isPowerDetecting" class="fa fa-spinner fa-spin"></i>
+            <i v-else class="fa fa-rocket text-yellow-300"></i>
+            <span>
+              Clean Redundant ({{ powerDetectResults.invalidEmployees?.length || 0 }})
+              & Apply Matches ({{ powerDetectResults.matched?.length || 0 }})
+            </span>
+          </button>
+
+          <button v-if="powerDetectResults && powerDetectResults.invalidEmployees?.length > 0 && powerDetectResults.matched?.length === 0"
+            @click="cleanUpInvalidEmployees" :disabled="isPowerDetecting"
+            class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
+            <i v-if="isPowerDetecting" class="fa fa-spinner fa-spin"></i>
+            <i v-else class="fa fa-broom"></i>
+            <span>Clean Redundant IDs & Remove Employee Tag</span>
+          </button>
+
+          <button v-if="powerDetectResults" @click="powerDetectResults = null"
+            class="px-4 py-2 text-xs font-medium text-violet-700 hover:bg-violet-50 border border-violet-200 rounded-lg transition cursor-pointer">
+            <i class="fa fa-redo text-xs mr-1"></i> Re-scan
           </button>
         </div>
       </div>

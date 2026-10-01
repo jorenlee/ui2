@@ -1821,7 +1821,7 @@ const submitRegistration = async () => {
             </div>
 
             <!-- SECTION 2: PERSONAL INFORMATION -->
-            <section v-if="currentParticipant.run_category">
+            <section v-if="currentParticipant.run_category" class="w-full lg:w-6/12 mx-auto">
               <div class="mb-4">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                   <span
@@ -1921,7 +1921,7 @@ const submitRegistration = async () => {
             </section>
 
             <!-- SECTION 3: CONTACT DETAILS -->
-            <section v-if="currentParticipant.run_category">
+            <section v-if="currentParticipant.run_category" class="w-full lg:w-6/12 mx-auto">
               <div class="mb-4">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                   <span
@@ -1993,7 +1993,7 @@ const submitRegistration = async () => {
             </section>
 
             <!-- SECTION 4: SHIRT TYPE & SIZE -->
-            <section v-if="currentParticipant.run_category" class="space-y-3">
+            <section v-if="currentParticipant.run_category" class="w-full lg:w-6/12 mx-auto">
               <div class="mb-4">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                   <h3 class="text-lg font-bold flex items-center gap-2">
@@ -2120,7 +2120,7 @@ const submitRegistration = async () => {
             </section>
 
             <!-- SECTION 5: CLASSIFICATION & PAYMENT OPTION (COMBINED & MINIMAL) -->
-            <section v-if="currentParticipant.run_category" class="space-y-4">
+            <section v-if="currentParticipant.run_category" class="w-full lg:w-6/12 mx-auto">
               <!-- Section Header -->
               <div class="mb-2">
                 <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -2490,7 +2490,7 @@ const submitRegistration = async () => {
                       <div class="flex items-center justify-between gap-1.5 mb-1.5">
                         <label class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                           <i class="fas fa-id-card text-emerald-600"></i>
-                          <span>Alumni ID — Front <span class="text-rose-500">*</span></span>
+                          <span>Upload ID <span class="text-rose-500">*</span></span>
                         </label>
                         <span class="text-[10px] text-gray-500 dark:text-gray-400">Within 1 year of issue or fresh grad
                           • Max 5
@@ -2500,7 +2500,7 @@ const submitRegistration = async () => {
                       <div class="max-w-md">
                         <p
                           class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
-                          <span><i class="fas fa-id-badge text-[10px] text-emerald-600 mr-0.5"></i> Front Side</span>
+                          <!-- <span><i class="fas fa-id-badge text-[10px] text-emerald-600 mr-0.5"></i> Front Side</span> -->
                           <span v-if="currentParticipant.alumni_id_front_preview"
                             class="text-emerald-600 dark:text-emerald-400 font-semibold">
                             <i class="fas fa-check-circle text-[9px]"></i> Uploaded
