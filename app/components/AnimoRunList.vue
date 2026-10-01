@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 
 const props = defineProps({
   darkMode: {
@@ -12,6 +12,10 @@ const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
 
 const isFetching = ref(false);
+const isAutoRefreshing = ref(false);
+const lastUpdated = ref(null);
+let pollingInterval = null;
+const POLL_INTERVAL_MS = 15000; // 15 seconds
 const isConfirming = ref(false);
 const isBulkDeleting = ref(false);
 
@@ -189,22 +193,51 @@ const runCategories = [
 
 const registrations = ref([]);
 
-const fetchRegistrations = async () => {
-  isFetching.value = true;
+const fetchRegistrations = async (silent = false) => {
+  if (silent) {
+    isAutoRefreshing.value = true;
+  } else {
+    isFetching.value = true;
+  }
   try {
     const res = await $fetch(`${endpoint.value}/api/animorun/list/`);
     if (Array.isArray(res)) {
       registrations.value = res;
+      lastUpdated.value = new Date();
     }
   } catch (err) {
     console.error("Error fetching Animo Run registrations:", err);
   } finally {
     isFetching.value = false;
+    isAutoRefreshing.value = false;
   }
 };
 
+const startPolling = () => {
+  pollingInterval = setInterval(() => {
+    fetchRegistrations(true);
+  }, POLL_INTERVAL_MS);
+};
+
+const stopPolling = () => {
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+};
+
+const formatLastUpdated = computed(() => {
+  if (!lastUpdated.value) return null;
+  return lastUpdated.value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+});
+
 onMounted(() => {
   fetchRegistrations();
+  startPolling();
+});
+
+onUnmounted(() => {
+  stopPolling();
 });
 
 const getImageUrl = (val) => {
@@ -1106,12 +1139,14 @@ onMounted(() => {
               </span>
             </button>
 
-            <!-- Refresh button -->
-            <!-- <button type="button" @click="() => { fetchRegistrations(); fetchBatches(); }" :disabled="isFetching"
-              class="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
-              <i :class="['fas fa-sync-alt', isFetching ? 'fa-spin' : '']"></i>
-              {{ isFetching ? 'Refreshing...' : 'Refresh' }}
-            </button> -->
+            <!-- Live indicator -->
+            <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur border border-white/20 text-white text-[10px] font-medium">
+              <span :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', isAutoRefreshing ? 'bg-amber-300 animate-ping' : 'bg-emerald-400 animate-pulse']"></span>
+              <span v-if="isAutoRefreshing" class="text-amber-200">Syncing…</span>
+              <span v-else-if="formatLastUpdated" class="text-emerald-200">Live · {{ formatLastUpdated }}</span>
+              <span v-else class="text-white/60">Live</span>
+            </div>
+
           </div>
         </div>
       </div>

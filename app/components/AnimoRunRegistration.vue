@@ -325,7 +325,7 @@ const OFFICIAL_SHIRT_CONFIGS = [
     icon: "fa-shirt",
     sizesGroupLabel: "ADULTS - SHIRT",
     defaultSize: "M",
-    sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+    sizes: ["2XS","XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
   },
   {
     id: "event_shirt_crop",
@@ -362,7 +362,7 @@ const FINISHER_SHIRT_CONFIG = {
   label: "Finisher Shirt",
   sizesGroupLabel: "ADULTS - SHIRT",
   defaultSize: "M",
-  sizes: ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
+  sizes: ["2XS","XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
 };
 
 const getShirtConfig = (shirtTypeId) => {
@@ -1735,7 +1735,7 @@ const submitRegistration = async () => {
 
               <!-- INTEGRATED PET COMPANION DETAILS (ACTIVATED AUTOMATICALLY WHEN 1K PET RUN IS SELECTED) -->
               <div v-if="isPetCategory(currentParticipant.run_category)"
-                class="mt-6 rounded-3xl p-5 sm:p-6 border-2 transition-all duration-300 relative overflow-hidden"
+                class="mt-6 rounded-3xl p-5 sm:p-6 border-2 transition-all duration-300 relative overflow-hidden lg:w-6/12 mx-auto"
                 :style="props.darkMode
                   ? { background: 'rgba(3,87,81,0.15)', borderColor: '#035751', boxShadow: '0 4px 20px rgba(3,87,81,0.2)' }
                   : { background: 'linear-gradient(135deg, #f0fbfa 0%, #ffffff 60%, #f0faf9 100%)', borderColor: '#2D9F98', boxShadow: '0 4px 16px rgba(45,159,152,0.12)' }">
@@ -1818,7 +1818,7 @@ const submitRegistration = async () => {
                 </div>
 
                 <!-- Pet Document Uploads: Vaccine Record + Consent Documents -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t"
+                <div class="pt-4 border-t"
                   style="border-color: rgba(147,202,197,0.4)">
 
                   <!-- 1. Vaccine Record Upload -->
@@ -1869,7 +1869,7 @@ const submitRegistration = async () => {
                   </div>
 
                   <!-- 2. Non-Liability Clause & Consent Multi-Document Upload -->
-                  <div class="space-y-2">
+                  <!-- <div class="space-y-2">
                     <div class="flex items-center justify-between">
                       <label class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
                         <i class="fas fa-file-signature text-emerald-600"></i>
@@ -1897,7 +1897,7 @@ const submitRegistration = async () => {
                       <span class="text-[10px] text-gray-400">Select multiple JPG, PNG, or PDF files</span>
                     </label>
 
-                    <!-- Uploaded Files List -->
+                
                     <div v-if="currentParticipant.pet_consent_files && currentParticipant.pet_consent_files.length"
                       class="space-y-1.5 max-h-28 overflow-y-auto">
                       <div v-for="(doc, dIdx) in currentParticipant.pet_consent_files" :key="'consent-doc-' + dIdx"
@@ -1917,7 +1917,7 @@ const submitRegistration = async () => {
                         </button>
                       </div>
                     </div>
-                  </div>
+                  </div> -->
 
                 </div>
 
@@ -2738,9 +2738,6 @@ const submitRegistration = async () => {
                           <i class="fas fa-id-card text-emerald-600"></i>
                           <span>Upload ID <span class="text-rose-500">*</span></span>
                         </label>
-                        <span class="text-[10px] text-gray-500 dark:text-gray-400">Within 1 year of issue or fresh grad
-                          • Max 5
-                          MB</span>
                       </div>
 
                       <div class="w-full">
@@ -2888,7 +2885,7 @@ const submitRegistration = async () => {
                         <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
                         <div>
                           <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth</div>
-                          <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 to 9:00 PM)</div>
+                          <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 PM to 8:00 PM)</div>
                         </div>
                       </div>
 
@@ -3087,7 +3084,7 @@ const submitRegistration = async () => {
                         <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
                         <div>
                           <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth</div>
-                            <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 PM to 9:00 PM)</div>
+                            <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 PM to 8:00 PM)</div>
                         </div>
                       </div>
                     </div>
