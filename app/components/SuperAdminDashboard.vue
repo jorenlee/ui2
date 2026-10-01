@@ -48,12 +48,28 @@ const lsuOnlyMenuGroups = new Set([
 ]);
 
 // ---------------- API ----------------
-const api = (url) => $fetch(`${endpoint}${url}`);
+const api = (url, opts) => $fetch(`${endpoint}${url}`, opts);
 
 // ---------------- FETCH ROLE PERMISSIONS ----------------
+const ROLE_CACHE_KEY = "sa_role_permissions";
+
 const fetchRolePermissions = async () => {
+  // Serve from sessionStorage on repeat visits within the same tab.
+  if (process.client) {
+    const cached = sessionStorage.getItem(ROLE_CACHE_KEY);
+    if (cached) {
+      try {
+        rolePermissions.value = JSON.parse(cached);
+        return;
+      } catch { /* ignore corrupt cache */ }
+    }
+  }
   try {
-    rolePermissions.value = await api("/api/cits/role-permissions/list/");
+    const data = await api("/api/cits/role-permissions/list/");
+    rolePermissions.value = data;
+    if (process.client) {
+      sessionStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(data));
+    }
   } catch (err) {
     console.error("Role permission error:", err);
   }
@@ -88,8 +104,8 @@ const toggleDarkMode = () => {
 
 // ---------------- MOUNT ----------------
 onMounted(async () => {
-  // Start auth init — must complete before we can check isLoggedIn
-  await init();
+  // init() reads localStorage synchronously — no network cost.
+  init();
 
   const token = route.query.token;
   if (token) {
@@ -99,25 +115,36 @@ onMounted(async () => {
 
   if (!isLoggedIn.value) {
     router.replace("/login");
-    return; // No need to fetch role permissions if not logged in
+    return;
   }
 
-  // Read dark mode preference synchronously (no await needed) while
-  // role permissions fetch runs in the background.
+  // Read dark mode preference (sync, no await).
   if (process.client) {
     const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     darkMode.value = stored === "dark" || (!stored && prefersDark);
   }
 
-  // Fetch role permissions — runs after the UI has already painted the
-  // menu skeleton, so the user sees content immediately.
-  await fetchRolePermissions();
+  // If we already have cached permissions, show the menu NOW (zero delay)
+  // and let the background refresh update it silently.
+  if (process.client && sessionStorage.getItem(ROLE_CACHE_KEY)) {
+    try {
+      rolePermissions.value = JSON.parse(sessionStorage.getItem(ROLE_CACHE_KEY));
+    } catch { /* ignore corrupt cache */ }
+    initialLoading.value = false; // reveal menu immediately
+    // Refresh permissions + ticket count silently in the background.
+    fetchRolePermissions();
+    checkForUnratedTickets();
+    return;
+  }
 
+  // First visit: only the permissions fetch gates the menu —
+  // the ticket count is a nice-to-have and must never slow down the menu.
+  await fetchRolePermissions();
   initialLoading.value = false;
+
+  // Fire ticket check as a true background task — no await.
+  checkForUnratedTickets();
 });
 
 // ---------------- MENU FILTER ----------------
@@ -162,54 +189,44 @@ if (menu.group === "IT Services Feedback") {
 const unratedTicketsCount = ref(0);
 
 const checkForUnratedTickets = async () => {
+  const email = user.value?.email;
+  if (!email) {
+    unratedTicketsCount.value = 0;
+    return;
+  }
+
+  // Abort if the request takes longer than 5 s — don't let a slow
+  // ticket API block the rest of the dashboard.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+
   try {
-    const email = user.value?.email;
-
-    if (!email) {
-      unratedTicketsCount.value = 0;
-      return;
-    }
-
-const res = await $fetch(
-  `${endpoint}/api/cits/request-ticket/list/`
-);
+    const res = await $fetch(`${endpoint}/api/cits/request-ticket/list/`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
 
     if (!Array.isArray(res)) {
       unratedTicketsCount.value = 0;
       return;
     }
 
-    const userTickets = res.filter(
-      (ticket) => ticket.requestor_lsu_email === email,
+    const unratedTickets = res.filter(
+      (ticket) =>
+        ticket.requestor_lsu_email === email &&
+        (!ticket.evaluation_feedback_client_star_rating ||
+          !ticket.evaluation_feedback_client_comment),
     );
 
-const unratedTickets = userTickets.filter((ticket) => {
-  const hasNoRating =
-    !ticket.evaluation_feedback_client_star_rating;
-
-  const hasNoFeedback =
-    !ticket.evaluation_feedback_client_comment;
-
-  return hasNoRating || hasNoFeedback;
-});
-
-unratedTicketsCount.value = unratedTickets.length;
-
+    unratedTicketsCount.value = unratedTickets.length;
   } catch (error) {
-    console.error("Error checking unrated tickets:", error);
+    clearTimeout(timer);
+    if (error?.name !== "AbortError") {
+      console.error("Error checking unrated tickets:", error);
+    }
     unratedTicketsCount.value = 0;
   }
 };
-
-watch(
-  () => user.value?.email,
-  (email) => {
-    if (email) {
-      checkForUnratedTickets();
-    }
-  },
-  { immediate: true },
-);
 
 // ---------------- MENU ----------------
 const subMenuList = [
