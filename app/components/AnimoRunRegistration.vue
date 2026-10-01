@@ -2736,7 +2736,7 @@ const submitRegistration = async () => {
                       <div class="flex items-center justify-between gap-1.5 mb-1.5">
                         <label class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
                           <i class="fas fa-id-card text-emerald-600"></i>
-                          <span>Upload ID <span class="text-rose-500">*</span></span>
+                          <span>Upload Alumni ID, ICC/ICC-LSU/LSU ID<span class="text-rose-500">*</span></span>
                         </label>
                       </div>
 
@@ -2759,7 +2759,7 @@ const submitRegistration = async () => {
                           <template v-if="currentParticipant.alumni_id_front_preview">
                             <img :src="currentParticipant.alumni_id_front_preview"
                               class="absolute inset-0 w-full h-full object-cover rounded-xl opacity-80 group-hover:opacity-60 transition"
-                              alt="Alumni ID Front" />
+                              alt="Image" />
                             <div
                               class="absolute inset-0 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-black/50 to-transparent">
                               <button type="button" @click.prevent="removeAlumniId(currentParticipant, 'front')"
@@ -2772,7 +2772,6 @@ const submitRegistration = async () => {
                             <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
                               <i
                                 class="fas fa-cloud-upload-alt text-lg text-gray-400 group-hover:text-emerald-500 transition"></i>
-                              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Upload ID</span>
                               <span class="text-[10px] text-gray-400">JPG, PNG, PDF up to 5MB</span>
                             </div>
                           </template>
