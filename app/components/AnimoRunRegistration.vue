@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { useAuth } from "~/composables/useAuth";
+import animoRunData from "~/animorun.json";
 
 const props = defineProps({
   darkMode: {
@@ -185,185 +186,16 @@ const onCardsDragEnd = () => {
   }
 };
 
-const runCategories = [
-  {
-    id: "1KM",
-    categoryType: "pet",
-    categoryTypeLabel: "Pet & Runner Duo",
-    name: "1 KM",
-    tagline: "Run together with your best furry friend.",
-    fee: 1000,
-    time: "5:00 AM",
-    description: "Special 1KM Pet & Runner Duo race route for dogs, cats & friendly pets.",
-    badge: "Pet Run (1K)",
-    icon: "fa-paw",
-    colors: {
-      primary: "#02857D",
-      secondary: "#035751",
-      accent: "#2D9F98",
-      highlight: "#93CAC5",
-      dark: "#0B0A09",
-      text: "#FFFFFF",
-      cardBg: "#f0fbfa",
-      cardBorder: "#93CAC5",
-      ringColor: "rgba(45,159,152,0.35)",
-    },
-    inclusions: [
-      "Pet Owner's Event Shirt",
-      "Pet Bandana",
-      "Race Bib",
-      "Post-Meal",
-      "Pet Treat",
-      "Acrylic Finisher Medal",
-    ],
-  },
-  {
-    id: "3KM",
-    categoryType: "human",
-    categoryTypeLabel: "",
-    name: "3 KM",
-    tagline: "Start your journey.",
-    fee: 1000,
-    time: "4:55 AM",
-    description: "Perfect for beginners, families, and casual runners.",
-    badge: "3KM",
-    icon: "fa-running",
-    colors: {
-      primary: "#C62216",
-      secondary: "#8E100B",
-      accent: "#D93625",
-      dark: "#160B0A",
-      light: "#F4F4F2",
-      neutral: "#A3A3A3",
-      cardBg: "#fff5f5",
-      cardBorder: "#C62216",
-      ringColor: "rgba(198,34,22,0.25)",
-    },
-    inclusions: [
-      "Event Shirt or Singlet",
-      "Post-Meal",
-      "Race Bib",
-      "Metal Finisher Medal",
-    ],
-  },
-  {
-    id: "10KM",
-    categoryType: "human",
-    categoryTypeLabel: "",
-    name: "10 KM",
-    tagline: "Go farther. Go stronger.",
-    fee: 1400,
-    time: "4:40 AM",
-    description: "For intermediate runners pushing their endurance limits.",
-    badge: "10KM",
-    icon: "fa-running",
-    colors: {
-      primary: "#C45A19",
-      secondary: "#9E3D12",
-      accent: "#D87828",
-      dark: "#35120A",
-      highlight: "#E9C98E",
-      text: "#F3F1E9",
-      cardBg: "#fff8f0",
-      cardBorder: "#C45A19",
-      ringColor: "rgba(196,90,25,0.25)",
-    },
-    inclusions: [
-      "Event Shirt or Singlet",
-      "Post-Meal",
-      "Race Bib",
-      "Metal Finisher Medal",
-    ],
-  },
-  {
-    id: "20KM",
-    categoryType: "human",
-    categoryTypeLabel: "",
-    name: "20 KM",
-    tagline: "Conquer the ultimate challenge.",
-    fee: 1800,
-    time: "4:00 AM",
-    description: "The premier distance for competitive runners and veterans.",
-    badge: "20KM",
-    icon: "fa-running",
-    colors: {
-      primary: "#075F86",
-      secondary: "#0B1C2E",
-      accent: "#0788B5",
-      dark: "#080D15",
-      highlight: "#10AFC5",
-      lighthl: "#B9E5E8",
-      text: "#F1F3F2",
-      cardBg: "#f0f8ff",
-      cardBorder: "#075F86",
-      ringColor: "rgba(7,95,134,0.25)",
-    },
-    inclusions: [
-      "Event Shirt or Singlet",
-      "Finisher Shirt",
-      "Post-Meal",
-      "Race Bib",
-      "Metal Finisher Medal",
-    ],
-  },
-];
-
-const OFFICIAL_SHIRT_CONFIGS = [
-  {
-    id: "singlet",
-    label: "Singlet",
-    shortLabel: "Singlet",
-    icon: "fa-tshirt",
-    sizesGroupLabel: "ADULTS - SINGLET",
-    defaultSize: "M",
-    sizes: ["XS", "S", "M", "L"],
-  },
-  {
-    id: "event_shirt",
-    label: "Event Shirt",
-    shortLabel: "Event Shirt",
-    icon: "fa-shirt",
-    sizesGroupLabel: "ADULTS - SHIRT",
-    defaultSize: "M",
-    sizes: ["2XS","XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
-  },
-  {
-    id: "event_shirt_crop",
-    label: "Event Shirt - Crop Top",
-    shortLabel: "Crop Top",
-    icon: "fa-shirt",
-    sizesGroupLabel: "ADULTS - CROP TOP",
-    defaultSize: "M",
-    sizes: ["XS", "S", "M", "L"],
-  },
-  {
-    id: "event_shirt_semi_crop",
-    label: "Event Shirt - Semi Crop Top",
-    shortLabel: "Semi-Crop Top",
-    icon: "fa-shirt",
-    sizesGroupLabel: "ADULTS - SEMI-CROP TOP",
-    defaultSize: "M",
-    sizes: ["XS", "S", "M", "L"],
-  },
-  {
-    id: "kids_shirt",
-    label: "Kids Shirt",
-    shortLabel: "Kids Shirt",
-    icon: "fa-child",
-    sizesGroupLabel: "KIDS - SHIRT",
-    defaultSize: "7-8",
-    sizes: ["1-2", "3-4", "5-6", "7-8", "9-11"],
-    isKidsStyle: true,
-  },
-];
-
-const FINISHER_SHIRT_CONFIG = {
-  id: "finisher_shirt",
-  label: "Finisher Shirt",
-  sizesGroupLabel: "ADULTS - SHIRT",
-  defaultSize: "M",
-  sizes: ["2XS","XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"],
-};
+const {
+  runCategories,
+  OFFICIAL_SHIRT_CONFIGS,
+  FINISHER_SHIRT_CONFIG,
+  PET_TYPE_OPTIONS,
+  SUFFIX_OPTIONS,
+  COLLEGE_COURSE_OPTIONS,
+  COLLEGE_YEAR_OPTIONS,
+  PARTNER_OFFICE_OPTIONS,
+} = animoRunData;
 
 const getShirtConfig = (shirtTypeId) => {
   return OFFICIAL_SHIRT_CONFIGS.find((c) => c.id === shirtTypeId) || OFFICIAL_SHIRT_CONFIGS[1];
@@ -1799,9 +1631,9 @@ const submitRegistration = async () => {
                       'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:outline-none',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
                     ]">
-                      <option value="Dog">Dog</option>
-                      <option value="Cat">Cat</option>
-                      <option value="Other">Other Pet Companion (Specify)</option>
+                      <option v-for="pet in PET_TYPE_OPTIONS" :key="pet.value" :value="pet.value">
+                        {{ pet.label }}
+                      </option>
                     </select>
                   </div>
 
@@ -2023,12 +1855,9 @@ const submitRegistration = async () => {
                       'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                     ]">
-                      <option value="">None</option>
-                      <option value="Jr.">Jr.</option>
-                      <option value="Sr.">Sr.</option>
-                      <option value="II">II</option>
-                      <option value="III">III</option>
-                      <option value="IV">IV</option>
+                      <option v-for="suf in SUFFIX_OPTIONS" :key="suf.value || 'none'" :value="suf.value">
+                        {{ suf.label }}
+                      </option>
                     </select>
                   </div>
 
@@ -2550,19 +2379,9 @@ const submitRegistration = async () => {
                           'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                         ]">
-                          <option value="">Select Course / Level</option>
-                          <option value="BSIT">BS Information Technology (BSIT)</option>
-                          <option value="BSCS">BS Computer Science (BSCS)</option>
-                          <option value="BSEd">BS Secondary Education (BSEd)</option>
-                          <option value="BSN">BS Nursing (BSN)</option>
-                          <option value="BSBA">BS Business Administration (BSBA)</option>
-                          <option value="BSA">BS Accountancy (BSA)</option>
-                          <option value="BSCrim">BS Criminology (BSCrim)</option>
-                          <option value="BSTM">BS Tourism Management (BSTM)</option>
-                          <option value="BSHM">BS Hospitality Management (BSHM)</option>
-                          <option value="Grade School">Grade School</option>
-                          <option value="JHS">Junior High School (JHS)</option>
-                          <option value="SHS">Senior High School (SHS)</option>
+                          <option v-for="course in COLLEGE_COURSE_OPTIONS" :key="course.value || 'default'" :value="course.value">
+                            {{ course.label }}
+                          </option>
                         </select>
                       </div>
 
@@ -2574,24 +2393,9 @@ const submitRegistration = async () => {
                           'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                         ]">
-                          <option value="">Select Level</option>
-                          <option value="1st Year">1st Year</option>
-                          <option value="2nd Year">2nd Year</option>
-                          <option value="3rd Year">3rd Year</option>
-                          <option value="4th Year">4th Year</option>
-                          <option value="5th Year">5th Year</option>
-                          <option value="Grade 1">Grade 1</option>
-                          <option value="Grade 2">Grade 2</option>
-                          <option value="Grade 3">Grade 3</option>
-                          <option value="Grade 4">Grade 4</option>
-                          <option value="Grade 5">Grade 5</option>
-                          <option value="Grade 6">Grade 6</option>
-                          <option value="Grade 7">Grade 7</option>
-                          <option value="Grade 8">Grade 8</option>
-                          <option value="Grade 9">Grade 9</option>
-                          <option value="Grade 10">Grade 10</option>
-                          <option value="Grade 11">Grade 11</option>
-                          <option value="Grade 12">Grade 12</option>
+                          <option v-for="year in COLLEGE_YEAR_OPTIONS" :key="year.value || 'default'" :value="year.value">
+                            {{ year.label }}
+                          </option>
                         </select>
                       </div>
 
@@ -2648,19 +2452,9 @@ const submitRegistration = async () => {
                           'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                         ]">
-                          <option value="">Select Office / Department</option>
-                          <option value="Office of the Chancellor">Office of the Chancellor</option>
-                          <option value="College of Computer Studies">College of Computer Studies</option>
-                          <option value="College of Arts and Sciences">College of Arts and Sciences</option>
-                          <option value="College of Business and Accountancy">College of Business and Accountancy
+                          <option v-for="office in PARTNER_OFFICE_OPTIONS" :key="office.value || 'default'" :value="office.value">
+                            {{ office.label }}
                           </option>
-                          <option value="College of Education">College of Education</option>
-                          <option value="College of Nursing">College of Nursing</option>
-                          <option value="College of Law">College of Law</option>
-                          <option value="General Services Office">General Services Office</option>
-                          <option value="University Registrar">University Registrar</option>
-                          <option value="Human Resource Center">Human Resource Center</option>
-                          <option value="Accounting Office">Accounting Office</option>
                         </select>
                       </div>
 

@@ -1,0 +1,748 @@
+{
+  "runCategories": [
+    {
+      "id": "1KM",
+      "categoryType": "pet",
+      "categoryTypeLabel": "Pet & Runner Duo",
+      "name": "1 KM",
+      "tagline": "Run together with your best furry friend.",
+      "fee": 1000,
+      "time": "5:00 AM",
+      "description": "Special 1KM Pet & Runner Duo race route for dogs, cats & friendly pets.",
+      "badge": "Pet Run (1K)",
+      "icon": "fa-paw",
+      "colors": {
+        "primary": "#02857D",
+        "secondary": "#035751",
+        "accent": "#2D9F98",
+        "highlight": "#93CAC5",
+        "dark": "#0B0A09",
+        "text": "#FFFFFF",
+        "cardBg": "#f0fbfa",
+        "cardBorder": "#93CAC5",
+        "ringColor": "rgba(45,159,152,0.35)"
+      },
+      "inclusions": [
+        "Pet Owner's Event Shirt",
+        "Pet Bandana",
+        "Race Bib",
+        "Post-Meal",
+        "Pet Treat",
+        "Acrylic Finisher Medal"
+      ]
+    },
+    {
+      "id": "3KM",
+      "categoryType": "human",
+      "categoryTypeLabel": "",
+      "name": "3 KM",
+      "tagline": "Start your journey.",
+      "fee": 1000,
+      "time": "4:55 AM",
+      "description": "Perfect for beginners, families, and casual runners.",
+      "badge": "3KM",
+      "icon": "fa-running",
+      "colors": {
+        "primary": "#C62216",
+        "secondary": "#8E100B",
+        "accent": "#D93625",
+        "dark": "#160B0A",
+        "light": "#F4F4F2",
+        "neutral": "#A3A3A3",
+        "cardBg": "#fff5f5",
+        "cardBorder": "#C62216",
+        "ringColor": "rgba(198,34,22,0.25)"
+      },
+      "inclusions": [
+        "Event Shirt or Singlet",
+        "Post-Meal",
+        "Race Bib",
+        "Metal Finisher Medal"
+      ]
+    },
+    {
+      "id": "10KM",
+      "categoryType": "human",
+      "categoryTypeLabel": "",
+      "name": "10 KM",
+      "tagline": "Go farther. Go stronger.",
+      "fee": 1400,
+      "time": "4:40 AM",
+      "description": "For intermediate runners pushing their endurance limits.",
+      "badge": "10KM",
+      "icon": "fa-running",
+      "colors": {
+        "primary": "#C45A19",
+        "secondary": "#9E3D12",
+        "accent": "#D87828",
+        "dark": "#35120A",
+        "highlight": "#E9C98E",
+        "text": "#F3F1E9",
+        "cardBg": "#fff8f0",
+        "cardBorder": "#C45A19",
+        "ringColor": "rgba(196,90,25,0.25)"
+      },
+      "inclusions": [
+        "Event Shirt or Singlet",
+        "Post-Meal",
+        "Race Bib",
+        "Metal Finisher Medal"
+      ]
+    },
+    {
+      "id": "20KM",
+      "categoryType": "human",
+      "categoryTypeLabel": "",
+      "name": "20 KM",
+      "tagline": "Conquer the ultimate challenge.",
+      "fee": 1800,
+      "time": "4:00 AM",
+      "description": "The premier distance for competitive runners and veterans.",
+      "badge": "20KM",
+      "icon": "fa-running",
+      "colors": {
+        "primary": "#075F86",
+        "secondary": "#0B1C2E",
+        "accent": "#0788B5",
+        "dark": "#080D15",
+        "highlight": "#10AFC5",
+        "lighthl": "#B9E5E8",
+        "text": "#F1F3F2",
+        "cardBg": "#f0f8ff",
+        "cardBorder": "#075F86",
+        "ringColor": "rgba(7,95,134,0.25)"
+      },
+      "inclusions": [
+        "Event Shirt or Singlet",
+        "Finisher Shirt",
+        "Post-Meal",
+        "Race Bib",
+        "Metal Finisher Medal"
+      ]
+    }
+  ],
+  "OFFICIAL_SHIRT_CONFIGS": [
+    {
+      "id": "singlet",
+      "label": "Singlet",
+      "shortLabel": "Singlet",
+      "icon": "fa-tshirt",
+      "sizesGroupLabel": "ADULTS - SINGLET",
+      "defaultSize": "M",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    {
+      "id": "event_shirt",
+      "label": "Event Shirt",
+      "shortLabel": "Event Shirt",
+      "icon": "fa-shirt",
+      "sizesGroupLabel": "ADULTS - SHIRT",
+      "defaultSize": "M",
+      "sizes": [
+        "2XS",
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "2XL",
+        "3XL",
+        "4XL",
+        "5XL"
+      ]
+    },
+    {
+      "id": "event_shirt_crop",
+      "label": "Event Shirt - Crop Top",
+      "shortLabel": "Crop Top",
+      "icon": "fa-shirt",
+      "sizesGroupLabel": "ADULTS - CROP TOP",
+      "defaultSize": "M",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    {
+      "id": "event_shirt_semi_crop",
+      "label": "Event Shirt - Semi Crop Top",
+      "shortLabel": "Semi-Crop Top",
+      "icon": "fa-shirt",
+      "sizesGroupLabel": "ADULTS - SEMI-CROP TOP",
+      "defaultSize": "M",
+      "sizes": [
+        "XS",
+        "S",
+        "M",
+        "L"
+      ]
+    },
+    {
+      "id": "kids_shirt",
+      "label": "Kids Shirt",
+      "shortLabel": "Kids Shirt",
+      "icon": "fa-child",
+      "sizesGroupLabel": "KIDS - SHIRT",
+      "defaultSize": "7-8",
+      "sizes": [
+        "1-2",
+        "3-4",
+        "5-6",
+        "7-8",
+        "9-11"
+      ],
+      "isKidsStyle": true
+    }
+  ],
+  "FINISHER_SHIRT_CONFIG": {
+    "id": "finisher_shirt",
+    "label": "Finisher Shirt",
+    "sizesGroupLabel": "ADULTS - SHIRT",
+    "defaultSize": "M",
+    "sizes": [
+      "2XS",
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "2XL",
+      "3XL",
+      "4XL",
+      "5XL"
+    ]
+  },
+  "PET_TYPE_OPTIONS": [
+    {
+      "value": "Dog",
+      "label": "Dog"
+    },
+    {
+      "value": "Cat",
+      "label": "Cat"
+    },
+    {
+      "value": "Other",
+      "label": "Other Pet Companion (Specify)"
+    }
+  ],
+  "SUFFIX_OPTIONS": [
+    {
+      "value": "",
+      "label": "None"
+    },
+    {
+      "value": "Jr.",
+      "label": "Jr."
+    },
+    {
+      "value": "Sr.",
+      "label": "Sr."
+    },
+    {
+      "value": "II",
+      "label": "II"
+    },
+    {
+      "value": "III",
+      "label": "III"
+    },
+    {
+      "value": "IV",
+      "label": "IV"
+    }
+  ],
+  "COLLEGE_COURSE_OPTIONS": [
+    {
+      "value": "",
+      "label": "Select Course / Level"
+    },
+    {
+      "value": "BSW",
+      "label": "Bachelor of Science in Social Work (BSW)"
+    },
+    {
+      "value": "BSPsych",
+      "label": "Bachelor of Science in Psychology (BSPsych)"
+    },
+    {
+      "value": "ABPolSci",
+      "label": "Bachelor of Arts in Political Science (AB PolSci)"
+    },
+    {
+      "value": "BSBA-Marketing",
+      "label": "Bachelor of Science in Business Administration Major in Marketing Management"
+    },
+    {
+      "value": "BSBA-Financial",
+      "label": "Bachelor of Science in Business Administration Major in Financial Management"
+    },
+    {
+      "value": "BSA",
+      "label": "Bachelor of Science in Accountancy (BSA)"
+    },
+    {
+      "value": "BSAIS",
+      "label": "Bachelor of Science in Accounting Information System (BSAIS)"
+    },
+    {
+      "value": "BSCrim",
+      "label": "Bachelor of Science in Criminology (BSCrim)"
+    },
+    {
+      "value": "BSCE-Computer",
+      "label": "Bachelor of Science in Computer Engineering (BSCE)"
+    },
+    {
+      "value": "BSCE-Civil",
+      "label": "Bachelor of Science in Civil Engineering (BSCE)"
+    },
+    {
+      "value": "BLIS",
+      "label": "Bachelor of Library and Information Science (BLIS)"
+    },
+    {
+      "value": "BSIT",
+      "label": "Bachelor of Science in Information Technology (BSIT)"
+    },
+    {
+      "value": "BSCS",
+      "label": "Bachelor of Science in Computer Science (BSCS)"
+    },
+    {
+      "value": "BSArch",
+      "label": "Bachelor of Science in Architecture (BSArch)"
+    },
+    {
+      "value": "BSECE",
+      "label": "Bachelor of Science in Electronics Engineering (BSECE)"
+    },
+    {
+      "value": "BSN",
+      "label": "Bachelor of Science in Nursing (BSN)"
+    },
+    {
+      "value": "BSNEd",
+      "label": "Bachelor of Special Needs Education (BSNEd)"
+    },
+    {
+      "value": "BPEd",
+      "label": "Bachelor of Physical Education (BPEd)"
+    },
+    {
+      "value": "BSEd-Values",
+      "label": "Bachelor of Secondary Education Major in Values Education"
+    },
+    {
+      "value": "BSEd-SocialStudies",
+      "label": "Bachelor of Secondary Education Major in Social Studies"
+    },
+    {
+      "value": "BSEd-Science",
+      "label": "Bachelor of Secondary Education Major in Science"
+    },
+    {
+      "value": "BSEd-Mathematics",
+      "label": "Bachelor of Secondary Education Major in Mathematics"
+    },
+    {
+      "value": "BSEd-Filipino",
+      "label": "Bachelor of Secondary Education Major in Filipino Language"
+    },
+    {
+      "value": "BSEd-English",
+      "label": "Bachelor of Secondary Education Major in English Language"
+    },
+    {
+      "value": "BEEd",
+      "label": "Bachelor of Elementary Education Generalist"
+    },
+    {
+      "value": "BTLEd",
+      "label": "Bachelor of Technology and Livelihood Education"
+    },
+    {
+      "value": "BSHM",
+      "label": "Bachelor of Science in Hospitality Management (BSHM)"
+    },
+    {
+      "value": "BSTM",
+      "label": "Bachelor of Science in Tourism Management (BSTM)"
+    },
+    {
+      "value": "BSMLS",
+      "label": "Bachelor of Science in Medical Laboratory Science (BSMLS)"
+    },
+    {
+      "value": "Grade School",
+      "label": "Grade School"
+    },
+    {
+      "value": "JHS",
+      "label": "Junior High School (JHS)"
+    },
+    {
+      "value": "SHS",
+      "label": "Senior High School (SHS)"
+    }
+  ],
+  "COLLEGE_YEAR_OPTIONS": [
+    {
+      "value": "",
+      "label": "Select Level"
+    },
+    {
+      "value": "1st Year",
+      "label": "1st Year"
+    },
+    {
+      "value": "2nd Year",
+      "label": "2nd Year"
+    },
+    {
+      "value": "3rd Year",
+      "label": "3rd Year"
+    },
+    {
+      "value": "4th Year",
+      "label": "4th Year"
+    },
+    {
+      "value": "5th Year",
+      "label": "5th Year"
+    },
+    {
+      "value": "SFTD - GS",
+      "label": "SFTD - GS"
+    },
+    {
+      "value": "SFTD - JHS",
+      "label": "SFTD - JHS"
+    },
+    {
+      "value": "Nursery/UK",
+      "label": "Nursery/UK"
+    },
+    {
+      "value": "Grade 1 Br. Andrew Gonzales FSC",
+      "label": "Grade 1 Br. Andrew Gonzales FSC"
+    },
+    {
+      "value": "Grade 1 Br. Vernon Poore FSC",
+      "label": "Grade 1 Br. Vernon Poore FSC"
+    },
+    {
+      "value": "Grade 2 Br. Herman Bock FSC",
+      "label": "Grade 2 Br. Herman Bock FSC"
+    },
+    {
+      "value": "Grade 2 Br. Arthur Higgins FSC",
+      "label": "Grade 2 Br. Arthur Higgins FSC"
+    },
+    {
+      "value": "Grade 3 Br. Bernard Thomas FSC",
+      "label": "Grade 3 Br. Bernard Thomas FSC"
+    },
+    {
+      "value": "Grade 3 Br. Thomas Cannon FSC",
+      "label": "Grade 3 Br. Thomas Cannon FSC"
+    },
+    {
+      "value": "Grade 4 Br. Lucide Martin FSC",
+      "label": "Grade 4 Br. Lucide Martin FSC"
+    },
+    {
+      "value": "Grade 4 Br. William Garvey FSC",
+      "label": "Grade 4 Br. William Garvey FSC"
+    },
+    {
+      "value": "Grade 5 Br. Bertin Raymund FSC",
+      "label": "Grade 5 Br. Bertin Raymund FSC"
+    },
+    {
+      "value": "Grade 6 Br. Anthony Ferdinand FSC",
+      "label": "Grade 6 Br. Anthony Ferdinand FSC"
+    },
+    {
+      "value": "Grade 7 Br. Felix Donatian FSC",
+      "label": "Grade 7 Br. Felix Donatian FSC"
+    },
+    {
+      "value": "Grade 7 Br. Alphonsus Henry FSC",
+      "label": "Grade 7 Br. Alphonsus Henry FSC"
+    },
+    {
+      "value": "Grade 7 Br. Charles Severin FSC",
+      "label": "Grade 7 Br. Charles Severin FSC"
+    },
+    {
+      "value": "Grade 8 Br. Anton Heitman FSC",
+      "label": "Grade 8 Br. Anton Heitman FSC"
+    },
+    {
+      "value": "Grade 8 Br. Francis Cody FSC",
+      "label": "Grade 8 Br. Francis Cody FSC"
+    },
+    {
+      "value": "Grade 8 Br. Edmund Hubert FSC",
+      "label": "Grade 8 Br. Edmund Hubert FSC"
+    },
+    {
+      "value": "Grade 9 Br. Alphonse Bloemen FSC",
+      "label": "Grade 9 Br. Alphonse Bloemen FSC"
+    },
+    {
+      "value": "Grade 9 Br. Hugh Wester FSC",
+      "label": "Grade 9 Br. Hugh Wester FSC"
+    },
+    {
+      "value": "Grade 9 Br. Justin Lucian FSC",
+      "label": "Grade 9 Br. Justin Lucian FSC"
+    },
+    {
+      "value": "Grade 10 Br. Gerard Ronan FSC",
+      "label": "Grade 10 Br. Gerard Ronan FSC"
+    },
+    {
+      "value": "Grade 10 Br. Fidelis Leddy FSC",
+      "label": "Grade 10 Br. Fidelis Leddy FSC"
+    },
+    {
+      "value": "Grade 11 STEM HS Br. Anselmo Pablo FSC",
+      "label": "Grade 11 STEM HS Br. Anselmo Pablo FSC"
+    },
+    {
+      "value": "Grade 11 STEM HS Br. Norberto Jose FSC",
+      "label": "Grade 11 STEM HS Br. Norberto Jose FSC"
+    },
+    {
+      "value": "Grade 11 STEM HS Br. Agustin Maria FSC",
+      "label": "Grade 11 STEM HS Br. Agustin Maria FSC"
+    },
+    {
+      "value": "Grade 11 STEM ENG Br. Esteban Vicente FSC",
+      "label": "Grade 11 STEM ENG Br. Esteban Vicente FSC"
+    },
+    {
+      "value": "Grade 11 STEM ENG Br. Luis Victorio FSC",
+      "label": "Grade 11 STEM ENG Br. Luis Victorio FSC"
+    },
+    {
+      "value": "Grade 11 BE Br. Junian Alberto FSC",
+      "label": "Grade 11 BE Br. Junian Alberto FSC"
+    },
+    {
+      "value": "Grade 11 ASSH Br. Ireneo Jacinto FSC",
+      "label": "Grade 11 ASSH Br. Ireneo Jacinto FSC"
+    },
+    {
+      "value": "Grade 12 STEM MED Br. Eleuterio Roman FSC",
+      "label": "Grade 12 STEM MED Br. Eleuterio Roman FSC"
+    },
+    {
+      "value": "Grade 12 STEM MED Br. Bertran Francisco FSC",
+      "label": "Grade 12 STEM MED Br. Bertran Francisco FSC"
+    },
+    {
+      "value": "Grade 12 STEM MED Br. Lorencio Martin FSC",
+      "label": "Grade 12 STEM MED Br. Lorencio Martin FSC"
+    },
+    {
+      "value": "Grade 12 STEM ENG Br. James Miller FSC",
+      "label": "Grade 12 STEM ENG Br. James Miller FSC"
+    },
+    {
+      "value": "Grade 12 ABM Br. Augusto Andres FSC",
+      "label": "Grade 12 ABM Br. Augusto Andres FSC"
+    },
+    {
+      "value": "Grade 12 HUMSS Br. Braulio Carlos FSC",
+      "label": "Grade 12 HUMSS Br. Braulio Carlos FSC"
+    }
+  ],
+  "PARTNER_OFFICE_OPTIONS": [
+    {
+      "value": "",
+      "label": "Select Office / Department"
+    },
+    {
+      "value": "OPR",
+      "label": "Office of the President (OPR)"
+    },
+    {
+      "value": "CEMC",
+      "label": "Corporate Executive Management Center (CEMC)"
+    },
+    {
+      "value": "NPCC",
+      "label": "Network, Programs, and Computerization (NPCC)"
+    },
+    {
+      "value": "AL",
+      "label": "Advancement and Linkages (AL)"
+    },
+    {
+      "value": "HRD",
+      "label": "Human Resource Development (HRD)"
+    },
+    {
+      "value": "RPQA",
+      "label": "Risk, Planning, and Quality Assurance (RPQA)"
+    },
+    {
+      "value": "GPM",
+      "label": "Government Partnerships Management (GPM)"
+    },
+    {
+      "value": "VPLMS",
+      "label": "Vice-President for Lasallian Mission Services (VPLMS)"
+    },
+    {
+      "value": "SAC",
+      "label": "Student Activities Center (SAC)"
+    },
+    {
+      "value": "ACC",
+      "label": "Arts and Culture Center (ACC)"
+    },
+    {
+      "value": "LMC",
+      "label": "Lasallian Ministries Center (LMC)"
+    },
+    {
+      "value": "SCC",
+      "label": "Social Concerns Center (SCC)"
+    },
+    {
+      "value": "CCC",
+      "label": "Career and Counseling Center (CCC)"
+    },
+    {
+      "value": "SW",
+      "label": "Sports and Wellness (SW)"
+    },
+    {
+      "value": "CO",
+      "label": "Community Organizing (CO)"
+    },
+    {
+      "value": "VPFAS",
+      "label": "Vice-President for Finance and Accounting Services (VPFAS)"
+    },
+    {
+      "value": "AS",
+      "label": "Admissions and Scholarships (AS)"
+    },
+    {
+      "value": "PC",
+      "label": "Procurement Center (PC)"
+    },
+    {
+      "value": "VPADS",
+      "label": "Vice-President for Administrative Services (VPADS)"
+    },
+    {
+      "value": "FM",
+      "label": "Farm Manager (FM)"
+    },
+    {
+      "value": "CD",
+      "label": "Campus Development (CD)"
+    },
+    {
+      "value": "GSC",
+      "label": "General Services Center (GSC)"
+    },
+    {
+      "value": "SSE",
+      "label": "Safety, Sustainability, and Environment (SSE)"
+    },
+    {
+      "value": "HSC",
+      "label": "Health Services Center (HSC)"
+    },
+    {
+      "value": "OCH",
+      "label": "Office of the Chancellor (OCH)"
+    },
+    {
+      "value": "LRC",
+      "label": "Learning Resource Center (LRC)"
+    },
+    {
+      "value": "ETC",
+      "label": "Educational Technology Center (ETC)"
+    },
+    {
+      "value": "IRP",
+      "label": "Institutional Research and Publications (IRP)"
+    },
+    {
+      "value": "RIP",
+      "label": "Research and Intellectual Property (RIP)"
+    },
+    {
+      "value": "ERB",
+      "label": "Ethics Review Board (ERB)"
+    },
+    {
+      "value": "SMCC",
+      "label": "Strategic Marketing and Communications Center (SMCC)"
+    },
+    {
+      "value": "VCAR",
+      "label": "Vice Chancellor for Academics and Research (VCAR)"
+    },
+    {
+      "value": "SGS",
+      "label": "School of Graduate Studies (SGS)"
+    },
+    {
+      "value": "CTE",
+      "label": "College of Teacher Education (CTE)"
+    },
+    {
+      "value": "CCSEA",
+      "label": "College of Computer Studies, Engineering, and Architecture (CCSEA)"
+    },
+    {
+      "value": "CBA",
+      "label": "College of Business and Accountancy (CBA)"
+    },
+    {
+      "value": "CAS",
+      "label": "College of Arts and Sciences (CAS)"
+    },
+    {
+      "value": "CCJE",
+      "label": "College of Criminal Justice Education (CCJE)"
+    },
+    {
+      "value": "CON",
+      "label": "College of Nursing (CON)"
+    },
+    {
+      "value": "CTHM",
+      "label": "College of Tourism and Hospitality Management (CTHM)"
+    },
+    {
+      "value": "COL",
+      "label": "College of Law (COL)"
+    },
+    {
+      "value": "COMT",
+      "label": "College of Medical Technology (COMT)"
+    },
+    {
+      "value": "BEU",
+      "label": "Basic Education Unit (BEU)"
+    }
+  ]
+}
