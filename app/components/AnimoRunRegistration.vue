@@ -113,7 +113,7 @@ const runCategories = [
       "Pet Owner's Event Shirt",
       "Pet Bandana",
       "Race Bib",
-      "Post Meal",
+      "Post-Meal",
       "Pet Treat",
       "Acrylic Finisher Medal",
     ],
@@ -144,7 +144,7 @@ const runCategories = [
       "Event Shirt or Singlet",
       "Post-Meal",
       "Race Bib",
-      "Acrylic Finisher Medal",
+      "Metal Finisher Medal",
     ],
   },
   {
