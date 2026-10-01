@@ -14,7 +14,8 @@ const { user, isLoggedIn, logout, setAuth, init } = useAuth();
 const rolePermissions = ref([]);
 const darkMode = ref(false);
 const currentView = ref("Menu");
-const initialLoading = ref(true);
+const initialLoading = ref(false);       // no longer used to block the page
+const permissionsLoading = ref(false);   // true only while the first-visit API is in-flight
 
 const openGroups = ref([
   "Content Management",
@@ -103,7 +104,7 @@ const toggleDarkMode = () => {
 };
 
 // ---------------- MOUNT ----------------
-onMounted(async () => {
+onMounted(() => {
   // init() reads localStorage synchronously — no network cost.
   init();
 
@@ -125,26 +126,26 @@ onMounted(async () => {
     darkMode.value = stored === "dark" || (!stored && prefersDark);
   }
 
-  // If we already have cached permissions, show the menu NOW (zero delay)
-  // and let the background refresh update it silently.
-  if (process.client && sessionStorage.getItem(ROLE_CACHE_KEY)) {
-    try {
-      rolePermissions.value = JSON.parse(sessionStorage.getItem(ROLE_CACHE_KEY));
-    } catch { /* ignore corrupt cache */ }
-    initialLoading.value = false; // reveal menu immediately
-    // Refresh permissions + ticket count silently in the background.
-    fetchRolePermissions();
-    checkForUnratedTickets();
-    return;
+  // Populate from sessionStorage synchronously so the menu renders on the
+  // very first paint with no network delay on revisits.
+  if (process.client) {
+    const cached = sessionStorage.getItem(ROLE_CACHE_KEY);
+    if (cached) {
+      try { rolePermissions.value = JSON.parse(cached); } catch { /* corrupt cache */ }
+    }
   }
 
-  // First visit: only the permissions fetch gates the menu —
-  // the ticket count is a nice-to-have and must never slow down the menu.
-  await fetchRolePermissions();
-  initialLoading.value = false;
+  // Show the menu list immediately — no awaiting.
+  // On first visit rolePermissions is empty here; it fills in reactively
+  // once fetchRolePermissions() resolves below.
+  // IT Services Feedback follows reactively once checkForUnratedTickets() resolves.
+  const isFirstVisit = rolePermissions.value.length === 0;
+  if (isFirstVisit) permissionsLoading.value = true;
 
-  // Fire ticket check as a true background task — no await.
+  // Both fetches run as true background tasks — nothing blocks the render.
+  fetchRolePermissions().finally(() => { permissionsLoading.value = false; });
   checkForUnratedTickets();
+
 });
 
 // ---------------- MENU FILTER ----------------
@@ -195,16 +196,9 @@ const checkForUnratedTickets = async () => {
     return;
   }
 
-  // Abort if the request takes longer than 5 s — don't let a slow
-  // ticket API block the rest of the dashboard.
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 5000);
-
   try {
-    const res = await $fetch(`${endpoint}/api/cits/request-ticket/list/`, {
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
+    // This runs as a background task — it never blocks the menu render.
+    const res = await $fetch(`${endpoint}/api/cits/request-ticket/list/`);
 
     if (!Array.isArray(res)) {
       unratedTicketsCount.value = 0;
@@ -219,11 +213,8 @@ const checkForUnratedTickets = async () => {
     );
 
     unratedTicketsCount.value = unratedTickets.length;
-  } catch (error) {
-    clearTimeout(timer);
-    if (error?.name !== "AbortError") {
-      console.error("Error checking unrated tickets:", error);
-    }
+  } catch {
+    // Non-blocking background fetch — swallow silently.
     unratedTicketsCount.value = 0;
   }
 };
@@ -690,21 +681,21 @@ const logOut = () => logout();
       
         <div v-if="currentView === 'Menu'">
           <SuperAdminDashboardWelcome :darkMode="darkMode" v-if="unratedTicketsCount === 0"/>
-          <template v-if="initialLoading">
-            <div class="mt-4 space-y-3 px-2 animate-pulse">
-              <div v-for="n in 5" :key="'sk-group-' + n"
-                :class="['rounded-2xl border p-3 space-y-2', darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200']">
-                <!-- Group label -->
-                <div :class="['h-3 rounded w-1/3', darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                <!-- Menu items -->
-                <div class="space-y-1.5 pl-2">
-                  <div v-for="m in 2" :key="m"
-                    :class="['h-2.5 rounded', darkMode ? 'bg-gray-700' : 'bg-slate-100',
-                      m === 2 ? 'w-2/5' : 'w-3/5']"></div>
-                </div>
+
+          <!-- Subtle inline spinner shown only on first visit while permissions load -->
+          <div v-if="permissionsLoading" class="mt-4 space-y-3 px-2 animate-pulse">
+            <div v-for="n in 5" :key="'sk-group-' + n"
+              :class="['rounded-2xl border p-3 space-y-2', darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200']">
+              <div :class="['h-3 rounded w-1/3', darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
+              <div class="space-y-1.5 pl-2">
+                <div v-for="m in 2" :key="m"
+                  :class="['h-2.5 rounded', darkMode ? 'bg-gray-700' : 'bg-slate-100', m === 2 ? 'w-2/5' : 'w-3/5']"></div>
               </div>
             </div>
-          </template>
+          </div>
+
+          <!-- Menu list renders immediately; populates reactively as data arrives.
+               IT Services Feedback slots in once unratedTicketsCount is known. -->
           <SuperAdminDashboardMenuList
             v-else
             :filteredMenuList="filteredMenuList"
