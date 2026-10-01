@@ -2039,7 +2039,7 @@ const submitRegistration = async () => {
                       :key="config.id"
                       @click="selectShirtType(currentParticipant, config.id, true)"
                       :class="[
-                        'flex items-center justify-center gap-1.5 px-2.5 py-2.5 rounded-xl border text-xs font-bold transition-all duration-150 cursor-pointer text-center relative',
+                        'flex items-center justify-center gap-1.5 px-2.5 py-0.5 rounded-xl border text-xs font-bold transition-all duration-150 cursor-pointer text-center relative',
                         currentParticipant.shirt_type === config.id
                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                           : props.darkMode
@@ -2047,7 +2047,7 @@ const submitRegistration = async () => {
                             : 'bg-white text-gray-700 border-gray-200 hover:bg-slate-100',
                       ]">
                       <i :class="['fas', config.icon, 'text-[11px]']"></i>
-                      <span class="truncate">{{ config.label }}</span>
+                      <span class="">{{ config.label }}</span>
                       <span v-if="config.id === 'kids_shirt' && isKidParticipant(currentParticipant)"
                         class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white"></span>
                     </button>
@@ -2497,7 +2497,7 @@ const submitRegistration = async () => {
                           MB</span>
                       </div>
 
-                      <div class="max-w-md">
+                      <div class="w-full">
                         <p
                           class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
                           <!-- <span><i class="fas fa-id-badge text-[10px] text-emerald-600 mr-0.5"></i> Front Side</span> -->
@@ -2529,8 +2529,7 @@ const submitRegistration = async () => {
                             <div class="flex flex-col items-center gap-0.5 py-2 px-2 text-center pointer-events-none">
                               <i
                                 class="fas fa-cloud-upload-alt text-lg text-gray-400 group-hover:text-emerald-500 transition"></i>
-                              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Upload Front of Alumni
-                                ID</span>
+                              <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Upload ID</span>
                               <span class="text-[10px] text-gray-400">JPG, PNG, PDF up to 5MB</span>
                             </div>
                           </template>
