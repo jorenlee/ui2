@@ -6,6 +6,7 @@ const props = defineProps({
   darkMode: Boolean,
   rolePermissions: Array,
 });
+const emit = defineEmits(["update:rolePermissions"]);
 const config = useRuntimeConfig();
 const endpoint = config.public.apiUrl;
 
@@ -659,6 +660,7 @@ const fetchList = async (retries = 2) => {
     if (res && Array.isArray(res)) {
       res.forEach(prepareItemSearchIndex);
       listItems.value = res;
+      emit("update:rolePermissions", res);
     } else {
       listItems.value = [];
     }
@@ -2187,6 +2189,7 @@ watch(
   (newVal) => {
     if (newVal && newVal.length > 0) {
       listItems.value = newVal;
+      listItems.value.forEach(prepareItemSearchIndex);
     }
   },
   { immediate: true },
@@ -2195,7 +2198,8 @@ watch(
 onMounted(async () => {
   if (props.rolePermissions && props.rolePermissions.length > 0) {
     listItems.value = props.rolePermissions;
-  } else if (!props.rolePermissions) {
+    listItems.value.forEach(prepareItemSearchIndex);
+  } else {
     await fetchList();
   }
 });

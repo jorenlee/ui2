@@ -12,10 +12,11 @@ const { user, isLoggedIn, logout, setAuth, init } = useAuth();
 
 // ---------------- STATE ----------------
 const rolePermissions = ref([]);
+const currentUserRoles = ref([]);
 const darkMode = ref(false);
 const currentView = ref("Menu");
 const initialLoading = ref(false);       // no longer used to block the page
-const permissionsLoading = ref(false);   // true only while the first-visit API is in-flight
+const permissionsLoading = ref(false);   // true only while initial user roles are loading
 
 const openGroups = ref([
   "Content Management",
@@ -51,33 +52,53 @@ const lsuOnlyMenuGroups = new Set([
 // ---------------- API ----------------
 const api = (url, opts) => $fetch(`${endpoint}${url}`, opts);
 
-// ---------------- FETCH ROLE PERMISSIONS ----------------
-const ROLE_CACHE_KEY = "sa_role_permissions";
+// ---------------- USER ROLES (LIGHTWEIGHT & PRIORITIZED) ----------------
+const USER_ROLES_KEY = "sa_current_user_roles";
 
-const fetchRolePermissions = async () => {
-  // Serve from sessionStorage on repeat visits within the same tab.
-  if (process.client) {
-    const cached = sessionStorage.getItem(ROLE_CACHE_KEY);
-    if (cached) {
-      try {
-        rolePermissions.value = JSON.parse(cached);
-        return;
-      } catch { /* ignore corrupt cache */ }
-    }
+const fetchCurrentUserRoles = async () => {
+  const email = user.value?.email;
+  if (!email) {
+    permissionsLoading.value = false;
+    return;
   }
+
   try {
-    const data = await api("/api/cits/role-permissions/list/");
-    rolePermissions.value = data;
-    if (process.client) {
-      sessionStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(data));
+    // Priority: Fetch ONLY the logged-in user's role permission record (fast & lightweight, <1KB)
+    const data = await api(`/api/cits/role-permissions/list/?email=${encodeURIComponent(email)}`);
+    if (Array.isArray(data)) {
+      // Find matching record(s) for this user's email
+      const userMatches = data.filter(
+        (r) => r.email && r.email.trim().toLowerCase() === email.trim().toLowerCase()
+      );
+
+      const rolesSet = new Set();
+      userMatches.forEach((item) => {
+        if (Array.isArray(item.role_filter_permissions)) {
+          item.role_filter_permissions.forEach((r) => rolesSet.add(r));
+        }
+      });
+
+      const roles = Array.from(rolesSet);
+      currentUserRoles.value = roles;
+
+      if (process.client) {
+        try {
+          localStorage.setItem(`${USER_ROLES_KEY}_${email}`, JSON.stringify(roles));
+        } catch {}
+      }
     }
   } catch (err) {
-    console.error("Role permission error:", err);
+    console.error("Error fetching user roles:", err);
+  } finally {
+    permissionsLoading.value = false;
   }
 };
 
 // ---------------- USER ROLES ----------------
 const userRoles = computed(() => {
+  if (currentUserRoles.value && currentUserRoles.value.length > 0) {
+    return currentUserRoles.value;
+  }
   if (!user.value?.email) return [];
 
   return (
@@ -126,26 +147,33 @@ onMounted(() => {
     darkMode.value = stored === "dark" || (!stored && prefersDark);
   }
 
-  // Populate from sessionStorage synchronously so the menu renders on the
-  // very first paint with no network delay on revisits.
+  // Clean up legacy giant sessionStorage key that caused QuotaExceededError
   if (process.client) {
-    const cached = sessionStorage.getItem(ROLE_CACHE_KEY);
-    if (cached) {
-      try { rolePermissions.value = JSON.parse(cached); } catch { /* corrupt cache */ }
-    }
+    try {
+      sessionStorage.removeItem("sa_role_permissions");
+    } catch {}
   }
 
-  // Show the menu list immediately — no awaiting.
-  // On first visit rolePermissions is empty here; it fills in reactively
-  // once fetchRolePermissions() resolves below.
-  // IT Services Feedback follows reactively once checkForUnratedTickets() resolves.
-  const isFirstVisit = rolePermissions.value.length === 0;
+  // Restore cached roles synchronously so the menu renders on the
+  // very first paint with zero network delay.
+  if (process.client && user.value?.email) {
+    try {
+      const cachedRoles = localStorage.getItem(`${USER_ROLES_KEY}_${user.value.email}`);
+      if (cachedRoles) {
+        currentUserRoles.value = JSON.parse(cachedRoles);
+      }
+    } catch {}
+  }
+
+  // Show skeleton only if roles are completely unknown on very first visit
+  const isFirstVisit = currentUserRoles.value.length === 0;
   if (isFirstVisit) permissionsLoading.value = true;
 
-  // Both fetches run as true background tasks — nothing blocks the render.
-  fetchRolePermissions().finally(() => { permissionsLoading.value = false; });
+  // Priority: Load other menus immediately!
+  // Fast background fetch for the current user's roles and unrated tickets.
+  // Full Role Permissions list will be loaded on-demand when clicking Role Permissions menu.
+  fetchCurrentUserRoles();
   checkForUnratedTickets();
-
 });
 
 // ---------------- MENU FILTER ----------------
@@ -660,6 +688,7 @@ const logOut = () => logout();
                 :is="activeViewComponent"
                 :darkMode="darkMode"
                 :rolePermissions="rolePermissions"
+                @update:rolePermissions="(val) => rolePermissions = val"
               />
               <template #fallback>
                 <div class="p-4 space-y-4 animate-pulse">
@@ -682,8 +711,8 @@ const logOut = () => logout();
         <div v-if="currentView === 'Menu'">
           <SuperAdminDashboardWelcome :darkMode="darkMode" v-if="unratedTicketsCount === 0"/>
 
-          <!-- Subtle inline spinner shown only on first visit while permissions load -->
-          <div v-if="permissionsLoading" class="mt-4 space-y-3 px-2 animate-pulse">
+          <!-- Subtle inline spinner shown only on very first visit while permissions load -->
+          <div v-if="permissionsLoading && currentUserRoles.length === 0" class="mt-4 space-y-3 px-2 animate-pulse">
             <div v-for="n in 5" :key="'sk-group-' + n"
               :class="['rounded-2xl border p-3 space-y-2', darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200']">
               <div :class="['h-3 rounded w-1/3', darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
@@ -694,7 +723,7 @@ const logOut = () => logout();
             </div>
           </div>
 
-          <!-- Menu list renders immediately; populates reactively as data arrives.
+          <!-- Menu list renders with top priority; populates reactively as data arrives.
                IT Services Feedback slots in once unratedTicketsCount is known. -->
           <SuperAdminDashboardMenuList
             v-else
