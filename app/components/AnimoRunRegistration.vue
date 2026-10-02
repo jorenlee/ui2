@@ -3,6 +3,7 @@ import { ref, computed, watch, onMounted } from "vue";
 import { useAuth } from "~/composables/useAuth";
 import animoRunData from "~/animorun.json";
 import waiverConsentData from "~/animorun_waiver_consent.json";
+import lsuIdVerifierData from "~/animorun_lsuid_verifier.json";
 
 const props = defineProps({
   darkMode: {
@@ -155,7 +156,116 @@ const isSubmitting = ref(false);
 const waiver_agreed = ref(false);
 const privacy_consent_agreed = ref(false);
 
-// ── Race-cards swipe (desktop drag-to-scroll) ──────────────────────────────
+// Fast lookup map for LSU ID verification (normalized uppercase ID with and without LSU prefix)
+const lsuIdMap = computed(() => {
+  const map = new Map();
+  if (Array.isArray(lsuIdVerifierData)) {
+    for (const item of lsuIdVerifierData) {
+      if (item && item.lsu_id_number && item.lsu_id_number !== '-') {
+        const rawId = item.lsu_id_number.trim().toUpperCase();
+        map.set(rawId, item);
+        if (rawId.startsWith("LSU")) {
+          const noPrefix = rawId.replace(/^LSU/, "");
+          if (noPrefix && !map.has(noPrefix)) map.set(noPrefix, item);
+        } else {
+          const withPrefix = "LSU" + rawId;
+          if (!map.has(withPrefix)) map.set(withPrefix, item);
+        }
+      }
+    }
+  }
+  return map;
+});
+
+const cleanNameString = (str) => {
+  if (!str) return "";
+  return str.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim();
+};
+
+const isNameMatchingRecord = (recordFullname, participant) => {
+  if (!recordFullname || !participant) return false;
+  
+  const recClean = cleanNameString(recordFullname);
+  const recWords = new Set(recClean.split(/\s+/).filter(Boolean));
+  
+  const firstClean = cleanNameString(participant.firstname);
+  const lastClean = cleanNameString(participant.lastname);
+  const middleClean = cleanNameString(participant.middlename);
+  
+  if (!firstClean || !lastClean) return false;
+  
+  const firstWords = firstClean.split(/\s+/).filter(Boolean);
+  const lastWords = lastClean.split(/\s+/).filter(Boolean);
+  
+  const firstMatches = firstWords.every((w) => recWords.has(w));
+  const lastMatches = lastWords.every((w) => recWords.has(w));
+  
+  if (!firstMatches || !lastMatches) return false;
+  
+  if (middleClean) {
+    const middleWords = middleClean.split(/\s+/).filter(Boolean);
+    for (const mw of middleWords) {
+      if (mw.length === 1) {
+        const hasInitialMatch = Array.from(recWords).some((rw) => rw.startsWith(mw));
+        if (!hasInitialMatch) return false;
+      } else {
+        if (!recWords.has(mw)) return false;
+      }
+    }
+  }
+  
+  return true;
+};
+
+const getLsuIdVerificationStatus = (idNumber, expectedCategory = null, participant = null) => {
+  if (!idNumber || !idNumber.trim()) return null;
+  const cleanId = idNumber.trim().toUpperCase();
+  const match = lsuIdMap.value.get(cleanId);
+  if (!match) {
+    return {
+      isValid: false,
+      statusText: "ID Number not found in LSU verifier records",
+      fullname: null,
+      category: null,
+    };
+  }
+  if (expectedCategory && match.category.toLowerCase() !== expectedCategory.toLowerCase()) {
+    return {
+      isValid: false,
+      statusText: `ID is registered under category "${match.category.toUpperCase()}" (expected ${expectedCategory.toUpperCase()})`,
+      fullname: null,
+      category: match.category,
+    };
+  }
+  if (participant) {
+    const hasFirst = participant.firstname?.trim();
+    const hasLast = participant.lastname?.trim();
+    if (!hasFirst || !hasLast) {
+      return {
+        isValid: false,
+        statusText: "Please complete First Name & Last Name to verify ID ownership",
+        fullname: null,
+        category: match.category,
+      };
+    }
+    const nameMatches = isNameMatchingRecord(match.fullname, participant);
+    if (!nameMatches) {
+      return {
+        isValid: false,
+        statusText: "Entered name does not match the record for this LSU ID Number",
+        fullname: null,
+        category: match.category,
+      };
+    }
+  }
+  return {
+    isValid: true,
+    statusText: `Verified LSU ${match.category.toUpperCase()} Record`,
+    fullname: match.fullname,
+    category: match.category,
+  };
+};
+
 const raceCardsRef = ref(null);
 const isDragging = ref(false);
 let dragStartX = 0;
@@ -854,7 +964,52 @@ const submitRegistration = async () => {
     }
   }
 
-  // Validate LSU ID Number for salary deduction / add to tuition
+  // Validate LSU Student & Employee ID Verification
+    if (['LSU Exclusive - Enrolled Student', 'Currently Enrolled Students'].includes(p.participant_type)) {
+      if (!p.lsu_id_number?.trim()) {
+        showNotice(
+          `Please provide your LSU Student ID Number for Runner #${i + 1}.`,
+          "LSU Student ID Number Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+      const studentCheck = getLsuIdVerificationStatus(p.lsu_id_number, "student", p);
+      if (!studentCheck || !studentCheck.isValid) {
+        showNotice(
+          `LSU Student ID verification failed for Runner #${i + 1}: ${studentCheck?.statusText || "ID not found"}. Please check your Student ID number.`,
+          "Invalid LSU Student ID",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+    }
+
+    if (['LSU Exclusive - Employee', 'Employees'].includes(p.participant_type)) {
+      if (!p.lsu_id_number?.trim()) {
+        showNotice(
+          `Please provide your LSU Employee ID Number for Runner #${i + 1}.`,
+          "LSU Employee ID Number Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+      const employeeCheck = getLsuIdVerificationStatus(p.lsu_id_number, "employee", p);
+      if (!employeeCheck || !employeeCheck.isValid) {
+        showNotice(
+          `LSU Employee ID verification failed for Runner #${i + 1}: ${employeeCheck?.statusText || "ID not found"}. Please check your Employee ID number.`,
+          "Invalid LSU Employee ID",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+    }
+
+    // Validate LSU ID Number for salary deduction / add to tuition
   if (paymentType.value === "salary_deduction") {
     if (!currentParticipant.value.lsu_id_number?.trim()) {
       showNotice(
@@ -2429,9 +2584,30 @@ const submitRegistration = async () => {
                           </span>
                           <input type="text" v-model="currentParticipant.lsu_id_number" placeholder="e.g. 240945593"
                             :class="[
-                              'w-full pl-8 pr-3 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none',
-                              props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
+                              'w-full pl-8 pr-9 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:outline-none transition-all',
+                              currentParticipant.lsu_id_number?.trim()
+                                ? (getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'student', currentParticipant)?.isValid
+                                  ? 'border-emerald-500 focus:ring-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100'
+                                  : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100')
+                                : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'),
                             ]" />
+                          <span v-if="currentParticipant.lsu_id_number?.trim()" class="absolute right-3 top-2.5 text-xs">
+                            <i v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'student', currentParticipant)?.isValid" class="fas fa-check-circle text-emerald-500 text-sm"></i>
+                            <i v-else class="fas fa-exclamation-circle text-amber-500 text-sm"></i>
+                          </span>
+                        </div>
+                        <!-- Live Verification Feedback -->
+                        <div v-if="currentParticipant.lsu_id_number?.trim()" class="mt-1.5 text-[11px] font-semibold">
+                          <div v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'student', currentParticipant)?.isValid"
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800">
+                            <i class="fas fa-user-check text-emerald-600 dark:text-emerald-400"></i>
+                            <span>Verified LSU Student Record</span>
+                          </div>
+                          <div v-else
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-800">
+                            <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400"></i>
+                                ID Not Found.
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2488,9 +2664,30 @@ const submitRegistration = async () => {
                           </span>
                           <input type="text" v-model="currentParticipant.lsu_id_number" placeholder="e.g. LSU210201"
                             :class="[
-                              'w-full pl-8 pr-3 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
-                              props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800',
+                              'w-full pl-8 pr-9 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:outline-none transition-all',
+                              currentParticipant.lsu_id_number?.trim()
+                                ? (getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'employee', currentParticipant)?.isValid
+                                  ? 'border-emerald-500 focus:ring-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100'
+                                  : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100')
+                                : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'),
                             ]" />
+                          <span v-if="currentParticipant.lsu_id_number?.trim()" class="absolute right-3 top-2.5 text-xs">
+                            <i v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'employee', currentParticipant)?.isValid" class="fas fa-check-circle text-emerald-500 text-sm"></i>
+                            <i v-else class="fas fa-exclamation-circle text-amber-500 text-sm"></i>
+                          </span>
+                        </div>
+                        <!-- Live Verification Feedback -->
+                        <div v-if="currentParticipant.lsu_id_number?.trim()" class="mt-1.5 text-[11px] font-semibold">
+                          <div v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'employee', currentParticipant)?.isValid"
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800">
+                            <i class="fas fa-user-check text-emerald-600 dark:text-emerald-400"></i>
+                            <span>Verified LSU Employee Record</span>
+                          </div>
+                          <div v-else
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-800">
+                            <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400"></i>
+                                ID Not Found.
+                          </div>
                         </div>
                       </div>
                     </div>
