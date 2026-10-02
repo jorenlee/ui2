@@ -1,0 +1,60 @@
+{
+  "title": "Consent, Waiver, Data Privacy, Security, and Liability",
+  "subtitle": "Please review the event terms and conditions and check both required agreement boxes before submitting.",
+  "sections": [
+    {
+      "id": 1,
+      "title": "Consent and Assumption of Risk",
+      "icon": "fas fa-shield-alt",
+      "content": "By submitting this registration form, I confirm that the information I have provided is true, complete, and accurate, and I voluntarily agree to participate in The Emerald Run. I acknowledge that participation involves physical activity and inherent risks, including accidents, injuries, illness, or other unforeseen circumstances. I voluntarily assume these risks and agree to participate only if I am physically fit and capable of completing my selected category."
+    },
+    {
+      "id": 2,
+      "title": "Waiver and Release of Liability",
+      "icon": "fas fa-handshake",
+      "content": "I release and hold harmless La Salle University, its officers, employees, organizers, volunteers, partners, sponsors, and authorized representatives from claims arising from my participation, except where caused by proven gross negligence or willful misconduct."
+    },
+    {
+      "id": 3,
+      "title": "Medical Assistance",
+      "icon": "fas fa-user-md",
+      "content": "I authorize the event organizers and designated medical personnel to provide or arrange first aid, medical assistance, or emergency response when necessary."
+    },
+    {
+      "id": 4,
+      "title": "Pet Safety & Removal (1 km Pet Run)",
+      "icon": "fas fa-paw",
+      "content": "For participants joining the 1 km Pet Run, I further confirm that my pet is healthy, physically fit, properly vaccinated, and fit to participate in the event, and that I will provide the required vaccination certificate. I am solely responsible for the supervision, safety, behavior, and welfare of my pet throughout the event, and for any injury, loss, damage, or incident caused by or involving my pet. I authorize the event organizers to take reasonable measures to protect participants and animals, including removing any pet deemed unfit, aggressive, distressed, or otherwise posing a safety risk."
+    },
+    {
+      "id": 5,
+      "title": "Security and Personal Belongings",
+      "icon": "fas fa-lock",
+      "content": "I understand that reasonable security and safety measures will be implemented during the event. I am responsible for my personal belongings. La Salle University and the event organizers are not responsible for loss, theft, or damage to personal belongings, except where liability is established under applicable law."
+    },
+    {
+      "id": 6,
+      "title": "Data Privacy Consent",
+      "icon": "fas fa-user-shield",
+      "content": "I consent to La Salle University collecting, processing, storing, and using my personal information for purposes related to The Emerald Run, including registration, verification, payment processing, race administration, communication, results management, and the issuance of race materials and recognition. My information will be handled in accordance with the Data Privacy Act of 2012 (Republic Act No. 10173) and applicable University policies."
+    },
+    {
+      "id": 7,
+      "title": "Photo and Video Consent",
+      "icon": "fas fa-camera",
+      "content": "I understand that photographs, videos, and other audiovisual materials may be taken during the event. I authorize La Salle University and its authorized representatives to use them for institutional, documentation, promotional, and communication purposes related to the University and the event."
+    }
+  ],
+  "checkboxes": [
+    {
+      "id": "waiver_agreed",
+      "label": "1. Event Waiver, Assumption of Risk & Release of Liability",
+      "description": "I have read, understood, and voluntarily agree to the Consent, Assumption of Risk, Waiver and Release of Liability, Medical Assistance, and Pet Safety guidelines governing The Emerald Run."
+    },
+    {
+      "id": "privacy_consent_agreed",
+      "label": "2. Data Privacy & Photo/Video Authorization Consent",
+      "description": "I consent to the collection, processing, and storage of my personal information under Republic Act No. 10173 (Data Privacy Act of 2012) and authorize La Salle University to use event photo, video, and audiovisual materials."
+    }
+  ]
+}

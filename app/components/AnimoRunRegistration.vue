@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useAuth } from "~/composables/useAuth";
 import animoRunData from "~/animorun.json";
+import waiverConsentData from "~/animorun_waiver_consent.json";
 
 const props = defineProps({
   darkMode: {
@@ -150,6 +151,9 @@ const nonLsuPaymentMethod = ref("qr_payment");
 const receiptFile = ref(null);
 const receiptPreview = ref(null);
 const isSubmitting = ref(false);
+
+const waiver_agreed = ref(false);
+const privacy_consent_agreed = ref(false);
 
 // ── Race-cards swipe (desktop drag-to-scroll) ──────────────────────────────
 const raceCardsRef = ref(null);
@@ -917,6 +921,16 @@ const submitRegistration = async () => {
     }
   }
 
+  // Validate Waiver & Privacy Consent Checkboxes
+  if (!waiver_agreed.value || !privacy_consent_agreed.value) {
+    showNotice(
+      "Please read and check both agreement boxes for the Waiver / Release of Liability and Data Privacy & Media Consent before submitting your registration.",
+      "Waiver & Consent Required",
+      "warning"
+    );
+    return;
+  }
+
   isSubmitting.value = true;
 
   try {
@@ -943,6 +957,8 @@ const submitRegistration = async () => {
     if (form_type.value === "Group") {
       const payload = {
         is_dashboard: isDashboard.value,
+        waiver_agreed: waiver_agreed.value,
+        privacy_consent_agreed: privacy_consent_agreed.value,
         participants: await Promise.all(participants.value.map(async (p, idx) => {
           // Upload Alumni ID front if present (up to 5MB)
           let idFrontUrl = "";
@@ -1006,6 +1022,8 @@ const submitRegistration = async () => {
             valid_id_back: idBackUrl ? [{ name: 'alumni_id_back', url: idBackUrl }] : [],
             pet_vaccine_record: vaccineUrl ? [{ name: 'pet_vaccine_record', url: vaccineUrl }] : [],
             pet_consent_documents: consentDocs,
+            waiver_agreed: waiver_agreed.value,
+            privacy_consent_agreed: privacy_consent_agreed.value,
           };
         })),
         form_type: "Group",
@@ -1090,6 +1108,8 @@ const submitRegistration = async () => {
         valid_id_back: idBackUrl ? [{ name: 'alumni_id_back', url: idBackUrl }] : [],
         pet_vaccine_record: vaccineUrl ? [{ name: 'pet_vaccine_record', url: vaccineUrl }] : [],
         pet_consent_documents: consentDocs,
+        waiver_agreed: waiver_agreed.value,
+        privacy_consent_agreed: privacy_consent_agreed.value,
       };
 
       res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
@@ -2981,6 +3001,105 @@ const submitRegistration = async () => {
                   </div>
                 </div>
               </div>
+
+
+
+
+
+
+
+
+
+
+
+              <!-- WAIVER / CONSENT SECTION -->
+              <div :class="[
+                'rounded-2xl p-4 sm:p-5 border shadow-md transition-all mt-4 space-y-4',
+                props.darkMode
+                  ? 'bg-gray-900/90 border-gray-700 text-gray-100'
+                  : 'bg-white border-slate-200 text-slate-800'
+              ]">
+                <!-- Section Header -->
+                <div class="flex items-center gap-2.5 pb-3 border-b border-gray-200 dark:border-gray-700">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <i class="fas fa-file-contract text-base"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-sm sm:text-base font-black tracking-wide text-gray-900 dark:text-white uppercase">
+                      {{ waiverConsentData.title || 'Consent, Waiver, Data Privacy, Security, and Liability' }}
+                    </h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                      {{ waiverConsentData.subtitle || 'Please review the event terms and conditions and check both required agreement boxes before submitting.' }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Scrollable Document Terms (rendered dynamically from JSON) -->
+                <div class="max-h-60 overflow-y-auto p-4 rounded-xl border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-slate-950/50 text-xs leading-relaxed text-gray-700 dark:text-gray-300 space-y-3.5 custom-scrollbar shadow-inner">
+                  <div v-for="section in waiverConsentData.sections" :key="section.id">
+                    <h4 class="font-bold text-gray-900 dark:text-white text-xs uppercase mb-1 flex items-center gap-1.5">
+                      <i :class="[section.icon || 'fas fa-shield-alt', 'text-emerald-600 text-[11px]']"></i> {{ section.id }}. {{ section.title }}
+                    </h4>
+                    <p>
+                      {{ section.content }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Checkboxes Section -->
+                <div class="space-y-3 pt-1">
+                  <!-- Checkbox 1: Waiver & Release of Liability -->
+                  <label :class="[
+                    'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none',
+                    waiver_agreed
+                      ? 'bg-emerald-50/80 border-emerald-500 dark:bg-emerald-950/40 dark:border-emerald-500'
+                      : 'bg-slate-50/50 border-gray-200 dark:bg-gray-800/40 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  ]">
+                    <input
+                      type="checkbox"
+                      v-model="waiver_agreed"
+                      class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-emerald-600 shrink-0 cursor-pointer"
+                    />
+                    <div class="text-xs leading-relaxed">
+                      <span class="font-bold text-gray-900 dark:text-white block mb-0.5">
+                        {{ waiverConsentData.checkboxes?.[0]?.label || '1. Event Waiver, Assumption of Risk & Release of Liability' }} <span class="text-rose-500">*</span>
+                      </span>
+                      <span class="text-gray-600 dark:text-gray-300">
+                        {{ waiverConsentData.checkboxes?.[0]?.description || 'I have read, understood, and voluntarily agree to the Consent, Assumption of Risk, Waiver and Release of Liability, Medical Assistance, and Pet Safety guidelines governing The Emerald Run.' }}
+                      </span>
+                    </div>
+                  </label>
+
+                  <!-- Checkbox 2: Data Privacy & Media Consent -->
+                  <label :class="[
+                    'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none',
+                    privacy_consent_agreed
+                      ? 'bg-emerald-50/80 border-emerald-500 dark:bg-emerald-950/40 dark:border-emerald-500'
+                      : 'bg-slate-50/50 border-gray-200 dark:bg-gray-800/40 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  ]">
+                    <input
+                      type="checkbox"
+                      v-model="privacy_consent_agreed"
+                      class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-emerald-600 shrink-0 cursor-pointer"
+                    />
+                    <div class="text-xs leading-relaxed">
+                      <span class="font-bold text-gray-900 dark:text-white block mb-0.5">
+                        {{ waiverConsentData.checkboxes?.[1]?.label || '2. Data Privacy & Photo/Video Authorization Consent' }} <span class="text-rose-500">*</span>
+                      </span>
+                      <span class="text-gray-600 dark:text-gray-300">
+                        {{ waiverConsentData.checkboxes?.[1]?.description || 'I consent to the collection, processing, and storage of my personal information under Republic Act No. 10173 (Data Privacy Act of 2012) and authorize La Salle University to use event photo, video, and audiovisual materials.' }}
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+
+
+
+
+
+
 
               <!-- CHECKOUT SUMMARY & SUBMIT BUTTON -->
               <div :class="[
