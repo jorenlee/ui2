@@ -806,6 +806,65 @@ const copyRunnerOneInfo = () => {
 const isSuccessModalOpen = ref(false);
 const registrationResult = ref(null);
 
+// ── Shirt Preview State (declare refs FIRST before any function references them) ──
+const shirtImageModalUrl = ref(null);
+const selectedShirtPreviewCat = ref(null);
+
+// Returns the CDN shirt image URL for a given category id
+const getShirtUrlForCat = (catId) => {
+  const norm = catId === "1K" ? "1KM" : catId;
+  const found = runCategories?.find((c) => c.id === norm);
+  if (found?.shirtImage) return found.shirtImage;
+  return `https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/${norm}.jpg`;
+};
+
+const handleShirtImageError = (e) => {
+  const target = e?.target;
+  if (!target) return;
+  const cat = selectedShirtPreviewCat.value || currentParticipant.value?.run_category || "3KM";
+  const norm = cat === "1K" ? "1KM" : cat;
+  const fallback = `/img/${norm}.jpg`;
+  if (target.src !== fallback) target.src = fallback;
+};
+
+// When a category tab is clicked → update preview AND switch run category
+const selectShirtPreviewCategory = (catKey) => {
+  // catKey is always a runCategory id (e.g. "1KM", "3KM", "10KM", "20KM")
+  selectedShirtPreviewCat.value = catKey;
+  if (currentParticipant.value) {
+    // The pet run category is stored as "1K" internally but shown as "1KM"
+    currentParticipant.value.run_category = catKey === '1KM' ? '1K' : catKey;
+  }
+};
+
+// Reactive: shirt image follows selectedShirtPreviewCat
+const activeShirtPreviewUrl = computed(() => {
+  const rawKey = selectedShirtPreviewCat.value;
+  if (rawKey) {
+    const norm = rawKey === "1K" ? "1KM" : rawKey;
+    return getShirtUrlForCat(norm);
+  }
+  // Fallback: derive from current participant's run category
+  const runCat = currentParticipant.value?.run_category || "3KM";
+  const norm = runCat === "1K" ? "1KM" : runCat;
+  return getShirtUrlForCat(norm);
+});
+
+// Keep selectedShirtPreviewCat in sync when run_category changes from the race cards
+watch(
+  () => currentParticipant.value?.run_category,
+  (newCat) => {
+    if (!newCat) return;
+    const norm = newCat === '1K' ? '1KM' : newCat;
+    // Only sync if the preview isn't already showing this category
+    // (prevents the watch from overriding a tab click)
+    if (selectedShirtPreviewCat.value !== norm) {
+      selectedShirtPreviewCat.value = norm;
+    }
+  },
+  { immediate: true }
+);
+
 const uploadSingleFile = async (file) => {
   if (!file) return null;
   const formData = new FormData();
@@ -962,9 +1021,8 @@ const submitRegistration = async () => {
         return;
       }
     }
-  }
 
-  // Validate LSU Student & Employee ID Verification
+    // Validate LSU Student & Employee ID Verification
     if (['LSU Exclusive - Enrolled Student', 'Currently Enrolled Students'].includes(p.participant_type)) {
       if (!p.lsu_id_number?.trim()) {
         showNotice(
@@ -1008,6 +1066,7 @@ const submitRegistration = async () => {
         return;
       }
     }
+  }
 
     // Validate LSU ID Number for salary deduction / add to tuition
   if (paymentType.value === "salary_deduction") {
@@ -1415,13 +1474,13 @@ const submitRegistration = async () => {
                 ? 'bg-gray-900/80 border-gray-700'
                 : 'bg-white border-emerald-200 shadow-sm',
             ]">
-              <span class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+              <span class="text-xs font-semibold text-emerald-600 whitespace-nowrap">
                 Participants:
               </span>
               <div class="flex items-center gap-2">
                 <button type="button"
                   @click="number_of_participants_per_group = Math.max(1, number_of_participants_per_group - 1)"
-                  class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold hover:bg-emerald-200 transition flex items-center justify-center text-sm">
+                  class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 font-bold hover:bg-emerald-200 transition flex items-center justify-center text-sm">
                   -
                 </button>
                 <input type="number" min="1" max="50" v-model="number_of_participants_per_group"
@@ -1477,12 +1536,12 @@ const submitRegistration = async () => {
               'p-4 rounded-2xl border flex items-center justify-between flex-wrap gap-3',
               props.darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-emerald-50/70 border-emerald-200',
             ]">
-              <div class="flex items-center gap-2 text-xs font-medium text-emerald-800 dark:text-emerald-300">
+              <div class="flex items-center gap-2 text-xs font-medium text-emerald-800">
                 <i class="fas fa-info-circle text-emerald-600 text-sm"></i>
                 <span>Filling details for Runner #{{ activeParticipantIndex + 1 }}</span>
               </div>
               <button type="button" @click="copyRunnerOneInfo"
-                class="px-3 py-1.5 bg-white dark:bg-gray-800 border border-emerald-300 dark:border-gray-600 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
+                class="px-3 py-1.5 bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-100 rounded-xl text-xs font-semibold shadow-sm transition flex items-center gap-1.5">
                 <i class="fas fa-copy text-xs"></i> Copy Contact/Classification from Runner #1
               </button>
             </div>
@@ -1493,7 +1552,7 @@ const submitRegistration = async () => {
                 <div>
                   <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
                     <span
-                      class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">1</span>
+                      class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-black">1</span>
                     Run Category
                   </h3>
                   <p class="text-xs text-gray-500 ml-9">
@@ -1629,7 +1688,7 @@ const submitRegistration = async () => {
                 <!-- VERTICAL DIVIDER (Desktop only) -->
                 <div class="hidden lg:flex flex-col items-center justify-center px-3 shrink-0">
                   <div
-                    class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent">
+                    class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 to-transparent">
                   </div>
                   <div :class="[
                     'my-2 px-2 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm shrink-0 flex flex-col items-center gap-1',
@@ -1648,7 +1707,7 @@ const submitRegistration = async () => {
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mb-1"></span>
                   </div>
                   <div
-                    class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 dark:via-gray-600 to-transparent">
+                    class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 to-transparent">
                   </div>
                 </div>
 
@@ -1733,12 +1792,11 @@ const submitRegistration = async () => {
 
               <!-- Swipe / Drag Hint -->
               <div
-                class="lg:hidden flex items-center justify-center gap-1.5 mt-2 text-[11px] text-gray-400 dark:text-gray-500">
+                class="lg:hidden flex items-center justify-center gap-1.5 mt-2 text-xs font-bold text-red-600">
                 <i class="fas fa-arrows-left-right text-[10px]"></i>
                 <span class="hidden sm:inline">Drag or swipe cards horizontally to explore all race distances</span>
                 <span class="sm:hidden">Swipe cards horizontally to explore all race distances</span>
               </div>
-
 
               <!-- INTEGRATED PET COMPANION DETAILS (ACTIVATED AUTOMATICALLY WHEN 1K PET RUN IS SELECTED) -->
               <div v-if="isPetCategory(currentParticipant.run_category)"
@@ -1789,7 +1847,7 @@ const submitRegistration = async () => {
                   currentParticipant.pet_type === 'Other' ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1 sm:grid-cols-2'
                 ]">
                   <div>
-                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">
                       Pet's Name <span class="text-rose-500">*</span>
                     </label>
                     <input v-model="currentParticipant.pet_name" placeholder="e.g. Milo / Barkley / Brownie" :class="[
@@ -1799,7 +1857,7 @@ const submitRegistration = async () => {
                   </div>
 
                   <div>
-                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">
                       Pet Species / Type <span class="text-rose-500">*</span>
                     </label>
                     <select v-model="currentParticipant.pet_type" :class="[
@@ -1813,7 +1871,7 @@ const submitRegistration = async () => {
                   </div>
 
                   <div v-if="currentParticipant.pet_type === 'Other'">
-                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
+                    <label class="block text-xs font-bold text-gray-700 mb-1">
                       Specify Pet Species / Type <span class="text-rose-500">*</span>
                     </label>
                     <input v-model="currentParticipant.pet_other_type" placeholder="e.g. Rabbit, Guinea Pig, Hamster"
@@ -1831,7 +1889,7 @@ const submitRegistration = async () => {
                   <!-- 1. Vaccine Record Upload -->
                   <div class="space-y-2">
                     <div class="flex items-center justify-between">
-                      <label class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                      <label class="text-xs font-bold text-gray-800 flex items-center gap-1.5">
                         <i class="fas fa-syringe text-emerald-600"></i>
                         <span>Updated Vaccination Record<span class="text-rose-500">*</span></span>
                       </label>
@@ -1840,15 +1898,15 @@ const submitRegistration = async () => {
                         <i class="fas fa-check-circle"></i> Uploaded
                       </span>
                     </div>
-                    <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                    <p class="text-[11px] text-gray-500">
                       Anti-Rabies and 5-in-1 Vaccine.
                     </p>
 
                     <label :for="'pet_vax_' + activeParticipantIndex" :class="[
                       'relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
                       currentParticipant.pet_vaccine_record_preview
-                        ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 h-36'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-24 py-2',
+                        ? 'border-emerald-500 bg-emerald-50/50 h-36'
+                        : 'border-gray-300 hover:border-emerald-500 h-24 py-2',
                       props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
                     ]">
                       <input :id="'pet_vax_' + activeParticipantIndex" type="file" accept="image/*,.pdf" class="sr-only"
@@ -1868,7 +1926,7 @@ const submitRegistration = async () => {
                       <template v-else>
                         <div class="flex flex-col items-center gap-1 py-3 px-2 text-center pointer-events-none">
                           <i class="fas fa-file-medical text-2xl text-emerald-500 group-hover:scale-110 transition"></i>
-                          <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Upload Vaccine Record</span>
+                          <span class="text-xs font-bold text-gray-700">Upload Vaccine Record</span>
                           <span class="text-[10px] text-gray-400">JPG, PNG, or PDF up to 5MB</span>
                         </div>
                       </template>
@@ -1878,7 +1936,7 @@ const submitRegistration = async () => {
                   <!-- 2. Non-Liability Clause & Consent Multi-Document Upload -->
                   <!-- <div class="space-y-2">
                     <div class="flex items-center justify-between">
-                      <label class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                      <label class="text-xs font-bold text-gray-800 flex items-center gap-1.5">
                         <i class="fas fa-file-signature text-emerald-600"></i>
                         <span>Consent Form / Waiver Documents</span>
                       </label>
@@ -1887,19 +1945,19 @@ const submitRegistration = async () => {
                         <i class="fas fa-check-circle"></i> {{ currentParticipant.pet_consent_files.length }} file(s)
                       </span>
                     </div>
-                    <p class="text-[11px] text-gray-500 dark:text-gray-400">
+                    <p class="text-[11px] text-gray-500">
                       Upload signed consent form, waiver, or veterinary clearance (multi-upload supported).
                     </p>
 
                     <label :for="'pet_consent_' + activeParticipantIndex" :class="[
                       'flex flex-col items-center justify-center rounded-2xl border-2 border-dashed cursor-pointer transition-all duration-200 p-3.5 text-center group',
-                      'border-gray-300 dark:border-gray-600 hover:border-emerald-500',
+                      'border-gray-300 hover:border-emerald-500',
                       props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
                     ]">
                       <input :id="'pet_consent_' + activeParticipantIndex" type="file" accept="image/*,.pdf" multiple
                         class="sr-only" @change="handlePetConsentUpload($event, currentParticipant)" />
                       <i class="fas fa-cloud-arrow-up text-2xl text-teal-600 group-hover:scale-110 transition mb-1"></i>
-                      <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Add Consent / Waiver
+                      <span class="text-xs font-bold text-gray-700">Add Consent / Waiver
                         Document(s)</span>
                       <span class="text-[10px] text-gray-400">Select multiple JPG, PNG, or PDF files</span>
                     </label>
@@ -1908,17 +1966,17 @@ const submitRegistration = async () => {
                     <div v-if="currentParticipant.pet_consent_files && currentParticipant.pet_consent_files.length"
                       class="space-y-1.5 max-h-28 overflow-y-auto">
                       <div v-for="(doc, dIdx) in currentParticipant.pet_consent_files" :key="'consent-doc-' + dIdx"
-                        class="flex items-center justify-between p-2 rounded-xl border bg-white/80 dark:bg-gray-800/80 border-emerald-200 dark:border-gray-700 text-xs shadow-2xs">
+                        class="flex items-center justify-between p-2 rounded-xl border bg-white/80 border-emerald-200 text-xs shadow-2xs">
                         <div class="flex items-center gap-2 min-w-0">
                           <i
                             :class="doc.isPdf ? 'fas fa-file-pdf text-rose-500' : 'fas fa-file-image text-emerald-500'"></i>
                           <span
-                            class="truncate max-w-[180px] font-semibold text-[11px] text-gray-700 dark:text-gray-300">{{
+                            class="truncate max-w-[180px] font-semibold text-[11px] text-gray-700">{{
                               doc.name
                             }}</span>
                         </div>
                         <button type="button" @click="removePetConsentDoc(currentParticipant, dIdx)"
-                          class="text-rose-500 hover:text-rose-700 text-xs px-1.5 py-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                          class="text-rose-500 hover:text-rose-700 text-xs px-1.5 py-0.5 rounded hover:bg-rose-50 transition"
                           title="Remove file">
                           <i class="fas fa-times"></i>
                         </button>
@@ -1929,7 +1987,7 @@ const submitRegistration = async () => {
                 </div>
 
                 <!-- Pet Safety & Non-Liability Clause Assurance Checkbox -->
-                <div class="mt-4 p-4 rounded-2xl border space-y-3 text-xs text-gray-700 dark:text-gray-300 shadow-2xs"
+                <div class="mt-4 p-4 rounded-2xl border space-y-3 text-xs text-gray-700 shadow-2xs"
                   :style="{ background: props.darkMode ? 'rgba(31,41,55,0.9)' : 'rgba(255,255,255,0.9)', borderColor: 'rgba(147,202,197,0.7)' }">
 
                   <div class="flex items-start gap-3">
@@ -1946,7 +2004,7 @@ const submitRegistration = async () => {
                     </label>
                   </div>
 
-                  <div class="flex items-start gap-3 pt-2 border-t border-gray-200 dark:border-gray-700">
+                  <div class="flex items-start gap-3 pt-2 border-t border-gray-200">
                     <input type="checkbox" v-model="currentParticipant.pet_consent_agreed"
                       class="mt-1 w-4 h-4 rounded cursor-pointer shrink-0" style="accent-color: #02857D"
                       :id="'pet_consent_agree_' + activeParticipantIndex" />
@@ -1969,15 +2027,15 @@ const submitRegistration = async () => {
             <div v-if="!currentParticipant.run_category"
               class="flex flex-col items-center justify-center gap-3 py-10 text-center">
               <div
-                class="w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-emerald-600 dark:text-emerald-400 text-2xl">
+                class="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-600 text-2xl">
                 <i class="fas fa-running"></i>
               </div>
               <div>
-                <p class="font-black text-base text-gray-800 dark:text-gray-200">Select a Race Category above</p>
+                <p class="font-black text-base text-gray-800">Select a Race Category above</p>
                 <p class="text-xs text-gray-500 mt-1">Your registration form will appear once you pick a category.</p>
               </div>
               <div
-                class="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold animate-bounce mt-1">
+                class="flex items-center gap-1.5 text-[11px] text-emerald-600 font-semibold animate-bounce mt-1">
                 <i class="fas fa-chevron-up text-[10px]"></i> Choose Category
               </div>
             </div>
@@ -1987,7 +2045,7 @@ const submitRegistration = async () => {
               <div class="mb-4">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                   <span
-                    class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">2</span>
+                    class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-black">2</span>
                   <span>{{ currentParticipant.run_category === '1K' ? 'Pet Owner / Runner Personal Information':'Personal Information' }}</span>
                 </h3>
                 <p class="text-xs text-gray-500 ml-9">
@@ -1998,7 +2056,7 @@ const submitRegistration = async () => {
               <div class="">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">First Name
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">First Name
                       *</label>
                     <input v-model="currentParticipant.firstname" placeholder="Juan" :class="[
                       'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
@@ -2007,7 +2065,7 @@ const submitRegistration = async () => {
                   </div>
 
                   <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Middle Name</label>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Middle Name</label>
                     <input v-model="currentParticipant.middlename" placeholder="Santos" :class="[
                       'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
@@ -2015,7 +2073,7 @@ const submitRegistration = async () => {
                   </div>
 
                   <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Last Name *</label>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Last Name *</label>
                     <input v-model="currentParticipant.lastname" placeholder="Dela Cruz" :class="[
                       'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
@@ -2025,7 +2083,7 @@ const submitRegistration = async () => {
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Suffix</label>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Suffix</label>
                     <select v-model="currentParticipant.suffix" :class="[
                       'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                       props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
@@ -2038,7 +2096,7 @@ const submitRegistration = async () => {
 
                   <!-- Date of Birth (1/4 column) -->
                   <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Date of Birth
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Date of Birth
                       *</label>
                     <input type="date" v-model="currentParticipant.birthdate" :class="[
                       'w-full px-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none',
@@ -2048,7 +2106,7 @@ const submitRegistration = async () => {
 
                   <!-- Gender (1/4 column) -->
                   <div>
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Gender *</label>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Gender *</label>
                     <div class="grid grid-cols-2 gap-2">
                       <div @click="currentParticipant.gender = 'Male'" :class="[
                         'flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl border cursor-pointer font-semibold text-xs transition select-none',
@@ -2084,7 +2142,7 @@ const submitRegistration = async () => {
               <div class="mb-4">
                 <h3 class="text-lg font-bold flex items-center gap-2">
                   <span
-                    class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">3</span>
+                    class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-black">3</span>
                   Contact Details
                 </h3>
                 <p class="text-xs text-gray-500 ml-9">
@@ -2095,10 +2153,10 @@ const submitRegistration = async () => {
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div class="w-full">
                   <div class="flex items-center justify-between mb-1">
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400">
+                    <label class="block text-xs font-semibold text-gray-600">
                       Email Address *
                     </label>
-                    <span v-if="isDashboard" class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
+                    <span v-if="isDashboard" class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-300">
                       <i class="fas fa-shield-alt text-emerald-600"></i> Auth Account
                     </span>
                   </div>
@@ -2113,13 +2171,13 @@ const submitRegistration = async () => {
                       :class="[
                         'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
                         props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
-                        (!isDashboard && activeParticipantIndex === 0 && isOtpVerified && verifiedEmail === (currentParticipant.contact_email || '').trim().toLowerCase()) ? 'border-emerald-500 bg-emerald-50/30 font-semibold text-emerald-800 dark:text-emerald-300' : ''
+                        (!isDashboard && activeParticipantIndex === 0 && isOtpVerified && verifiedEmail === (currentParticipant.contact_email || '').trim().toLowerCase()) ? 'border-emerald-500 bg-emerald-50/30 font-semibold text-emerald-800' : ''
                       ]"
                     />
                   </div>
 
                   <!-- Dashboard Form: Auth config info badge -->
-                  <p v-if="isDashboard" class="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
+                  <p v-if="isDashboard" class="text-[11px] text-emerald-600 mt-1 flex items-center gap-1">
                     <i class="fas fa-check-circle"></i> Authenticated via Dashboard ({{ user?.email || 'Logged In' }}). OTP is not required.
                   </p>
 
@@ -2128,16 +2186,16 @@ const submitRegistration = async () => {
                     <!-- Verified State Badge -->
                     <div
                       v-if="isOtpVerified && verifiedEmail === (currentParticipant.contact_email || '').trim().toLowerCase()"
-                      class="flex items-center justify-between p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800"
+                      class="flex items-center justify-between p-2 rounded-xl bg-emerald-50 border border-emerald-300"
                     >
-                      <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                      <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
                         <i class="fas fa-check-circle text-emerald-500 text-sm"></i>
                         <span>Email Verified with OTP</span>
                       </div>
                       <button
                         type="button"
                         @click="resetOtpVerification"
-                        class="text-[11px] text-emerald-800 dark:text-emerald-400 hover:text-red-500 underline font-semibold transition cursor-pointer"
+                        class="text-[11px] text-emerald-800 hover:text-red-500 underline font-semibold transition cursor-pointer"
                       >
                         Change Email
                       </button>
@@ -2157,9 +2215,9 @@ const submitRegistration = async () => {
                       </button>
 
                       <!-- OTP Input & Verify Section -->
-                      <div v-if="otpSent" class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 space-y-2">
+                      <div v-if="otpSent" class="p-3 rounded-xl bg-amber-50 border border-amber-200 space-y-2">
                         <div class="flex items-center justify-between text-xs">
-                          <span class="font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                          <span class="font-bold text-amber-800 flex items-center gap-1.5">
                             <i class="fas fa-key text-amber-600"></i>
                             Enter 6-Digit OTP Code
                           </span>
@@ -2172,7 +2230,7 @@ const submitRegistration = async () => {
                             inputmode="numeric"
                             maxlength="6"
                             placeholder="000000"
-                            class="w-32 px-3 py-2 text-center text-base tracking-widest font-mono font-bold rounded-lg border border-amber-300 dark:border-amber-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            class="w-32 px-3 py-2 text-center text-base tracking-widest font-mono font-bold rounded-lg border border-amber-300 bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                           />
                           <button
                             type="button"
@@ -2185,7 +2243,7 @@ const submitRegistration = async () => {
                             <span>Verify Code</span>
                           </button>
                         </div>
-                        <p class="text-[10px] text-amber-700 dark:text-amber-400">
+                        <p class="text-[10px] text-amber-700">
                           A 6-digit OTP code has been dispatched to your email. Check inbox or spam.
                         </p>
                       </div>
@@ -2200,7 +2258,7 @@ const submitRegistration = async () => {
 
                 <!-- Locked +63 Contact Phone Number -->
                 <div class="w-full">
-                  <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                  <label class="block text-xs font-semibold text-gray-600 mb-1">
                     Contact Phone Number *
                   </label>
                   <div :class="[
@@ -2227,7 +2285,7 @@ const submitRegistration = async () => {
                 </div>
 
                 <div class="w-full">
-                  <label class="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">Complete
+                  <label class="block text-xs font-semibold text-gray-600 mb-1">Complete
                     Address</label>
                   <div class="relative">
                     <span class="absolute left-3.5 top-3 text-xs text-gray-400">
@@ -2248,7 +2306,7 @@ const submitRegistration = async () => {
                 <div class="flex items-center justify-between flex-wrap gap-2">
                   <h3 class="text-lg font-bold flex items-center gap-2">
                     <span
-                      class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">4</span>
+                      class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-black">4</span>
                     Size Selection
                   </h3>
                   <div class="flex items-center gap-2">
@@ -2256,15 +2314,15 @@ const submitRegistration = async () => {
                       :class="[
                         'text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-all',
                         isKidParticipant(currentParticipant)
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200'
-                          : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                          : 'bg-emerald-100 text-emerald-800'
                       ]">
                       <i :class="isKidParticipant(currentParticipant) ? 'fas fa-child' : 'fas fa-user'"></i>
                       <span>Age: {{ calculateAge(currentParticipant.birthdate) }} yrs</span>
-                      <span v-if="isKidParticipant(currentParticipant)" class="text-[10px] font-semibold bg-blue-200 dark:bg-blue-900 px-1.5 py-0.5 rounded">Kids Shirt Auto-Selected</span>
+                      <span v-if="isKidParticipant(currentParticipant)" class="text-[10px] font-semibold bg-blue-200 px-1.5 py-0.5 rounded">Kids Shirt Auto-Selected</span>
                     </span>
                     <span
-                      class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300">
+                      class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
                       <span v-if="currentParticipant.run_category === '20KM'" class="font-black">2 Shirts</span>
                       <span v-else class="font-black">1 Shirt</span>
                     </span>
@@ -2276,20 +2334,89 @@ const submitRegistration = async () => {
                 </p>
               </div>
 
+              <!-- ── Official Shirt Design Preview Pictures ── -->
+              <div :class="[
+                'mb-4 p-3.5 sm:p-4 rounded-2xl border space-y-3 transition-all',
+                props.darkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-white border-slate-200 shadow-sm'
+              ]">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                  <span class="text-xs font-bold flex items-center gap-1.5" :class="props.darkMode ? 'text-gray-200' : 'text-gray-800'">
+                    <i class="fas fa-tshirt text-emerald-600"></i>
+                    <span>Official Shirt Design Preview</span>
+                  </span>
+                  <span class="text-[11px] text-gray-400 font-medium flex items-center gap-1">
+                    <i class="fas fa-search-plus text-[10px]"></i> Click image to view full size
+                  </span>
+                </div>
+
+                <!-- Category selector tabs for shirt preview -->
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
+                  <button
+                    v-for="cat in runCategories"
+                    :key="'preview-tab-' + cat.id"
+                    type="button"
+                    @click="selectShirtPreviewCategory(cat.id)"
+                    :class="[
+                      'px-3 py-1 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1 shrink-0 cursor-pointer active:scale-95',
+                      (selectedShirtPreviewCat === cat.id ||
+                        (!selectedShirtPreviewCat && (
+                          currentParticipant.run_category === cat.id ||
+                          (currentParticipant.run_category === '1K' && cat.id === '1KM')
+                        ))
+                      )
+                        ? 'text-white shadow-sm ring-2 ring-white/30'
+                        : props.darkMode
+                          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-slate-100 text-gray-600 hover:bg-slate-200'
+                    ]"
+                    :style="(selectedShirtPreviewCat === cat.id ||
+                      (!selectedShirtPreviewCat && (
+                        currentParticipant.run_category === cat.id ||
+                        (currentParticipant.run_category === '1K' && cat.id === '1KM')
+                      ))
+                    ) ? { background: `linear-gradient(135deg, ${cat.colors?.secondary || '#059669'}, ${cat.colors?.primary || '#10b981'})` } : {}"
+                  >
+                    <i :class="['fas text-[10px]', cat.categoryType === 'pet' ? 'fa-paw' : 'fa-running']"></i>
+                    <span>{{ cat.id }}</span>
+                    <span
+                      v-if="currentParticipant.run_category === cat.id || (currentParticipant.run_category === '1K' && cat.id === '1KM')"
+                      class="text-[9px] uppercase px-1 py-0.5 rounded bg-white/25 font-black tracking-wide"
+                    >✓</span>
+                  </button>
+                </div>
+
+                <!-- Featured Shirt Preview Image -->
+                <div 
+                  class="relative rounded-xl overflow-hidden cursor-pointer group border transition hover:shadow-md flex items-center justify-center p-2 min-h-[220px]"
+                  :class="props.darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-slate-50 border-slate-200'"
+                  @click="shirtImageModalUrl = activeShirtPreviewUrl"
+                >
+                  <img 
+                    :src="activeShirtPreviewUrl" 
+                    alt="Official Animo Run Shirt Preview"
+                    class="w-full object-contain mx-auto transition duration-300 group-hover:scale-102"
+                    @error="handleShirtImageError"
+                  />
+                  <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs rounded-xl">
+                    <i class="fas fa-expand text-base"></i> Click to Zoom / View Full Size
+                  </div>
+                </div>
+              </div>
+
               <!-- ── 1. Race Shirt Choice + Size ── -->
               <div :class="[
                 'p-3.5 sm:p-4 rounded-2xl border space-y-3',
                 props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
               ]">
-                <!-- Shirt style buttons (Rendered from OFFICIAL_SHIRT_CONFIGS) -->
+                 <!-- Shirt style buttons (Rendered from OFFICIAL_SHIRT_CONFIGS) -->
                 <div>
-                  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                  <div class="lg:flex gap-2">
                     <button type="button"
                       v-for="config in OFFICIAL_SHIRT_CONFIGS"
                       :key="config.id"
                       @click="selectShirtType(currentParticipant, config.id, true)"
                       :class="[
-                        'flex items-center justify-center gap-1.5 px-2.5 py-0.5 rounded-xl border text-xs font-bold transition-all duration-150 cursor-pointer text-center relative',
+                        'flex items-center gap-1.5 px-2.5 gap-y-2 py-2 rounded-xl border text-xs font-bold transition-all duration-150 cursor-pointer relative w-full',
                         currentParticipant.shirt_type === config.id
                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                           : props.darkMode
@@ -2297,15 +2424,16 @@ const submitRegistration = async () => {
                             : 'bg-white text-gray-700 border-gray-200 hover:bg-slate-100',
                       ]">
                       <i :class="['fas', config.icon, 'text-[11px]']"></i>
-                      <span class="">{{ config.label }}</span>
+                      <span class="whitespace-nowrap">{{ config.label }}</span>
                       <span v-if="config.id === 'kids_shirt' && isKidParticipant(currentParticipant)"
                         class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white"></span>
                     </button>
                   </div>
                 </div>
 
+
                 <!-- Size dropdown for selected shirt style -->
-                <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200 dark:border-gray-700">
+                <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200">
                   <div class="flex items-center gap-2.5 min-w-0">
                     <label class="text-xs font-bold shrink-0"
                       :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">
@@ -2330,7 +2458,7 @@ const submitRegistration = async () => {
 
                   <!-- Summary badge -->
                   <span
-                    class="text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0">
+                    class="text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
                     {{ getShirtConfig(currentParticipant.shirt_type).label }} · {{ getSelectedRaceShirtSize(currentParticipant) }}
                   </span>
                 </div>
@@ -2343,7 +2471,7 @@ const submitRegistration = async () => {
               ]">
                 <div class="flex items-center gap-2">
                   <i class="fas fa-medal text-amber-500 text-sm shrink-0"></i>
-                  <span class="text-xs font-bold text-gray-800 dark:text-gray-200">Finisher Shirt (20KM Only)</span>
+                  <span class="text-xs font-bold text-gray-800">Finisher Shirt (20KM Only)</span>
                 </div>
 
                 <div :class="['w-px h-6 shrink-0 hidden sm:block', props.darkMode ? 'bg-gray-600' : 'bg-amber-200']"></div>
@@ -2363,7 +2491,7 @@ const submitRegistration = async () => {
                 </div>
 
                 <span
-                  class="ml-auto text-[11px] font-black px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 shrink-0">
+                  class="ml-auto text-[11px] font-black px-2.5 py-1 rounded-lg bg-amber-100 text-amber-700 shrink-0">
                   Finisher Shirt · {{ currentParticipant.finisher_shirt_size || 'M' }}
                 </span>
               </div>
@@ -2376,15 +2504,15 @@ const submitRegistration = async () => {
                 <div class="flex items-center justify-between gap-3 flex-wrap">
                   <h3 class="text-base sm:text-lg font-bold flex items-center gap-2">
                     <span
-                      class="w-7 h-7 rounded-xl bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xs font-black">5</span>
+                      class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-black">5</span>
                     <span>Classification & Payment Option</span>
                   </h3>
                   <span
-                    class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300/40">
+                    class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300/40">
                     {{ isPetCategory(currentParticipant.run_category) ? 'Pet Run Direct Payment' : (currentParticipant.participantGroup === 'LSU' ? (currentParticipant.participant_type || 'LSU Exclusive') : 'Open Category') }} • {{ paymentMethodLabel }}
                   </span>
                 </div>
-                <p class="text-xs text-gray-500 ml-9 mt-0.5">
+                <p class="text-xs text-gray-500 mt-0.5">
                   Select participant category to configure available payment options
                 </p>
               </div>
@@ -2398,27 +2526,27 @@ const submitRegistration = async () => {
                   <div @click="selectParticipantGroup(currentParticipant, 'LSU')" :class="[
                     'rounded-2xl border-2 p-3 sm:p-3.5 cursor-pointer transition-all duration-200 text-left relative flex items-center justify-between gap-3',
                     currentParticipant.participantGroup === 'LSU'
-                      ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 ring-2 ring-emerald-500/30 shadow-xs'
+                      ? 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-500/30 shadow-xs'
                       : props.darkMode
                         ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800'
                         : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
                   ]">
                     <div class="flex items-center gap-2.5 min-w-0">
                       <div
-                        class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-base font-bold shrink-0">
+                        class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-base font-bold shrink-0">
                         <i class="fas fa-university"></i>
                       </div>
                       <div class="min-w-0">
                         <div class="flex items-center gap-1.5 flex-wrap">
-                          <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                          <h4 class="font-bold text-sm text-gray-900">
                             LSU Exclusive
                           </h4>
                           <span
-                            class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300">
+                            class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
                             Students · Staff · Alumni
                           </span>
                         </div>
-                        <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                        <p class="text-[11px] text-gray-500 truncate">
                           Enrolled students, university employees, and alumni
                         </p>
                       </div>
@@ -2427,7 +2555,7 @@ const submitRegistration = async () => {
                       'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
                       currentParticipant.participantGroup === 'LSU'
                         ? 'border-emerald-600 bg-emerald-600'
-                        : 'border-gray-300 dark:border-gray-600'
+                        : 'border-gray-300'
                     ]">
                       <div v-if="currentParticipant.participantGroup === 'LSU'" class="w-2 h-2 rounded-full bg-white">
                       </div>
@@ -2438,27 +2566,27 @@ const submitRegistration = async () => {
                   <div @click="selectParticipantGroup(currentParticipant, 'Open')" :class="[
                     'rounded-2xl border-2 p-3 sm:p-3.5 cursor-pointer transition-all duration-200 text-left relative flex items-center justify-between gap-3',
                     currentParticipant.participantGroup === 'Open'
-                      ? 'border-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40 ring-2 ring-emerald-500/30 shadow-xs'
+                      ? 'border-emerald-600 bg-emerald-50/80 ring-2 ring-emerald-500/30 shadow-xs'
                       : props.darkMode
                         ? 'border-gray-700 bg-gray-800/40 hover:border-gray-600 hover:bg-gray-800'
                         : 'border-slate-200 bg-white hover:border-emerald-300 hover:bg-slate-50'
                   ]">
                     <div class="flex items-center gap-2.5 min-w-0">
                       <div
-                        class="w-9 h-9 rounded-xl bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 flex items-center justify-center text-base font-bold shrink-0">
+                        class="w-9 h-9 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center text-base font-bold shrink-0">
                         <i class="fas fa-globe-asia"></i>
                       </div>
                       <div class="min-w-0">
                         <div class="flex items-center gap-1.5 flex-wrap">
-                          <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100">
+                          <h4 class="font-bold text-sm text-gray-900">
                             Open Category
                           </h4>
                           <span
-                            class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                            class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-gray-700">
                             General Public
                           </span>
                         </div>
-                        <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                        <p class="text-[11px] text-gray-500 truncate">
                           Public runners, running clubs, and visiting enthusiasts
                         </p>
                       </div>
@@ -2467,7 +2595,7 @@ const submitRegistration = async () => {
                       'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
                       currentParticipant.participantGroup === 'Open'
                         ? 'border-emerald-600 bg-emerald-600'
-                        : 'border-gray-300 dark:border-gray-600'
+                        : 'border-gray-300'
                     ]">
                       <div v-if="currentParticipant.participantGroup === 'Open'" class="w-2 h-2 rounded-full bg-white">
                       </div>
@@ -2477,16 +2605,16 @@ const submitRegistration = async () => {
 
                 <!-- INTEGRATED LSU EXCLUSIVE AFFILIATION & PAYMENT FORM -->
                 <div v-if="currentParticipant.participantGroup === 'LSU'"
-                  class="p-3.5 sm:p-4 rounded-2xl border bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/80 dark:border-emerald-900/60 space-y-4 transition-all duration-300">
+                  class="p-3.5 sm:p-4 rounded-2xl border bg-emerald-50/40 border-emerald-200/80 space-y-4 transition-all duration-300">
                   <!-- 3-Button Segmented Affiliation Selector -->
                   <div>
                     <div class="flex items-center justify-between mb-2">
                       <label
-                        class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                        class="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
                         <i class="fas fa-list-check"></i>
                         <span>Select Your LSU Affiliation:</span>
                       </label>
-                      <span class="text-[11px] text-gray-500 dark:text-gray-400">Choose one</span>
+                      <span class="text-[11px] text-gray-500">Choose one</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -2534,21 +2662,21 @@ const submitRegistration = async () => {
 
                   <!-- 1. Enrolled Students Form + Integrated Add-to-Tuition Payment -->
                   <div v-if="['LSU Exclusive - Enrolled Student', 'Currently Enrolled Students'].includes(currentParticipant.participant_type)"
-                    class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
+                    class="pt-3 border-t border-emerald-200/80 space-y-3">
                     <div
-                      class="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900 text-xs text-blue-800 dark:text-blue-300">
+                      class="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-800">
                       <div class="flex items-center gap-2 font-bold">
                         <i class="fas fa-file-invoice-dollar text-blue-600"></i>
                         <span>Payment Method: Add to Tuition</span>
                       </div>
                       <span
-                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">LSU
+                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700">LSU
                         Student Account</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Course /
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Course /
                           Program *</label>
                         <select v-model="currentParticipant.college_course" :class="[
                           'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
@@ -2561,7 +2689,7 @@ const submitRegistration = async () => {
                       </div>
 
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Year / Grade
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Year / Grade
                           Level
                           *</label>
                         <select v-model="currentParticipant.college_year" :class="[
@@ -2575,7 +2703,7 @@ const submitRegistration = async () => {
                       </div>
 
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">LSU Student ID
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">LSU Student ID
                           Number
                           *</label>
                         <div class="relative">
@@ -2587,8 +2715,8 @@ const submitRegistration = async () => {
                               'w-full pl-8 pr-9 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:outline-none transition-all',
                               currentParticipant.lsu_id_number?.trim()
                                 ? (getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'student', currentParticipant)?.isValid
-                                  ? 'border-emerald-500 focus:ring-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100'
-                                  : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100')
+                                  ? 'border-emerald-500 focus:ring-emerald-500 bg-emerald-50/30 text-emerald-900'
+                                  : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 text-amber-900')
                                 : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'),
                             ]" />
                           <span v-if="currentParticipant.lsu_id_number?.trim()" class="absolute right-3 top-2.5 text-xs">
@@ -2599,13 +2727,13 @@ const submitRegistration = async () => {
                         <!-- Live Verification Feedback -->
                         <div v-if="currentParticipant.lsu_id_number?.trim()" class="mt-1.5 text-[11px] font-semibold">
                           <div v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'student', currentParticipant)?.isValid"
-                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800">
-                            <i class="fas fa-user-check text-emerald-600 dark:text-emerald-400"></i>
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300">
+                            <i class="fas fa-user-check text-emerald-600"></i>
                             <span>Verified LSU Student Record</span>
                           </div>
                           <div v-else
-                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-800">
-                            <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400"></i>
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-300">
+                            <i class="fas fa-exclamation-triangle text-amber-600"></i>
                                 ID Not Found.
                           </div>
                         </div>
@@ -2614,7 +2742,7 @@ const submitRegistration = async () => {
 
                     <!-- Running Club / Organization (Students) -->
                     <div>
-                      <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      <label class="block text-xs font-semibold text-gray-700 mb-1">
                         Running Club / Organization <span class="text-gray-400 font-normal">(Optional)</span>
                       </label>
                       <input type="text" v-model="currentParticipant.organization"
@@ -2627,21 +2755,21 @@ const submitRegistration = async () => {
 
                   <!-- 2. Employees Form + Integrated Salary Deduction Payment -->
                   <div v-if="['LSU Exclusive - Employee', 'Employees'].includes(currentParticipant.participant_type)"
-                    class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
+                    class="pt-3 border-t border-emerald-200/80 space-y-3">
                     <div
-                      class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900 text-xs text-emerald-800 dark:text-emerald-300">
+                      class="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
                       <div class="flex items-center gap-2 font-bold">
                         <i class="fas fa-money-check-alt text-emerald-600"></i>
                         <span>Payment Method: Payroll Salary Deduction (4 Gives)</span>
                       </div>
                       <span
-                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300">Employee
+                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-700">Employee
                         Payroll</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Office /
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Office /
                           Department
                           *</label>
                         <select v-model="currentParticipant.partner_office" :class="[
@@ -2655,7 +2783,7 @@ const submitRegistration = async () => {
                       </div>
 
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">LSU Employee ID
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">LSU Employee ID
                           Number
                           *</label>
                         <div class="relative">
@@ -2667,8 +2795,8 @@ const submitRegistration = async () => {
                               'w-full pl-8 pr-9 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:outline-none transition-all',
                               currentParticipant.lsu_id_number?.trim()
                                 ? (getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'employee', currentParticipant)?.isValid
-                                  ? 'border-emerald-500 focus:ring-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/30 text-emerald-900 dark:text-emerald-100'
-                                  : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 dark:bg-amber-950/30 text-amber-900 dark:text-amber-100')
+                                  ? 'border-emerald-500 focus:ring-emerald-500 bg-emerald-50/30 text-emerald-900'
+                                  : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 text-amber-900')
                                 : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'),
                             ]" />
                           <span v-if="currentParticipant.lsu_id_number?.trim()" class="absolute right-3 top-2.5 text-xs">
@@ -2679,13 +2807,13 @@ const submitRegistration = async () => {
                         <!-- Live Verification Feedback -->
                         <div v-if="currentParticipant.lsu_id_number?.trim()" class="mt-1.5 text-[11px] font-semibold">
                           <div v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'employee', currentParticipant)?.isValid"
-                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-800">
-                            <i class="fas fa-user-check text-emerald-600 dark:text-emerald-400"></i>
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300">
+                            <i class="fas fa-user-check text-emerald-600"></i>
                             <span>Verified LSU Employee Record</span>
                           </div>
                           <div v-else
-                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-800">
-                            <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400"></i>
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-300">
+                            <i class="fas fa-exclamation-triangle text-amber-600"></i>
                                 ID Not Found.
                           </div>
                         </div>
@@ -2694,7 +2822,7 @@ const submitRegistration = async () => {
 
                     <!-- Running Club / Organization (Employees) -->
                     <div>
-                      <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                      <label class="block text-xs font-semibold text-gray-700 mb-1">
                         Running Club / Organization <span class="text-gray-400 font-normal">(Optional)</span>
                       </label>
                       <input type="text" v-model="currentParticipant.organization"
@@ -2707,21 +2835,21 @@ const submitRegistration = async () => {
 
                   <!-- 3. Alumni Form + Integrated Direct Payment -->
                   <div v-if="['LSU Exclusive - Alumni', 'Alumni'].includes(currentParticipant.participant_type)"
-                    class="pt-3 border-t border-emerald-200/80 dark:border-gray-700 space-y-3">
+                    class="pt-3 border-t border-emerald-200/80 space-y-3">
                     <div
-                      class="flex items-center justify-between p-2.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-900 text-xs text-purple-800 dark:text-purple-300">
+                      class="flex items-center justify-between p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-xs text-purple-800">
                       <div class="flex items-center gap-2 font-bold">
                         <i class="fas fa-wallet text-purple-600"></i>
                         <span>Payment Method: Direct Payment (QR / OTC / Cash)</span>
                       </div>
                       <span
-                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300">Alumni
+                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-100 text-purple-700">Alumni
                         Direct</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Batch /
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Batch /
                           Graduation
                           Year</label>
                         <input type="text" v-model="currentParticipant.alumni_batch"
@@ -2731,7 +2859,7 @@ const submitRegistration = async () => {
                           ]" />
                       </div>
                       <div>
-                        <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">
                           Running Club / Organization <span class="text-gray-400 font-normal">(Optional)</span>
                         </label>
                         <input type="text" v-model="currentParticipant.organization"
@@ -2745,7 +2873,7 @@ const submitRegistration = async () => {
                     <!-- Alumni ID Upload: Front Only (Up to 5MB) -->
                     <div>
                       <div class="flex items-center justify-between gap-1.5 mb-1.5">
-                        <label class="text-xs font-bold text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                        <label class="text-xs font-bold text-gray-700 flex items-center gap-1.5">
                           <i class="fas fa-id-card text-emerald-600"></i>
                           <span>Upload Alumni ID, ICC/ICC-LSU/LSU ID<span class="text-rose-500">*</span></span>
                         </label>
@@ -2753,16 +2881,16 @@ const submitRegistration = async () => {
 
                       <div class="w-full">
                         <p
-                          class="text-[10px] font-bold text-gray-600 dark:text-gray-400 mb-1 flex items-center justify-between">
+                          class="text-[10px] font-bold text-gray-600 mb-1 flex items-center justify-between">
                           <!-- <span><i class="fas fa-id-badge text-[10px] text-emerald-600 mr-0.5"></i> Front Side</span> -->
                           <span v-if="currentParticipant.alumni_id_front_preview"
-                            class="text-emerald-600 dark:text-emerald-400 font-semibold">
+                            class="text-emerald-600 font-semibold">
                             <i class="fas fa-check-circle text-[9px]"></i> Uploaded
                           </span>
                         </p>
                         <label :for="'alumni_front_' + activeParticipantIndex" :class="[
                           'relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed cursor-pointer transition-all duration-200 overflow-hidden group',
-                          currentParticipant.alumni_id_front_preview ? 'border-emerald-500 bg-emerald-50/40 dark:bg-emerald-950/20 h-28' : 'border-gray-300 dark:border-gray-600 hover:border-emerald-500 h-20',
+                          currentParticipant.alumni_id_front_preview ? 'border-emerald-500 bg-emerald-50/40 h-28' : 'border-gray-300 hover:border-emerald-500 h-20',
                           props.darkMode ? 'bg-gray-800/40 hover:bg-gray-800' : 'bg-white hover:bg-emerald-50/30',
                         ]">
                           <input :id="'alumni_front_' + activeParticipantIndex" type="file" accept="image/*,.pdf"
@@ -2794,22 +2922,22 @@ const submitRegistration = async () => {
 
                 <!-- INTEGRATED OPEN CATEGORY DETAILS & PAYMENT FORM -->
                 <div v-if="currentParticipant.participantGroup === 'Open'"
-                  class="p-3.5 sm:p-4 rounded-2xl border bg-slate-50 dark:bg-gray-800/60 border-slate-200 dark:border-gray-700 space-y-3 transition-all duration-300">
+                  class="p-3.5 sm:p-4 rounded-2xl border bg-slate-50 border-slate-200 space-y-3 transition-all duration-300">
                   <div
-                    class="flex items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-gray-700">
+                    class="flex items-center justify-between gap-2 pb-2 border-b border-slate-200">
                     <span
-                      class="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
+                      class="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
                       <i class="fas fa-running text-teal-600"></i>
                       <span>Open Category Details</span>
                     </span>
                     <span
-                      class="text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/60 px-2 py-0.5 rounded-md">
+                      class="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
                       Direct Payment (QR / OTC / Cash)
                     </span>
                   </div>
 
                   <div class="max-w-md">
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">
                       Organization / Running Club / Company <span class="text-gray-400 font-normal">(Optional)</span>
                     </label>
                     <input type="text" v-model="currentParticipant.organization"
@@ -2822,8 +2950,8 @@ const submitRegistration = async () => {
 
                 <!-- DIRECT PAYMENT METHODS & RECEIPT UPLOAD (For Open Category & Alumni) -->
                 <div v-if="paymentType === 'non_lsu_payment'"
-                  class="p-4 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-200 dark:border-gray-700 space-y-4">
-                  <div class="font-bold text-xs uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                  class="p-4 rounded-2xl bg-white border border-emerald-200 space-y-4">
+                  <div class="font-bold text-xs uppercase tracking-wider text-emerald-700">
                     Select Non-LSU Payment Method:
                   </div>
 
@@ -2832,8 +2960,8 @@ const submitRegistration = async () => {
                     <div @click="nonLsuPaymentMethod = 'qr_payment'" :class="[
                       'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
                       nonLsuPaymentMethod === 'qr_payment'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
                     ]">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
@@ -2865,8 +2993,8 @@ const submitRegistration = async () => {
                     <div @click="nonLsuPaymentMethod = 'accounting_otc'" :class="[
                       'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
                       nonLsuPaymentMethod === 'accounting_otc'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
                     ]">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
@@ -2888,8 +3016,8 @@ const submitRegistration = async () => {
                     <div @click="nonLsuPaymentMethod = 'weekend_cash'" :class="[
                       'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
                       nonLsuPaymentMethod === 'weekend_cash'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
                     ]">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
@@ -2958,7 +3086,7 @@ const submitRegistration = async () => {
                     <div :class="[
                       'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden w-full flex items-center',
                       receiptPreview
-                        ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
+                        ? 'border-emerald-500 bg-emerald-50/20'
                         : props.darkMode
                           ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
                           : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
@@ -2981,7 +3109,7 @@ const submitRegistration = async () => {
                           class="h-32 w-full object-cover rounded-xl border shadow-sm" />
                         <div class="mt-2 flex items-center justify-between text-xs">
                           <span
-                            class="truncate max-w-[160px] font-medium text-emerald-600 dark:text-emerald-400 text-[11px]">
+                            class="truncate max-w-[160px] font-medium text-emerald-600 text-[11px]">
                             <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
                           </span>
                           <button type="button" @click="removeReceipt"
@@ -2996,7 +3124,7 @@ const submitRegistration = async () => {
 
                   <!-- TEXT INSTRUCTION (For Accounting OTC & Weekend Cash) -->
                   <div v-else
-                    class="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                    class="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-1">
                     <div class="font-bold flex items-center gap-1.5">
                       <i class="fas fa-clock text-amber-600"></i> Payment Instruction
                     </div>
@@ -3009,7 +3137,7 @@ const submitRegistration = async () => {
     Please proceed to the Ozamiz Lifestyle Runners weekend booth to settle your fee of
     <strong>PHP {{ grandTotal.toLocaleString() }}</strong>
   </span>
-  <span class="text-amber-700 dark:text-amber-300">
+  <span class="text-amber-700">
     on or before the next <strong>Saturday</strong> to avoid cancellation of your registration.
   </span>
 </p>
@@ -3021,15 +3149,15 @@ const submitRegistration = async () => {
               <!-- FOR PET RUN RUNNERS (1KM PET RUN DIRECT PAYMENT) -->
               <div v-else class="space-y-4">
                 <div
-                  class="p-4 rounded-2xl bg-white dark:bg-gray-800/90 border border-emerald-200 dark:border-gray-700 space-y-4">
-                  <div class="flex items-center justify-between pb-2 border-b border-gray-100 dark:border-gray-700">
+                  class="p-4 rounded-2xl bg-white border border-emerald-200 space-y-4">
+                  <div class="flex items-center justify-between pb-2 border-b border-gray-100">
                     <span
-                      class="text-xs font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+                      class="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
                       <i class="fas fa-paw text-emerald-600"></i>
                       <span>1 KM Direct Payment</span>
                     </span>
                     <span
-                      class="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
+                      class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
                       QR / OTC / Cash
                     </span>
                   </div>
@@ -3039,8 +3167,8 @@ const submitRegistration = async () => {
                     <div @click="nonLsuPaymentMethod = 'qr_payment'" :class="[
                       'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
                       nonLsuPaymentMethod === 'qr_payment'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
                     ]">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
@@ -3071,8 +3199,8 @@ const submitRegistration = async () => {
                     <div @click="nonLsuPaymentMethod = 'accounting_otc'" :class="[
                       'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
                       nonLsuPaymentMethod === 'accounting_otc'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
                     ]">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
@@ -3087,8 +3215,8 @@ const submitRegistration = async () => {
                     <div @click="nonLsuPaymentMethod = 'weekend_cash'" :class="[
                       'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
                       nonLsuPaymentMethod === 'weekend_cash'
-                        ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700',
+                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
                     ]">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
@@ -3137,7 +3265,7 @@ const submitRegistration = async () => {
                     <div :class="[
                       'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden w-full flex items-center justify-center',
                       receiptPreview
-                        ? 'border-emerald-500 bg-emerald-50/20 dark:bg-emerald-950/20'
+                        ? 'border-emerald-500 bg-emerald-50/20'
                         : props.darkMode
                           ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
                           : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
@@ -3160,7 +3288,7 @@ const submitRegistration = async () => {
                           class="h-32 w-full object-cover rounded-xl border shadow-sm" />
                         <div class="mt-2 flex items-center justify-between text-xs">
                           <span
-                            class="truncate max-w-[160px] font-medium text-emerald-600 dark:text-emerald-400 text-[11px]">
+                            class="truncate max-w-[160px] font-medium text-emerald-600 text-[11px]">
                             <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
                           </span>
                           <button type="button" @click="removeReceipt"
@@ -3176,7 +3304,7 @@ const submitRegistration = async () => {
 
                   <!-- TEXT INSTRUCTION (For Accounting OTC & Weekend Cash) -->
                   <div v-else
-                    class="p-3.5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 space-y-1">
+                    class="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-1">
                     <div class="font-bold flex items-center gap-1.5">
                       <i class="fas fa-clock text-amber-600"></i> Payment Instruction
                     </div>
@@ -3191,7 +3319,7 @@ const submitRegistration = async () => {
                           {{
                           grandTotal.toLocaleString() }}</strong>.
                       </span>
-                      <strong class="text-amber-700 dark:text-amber-300 block mt-0.5">Please wait for the confirmation
+                      <strong class="text-amber-700 block mt-0.5">Please wait for the confirmation
                         to be paid
                         and confirmed by the admin.</strong>
                     </p>
@@ -3217,24 +3345,24 @@ const submitRegistration = async () => {
                   : 'bg-white border-slate-200 text-slate-800'
               ]">
                 <!-- Section Header -->
-                <div class="flex items-center gap-2.5 pb-3 border-b border-gray-200 dark:border-gray-700">
-                  <div class="w-9 h-9 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <div class="flex items-center gap-2.5 pb-3 border-b border-gray-200">
+                  <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
                     <i class="fas fa-file-contract text-base"></i>
                   </div>
                   <div>
-                    <h3 class="text-sm sm:text-base font-black tracking-wide text-gray-900 dark:text-white uppercase">
+                    <h3 class="text-sm sm:text-base font-black tracking-wide text-gray-900 uppercase">
                       {{ waiverConsentData.title || 'Consent, Waiver, Data Privacy, Security, and Liability' }}
                     </h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <p class="text-xs text-gray-500">
                       {{ waiverConsentData.subtitle || 'Please review the event terms and conditions and check both required agreement boxes before submitting.' }}
                     </p>
                   </div>
                 </div>
 
                 <!-- Scrollable Document Terms (rendered dynamically from JSON) -->
-                <div class="max-h-60 overflow-y-auto p-4 rounded-xl border border-slate-200 dark:border-gray-700 bg-slate-50 dark:bg-slate-950/50 text-xs leading-relaxed text-gray-700 dark:text-gray-300 space-y-3.5 custom-scrollbar shadow-inner">
+                <div class="max-h-60 overflow-y-auto p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs leading-relaxed text-gray-700 space-y-3.5 custom-scrollbar shadow-inner">
                   <div v-for="section in waiverConsentData.sections" :key="section.id">
-                    <h4 class="font-bold text-gray-900 dark:text-white text-xs uppercase mb-1 flex items-center gap-1.5">
+                    <h4 class="font-bold text-gray-900 text-xs uppercase mb-1 flex items-center gap-1.5">
                       <i :class="[section.icon || 'fas fa-shield-alt', 'text-emerald-600 text-[11px]']"></i> {{ section.id }}. {{ section.title }}
                     </h4>
                     <p>
@@ -3249,19 +3377,19 @@ const submitRegistration = async () => {
                   <label :class="[
                     'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none',
                     waiver_agreed
-                      ? 'bg-emerald-50/80 border-emerald-500 dark:bg-emerald-950/40 dark:border-emerald-500'
-                      : 'bg-slate-50/50 border-gray-200 dark:bg-gray-800/40 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      ? 'bg-emerald-50/80 border-emerald-500'
+                      : 'bg-slate-50/50 border-gray-200 hover:border-gray-300'
                   ]">
                     <input
                       type="checkbox"
                       v-model="waiver_agreed"
-                      class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-emerald-600 shrink-0 cursor-pointer"
+                      class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 shrink-0 cursor-pointer"
                     />
                     <div class="text-xs leading-relaxed">
-                      <span class="font-bold text-gray-900 dark:text-white block mb-0.5">
+                      <span class="font-bold text-gray-900 block mb-0.5">
                         {{ waiverConsentData.checkboxes?.[0]?.label || '1. Event Waiver, Assumption of Risk & Release of Liability' }} <span class="text-rose-500">*</span>
                       </span>
-                      <span class="text-gray-600 dark:text-gray-300">
+                      <span class="text-gray-600">
                         {{ waiverConsentData.checkboxes?.[0]?.description || 'I have read, understood, and voluntarily agree to the Consent, Assumption of Risk, Waiver and Release of Liability, Medical Assistance, and Pet Safety guidelines governing The Emerald Run.' }}
                       </span>
                     </div>
@@ -3271,19 +3399,19 @@ const submitRegistration = async () => {
                   <label :class="[
                     'flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none',
                     privacy_consent_agreed
-                      ? 'bg-emerald-50/80 border-emerald-500 dark:bg-emerald-950/40 dark:border-emerald-500'
-                      : 'bg-slate-50/50 border-gray-200 dark:bg-gray-800/40 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                      ? 'bg-emerald-50/80 border-emerald-500'
+                      : 'bg-slate-50/50 border-gray-200 hover:border-gray-300'
                   ]">
                     <input
                       type="checkbox"
                       v-model="privacy_consent_agreed"
-                      class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 dark:border-gray-600 dark:bg-gray-700 dark:checked:bg-emerald-600 shrink-0 cursor-pointer"
+                      class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 shrink-0 cursor-pointer"
                     />
                     <div class="text-xs leading-relaxed">
-                      <span class="font-bold text-gray-900 dark:text-white block mb-0.5">
+                      <span class="font-bold text-gray-900 block mb-0.5">
                         {{ waiverConsentData.checkboxes?.[1]?.label || '2. Data Privacy & Photo/Video Authorization Consent' }} <span class="text-rose-500">*</span>
                       </span>
-                      <span class="text-gray-600 dark:text-gray-300">
+                      <span class="text-gray-600">
                         {{ waiverConsentData.checkboxes?.[1]?.description || 'I consent to the collection, processing, and storage of my personal information under Republic Act No. 10173 (Data Privacy Act of 2012) and authorize La Salle University to use event photo, video, and audiovisual materials.' }}
                       </span>
                     </div>
@@ -3306,10 +3434,10 @@ const submitRegistration = async () => {
                   : 'bg-gradient-to-br from-slate-50 to-emerald-50/50 border-emerald-200',
               ]">
                 <div class="flex items-center justify-between text-base sm:text-lg font-black mb-4">
-                  <span class="text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                  <span class="text-gray-800 flex items-center gap-2">
                     <i class="fas fa-receipt text-emerald-600"></i>Total Fee
                   </span>
-                  <span class="text-2xl font-black text-emerald-700 dark:text-emerald-400">
+                  <span class="text-2xl font-black text-emerald-700">
                     PHP {{ grandTotal.toLocaleString() }}
                   </span>
                 </div>
@@ -3369,9 +3497,9 @@ v-if="isSuccessModalOpen"
 
  
 
-    <p class="text-xs text-gray-500 dark:text-gray-400" v-if="nonLsuPaymentMethod === 'qr_payment'">A confirmation email will be sent once your <strong>PHP {{ grandTotal.toLocaleString() }}</strong> payment  has been verified.</p>
+    <p class="text-xs text-gray-500" v-if="nonLsuPaymentMethod === 'qr_payment'">A confirmation email will be sent once your <strong>PHP {{ grandTotal.toLocaleString() }}</strong> payment  has been verified.</p>
 
-    <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400" v-if="nonLsuPaymentMethod !== 'qr_payment'">
+    <p class="mt-1.5 text-xs text-gray-500" v-if="nonLsuPaymentMethod !== 'qr_payment'">
       Please pay your registration fee of 
       <strong>PHP {{ grandTotal.toLocaleString() }}</strong>
       at
@@ -3386,16 +3514,16 @@ v-if="isSuccessModalOpen"
     <!-- Short Message -->
     <div
     v-if="nonLsuPaymentMethod === 'qr_payment'"
-      class="mt-5 rounded-2xl border border-blue-200 bg-blue-50/80 p-4 dark:border-blue-800 dark:bg-blue-950/30"
+      class="mt-5 rounded-2xl border border-blue-200 bg-blue-50/80 p-4"
     >
-      <div class="flex items-center justify-center gap-2 text-sm font-bold text-blue-700 dark:text-blue-300">
+      <div class="flex items-center justify-center gap-2 text-sm font-bold text-blue-700">
         <i class="fas fa-envelope-circle-check"></i>
         <span>Check your email for the details.</span>
       </div>
 
-      <p class="mt-2 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+      <p class="mt-2 text-xs leading-relaxed text-gray-600">
         Your registration summary and payment details have been sent to
-        <strong class="text-blue-700 dark:text-blue-300">
+        <strong class="text-blue-700">
           {{ participants[0]?.contact_email || user?.email }}
         </strong>.
       </p>
@@ -3403,9 +3531,9 @@ v-if="isSuccessModalOpen"
 
     <!-- Follow Socials -->
     <div
-      class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-gray-700 dark:bg-gray-900/50"
+      class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
     >
-      <p class="text-sm font-bold text-gray-800 dark:text-white text-left px-2">
+      <p class="text-sm font-bold text-gray-800 text-left px-2">
         <i class="fas fa-bell mr-1"></i>
         Follow our socials for more info
       </p>
@@ -3415,7 +3543,7 @@ v-if="isSuccessModalOpen"
           href="https://www.facebook.com/lsuanimorun"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold"
         >
           <i class="fab fa-facebook"></i>
           LSU Animo Run
@@ -3425,7 +3553,7 @@ v-if="isSuccessModalOpen"
           href="https://www.facebook.com/ozamizlifestylerunners"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold"
         >
           <i class="fab fa-facebook"></i>
           Ozamiz Lifestyle Runners
@@ -3437,7 +3565,7 @@ v-if="isSuccessModalOpen"
           href="https://animorun.lsu.edu.ph"
           target="_blank"
           rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold dark:bg-gray-800 dark:text-emerald-300"
+          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold"
         >
           <i class="fas fa-globe"></i>
           animorun.lsu.edu.ph
@@ -3446,12 +3574,12 @@ v-if="isSuccessModalOpen"
     </div>
 
     <!-- Verification Note -->
- <p class="mt-4 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400" v-if="nonLsuPaymentMethod !== 'qr_payment'">
+ <p class="mt-4 text-[11px] leading-relaxed text-gray-500" v-if="nonLsuPaymentMethod !== 'qr_payment'">
       Once your payment is verified, you’ll receive your
      
     </p>
     <p class="text-xs" v-if="nonLsuPaymentMethod !== 'qr_payment'">
-       <strong class="text-gray-700 dark:text-gray-200">
+       <strong class="text-gray-700">
         Official Confirmation Email.
       </strong>
       Thank you!</p>
@@ -3533,10 +3661,10 @@ v-if="isSuccessModalOpen"
         <div :class="[
           'w-14 h-14 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-sm mt-2',
           toastModal.type === 'error'
-            ? 'bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400'
+            ? 'bg-rose-100 text-rose-600'
             : toastModal.type === 'success'
-              ? 'bg-emerald-100 text-blue-500 dark:bg-emerald-950/80 dark:text-emerald-400'
-              : 'bg-amber-100 text-amber-600 dark:bg-amber-950/80 dark:text-amber-400'
+              ? 'bg-emerald-100 text-blue-500'
+              : 'bg-amber-100 text-amber-600'
         ]">
           <i :class="[
             toastModal.type === 'error'
@@ -3551,7 +3679,7 @@ v-if="isSuccessModalOpen"
           <h3 class="text-lg font-black tracking-tight">
             {{ toastModal.title }}
           </h3>
-          <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 leading-relaxed whitespace-pre-line px-2">
+          <p class="text-xs text-gray-600 mt-2 leading-relaxed whitespace-pre-line px-2">
             {{ toastModal.message }}
           </p>
         </div>
@@ -3568,6 +3696,24 @@ v-if="isSuccessModalOpen"
             <span>Understood</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- SHIRT DESIGN LIGHTBOX MODAL -->
+    <div v-if="shirtImageModalUrl" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-xs" @click.self="shirtImageModalUrl = null">
+      <div :class="[
+        'relative max-w-4xl w-full rounded-3xl p-4 overflow-hidden shadow-2xl flex flex-col items-center',
+        props.darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white'
+      ]">
+        <button type="button" @click="shirtImageModalUrl = null" class="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-gray-200 text-gray-700 hover:bg-rose-500 hover:text-white flex items-center justify-center font-bold text-sm transition cursor-pointer">
+          <i class="fas fa-times"></i>
+        </button>
+        <div class="w-full flex items-center justify-between px-2 mb-2">
+          <span class="text-xs font-bold flex items-center gap-1.5" :class="props.darkMode ? 'text-gray-200' : 'text-gray-700'">
+            <i class="fas fa-tshirt text-emerald-600"></i> Official Shirt Design
+          </span>
+        </div>
+        <img :src="shirtImageModalUrl" alt="Shirt Design Full View" class="w-full h-auto max-h-[82vh] object-contain rounded-2xl border" :class="props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'" @error="handleShirtImageError" />
       </div>
     </div>
   </div>

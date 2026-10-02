@@ -11,6 +11,7 @@
       "description": "Special 1KM Pet & Runner Duo race route for dogs, cats & friendly pets.",
       "badge": "Pet Run (1K)",
       "icon": "fa-paw",
+      "shirtImage": "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/1KM.jpg",
       "colors": {
         "primary": "#02857D",
         "secondary": "#035751",
@@ -42,6 +43,7 @@
       "description": "Perfect for beginners, families, and casual runners.",
       "badge": "3KM",
       "icon": "fa-running",
+      "shirtImage": "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/3KM.jpg",
       "colors": {
         "primary": "#C62216",
         "secondary": "#8E100B",
@@ -71,6 +73,7 @@
       "description": "For intermediate runners pushing their endurance limits.",
       "badge": "10KM",
       "icon": "fa-running",
+      "shirtImage": "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/10KM.jpg",
       "colors": {
         "primary": "#C45A19",
         "secondary": "#9E3D12",
@@ -100,6 +103,7 @@
       "description": "The premier distance for competitive runners and veterans.",
       "badge": "20KM",
       "icon": "fa-running",
+      "shirtImage": "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/20KM.jpg",
       "colors": {
         "primary": "#075F86",
         "secondary": "#0B1C2E",

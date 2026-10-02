@@ -1,49 +1,22 @@
 <template>
   <div class="poster w-full h-screen">
-    <!-- Background wash + grain -->
     <div class="bg-wash"></div>
     <div class="grain"></div>
-
-    <!-- Lens flare -->
     <div class="lens-flare">
       <div class="beam"></div>
       <div class="beam-glow"></div>
-
-      <!-- Primary and secondary aperture rings -->
       <div class="ring ring-main"></div>
-      <!-- <div class="ring ring-upper"></div> -->
       <div class="ring-inner -ml-44"></div>
-
-      <!-- Core radiance -->
       <div class="bloom -ml-20"></div>
       <div class="core"></div>
-
-      <!-- Lower-left ghost glare trail -->
-      <!-- <div class="ghost ghost1"></div>
-      <div class="ghost ghost2"></div>
-      <div class="ghost ghost3"></div> -->
-      <!-- <div class="ghost ghost4"></div> -->
-      <!-- <div class="ghost ghost5"></div> -->
-      <!-- <div class="ghost ghost6"></div>  -->
-
-      <!-- Upper-right opposite glare circles (other side) -->
-      <!-- <div class="ghost ghost-opp1"></div> -->
-      <!-- <div class="ghost ghost-opp2"></div>
-      <div class="ghost ghost-opp3"></div> -->
     </div>
-
-    <!-- Content -->
     <div class="content">
       <img class="lg:w-2/12 w-8/12"
         src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/20th%20Anniversary%20Emerald%20Logos-20260618T012425Z-3-001/20th%20Anniversary%20Emerald%20Logos/Emerald%20%26%20Theme%20with%20Corp%20Logo.png"
         alt="La Salle Ozamiz 20 Years" />
-
-     
-<h1 class="headline text-9xl typing-title">
+   <h1 class="headline text-9xl typing-title">
   <span class="typing-text">The Emerald Run</span><span class="typing-cursor">|</span>
 </h1>
-
-
       <p class="subtitle text-7xl">ANIMO Run 2026</p>
 
       <div class="date-badge">November 14, 2026</div>
