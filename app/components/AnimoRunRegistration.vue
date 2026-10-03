@@ -836,15 +836,15 @@ const registrationResult = ref(null);
 
 // QR Payment images mapped by KM category
 const QR_PAYMENT_IMAGES = {
-  "1KM": { src: "/img/1KM-QR-PAYMENT.jpg", label: "1KM QR Code Payment", filename: "1KM-QR-PAYMENT.jpg" },
-  "3KM": { src: "/img/3KM-QR-PAYMENT.jpg",  label: "3KM QR Code Payment", filename: "3KM-QR-PAYMENT.jpg" },
-  "10KM":{ src: "/img/10KM-QR-PAYMENT.jpg", label: "10KM QR Code Payment",filename: "10KM-QR-PAYMENT.jpg" },
-  "20KM":{ src: "/img/20KM-QR-PAYMENT.jpg", label: "20KM QR Code Payment",filename: "20KM-QR-PAYMENT.jpg" },
+  "1KM": { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/1KM-QR-PAYMENT.jpg", label: "1KM QR Code Payment"},
+  "3KM": { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/3KM-QR-PAYMENT.jpg",  label: "3KM QR Code Payment"},
+  "10KM":{ src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/10KM-QR-PAYMENT.jpg", label: "10KM QR Code Payment"},
+  "20KM":{ src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/20KM-QR-PAYMENT.jpg", label: "20KM QR Code Payment"},
 };
 
 const qrPaymentImage = computed(() => {
   const cat = currentParticipant.value?.run_category || "";
-  return QR_PAYMENT_IMAGES[cat] || { src: "/img/1KM-QR-PAYMENT.jpg", label: "QR Code Payment", filename: "QR-PAYMENT.jpg" };
+  return QR_PAYMENT_IMAGES[cat] || { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/1KM-QR-PAYMENT.jpg", label: "1KM QR Code Payment"};
 });
 
 // ── Shirt Preview State (declare refs FIRST before any function references them) ──
@@ -3227,7 +3227,7 @@ const submitRegistration = async () => {
 
     <a
       :href="qrPaymentImage.src"
-      :download="qrPaymentImage.filename"
+      :download="qrPaymentImage.src"
       class="inline-flex items-center justify-center lg:whitespace-nowrap gap-2 rounded-lg bg-green-800 px-5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
     >
       <i class="fa fa-download" aria-hidden="true"></i>
@@ -3407,7 +3407,7 @@ const submitRegistration = async () => {
 
     <a
       :href="qrPaymentImage.src"
-      :download="qrPaymentImage.filename"
+      :download="qrPaymentImage.src"
       class="inline-flex items-center justify-center lg:whitespace-nowrap gap-2 rounded-lg bg-green-800 px-5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
     >
       <i class="fa fa-download" aria-hidden="true"></i>
