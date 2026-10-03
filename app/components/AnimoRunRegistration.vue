@@ -3,7 +3,8 @@ import { ref, computed, watch, onMounted } from "vue";
 import { useAuth } from "~/composables/useAuth";
 import animoRunData from "~/animorun.json";
 import waiverConsentData from "~/animorun_waiver_consent.json";
-import lsuIdVerifierData from "~/animorun_lsuid_verifier.json";
+// LSU ID verifier data loaded at runtime from cloud storage
+const lsuIdVerifierData = ref([]);
 
 const props = defineProps({
   darkMode: {
@@ -161,8 +162,9 @@ const privacy_consent_agreed = ref(false);
 // Fast lookup map for LSU ID verification (normalized uppercase ID with and without LSU prefix)
 const lsuIdMap = computed(() => {
   const map = new Map();
-  if (Array.isArray(lsuIdVerifierData)) {
-    for (const item of lsuIdVerifierData) {
+  const data = lsuIdVerifierData.value;
+  if (Array.isArray(data)) {
+    for (const item of data) {
       if (item && item.lsu_id_number && item.lsu_id_number !== '-') {
         const rawId = item.lsu_id_number.trim().toUpperCase();
         map.set(rawId, item);
@@ -512,10 +514,22 @@ const selectParticipantGroup = (participant, group) => {
 
 const participants = ref([createEmptyParticipant(1)]);
 
-onMounted(() => {
+onMounted(async () => {
   if (init) init();
   if (isDashboard.value && user?.value?.email && participants.value[0]) {
     participants.value[0].contact_email = user.value.email;
+  }
+
+  // Fetch LSU ID verifier data from cloud storage
+  try {
+    const res = await fetch("https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/animorun_lsuid_verifier.json");
+    if (res.ok) {
+      lsuIdVerifierData.value = await res.json();
+    } else {
+      console.error("Failed to load LSU ID verifier data:", res.status);
+    }
+  } catch (err) {
+    console.error("Error fetching LSU ID verifier data:", err);
   }
 });
 
