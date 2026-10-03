@@ -367,7 +367,9 @@ const filteredRegistrations = computed(() => {
 
     const category = item.run_category || "";
     const matchesCategory = selectedCategory.value === "All" || category.startsWith(selectedCategory.value);
-    const matchesStatus = selectedStatus.value === "All" || item.payment_status === selectedStatus.value;
+    const matchesStatus =
+      selectedStatus.value === "All" ||
+      (selectedStatus.value === "Pending" ? (item.payment_status || "").startsWith("Pending") : item.payment_status === selectedStatus.value);
     const matchesType = selectedParticipantType.value === "All" || item.participant_type === selectedParticipantType.value;
 
     // Age group filter
@@ -1185,18 +1187,30 @@ onMounted(() => {
           </div>
         </div>
 
-        <div :class="[
-          'px-4 py-2.5 rounded-2xl border shadow-sm transition flex items-center justify-between',
-          props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
-        ]">
+        <div
+          :class="[
+            'px-4 py-2.5 rounded-2xl border shadow-sm transition flex items-center justify-between cursor-pointer group',
+            selectedStatus === 'Pending'
+              ? (props.darkMode ? 'bg-amber-950/40 border-amber-600 ring-2 ring-amber-500/40' : 'bg-amber-50 border-amber-400 ring-2 ring-amber-300/50')
+              : (props.darkMode ? 'bg-gray-800 border-gray-700 hover:border-amber-600/50' : 'bg-white border-slate-200 hover:border-amber-300'),
+          ]"
+          @click="selectedStatus = selectedStatus === 'Pending' ? 'All' : 'Pending'"
+          :title="selectedStatus === 'Pending' ? 'Click to clear pending filter' : 'Click to filter by pending items'"
+        >
           <div>
             <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Pending Action</p>
             <h3 class="text-xl font-black text-amber-500 dark:text-amber-400 mt-0.5">
               <span v-if="isFetching" class="inline-block h-5 w-10 rounded bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
               <span v-else>{{ stats.pending }}</span>
             </h3>
+            <p v-if="selectedStatus === 'Pending'" class="text-[10px] text-amber-500 font-semibold mt-0.5">Filtering active ✓</p>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg">
+          <div :class="[
+            'w-10 h-10 rounded-xl flex items-center justify-center text-lg transition',
+            selectedStatus === 'Pending'
+              ? 'bg-amber-400 text-white'
+              : 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200'
+          ]">
             <i class="fas fa-clock"></i>
           </div>
         </div>
@@ -1255,8 +1269,10 @@ onMounted(() => {
               props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
             ]">
               <option value="All">All Payment Statuses</option>
-              <option value="Confirmed">Confirmed</option>
-              <option value="Pending Payment">Pending Payment</option>
+              <option value="Confirmed">✅ Confirmed</option>
+              <option value="Pending">⏳ All Pending</option>
+              <option value="Pending Payment">💳 Pending Payment</option>
+              <option value="Pending Approval">🔍 Pending Approval</option>
             </select>
           </div>
 

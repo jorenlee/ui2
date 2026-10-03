@@ -149,6 +149,8 @@ const activeParticipantIndex = ref(0);
 
 const paymentType = ref("add_to_tuition");
 const nonLsuPaymentMethod = ref("qr_payment");
+const relativeFullname = ref("");
+const relativeLsuId = ref("");
 const receiptFile = ref(null);
 const receiptPreview = ref(null);
 const isSubmitting = ref(false);
@@ -184,37 +186,18 @@ const cleanNameString = (str) => {
 
 const isNameMatchingRecord = (recordFullname, participant) => {
   if (!recordFullname || !participant) return false;
-  
+
   const recClean = cleanNameString(recordFullname);
   const recWords = new Set(recClean.split(/\s+/).filter(Boolean));
-  
-  const firstClean = cleanNameString(participant.firstname);
+
   const lastClean = cleanNameString(participant.lastname);
-  const middleClean = cleanNameString(participant.middlename);
-  
-  if (!firstClean || !lastClean) return false;
-  
-  const firstWords = firstClean.split(/\s+/).filter(Boolean);
+
+  if (!lastClean) return false;
+
   const lastWords = lastClean.split(/\s+/).filter(Boolean);
-  
-  const firstMatches = firstWords.every((w) => recWords.has(w));
   const lastMatches = lastWords.every((w) => recWords.has(w));
-  
-  if (!firstMatches || !lastMatches) return false;
-  
-  if (middleClean) {
-    const middleWords = middleClean.split(/\s+/).filter(Boolean);
-    for (const mw of middleWords) {
-      if (mw.length === 1) {
-        const hasInitialMatch = Array.from(recWords).some((rw) => rw.startsWith(mw));
-        if (!hasInitialMatch) return false;
-      } else {
-        if (!recWords.has(mw)) return false;
-      }
-    }
-  }
-  
-  return true;
+
+  return lastMatches;
 };
 
 const getLsuIdVerificationStatus = (idNumber, expectedCategory = null, participant = null) => {
@@ -238,12 +221,11 @@ const getLsuIdVerificationStatus = (idNumber, expectedCategory = null, participa
     };
   }
   if (participant) {
-    const hasFirst = participant.firstname?.trim();
     const hasLast = participant.lastname?.trim();
-    if (!hasFirst || !hasLast) {
+    if (!hasLast) {
       return {
         isValid: false,
-        statusText: "Please complete First Name & Last Name to verify ID ownership",
+        statusText: "Please enter your Last Name to verify ID ownership",
         fullname: null,
         category: match.category,
       };
@@ -252,7 +234,7 @@ const getLsuIdVerificationStatus = (idNumber, expectedCategory = null, participa
     if (!nameMatches) {
       return {
         isValid: false,
-        statusText: "Entered name does not match the record for this LSU ID Number",
+        statusText: "Last Name does not match the record for this LSU ID Number",
         fullname: null,
         category: match.category,
       };
@@ -265,6 +247,51 @@ const getLsuIdVerificationStatus = (idNumber, expectedCategory = null, participa
     category: match.category,
   };
 };
+
+// Verify Family/Relative LSU Employee ID against the verifier JSON
+// Checks: ID exists, category is 'employee', last name from relativeFullname matches record
+const getRelativeVerificationStatus = computed(() => {
+  const idNum = relativeLsuId.value?.trim();
+  const enteredName = relativeFullname.value?.trim();
+  if (!idNum) return null;
+
+  const cleanId = idNum.toUpperCase();
+  const match = lsuIdMap.value.get(cleanId);
+
+  if (!match) {
+    return { isValid: false, statusText: "LSU ID Number not found in verifier records" };
+  }
+  if (match.category.toLowerCase() !== "employee") {
+    return {
+      isValid: false,
+      statusText: `ID is registered under "${match.category.toUpperCase()}" category, not Employee`,
+    };
+  }
+  if (!enteredName) {
+    return { isValid: false, statusText: "Please enter the Full Name of the LSU Employee" };
+  }
+
+  // Extract last name from record fullname (format: "Lastname, Firstname ...")
+  const recordLastname = match.fullname.split(",")[0]?.trim() || "";
+  const enteredLastname = enteredName.split(" ").pop()?.trim() ||
+    enteredName.split(",")[0]?.trim() || enteredName;
+
+  const recLastClean = cleanNameString(recordLastname);
+  const entLastClean = cleanNameString(enteredLastname);
+
+  if (!recLastClean || !entLastClean || !recLastClean.includes(entLastClean) && !entLastClean.includes(recLastClean)) {
+    return {
+      isValid: false,
+      statusText: "Last Name does not match the LSU Employee record for this ID",
+    };
+  }
+
+  return {
+    isValid: true,
+    statusText: `Verified LSU Employee: ${match.fullname}`,
+    fullname: match.fullname,
+  };
+});
 
 const raceCardsRef = ref(null);
 const isDragging = ref(false);
@@ -741,6 +768,7 @@ const grandTotal = computed(() => {
 const paymentMethodLabel = computed(() => {
   if (paymentType.value === "salary_deduction") return "Salary Deduction";
   if (paymentType.value === "add_to_tuition") return "Add to Tuition";
+  if (paymentType.value === "family_salary_deduction") return "Family Salary Deduction";
   if (nonLsuPaymentMethod.value === "qr_payment") return "QR Payment";
   if (nonLsuPaymentMethod.value === "accounting_otc") return "Accounting OTC";
   return "Weekend Cash";
@@ -805,6 +833,19 @@ const copyRunnerOneInfo = () => {
 
 const isSuccessModalOpen = ref(false);
 const registrationResult = ref(null);
+
+// QR Payment images mapped by KM category
+const QR_PAYMENT_IMAGES = {
+  "1KM": { src: "/img/1KM-QR-PAYMENT.jpg", label: "1KM QR Code Payment", filename: "1KM-QR-PAYMENT.jpg" },
+  "3KM": { src: "/img/3KM-QR-PAYMENT.jpg",  label: "3KM QR Code Payment", filename: "3KM-QR-PAYMENT.jpg" },
+  "10KM":{ src: "/img/10KM-QR-PAYMENT.jpg", label: "10KM QR Code Payment",filename: "10KM-QR-PAYMENT.jpg" },
+  "20KM":{ src: "/img/20KM-QR-PAYMENT.jpg", label: "20KM QR Code Payment",filename: "20KM-QR-PAYMENT.jpg" },
+};
+
+const qrPaymentImage = computed(() => {
+  const cat = currentParticipant.value?.run_category || "";
+  return QR_PAYMENT_IMAGES[cat] || { src: "/img/1KM-QR-PAYMENT.jpg", label: "QR Code Payment", filename: "QR-PAYMENT.jpg" };
+});
 
 // ── Shirt Preview State (declare refs FIRST before any function references them) ──
 const shirtImageModalUrl = ref(null);
@@ -1087,6 +1128,32 @@ const submitRegistration = async () => {
       );
       return;
     }
+  } else if (paymentType.value === "family_salary_deduction") {
+    if (!relativeFullname.value?.trim()) {
+      showNotice(
+        "Please provide the full name of your family member or relative who works at La Salle University.",
+        "Relative Full Name Required",
+        "warning"
+      );
+      return;
+    }
+    if (!relativeLsuId.value?.trim()) {
+      showNotice(
+        "Please provide the LSU ID Number of your family member or relative.",
+        "Relative LSU ID Number Required",
+        "warning"
+      );
+      return;
+    }
+    const relVerif = getRelativeVerificationStatus.value;
+    if (!relVerif || !relVerif.isValid) {
+      showNotice(
+        relVerif?.statusText || "The LSU Employee ID could not be verified. Please check the ID Number and Last Name.",
+        "Relative Verification Failed",
+        "warning"
+      );
+      return;
+    }
   } else if (paymentType.value === "non_lsu_payment") {
     if (nonLsuPaymentMethod.value === "qr_payment" && !receiptFile.value) {
       showNotice(
@@ -1166,6 +1233,9 @@ const submitRegistration = async () => {
       paymentType.value === "non_lsu_payment"
         ? nonLsuPaymentMethod.value || "qr_payment"
         : paymentType.value;
+    const relativeInfo = paymentType.value === "family_salary_deduction"
+      ? { relative_fullname: relativeFullname.value?.trim(), relative_lsu_id: relativeLsuId.value?.trim() }
+      : {};
 
     let res;
     if (form_type.value === "Group") {
@@ -1245,6 +1315,7 @@ const submitRegistration = async () => {
         proof_of_payment: receiptUrl || "",
         grand_total_payment: grandTotal.value,
         detail_fees: itemizedFees.value,
+        ...relativeInfo,
       };
 
       res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
@@ -1318,6 +1389,7 @@ const submitRegistration = async () => {
         proof_of_payment: receiptUrl || "",
         grand_total_payment: grandTotal.value,
         detail_fees: itemizedFees.value,
+        ...relativeInfo,
         valid_id_front: idFrontUrl ? [{ name: 'alumni_id_front', url: idFrontUrl }] : [],
         valid_id_back: idBackUrl ? [{ name: 'alumni_id_back', url: idBackUrl }] : [],
         pet_vaccine_record: vaccineUrl ? [{ name: 'pet_vaccine_record', url: vaccineUrl }] : [],
@@ -2931,8 +3003,13 @@ const submitRegistration = async () => {
                       <span>Open Category Details</span>
                     </span>
                     <span
-                      class="text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-md">
-                      Direct Payment (QR / OTC / Cash)
+                      :class="[
+                        'text-[10px] font-bold px-2 py-0.5 rounded-md',
+                        paymentType === 'family_salary_deduction'
+                          ? 'text-blue-700 bg-blue-100'
+                          : 'text-purple-700 bg-purple-100'
+                      ]">
+                      {{ paymentType === 'family_salary_deduction' ? 'Family Salary Deduction' : 'Direct Payment (QR / OTC / Cash)' }}
                     </span>
                   </div>
 
@@ -2945,6 +3022,104 @@ const submitRegistration = async () => {
                         'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                         props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                       ]" />
+                  </div>
+
+                  <!-- PAYMENT METHOD CHOICE: Direct vs Family Salary Deduction -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <!-- Direct Payment option -->
+                    <div @click="paymentType = 'non_lsu_payment'" :class="[
+                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                      paymentType !== 'family_salary_deduction'
+                        ? 'bg-purple-50 border-purple-500 text-purple-800 ring-1 ring-purple-500'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                    ]">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-credit-card text-purple-600 text-base shrink-0"></i>
+                        <div>
+                          <div class="font-bold text-xs">Direct Payment</div>
+                          <div class="text-[10px] font-normal text-gray-500">QR / Accounting OTC / Weekend Cash</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Family / Relative Salary Deduction option -->
+                    <div @click="paymentType = 'family_salary_deduction'" :class="[
+                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                      paymentType === 'family_salary_deduction'
+                        ? 'bg-blue-50 border-blue-500 text-blue-800 ring-1 ring-blue-500'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                    ]">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-users text-blue-600 text-base shrink-0"></i>
+                        <div>
+                          <div class="font-bold text-xs">Family / Relative – Salary Deduction</div>
+                          <div class="text-[10px] font-normal text-gray-500">Through a family member or relative who works at LSU</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Family Salary Deduction fields -->
+                  <div v-if="paymentType === 'family_salary_deduction'"
+                    class="p-3.5 rounded-xl bg-blue-50 border border-blue-200 space-y-3">
+                    <div class="text-xs font-bold text-blue-800 flex items-center gap-1.5">
+                      <i class="fas fa-id-card text-blue-600"></i>
+                      LSU Employee Information (Family / Relative)
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">
+                          Full Name of LSU Employee <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" v-model="relativeFullname"
+                          placeholder="e.g. Juan Dela Cruz"
+                          :class="[
+                            'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none',
+                            props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-blue-300 text-gray-800',
+                          ]" />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">
+                          LSU ID Number <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                          <span class="absolute left-3 top-2.5 text-xs text-gray-400">
+                            <i class="fas fa-address-card"></i>
+                          </span>
+                          <input type="text" v-model="relativeLsuId"
+                            placeholder="e.g. LSU871101"
+                            :class="[
+                              'w-full pl-8 pr-9 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:outline-none transition-all',
+                              relativeLsuId?.trim()
+                                ? (getRelativeVerificationStatus?.isValid
+                                  ? 'border-emerald-500 focus:ring-emerald-500 bg-emerald-50/30 text-emerald-900'
+                                  : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 text-amber-900')
+                                : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-blue-300 text-gray-800'),
+                            ]" />
+                          <span v-if="relativeLsuId?.trim()" class="absolute right-3 top-2.5 text-xs">
+                            <i v-if="getRelativeVerificationStatus?.isValid" class="fas fa-check-circle text-emerald-500 text-sm"></i>
+                            <i v-else class="fas fa-exclamation-circle text-amber-500 text-sm"></i>
+                          </span>
+                        </div>
+                        <!-- Live Verification Feedback -->
+                        <div v-if="relativeLsuId?.trim()" class="mt-1.5 text-[11px] font-semibold">
+                          <div v-if="getRelativeVerificationStatus?.isValid"
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300">
+                            <i class="fas fa-user-check text-emerald-600"></i>
+                            <span>{{ getRelativeVerificationStatus.statusText }}</span>
+                          </div>
+                          <div v-else
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-300">
+                            <i class="fas fa-exclamation-triangle text-amber-600"></i>
+                            <span>{{ getRelativeVerificationStatus?.statusText || 'Enter LSU ID Number' }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <p class="text-[10px] text-blue-700 leading-relaxed">
+                      <i class="fas fa-info-circle"></i>
+                      The registration fee will be deducted from the salary of the LSU employee listed above. Please ensure the information is accurate.
+                    </p>
                   </div>
                 </div>
 
@@ -3037,22 +3212,22 @@ const submitRegistration = async () => {
                     <div class="lg:flex lg:w-auto">
 <div class="text-center w-full items-center gap-4 rounded-xl border border-green-200 bg-white p-5 shadow-sm lg:mb-0 mb-3">
   <img
-    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/LSU-SB-QR.jpg"
-    alt="LSU Security Bank QR Payment"
-    class="w-32 mx-auto rounded-lg border border-gray-200"
+    :key="qrPaymentImage.src"
+    :src="qrPaymentImage.src"
+    :alt="qrPaymentImage.label"
+    class="w-32 h-32 object-contain mx-auto rounded-lg border border-gray-200"
   />
 
   <div class="flex flex-col gap-x-3 gap-y-1">
     <div>
       <h3 class="text-sm font-bold text-green-900 lg:whitespace-nowrap">
-        Security Bank QR Code Payment
+        {{ qrPaymentImage.label }}
       </h3>
-
     </div>
 
     <a
-      href="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/LSU-SB-QR.jpg"
-      download="LSU-SB-QR.jpg"
+      :href="qrPaymentImage.src"
+      :download="qrPaymentImage.filename"
       class="inline-flex items-center justify-center lg:whitespace-nowrap gap-2 rounded-lg bg-green-800 px-5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
     >
       <i class="fa fa-download" aria-hidden="true"></i>
@@ -3061,25 +3236,6 @@ const submitRegistration = async () => {
   </div>
 </div>
 
-
-  <!-- <a download class="w-full lg:w-1/4" v-if="currentParticipant.run_category === 'pet-run'">
-    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/PET-QR-PAYMENT.jpg"/>
-  </a> -->
-
-    <!-- <a download class="w-full lg:w-1/4" v-if="currentParticipant.run_category === '3k'">
-    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/3K-QR-PAYMENT.jpg"/>
-  </a>
-
-    <a download class="w-full lg:w-1/4" v-if="currentParticipant.run_category === '10k'">
-    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/10K-QR-PAYMENT.jpg"/>
-  </a>
-
-    <a download class="w-full lg:w-1/4" v-if="currentParticipant.run_category === '20k'">
-    <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/20K-QR-PAYMENT.jpg"/>
-  </a>
- -->
-
-  
 </div>
 
 
@@ -3236,22 +3392,22 @@ const submitRegistration = async () => {
 
 <div class="text-center w-full lg:w-fit items-center gap-4 rounded-xl border border-green-200 bg-white p-5 shadow-sm lg:mb-0 mb-3">
   <img
-    src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/LSU-SB-QR.jpg"
-    alt="LSU Security Bank QR Payment"
-    class="w-32 mx-auto rounded-lg border border-gray-200"
+    :key="qrPaymentImage.src"
+    :src="qrPaymentImage.src"
+    :alt="qrPaymentImage.label"
+    class="w-32 h-32 object-contain mx-auto rounded-lg border border-gray-200"
   />
 
   <div class="flex flex-col gap-x-3 gap-y-1">
     <div>
       <h3 class="text-sm font-bold text-green-900 lg:whitespace-nowrap">
-        Security Bank QR Code Payment
+        {{ qrPaymentImage.label }}
       </h3>
-
     </div>
 
     <a
-      href="https://lsu-media-styles.sgp1.digitaloceanspaces.com/QR-PAYMENTS/LSU-SB-QR.jpg"
-      download="LSU-SB-QR.jpg"
+      :href="qrPaymentImage.src"
+      :download="qrPaymentImage.filename"
       class="inline-flex items-center justify-center lg:whitespace-nowrap gap-2 rounded-lg bg-green-800 px-5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
     >
       <i class="fa fa-download" aria-hidden="true"></i>
