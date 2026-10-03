@@ -1,6 +1,6 @@
 node_modules
 *.log*
-# .nuxt
+.nuxt
 .nitro
 .cache
 .output
@@ -11,3 +11,4 @@ deploy.js
 firebaseInit.js
 deploy.txt
 nginx.txt
+# package-lock.json
