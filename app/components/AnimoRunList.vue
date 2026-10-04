@@ -2314,6 +2314,10 @@ onMounted(() => {
               :class="['px-2.5 py-0.5 rounded-lg border font-bold text-xs', getStatusBadge(selectedRunner.payment_status)]">
               {{ selectedRunner.payment_status }}
             </span>
+           <span class="px-5 py-1 rounded-lg border font-bold text-xs bg-blue-600 text-white">
+           <i class="fa fa-credit-card mr-2" aria-hidden="true"></i>
+  {{ selectedRunner.payment_type.replaceAll('_', ' ').toUpperCase() }}
+</span>
             <span class="text-[10px] text-gray-500 dark:text-gray-400 font-medium ml-1">
               <i class="fas fa-shield-alt text-emerald-600 mr-1"></i> No Refund Policy
             </span>
