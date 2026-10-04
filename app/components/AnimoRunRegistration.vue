@@ -6,6 +6,90 @@ import waiverConsentData from "~/animorun_waiver_consent.json";
 // LSU ID verifier data loaded at runtime from cloud storage
 const lsuIdVerifierData = ref([]);
 
+// ── Slot Capacity Limits & Availability ─────────────────────────────────────
+const SLOT_LIMITS = {
+  "1KM": 50,   // Pet Run
+  "3KM": 1000,
+  "10KM": 1000,
+  "20KM": 1000,
+};
+
+const slotData = ref({
+  "1KM": { filled: 0, max: 50, remaining: 50, is_full: false },
+  "3KM": { filled: 0, max: 1000, remaining: 1000, is_full: false },
+  "10KM": { filled: 0, max: 1000, remaining: 1000, is_full: false },
+  "20KM": { filled: 0, max: 1000, remaining: 1000, is_full: false },
+});
+const slotDataLoaded = ref(false);
+
+const fetchSlotCounts = async () => {
+  try {
+    const rawUrl = config?.public?.apiUrl || 'http://127.0.0.1:8000';
+    const url = String(rawUrl).replace(/\/+$/, '');
+
+    // 1. Try /api/animorun/list/ first (actual live database from AnimoRunList)
+    try {
+      const list = await $fetch(`${url}/api/animorun/list/`);
+      if (Array.isArray(list)) {
+        const counts = { "1KM": 0, "3KM": 0, "10KM": 0, "20KM": 0 };
+        list.forEach((r) => {
+          const val = String(r.run_category || "").trim().toUpperCase();
+          let norm = "3KM";
+          if (val.includes("PET") || val.startsWith("1K") || val === "1") norm = "1KM";
+          else if (val.startsWith("20K") || val === "20") norm = "20KM";
+          else if (val.startsWith("10K") || val === "10") norm = "10KM";
+          else if (val.startsWith("3K") || val === "3") norm = "3KM";
+          else {
+            const prefix = val.split(" ")[0];
+            if (prefix.endsWith("KM")) norm = prefix;
+            else if (prefix.endsWith("K")) norm = prefix + "M";
+            else if (!isNaN(prefix)) norm = prefix + "KM";
+          }
+          if (norm in counts) counts[norm]++;
+        });
+
+        const newSlots = {};
+        for (const [cat, max] of Object.entries(SLOT_LIMITS)) {
+          const filled = counts[cat] || 0;
+          newSlots[cat] = {
+            filled,
+            max,
+            remaining: Math.max(0, max - filled),
+            is_full: filled >= max,
+          };
+        }
+        slotData.value = { ...slotData.value, ...newSlots };
+        slotDataLoaded.value = true;
+        return;
+      }
+    } catch (listErr) {
+      // list endpoint not reached, proceed to slot-count
+    }
+
+    // 2. Fallback to /api/animorun/slot-count/
+    const res = await $fetch(`${url}/api/animorun/slot-count/`);
+    if (res && typeof res === "object") {
+      slotData.value = { ...slotData.value, ...res };
+      slotDataLoaded.value = true;
+    }
+  } catch (err) {
+    console.warn("Failed to fetch slot counts:", err);
+  }
+};
+
+const getSlotInfo = (categoryId) => {
+  const norm = categoryId === '1K' ? '1KM' : categoryId;
+  return slotData.value[norm] || { filled: 0, max: 1000, remaining: 1000, is_full: false };
+};
+
+const isCategoryFull = (categoryId) => {
+  return getSlotInfo(categoryId).is_full;
+};
+
+const getRemainingSlots = (categoryId) => {
+  return getSlotInfo(categoryId).remaining;
+};
+
 const props = defineProps({
   darkMode: {
     type: Boolean,
@@ -520,6 +604,9 @@ onMounted(async () => {
     participants.value[0].contact_email = user.value.email;
   }
 
+  // Fetch slot counts for availability checking
+  fetchSlotCounts();
+
   // Fetch LSU ID verifier data from cloud storage
   try {
     const res = await fetch("https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/animorun_lsuid_verifier.json");
@@ -958,6 +1045,33 @@ const resetForm = () => {
 };
 
 const submitRegistration = async () => {
+  // ── Slot Availability Check (re-fetch fresh counts before submit) ──────────
+  await fetchSlotCounts();
+  for (let i = 0; i < participants.value.length; i++) {
+    const p = participants.value[i];
+    const catId = p.run_category === '1K' ? '1KM' : p.run_category;
+    if (!catId) {
+      showNotice(
+        `Please select a Race Category for Runner #${i + 1}.`,
+        "Race Category Required",
+        "warning"
+      );
+      activeParticipantIndex.value = i;
+      return;
+    }
+    const slotInfo = getSlotInfo(catId);
+    if (slotInfo.is_full) {
+      const catLabel = catId === '1KM' ? 'Pet Run (1KM)' : catId;
+      showNotice(
+        `Sorry, registration for ${catLabel} is already full (${slotInfo.max} slots filled). Please select a different race category.`,
+        "Category Full — No Slots Available",
+        "error"
+      );
+      activeParticipantIndex.value = i;
+      return;
+    }
+  }
+
   // Validate participant name & contact
   for (let i = 0; i < participants.value.length; i++) {
     const p = participants.value[i];
@@ -1420,6 +1534,9 @@ const submitRegistration = async () => {
 
     registrationResult.value = res;
     isSuccessModalOpen.value = true;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("animorun:registered"));
+    }
   } catch (error) {
     console.error("Registration submission error:", error);
     const serverMessage = error?.data?.message || error?.response?._data?.message || error?.data?.error || error?.message;
@@ -1766,6 +1883,25 @@ const submitRegistration = async () => {
                       <span class="font-black text-xl" :style="{ color: cat.colors.highlight || '#fff' }">PHP {{
                         cat.fee.toLocaleString() }}</span>
                     </div>
+
+                    <!-- Slot Availability Badge -->
+                    <div class="mt-2 flex items-center gap-1.5" v-if="slotDataLoaded">
+                      <span v-if="isCategoryFull(cat.id)"
+                        class="text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
+                        style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4)">
+                        <i class="fas fa-ban text-[9px]"></i> FULL — 0 Slots Left
+                      </span>
+                      <span v-else-if="getRemainingSlots(cat.id) <= 50"
+                        class="text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
+                        style="background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4)">
+                        <i class="fas fa-exclamation-triangle text-[9px]"></i> {{ getRemainingSlots(cat.id) }} Slots Left
+                      </span>
+                      <span v-else
+                        class="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
+                        style="background: rgba(34,197,94,0.15); color: rgba(134,239,172,0.9); border: 1px solid rgba(34,197,94,0.3)">
+                        <i class="fas fa-check-circle text-[9px]"></i> {{ getRemainingSlots(cat.id) }} Slots Left
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -1844,6 +1980,25 @@ const submitRegistration = async () => {
                       <span class="text-xl font-black"
                         :style="{ color: currentParticipant.run_category === '1K' ? '#93CAC5' : 'rgba(255,255,255,0.5)' }">PHP
                         1,000</span>
+                    </div>
+
+                    <!-- Pet Run Slot Availability Badge -->
+                    <div class="mt-2 flex items-center gap-1.5" v-if="slotDataLoaded">
+                      <span v-if="isCategoryFull('1KM')"
+                        class="text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
+                        style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4)">
+                        <i class="fas fa-ban text-[9px]"></i> FULL — 0 Slots Left
+                      </span>
+                      <span v-else-if="getRemainingSlots('1KM') <= 10"
+                        class="text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
+                        style="background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4)">
+                        <i class="fas fa-exclamation-triangle text-[9px]"></i> {{ getRemainingSlots('1KM') }} Slots Left
+                      </span>
+                      <span v-else
+                        class="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
+                        style="background: rgba(34,197,94,0.15); color: rgba(134,239,172,0.9); border: 1px solid rgba(34,197,94,0.3)">
+                        <i class="fas fa-check-circle text-[9px]"></i> {{ getRemainingSlots('1KM') }} / 50 Slots Left
+                      </span>
                     </div>
 
                     <!-- Inclusions -->

@@ -35,7 +35,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
       <Header class="hidden lg:block" />
 
       <!-- Full Widescreen Edge-to-Edge Student Banner Image -->
-      <div class="relative w-full overflow-hidden bg-white">
+      <!-- <div class="relative w-full overflow-hidden bg-white">
         <img
           src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LANDSCAPE%20CROPPED.jpg"
           alt="La Salle Students Banner"
@@ -62,9 +62,41 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
           </div>
         </div>
         <div class="absolute inset-x-0 bottom-0 h-12 sm:h-24 bg-gradient-to-t from-slate-900/15 to-transparent pointer-events-none"></div>
+      </div> -->
+
+
+    <!-- ═══════════════════════════════════════
+         ANIMO RUN BANNER
+    ════════════════════════════════════════ -->
+    <section id="animo-run-banner" class="relative w-full overflow-hidden bg-white">
+      <!-- Top vignette blend -->
+      <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-white/60 to-transparent z-10 pointer-events-none"></div>
+
+      <!-- Full-width banner image -->
+      <img
+        src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/LSUANIMORUN.png"
+        alt="LSU Animo Run 2026 – The Emerald Run, November 14, 2026, Aguada, Ozamiz City"
+        class="w-full h-auto block"
+        loading="lazy"
+        decoding="async"
+        fetchpriority="low"
+      />
+
+    
+      <!-- Bottom vignette blend -->
+      <div class="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-slate-50 to-transparent z-10 pointer-events-none"></div>
+
+      <!-- CTA ribbon -->
+      <div class="absolute lg:bottom-32 bottom-5 left-0 w-full z-20 flex items-center justify-center pb-3">
+        <NuxtLink
+          to="https://animorun.lsu.edu.ph"
+          class="inline-flex items-center gap-2 lg:px-20 px-5  py-2.5 rounded-full font-black uppercase tracking-widest bg-emerald-600 text-white shadow-lg hover:bg-emerald-500 transition-all duration-200 hover:scale-105 active:scale-95 lg:text-xl text-sm animate-bounce"
+        >
+          <i class="fas fa-running"></i>
+          Register Now
+        </NuxtLink>
       </div>
-
-
+    </section>
 <!-- <div class="bg-[#a7d4aa]">
 <HeroLanding/>
 </div> -->
@@ -107,37 +139,6 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
 <TUKIB/>
  
 
-    <!-- ═══════════════════════════════════════
-         ANIMO RUN BANNER
-    ════════════════════════════════════════ -->
-    <section id="animo-run-banner" class="relative w-full overflow-hidden bg-white">
-      <!-- Top vignette blend -->
-      <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-white/60 to-transparent z-10 pointer-events-none"></div>
-
-      <!-- Full-width banner image -->
-      <img
-        src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/LSU%20ANIMO%20RUN.png"
-        alt="LSU Animo Run 2026 – The Emerald Run, November 14, 2026, Aguada, Ozamiz City"
-        class="w-full h-auto block"
-        loading="lazy"
-        decoding="async"
-        fetchpriority="low"
-      />
-
-      <!-- Bottom vignette blend -->
-      <div class="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-slate-50 to-transparent z-10 pointer-events-none"></div>
-
-      <!-- CTA ribbon -->
-      <div class="absolute bottom-0 left-0 w-full z-20 flex items-center justify-center pb-3">
-        <NuxtLink
-          to="https://animorun.lsu.edu.ph"
-          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest bg-emerald-600 text-white shadow-lg hover:bg-emerald-500 transition-all duration-200 hover:scale-105 active:scale-95"
-        >
-          <i class="fas fa-running text-sm"></i>
-          Register Now
-        </NuxtLink>
-      </div>
-    </section>
     <!-- ═══════════════════════════════════════
          SUSTAINABILITY / SDGs
     ════════════════════════════════════════ -->
