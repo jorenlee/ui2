@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 
 const props = defineProps({
   darkMode: {
@@ -463,6 +463,7 @@ const openDetails = (runner) => {
   bypassWarningAcknowledged.value = false;
   chatInput.value = "";
   loadChat(runner);
+  scrollChatToBottom();
 };
 
 const closeDetails = () => {
@@ -576,6 +577,53 @@ const handleAdminReceiptChange = (event, runner) => {
   const file = event.target.files[0];
   if (file) {
     uploadAdminReceipt(file, runner);
+  }
+};
+
+// ── Delete Receipt ──────────────────────────────────────────────────────────
+const isDeletingReceipt = ref(false);
+const deleteReceiptModal = ref({ show: false, runner: null });
+
+const promptDeleteReceipt = (runner) => {
+  if (!runner || isDeletingReceipt.value) return;
+  deleteReceiptModal.value = { show: true, runner };
+};
+
+const closeDeleteReceiptModal = () => {
+  deleteReceiptModal.value = { show: false, runner: null };
+};
+
+const executeDeleteReceipt = async () => {
+  const runner = deleteReceiptModal.value.runner;
+  if (!runner || isDeletingReceipt.value) return;
+  isDeletingReceipt.value = true;
+  try {
+    await $fetch(`${endpoint.value}/api/animorun/${runner.id}/edit/`, {
+      method: "PUT",
+      body: { proof_of_payment: "", bypass_lock: true },
+    });
+    runner.proof_of_payment = "";
+    if (selectedRunner.value && selectedRunner.value.id === runner.id) {
+      selectedRunner.value.proof_of_payment = "";
+    }
+    const idx = registrations.value.findIndex((r) => r.id === runner.id);
+    if (idx !== -1) registrations.value[idx].proof_of_payment = "";
+    closeDeleteReceiptModal();
+    showNotice(
+      `Payment receipt deleted for ${runner.firstname} ${runner.lastname}.`,
+      "Receipt Deleted",
+      "success"
+    );
+  } catch (err) {
+    console.error("Delete receipt error:", err);
+    closeDeleteReceiptModal();
+    showNotice(
+      "Failed to delete receipt. Please try again.",
+      "Deletion Failed",
+      "error"
+    );
+  } finally {
+    isDeletingReceipt.value = false;
   }
 };
 
@@ -1097,10 +1145,58 @@ const downloadBatchCsv = (batch) => {
 // ── Communication Chat (Admin Side) ─────────────────────────────────────────────
 const chatMessages = ref([]);
 const chatInput = ref("");
+const chatAttachment = ref(null);  // { file, previewUrl, name }
 const isSendingChat = ref(false);
 const isChatLoading = ref(false);
+const chatMessagesContainer = ref(null);
+
+const scrollChatToBottom = () => {
+  nextTick(() => {
+    if (chatMessagesContainer.value) {
+      chatMessagesContainer.value.scrollTop = chatMessagesContainer.value.scrollHeight;
+    }
+    setTimeout(() => {
+      if (chatMessagesContainer.value) {
+        chatMessagesContainer.value.scrollTop = chatMessagesContainer.value.scrollHeight;
+      }
+    }, 120);
+  });
+};
+
+watch(chatMessages, () => {
+  scrollChatToBottom();
+}, { deep: true });
 // Tracks whether the last message also triggered an email notification to the runner
 const chatEmailSent = ref(false);
+
+const CHAT_ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+const CHAT_MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+
+const handleChatAttachmentChange = (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!CHAT_ACCEPTED_TYPES.includes(file.type)) {
+    showNotice('Only JPG, JPEG, PNG, or PDF files are allowed.', 'Invalid File Type', 'error');
+    event.target.value = '';
+    return;
+  }
+  if (file.size > CHAT_MAX_SIZE) {
+    showNotice(`File exceeds the 5 MB limit (${(file.size / 1024 / 1024).toFixed(2)} MB).`, 'File Too Large', 'error');
+    event.target.value = '';
+    return;
+  }
+  const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+  chatAttachment.value = { file, previewUrl, name: file.name };
+  event.target.value = '';
+};
+
+const removeChatAttachment = () => {
+  if (chatAttachment.value?.previewUrl) URL.revokeObjectURL(chatAttachment.value.previewUrl);
+  chatAttachment.value = null;
+};
+
+const isPdfAttachment = (url) => (url || '').toLowerCase().includes('.pdf') || (url || '').endsWith('pdf');
+
 
 const loadChat = async (runner) => {
   if (!runner) return;
@@ -1119,23 +1215,46 @@ const loadChat = async (runner) => {
     console.warn("Could not load chat messages:", e);
   } finally {
     isChatLoading.value = false;
+    scrollChatToBottom();
   }
 };
 
 const sendAdminMessage = async () => {
   const runner = selectedRunner.value;
   const text = chatInput.value.trim();
-  if (!runner || !text || isSendingChat.value) return;
+  const attachment = chatAttachment.value;
+  if (!runner || (!text && !attachment) || isSendingChat.value) return;
   isSendingChat.value = true;
   chatEmailSent.value = false;
   try {
+    let attachmentUrl = '';
+    let attachmentName = '';
+    // Upload attachment first if present
+    if (attachment?.file) {
+      const formData = new FormData();
+      formData.append('file', attachment.file);
+      const uploadRes = await $fetch(`${endpoint.value}/api/animorun/upload/`, {
+        method: 'POST',
+        body: formData,
+      });
+      attachmentUrl = uploadRes.url || '';
+      attachmentName = attachment.name || 'Attachment';
+    }
+
     let newLogs;
     let emailNotified = false;
+    const operatorEmail = user.value?.email || (currentOperator.value.includes('@') ? currentOperator.value : 'animorun@lsu.edu.ph');
     try {
       // Primary: dedicated /message/ endpoint — server sends email notification automatically
       const res = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/message/`, {
         method: "POST",
-        body: { message: text, sender_name: currentOperator.value || "Admin" },
+        body: {
+          message: text,
+          sender_name: currentOperator.value || "Admin",
+          sender_email: operatorEmail,
+          attachment_url: attachmentUrl,
+          attachment_name: attachmentName
+        },
       });
       newLogs = res.messages || [...chatMessages.value, res.entry];
       emailNotified = true; // server handles email dispatch
@@ -1145,8 +1264,10 @@ const sendAdminMessage = async () => {
         // Fallback: build the log entry manually and patch via the existing /edit/ endpoint
         const entry = {
           sender: currentOperator.value || "Admin",
+          sender_email: operatorEmail,
           sender_type: "admin",
           message: text,
+          ...(attachmentUrl ? { attachment_url: attachmentUrl, attachment_name: attachmentName } : {}),
           message_id: Math.random().toString(36).slice(2, 10),
           timestamp: new Date().toLocaleString("en-PH", { hour12: false }).replace(",", ""),
           is_message_edited: "false",
@@ -1163,7 +1284,9 @@ const sendAdminMessage = async () => {
     chatMessages.value = newLogs;
     runner.communication_logs = chatMessages.value;
     chatInput.value = "";
+    removeChatAttachment();
     chatEmailSent.value = emailNotified;
+    scrollChatToBottom();
     if (emailNotified) {
       showNotice(
         `Message sent and an email notification was dispatched to ${runner.contact_email || 'the runner'}.`,
@@ -1178,6 +1301,7 @@ const sendAdminMessage = async () => {
     isSendingChat.value = false;
   }
 };
+
 
 // Trigger fetch batches on mounted
 onMounted(() => {
@@ -2325,7 +2449,7 @@ onMounted(() => {
                   </div>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <button type="button"
                     @click="openReceiptModal(selectedRunner.proof_of_payment, 'Payment Receipt Proof', selectedRunner)"
                     class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-sm">
@@ -2337,6 +2461,13 @@ onMounted(() => {
                     <span>{{ isAdminUploadingReceipt ? 'Uploading...' : 'Replace Receipt' }}</span>
                     <input type="file" accept="image/*,.pdf" class="hidden" @change="handleAdminReceiptChange($event, selectedRunner)" :disabled="isAdminUploadingReceipt" />
                   </label>
+                  <button type="button"
+                    @click="promptDeleteReceipt(selectedRunner)"
+                    :disabled="isDeletingReceipt"
+                    class="px-3 py-1.5 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-bold text-xs hover:bg-rose-200 dark:hover:bg-rose-900/80 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs border border-rose-200 dark:border-rose-800 disabled:opacity-50">
+                    <i :class="['fas', isDeletingReceipt ? 'fa-spinner fa-spin' : 'fa-trash']" class="text-xs"></i>
+                    <span>{{ isDeletingReceipt ? 'Deleting...' : 'Delete Receipt' }}</span>
+                  </button>
                 </div>
               </div>
 
@@ -2423,7 +2554,7 @@ onMounted(() => {
             </div>
 
             <!-- Message thread -->
-            <div class="flex-1 overflow-y-auto max-h-72 space-y-2.5 pr-1 custom-scrollbar">
+            <div ref="chatMessagesContainer" class="flex-1 overflow-y-auto max-h-72 space-y-2.5 pr-1 custom-scrollbar">
               <!-- Empty state -->
               <div v-if="!isChatLoading && !chatMessages.length"
                 class="flex flex-col items-center justify-center py-10 text-center text-gray-400">
@@ -2449,7 +2580,21 @@ onMounted(() => {
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-tl-sm'
                 ]">
                   <p class="font-semibold text-[10px] mb-0.5 opacity-80">{{ msg.sender }}</p>
-                  <p class="whitespace-pre-wrap break-words">{{ msg.message }}</p>
+                  <p v-if="msg.message" class="whitespace-pre-wrap break-words">{{ msg.message }}</p>
+                  <!-- Attachment -->
+                  <div v-if="msg.attachment_url" class="mt-1.5">
+                    <a v-if="isPdfAttachment(msg.attachment_url)" :href="msg.attachment_url" target="_blank"
+                      :class="['flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition', msg.sender_type === 'admin' ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200']">
+                      <i class="fas fa-file-pdf"></i>
+                      <span class="truncate max-w-[140px]">{{ msg.attachment_name || 'View PDF' }}</span>
+                      <i class="fas fa-external-link-alt text-[9px] opacity-60 ml-auto"></i>
+                    </a>
+                    <a v-else :href="msg.attachment_url" target="_blank" class="block">
+                      <img :src="msg.attachment_url" :alt="msg.attachment_name || 'Image'"
+                        @load="scrollChatToBottom"
+                        class="mt-1 max-w-[180px] max-h-[160px] rounded-xl object-cover border border-white/20 shadow-sm cursor-pointer hover:opacity-90 transition" />
+                    </a>
+                  </div>
                   <p class="text-[9px] mt-1 opacity-60 text-right">{{ msg.timestamp }}</p>
                 </div>
               </div>
@@ -2463,6 +2608,19 @@ onMounted(() => {
                   <i class="fas fa-envelope text-[9px]"></i> Email will be sent to runner
                 </span>
               </p>
+
+              <!-- Attachment Preview -->
+              <div v-if="chatAttachment" class="mb-2 flex items-center gap-2 p-2 rounded-xl border bg-slate-50 dark:bg-gray-800/60 border-emerald-200 dark:border-emerald-800">
+                <img v-if="chatAttachment.previewUrl" :src="chatAttachment.previewUrl" class="w-10 h-10 rounded-lg object-cover border border-emerald-200 shrink-0" alt="preview" />
+                <div v-else class="w-10 h-10 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-500 flex items-center justify-center shrink-0">
+                  <i class="fas fa-file-pdf text-base"></i>
+                </div>
+                <span class="flex-1 text-[10px] text-gray-600 dark:text-gray-300 truncate">{{ chatAttachment.name }}</span>
+                <button type="button" @click="removeChatAttachment" class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-500 hover:bg-rose-100 hover:text-rose-500 flex items-center justify-center transition cursor-pointer">
+                  <i class="fas fa-times text-[9px]"></i>
+                </button>
+              </div>
+
               <textarea v-model="chatInput"
                 :disabled="isSendingChat"
                 @keydown.enter.ctrl="sendAdminMessage"
@@ -2473,14 +2631,28 @@ onMounted(() => {
                   props.darkMode ? 'bg-gray-900 border-gray-600 text-gray-100 placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'
                 ]"
               ></textarea>
-              <button type="button" @click="sendAdminMessage"
-                :disabled="isSendingChat || !chatInput.trim()"
-                class="mt-2 w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
-                title="Send message and notify the runner by email">
-                <i :class="['fas', isSendingChat ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
-                <span>{{ isSendingChat ? 'Sending...' : 'Send Message' }}</span>
-                <span v-if="!isSendingChat" class="ml-1 opacity-70 flex items-center gap-0.5"><i class="fas fa-envelope text-[9px]"></i></span>
-              </button>
+              <div class="mt-2 flex items-center gap-2">
+                <!-- Paperclip / Attach file -->
+                <label
+                  :class="[
+                    'flex items-center justify-center w-9 h-9 rounded-xl border cursor-pointer transition shrink-0',
+                    chatAttachment
+                      ? 'bg-emerald-100 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:border-emerald-300 hover:text-emerald-600'
+                  ]"
+                  title="Attach image or PDF (max 5 MB)">
+                  <i class="fas fa-paperclip text-sm"></i>
+                  <input type="file" accept="image/jpeg,image/jpg,image/png,application/pdf" class="hidden" @change="handleChatAttachmentChange" :disabled="isSendingChat" />
+                </label>
+                <button type="button" @click="sendAdminMessage"
+                  :disabled="isSendingChat || (!chatInput.trim() && !chatAttachment)"
+                  class="flex-1 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  title="Send message and notify the runner by email">
+                  <i :class="['fas', isSendingChat ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
+                  <span>{{ isSendingChat ? 'Sending...' : 'Send Message' }}</span>
+                  <span v-if="!isSendingChat" class="ml-1 opacity-70 flex items-center gap-0.5"><i class="fas fa-envelope text-[9px]"></i></span>
+                </button>
+              </div>
             </div>
           </div><!-- /chat panel -->
 
@@ -2562,6 +2734,46 @@ onMounted(() => {
             <i v-if="!isBulkDeleting" class="fas fa-trash"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
             <span>{{ isBulkDeleting ? 'Deleting...' : 'Yes, Delete All' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE RECEIPT CONFIRMATION MODAL -->
+    <div v-if="deleteReceiptModal.show && deleteReceiptModal.runner"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      @click.self="closeDeleteReceiptModal">
+      <div :class="[
+        'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-rose-500"></div>
+
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400 flex items-center justify-center text-2xl shadow-sm mt-2">
+          <i class="fas fa-trash"></i>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-black tracking-tight">Delete Receipt?</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Remove the uploaded payment receipt for
+            <strong class="text-rose-600 dark:text-rose-400">{{ deleteReceiptModal.runner.firstname }} {{ deleteReceiptModal.runner.lastname }}</strong>?
+          </p>
+          <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-2 leading-relaxed">
+            This will clear the <strong>proof of payment</strong> on record. The runner's payment status will remain unchanged. You can upload a new receipt at any time.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" @click="closeDeleteReceiptModal" :disabled="isDeletingReceipt"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="button" @click="executeDeleteReceipt" :disabled="isDeletingReceipt"
+            class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60">
+            <i v-if="!isDeletingReceipt" class="fas fa-trash"></i>
+            <i v-else class="fas fa-spinner fa-spin"></i>
+            <span>{{ isDeletingReceipt ? 'Deleting...' : 'Yes, Delete Receipt' }}</span>
           </button>
         </div>
       </div>

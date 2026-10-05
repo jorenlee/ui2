@@ -234,12 +234,6 @@ const form_type = ref("Individual");
 const number_of_participants_per_group = ref(1);
 const activeParticipantIndex = ref(0);
 
-const paymentType = ref("add_to_tuition");
-const nonLsuPaymentMethod = ref("qr_payment");
-const relativeFullname = ref("");
-const relativeLsuId = ref("");
-const receiptFile = ref(null);
-const receiptPreview = ref(null);
 const isSubmitting = ref(false);
 
 const waiver_agreed = ref(false);
@@ -583,6 +577,13 @@ const createEmptyParticipant = (index = 1) => ({
   pet_vaccine_record_preview: null,
   pet_consent_agreed: true,
   pet_consent_files: [], // array of { file, name, preview, isPdf }
+  // Per-entry payment mode & proof
+  payment_type: "add_to_tuition",
+  non_lsu_payment_method: "qr_payment",
+  relative_fullname: "",
+  relative_lsu_id: "",
+  receipt_file: null,
+  receipt_preview: null,
 });
 
 const selectParticipantGroup = (participant, group) => {
@@ -680,38 +681,85 @@ const currentParticipant = computed(() => {
   );
 });
 
-// Watch birthdate to automatically select Kids Shirt for minors (<18 yrs old)
-watch(
-  () => currentParticipant.value?.birthdate,
-  (newBirthdate) => {
-    if (!newBirthdate || !currentParticipant.value) return;
-    const age = calculateAge(newBirthdate);
-    if (age !== null) {
-      if (age < 18) {
-        if (!currentParticipant.value.shirt_type_manually_selected) {
-          selectShirtType(currentParticipant.value, "kids_shirt");
-        }
-      } else {
-        if (currentParticipant.value.shirt_type === "kids_shirt" && !currentParticipant.value.shirt_type_manually_selected) {
-          selectShirtType(currentParticipant.value, "event_shirt");
-        }
-      }
-    }
-  }
-);
+// ── KM Category Prices & Fee Resolvers ──────────────────────────────────────
+// Stick strictly to KM prices:
+// 1000 - PET RUN (1KM)
+// 1000 - 3KM
+// 1400 - 10KM
+// 1800 - 20KM
+const getCategoryFee = (catId) => {
+  const norm = String(catId || "").toUpperCase().trim();
+  if (norm.includes("20")) return 1800;
+  if (norm.includes("10")) return 1400;
+  if (norm.includes("PET") || norm.startsWith("1K") || norm === "1") return 1000;
+  return 1000; // 3KM or default
+};
+
+const currentParticipantFee = computed(() => {
+  return getCategoryFee(currentParticipant.value?.run_category);
+});
+
+// Per-participant payment proxies to avoid sharing or overwriting payment mode across group members
+const paymentType = computed({
+  get: () => currentParticipant.value?.payment_type || "add_to_tuition",
+  set: (val) => {
+    if (currentParticipant.value) currentParticipant.value.payment_type = val;
+  },
+});
+
+const nonLsuPaymentMethod = computed({
+  get: () => currentParticipant.value?.non_lsu_payment_method || "qr_payment",
+  set: (val) => {
+    if (currentParticipant.value) currentParticipant.value.non_lsu_payment_method = val;
+  },
+});
+
+const relativeFullname = computed({
+  get: () => currentParticipant.value?.relative_fullname || "",
+  set: (val) => {
+    if (currentParticipant.value) currentParticipant.value.relative_fullname = val;
+  },
+});
+
+const relativeLsuId = computed({
+  get: () => currentParticipant.value?.relative_lsu_id || "",
+  set: (val) => {
+    if (currentParticipant.value) currentParticipant.value.relative_lsu_id = val;
+  },
+});
+
+const receiptFile = computed({
+  get: () => currentParticipant.value?.receipt_file || null,
+  set: (val) => {
+    if (currentParticipant.value) currentParticipant.value.receipt_file = val;
+  },
+});
+
+const receiptPreview = computed({
+  get: () => currentParticipant.value?.receipt_preview || null,
+  set: (val) => {
+    if (currentParticipant.value) currentParticipant.value.receipt_preview = val;
+  },
+});
 
 // Automatically adjust recommended paymentType when participant classification or category changes
 watch(
   [() => currentParticipant.value?.participant_type, () => currentParticipant.value?.run_category],
-  ([newType, newCat]) => {
-    if (newCat === "1KM" || newCat === "1K" || newType === "Pet") {
-      paymentType.value = "non_lsu_payment";
-    } else if (newType === "LSU Exclusive - Employee" || newType === "Employees") {
-      paymentType.value = "salary_deduction";
-    } else if (newType === "LSU Exclusive - Enrolled Student" || newType === "Currently Enrolled Students") {
-      paymentType.value = "add_to_tuition";
-    } else if (newType === "Open Category" || newType === "LSU Exclusive - Alumni" || newType === "Alumni") {
-      paymentType.value = "non_lsu_payment";
+  ([newType, newCat], [oldType, oldCat]) => {
+    const p = currentParticipant.value;
+    if (!p) return;
+    if (newType !== oldType || newCat !== oldCat) {
+      if (newCat === "1KM" || newCat === "1K" || newType === "Pet") {
+        p.payment_type = "non_lsu_payment";
+      } else if (newType === "LSU Exclusive - Employee" || newType === "Employees") {
+        p.payment_type = "salary_deduction";
+      } else if (newType === "LSU Exclusive - Enrolled Student" || newType === "Currently Enrolled Students") {
+        p.payment_type = "add_to_tuition";
+      } else if (newType === "Open Category" || newType === "LSU Exclusive - Alumni" || newType === "Alumni") {
+        if (p.payment_type !== "family_salary_deduction") {
+          p.payment_type = "non_lsu_payment";
+        }
+      }
     }
   },
   { immediate: true }
@@ -836,7 +884,8 @@ const itemizedFees = computed(() => {
         ? `Runner #${idx + 1} (${p.firstname || "Unnamed"}): `
         : "";
     const cat = runCategories.find((c) => c.id === p.run_category || (p.run_category === '1K' && c.id === '1KM'));
-    if (cat) {
+    const fee = getCategoryFee(p.run_category);
+    if (cat || p.run_category) {
       const isPet = isPetCategory(p.run_category);
       const shirtDesc = isPet
         ? `Size: ${p.tshirt_size || "M"} (Owner) + Bandana (Standard)`
@@ -845,9 +894,9 @@ const itemizedFees = computed(() => {
           : `Size: ${buildShirtSizeSummary(p)}`;
 
       items.push({
-        name: `${labelPrefix}${cat.name} (${cat.id})${isPet && p.pet_name ? ' - Pet: ' + p.pet_name : ''}`,
+        name: `${labelPrefix}${cat?.name || p.run_category} (${cat?.id || p.run_category})${isPet && p.pet_name ? ' - Pet: ' + p.pet_name : ''}`,
         shirt: shirtDesc,
-        amount: cat.fee,
+        amount: fee,
         isPet: isPet,
       });
     }
@@ -859,13 +908,19 @@ const grandTotal = computed(() => {
   return itemizedFees.value.reduce((sum, item) => sum + item.amount, 0);
 });
 
+const getParticipantPaymentLabel = (p) => {
+  const pType = p?.payment_type || "non_lsu_payment";
+  const pNonLsu = p?.non_lsu_payment_method || "qr_payment";
+  if (pType === "salary_deduction") return "Salary Deduction";
+  if (pType === "add_to_tuition") return "Add to Tuition";
+  if (pType === "family_salary_deduction") return "Family Salary Deduction";
+  if (pNonLsu === "accounting_otc") return "Accounting OTC";
+  if (pNonLsu === "weekend_cash") return "Weekend Cash";
+  return "QR Payment";
+};
+
 const paymentMethodLabel = computed(() => {
-  if (paymentType.value === "salary_deduction") return "Salary Deduction";
-  if (paymentType.value === "add_to_tuition") return "Add to Tuition";
-  if (paymentType.value === "family_salary_deduction") return "Family Salary Deduction";
-  if (nonLsuPaymentMethod.value === "qr_payment") return "QR Payment";
-  if (nonLsuPaymentMethod.value === "accounting_otc") return "Accounting OTC";
-  return "Weekend Cash";
+  return getParticipantPaymentLabel(currentParticipant.value);
 });
 
 const registrationSummary = computed(() => {
@@ -882,8 +937,8 @@ const registrationSummary = computed(() => {
         : participant.participantGroup === "LSU"
           ? participant.participant_type || "LSU Exclusive - Enrolled Student"
           : "Open Category",
-      payment: paymentMethodLabel.value,
-      fee: category?.fee || 0,
+      payment: getParticipantPaymentLabel(participant),
+      fee: getCategoryFee(participant.run_category),
     };
   });
 
@@ -923,6 +978,12 @@ const copyRunnerOneInfo = () => {
   p.pet_bandana_size = r1.pet_bandana_size;
   p.pet_vaccinated = r1.pet_vaccinated;
   p.pet_consent_agreed = r1.pet_consent_agreed;
+  p.payment_type = r1.payment_type;
+  p.non_lsu_payment_method = r1.non_lsu_payment_method;
+  p.relative_fullname = r1.relative_fullname;
+  p.relative_lsu_id = r1.relative_lsu_id;
+  p.receipt_file = r1.receipt_file;
+  p.receipt_preview = r1.receipt_preview;
 };
 
 const isSuccessModalOpen = ref(false);
@@ -930,15 +991,15 @@ const registrationResult = ref(null);
 
 // QR Payment images mapped by KM category
 const QR_PAYMENT_IMAGES = {
-  "1KM": { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/1KM-QR-PAYMENT.jpg", label: "1KM QR Code Payment"},
-  "3KM": { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/3KM-QR-PAYMENT.jpg",  label: "3KM QR Code Payment"},
-  "10KM":{ src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/10KM-QR-PAYMENT.jpg", label: "10KM QR Code Payment"},
-  "20KM":{ src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/20KM-QR-PAYMENT.jpg", label: "20KM QR Code Payment"},
+  "1KM": { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/1KM-QR-PAYMENT.jpg", label: "1KM QR Code Payment" },
+  "3KM": { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/3KM-QR-PAYMENT.jpg", label: "3KM QR Code Payment" },
+  "10KM": { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/10KM-QR-PAYMENT.jpg", label: "10KM QR Code Payment" },
+  "20KM": { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/20KM-QR-PAYMENT.jpg", label: "20KM QR Code Payment" },
 };
 
 const qrPaymentImage = computed(() => {
   const cat = currentParticipant.value?.run_category || "";
-  return QR_PAYMENT_IMAGES[cat] || { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/1KM-QR-PAYMENT.jpg", label: "1KM QR Code Payment"};
+  return QR_PAYMENT_IMAGES[cat] || { src: "https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/1KM-QR-PAYMENT.jpg", label: "1KM QR Code Payment" };
 });
 
 // ── Shirt Preview State (declare refs FIRST before any function references them) ──
@@ -1259,70 +1320,84 @@ const submitRegistration = async () => {
     }
   }
 
-    // Validate LSU ID Number for salary deduction / add to tuition
-  if (paymentType.value === "salary_deduction") {
-    if (!currentParticipant.value.lsu_id_number?.trim()) {
-      showNotice(
-        "Please provide your LSU Employee ID Number for Salary Deduction verification.",
-        "LSU Employee ID Number Required",
-        "warning"
-      );
-      return;
-    }
-  } else if (paymentType.value === "add_to_tuition") {
-    if (!currentParticipant.value.lsu_id_number?.trim()) {
-      showNotice(
-        "Please provide your LSU Student ID Number for Add to Tuition verification.",
-        "LSU Student ID Number Required",
-        "warning"
-      );
-      return;
-    }
-  } else if (paymentType.value === "family_salary_deduction") {
-    if (!relativeFullname.value?.trim()) {
-      showNotice(
-        "Please provide the full name of your family member or relative who works at La Salle University.",
-        "Relative Full Name Required",
-        "warning"
-      );
-      return;
-    }
-    if (!relativeLsuId.value?.trim()) {
-      showNotice(
-        "Please provide the LSU ID Number of your family member or relative.",
-        "Relative LSU ID Number Required",
-        "warning"
-      );
-      return;
-    }
-    const relVerif = getRelativeVerificationStatus.value;
-    if (!relVerif || !relVerif.isValid) {
-      showNotice(
-        relVerif?.statusText || "The LSU Employee ID could not be verified. Please check the ID Number and Last Name.",
-        "Relative Verification Failed",
-        "warning"
-      );
-      return;
-    }
-  } else if (paymentType.value === "non_lsu_payment") {
-    if (nonLsuPaymentMethod.value === "qr_payment" && !receiptFile.value) {
-      showNotice(
-        "Please upload your proof of payment or deposit transfer screenshot before submitting.",
-        "Payment Receipt Required",
-        "warning"
-      );
-      return;
-    }
-  }
+  // Validate payment information for every participant separately
+  const hasAnyReceipt = participants.value.some((p) => p.receipt_file);
+  for (let i = 0; i < participants.value.length; i++) {
+    const p = participants.value[i];
+    const runnerLabel = form_type.value === "Group" ? `Runner #${i + 1}` : "Runner";
+    const pPayType = p.payment_type || "non_lsu_payment";
+    const pNonLsuMethod = p.non_lsu_payment_method || "qr_payment";
 
-  // Final guard: ensure no uploaded file exceeds 1MB before submitting
-  if (receiptFile.value && receiptFile.value.size > MAX_FILE_SIZE_BYTES) {
-    showNotice(
-      `Your payment receipt exceeds the maximum allowed size of ${MAX_FILE_SIZE_MB}MB. Please compress or resize the file and re-upload.`,
-      "File Too Large",
-      "error"
-    );
-    return;
+    if (pPayType === "salary_deduction") {
+      if (!p.lsu_id_number?.trim()) {
+        showNotice(
+          `Please provide the LSU Employee ID Number for ${runnerLabel} for Salary Deduction verification.`,
+          "LSU Employee ID Number Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+    } else if (pPayType === "add_to_tuition") {
+      if (!p.lsu_id_number?.trim()) {
+        showNotice(
+          `Please provide the LSU Student ID Number for ${runnerLabel} for Add to Tuition verification.`,
+          "LSU Student ID Number Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+    } else if (pPayType === "family_salary_deduction") {
+      if (!p.relative_fullname?.trim()) {
+        showNotice(
+          `Please provide the full name of the family member or relative who works at La Salle University for ${runnerLabel}.`,
+          "Relative Full Name Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+      if (!p.relative_lsu_id?.trim()) {
+        showNotice(
+          `Please provide the LSU ID Number of your family member or relative for ${runnerLabel}.`,
+          "Relative LSU ID Number Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+      const relVerif = getLsuIdVerificationStatus(p.relative_lsu_id, "employee");
+      if (!relVerif || !relVerif.isValid) {
+        showNotice(
+          `LSU Employee ID could not be verified for ${runnerLabel}. Please check the Relative ID Number and Name.`,
+          "Relative Verification Failed",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+    } else if (pPayType === "non_lsu_payment") {
+      if (pNonLsuMethod === "qr_payment" && !p.receipt_file && !hasAnyReceipt) {
+        showNotice(
+          `Please upload your proof of payment or transfer receipt screenshot for ${runnerLabel}.`,
+          "Payment Receipt Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
+    }
+
+    if (p.receipt_file && p.receipt_file.size > MAX_FILE_SIZE_BYTES) {
+      showNotice(
+        `Payment receipt for ${runnerLabel} exceeds the maximum allowed size of ${MAX_FILE_SIZE_MB}MB. Please compress or resize the file.`,
+        "File Too Large",
+        "error"
+      );
+      activeParticipantIndex.value = i;
+      return;
+    }
   }
   for (let i = 0; i < participants.value.length; i++) {
     const p = participants.value[i];
@@ -1386,11 +1461,19 @@ const submitRegistration = async () => {
   isSubmitting.value = true;
 
   try {
-    // 1. Upload receipt file if present
-    let receiptUrl = "";
-    if (receiptFile.value) {
-      receiptUrl = await uploadSingleFile(receiptFile.value);
-    }
+    // 1. Upload receipt files safely (cache to avoid redundant uploads)
+    const uploadedReceiptMap = new Map();
+    const uploadReceiptSafely = async (file) => {
+      if (!file) return "";
+      if (uploadedReceiptMap.has(file)) return uploadedReceiptMap.get(file);
+      const url = (await uploadSingleFile(file)) || "";
+      uploadedReceiptMap.set(file, url);
+      return url;
+    };
+
+    // Shared / fallback receipt if uploaded by any runner
+    const primaryReceipt = participants.value.find((p) => p.receipt_file)?.receipt_file;
+    const fallbackReceiptUrl = primaryReceipt ? await uploadReceiptSafely(primaryReceipt) : "";
 
     // Ensure email is set
     for (const p of participants.value) {
@@ -1399,33 +1482,21 @@ const submitRegistration = async () => {
       }
     }
 
-    // 3. Prepare payload and dispatch to Django API
-    const effectivePaymentType =
-      paymentType.value === "non_lsu_payment"
-        ? nonLsuPaymentMethod.value || "qr_payment"
-        : paymentType.value;
-    const relativeInfo = paymentType.value === "family_salary_deduction"
-      ? { relative_fullname: relativeFullname.value?.trim(), relative_lsu_id: relativeLsuId.value?.trim() }
-      : {};
-
     let res;
     if (form_type.value === "Group") {
-      const payload = {
-        is_dashboard: isDashboard.value,
-        waiver_agreed: waiver_agreed.value,
-        privacy_consent_agreed: privacy_consent_agreed.value,
-        participants: await Promise.all(participants.value.map(async (p, idx) => {
+      const mappedParticipants = await Promise.all(
+        participants.value.map(async (p, idx) => {
           // Upload Alumni ID front if present (up to 5MB)
           let idFrontUrl = "";
           let idBackUrl = "";
           if (p.participant_type === 'LSU Exclusive - Alumni' || p.participant_type === 'Alumni') {
-            if (p.alumni_id_front_file) idFrontUrl = await uploadSingleFile(p.alumni_id_front_file) || "";
+            if (p.alumni_id_front_file) idFrontUrl = (await uploadSingleFile(p.alumni_id_front_file)) || "";
           }
 
           // Upload Pet Vaccine Record if present
           let vaccineUrl = "";
           if (p.pet_vaccine_record_file) {
-            vaccineUrl = await uploadSingleFile(p.pet_vaccine_record_file) || "";
+            vaccineUrl = (await uploadSingleFile(p.pet_vaccine_record_file)) || "";
           }
 
           // Upload Pet Consent Documents if present
@@ -1439,21 +1510,45 @@ const submitRegistration = async () => {
             }
           }
 
-          const resolvedPetType = p.pet_type === "Other" && p.pet_other_type?.trim()
-            ? `Other: ${p.pet_other_type.trim()}`
-            : p.pet_type;
+          const resolvedPetType =
+            p.pet_type === "Other" && p.pet_other_type?.trim()
+              ? `Other: ${p.pet_other_type.trim()}`
+              : p.pet_type;
 
           const formattedPhone = p.contact_number ? `+63 ${p.contact_number}` : "";
-          const emailVal = (idx === 0 && isDashboard.value && user?.value?.email)
-            ? user.value.email
-            : (p.contact_email || user?.value?.email || "");
+          const emailVal =
+            idx === 0 && isDashboard.value && user?.value?.email
+              ? user.value.email
+              : p.contact_email || user?.value?.email || "";
+
+          const pCat = p.run_category === "1K" ? "1KM" : p.run_category || "3KM";
+          const pFee = getCategoryFee(pCat);
+          const pEffectivePaymentType =
+            p.payment_type === "non_lsu_payment"
+              ? p.non_lsu_payment_method || "qr_payment"
+              : p.payment_type || "add_to_tuition";
+
+          let pReceiptUrl = "";
+          if (p.receipt_file) {
+            pReceiptUrl = await uploadReceiptSafely(p.receipt_file);
+          } else if (pEffectivePaymentType === "qr_payment") {
+            pReceiptUrl = fallbackReceiptUrl;
+          }
+
+          const pRelativeInfo =
+            p.payment_type === "family_salary_deduction"
+              ? {
+                  relative_fullname: p.relative_fullname?.trim() || "",
+                  relative_lsu_id: p.relative_lsu_id?.trim() || "",
+                }
+              : {};
 
           return {
             firstname: p.firstname,
             middlename: p.middlename,
             lastname: p.lastname,
             suffix: p.suffix,
-            run_category: p.run_category === "1K" ? "1KM" : p.run_category,
+            run_category: pCat,
             participant_type: p.participant_type,
             lsu_id_number: p.lsu_id_number,
             birthdate: p.birthdate,
@@ -1471,7 +1566,10 @@ const submitRegistration = async () => {
             tshirt_size: buildShirtSizeSummary(p),
             pet_name: p.pet_name,
             pet_type: resolvedPetType,
-            pet_bandana_size: (isPetCategory(p.run_category) || p.pet_name) ? "Standard" : (p.pet_bandana_size || ""),
+            pet_bandana_size:
+              isPetCategory(p.run_category) || p.pet_name
+                ? "Standard"
+                : p.pet_bandana_size || "",
             pet_vaccinated: p.pet_vaccinated,
             valid_id_front: idFrontUrl ? [{ name: 'alumni_id_front', url: idFrontUrl }] : [],
             valid_id_back: idBackUrl ? [{ name: 'alumni_id_back', url: idBackUrl }] : [],
@@ -1479,14 +1577,33 @@ const submitRegistration = async () => {
             pet_consent_documents: consentDocs,
             waiver_agreed: waiver_agreed.value,
             privacy_consent_agreed: privacy_consent_agreed.value,
+
+            // Retain individual price per entry: 1000 - PET RUN, 1000 - 3KM, 1400 - 10KM, 1800 - 20KM
+            grand_total_payment: String(pFee),
+            fee: pFee,
+            amount: pFee,
+            // Separate mode or type of payment per entry
+            payment_type: pEffectivePaymentType,
+            proof_of_payment: pReceiptUrl,
+            ...pRelativeInfo,
           };
-        })),
+        })
+      );
+
+      const payload = {
+        is_dashboard: isDashboard.value,
+        waiver_agreed: waiver_agreed.value,
+        privacy_consent_agreed: privacy_consent_agreed.value,
+        participants: mappedParticipants,
         form_type: "Group",
-        payment_type: effectivePaymentType,
-        proof_of_payment: receiptUrl || "",
-        grand_total_payment: grandTotal.value,
+        payment_type:
+          participants.value[0]?.payment_type === "non_lsu_payment"
+            ? participants.value[0]?.non_lsu_payment_method || "qr_payment"
+            : participants.value[0]?.payment_type || "add_to_tuition",
+        proof_of_payment: fallbackReceiptUrl || "",
+        // Do NOT total the amount if group to avoid confusing registrants checker
+        grand_total_payment: "",
         detail_fees: itemizedFees.value,
-        ...relativeInfo,
       };
 
       res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
@@ -1500,13 +1617,13 @@ const submitRegistration = async () => {
       let idFrontUrl = "";
       let idBackUrl = "";
       if (p.participant_type === 'LSU Exclusive - Alumni' || p.participant_type === 'Alumni') {
-        if (p.alumni_id_front_file) idFrontUrl = await uploadSingleFile(p.alumni_id_front_file) || "";
+        if (p.alumni_id_front_file) idFrontUrl = (await uploadSingleFile(p.alumni_id_front_file)) || "";
       }
 
       // Upload Pet Vaccine Record if present
       let vaccineUrl = "";
       if (p.pet_vaccine_record_file) {
-        vaccineUrl = await uploadSingleFile(p.pet_vaccine_record_file) || "";
+        vaccineUrl = (await uploadSingleFile(p.pet_vaccine_record_file)) || "";
       }
 
       // Upload Pet Consent Documents if present
@@ -1520,14 +1637,36 @@ const submitRegistration = async () => {
         }
       }
 
-      const resolvedPetType = p.pet_type === "Other" && p.pet_other_type?.trim()
-        ? `Other: ${p.pet_other_type.trim()}`
-        : p.pet_type;
+      const resolvedPetType =
+        p.pet_type === "Other" && p.pet_other_type?.trim()
+          ? `Other: ${p.pet_other_type.trim()}`
+          : p.pet_type;
 
       const formattedPhone = p.contact_number ? `+63 ${p.contact_number}` : "";
-      const emailVal = (isDashboard.value && user?.value?.email)
-        ? user.value.email
-        : (p.contact_email || user?.value?.email || "");
+      const emailVal =
+        isDashboard.value && user?.value?.email
+          ? user.value.email
+          : p.contact_email || user?.value?.email || "";
+
+      const pCat = p.run_category === "1K" ? "1KM" : p.run_category || "3KM";
+      const pFee = getCategoryFee(pCat);
+      const effectivePaymentType =
+        p.payment_type === "non_lsu_payment"
+          ? p.non_lsu_payment_method || "qr_payment"
+          : p.payment_type || "add_to_tuition";
+
+      let receiptUrl = "";
+      if (p.receipt_file) {
+        receiptUrl = (await uploadReceiptSafely(p.receipt_file)) || "";
+      }
+
+      const relativeInfo =
+        p.payment_type === "family_salary_deduction"
+          ? {
+              relative_fullname: p.relative_fullname?.trim() || "",
+              relative_lsu_id: p.relative_lsu_id?.trim() || "",
+            }
+          : {};
 
       const payload = {
         is_dashboard: isDashboard.value,
@@ -1535,7 +1674,7 @@ const submitRegistration = async () => {
         middlename: p.middlename,
         lastname: p.lastname,
         suffix: p.suffix,
-        run_category: p.run_category === "1K" ? "1KM" : p.run_category,
+        run_category: pCat,
         participant_type: p.participant_type,
         lsu_id_number: p.lsu_id_number,
         birthdate: p.birthdate,
@@ -1553,12 +1692,16 @@ const submitRegistration = async () => {
         tshirt_size: buildShirtSizeSummary(p),
         pet_name: p.pet_name,
         pet_type: resolvedPetType,
-        pet_bandana_size: (isPetCategory(p.run_category) || p.pet_name) ? "Standard" : (p.pet_bandana_size || ""),
+        pet_bandana_size:
+          isPetCategory(p.run_category) || p.pet_name
+            ? "Standard"
+            : p.pet_bandana_size || "",
         pet_vaccinated: p.pet_vaccinated,
         form_type: "Individual",
         payment_type: effectivePaymentType,
         proof_of_payment: receiptUrl || "",
-        grand_total_payment: grandTotal.value,
+        grand_total_payment: String(pFee),
+        fee: pFee,
         detail_fees: itemizedFees.value,
         ...relativeInfo,
         valid_id_front: idFrontUrl ? [{ name: 'alumni_id_front', url: idFrontUrl }] : [],
@@ -1673,24 +1816,10 @@ const sendChatWidgetMessage = async () => {
 </script>
 
 <template>
-  <div :class="[
-    'min-h-screen py-2 px-2 sm:px-4 lg:px-8 transition-colors duration-300',
-    props.darkMode ? 'bg-gray-900 text-gray-100' : 'bg-slate-50 text-gray-800',
-  ]">
-    <div class="">
+  <div class="min-h-screen transition-colors duration-300">
+    <div>
       <!-- HERO / HEADER -->
-      <div :class="[
-        'relative overflow-hidden shadow-xl mb-2 border transition-all duration-300',
-        props.darkMode
-          ? 'bg-gradient-to-br from-green-950 via-emerald-900 to-gray-900 border-green-800/40'
-          : 'bg-gradient-to-br from-green-800 via-emerald-700 to-teal-800 border-green-600 text-white',
-      ]">
-        <!-- Background decorative elements -->
-        <div class="absolute -right-16 -top-16 w-64 h-64 bg-emerald-900 rounded-full blur-3xl pointer-events-none">
-        </div>
-        <div class="absolute -left-16 -bottom-16 w-64 h-64 bg-teal-800 rounded-full blur-3xl pointer-events-none">
-        </div>
-
+      <div class="relative overflow-hidden shadow-xl transition-all duration-300 bg-green-900 text-white">
         <div class="relative px-4 py-3 sm:px-8 sm:py-5">
           <!-- Mobile: compact row layout -->
           <div class="flex items-center gap-3 sm:gap-5">
@@ -1710,39 +1839,27 @@ const sendChatWidgetMessage = async () => {
 
       <!-- MAIN CONTAINER -->
       <div :class="[
-        'rounded-3xl shadow-xl border overflow-hidden transition-all duration-300',
+        'shadow-xl border overflow-hidden transition-all duration-300',
         props.darkMode
           ? 'bg-gray-800 border-gray-700'
           : 'bg-white border-slate-200',
       ]">
         <!-- REGISTRATION TYPE SELECTOR -->
-        <div :class="[
-          'p-3 sm:p-5 border-b transition-colors duration-300',
-          props.darkMode
-            ? 'bg-gray-800/80 border-gray-700'
-            : 'bg-gradient-to-r from-emerald-50/60 to-slate-50 border-slate-200',
-        ]">
-          <div class=" items-start sm:items-center gap-3 sm:gap-5 lg:w-fit">
-
-
-
+        <div class="p-3 transition-colors duration-300">
+          <div class="lg:flex items-start sm:items-center gap-3 sm:gap-5 lg:w-fit">
             <!-- Title & Description -->
             <div class="flex-1 min-w-0 mb-3">
               <h2 class="text-base sm:text-lg font-bold flex items-center gap-2">
-                <i class="fas fa-users text-emerald-600"></i>
+                <i class="fas fa-users text-emerald-900"></i>
                 Select Registration Type
               </h2>
-              <p class="text-xs text-gray-500 mt-0.5">
-                Choose whether you are registering for yourself or a team/group
-              </p>
             </div>
-
             <!-- Individual / Group Radio Cards — LEFTMOST -->
             <div class="flex gap-2 shrink-0" v-if="currentParticipant.run_category !== '1K'">
               <div @click="form_type = 'Individual'" :class="[
-                'lg:w-fit w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
+                'lg:w-fit w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer  font-semibold text-sm transition-all duration-200 shadow-sm',
                 form_type === 'Individual'
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/30'
+                  ? 'bg-emerald-900 text-white shadow-emerald-600/30'
                   : props.darkMode
                     ? 'bg-gray-700/60 text-gray-300 border-gray-600 hover:bg-gray-700'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-emerald-50',
@@ -1751,11 +1868,10 @@ const sendChatWidgetMessage = async () => {
                 <i class="fas fa-user text-xs"></i>
                 <span>Individual</span>
               </div>
-
               <div @click="form_type = 'Group'" :class="[
-                'lg:w-fit w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer border font-semibold text-sm transition-all duration-200 shadow-sm',
+                'lg:w-fit w-full flex items-center justify-center gap-2 px-5 py-3 rounded-2xl cursor-pointer  font-semibold text-sm transition-all duration-200 shadow-sm',
                 form_type === 'Group'
-                  ? 'bg-emerald-600 text-white border-emerald-600 shadow-emerald-600/30'
+                  ? 'bg-emerald-900 text-white shadow-emerald-600/30'
                   : props.darkMode
                     ? 'bg-gray-700/60 text-gray-300 border-gray-600 hover:bg-gray-700'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-emerald-50',
@@ -1764,16 +1880,9 @@ const sendChatWidgetMessage = async () => {
                 <i class="fas fa-users-cog text-xs"></i>
                 <span>Group</span>
               </div>
-
-
-
             </div>
-
-
-
           </div>
         </div>
-
         <!-- FORM CONTENT AREA -->
         <div class="lg:flex">
 
@@ -1909,14 +2018,10 @@ const sendChatWidgetMessage = async () => {
 
               <!-- RACE CARDS CONTAINER -->
               <!-- Mobile: Horizontal swipe snap container; Desktop: flex row with sidebar -->
-              <div
-                ref="raceCardsRef"
+              <div ref="raceCardsRef"
                 class="flex gap-3 overflow-x-auto pb-3 pt-1 snap-x snap-mandatory scrollbar-none items-stretch -mx-2 px-2 sm:mx-0 sm:px-0 select-none"
-                style="cursor: grab"
-                @mousedown="onCardsDragStart"
-                @mousemove="onCardsDragMove"
-                @mouseup="onCardsDragEnd"
-                @mouseleave="onCardsDragEnd">
+                style="cursor: grab" @mousedown="onCardsDragStart" @mousemove="onCardsDragMove"
+                @mouseup="onCardsDragEnd" @mouseleave="onCardsDragEnd">
 
 
 
@@ -2011,8 +2116,7 @@ const sendChatWidgetMessage = async () => {
 
                 <!-- VERTICAL DIVIDER (Desktop only) -->
                 <div class="hidden lg:flex flex-col items-center justify-center px-3 shrink-0">
-                  <div
-                    class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 to-transparent">
+                  <div class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 to-transparent">
                   </div>
                   <div :class="[
                     'my-2 px-2 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest border shadow-sm shrink-0 flex flex-col items-center gap-1',
@@ -2030,8 +2134,7 @@ const sendChatWidgetMessage = async () => {
                     Human
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block mb-1"></span>
                   </div>
-                  <div
-                    class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 to-transparent">
+                  <div class="w-px flex-1 bg-gradient-to-b from-transparent via-gray-300 to-transparent">
                   </div>
                 </div>
 
@@ -2084,25 +2187,6 @@ const sendChatWidgetMessage = async () => {
                         1,000</span>
                     </div>
 
-                    <!-- Pet Run Slot Availability Badge -->
-                    <div class="mt-2 flex items-center gap-1.5" v-if="slotDataLoaded">
-                      <span v-if="isCategoryFull('1KM')"
-                        class="text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
-                        style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4)">
-                        <i class="fas fa-ban text-[9px]"></i> FULL — 0 Slots Left
-                      </span>
-                      <span v-else-if="getRemainingSlots('1KM') <= 10"
-                        class="text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
-                        style="background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4)">
-                        <i class="fas fa-exclamation-triangle text-[9px]"></i> {{ getRemainingSlots('1KM') }} Slots Left
-                      </span>
-                      <span v-else
-                        class="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
-                        style="background: rgba(34,197,94,0.15); color: rgba(134,239,172,0.9); border: 1px solid rgba(34,197,94,0.3)">
-                        <i class="fas fa-check-circle text-[9px]"></i> {{ getRemainingSlots('1KM') }} / 50 Slots Left
-                      </span>
-                    </div>
-
                     <!-- Inclusions -->
                     <div class="mt-4 pt-3 border-t" style="border-color: rgba(255,255,255,0.15)">
                       <p class="text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1"
@@ -2117,25 +2201,12 @@ const sendChatWidgetMessage = async () => {
                       </ul>
                     </div>
                   </div>
-
-                  <!-- Gun Time -->
-                  <!-- <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
-                    style="border-color: rgba(255,255,255,0.15)">
-                    <span class="font-medium flex items-center gap-1" style="color: rgba(255,255,255,0.6)">
-                      <i class="fas fa-clock" style="color: #93CAC5"></i> Gun Time:
-                    </span>
-                    <span class="font-black" style="color: #93CAC5">5:00 AM</span>
-                  </div> -->
                 </div>
-
-
-
-
               </div>
 
               <!-- Swipe / Drag Hint -->
               <div
-                class="lg:hidden flex items-center justify-center gap-1.5 mt-2 text-xs font-bold text-red-600">
+                class="lg:hidden flex items-center justify-center gap-1.5 mt-2 text-xs font-bold text-red-600 whitespace-nowrap">
                 <i class="fas fa-arrows-left-right text-[10px]"></i>
                 <span class="hidden sm:inline">Drag or swipe cards horizontally to explore all race distances</span>
                 <span class="sm:hidden">Swipe cards horizontally to explore all race distances</span>
@@ -2226,8 +2297,7 @@ const sendChatWidgetMessage = async () => {
                 </div>
 
                 <!-- Pet Document Uploads: Vaccine Record + Consent Documents -->
-                <div class="pt-4 border-t"
-                  style="border-color: rgba(147,202,197,0.4)">
+                <div class="pt-4 border-t" style="border-color: rgba(147,202,197,0.4)">
 
                   <!-- 1. Vaccine Record Upload -->
                   <div class="space-y-2">
@@ -2377,8 +2447,7 @@ const sendChatWidgetMessage = async () => {
                 <p class="font-black text-base text-gray-800">Select a Race Category above</p>
                 <p class="text-xs text-gray-500 mt-1">Your registration form will appear once you pick a category.</p>
               </div>
-              <div
-                class="flex items-center gap-1.5 text-[11px] text-emerald-600 font-semibold animate-bounce mt-1">
+              <div class="flex items-center gap-1.5 text-[11px] text-emerald-600 font-semibold animate-bounce mt-1">
                 <i class="fas fa-chevron-up text-[10px]"></i> Choose Category
               </div>
             </div>
@@ -2389,7 +2458,7 @@ const sendChatWidgetMessage = async () => {
                 <h3 class="text-lg font-bold flex items-center gap-2">
                   <span
                     class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-black">2</span>
-                  <span>{{ currentParticipant.run_category === '1K' ? 'Pet Owner / Runner Personal Information':'Personal Information' }}</span>
+                  <span>{{ currentParticipant.run_category === '1K' ? 'Pet Owner / Runner Personal Information' : 'Personal Information' }}</span>
                 </h3>
                 <p class="text-xs text-gray-500 ml-9">
                   {{ currentParticipant.run_category === '1K' ? 'Personal details of the pet owner / runner' : `Personal details for Runner #${activeParticipantIndex + 1}` }}
@@ -2499,7 +2568,8 @@ const sendChatWidgetMessage = async () => {
                     <label class="block text-xs font-semibold text-gray-600">
                       Email Address *
                     </label>
-                    <span v-if="isDashboard" class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-300">
+                    <span v-if="isDashboard"
+                      class="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-300">
                       <i class="fas fa-shield-alt text-emerald-600"></i> Auth Account
                     </span>
                   </div>
@@ -2507,21 +2577,20 @@ const sendChatWidgetMessage = async () => {
                     <span class="absolute left-3.5 top-3 text-xs text-gray-400">
                       <i class="fas fa-envelope"></i>
                     </span>
-                    <input
-                      v-model="currentParticipant.contact_email"
+                    <input v-model="currentParticipant.contact_email"
                       :readonly="isDashboard ? false : (activeParticipantIndex === 0 && isOtpVerified && verifiedEmail === (currentParticipant.contact_email || '').trim().toLowerCase())"
-                      placeholder="runner@lsu.edu.ph"
-                      :class="[
+                      placeholder="runner@lsu.edu.ph" :class="[
                         'w-full pl-9 pr-3.5 py-2.5 rounded-xl border text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
                         props.darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300',
                         (!isDashboard && activeParticipantIndex === 0 && isOtpVerified && verifiedEmail === (currentParticipant.contact_email || '').trim().toLowerCase()) ? 'border-emerald-500 bg-emerald-50/30 font-semibold text-emerald-800' : ''
-                      ]"
-                    />
+                      ]" />
                   </div>
 
                   <!-- Dashboard Form: Auth config info badge -->
                   <p v-if="isDashboard" class="text-[11px] text-emerald-600 mt-1 flex items-center gap-1">
-                    <i class="fas fa-check-circle"></i> Authenticated via Dashboard ({{ user?.email || 'Logged In' }}). OTP is not required.
+                    <i class="fas fa-check-circle"></i> Authenticated via Dashboard ({{ user?.email || 'Logged In' }}).
+                    OTP is not
+                    required.
                   </p>
 
                   <!-- Public Form: OTP Verification for Runner #1 (Primary Registrant / Lister) -->
@@ -2529,29 +2598,22 @@ const sendChatWidgetMessage = async () => {
                     <!-- Verified State Badge -->
                     <div
                       v-if="isOtpVerified && verifiedEmail === (currentParticipant.contact_email || '').trim().toLowerCase()"
-                      class="flex items-center justify-between p-2 rounded-xl bg-emerald-50 border border-emerald-300"
-                    >
+                      class="flex items-center justify-between p-2 rounded-xl bg-emerald-50 border border-emerald-300">
                       <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-700">
                         <i class="fas fa-check-circle text-emerald-500 text-sm"></i>
                         <span>Email Verified with OTP</span>
                       </div>
-                      <button
-                        type="button"
-                        @click="resetOtpVerification"
-                        class="text-[11px] text-emerald-800 hover:text-red-500 underline font-semibold transition cursor-pointer"
-                      >
+                      <button type="button" @click="resetOtpVerification"
+                        class="text-[11px] text-emerald-800 hover:text-red-500 underline font-semibold transition cursor-pointer">
                         Change Email
                       </button>
                     </div>
 
                     <!-- Unverified State: Send OTP Button -->
                     <div v-else class="space-y-2">
-                      <button
-                        type="button"
-                        @click="sendOtp"
+                      <button type="button" @click="sendOtp"
                         :disabled="isSendingOtp || otpCooldown > 0 || !isValidEmail(currentParticipant.contact_email)"
-                        class="w-full py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
+                        class="w-full py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                         <i v-if="isSendingOtp" class="fas fa-spinner fa-spin"></i>
                         <i v-else class="fas fa-paper-plane"></i>
                         <span>{{ otpCooldown > 0 ? `Resend code in ${otpCooldown}s` : (otpSent ? 'Resend Verification Code' : 'Send Verification Code (OTP)') }}</span>
@@ -2567,20 +2629,11 @@ const sendChatWidgetMessage = async () => {
                           <span class="text-[11px] text-gray-500">Expires in 10 mins</span>
                         </div>
                         <div class="flex gap-2">
-                          <input
-                            v-model="otpCode"
-                            type="text"
-                            inputmode="numeric"
-                            maxlength="6"
-                            placeholder="000000"
-                            class="w-32 px-3 py-2 text-center text-base tracking-widest font-mono font-bold rounded-lg border border-amber-300 bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                          />
-                          <button
-                            type="button"
-                            @click="verifyOtp"
+                          <input v-model="otpCode" type="text" inputmode="numeric" maxlength="6" placeholder="000000"
+                            class="w-32 px-3 py-2 text-center text-base tracking-widest font-mono font-bold rounded-lg border border-amber-300 bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+                          <button type="button" @click="verifyOtp"
                             :disabled="isVerifyingOtp || !otpCode || otpCode.trim().length !== 6"
-                            class="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                          >
+                            class="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
                             <i v-if="isVerifyingOtp" class="fas fa-spinner fa-spin"></i>
                             <i v-else class="fas fa-check"></i>
                             <span>Verify Code</span>
@@ -2595,7 +2648,8 @@ const sendChatWidgetMessage = async () => {
 
                   <!-- Public Form: Runner #2+ (optional notification email) -->
                   <p v-else class="text-[10px] text-gray-400 mt-1">
-                    Runner #{{ activeParticipantIndex + 1 }} notification email (Runner #1 is the group authorized lister).
+                    Runner #{{ activeParticipantIndex + 1 }} notification email (Runner #1 is the group authorized
+                    lister).
                   </p>
                 </div>
 
@@ -2652,28 +2706,10 @@ const sendChatWidgetMessage = async () => {
                       class="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-black">4</span>
                     Size Selection
                   </h3>
-                  <div class="flex items-center gap-2">
-                    <span v-if="calculateAge(currentParticipant.birthdate) !== null"
-                      :class="[
-                        'text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1.5 transition-all',
-                        isKidParticipant(currentParticipant)
-                          ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                          : 'bg-emerald-100 text-emerald-800'
-                      ]">
-                      <i :class="isKidParticipant(currentParticipant) ? 'fas fa-child' : 'fas fa-user'"></i>
-                      <span>Age: {{ calculateAge(currentParticipant.birthdate) }} yrs</span>
-                      <span v-if="isKidParticipant(currentParticipant)" class="text-[10px] font-semibold bg-blue-200 px-1.5 py-0.5 rounded">Kids Shirt Auto-Selected</span>
-                    </span>
-                    <span
-                      class="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
-                      <span v-if="currentParticipant.run_category === '20KM'" class="font-black">2 Shirts</span>
-                      <span v-else class="font-black">1 Shirt</span>
-                    </span>
-                  </div>
                 </div>
                 <p class="text-xs text-gray-500 ml-9">
                   <span v-if="currentParticipant.run_category === '20KM'">Select your Race Shirt (Singlet, Event Shirt, Crop Top, Semi Crop Top, or Kids Shirt) and Finisher Shirt sizes</span>
-                  <span v-else>Choose your shirt style and size (Kids Shirt is automatically selected based on Date of Birth)</span>
+                  <span v-else>Choose your shirt style and size</span>
                 </p>
               </div>
 
@@ -2683,7 +2719,8 @@ const sendChatWidgetMessage = async () => {
                 props.darkMode ? 'bg-gray-800/60 border-gray-700' : 'bg-white border-slate-200 shadow-sm'
               ]">
                 <div class="flex items-center justify-between flex-wrap gap-2">
-                  <span class="text-xs font-bold flex items-center gap-1.5" :class="props.darkMode ? 'text-gray-200' : 'text-gray-800'">
+                  <span class="text-xs font-bold flex items-center gap-1.5"
+                    :class="props.darkMode ? 'text-gray-200' : 'text-gray-800'">
                     <i class="fas fa-tshirt text-emerald-600"></i>
                     <span>Official Shirt Design Preview</span>
                   </span>
@@ -2694,12 +2731,8 @@ const sendChatWidgetMessage = async () => {
 
                 <!-- Category selector tabs for shirt preview -->
                 <div class="flex items-center gap-1.5 overflow-x-auto pb-1">
-                  <button
-                    v-for="cat in runCategories"
-                    :key="'preview-tab-' + cat.id"
-                    type="button"
-                    @click="selectShirtPreviewCategory(cat.id)"
-                    :class="[
+                  <button v-for="cat in runCategories" :key="'preview-tab-' + cat.id" type="button"
+                    @click="selectShirtPreviewCategory(cat.id)" :class="[
                       'px-3 py-1 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1 shrink-0 cursor-pointer active:scale-95',
                       (selectedShirtPreviewCat === cat.id ||
                         (!selectedShirtPreviewCat && (
@@ -2717,30 +2750,25 @@ const sendChatWidgetMessage = async () => {
                         currentParticipant.run_category === cat.id ||
                         (currentParticipant.run_category === '1K' && cat.id === '1KM')
                       ))
-                    ) ? { background: `linear-gradient(135deg, ${cat.colors?.secondary || '#059669'}, ${cat.colors?.primary || '#10b981'})` } : {}"
-                  >
+                    ) ? { background: `linear-gradient(135deg, ${cat.colors?.secondary || '#059669'}, ${cat.colors?.primary || '#10b981'})` } : {}">
                     <i :class="['fas text-[10px]', cat.categoryType === 'pet' ? 'fa-paw' : 'fa-running']"></i>
                     <span>{{ cat.id }}</span>
                     <span
                       v-if="currentParticipant.run_category === cat.id || (currentParticipant.run_category === '1K' && cat.id === '1KM')"
-                      class="text-[9px] uppercase px-1 py-0.5 rounded bg-white/25 font-black tracking-wide"
-                    >✓</span>
+                      class="text-[9px] uppercase px-1 py-0.5 rounded bg-white/25 font-black tracking-wide">✓</span>
                   </button>
                 </div>
 
                 <!-- Featured Shirt Preview Image -->
-                <div 
+                <div
                   class="relative rounded-xl overflow-hidden cursor-pointer group border transition hover:shadow-md flex items-center justify-center p-2 min-h-[220px]"
                   :class="props.darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-slate-50 border-slate-200'"
-                  @click="shirtImageModalUrl = activeShirtPreviewUrl"
-                >
-                  <img 
-                    :src="activeShirtPreviewUrl" 
-                    alt="Official Animo Run Shirt Preview"
+                  @click="shirtImageModalUrl = activeShirtPreviewUrl">
+                  <img :src="activeShirtPreviewUrl" alt="Official Animo Run Shirt Preview"
                     class="w-full object-contain mx-auto transition duration-300 group-hover:scale-102"
-                    @error="handleShirtImageError"
-                  />
-                  <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs rounded-xl">
+                    @error="handleShirtImageError" />
+                  <div
+                    class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 text-white font-bold text-xs rounded-xl">
                     <i class="fas fa-expand text-base"></i> Click to Zoom / View Full Size
                   </div>
                 </div>
@@ -2751,14 +2779,11 @@ const sendChatWidgetMessage = async () => {
                 'p-3.5 sm:p-4 rounded-2xl border space-y-3',
                 props.darkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-slate-50 border-slate-200'
               ]">
-                 <!-- Shirt style buttons (Rendered from OFFICIAL_SHIRT_CONFIGS) -->
+                <!-- Shirt style buttons (Rendered from OFFICIAL_SHIRT_CONFIGS) -->
                 <div>
                   <div class="lg:flex gap-2">
-                    <button type="button"
-                      v-for="config in OFFICIAL_SHIRT_CONFIGS"
-                      :key="config.id"
-                      @click="selectShirtType(currentParticipant, config.id, true)"
-                      :class="[
+                    <button type="button" v-for="config in OFFICIAL_SHIRT_CONFIGS" :key="config.id"
+                      @click="selectShirtType(currentParticipant, config.id, true)" :class="[
                         'flex items-center gap-1.5 px-2.5 gap-y-2 py-2 rounded-xl border text-xs font-bold transition-all duration-150 cursor-pointer relative w-full',
                         currentParticipant.shirt_type === config.id
                           ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
@@ -2766,14 +2791,11 @@ const sendChatWidgetMessage = async () => {
                             ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
                             : 'bg-white text-gray-700 border-gray-200 hover:bg-slate-100',
                       ]">
-                      <i :class="['fas', config.icon, 'text-[11px]']"></i>
+                      <i :class="['fa fa-shirt', 'text-[11px]']"></i>
                       <span class="whitespace-nowrap">{{ config.label }}</span>
-                      <span v-if="config.id === 'kids_shirt' && isKidParticipant(currentParticipant)"
-                        class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white"></span>
                     </button>
                   </div>
                 </div>
-
 
                 <!-- Size dropdown for selected shirt style -->
                 <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200">
@@ -2782,17 +2804,14 @@ const sendChatWidgetMessage = async () => {
                       :class="props.darkMode ? 'text-gray-300' : 'text-gray-700'">
                       {{ getShirtConfig(currentParticipant.shirt_type).label }} Size *
                     </label>
-                    <select
-                      :value="getSelectedRaceShirtSize(currentParticipant)"
-                      @change="(e) => setSelectedRaceShirtSize(currentParticipant, e.target.value)"
-                      :class="[
+                    <select :value="getSelectedRaceShirtSize(currentParticipant)"
+                      @change="(e) => setSelectedRaceShirtSize(currentParticipant, e.target.value)" :class="[
                         'px-3.5 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer',
                         props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
                       ]">
                       <optgroup :label="getShirtConfig(currentParticipant.shirt_type).sizesGroupLabel">
                         <option v-for="size in getShirtConfig(currentParticipant.shirt_type).sizes"
-                          :key="currentParticipant.shirt_type + '-' + size"
-                          :value="size">
+                          :key="currentParticipant.shirt_type + '-' + size" :value="size">
                           {{ size }}
                         </option>
                       </optgroup>
@@ -2800,9 +2819,9 @@ const sendChatWidgetMessage = async () => {
                   </div>
 
                   <!-- Summary badge -->
-                  <span
-                    class="text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
-                    {{ getShirtConfig(currentParticipant.shirt_type).label }} · {{ getSelectedRaceShirtSize(currentParticipant) }}
+                  <span class="text-[11px] font-black px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
+                    {{ getShirtConfig(currentParticipant.shirt_type).label }} · {{
+                      getSelectedRaceShirtSize(currentParticipant) }}
                   </span>
                 </div>
               </div>
@@ -2817,18 +2836,21 @@ const sendChatWidgetMessage = async () => {
                   <span class="text-xs font-bold text-gray-800">Finisher Shirt (20KM Only)</span>
                 </div>
 
-                <div :class="['w-px h-6 shrink-0 hidden sm:block', props.darkMode ? 'bg-gray-600' : 'bg-amber-200']"></div>
+                <div :class="['w-px h-6 shrink-0 hidden sm:block', props.darkMode ? 'bg-gray-600' : 'bg-amber-200']">
+                </div>
 
                 <div class="flex items-center gap-2">
                   <label class="text-xs font-semibold shrink-0"
-                    :class="props.darkMode ? 'text-gray-400' : 'text-gray-600'">Finisher Size *</label>
+                    :class="props.darkMode ? 'text-gray-400' : 'text-gray-600'">Finisher
+                    Size *</label>
                   <select v-model="currentParticipant.finisher_shirt_size"
                     @change="currentParticipant.tshirt_size = buildShirtSizeSummary(currentParticipant)" :class="[
                       'px-3.5 py-2 rounded-xl border text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer',
                       props.darkMode ? 'bg-gray-700 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'
                     ]">
                     <optgroup :label="FINISHER_SHIRT_CONFIG.sizesGroupLabel">
-                      <option v-for="size in FINISHER_SHIRT_CONFIG.sizes" :key="'fn-' + size" :value="size">{{ size }}</option>
+                      <option v-for="size in FINISHER_SHIRT_CONFIG.sizes" :key="'fn-' + size" :value="size">{{ size }}
+                      </option>
                     </optgroup>
                   </select>
                 </div>
@@ -2852,7 +2874,7 @@ const sendChatWidgetMessage = async () => {
                   </h3>
                   <span
                     class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300/40">
-                    {{ isPetCategory(currentParticipant.run_category) ? 'Pet Run Direct Payment' : (currentParticipant.participantGroup === 'LSU' ? (currentParticipant.participant_type || 'LSU Exclusive') : 'Open Category') }} • {{ paymentMethodLabel }}
+                    {{ isPetCategory(currentParticipant.run_category) ? (paymentType === 'family_salary_deduction' ? 'Pet Run – Salary Deduction' : 'Pet Run – Direct Payment') : (currentParticipant.participantGroup === 'LSU' ? (currentParticipant.participant_type || 'LSU Exclusive') : 'Open Category') }} • {{ paymentMethodLabel }}
                   </span>
                 </div>
                 <p class="text-xs text-gray-500 mt-0.5">
@@ -2884,8 +2906,7 @@ const sendChatWidgetMessage = async () => {
                           <h4 class="font-bold text-sm text-gray-900">
                             LSU Exclusive
                           </h4>
-                          <span
-                            class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                          <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
                             Students · Staff · Alumni
                           </span>
                         </div>
@@ -2924,8 +2945,7 @@ const sendChatWidgetMessage = async () => {
                           <h4 class="font-bold text-sm text-gray-900">
                             Open Category
                           </h4>
-                          <span
-                            class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-gray-700">
+                          <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-gray-700">
                             General Public
                           </span>
                         </div>
@@ -2962,8 +2982,8 @@ const sendChatWidgetMessage = async () => {
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <!-- 1. Students Button -->
-                      <button type="button" @click="currentParticipant.participant_type = 'LSU Exclusive - Enrolled Student'"
-                        :class="[
+                      <button type="button"
+                        @click="currentParticipant.participant_type = 'LSU Exclusive - Enrolled Student'" :class="[
                           'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
                           ['LSU Exclusive - Enrolled Student', 'Currently Enrolled Students'].includes(currentParticipant.participant_type)
                             ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
@@ -2976,27 +2996,29 @@ const sendChatWidgetMessage = async () => {
                       </button>
 
                       <!-- 2. Employees Button -->
-                      <button type="button" @click="currentParticipant.participant_type = 'LSU Exclusive - Employee'" :class="[
-                        'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
-                        ['LSU Exclusive - Employee', 'Employees'].includes(currentParticipant.participant_type)
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
-                          : props.darkMode
-                            ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
-                            : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
-                      ]">
+                      <button type="button" @click="currentParticipant.participant_type = 'LSU Exclusive - Employee'"
+                        :class="[
+                          'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
+                          ['LSU Exclusive - Employee', 'Employees'].includes(currentParticipant.participant_type)
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
+                            : props.darkMode
+                              ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
+                              : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
+                        ]">
                         <i class="fas fa-briefcase text-sm"></i>
                         <span>Employees</span>
                       </button>
 
                       <!-- 3. Alumni Button -->
-                      <button type="button" @click="currentParticipant.participant_type = 'LSU Exclusive - Alumni'" :class="[
-                        'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
-                        ['LSU Exclusive - Alumni', 'Alumni'].includes(currentParticipant.participant_type)
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
-                          : props.darkMode
-                            ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
-                            : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
-                      ]">
+                      <button type="button" @click="currentParticipant.participant_type = 'LSU Exclusive - Alumni'"
+                        :class="[
+                          'px-3 py-2.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer',
+                          ['LSU Exclusive - Alumni', 'Alumni'].includes(currentParticipant.participant_type)
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-600/30 ring-1 ring-emerald-500'
+                            : props.darkMode
+                              ? 'bg-gray-800/90 text-gray-300 border-gray-700 hover:bg-gray-700'
+                              : 'bg-white text-gray-700 border-gray-200 hover:bg-emerald-50 hover:border-emerald-300'
+                        ]">
                         <i class="fas fa-graduation-cap text-sm"></i>
                         <span>LSU / ICC Alumni</span>
                       </button>
@@ -3004,7 +3026,8 @@ const sendChatWidgetMessage = async () => {
                   </div>
 
                   <!-- 1. Enrolled Students Form + Integrated Add-to-Tuition Payment -->
-                  <div v-if="['LSU Exclusive - Enrolled Student', 'Currently Enrolled Students'].includes(currentParticipant.participant_type)"
+                  <div
+                    v-if="['LSU Exclusive - Enrolled Student', 'Currently Enrolled Students'].includes(currentParticipant.participant_type)"
                     class="pt-3 border-t border-emerald-200/80 space-y-3">
                     <div
                       class="flex items-center justify-between p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-800">
@@ -3012,8 +3035,7 @@ const sendChatWidgetMessage = async () => {
                         <i class="fas fa-file-invoice-dollar text-blue-600"></i>
                         <span>Payment Method: Add to Tuition</span>
                       </div>
-                      <span
-                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700">LSU
+                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 text-blue-700">LSU
                         Student Account</span>
                     </div>
 
@@ -3025,7 +3047,8 @@ const sendChatWidgetMessage = async () => {
                           'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                         ]">
-                          <option v-for="course in COLLEGE_COURSE_OPTIONS" :key="course.value || 'default'" :value="course.value">
+                          <option v-for="course in COLLEGE_COURSE_OPTIONS" :key="course.value || 'default'"
+                            :value="course.value">
                             {{ course.label }}
                           </option>
                         </select>
@@ -3039,7 +3062,8 @@ const sendChatWidgetMessage = async () => {
                           'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                         ]">
-                          <option v-for="year in COLLEGE_YEAR_OPTIONS" :key="year.value || 'default'" :value="year.value">
+                          <option v-for="year in COLLEGE_YEAR_OPTIONS" :key="year.value || 'default'"
+                            :value="year.value">
                             {{ year.label }}
                           </option>
                         </select>
@@ -3062,14 +3086,17 @@ const sendChatWidgetMessage = async () => {
                                   : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 text-amber-900')
                                 : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'),
                             ]" />
-                          <span v-if="currentParticipant.lsu_id_number?.trim()" class="absolute right-3 top-2.5 text-xs">
-                            <i v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'student', currentParticipant)?.isValid" class="fas fa-check-circle text-emerald-500 text-sm"></i>
+                          <span v-if="currentParticipant.lsu_id_number?.trim()"
+                            class="absolute right-3 top-2.5 text-xs">
+                            <i v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'student', currentParticipant)?.isValid"
+                              class="fas fa-check-circle text-emerald-500 text-sm"></i>
                             <i v-else class="fas fa-exclamation-circle text-amber-500 text-sm"></i>
                           </span>
                         </div>
                         <!-- Live Verification Feedback -->
                         <div v-if="currentParticipant.lsu_id_number?.trim()" class="mt-1.5 text-[11px] font-semibold">
-                          <div v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'student', currentParticipant)?.isValid"
+                          <div
+                            v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'student', currentParticipant)?.isValid"
                             class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300">
                             <i class="fas fa-user-check text-emerald-600"></i>
                             <span>Verified LSU Student Record</span>
@@ -3077,7 +3104,7 @@ const sendChatWidgetMessage = async () => {
                           <div v-else
                             class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-300">
                             <i class="fas fa-exclamation-triangle text-amber-600"></i>
-                                ID Not Found.
+                            ID Not Found.
                           </div>
                         </div>
                       </div>
@@ -3119,7 +3146,8 @@ const sendChatWidgetMessage = async () => {
                           'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none',
                           props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-gray-300 text-gray-800',
                         ]">
-                          <option v-for="office in PARTNER_OFFICE_OPTIONS" :key="office.value || 'default'" :value="office.value">
+                          <option v-for="office in PARTNER_OFFICE_OPTIONS" :key="office.value || 'default'"
+                            :value="office.value">
                             {{ office.label }}
                           </option>
                         </select>
@@ -3142,14 +3170,17 @@ const sendChatWidgetMessage = async () => {
                                   : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 text-amber-900')
                                 : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-300 text-gray-800'),
                             ]" />
-                          <span v-if="currentParticipant.lsu_id_number?.trim()" class="absolute right-3 top-2.5 text-xs">
-                            <i v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'employee', currentParticipant)?.isValid" class="fas fa-check-circle text-emerald-500 text-sm"></i>
+                          <span v-if="currentParticipant.lsu_id_number?.trim()"
+                            class="absolute right-3 top-2.5 text-xs">
+                            <i v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'employee', currentParticipant)?.isValid"
+                              class="fas fa-check-circle text-emerald-500 text-sm"></i>
                             <i v-else class="fas fa-exclamation-circle text-amber-500 text-sm"></i>
                           </span>
                         </div>
                         <!-- Live Verification Feedback -->
                         <div v-if="currentParticipant.lsu_id_number?.trim()" class="mt-1.5 text-[11px] font-semibold">
-                          <div v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'employee', currentParticipant)?.isValid"
+                          <div
+                            v-if="getLsuIdVerificationStatus(currentParticipant.lsu_id_number, 'employee', currentParticipant)?.isValid"
                             class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300">
                             <i class="fas fa-user-check text-emerald-600"></i>
                             <span>Verified LSU Employee Record</span>
@@ -3157,7 +3188,7 @@ const sendChatWidgetMessage = async () => {
                           <div v-else
                             class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-300">
                             <i class="fas fa-exclamation-triangle text-amber-600"></i>
-                                ID Not Found.
+                            ID Not Found.
                           </div>
                         </div>
                       </div>
@@ -3185,8 +3216,7 @@ const sendChatWidgetMessage = async () => {
                         <i class="fas fa-wallet text-purple-600"></i>
                         <span>Payment Method: Direct Payment (QR / OTC / Cash)</span>
                       </div>
-                      <span
-                        class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-100 text-purple-700">Alumni
+                      <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-purple-100 text-purple-700">Alumni
                         Direct</span>
                     </div>
 
@@ -3223,8 +3253,7 @@ const sendChatWidgetMessage = async () => {
                       </div>
 
                       <div class="w-full">
-                        <p
-                          class="text-[10px] font-bold text-gray-600 mb-1 flex items-center justify-between">
+                        <p class="text-[10px] font-bold text-gray-600 mb-1 flex items-center justify-between">
                           <!-- <span><i class="fas fa-id-badge text-[10px] text-emerald-600 mr-0.5"></i> Front Side</span> -->
                           <span v-if="currentParticipant.alumni_id_front_preview"
                             class="text-emerald-600 font-semibold">
@@ -3266,20 +3295,17 @@ const sendChatWidgetMessage = async () => {
                 <!-- INTEGRATED OPEN CATEGORY DETAILS & PAYMENT FORM -->
                 <div v-if="currentParticipant.participantGroup === 'Open'"
                   class="p-3.5 sm:p-4 rounded-2xl border bg-slate-50 border-slate-200 space-y-3 transition-all duration-300">
-                  <div
-                    class="flex items-center justify-between gap-2 pb-2 border-b border-slate-200">
-                    <span
-                      class="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <div class="flex items-center justify-between gap-2 pb-2 border-b border-slate-200">
+                    <span class="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
                       <i class="fas fa-running text-teal-600"></i>
                       <span>Open Category Details</span>
                     </span>
-                    <span
-                      :class="[
-                        'text-[10px] font-bold px-2 py-0.5 rounded-md',
-                        paymentType === 'family_salary_deduction'
-                          ? 'text-blue-700 bg-blue-100'
-                          : 'text-purple-700 bg-purple-100'
-                      ]">
+                    <span :class="[
+                      'text-[10px] font-bold px-2 py-0.5 rounded-md',
+                      paymentType === 'family_salary_deduction'
+                        ? 'text-blue-700 bg-blue-100'
+                        : 'text-purple-700 bg-purple-100'
+                    ]">
                       {{ paymentType === 'family_salary_deduction' ? 'Family Salary Deduction' : 'Direct Payment (QR / OTC / Cash)' }}
                     </span>
                   </div>
@@ -3324,7 +3350,9 @@ const sendChatWidgetMessage = async () => {
                         <i class="fas fa-users text-blue-600 text-base shrink-0"></i>
                         <div>
                           <div class="font-bold text-xs">Family / Relative – Salary Deduction</div>
-                          <div class="text-[10px] font-normal text-gray-500">Through a family member or relative who works at LSU</div>
+                          <div class="text-[10px] font-normal text-gray-500">Through a family member or relative who
+                            works at LSU
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -3342,12 +3370,10 @@ const sendChatWidgetMessage = async () => {
                         <label class="block text-xs font-semibold text-gray-700 mb-1">
                           Full Name of LSU Employee <span class="text-red-500">*</span>
                         </label>
-                        <input type="text" v-model="relativeFullname"
-                          placeholder="e.g. Juan Dela Cruz"
-                          :class="[
-                            'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none',
-                            props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-blue-300 text-gray-800',
-                          ]" />
+                        <input type="text" v-model="relativeFullname" placeholder="e.g. Juan Dela Cruz" :class="[
+                          'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none',
+                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-blue-300 text-gray-800',
+                        ]" />
                       </div>
                       <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">
@@ -3357,18 +3383,17 @@ const sendChatWidgetMessage = async () => {
                           <span class="absolute left-3 top-2.5 text-xs text-gray-400">
                             <i class="fas fa-address-card"></i>
                           </span>
-                          <input type="text" v-model="relativeLsuId"
-                            placeholder="e.g. LSU871101"
-                            :class="[
-                              'w-full pl-8 pr-9 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:outline-none transition-all',
-                              relativeLsuId?.trim()
-                                ? (getRelativeVerificationStatus?.isValid
-                                  ? 'border-emerald-500 focus:ring-emerald-500 bg-emerald-50/30 text-emerald-900'
-                                  : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 text-amber-900')
-                                : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-blue-300 text-gray-800'),
-                            ]" />
+                          <input type="text" v-model="relativeLsuId" placeholder="e.g. LSU871101" :class="[
+                            'w-full pl-8 pr-9 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:outline-none transition-all',
+                            relativeLsuId?.trim()
+                              ? (getRelativeVerificationStatus?.isValid
+                                ? 'border-emerald-500 focus:ring-emerald-500 bg-emerald-50/30 text-emerald-900'
+                                : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 text-amber-900')
+                              : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-blue-300 text-gray-800'),
+                          ]" />
                           <span v-if="relativeLsuId?.trim()" class="absolute right-3 top-2.5 text-xs">
-                            <i v-if="getRelativeVerificationStatus?.isValid" class="fas fa-check-circle text-emerald-500 text-sm"></i>
+                            <i v-if="getRelativeVerificationStatus?.isValid"
+                              class="fas fa-check-circle text-emerald-500 text-sm"></i>
                             <i v-else class="fas fa-exclamation-circle text-amber-500 text-sm"></i>
                           </span>
                         </div>
@@ -3389,7 +3414,9 @@ const sendChatWidgetMessage = async () => {
                     </div>
                     <p class="text-[10px] text-blue-700 leading-relaxed">
                       <i class="fas fa-info-circle"></i>
-                      The registration fee will be deducted from the salary of the LSU employee listed above. Please ensure the information is accurate.
+                      The registration fee will be deducted from the salary of the LSU employee listed above. Please
+                      ensure the
+                      information is accurate.
                     </p>
                   </div>
                 </div>
@@ -3417,13 +3444,12 @@ const sendChatWidgetMessage = async () => {
 
 
 
-                         <div>
+                        <div>
                           <div class="font-bold text-xs">QR Payment: GCash / Maya</div>
                           <div class="text-[10px] font-normal text-gray-500">
- Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> via QR and upload your transfer
-                        receipt
-                        screenshot below.
-
+                            Pay <strong>PHP {{ (form_type === 'Group' ? currentParticipantFee : grandTotal).toLocaleString() }}</strong> via QR and upload your transfer
+                            receipt
+                            screenshot below.
                           </div>
                         </div>
 
@@ -3444,18 +3470,20 @@ const sendChatWidgetMessage = async () => {
                     ]">
                       <div class="flex items-center gap-2">
                         <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
-                       
 
-                   <div>
+
+                        <div>
                           <div class="font-bold text-xs">Weekdays Cash : Over-The-Counter</div>
-                          <div class="text-[10px] font-normal text-gray-500">Visit LSU Accounting Window (Mon-Fri, 8:00 AM - 12:00 PM and 1:30 PM - 4:30 PM)</div>
+                          <div class="text-[10px] font-normal text-gray-500">Visit LSU Accounting Window (Mon-Fri, 8:00
+                            AM - 12:00
+                            PM and 1:30 PM - 4:30 PM)</div>
                         </div>
 
 
 
                       </div>
 
-                    
+
                     </div>
 
                     <!-- Weekend Cash -->
@@ -3469,11 +3497,13 @@ const sendChatWidgetMessage = async () => {
                         <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
                         <div>
                           <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth</div>
-                          <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 PM to 8:00 PM)</div>
+                          <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at
+                            Wellness Park
+                            (Fri-Sun, 5:30 PM to 8:00 PM)</div>
                         </div>
                       </div>
 
-                  
+
                     </div>
                   </div>
 
@@ -3481,33 +3511,27 @@ const sendChatWidgetMessage = async () => {
                   <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-2 lg:flex lg:gap-x-5">
 
                     <div class="lg:flex lg:w-auto">
-<div class="text-center w-full items-center gap-4 rounded-xl border border-green-200 bg-white p-5 shadow-sm lg:mb-0 mb-3">
-  <img
-    :key="qrPaymentImage.src"
-    :src="qrPaymentImage.src"
-    :alt="qrPaymentImage.label"
-    class="w-32 h-32 object-contain mx-auto rounded-lg border border-gray-200"
-  />
+                      <div
+                        class="text-center w-full items-center gap-4 rounded-xl border border-green-200 bg-white p-5 shadow-sm lg:mb-0 mb-3">
+                        <img :key="qrPaymentImage.src" :src="qrPaymentImage.src" :alt="qrPaymentImage.label"
+                          class="w-32 h-32 object-contain mx-auto rounded-lg border border-gray-200" />
 
-  <div class="flex flex-col gap-x-3 gap-y-1">
-    <div>
-      <h3 class="text-sm font-bold text-green-900 lg:whitespace-nowrap">
-        {{ qrPaymentImage.label }}
-      </h3>
-    </div>
+                        <div class="flex flex-col gap-x-3 gap-y-1">
+                          <div>
+                            <h3 class="text-sm font-bold text-green-900 lg:whitespace-nowrap">
+                              {{ qrPaymentImage.label }}
+                            </h3>
+                          </div>
 
-    <a
-      :href="qrPaymentImage.src"
-      :download="qrPaymentImage.src"
-      class="inline-flex items-center justify-center lg:whitespace-nowrap gap-2 rounded-lg bg-green-800 px-5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
-    >
-      <i class="fa fa-download" aria-hidden="true"></i>
-      Download
-    </a>
-  </div>
-</div>
+                          <a :href="qrPaymentImage.src" :download="qrPaymentImage.src"
+                            class="inline-flex items-center justify-center lg:whitespace-nowrap gap-2 rounded-lg bg-green-800 px-5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2">
+                            <i class="fa fa-download" aria-hidden="true"></i>
+                            Download
+                          </a>
+                        </div>
+                      </div>
 
-</div>
+                    </div>
 
 
                     <div :class="[
@@ -3518,213 +3542,32 @@ const sendChatWidgetMessage = async () => {
                           ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
                           : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
                     ]">
-                     <div class="w-full">
+                      <div class="w-full">
 
-                       <div v-if="!receiptPreview">
-                        <i class="fas fa-cloud-upload-alt text-2xl text-emerald-500 mb-1"></i>
-                        <p class="text-xs font-bold mb-0.5">Upload Receipt or Screenshot *</p>
-                        <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 5MB</p>
-                        <label
-                          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
-                          <i class="fas fa-upload text-xs"></i> Browse Receipt File
-                          <input type="file" accept="image/*,.pdf" class="hidden" @change="handleReceiptUpload" />
-                        </label>
-                      </div>
-
-                      <div v-else class="relative group max-w-xs mx-auto">
-                        <img :src="receiptPreview" alt="Receipt Preview"
-                          class="h-32 w-full object-cover rounded-xl border shadow-sm" />
-                        <div class="mt-2 flex items-center justify-between text-xs">
-                          <span
-                            class="truncate max-w-[160px] font-medium text-emerald-600 text-[11px]">
-                            <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
-                          </span>
-                          <button type="button" @click="removeReceipt"
-                            class="px-2 py-0.5 bg-rose-500 text-white rounded-lg text-[10px] font-bold hover:bg-rose-600 transition cursor-pointer">
-                            Remove
-                          </button>
+                        <div v-if="!receiptPreview">
+                          <i class="fas fa-cloud-upload-alt text-2xl text-emerald-500 mb-1"></i>
+                          <p class="text-xs font-bold mb-0.5">Upload Receipt or Screenshot *</p>
+                          <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 5MB</p>
+                          <label
+                            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
+                            <i class="fas fa-upload text-xs"></i> Browse Receipt File
+                            <input type="file" accept="image/*,.pdf" class="hidden" @change="handleReceiptUpload" />
+                          </label>
                         </div>
-                      </div>
-                     </div>
-                    </div>
-                  </div>
 
-                  <!-- TEXT INSTRUCTION (For Accounting OTC & Weekend Cash) -->
-                  <div v-else
-                    class="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-1">
-                    <div class="font-bold flex items-center gap-1.5">
-                      <i class="fas fa-clock text-amber-600"></i> Payment Instruction
-                    </div>
-                    <p class="text-[11px] leading-relaxed">
-  <span v-if="nonLsuPaymentMethod === 'accounting_otc'">
-    Please proceed to the LSU Accounting window to settle your fee of
-    <strong>PHP {{ grandTotal.toLocaleString() }}</strong>
-  </span>
-  <span v-else>
-    Please proceed to the Ozamiz Lifestyle Runners weekend booth to settle your fee of
-    <strong>PHP {{ grandTotal.toLocaleString() }}</strong>
-  </span>
-  <span class="text-amber-700">
-    on or before the next <strong>Saturday</strong> to avoid cancellation of your registration.
-  </span>
-</p>
-                  </div>
-                </div>
-
-              </div>
-
-              <!-- FOR PET RUN RUNNERS (1KM PET RUN DIRECT PAYMENT) -->
-              <div v-else class="space-y-4">
-                <div
-                  class="p-4 rounded-2xl bg-white border border-emerald-200 space-y-4">
-                  <div class="flex items-center justify-between pb-2 border-b border-gray-100">
-                    <span
-                      class="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-                      <i class="fas fa-paw text-emerald-600"></i>
-                      <span>1 KM Direct Payment</span>
-                    </span>
-                    <span
-                      class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md">
-                      QR / OTC / Cash
-                    </span>
-                  </div>
-
-                  <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <!-- QR Payment -->
-                    <div @click="nonLsuPaymentMethod = 'qr_payment'" :class="[
-                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
-                      nonLsuPaymentMethod === 'qr_payment'
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
-                    ]">
-                      <div class="flex items-center gap-2">
-                        <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
-
-
-
-
-
-
-                         <div>
-                          <div class="font-bold text-xs">QR Payment: GCash / Maya</div>
-                          <div class="text-[10px] font-normal text-gray-500">
- Pay <strong>PHP {{ grandTotal.toLocaleString() }}</strong> via QR and upload your transfer
-                        receipt
-                        screenshot below.
-
+                        <div v-else class="relative group max-w-xs mx-auto">
+                          <img :src="receiptPreview" alt="Receipt Preview"
+                            class="h-32 w-full object-cover rounded-xl border shadow-sm" />
+                          <div class="mt-2 flex items-center justify-between text-xs">
+                            <span class="truncate max-w-[160px] font-medium text-emerald-600 text-[11px]">
+                              <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
+                            </span>
+                            <button type="button" @click="removeReceipt"
+                              class="px-2 py-0.5 bg-rose-500 text-white rounded-lg text-[10px] font-bold hover:bg-rose-600 transition cursor-pointer">
+                              Remove
+                            </button>
                           </div>
                         </div>
-
-
-
-
-
-                      </div>
-                    </div>
-
-                    <!-- Accounting OTC -->
-                    <div @click="nonLsuPaymentMethod = 'accounting_otc'" :class="[
-                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
-                      nonLsuPaymentMethod === 'accounting_otc'
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
-                    ]">
-                      <div class="flex items-center gap-2">
-                        <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
-                        <div>
-                          <div class="font-bold text-xs">Weekdays Cash : Over-The-Counter</div>
-                          <div class="text-[10px] font-normal text-gray-500">Visit LSU Accounting Window (Mon-Fri, 8:00 AM - 12:00 PM and 1:30 PM - 4:30 PM)</div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Weekend Cash -->
-                    <div @click="nonLsuPaymentMethod = 'weekend_cash'" :class="[
-                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
-                      nonLsuPaymentMethod === 'weekend_cash'
-                        ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
-                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
-                    ]">
-                      <div class="flex items-center gap-2">
-                        <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
-                        <div>
-                          <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth</div>
-                            <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at Wellness Park (Fri-Sun, 5:30 PM to 8:00 PM)</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-
-
-                  <!-- RECEIPT DROPZONE (Only for QR Payment) -->
-                  <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-2 lg:flex lg:gap-x-5">
-
-
-<div class="text-center w-full lg:w-fit items-center gap-4 rounded-xl border border-green-200 bg-white p-5 shadow-sm lg:mb-0 mb-3">
-  <img
-    :key="qrPaymentImage.src"
-    :src="qrPaymentImage.src"
-    :alt="qrPaymentImage.label"
-    class="w-32 h-32 object-contain mx-auto rounded-lg border border-gray-200"
-  />
-
-  <div class="flex flex-col gap-x-3 gap-y-1">
-    <div>
-      <h3 class="text-sm font-bold text-green-900 lg:whitespace-nowrap">
-        {{ qrPaymentImage.label }}
-      </h3>
-    </div>
-
-    <a
-      :href="qrPaymentImage.src"
-      :download="qrPaymentImage.src"
-      class="inline-flex items-center justify-center lg:whitespace-nowrap gap-2 rounded-lg bg-green-800 px-5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2"
-    >
-      <i class="fa fa-download" aria-hidden="true"></i>
-      Download
-    </a>
-  </div>
-</div>
-
-
-
-                    <div :class="[
-                      'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden w-full flex items-center justify-center',
-                      receiptPreview
-                        ? 'border-emerald-500 bg-emerald-50/20'
-                        : props.darkMode
-                          ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
-                          : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
-                    ]">
-                      <div>
-
-<div v-if="!receiptPreview">
-                        <i class="fas fa-cloud-upload-alt text-2xl text-emerald-500 mb-1"></i>
-                        <p class="text-xs font-bold mb-0.5">Upload Receipt *</p>
-                        <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 5MB</p>
-                        <label
-                          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
-                          <i class="fas fa-upload text-xs"></i> Browse Receipt File
-                          <input type="file" accept="image/*,.pdf" class="hidden" @change="handleReceiptUpload" />
-                        </label>
-                      </div>
-
-                      <div v-else class="relative group max-w-xs mx-auto">
-                        <img :src="receiptPreview" alt="Receipt Preview"
-                          class="h-32 w-full object-cover rounded-xl border shadow-sm" />
-                        <div class="mt-2 flex items-center justify-between text-xs">
-                          <span
-                            class="truncate max-w-[160px] font-medium text-emerald-600 text-[11px]">
-                            <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
-                          </span>
-                          <button type="button" @click="removeReceipt"
-                            class="px-2 py-0.5 bg-rose-500 text-white rounded-lg text-[10px] font-bold hover:bg-rose-600 transition cursor-pointer">
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-
                       </div>
                     </div>
                   </div>
@@ -3737,19 +3580,278 @@ const sendChatWidgetMessage = async () => {
                     </div>
                     <p class="text-[11px] leading-relaxed">
                       <span v-if="nonLsuPaymentMethod === 'accounting_otc'">
-                        Please proceed to the LSU Accounting window to settle your fee of <strong>PHP {{
-                          grandTotal.toLocaleString()
-                          }}</strong>.
+                        Please proceed to the LSU Accounting window to settle your fee of
+                        <strong>PHP {{ (form_type === 'Group' ? currentParticipantFee : grandTotal).toLocaleString() }}</strong>
                       </span>
                       <span v-else>
-                        Please proceed to the Ozamiz Lifestyle Runners weekend booth to settle your fee of <strong>PHP
-                          {{
-                          grandTotal.toLocaleString() }}</strong>.
+                        Please proceed to the Ozamiz Lifestyle Runners weekend booth to settle your fee of
+                        <strong>PHP {{ (form_type === 'Group' ? currentParticipantFee : grandTotal).toLocaleString() }}</strong>
                       </span>
-                      <strong class="text-amber-700 block mt-0.5">Please wait for the confirmation
-                        to be paid
-                        and confirmed by the admin.</strong>
+                      <span class="text-amber-700">
+                        on or before the next <strong>Saturday</strong> to avoid cancellation of your registration.
+                      </span>
                     </p>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- FOR PET RUN RUNNERS (1KM PET RUN) -->
+              <div v-else class="space-y-4">
+                <div class="p-4 rounded-2xl bg-white border border-emerald-200 space-y-4">
+                  <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+                    <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <i class="fas fa-paw text-emerald-600"></i>
+                      <span>1 KM Payment Option</span>
+                    </span>
+                    <span :class="[
+                      'text-[10px] font-bold px-2 py-0.5 rounded-md',
+                      paymentType === 'family_salary_deduction'
+                        ? 'text-blue-700 bg-blue-100'
+                        : 'text-emerald-700 bg-emerald-100'
+                    ]">
+                      {{ paymentType === 'family_salary_deduction' ? 'Family Salary Deduction' : 'QR / OTC / Cash' }}
+                    </span>
+                  </div>
+
+                  <!-- PAYMENT METHOD CHOICE: Direct vs Family Salary Deduction -->
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Direct Payment option -->
+                    <div @click="paymentType = 'non_lsu_payment'" :class="[
+                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                      paymentType !== 'family_salary_deduction'
+                        ? 'bg-purple-50 border-purple-500 text-purple-800 ring-1 ring-purple-500'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                    ]">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-credit-card text-purple-600 text-base shrink-0"></i>
+                        <div>
+                          <div class="font-bold text-xs">Direct Payment</div>
+                          <div class="text-[10px] font-normal text-gray-500">QR / Accounting OTC / Weekend Cash</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Family / Relative Salary Deduction option -->
+                    <div @click="paymentType = 'family_salary_deduction'" :class="[
+                      'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                      paymentType === 'family_salary_deduction'
+                        ? 'bg-blue-50 border-blue-500 text-blue-800 ring-1 ring-blue-500'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                    ]">
+                      <div class="flex items-center gap-2">
+                        <i class="fas fa-users text-blue-600 text-base shrink-0"></i>
+                        <div>
+                          <div class="font-bold text-xs">Family / Relative &#x2013; Salary Deduction</div>
+                          <div class="text-[10px] font-normal text-gray-500">Through a family member or relative who
+                            works at LSU
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Family Salary Deduction fields -->
+                  <div v-if="paymentType === 'family_salary_deduction'"
+                    class="p-3.5 rounded-xl bg-blue-50 border border-blue-200 space-y-3">
+                    <div class="text-xs font-bold text-blue-800 flex items-center gap-1.5">
+                      <i class="fas fa-id-card text-blue-600"></i>
+                      LSU Employee Information (Family / Relative)
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">
+                          Full Name of LSU Employee <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" v-model="relativeFullname" placeholder="e.g. Juan Dela Cruz" :class="[
+                          'w-full px-3.5 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-blue-500 focus:outline-none',
+                          props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-200' : 'bg-white border-blue-300 text-gray-800',
+                        ]" />
+                      </div>
+                      <div>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">
+                          LSU ID Number <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                          <span class="absolute left-3 top-2.5 text-xs text-gray-400">
+                            <i class="fas fa-address-card"></i>
+                          </span>
+                          <input type="text" v-model="relativeLsuId" placeholder="e.g. LSU871101" :class="[
+                            'w-full pl-8 pr-9 py-2.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:outline-none transition-all',
+                            relativeLsuId?.trim()
+                              ? (getRelativeVerificationStatus?.isValid
+                                ? 'border-emerald-500 focus:ring-emerald-500 bg-emerald-50/30 text-emerald-900'
+                                : 'border-amber-500 focus:ring-amber-500 bg-amber-50/30 text-amber-900')
+                              : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-blue-300 text-gray-800'),
+                          ]" />
+                          <span v-if="relativeLsuId?.trim()" class="absolute right-3 top-2.5 text-xs">
+                            <i v-if="getRelativeVerificationStatus?.isValid"
+                              class="fas fa-check-circle text-emerald-500 text-sm"></i>
+                            <i v-else class="fas fa-exclamation-circle text-amber-500 text-sm"></i>
+                          </span>
+                        </div>
+                        <!-- Live Verification Feedback -->
+                        <div v-if="relativeLsuId?.trim()" class="mt-1.5 text-[11px] font-semibold">
+                          <div v-if="getRelativeVerificationStatus?.isValid"
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300">
+                            <i class="fas fa-user-check text-emerald-600"></i>
+                            <span>{{ getRelativeVerificationStatus.statusText }}</span>
+                          </div>
+                          <div v-else
+                            class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-300">
+                            <i class="fas fa-exclamation-triangle text-amber-600"></i>
+                            <span>{{ getRelativeVerificationStatus?.statusText || 'Enter LSU ID Number' }}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <p class="text-[10px] text-blue-700 leading-relaxed">
+                      <i class="fas fa-info-circle"></i>
+                      The registration fee will be deducted from the salary of the LSU employee listed above. Please
+                      ensure the
+                      information is accurate.
+                    </p>
+                  </div>
+
+                  <!-- Direct Payment sub-options (shown when Direct Payment is selected) -->
+                  <div v-if="paymentType !== 'family_salary_deduction'">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <!-- QR Payment -->
+                      <div @click="nonLsuPaymentMethod = 'qr_payment'" :class="[
+                        'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                        nonLsuPaymentMethod === 'qr_payment'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                      ]">
+                        <div class="flex items-center gap-2">
+                          <i class="fas fa-qrcode text-emerald-600 text-base shrink-0"></i>
+                          <div>
+                            <div class="font-bold text-xs">QR Payment: GCash / Maya</div>
+                            <div class="text-[10px] font-normal text-gray-500">
+                              Pay <strong>PHP {{ (form_type === 'Group' ? currentParticipantFee : grandTotal).toLocaleString() }}</strong> via QR and upload your transfer
+                              receipt
+                              screenshot below.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Accounting OTC -->
+                      <div @click="nonLsuPaymentMethod = 'accounting_otc'" :class="[
+                        'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                        nonLsuPaymentMethod === 'accounting_otc'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                      ]">
+                        <div class="flex items-center gap-2">
+                          <i class="fas fa-university text-emerald-600 text-base shrink-0"></i>
+                          <div>
+                            <div class="font-bold text-xs">Weekdays Cash : Over-The-Counter</div>
+                            <div class="text-[10px] font-normal text-gray-500">Visit LSU Accounting Window (Mon-Fri,
+                              8:00 AM - 12:00
+                              PM and 1:30 PM - 4:30 PM)</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Weekend Cash -->
+                      <div @click="nonLsuPaymentMethod = 'weekend_cash'" :class="[
+                        'p-3 rounded-xl border cursor-pointer transition text-xs font-semibold',
+                        nonLsuPaymentMethod === 'weekend_cash'
+                          ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-1 ring-emerald-500'
+                          : 'border-gray-200 text-gray-600 hover:bg-gray-50',
+                      ]">
+                        <div class="flex items-center gap-2">
+                          <i class="fas fa-running text-emerald-600 text-base shrink-0"></i>
+                          <div>
+                            <div class="font-bold text-xs">Weekend Cash : Pay at Ozamiz Lifestyle Runners Booth</div>
+                            <div class="text-[10px] font-normal text-gray-500">Visit Ozamiz Lifestyle Runners booth at
+                              Wellness Park
+                              (Fri-Sun, 5:30 PM to 8:00 PM)</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- RECEIPT DROPZONE (Only for QR Payment) -->
+                    <div v-if="nonLsuPaymentMethod === 'qr_payment'" class="pt-3 lg:flex lg:gap-x-5">
+                      <div
+                        class="text-center w-full lg:w-fit items-center gap-4 rounded-xl border border-green-200 bg-white p-5 shadow-sm lg:mb-0 mb-3">
+                        <img :key="qrPaymentImage.src" :src="qrPaymentImage.src" :alt="qrPaymentImage.label"
+                          class="w-32 h-32 object-contain mx-auto rounded-lg border border-gray-200" />
+                        <div class="flex flex-col gap-x-3 gap-y-1">
+                          <div>
+                            <h3 class="text-sm font-bold text-green-900 lg:whitespace-nowrap">
+                              {{ qrPaymentImage.label }}
+                            </h3>
+                          </div>
+                          <a :href="qrPaymentImage.src" :download="qrPaymentImage.src"
+                            class="inline-flex items-center justify-center lg:whitespace-nowrap gap-2 rounded-lg bg-green-800 px-5 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-600 focus:ring-offset-2">
+                            <i class="fa fa-download" aria-hidden="true"></i>
+                            Download
+                          </a>
+                        </div>
+                      </div>
+
+                      <div :class="[
+                        'rounded-2xl border-2 border-dashed p-3 text-center transition-all relative overflow-hidden w-full flex items-center justify-center',
+                        receiptPreview
+                          ? 'border-emerald-500 bg-emerald-50/20'
+                          : props.darkMode
+                            ? 'border-gray-700 bg-gray-900/40 hover:border-emerald-500'
+                            : 'border-slate-300 bg-slate-50 hover:border-emerald-400',
+                      ]">
+                        <div>
+                          <div v-if="!receiptPreview">
+                            <i class="fas fa-cloud-upload-alt text-2xl text-emerald-500 mb-1"></i>
+                            <p class="text-xs font-bold mb-0.5">Upload Receipt *</p>
+                            <p class="text-[10px] text-gray-400 mb-2">PNG, JPG, or PDF up to 5MB</p>
+                            <label
+                              class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer shadow-md transition">
+                              <i class="fas fa-upload text-xs"></i> Browse Receipt File
+                              <input type="file" accept="image/*,.pdf" class="hidden" @change="handleReceiptUpload" />
+                            </label>
+                          </div>
+
+                          <div v-else class="relative group max-w-xs mx-auto">
+                            <img :src="receiptPreview" alt="Receipt Preview"
+                              class="h-32 w-full object-cover rounded-xl border shadow-sm" />
+                            <div class="mt-2 flex items-center justify-between text-xs">
+                              <span class="truncate max-w-[160px] font-medium text-emerald-600 text-[11px]">
+                                <i class="fas fa-check-circle"></i> {{ receiptFile?.name || 'Payment Receipt' }}
+                              </span>
+                              <button type="button" @click="removeReceipt"
+                                class="px-2 py-0.5 bg-rose-500 text-white rounded-lg text-[10px] font-bold hover:bg-rose-600 transition cursor-pointer">
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- TEXT INSTRUCTION (For Accounting OTC & Weekend Cash) -->
+                    <div v-else
+                      class="mt-3 p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-1">
+                      <div class="font-bold flex items-center gap-1.5">
+                        <i class="fas fa-clock text-amber-600"></i> Payment Instruction
+                      </div>
+                      <p class="text-[11px] leading-relaxed">
+                        <span v-if="nonLsuPaymentMethod === 'accounting_otc'">
+                          Please proceed to the LSU Accounting window to settle your fee of <strong>PHP {{
+                            (form_type === 'Group' ? currentParticipantFee : grandTotal).toLocaleString()
+                          }}</strong>.
+                        </span>
+                        <span v-else>
+                          Please proceed to the Ozamiz Lifestyle Runners weekend booth to settle your fee of <strong>PHP
+                            {{
+                              (form_type === 'Group' ? currentParticipantFee : grandTotal).toLocaleString() }}</strong>.
+                        </span>
+                        <strong class="text-amber-700 block mt-0.5">Please wait for the confirmation
+                          to be paid
+                          and confirmed by the admin.</strong>
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3773,7 +3875,8 @@ const sendChatWidgetMessage = async () => {
               ]">
                 <!-- Section Header -->
                 <div class="flex items-center gap-2.5 pb-3 border-b border-gray-200">
-                  <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                  <div
+                    class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
                     <i class="fas fa-file-contract text-base"></i>
                   </div>
                   <div>
@@ -3787,7 +3890,8 @@ const sendChatWidgetMessage = async () => {
                 </div>
 
                 <!-- Scrollable Document Terms (rendered dynamically from JSON) -->
-                <div class="max-h-60 overflow-y-auto p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs leading-relaxed text-gray-700 space-y-3.5 custom-scrollbar shadow-inner">
+                <div
+                  class="max-h-60 overflow-y-auto p-4 rounded-xl border border-slate-200 bg-slate-50 text-xs leading-relaxed text-gray-700 space-y-3.5 custom-scrollbar shadow-inner">
                   <div v-for="section in waiverConsentData.sections" :key="section.id">
                     <h4 class="font-bold text-gray-900 text-xs uppercase mb-1 flex items-center gap-1.5">
                       <i :class="[section.icon || 'fas fa-shield-alt', 'text-emerald-600 text-[11px]']"></i> {{ section.id }}. {{ section.title }}
@@ -3807,11 +3911,8 @@ const sendChatWidgetMessage = async () => {
                       ? 'bg-emerald-50/80 border-emerald-500'
                       : 'bg-slate-50/50 border-gray-200 hover:border-gray-300'
                   ]">
-                    <input
-                      type="checkbox"
-                      v-model="waiver_agreed"
-                      class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 shrink-0 cursor-pointer"
-                    />
+                    <input type="checkbox" v-model="waiver_agreed"
+                      class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 shrink-0 cursor-pointer" />
                     <div class="text-xs leading-relaxed">
                       <span class="font-bold text-gray-900 block mb-0.5">
                         {{ waiverConsentData.checkboxes?.[0]?.label || '1. Event Waiver, Assumption of Risk & Release of Liability' }} <span class="text-rose-500">*</span>
@@ -3829,11 +3930,8 @@ const sendChatWidgetMessage = async () => {
                       ? 'bg-emerald-50/80 border-emerald-500'
                       : 'bg-slate-50/50 border-gray-200 hover:border-gray-300'
                   ]">
-                    <input
-                      type="checkbox"
-                      v-model="privacy_consent_agreed"
-                      class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 shrink-0 cursor-pointer"
-                    />
+                    <input type="checkbox" v-model="privacy_consent_agreed"
+                      class="mt-0.5 w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 shrink-0 cursor-pointer" />
                     <div class="text-xs leading-relaxed">
                       <span class="font-bold text-gray-900 block mb-0.5">
                         {{ waiverConsentData.checkboxes?.[1]?.label || '2. Data Privacy & Photo/Video Authorization Consent' }} <span class="text-rose-500">*</span>
@@ -3862,9 +3960,19 @@ const sendChatWidgetMessage = async () => {
               ]">
                 <div class="flex items-center justify-between text-base sm:text-lg font-black mb-4">
                   <span class="text-gray-800 flex items-center gap-2">
-                    <i class="fas fa-receipt text-emerald-600"></i>Total Fee
+                    <i class="fas fa-receipt text-emerald-600"></i>{{ form_type === 'Group' ? 'Entries Breakdown' : 'Total Fee' }}
                   </span>
-                  <span class="text-2xl font-black text-emerald-700">
+                  <div v-if="form_type === 'Group'" class="text-right">
+                    <div class="text-xs font-bold text-gray-500">
+                      {{ participants.length }} Runner(s) · Per-entry price retained
+                    </div>
+                    <div class="text-sm font-semibold text-emerald-800 flex flex-wrap justify-end gap-x-2">
+                      <span v-for="(p, pIdx) in participants" :key="'sum-' + pIdx" class="text-xs">
+                        #{{ pIdx + 1 }}: PHP {{ getCategoryFee(p.run_category).toLocaleString() }}
+                      </span>
+                    </div>
+                  </div>
+                  <span v-else class="text-2xl font-black text-emerald-700">
                     PHP {{ grandTotal.toLocaleString() }}
                   </span>
                 </div>
@@ -3873,8 +3981,8 @@ const sendChatWidgetMessage = async () => {
                   class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 lg:text-base text-sm cursor-pointer">
                   <i v-if="!isSubmitting" class="fas fa-check-circle text-lg"></i>
                   <i v-else class="fas fa-spinner fa-spin text-lg"></i>
-                  <span>{{ isSubmitting ? 'Submitting Registration...' : 'Submit Registration (PHP ' +
-                    grandTotal.toLocaleString() + ')' }}</span>
+                  <span>{{ isSubmitting ? 'Submitting Registration...' : (form_type === 'Group' ? `Submit Group Registration (${participants.length} Entries)` : 'Submit Registration (PHP ' +
+                    grandTotal.toLocaleString() + ')') }}</span>
                 </button>
               </div>
             </section>
@@ -3894,148 +4002,129 @@ const sendChatWidgetMessage = async () => {
 
 
 
-<!-- SUCCESS CONFIRMATION MODAL -->
+    <!-- SUCCESS CONFIRMATION MODAL -->
 
-<!-- v-if="isSuccessModalOpen" -->
-<div
-v-if="isSuccessModalOpen"
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-6 backdrop-blur-sm overflow-y-auto"
->
-  <div
-    :class="[
-      'w-full max-w-xl rounded-3xl p-5 sm:p-7 shadow-2xl border text-center',
-      props.darkMode
-        ? 'bg-gray-800 border-gray-700 text-white'
-        : 'bg-white border-slate-200 text-gray-800'
-    ]"
-  >
+    <!-- v-if="isSuccessModalOpen" -->
+    <div v-if="isSuccessModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3 sm:p-6 backdrop-blur-sm overflow-y-auto">
+      <div :class="[
+        'w-full max-w-xl rounded-3xl p-5 sm:p-7 shadow-2xl border text-center',
+        props.darkMode
+          ? 'bg-gray-800 border-gray-700 text-white'
+          : 'bg-white border-slate-200 text-gray-800'
+      ]">
 
 
-    <!-- Title -->
+        <!-- Title -->
 
-    
-        <h2 v-if="nonLsuPaymentMethod === 'qr_payment'" class="flex text-xl sm:text-2xl font-black tracking-tight text-blue-600 gap-x-3 w-fit mx-auto">
-        <i class="fas fa-clock text-2xl sm:text-3xl text-blue-500   rounded-full flex items-center justify-center  "></i> Confirmation Pending
-    </h2>
 
-    <h2 v-else class="flex text-xl sm:text-2xl font-black tracking-tight text-yellow-600 gap-x-3 w-fit mx-auto">
-      <i class="fas fa-clock text-2xl sm:text-3xl text-yellow-600   rounded-full flex items-center justify-center "></i>  Registration Pending
-    </h2>
+        <h2 v-if="nonLsuPaymentMethod === 'qr_payment'"
+          class="flex text-xl sm:text-2xl font-black tracking-tight text-blue-600 gap-x-3 w-fit mx-auto">
+          <i
+            class="fas fa-clock text-2xl sm:text-3xl text-blue-500   rounded-full flex items-center justify-center  "></i>
+          Confirmation Pending
+        </h2>
 
- 
-
-    <p class="text-xs text-gray-500" v-if="nonLsuPaymentMethod === 'qr_payment'">A confirmation email will be sent once your <strong>PHP {{ grandTotal.toLocaleString() }}</strong> payment  has been verified.</p>
-
-    <p class="mt-1.5 text-xs text-gray-500" v-if="nonLsuPaymentMethod !== 'qr_payment'">
-      Please pay your registration fee of 
-      <strong>PHP {{ grandTotal.toLocaleString() }}</strong>
-      at
-      <strong v-if="nonLsuPaymentMethod === 'weekend_cash'">Wellness Park Ozamiz</strong>
-      <strong v-else>LSU Campus Accounting Office</strong>
-      on or before the next <strong>Saturday</strong> to avoid cancellation of your registration.
-    </p>
+        <h2 v-else class="flex text-xl sm:text-2xl font-black tracking-tight text-yellow-600 gap-x-3 w-fit mx-auto">
+          <i
+            class="fas fa-clock text-2xl sm:text-3xl text-yellow-600   rounded-full flex items-center justify-center "></i>
+          Registration Pending
+        </h2>
 
 
 
+        <p class="text-xs text-gray-500" v-if="nonLsuPaymentMethod === 'qr_payment'">A confirmation email will be sent
+          once
+          your <strong>PHP {{ grandTotal.toLocaleString() }}</strong> payment has been verified.</p>
 
-    <!-- Short Message -->
-    <div
-    v-if="nonLsuPaymentMethod === 'qr_payment'"
-      class="mt-5 rounded-2xl border border-blue-200 bg-blue-50/80 p-4"
-    >
-      <div class="flex items-center justify-center gap-2 text-sm font-bold text-blue-700">
-        <i class="fas fa-envelope-circle-check"></i>
-        <span>Check your email for the details.</span>
+        <p class="mt-1.5 text-xs text-gray-500" v-if="nonLsuPaymentMethod !== 'qr_payment'">
+          Please pay your registration fee of
+          <strong>PHP {{ grandTotal.toLocaleString() }}</strong>
+          at
+          <strong v-if="nonLsuPaymentMethod === 'weekend_cash'">Wellness Park Ozamiz</strong>
+          <strong v-else>LSU Campus Accounting Office</strong>
+          on or before the next <strong>Saturday</strong> to avoid cancellation of your registration.
+        </p>
+
+
+
+
+        <!-- Short Message -->
+        <div v-if="nonLsuPaymentMethod === 'qr_payment'"
+          class="mt-5 rounded-2xl border border-blue-200 bg-blue-50/80 p-4">
+          <div class="flex items-center justify-center gap-2 text-sm font-bold text-blue-700">
+            <i class="fas fa-envelope-circle-check"></i>
+            <span>Check your email for the details.</span>
+          </div>
+
+          <p class="mt-2 text-xs leading-relaxed text-gray-600">
+            Your registration summary and payment details have been sent to
+            <strong class="text-blue-700">
+              {{ participants[0]?.contact_email || user?.email }}
+            </strong>.
+          </p>
+        </div>
+
+        <!-- Follow Socials -->
+        <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p class="text-sm font-bold text-gray-800 text-left px-2">
+            <i class="fas fa-bell mr-1"></i>
+            Follow our socials for more info
+          </p>
+
+          <div class="mt-3 lg:flex gap-2 text-xs font-semibold">
+            <a href="https://www.facebook.com/lsuanimorun" target="_blank" rel="noopener noreferrer"
+              class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold">
+              <i class="fab fa-facebook"></i>
+              LSU Animo Run
+            </a>
+
+            <a href="https://www.facebook.com/ozamizlifestylerunners" target="_blank" rel="noopener noreferrer"
+              class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold">
+              <i class="fab fa-facebook"></i>
+              Ozamiz Lifestyle Runners
+            </a>
+
+
+
+            <a href="https://animorun.lsu.edu.ph" target="_blank" rel="noopener noreferrer"
+              class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold">
+              <i class="fas fa-globe"></i>
+              animorun.lsu.edu.ph
+            </a>
+          </div>
+        </div>
+
+        <!-- Verification Note -->
+        <p class="mt-4 text-[11px] leading-relaxed text-gray-500" v-if="nonLsuPaymentMethod !== 'qr_payment'">
+          Once your payment is verified, you’ll receive your
+
+        </p>
+        <p class="text-xs" v-if="nonLsuPaymentMethod !== 'qr_payment'">
+          <strong class="text-gray-700">
+            Official Confirmation Email.
+          </strong>
+          Thank you!
+        </p>
+
+        <!-- Done -->
+        <button v-if="nonLsuPaymentMethod === 'qr_payment'" type="button" @click="resetForm"
+          class="mt-5 w-full rounded-2xl bg-blue-500 py-3.5 px-6 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:bg-blue-700 active:scale-[0.98]">
+          <i class="fas fa-check mr-1.5"></i>
+          Okay
+        </button>
+
+
+        <button v-if="nonLsuPaymentMethod !== 'qr_payment'" type="button" @click="resetForm"
+          class="mt-5 w-full rounded-2xl bg-yellow-600 py-3.5 px-6 text-sm font-bold text-white shadow-lg shadow-yellow-600/30 transition hover:bg-yellow-700 active:scale-[0.98]">
+          <i class="fas fa-check mr-1.5"></i>
+          Proceed to Payment
+        </button>
+        <p class="italic text-xs text-center mt-6 text-gray-500 w-full">Disclaimer: Non-refundable once payment is made.
+        </p>
+
       </div>
-
-      <p class="mt-2 text-xs leading-relaxed text-gray-600">
-        Your registration summary and payment details have been sent to
-        <strong class="text-blue-700">
-          {{ participants[0]?.contact_email || user?.email }}
-        </strong>.
-      </p>
     </div>
-
-    <!-- Follow Socials -->
-    <div
-      class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
-    >
-      <p class="text-sm font-bold text-gray-800 text-left px-2">
-        <i class="fas fa-bell mr-1"></i>
-        Follow our socials for more info
-      </p>
-
-      <div class="mt-3 lg:flex gap-2 text-xs font-semibold">
-        <a
-          href="https://www.facebook.com/lsuanimorun"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold"
-        >
-          <i class="fab fa-facebook"></i>
-          LSU Animo Run
-        </a>
-
-         <a
-          href="https://www.facebook.com/ozamizlifestylerunners"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold"
-        >
-          <i class="fab fa-facebook"></i>
-          Ozamiz Lifestyle Runners
-        </a>
-
-
-
-        <a
-          href="https://animorun.lsu.edu.ph"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="flex items-center  gap-2 rounded-xl bg-white px-3 py-2.5  shadow-sm whitespace-nowrap transition hover:font-bold"
-        >
-          <i class="fas fa-globe"></i>
-          animorun.lsu.edu.ph
-        </a>
-      </div>
-    </div>
-
-    <!-- Verification Note -->
- <p class="mt-4 text-[11px] leading-relaxed text-gray-500" v-if="nonLsuPaymentMethod !== 'qr_payment'">
-      Once your payment is verified, you’ll receive your
-     
-    </p>
-    <p class="text-xs" v-if="nonLsuPaymentMethod !== 'qr_payment'">
-       <strong class="text-gray-700">
-        Official Confirmation Email.
-      </strong>
-      Thank you!</p>
-
-    <!-- Done -->
-    <button
-    v-if="nonLsuPaymentMethod === 'qr_payment'"
-      type="button"
-      @click="resetForm"
-      class="mt-5 w-full rounded-2xl bg-blue-500 py-3.5 px-6 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:bg-blue-700 active:scale-[0.98]"
-    >
-      <i class="fas fa-check mr-1.5"></i>
-      Okay
-    </button>
-
-
-    <button
-       v-if="nonLsuPaymentMethod !== 'qr_payment'"
-      type="button"
-      @click="resetForm"
-      class="mt-5 w-full rounded-2xl bg-yellow-600 py-3.5 px-6 text-sm font-bold text-white shadow-lg shadow-yellow-600/30 transition hover:bg-yellow-700 active:scale-[0.98]"
-    >
-      <i class="fas fa-check mr-1.5"></i>
-      Proceed to Payment
-    </button>
-<p class="italic text-xs text-center mt-6 text-gray-500 w-full">Disclaimer: Non-refundable once payment is made.</p>
-
-  </div>
-</div>
 
 
 
@@ -4127,139 +4216,149 @@ v-if="isSuccessModalOpen"
     </div>
 
     <!-- SHIRT DESIGN LIGHTBOX MODAL -->
-    <div v-if="shirtImageModalUrl" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-xs" @click.self="shirtImageModalUrl = null">
+    <div v-if="shirtImageModalUrl"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-xs"
+      @click.self="shirtImageModalUrl = null">
       <div :class="[
         'relative max-w-4xl w-full rounded-3xl p-4 overflow-hidden shadow-2xl flex flex-col items-center',
         props.darkMode ? 'bg-gray-900 border border-gray-700' : 'bg-white'
       ]">
-        <button type="button" @click="shirtImageModalUrl = null" class="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-gray-200 text-gray-700 hover:bg-rose-500 hover:text-white flex items-center justify-center font-bold text-sm transition cursor-pointer">
+        <button type="button" @click="shirtImageModalUrl = null"
+          class="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-gray-200 text-gray-700 hover:bg-rose-500 hover:text-white flex items-center justify-center font-bold text-sm transition cursor-pointer">
           <i class="fas fa-times"></i>
         </button>
         <div class="w-full flex items-center justify-between px-2 mb-2">
-          <span class="text-xs font-bold flex items-center gap-1.5" :class="props.darkMode ? 'text-gray-200' : 'text-gray-700'">
+          <span class="text-xs font-bold flex items-center gap-1.5"
+            :class="props.darkMode ? 'text-gray-200' : 'text-gray-700'">
             <i class="fas fa-tshirt text-emerald-600"></i> Official Shirt Design
           </span>
         </div>
-        <img :src="shirtImageModalUrl" alt="Shirt Design Full View" class="w-full h-auto max-h-[82vh] object-contain rounded-2xl border" :class="props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'" @error="handleShirtImageError" />
+        <img :src="shirtImageModalUrl" alt="Shirt Design Full View"
+          class="w-full h-auto max-h-[82vh] object-contain rounded-2xl border"
+          :class="props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'"
+          @error="handleShirtImageError" />
       </div>
     </div>
 
-  <!-- ── Floating Chat Widget ─────────────────────────────────────────────────── -->
-  <!-- Trigger bubble -->
-  <button
-    type="button"
-    id="chat-widget-trigger"
-    @click="openChatWidget(participants[0]?.contact_email || user?.email || '')"
-    :class="['fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full text-white shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 cursor-pointer relative', props.darkMode ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-emerald-600 hover:bg-emerald-700']"
-    title="Chat with Admin / Contact Us"
-  >
-    <i class="fas fa-comments text-xl"></i>
-    <span v-if="chatWidgetMessages.length > 0"
-      class="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
-      {{ chatWidgetMessages.length > 9 ? '9+' : chatWidgetMessages.length }}
-    </span>
-  </button>
+    <!-- ── Floating Chat Widget ─────────────────────────────────────────────────── -->
+    <!-- Trigger bubble -->
+    <button type="button" id="chat-widget-trigger"
+      @click="openChatWidget(participants[0]?.contact_email || user?.email || '')"
+      :class="['fixed bottom-6 lg:left-20 left-3 z-50 w-14 h-14 rounded-full text-white shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 cursor-pointer relative', props.darkMode ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-emerald-600 hover:bg-emerald-700']"
+      title="Chat with Admin / Contact Us">
+      <i class="fas fa-comments text-xl"></i>
+      <span v-if="chatWidgetMessages.length > 0"
+        class="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+        {{ chatWidgetMessages.length > 9 ? '9+' : chatWidgetMessages.length }}
+      </span>
+    </button>
 
-  <!-- Chat panel -->
-  <transition name="chat-slide">
-    <div v-if="isChatOpen"
-      id="chat-widget-panel"
-      :class="['fixed bottom-24 right-6 z-50 w-80 sm:w-96 max-h-[82vh] flex flex-col rounded-3xl shadow-2xl border overflow-hidden', props.darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200']"
-    >
-      <!-- Header -->
-      <div class="flex items-center gap-3 px-4 py-3 bg-emerald-700 text-white">
-        <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm font-black">
-          <i class="fas fa-headset"></i>
-        </div>
-        <div class="flex-1">
-          <p class="text-sm font-black leading-tight">Communication Chat</p>
-          <p class="text-[10px] opacity-70">
-            <template v-if="chatWidgetRunNumber">{{ chatWidgetRunNumber }}</template>
-            <template v-else>Contact the Animo Run team</template>
-          </p>
-        </div>
-        <button type="button" @click="isChatOpen = false"
-          class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/30 flex items-center justify-center transition cursor-pointer">
-          <i class="fas fa-times text-xs"></i>
-        </button>
-      </div>
-
-      <!-- Email lookup row -->
-      <div v-if="!chatWidgetLookupDone" :class="['px-4 pt-3 pb-2 border-b', props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50']">
-        <label :class="['block text-[10px] font-bold uppercase mb-1', props.darkMode ? 'text-gray-400' : 'text-gray-500']">Your Registered Email</label>
-        <div class="flex gap-2">
-          <input v-model="chatWidgetEmail" type="email" placeholder="e.g. juan@example.com"
-            @keydown.enter="loadChatWidgetMessages"
-            :class="['flex-1 text-xs rounded-xl border px-3 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none', props.darkMode ? 'bg-gray-900 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-800']" />
-          <button type="button" @click="loadChatWidgetMessages" :disabled="isChatWidgetLoading"
-            class="px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1">
-            <i :class="['fas', isChatWidgetLoading ? 'fa-spinner fa-spin' : 'fa-search']"></i>
+    <!-- Chat panel -->
+    <transition name="chat-slide">
+      <div v-if="isChatOpen" id="chat-widget-panel"
+        :class="['fixed bottom-24 right-6 z-50 w-80 sm:w-96 max-h-[82vh] flex flex-col rounded-3xl shadow-2xl border overflow-hidden', props.darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200']">
+        <!-- Header -->
+        <div class="flex items-center gap-3 px-4 py-3 bg-emerald-700 text-white">
+          <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm font-black">
+            <i class="fas fa-headset"></i>
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-black leading-tight">Communication Chat</p>
+            <p class="text-[10px] opacity-70">
+              <template v-if="chatWidgetRunNumber">{{ chatWidgetRunNumber }}</template>
+              <template v-else>Contact the Animo Run team</template>
+            </p>
+          </div>
+          <button type="button" @click="isChatOpen = false"
+            class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/30 flex items-center justify-center transition cursor-pointer">
+            <i class="fas fa-times text-xs"></i>
           </button>
         </div>
-      </div>
 
-      <!-- Runner info bar -->
-      <div v-if="chatWidgetLookupDone" :class="['px-4 pt-2.5 pb-2 border-b flex items-center justify-between gap-2', props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50']">
-        <span :class="['text-[11px] truncate', props.darkMode ? 'text-gray-300' : 'text-gray-600']">
-          <i class="fas fa-user-circle text-emerald-500 mr-1"></i>
-          <strong>{{ chatWidgetRunnerName || chatWidgetEmail }}</strong>
-          <template v-if="chatWidgetRunNumber"> &bull; {{ chatWidgetRunNumber }}</template>
-        </span>
-        <button type="button" @click="chatWidgetLookupDone = false; chatWidgetEmail = ''; chatWidgetRunNumber = ''; chatWidgetMessages = []"
-          class="text-[10px] text-gray-400 hover:text-rose-500 transition cursor-pointer whitespace-nowrap">
-          <i class="fas fa-times mr-0.5"></i> Change
-        </button>
-      </div>
-
-      <!-- Messages -->
-      <div :class="['flex-1 overflow-y-auto px-4 py-3 space-y-3', props.darkMode ? 'bg-gray-900' : 'bg-slate-50']">
-        <div v-if="isChatWidgetLoading" class="flex justify-center py-6">
-          <i class="fas fa-spinner fa-spin text-emerald-500 text-xl"></i>
-        </div>
-        <div v-else-if="!chatWidgetMessages.length && chatWidgetLookupDone" class="flex flex-col items-center justify-center py-8 text-gray-400 text-center">
-          <i class="fas fa-comment-dots text-4xl opacity-20 mb-2"></i>
-          <p class="text-xs">No messages yet.<br/>Send your first message below.</p>
-        </div>
-        <div v-else-if="!chatWidgetMessages.length && !chatWidgetLookupDone" class="flex flex-col items-center justify-center py-8 text-gray-400 text-center">
-          <i class="fas fa-search text-4xl opacity-20 mb-2"></i>
-          <p class="text-xs">Enter your registered email to<br/>view or start a conversation.</p>
-        </div>
-        <div v-for="msg in chatWidgetMessages" :key="msg.message_id || msg.timestamp"
-          :class="['flex', msg.sender_type === 'admin' ? 'justify-start' : 'justify-end']">
-          <div :class="[
-            'max-w-[82%] rounded-2xl px-3 py-2 text-xs leading-relaxed shadow-sm',
-            msg.sender_type === 'admin'
-              ? 'bg-emerald-600 text-white rounded-tl-sm'
-              : props.darkMode ? 'bg-gray-700 text-gray-100 rounded-tr-sm' : 'bg-white border border-gray-200 text-gray-800 rounded-tr-sm'
-          ]">
-            <p class="font-semibold text-[10px] mb-0.5 opacity-70">{{ msg.sender }}</p>
-            <p class="whitespace-pre-wrap break-words">{{ msg.message }}</p>
-            <p class="text-[9px] mt-1 opacity-50 text-right">{{ msg.timestamp }}</p>
+        <!-- Email lookup row -->
+        <div v-if="!chatWidgetLookupDone"
+          :class="['px-4 pt-3 pb-2 border-b', props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50']">
+          <label
+            :class="['block text-[10px] font-bold uppercase mb-1', props.darkMode ? 'text-gray-400' : 'text-gray-500']">Your
+            Registered Email</label>
+          <div class="flex gap-2">
+            <input v-model="chatWidgetEmail" type="email" placeholder="e.g. juan@example.com"
+              @keydown.enter="loadChatWidgetMessages"
+              :class="['flex-1 text-xs rounded-xl border px-3 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none', props.darkMode ? 'bg-gray-900 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-800']" />
+            <button type="button" @click="loadChatWidgetMessages" :disabled="isChatWidgetLoading"
+              class="px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1">
+              <i :class="['fas', isChatWidgetLoading ? 'fa-spinner fa-spin' : 'fa-search']"></i>
+            </button>
           </div>
         </div>
-      </div>
 
-      <!-- Input -->
-      <div :class="['px-4 py-3 border-t', props.darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white']">
-        <div v-if="!chatWidgetLookupDone" class="text-[11px] text-gray-400 text-center">Enter your email above to start chatting.</div>
-        <template v-else>
-          <textarea v-model="chatWidgetInput" :disabled="isChatWidgetSending"
-            @keydown.enter.ctrl="sendChatWidgetMessage" rows="2"
-            placeholder="Type your message... (Ctrl+Enter to send)"
-            :class="['w-full text-xs rounded-xl border px-3 py-2 resize-none focus:ring-2 focus:ring-emerald-400 focus:outline-none', props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-800']"
-          ></textarea>
-          <button type="button" @click="sendChatWidgetMessage"
-            :disabled="isChatWidgetSending || !chatWidgetInput.trim()"
-            class="mt-2 w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer">
-            <i :class="['fas', isChatWidgetSending ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
-            <span>{{ isChatWidgetSending ? 'Sending...' : 'Send Message' }}</span>
+        <!-- Runner info bar -->
+        <div v-if="chatWidgetLookupDone"
+          :class="['px-4 pt-2.5 pb-2 border-b flex items-center justify-between gap-2', props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50']">
+          <span :class="['text-[11px] truncate', props.darkMode ? 'text-gray-300' : 'text-gray-600']">
+            <i class="fas fa-user-circle text-emerald-500 mr-1"></i>
+            <strong>{{ chatWidgetRunnerName || chatWidgetEmail }}</strong>
+            <template v-if="chatWidgetRunNumber"> &bull; {{ chatWidgetRunNumber }}</template>
+          </span>
+          <button type="button"
+            @click="chatWidgetLookupDone = false; chatWidgetEmail = ''; chatWidgetRunNumber = ''; chatWidgetMessages = []"
+            class="text-[10px] text-gray-400 hover:text-rose-500 transition cursor-pointer whitespace-nowrap">
+            <i class="fas fa-times mr-0.5"></i> Change
           </button>
-        </template>
-      </div>
-    </div>
-  </transition>
+        </div>
 
-</div>
+        <!-- Messages -->
+        <div :class="['flex-1 overflow-y-auto px-4 py-3 space-y-3', props.darkMode ? 'bg-gray-900' : 'bg-slate-50']">
+          <div v-if="isChatWidgetLoading" class="flex justify-center py-6">
+            <i class="fas fa-spinner fa-spin text-emerald-500 text-xl"></i>
+          </div>
+          <div v-else-if="!chatWidgetMessages.length && chatWidgetLookupDone"
+            class="flex flex-col items-center justify-center py-8 text-gray-400 text-center">
+            <i class="fas fa-comment-dots text-4xl opacity-20 mb-2"></i>
+            <p class="text-xs">No messages yet.<br />Send your first message below.</p>
+          </div>
+          <div v-else-if="!chatWidgetMessages.length && !chatWidgetLookupDone"
+            class="flex flex-col items-center justify-center py-8 text-gray-400 text-center">
+            <i class="fas fa-search text-4xl opacity-20 mb-2"></i>
+            <p class="text-xs">Enter your registered email to<br />view or start a conversation.</p>
+          </div>
+          <div v-for="msg in chatWidgetMessages" :key="msg.message_id || msg.timestamp"
+            :class="['flex', msg.sender_type === 'admin' ? 'justify-start' : 'justify-end']">
+            <div :class="[
+              'max-w-[82%] rounded-2xl px-3 py-2 text-xs leading-relaxed shadow-sm',
+              msg.sender_type === 'admin'
+                ? 'bg-emerald-600 text-white rounded-tl-sm'
+                : props.darkMode ? 'bg-gray-700 text-gray-100 rounded-tr-sm' : 'bg-white border border-gray-200 text-gray-800 rounded-tr-sm'
+            ]">
+              <p class="font-semibold text-[10px] mb-0.5 opacity-70">{{ msg.sender }}</p>
+              <p class="whitespace-pre-wrap break-words">{{ msg.message }}</p>
+              <p class="text-[9px] mt-1 opacity-50 text-right">{{ msg.timestamp }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div :class="['px-4 py-3 border-t', props.darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white']">
+          <div v-if="!chatWidgetLookupDone" class="text-[11px] text-gray-400 text-center">Enter your email above to
+            start
+            chatting.</div>
+          <template v-else>
+            <textarea v-model="chatWidgetInput" :disabled="isChatWidgetSending"
+              @keydown.enter.ctrl="sendChatWidgetMessage" rows="2"
+              placeholder="Type your message... (Ctrl+Enter to send)"
+              :class="['w-full text-xs rounded-xl border px-3 py-2 resize-none focus:ring-2 focus:ring-emerald-400 focus:outline-none', props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-800']"></textarea>
+            <button type="button" @click="sendChatWidgetMessage"
+              :disabled="isChatWidgetSending || !chatWidgetInput.trim()"
+              class="mt-2 w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer">
+              <i :class="['fas', isChatWidgetSending ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
+              <span>{{ isChatWidgetSending ? 'Sending...' : 'Send Message' }}</span>
+            </button>
+          </template>
+        </div>
+      </div>
+    </transition>
+
+  </div>
 </template>
 
 <style scoped>
@@ -4300,6 +4399,7 @@ input[type="checkbox"] {
 .chat-slide-leave-active {
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .chat-slide-enter-from,
 .chat-slide-leave-to {
   opacity: 0;
