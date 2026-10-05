@@ -1099,11 +1099,14 @@ const chatMessages = ref([]);
 const chatInput = ref("");
 const isSendingChat = ref(false);
 const isChatLoading = ref(false);
+// Tracks whether the last message also triggered an email notification to the runner
+const chatEmailSent = ref(false);
 
 const loadChat = async (runner) => {
   if (!runner) return;
   isChatLoading.value = true;
   chatMessages.value = [];
+  chatEmailSent.value = false;
   try {
     // Prefer already-loaded communication_logs from the runner object
     if (Array.isArray(runner.communication_logs)) {
@@ -1124,15 +1127,18 @@ const sendAdminMessage = async () => {
   const text = chatInput.value.trim();
   if (!runner || !text || isSendingChat.value) return;
   isSendingChat.value = true;
+  chatEmailSent.value = false;
   try {
     let newLogs;
+    let emailNotified = false;
     try {
-      // Primary: dedicated /message/ endpoint (requires server update)
+      // Primary: dedicated /message/ endpoint — server sends email notification automatically
       const res = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/message/`, {
         method: "POST",
         body: { message: text, sender_name: currentOperator.value || "Admin" },
       });
       newLogs = res.messages || [...chatMessages.value, res.entry];
+      emailNotified = true; // server handles email dispatch
     } catch (msgErr) {
       const st = msgErr?.response?.status || msgErr?.status;
       if (st === 404) {
@@ -1157,6 +1163,14 @@ const sendAdminMessage = async () => {
     chatMessages.value = newLogs;
     runner.communication_logs = chatMessages.value;
     chatInput.value = "";
+    chatEmailSent.value = emailNotified;
+    if (emailNotified) {
+      showNotice(
+        `Message sent and an email notification was dispatched to ${runner.contact_email || 'the runner'}.`,
+        "Message Sent ✔ Email Notified",
+        "success"
+      );
+    }
   } catch (e) {
     console.error("Send admin message error:", e);
     showNotice("Failed to send message. Please try again.", "Send Failed", "error");
@@ -2391,10 +2405,15 @@ onMounted(() => {
                 <p class="text-xs font-black uppercase tracking-wide">Communication Chat</p>
                 <p class="text-[10px] text-gray-500">{{ selectedRunner.run_number }}</p>
               </div>
-              <button type="button" @click="loadChat(selectedRunner)" title="Refresh messages"
-                class="ml-auto w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-gray-500 hover:text-emerald-700 flex items-center justify-center transition cursor-pointer">
-                <i :class="['fas text-[10px]', isChatLoading ? 'fa-spinner fa-spin' : 'fa-sync-alt']"></i>
-              </button>
+              <div class="ml-auto flex items-center gap-1.5">
+                <span v-if="chatEmailSent" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold">
+                  <i class="fas fa-envelope-check text-[9px]"></i> Email Sent
+                </span>
+                <button type="button" @click="loadChat(selectedRunner)" title="Refresh messages"
+                  class="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-gray-500 hover:text-emerald-700 flex items-center justify-center transition cursor-pointer">
+                  <i :class="['fas text-[10px]', isChatLoading ? 'fa-spinner fa-spin' : 'fa-sync-alt']"></i>
+                </button>
+              </div>
             </div>
 
             <!-- Message thread -->
@@ -2434,6 +2453,9 @@ onMounted(() => {
             <div class="mt-3 pt-3 border-t dark:border-gray-700">
               <p class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mb-1.5 flex items-center gap-1">
                 <i class="fas fa-pencil-alt"></i> Send Follow-up Message
+                <span class="ml-auto font-normal text-gray-400 flex items-center gap-1">
+                  <i class="fas fa-envelope text-[9px]"></i> Email will be sent to runner
+                </span>
               </p>
               <textarea v-model="chatInput"
                 :disabled="isSendingChat"
@@ -2447,9 +2469,11 @@ onMounted(() => {
               ></textarea>
               <button type="button" @click="sendAdminMessage"
                 :disabled="isSendingChat || !chatInput.trim()"
-                class="mt-2 w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                class="mt-2 w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                title="Send message and notify the runner by email">
                 <i :class="['fas', isSendingChat ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
                 <span>{{ isSendingChat ? 'Sending...' : 'Send Message' }}</span>
+                <span v-if="!isSendingChat" class="ml-1 opacity-70 flex items-center gap-0.5"><i class="fas fa-envelope text-[9px]"></i></span>
               </button>
             </div>
           </div><!-- /chat panel -->

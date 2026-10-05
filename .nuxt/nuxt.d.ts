@@ -1,6 +1,6 @@
-/// <reference types="@pinia/nuxt" />
 /// <reference types="nuxt-lodash" />
 /// <reference types="nuxt-gtag" />
+/// <reference types="@pinia/nuxt" />
 /// <reference types="@nuxtjs/google-adsense" />
 /// <reference types="@nuxt/telemetry" />
 /// <reference path="types/nitro-layouts.d.ts" />

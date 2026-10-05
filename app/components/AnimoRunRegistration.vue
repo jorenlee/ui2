@@ -1657,6 +1657,12 @@ const sendChatWidgetMessage = async () => {
     chatWidgetRunnerName.value = senderName;
     chatWidgetInput.value = "";
     chatWidgetLookupDone.value = true;
+    // Inform the registrant that the admin team was also notified by email
+    showNotice(
+      "Your message has been sent. The organizing team has been notified by email and will reply shortly.",
+      "Message Sent ✔ Admin Notified",
+      "success"
+    );
   } catch (e) {
     const errMsg = e?.data?.message || "Failed to send message. Make sure your email matches your registration.";
     showNotice(errMsg, "Could Not Send Message", "error");
