@@ -1208,7 +1208,7 @@ onMounted(() => {
             </h1>
           </div>
 
-          <div class="flex items-center gap-2 flex-wrap shrink-0 self-end sm:self-auto">
+          <div class="lg:flex hidden items-center gap-2 flex-wrap shrink-0 self-end sm:self-auto">
 
 
             <!-- Supplier Batches History button -->
@@ -1241,43 +1241,46 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- STATS SUMMARY CARDS (4 COLUMNS INCLUDING SUPPLIER BATCH LOCKED COUNT) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="lg:flex"> 
+        <!-- STATS SUMMARY CARDS (4 COLUMNS INCLUDING SUPPLIER BATCH LOCKED COUNT) -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 lg:w-5/12 w-full">
         <div :class="[
-          'px-4 py-2.5 rounded-2xl border shadow-sm transition flex items-center justify-between',
+          'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
           props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
         ]">
-          <div>
+         <div class="w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
+            <i class="fas fa-running"></i>
+          </div>
+          <div class="text-center">
             <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Runners</p>
             <h3 class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
               <span v-if="isFetching" class="inline-block h-5 w-10 rounded bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
               <span v-else>{{ stats.totalRunners }}</span>
             </h3>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
-            <i class="fas fa-running"></i>
-          </div>
+         
         </div>
 
         <div :class="[
-          'px-4 py-2.5 rounded-2xl border shadow-sm transition flex items-center justify-between',
+          'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
           props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
         ]">
-          <div>
+         <div class="w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 dark:bg-green-950/80 text-green-600 dark:text-green-400 flex items-center justify-center text-lg">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="text-center">
             <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Confirmed Paid</p>
             <h3 class="text-xl font-black text-green-600 dark:text-green-400 mt-0.5">
               <span v-if="isFetching" class="inline-block h-5 w-10 rounded bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
               <span v-else>{{ stats.confirmed }}</span>
             </h3>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-950/80 text-green-600 dark:text-green-400 flex items-center justify-center text-lg">
-            <i class="fas fa-check-circle"></i>
-          </div>
+         
         </div>
 
         <div
           :class="[
-            'px-4 py-2.5 rounded-2xl border shadow-sm transition flex items-center justify-between cursor-pointer group',
+            'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap cursor-pointer group',
             selectedStatus === 'Pending'
               ? (props.darkMode ? 'bg-amber-950/40 border-amber-600 ring-2 ring-amber-500/40' : 'bg-amber-50 border-amber-400 ring-2 ring-amber-300/50')
               : (props.darkMode ? 'bg-gray-800 border-gray-700 hover:border-amber-600/50' : 'bg-white border-slate-200 hover:border-amber-300'),
@@ -1285,7 +1288,15 @@ onMounted(() => {
           @click="selectedStatus = selectedStatus === 'Pending' ? 'All' : 'Pending'"
           :title="selectedStatus === 'Pending' ? 'Click to clear pending filter' : 'Click to filter by pending items'"
         >
-          <div>
+         <div :class="[
+            'w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 flex items-center justify-center text-lg transition',
+            selectedStatus === 'Pending'
+              ? 'bg-amber-400 text-white'
+              : 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200'
+          ]">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="text-center">
             <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Pending Action</p>
             <h3 class="text-xl font-black text-amber-500 dark:text-amber-400 mt-0.5">
               <span v-if="isFetching" class="inline-block h-5 w-10 rounded bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
@@ -1293,42 +1304,36 @@ onMounted(() => {
             </h3>
             <p v-if="selectedStatus === 'Pending'" class="text-[10px] text-amber-500 font-semibold mt-0.5">Filtering active ✓</p>
           </div>
-          <div :class="[
-            'w-10 h-10 rounded-xl flex items-center justify-center text-lg transition',
-            selectedStatus === 'Pending'
-              ? 'bg-amber-400 text-white'
-              : 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200'
-          ]">
-            <i class="fas fa-clock"></i>
-          </div>
+         
         </div>
 
         <div :class="[
-          'px-4 py-2.5 rounded-2xl border shadow-sm transition flex items-center justify-between',
+          'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
           props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
         ]">
-          <div>
-            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Batch Locked 🔒</p>
+          <div class="w-10 h-10 rounded-xl mx-auto mb-2 bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg">
+            <i class="fas fa-lock"></i>
+          </div>
+          <div class="text-center">
+            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Batch Locked</p>
             <h3 class="text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5">
               <span v-if="isFetching" class="inline-block h-5 w-10 rounded bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
               <span v-else>{{ stats.lockedCount }}</span>
             </h3>
           </div>
-          <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg">
-            <i class="fas fa-lock"></i>
-          </div>
+        
         </div>
       </div>
 
       <!-- SEARCH & FILTER TOOLBAR (ROW 1: SEARCH & FILTERS, ROW 2: DATE RANGE & SORTING) -->
       <div :class="[
-        'p-3 rounded-3xl border shadow-md transition space-y-3',
+        'p-3 rounded-3xl border shadow-md transition space-y-3 w-full',
         props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
       ]">
         <!-- Toolbar Row 1: Search & Basic Filters -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="lg:flex gap-3 w-full">
           <!-- Search Input -->
-          <div class="relative lg:col-span-1">
+          <div class="relative lg:w-6/12 w-full">
             <i class="fas fa-search absolute left-3.5 top-3.5 text-xs text-gray-400"></i>
             <input v-model="searchQuery" type="text" placeholder="Search Name, Reg ID, Bib #, Email, Batch..." :class="[
               'w-full pl-9 pr-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
@@ -1474,6 +1479,7 @@ onMounted(() => {
         </div>
       </div>
 
+    </div>
       <!-- PARTICIPANTS VIEW (RESPONSIVE: MOBILE CARDS + DESKTOP TABLE) -->
       <div :class="[
         'rounded-3xl border shadow-lg overflow-hidden transition',

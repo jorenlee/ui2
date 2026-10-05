@@ -64,7 +64,7 @@
 
               <a
                 href="/dashboard"
-                class="font-bold text-base -ml-[1.5px]"
+                class="font-bold text-base -ml-[1.5px] uppercase"
                 :class="
                   darkMode
                     ? 'text-white'
