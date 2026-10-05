@@ -3,7 +3,9 @@ import { ref, computed, watch, onMounted } from "vue";
 import { useAuth } from "~/composables/useAuth";
 import animoRunData from "~/animorun.json";
 import waiverConsentData from "~/animorun_waiver_consent.json";
-// LSU ID verifier data loaded at runtime from cloud storage
+// LSU ID verifier data: bundled locally (no CORS) and optionally refreshed from cloud
+// Source: https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/animorun_lsuid_verifier.json
+import lsuIdVerifierLocalData from "~/animorun_lsuid_verifier.json";
 const lsuIdVerifierData = ref([]);
 
 // ── Slot Capacity Limits & Availability ─────────────────────────────────────
@@ -607,17 +609,8 @@ onMounted(async () => {
   // Fetch slot counts for availability checking
   fetchSlotCounts();
 
-  // Fetch LSU ID verifier data from cloud storage
-  try {
-    const res = await fetch("https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/animorun_lsuid_verifier.json");
-    if (res.ok) {
-      lsuIdVerifierData.value = await res.json();
-    } else {
-      console.error("Failed to load LSU ID verifier data:", res.status);
-    }
-  } catch (err) {
-    console.error("Error fetching LSU ID verifier data:", err);
-  }
+  // LSU ID verifier: use local bundled JSON (no network, no CORS issues).
+  lsuIdVerifierData.value = Array.isArray(lsuIdVerifierLocalData) ? lsuIdVerifierLocalData : [];
 });
 
 watch(
@@ -1044,6 +1037,35 @@ const resetForm = () => {
   }
 };
 
+// ── Duplicate Entry Check ──────────────────────────────────────────────────
+const checkDuplicates = async (participantsList) => {
+  const allDups = [];
+  for (let i = 0; i < participantsList.length; i++) {
+    const p = participantsList[i];
+    const emailVal = (p.contact_email || user?.value?.email || "").trim().toLowerCase();
+    const category = p.run_category === "1K" ? "1KM" : p.run_category;
+    if (!emailVal && !p.lsu_id_number?.trim()) continue;
+    try {
+      const res = await $fetch(`${endpoint.value}/api/animorun/check-duplicate/`, {
+        method: "POST",
+        body: {
+          contact_email: emailVal,
+          firstname: (p.firstname || "").trim(),
+          lastname: (p.lastname || "").trim(),
+          lsu_id_number: (p.lsu_id_number || "").trim(),
+          run_category: category,
+        },
+      });
+      if (res?.is_duplicate && res.duplicates?.length) {
+        allDups.push({ runnerIndex: i + 1, name: `${p.firstname} ${p.lastname}`.trim(), duplicates: res.duplicates });
+      }
+    } catch (e) {
+      console.warn("Duplicate check failed (non-fatal):", e);
+    }
+  }
+  return allDups;
+};
+
 const submitRegistration = async () => {
   // ── Slot Availability Check (re-fetch fresh counts before submit) ──────────
   await fetchSlotCounts();
@@ -1330,6 +1352,27 @@ const submitRegistration = async () => {
     }
   }
 
+  // ── Duplicate Entry Check ──────────────────────────────────────────────────
+  {
+    const dups = await checkDuplicates(participants.value);
+    if (dups.length > 0) {
+      const lines = dups.map(({ runnerIndex, name, duplicates }) => {
+        const bibList = duplicates.map(d => `Bib ${d.run_number || '#' + d.id} (${d.run_category}) — ${d.payment_status}`).join("\n  ");
+        return `Runner #${runnerIndex} (${name || 'Unnamed'}) is already registered:\n  ${bibList}`;
+      });
+      showNotice(
+        `Duplicate registration detected. The following participant(s) already have an existing entry:\n\n${lines.join("\n\n")}\n\nIf this is a mistake, use the chat button to contact the event organizers.`,
+        "Duplicate Registration Detected",
+        "error"
+      );
+      // Auto-open chat widget so the user can immediately clarify
+      const firstEmail = (participants.value[0]?.contact_email || user?.value?.email || "").trim();
+      const clarificationMsg = `Hi, I tried to register but was told I already have an entry. My name is ${dups[0]?.name || ''} and I'd like to clarify my registration status.`;
+      await openChatWidget(firstEmail, clarificationMsg);
+      return;
+    }
+  }
+
   // Validate Waiver & Privacy Consent Checkboxes
   if (!waiver_agreed.value || !privacy_consent_agreed.value) {
     showNotice(
@@ -1547,6 +1590,78 @@ const submitRegistration = async () => {
     );
   } finally {
     isSubmitting.value = false;
+  }
+};
+
+// ── Floating Chat Widget ───────────────────────────────────────────────────
+const isChatOpen = ref(false);
+const chatWidgetEmail = ref("");
+const chatWidgetRunNumber = ref("");
+const chatWidgetMessages = ref([]);
+const chatWidgetInput = ref("");
+const isChatWidgetLoading = ref(false);
+const isChatWidgetSending = ref(false);
+const chatWidgetLookupDone = ref(false);
+const chatWidgetRunnerName = ref("");
+
+const openChatWidget = async (prefilledEmail = "", prefilledMessage = "") => {
+  isChatOpen.value = true;
+  if (prefilledEmail) {
+    chatWidgetEmail.value = prefilledEmail;
+    chatWidgetInput.value = prefilledMessage;
+    await loadChatWidgetMessages();
+  }
+};
+
+const loadChatWidgetMessages = async () => {
+  const email = chatWidgetEmail.value.trim();
+  if (!email) return;
+  isChatWidgetLoading.value = true;
+  chatWidgetLookupDone.value = false;
+  try {
+    const params = new URLSearchParams({ email });
+    if (chatWidgetRunNumber.value.trim()) params.set("run_number", chatWidgetRunNumber.value.trim());
+    const res = await $fetch(`${endpoint.value}/api/animorun/chat/?${params.toString()}`);
+    chatWidgetMessages.value = res.messages || [];
+    chatWidgetRunnerName.value = res.runner_name || "";
+    chatWidgetRunNumber.value = res.run_number || chatWidgetRunNumber.value;
+    chatWidgetLookupDone.value = true;
+  } catch (e) {
+    console.warn("Chat load error:", e);
+    chatWidgetLookupDone.value = true;
+  } finally {
+    isChatWidgetLoading.value = false;
+  }
+};
+
+const sendChatWidgetMessage = async () => {
+  const email = chatWidgetEmail.value.trim();
+  const text = chatWidgetInput.value.trim();
+  if (!email || !text || isChatWidgetSending.value) return;
+  isChatWidgetSending.value = true;
+  try {
+    const p = participants.value[0];
+    const emailForSender = p?.contact_email || user?.value?.email || email;
+    const senderName = `${p?.firstname || ""} ${p?.lastname || ""}`.trim() || user?.value?.name || "Registrant";
+    const res = await $fetch(`${endpoint.value}/api/animorun/chat/`, {
+      method: "POST",
+      body: {
+        contact_email: emailForSender,
+        run_number: chatWidgetRunNumber.value.trim(),
+        sender_name: senderName,
+        message: text,
+      },
+    });
+    chatWidgetMessages.value = res.messages || [...chatWidgetMessages.value, res.entry];
+    chatWidgetRunNumber.value = res.run_number || chatWidgetRunNumber.value;
+    chatWidgetRunnerName.value = senderName;
+    chatWidgetInput.value = "";
+    chatWidgetLookupDone.value = true;
+  } catch (e) {
+    const errMsg = e?.data?.message || "Failed to send message. Make sure your email matches your registration.";
+    showNotice(errMsg, "Could Not Send Message", "error");
+  } finally {
+    isChatWidgetSending.value = false;
   }
 };
 </script>
@@ -1882,25 +1997,6 @@ const submitRegistration = async () => {
                       </span> -->
                       <span class="font-black text-xl" :style="{ color: cat.colors.highlight || '#fff' }">PHP {{
                         cat.fee.toLocaleString() }}</span>
-                    </div>
-
-                    <!-- Slot Availability Badge -->
-                    <div class="mt-2 flex items-center gap-1.5" v-if="slotDataLoaded">
-                      <span v-if="isCategoryFull(cat.id)"
-                        class="text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
-                        style="background: rgba(239,68,68,0.2); color: #fca5a5; border: 1px solid rgba(239,68,68,0.4)">
-                        <i class="fas fa-ban text-[9px]"></i> FULL — 0 Slots Left
-                      </span>
-                      <span v-else-if="getRemainingSlots(cat.id) <= 50"
-                        class="text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
-                        style="background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4)">
-                        <i class="fas fa-exclamation-triangle text-[9px]"></i> {{ getRemainingSlots(cat.id) }} Slots Left
-                      </span>
-                      <span v-else
-                        class="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full flex items-center gap-1"
-                        style="background: rgba(34,197,94,0.15); color: rgba(134,239,172,0.9); border: 1px solid rgba(34,197,94,0.3)">
-                        <i class="fas fa-check-circle text-[9px]"></i> {{ getRemainingSlots(cat.id) }} Slots Left
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -4041,7 +4137,123 @@ v-if="isSuccessModalOpen"
         <img :src="shirtImageModalUrl" alt="Shirt Design Full View" class="w-full h-auto max-h-[82vh] object-contain rounded-2xl border" :class="props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-slate-50 border-slate-200'" @error="handleShirtImageError" />
       </div>
     </div>
-  </div>
+
+  <!-- ── Floating Chat Widget ─────────────────────────────────────────────────── -->
+  <!-- Trigger bubble -->
+  <button
+    type="button"
+    id="chat-widget-trigger"
+    @click="openChatWidget(participants[0]?.contact_email || user?.email || '')"
+    :class="['fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full text-white shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110 cursor-pointer relative', props.darkMode ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-emerald-600 hover:bg-emerald-700']"
+    title="Chat with Admin / Contact Us"
+  >
+    <i class="fas fa-comments text-xl"></i>
+    <span v-if="chatWidgetMessages.length > 0"
+      class="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
+      {{ chatWidgetMessages.length > 9 ? '9+' : chatWidgetMessages.length }}
+    </span>
+  </button>
+
+  <!-- Chat panel -->
+  <transition name="chat-slide">
+    <div v-if="isChatOpen"
+      id="chat-widget-panel"
+      :class="['fixed bottom-24 right-6 z-50 w-80 sm:w-96 max-h-[82vh] flex flex-col rounded-3xl shadow-2xl border overflow-hidden', props.darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200']"
+    >
+      <!-- Header -->
+      <div class="flex items-center gap-3 px-4 py-3 bg-emerald-700 text-white">
+        <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm font-black">
+          <i class="fas fa-headset"></i>
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-black leading-tight">Communication Chat</p>
+          <p class="text-[10px] opacity-70">
+            <template v-if="chatWidgetRunNumber">{{ chatWidgetRunNumber }}</template>
+            <template v-else>Contact the Animo Run team</template>
+          </p>
+        </div>
+        <button type="button" @click="isChatOpen = false"
+          class="w-7 h-7 rounded-full bg-white/10 hover:bg-white/30 flex items-center justify-center transition cursor-pointer">
+          <i class="fas fa-times text-xs"></i>
+        </button>
+      </div>
+
+      <!-- Email lookup row -->
+      <div v-if="!chatWidgetLookupDone" :class="['px-4 pt-3 pb-2 border-b', props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50']">
+        <label :class="['block text-[10px] font-bold uppercase mb-1', props.darkMode ? 'text-gray-400' : 'text-gray-500']">Your Registered Email</label>
+        <div class="flex gap-2">
+          <input v-model="chatWidgetEmail" type="email" placeholder="e.g. juan@example.com"
+            @keydown.enter="loadChatWidgetMessages"
+            :class="['flex-1 text-xs rounded-xl border px-3 py-2 focus:ring-2 focus:ring-emerald-400 focus:outline-none', props.darkMode ? 'bg-gray-900 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-800']" />
+          <button type="button" @click="loadChatWidgetMessages" :disabled="isChatWidgetLoading"
+            class="px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer flex items-center gap-1">
+            <i :class="['fas', isChatWidgetLoading ? 'fa-spinner fa-spin' : 'fa-search']"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Runner info bar -->
+      <div v-if="chatWidgetLookupDone" :class="['px-4 pt-2.5 pb-2 border-b flex items-center justify-between gap-2', props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50']">
+        <span :class="['text-[11px] truncate', props.darkMode ? 'text-gray-300' : 'text-gray-600']">
+          <i class="fas fa-user-circle text-emerald-500 mr-1"></i>
+          <strong>{{ chatWidgetRunnerName || chatWidgetEmail }}</strong>
+          <template v-if="chatWidgetRunNumber"> &bull; {{ chatWidgetRunNumber }}</template>
+        </span>
+        <button type="button" @click="chatWidgetLookupDone = false; chatWidgetEmail = ''; chatWidgetRunNumber = ''; chatWidgetMessages = []"
+          class="text-[10px] text-gray-400 hover:text-rose-500 transition cursor-pointer whitespace-nowrap">
+          <i class="fas fa-times mr-0.5"></i> Change
+        </button>
+      </div>
+
+      <!-- Messages -->
+      <div :class="['flex-1 overflow-y-auto px-4 py-3 space-y-3', props.darkMode ? 'bg-gray-900' : 'bg-slate-50']">
+        <div v-if="isChatWidgetLoading" class="flex justify-center py-6">
+          <i class="fas fa-spinner fa-spin text-emerald-500 text-xl"></i>
+        </div>
+        <div v-else-if="!chatWidgetMessages.length && chatWidgetLookupDone" class="flex flex-col items-center justify-center py-8 text-gray-400 text-center">
+          <i class="fas fa-comment-dots text-4xl opacity-20 mb-2"></i>
+          <p class="text-xs">No messages yet.<br/>Send your first message below.</p>
+        </div>
+        <div v-else-if="!chatWidgetMessages.length && !chatWidgetLookupDone" class="flex flex-col items-center justify-center py-8 text-gray-400 text-center">
+          <i class="fas fa-search text-4xl opacity-20 mb-2"></i>
+          <p class="text-xs">Enter your registered email to<br/>view or start a conversation.</p>
+        </div>
+        <div v-for="msg in chatWidgetMessages" :key="msg.message_id || msg.timestamp"
+          :class="['flex', msg.sender_type === 'admin' ? 'justify-start' : 'justify-end']">
+          <div :class="[
+            'max-w-[82%] rounded-2xl px-3 py-2 text-xs leading-relaxed shadow-sm',
+            msg.sender_type === 'admin'
+              ? 'bg-emerald-600 text-white rounded-tl-sm'
+              : props.darkMode ? 'bg-gray-700 text-gray-100 rounded-tr-sm' : 'bg-white border border-gray-200 text-gray-800 rounded-tr-sm'
+          ]">
+            <p class="font-semibold text-[10px] mb-0.5 opacity-70">{{ msg.sender }}</p>
+            <p class="whitespace-pre-wrap break-words">{{ msg.message }}</p>
+            <p class="text-[9px] mt-1 opacity-50 text-right">{{ msg.timestamp }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div :class="['px-4 py-3 border-t', props.darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white']">
+        <div v-if="!chatWidgetLookupDone" class="text-[11px] text-gray-400 text-center">Enter your email above to start chatting.</div>
+        <template v-else>
+          <textarea v-model="chatWidgetInput" :disabled="isChatWidgetSending"
+            @keydown.enter.ctrl="sendChatWidgetMessage" rows="2"
+            placeholder="Type your message... (Ctrl+Enter to send)"
+            :class="['w-full text-xs rounded-xl border px-3 py-2 resize-none focus:ring-2 focus:ring-emerald-400 focus:outline-none', props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-100' : 'bg-white border-gray-200 text-gray-800']"
+          ></textarea>
+          <button type="button" @click="sendChatWidgetMessage"
+            :disabled="isChatWidgetSending || !chatWidgetInput.trim()"
+            class="mt-2 w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer">
+            <i :class="['fas', isChatWidgetSending ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
+            <span>{{ isChatWidgetSending ? 'Sending...' : 'Send Message' }}</span>
+          </button>
+        </template>
+      </div>
+    </div>
+  </transition>
+
+</div>
 </template>
 
 <style scoped>
@@ -4075,5 +4287,16 @@ input[type="checkbox"] {
 .pet-name-input:focus {
   box-shadow: 0 0 0 2px rgba(2, 133, 125, 0.25);
   border-color: #02857D !important;
+}
+
+/* Chat widget slide transition */
+.chat-slide-enter-active,
+.chat-slide-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.chat-slide-enter-from,
+.chat-slide-leave-to {
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
 }
 </style>

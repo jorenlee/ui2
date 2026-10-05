@@ -79,6 +79,7 @@ interface _GlobalComponents {
   Logout: typeof import("../../app/components/Logout.vue")['default']
   McoMenuBar: typeof import("../../app/components/McoMenuBar.vue")['default']
   MoodTicket: typeof import("../../app/components/MoodTicket.vue")['default']
+  MyAnimoRunMyRuns: typeof import("../../app/components/MyAnimoRun/MyRuns.vue")['default']
   NPCC: typeof import("../../app/components/NPCC/index.vue")['default']
   NetworkLogo: typeof import("../../app/components/NetworkLogo.vue")['default']
   NewsAndUpdates: typeof import("../../app/components/NewsAndUpdates.vue")['default']
@@ -224,6 +225,7 @@ interface _GlobalComponents {
   LazyLogout: LazyComponent<typeof import("../../app/components/Logout.vue")['default']>
   LazyMcoMenuBar: LazyComponent<typeof import("../../app/components/McoMenuBar.vue")['default']>
   LazyMoodTicket: LazyComponent<typeof import("../../app/components/MoodTicket.vue")['default']>
+  LazyMyAnimoRunMyRuns: LazyComponent<typeof import("../../app/components/MyAnimoRun/MyRuns.vue")['default']>
   LazyNPCC: LazyComponent<typeof import("../../app/components/NPCC/index.vue")['default']>
   LazyNetworkLogo: LazyComponent<typeof import("../../app/components/NetworkLogo.vue")['default']>
   LazyNewsAndUpdates: LazyComponent<typeof import("../../app/components/NewsAndUpdates.vue")['default']>

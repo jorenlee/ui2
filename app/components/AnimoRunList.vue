@@ -461,6 +461,8 @@ const openDetails = (runner) => {
   isEditMode.value = false;
   editForm.value = {};
   bypassWarningAcknowledged.value = false;
+  chatInput.value = "";
+  loadChat(runner);
 };
 
 const closeDetails = () => {
@@ -1089,6 +1091,78 @@ const downloadBatchCsv = (batch) => {
   const filename = `${batch.batch_name.replace(/\s+/g, "_")}_EmeraldRun_Orders.csv`;
   downloadCsvFile(csv, filename);
   showNotice(`Downloaded CSV for ${batch.batch_name} (${runners.length} runners).`, "CSV Downloaded", "success");
+};
+
+
+// ── Communication Chat (Admin Side) ─────────────────────────────────────────────
+const chatMessages = ref([]);
+const chatInput = ref("");
+const isSendingChat = ref(false);
+const isChatLoading = ref(false);
+
+const loadChat = async (runner) => {
+  if (!runner) return;
+  isChatLoading.value = true;
+  chatMessages.value = [];
+  try {
+    // Prefer already-loaded communication_logs from the runner object
+    if (Array.isArray(runner.communication_logs)) {
+      chatMessages.value = runner.communication_logs;
+    } else {
+      const res = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/`);
+      chatMessages.value = res?.communication_logs || [];
+    }
+  } catch (e) {
+    console.warn("Could not load chat messages:", e);
+  } finally {
+    isChatLoading.value = false;
+  }
+};
+
+const sendAdminMessage = async () => {
+  const runner = selectedRunner.value;
+  const text = chatInput.value.trim();
+  if (!runner || !text || isSendingChat.value) return;
+  isSendingChat.value = true;
+  try {
+    let newLogs;
+    try {
+      // Primary: dedicated /message/ endpoint (requires server update)
+      const res = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/message/`, {
+        method: "POST",
+        body: { message: text, sender_name: currentOperator.value || "Admin" },
+      });
+      newLogs = res.messages || [...chatMessages.value, res.entry];
+    } catch (msgErr) {
+      const st = msgErr?.response?.status || msgErr?.status;
+      if (st === 404) {
+        // Fallback: build the log entry manually and patch via the existing /edit/ endpoint
+        const entry = {
+          sender: currentOperator.value || "Admin",
+          sender_type: "admin",
+          message: text,
+          message_id: Math.random().toString(36).slice(2, 10),
+          timestamp: new Date().toLocaleString("en-PH", { hour12: false }).replace(",", ""),
+          is_message_edited: "false",
+        };
+        newLogs = [...(chatMessages.value || []), entry];
+        await $fetch(`${endpoint.value}/api/animorun/${runner.id}/edit/`, {
+          method: "PUT",
+          body: { communication_logs: newLogs },
+        });
+      } else {
+        throw msgErr;
+      }
+    }
+    chatMessages.value = newLogs;
+    runner.communication_logs = chatMessages.value;
+    chatInput.value = "";
+  } catch (e) {
+    console.error("Send admin message error:", e);
+    showNotice("Failed to send message. Please try again.", "Send Failed", "error");
+  } finally {
+    isSendingChat.value = false;
+  }
 };
 
 // Trigger fetch batches on mounted
@@ -1920,7 +1994,7 @@ onMounted(() => {
     <div v-if="isDetailModalOpen && selectedRunner"
       class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
       <div :class="[
-        'relative lg:w-8/12 w-full rounded-3xl shadow-2xl border p-4 sm:p-8 max-h-[92vh] overflow-y-auto space-y-4 sm:space-y-6 transition',
+        'relative lg:w-11/12 w-full rounded-3xl shadow-2xl border p-4 sm:p-8 max-h-[92vh] overflow-y-auto space-y-4 sm:space-y-6 transition',
         props.darkMode ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-slate-200',
       ]">
         <!-- Modal Header -->
@@ -1966,7 +2040,7 @@ onMounted(() => {
               <!-- ── VIEW MODE ───────────────────────────────────────────── -->
               <template v-if="!isEditMode">
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Full Name</label>
+                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Full Name</label>
                   <p class="font-semibold uppercase">
                     {{ selectedRunner.firstname }} {{ selectedRunner.middlename }} {{ selectedRunner.lastname }}{{
                       selectedRunner.suffix ? ' ' + selectedRunner.suffix : '' }}
@@ -1974,40 +2048,40 @@ onMounted(() => {
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Gender &amp; Birthdate</label>
+                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Gender &amp; Birthdate</label>
                   <p class="font-semibold">
                     {{ selectedRunner.gender || 'Not specified' }} • {{ selectedRunner.birthdate || 'N/A' }}
                   </p>
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Contact Phone</label>
+                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Contact Phone</label>
                   <p class="font-semibold">{{ selectedRunner.contact_number || selectedRunner.phone || 'N/A' }}</p>
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Email Address</label>
+                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Email Address</label>
                   <p class="font-semibold">{{ selectedRunner.contact_email || selectedRunner.email }}</p>
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Classification</label>
+                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Classification</label>
                   <p class="font-semibold">{{ selectedRunner.participant_type }} {{ selectedRunner.lsu_id_number ? '(' +
                     selectedRunner.lsu_id_number + ')' : '' }}</p>
                 </div>
 
                 <div v-if="selectedRunner.organization" class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Running Club / Org</label>
+                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Running Club / Org</label>
                   <p class="font-semibold text-emerald-600 dark:text-emerald-400">{{ selectedRunner.organization }}</p>
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">T-Shirt Size</label>
+                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">T-Shirt Size</label>
                   <p class="font-semibold">{{ selectedRunner.tshirt_size || 'M' }}</p>
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Address</label>
+                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Address</label>
                   <p class="font-semibold">{{ selectedRunner.contact_address || selectedRunner.address || 'Ozamiz City' }}
                   </p>
                 </div>
@@ -2304,8 +2378,83 @@ onMounted(() => {
               </div>
             </div>
 
-          </div>
-        </div>
+          </div><!-- /Personal Details -->
+
+          <!-- ── COMMUNICATION CHAT PANEL ────────────────────────────────────────────── -->
+          <div class="lg:w-80 shrink-0 flex flex-col mt-6 lg:mt-0">
+            <!-- Header -->
+            <div class="flex items-center gap-2 mb-3 pb-2 border-b dark:border-gray-700">
+              <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm">
+                <i class="fas fa-comments"></i>
+              </div>
+              <div>
+                <p class="text-xs font-black uppercase tracking-wide">Communication Chat</p>
+                <p class="text-[10px] text-gray-500">{{ selectedRunner.run_number }}</p>
+              </div>
+              <button type="button" @click="loadChat(selectedRunner)" title="Refresh messages"
+                class="ml-auto w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-gray-500 hover:text-emerald-700 flex items-center justify-center transition cursor-pointer">
+                <i :class="['fas text-[10px]', isChatLoading ? 'fa-spinner fa-spin' : 'fa-sync-alt']"></i>
+              </button>
+            </div>
+
+            <!-- Message thread -->
+            <div class="flex-1 overflow-y-auto max-h-72 space-y-2.5 pr-1 custom-scrollbar">
+              <!-- Empty state -->
+              <div v-if="!isChatLoading && !chatMessages.length"
+                class="flex flex-col items-center justify-center py-10 text-center text-gray-400">
+                <i class="fas fa-comment-slash text-3xl mb-2 opacity-30"></i>
+                <p class="text-xs">No messages yet</p>
+              </div>
+
+              <!-- Loading -->
+              <div v-if="isChatLoading" class="flex items-center justify-center py-6">
+                <i class="fas fa-spinner fa-spin text-emerald-500 text-lg"></i>
+              </div>
+
+              <!-- Messages -->
+              <div v-for="msg in chatMessages" :key="msg.message_id || msg.timestamp"
+                :class="[
+                  'flex',
+                  msg.sender_type === 'admin' ? 'justify-end' : 'justify-start'
+                ]">
+                <div :class="[
+                  'max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed shadow-sm',
+                  msg.sender_type === 'admin'
+                    ? 'bg-emerald-600 text-white rounded-tr-sm'
+                    : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-tl-sm'
+                ]">
+                  <p class="font-semibold text-[10px] mb-0.5 opacity-80">{{ msg.sender }}</p>
+                  <p class="whitespace-pre-wrap break-words">{{ msg.message }}</p>
+                  <p class="text-[9px] mt-1 opacity-60 text-right">{{ msg.timestamp }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reply input -->
+            <div class="mt-3 pt-3 border-t dark:border-gray-700">
+              <p class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 mb-1.5 flex items-center gap-1">
+                <i class="fas fa-pencil-alt"></i> Send Follow-up Message
+              </p>
+              <textarea v-model="chatInput"
+                :disabled="isSendingChat"
+                @keydown.enter.ctrl="sendAdminMessage"
+                rows="3"
+                placeholder="Type your follow-up remarks here..."
+                :class="[
+                  'w-full rounded-xl border text-xs px-3 py-2 resize-none focus:ring-2 focus:ring-emerald-400 focus:outline-none transition',
+                  props.darkMode ? 'bg-gray-900 border-gray-600 text-gray-100 placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'
+                ]"
+              ></textarea>
+              <button type="button" @click="sendAdminMessage"
+                :disabled="isSendingChat || !chatInput.trim()"
+                class="mt-2 w-full py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <i :class="['fas', isSendingChat ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
+                <span>{{ isSendingChat ? 'Sending...' : 'Send Message' }}</span>
+              </button>
+            </div>
+          </div><!-- /chat panel -->
+
+        </div><!-- /lg:flex -->
         <!-- Action / Status Management -->
         <div class="pt-4 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div class="flex items-center gap-2 flex-wrap">

@@ -18,6 +18,43 @@ const currentView = ref("Menu");
 const initialLoading = ref(false);       // no longer used to block the page
 const permissionsLoading = ref(false);   // true only while initial user roles are loading
 
+// ---------------- MY ANIMO RUN VISIBILITY ----------------
+// The "My Animo Run" menu is only shown when the admin has sent the logged-in
+// user a message (edit_enabled = true from communication_logs).
+const myAnimoRunEditEnabled = ref(false);
+
+const checkMyAnimoRunStatus = async () => {
+  const email = user.value?.email;
+  if (!email) return;
+  try {
+    // Primary: dedicated my-registration endpoint
+    const res = await $fetch(
+      `${endpoint}/api/animorun/my-registration/?email=${encodeURIComponent(email)}`
+    );
+    myAnimoRunEditEnabled.value = res.edit_enabled || false;
+  } catch (err) {
+    const st = err?.response?.status || err?.status;
+    if (st === 404 || st === 500) {
+      // Fallback: scan /list/ endpoint for this email and check for admin messages
+      try {
+        const listRes = await $fetch(`${endpoint}/api/animorun/list/`);
+        const emailLower = email.trim().toLowerCase();
+        const all = Array.isArray(listRes) ? listRes : (listRes.registrations || listRes.results || []);
+        const mine = all.filter(
+          (r) => (r.contact_email || r.email || "").trim().toLowerCase() === emailLower
+        );
+        myAnimoRunEditEnabled.value = mine.some((r) =>
+          (r.communication_logs || []).some((m) => m.sender_type === "admin")
+        );
+      } catch {
+        myAnimoRunEditEnabled.value = false;
+      }
+    } else {
+      myAnimoRunEditEnabled.value = false;
+    }
+  }
+};
+
 const openGroups = ref([
   "Content Management",
   "Open Educational Resources",
@@ -38,6 +75,7 @@ const openGroups = ref([
   "Super Admin",
   "Juris Doctor Admin",
   "Juris Doctor Examinee",
+  "My Animo Run"
 ]);
 
 const lsuOnlyMenuGroups = new Set([
@@ -174,6 +212,7 @@ onMounted(() => {
   // Full Role Permissions list will be loaded on-demand when clicking Role Permissions menu.
   fetchCurrentUserRoles();
   checkForUnratedTickets();
+  checkMyAnimoRunStatus();
 });
 
 // ---------------- MENU FILTER ----------------
@@ -194,9 +233,14 @@ const filteredMenuList = computed(() => {
   }
 
   const roleFiltered = subMenuList.filter((menu) => {
-if (menu.group === "IT Services Feedback") {
-  return unratedTicketsCount.value > 0;
-}
+    if (menu.group === "IT Services Feedback") {
+      return unratedTicketsCount.value > 0;
+    }
+
+    // My Animo Run: only visible when admin has enabled editing (sent a message)
+    if (menu.group === "My Animo Run") {
+      return myAnimoRunEditEnabled.value;
+    }
 
     const hasRole = Array.isArray(menu.allowedRole)
       ? menu.allowedRole.some((r) => roles.includes(r))
@@ -264,6 +308,18 @@ const subMenuList = [
         icon: "fa-list",
         type: "button",
         view: "ViewAnimoRunList",
+      },
+    ],
+  },
+    {
+    group: "My Animo Run",
+    allowedRole: ["My Animo Run"],
+    items: [
+      {
+        label: "My Runs",
+        icon: "fa-running",
+        type: "button",
+        view: "ViewMyAnimoRun",
       },
     ],
   },
@@ -627,6 +683,7 @@ const lazyViewMap = {
   ViewOERList: { loader: () => import("~/components/OER/List.vue"), class: "pb-32" },
   ViewJurisDoctorAdmissionTestManagement: { loader: () => import("~/components/JurisDoctor/Admin.vue"), class: "pb-32" },
   ViewJurisDoctorAdmissionTest: { loader: () => import("~/components/JurisDoctor/Admission.vue"), class: "pb-32" },
+  ViewMyAnimoRun: { loader: () => import("~/components/MyAnimoRun/MyRuns.vue"), class: "pb-32" },
 };
 
 // ---------------- ACTIVE VIEW (resolved lazily) ----------------
