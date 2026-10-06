@@ -15,7 +15,7 @@ const isFetching = ref(false);
 const isAutoRefreshing = ref(false);
 const lastUpdated = ref(null);
 let pollingInterval = null;
-const POLL_INTERVAL_MS = 15000; // 15 seconds
+const POLL_INTERVAL_MS = 5000; // 5 seconds
 const isConfirming = ref(false);
 const isBulkDeleting = ref(false);
 
@@ -193,6 +193,64 @@ const runCategories = [
 
 const registrations = ref([]);
 
+// ── Auto-Deduplication ────────────────────────────────────────────────────────
+// Groups registrations by (firstname + lastname + created_at minute).
+// Within each duplicate group, the entry with the smallest id is kept (first
+// submission); all others are deleted via the bulk-delete API and removed from
+// the local list immediately so the UI updates without waiting for the next poll.
+const isDeduplicating = ref(false);
+
+const deduplicateRegistrations = async () => {
+  if (isDeduplicating.value) return;
+
+  // Build a map keyed by "firstname|lastname|created_at-minute"
+  const groups = new Map();
+  for (const r of registrations.value) {
+    const firstName = (r.firstname || "").trim().toLowerCase();
+    const lastName  = (r.lastname  || "").trim().toLowerCase();
+    // Truncate timestamp to the minute so entries within the same minute are grouped
+    const minute = r.created_at
+      ? r.created_at.substring(0, 16) // "YYYY-MM-DDTHH:MM" or "YYYY-MM-DD HH:MM"
+      : "__no_ts__";
+    const key = `${firstName}|${lastName}|${minute}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  }
+
+  // Collect IDs to delete (all but the first/lowest id in each group)
+  const toDeleteIds = [];
+  for (const [, group] of groups) {
+    if (group.length < 2) continue;
+    // Sort ascending by id so the smallest (first) id is index 0
+    group.sort((a, b) => Number(a.id) - Number(b.id));
+    // Keep group[0], delete the rest
+    for (let i = 1; i < group.length; i++) {
+      toDeleteIds.push(group[i].id);
+    }
+  }
+
+  if (!toDeleteIds.length) return;
+
+  isDeduplicating.value = true;
+  try {
+    // Remove from local list immediately for instant UI update
+    registrations.value = registrations.value.filter((r) => !toDeleteIds.includes(r.id));
+    // Also clear any stale selections
+    selectedIds.value = selectedIds.value.filter((id) => !toDeleteIds.includes(id));
+
+    // Persist the deletion to the server
+    await $fetch(`${endpoint.value}/api/animorun/bulk-delete/`, {
+      method: "DELETE",
+      body: { ids: toDeleteIds },
+    });
+    console.info(`[AnimoRunList] Auto-removed ${toDeleteIds.length} duplicate registration(s).`);
+  } catch (err) {
+    console.error("[AnimoRunList] Auto-deduplication delete error:", err);
+  } finally {
+    isDeduplicating.value = false;
+  }
+};
+
 const fetchRegistrations = async (silent = false) => {
   if (silent) {
     isAutoRefreshing.value = true;
@@ -204,6 +262,8 @@ const fetchRegistrations = async (silent = false) => {
     if (Array.isArray(res)) {
       registrations.value = res;
       lastUpdated.value = new Date();
+      // Run deduplication after every successful fetch
+      await deduplicateRegistrations();
     }
   } catch (err) {
     console.error("Error fetching Animo Run registrations:", err);
