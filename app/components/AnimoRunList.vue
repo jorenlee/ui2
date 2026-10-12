@@ -191,7 +191,15 @@ const runCategories = [
   { id: "20KM", name: "20 KM", color: "bg-[#1D2735] text-white" }, // Navy
 ];
 
-const registrations = ref([]);
+const CACHE_KEY = "animorun_registrations_cache";
+let initialRegs = [];
+if (process.client) {
+  try {
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) initialRegs = JSON.parse(cached);
+  } catch {}
+}
+const registrations = ref(initialRegs);
 
 // ── Auto-Deduplication ────────────────────────────────────────────────────────
 // Groups registrations by (firstname + lastname + created_at minute).
@@ -207,7 +215,7 @@ const deduplicateRegistrations = async () => {
   const groups = new Map();
   for (const r of registrations.value) {
     const firstName = (r.firstname || "").trim().toLowerCase();
-    const lastName  = (r.lastname  || "").trim().toLowerCase();
+    const lastName = (r.lastname || "").trim().toLowerCase();
     // Truncate timestamp to the minute so entries within the same minute are grouped
     const minute = r.created_at
       ? r.created_at.substring(0, 16) // "YYYY-MM-DDTHH:MM" or "YYYY-MM-DD HH:MM"
@@ -262,6 +270,11 @@ const fetchRegistrations = async (silent = false) => {
     if (Array.isArray(res)) {
       registrations.value = res;
       lastUpdated.value = new Date();
+      if (process.client) {
+        try {
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify(res));
+        } catch {}
+      }
       // Run deduplication after every successful fetch
       await deduplicateRegistrations();
     }
@@ -495,7 +508,7 @@ const filteredRegistrations = computed(() => {
       return (a.batch_name || "ZZZ").localeCompare(b.batch_name || "ZZZ");
     }
     if (sortBy.value === "shirt_asc") {
-      const sizeOrder = ['3XS','2XS','XS','S','M','L','XL','2XL','3XL','4XL','5XL'];
+      const sizeOrder = ['3XS', '2XS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
       const szA = (a.tshirt_size || 'M').trim().toUpperCase().split(';')[0].split(':').pop().trim();
       const szB = (b.tshirt_size || 'M').trim().toUpperCase().split(';')[0].split(':').pop().trim();
       const idxA = sizeOrder.indexOf(szA);
@@ -598,7 +611,7 @@ const uploadAdminReceipt = async (file, runner) => {
       body: formData,
     });
     const receiptUrl = res.url;
-    
+
     // Update proof_of_payment for runner
     const editRes = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/edit/`, {
       method: "PUT",
@@ -689,10 +702,9 @@ const executeDeleteReceipt = async () => {
 
 // Shared input class for edit mode fields
 const inputCls = computed(() =>
-  `w-full px-3 py-2 rounded-xl border text-xs focus:ring-2 focus:ring-amber-400 focus:outline-none transition ${
-    props.darkMode
-      ? 'bg-gray-900 border-gray-600 text-gray-100'
-      : 'bg-white border-gray-300 text-gray-800'
+  `w-full px-3 py-2 rounded-xl border text-xs focus:ring-2 focus:ring-amber-400 focus:outline-none transition ${props.darkMode
+    ? 'bg-gray-900 border-gray-600 text-gray-100'
+    : 'bg-white border-gray-300 text-gray-800'
   }`
 );
 
@@ -807,39 +819,39 @@ const downloadCsvFile = (csvContent, filename) => {
 
 // ── CSV Column Picker for Supplier Fulfillment ──────────────────────────────────
 const CSV_ALL_COLUMNS = [
-  { key: 'batch',          label: 'Batch Group' },
-  { key: 'lock_status',    label: 'Lock Status' },
-  { key: 'reg_id',         label: 'Reg ID' },
-  { key: 'race_bib',       label: 'Race BIB Number' },
-  { key: 'category',       label: 'Category' },
-  { key: 'full_name',      label: 'Full Name' },
-  { key: 'firstname',      label: 'First Name' },
-  { key: 'middlename',     label: 'Middle Name' },
-  { key: 'lastname',       label: 'Last Name' },
-  { key: 'suffix',         label: 'Suffix' },
-  { key: 'gender',         label: 'Gender' },
-  { key: 'age',            label: 'Age' },
-  { key: 'birthdate',      label: 'Birthdate' },
+  { key: 'batch', label: 'Batch Group' },
+  { key: 'lock_status', label: 'Lock Status' },
+  { key: 'reg_id', label: 'Reg ID' },
+  { key: 'race_bib', label: 'Race BIB Number' },
+  { key: 'category', label: 'Category' },
+  { key: 'full_name', label: 'Full Name' },
+  { key: 'firstname', label: 'First Name' },
+  { key: 'middlename', label: 'Middle Name' },
+  { key: 'lastname', label: 'Last Name' },
+  { key: 'suffix', label: 'Suffix' },
+  { key: 'gender', label: 'Gender' },
+  { key: 'age', label: 'Age' },
+  { key: 'birthdate', label: 'Birthdate' },
   { key: 'contact_number', label: 'Contact Number' },
-  { key: 'email',          label: 'Email Address' },
-  { key: 'address',        label: 'Address' },
+  { key: 'email', label: 'Email Address' },
+  { key: 'address', label: 'Address' },
   { key: 'classification', label: 'Classification' },
-  { key: 'lsu_id',         label: 'LSU ID Number' },
-  { key: 'organization',   label: 'Club / Organization' },
-  { key: 'affiliation',    label: 'Batch / Affiliation' },
-  { key: 'tshirt_size',    label: 'T-Shirt Size' },
-  { key: 'pet_name',       label: 'Pet Name' },
-  { key: 'pet_type',       label: 'Pet Type' },
-  { key: 'pet_bandana',    label: 'Pet Bandana' },
+  { key: 'lsu_id', label: 'LSU ID Number' },
+  { key: 'organization', label: 'Club / Organization' },
+  { key: 'affiliation', label: 'Batch / Affiliation' },
+  { key: 'tshirt_size', label: 'T-Shirt Size' },
+  { key: 'pet_name', label: 'Pet Name' },
+  { key: 'pet_type', label: 'Pet Type' },
+  { key: 'pet_bandana', label: 'Pet Bandana' },
   { key: 'pet_vaccinated', label: 'Pet Vaccinated' },
   { key: 'payment_option', label: 'Payment Option' },
   { key: 'payment_status', label: 'Payment Status' },
-  { key: 'total_amount',   label: 'Total Amount (PHP)' },
-  { key: 'reg_date',       label: 'Registration Date' },
+  { key: 'total_amount', label: 'Total Amount (PHP)' },
+  { key: 'reg_date', label: 'Registration Date' },
   { key: 'confirmed_date', label: 'Confirmed Date' },
-  { key: 'confirmed_by',   label: 'Confirmed By' },
-  { key: 'locked_by',      label: 'Batch Locked By' },
-  { key: 'locked_at',      label: 'Batch Locked At' },
+  { key: 'confirmed_by', label: 'Confirmed By' },
+  { key: 'locked_by', label: 'Batch Locked By' },
+  { key: 'locked_at', label: 'Batch Locked At' },
 ];
 
 const DEFAULT_COLUMNS = [
@@ -885,39 +897,39 @@ const generateCsvFromList = (list, batchLabel = "Export") => {
     const age = computeAge(r.birthdate);
 
     const colMap = {
-      batch:          escapeCsv(batchStr),
-      lock_status:    escapeCsv(lockStr),
-      reg_id:         escapeCsv(r.id),
-      race_bib:       escapeCsv(r.run_number || r.bib_number || `AR-${r.id}`),
-      category:       escapeCsv(r.run_category || ""),
-      full_name:      escapeCsv(fullName),
-      firstname:      escapeCsv(r.firstname || ""),
-      middlename:     escapeCsv(r.middlename || ""),
-      lastname:       escapeCsv(r.lastname || ""),
-      suffix:         escapeCsv(r.suffix || ""),
-      gender:         escapeCsv(r.gender || ""),
-      age:            escapeCsv(age !== null ? age : ""),
-      birthdate:      escapeCsv(r.birthdate || ""),
+      batch: escapeCsv(batchStr),
+      lock_status: escapeCsv(lockStr),
+      reg_id: escapeCsv(r.id),
+      race_bib: escapeCsv(r.run_number || r.bib_number || `AR-${r.id}`),
+      category: escapeCsv(r.run_category || ""),
+      full_name: escapeCsv(fullName),
+      firstname: escapeCsv(r.firstname || ""),
+      middlename: escapeCsv(r.middlename || ""),
+      lastname: escapeCsv(r.lastname || ""),
+      suffix: escapeCsv(r.suffix || ""),
+      gender: escapeCsv(r.gender || ""),
+      age: escapeCsv(age !== null ? age : ""),
+      birthdate: escapeCsv(r.birthdate || ""),
       contact_number: escapeCsv(r.contact_number || r.phone || ""),
-      email:          escapeCsv(r.contact_email || r.email || ""),
-      address:        escapeCsv(r.contact_address || r.address || ""),
+      email: escapeCsv(r.contact_email || r.email || ""),
+      address: escapeCsv(r.contact_address || r.address || ""),
       classification: escapeCsv(r.participant_type || ""),
-      lsu_id:         escapeCsv(r.lsu_id_number || ""),
-      organization:   escapeCsv(r.organization || ""),
-      affiliation:    escapeCsv(r.alumni_batch || ""),
-      tshirt_size:    escapeCsv(r.tshirt_size || "M"),
-      pet_name:       escapeCsv(r.pet_name || ""),
-      pet_type:       escapeCsv(r.pet_type || ""),
-      pet_bandana:    escapeCsv((r.run_category || "").toUpperCase().startsWith("1K") || r.pet_name || r.pet_bandana_size || r.pet_bandana ? "Standard" : ""),
+      lsu_id: escapeCsv(r.lsu_id_number || ""),
+      organization: escapeCsv(r.organization || ""),
+      affiliation: escapeCsv(r.alumni_batch || ""),
+      tshirt_size: escapeCsv(r.tshirt_size || "M"),
+      pet_name: escapeCsv(r.pet_name || ""),
+      pet_type: escapeCsv(r.pet_type || ""),
+      pet_bandana: escapeCsv((r.run_category || "").toUpperCase().startsWith("1K") || r.pet_name || r.pet_bandana_size || r.pet_bandana ? "Standard" : ""),
       pet_vaccinated: escapeCsv(r.pet_vaccinated ? "Yes" : "No"),
       payment_option: escapeCsv(r.payment_type || ""),
       payment_status: escapeCsv(r.payment_status || ""),
-      total_amount:   escapeCsv(r.grand_total_payment || r.grand_total || 0),
-      reg_date:       escapeCsv(r.created_at_formatted || r.created_at || ""),
+      total_amount: escapeCsv(r.grand_total_payment || r.grand_total || 0),
+      reg_date: escapeCsv(r.created_at_formatted || r.created_at || ""),
       confirmed_date: escapeCsv(r.confirmed_at || ""),
-      confirmed_by:   escapeCsv(r.confirmed_by || ""),
-      locked_by:      escapeCsv(r.batch_locked_by || ""),
-      locked_at:      escapeCsv(r.batch_locked_at || ""),
+      confirmed_by: escapeCsv(r.confirmed_by || ""),
+      locked_by: escapeCsv(r.batch_locked_by || ""),
+      locked_at: escapeCsv(r.batch_locked_at || ""),
     };
 
     return activeCols.map(c => colMap[c.key] || '""').join(",");
@@ -1387,7 +1399,8 @@ onMounted(() => {
             <h1 class="text-sm sm:text-base text-white font-black tracking-tight leading-snug">
               THE EMERALD RUN
               <span class="font-normal text-xs sm:text-sm text-emerald-200 block sm:inline sm:ml-1">
-                <i class="fas fa-list text-amber-300"></i> Track, verify & manage runner registrations & supplier batches
+                <i class="fas fa-list text-amber-300"></i> Track, verify & manage runner registrations & supplier
+                batches
               </span>
             </h1>
           </div>
@@ -1399,7 +1412,8 @@ onMounted(() => {
             <button type="button" @click="openBatchHistoryModal"
               class="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
               <i class="fas fa-boxes"></i> Batches
-              <span v-if="batchesList.length" class="px-1.5 py-0.2 rounded-full bg-amber-400 text-gray-900 font-black text-[10px]">
+              <span v-if="batchesList.length"
+                class="px-1.5 py-0.2 rounded-full bg-amber-400 text-gray-900 font-black text-[10px]">
                 {{ batchesList.length }}
               </span>
             </button>
@@ -1414,8 +1428,10 @@ onMounted(() => {
             </button>
 
             <!-- Live indicator -->
-            <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur border border-white/20 text-white text-[10px] font-medium">
-              <span :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', isAutoRefreshing ? 'bg-amber-300 animate-ping' : 'bg-emerald-400 animate-pulse']"></span>
+            <div
+              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur border border-white/20 text-white text-[10px] font-medium">
+              <span
+                :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', isAutoRefreshing ? 'bg-amber-300 animate-ping' : 'bg-emerald-400 animate-pulse']"></span>
               <span v-if="isAutoRefreshing" class="text-amber-200">Syncing…</span>
               <span v-else-if="formatLastUpdated" class="text-emerald-200">Live · {{ formatLastUpdated }}</span>
               <span v-else class="text-white/60">Live</span>
@@ -1425,245 +1441,247 @@ onMounted(() => {
         </div>
       </div>
 
-    <div class="lg:flex"> 
+      <div class="lg:flex">
         <!-- STATS SUMMARY CARDS (4 COLUMNS INCLUDING SUPPLIER BATCH LOCKED COUNT) -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 lg:w-5/12 w-full">
-        <div :class="[
-          'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
-          props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
-        ]">
-         <div class="w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
-            <i class="fas fa-running"></i>
-          </div>
-          <div class="text-center">
-            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Runners</p>
-            <h3 class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-              <span v-if="isFetching" class="inline-block h-5 w-10 rounded bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
-              <span v-else>{{ stats.totalRunners }}</span>
-            </h3>
-          </div>
-         
-        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-4 lg:w-5/12 w-full">
+          <div :class="[
+            'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
+            props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
+          ]">
+            <div
+              class="w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
+              <i class="fas fa-running"></i>
+            </div>
+            <div class="text-center">
+              <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Runners</p>
+              <h3 class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                {{ stats.totalRunners }}
+              </h3>
+            </div>
 
-        <div :class="[
-          'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
-          props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
-        ]">
-         <div class="w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 dark:bg-green-950/80 text-green-600 dark:text-green-400 flex items-center justify-center text-lg">
-            <i class="fas fa-check-circle"></i>
           </div>
-          <div class="text-center">
-            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Confirmed Paid</p>
-            <h3 class="text-xl font-black text-green-600 dark:text-green-400 mt-0.5">
-              <span v-if="isFetching" class="inline-block h-5 w-10 rounded bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
-              <span v-else>{{ stats.confirmed }}</span>
-            </h3>
-          </div>
-         
-        </div>
 
-        <div
-          :class="[
+          <div :class="[
+            'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
+            props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
+          ]">
+            <div
+              class="w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 dark:bg-green-950/80 text-green-600 dark:text-green-400 flex items-center justify-center text-lg">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="text-center">
+              <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Confirmed Paid</p>
+              <h3 class="text-xl font-black text-green-600 dark:text-green-400 mt-0.5">
+                {{ stats.confirmed }}
+              </h3>
+            </div>
+
+          </div>
+
+          <div :class="[
             'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap cursor-pointer group',
             selectedStatus === 'Pending'
               ? (props.darkMode ? 'bg-amber-950/40 border-amber-600 ring-2 ring-amber-500/40' : 'bg-amber-50 border-amber-400 ring-2 ring-amber-300/50')
               : (props.darkMode ? 'bg-gray-800 border-gray-700 hover:border-amber-600/50' : 'bg-white border-slate-200 hover:border-amber-300'),
-          ]"
-          @click="selectedStatus = selectedStatus === 'Pending' ? 'All' : 'Pending'"
-          :title="selectedStatus === 'Pending' ? 'Click to clear pending filter' : 'Click to filter by pending items'"
-        >
-         <div :class="[
-            'w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 flex items-center justify-center text-lg transition',
-            selectedStatus === 'Pending'
-              ? 'bg-amber-400 text-white'
-              : 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200'
+          ]" @click="selectedStatus = selectedStatus === 'Pending' ? 'All' : 'Pending'"
+            :title="selectedStatus === 'Pending' ? 'Click to clear pending filter' : 'Click to filter by pending items'">
+            <div :class="[
+              'w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 flex items-center justify-center text-lg transition',
+              selectedStatus === 'Pending'
+                ? 'bg-amber-400 text-white'
+                : 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200'
+            ]">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="text-center">
+              <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Pending Action</p>
+              <h3 class="text-xl font-black text-amber-500 dark:text-amber-400 mt-0.5">
+                {{ stats.pending }}
+              </h3>
+              <p v-if="selectedStatus === 'Pending'" class="text-[10px] text-amber-500 font-semibold mt-0.5">Filtering
+                active ✓</p>
+            </div>
+
+          </div>
+
+          <div :class="[
+            'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
+            props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
           ]">
-            <i class="fas fa-clock"></i>
+            <div
+              class="w-10 h-10 rounded-xl mx-auto mb-2 bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg">
+              <i class="fas fa-lock"></i>
+            </div>
+            <div class="text-center">
+              <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Batch Locked</p>
+              <h3 class="text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5">
+                {{ stats.lockedCount }}
+              </h3>
+            </div>
+
           </div>
-          <div class="text-center">
-            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Pending Action</p>
-            <h3 class="text-xl font-black text-amber-500 dark:text-amber-400 mt-0.5">
-              <span v-if="isFetching" class="inline-block h-5 w-10 rounded bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
-              <span v-else>{{ stats.pending }}</span>
-            </h3>
-            <p v-if="selectedStatus === 'Pending'" class="text-[10px] text-amber-500 font-semibold mt-0.5">Filtering active ✓</p>
-          </div>
-         
         </div>
 
+        <!-- SEARCH & FILTER TOOLBAR (ROW 1: SEARCH & FILTERS, ROW 2: DATE RANGE & SORTING) -->
         <div :class="[
-          'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
+          'p-3 rounded-3xl border shadow-md transition space-y-3 w-full',
           props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
         ]">
-          <div class="w-10 h-10 rounded-xl mx-auto mb-2 bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg">
-            <i class="fas fa-lock"></i>
-          </div>
-          <div class="text-center">
-            <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Batch Locked</p>
-            <h3 class="text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5">
-              <span v-if="isFetching" class="inline-block h-5 w-10 rounded bg-slate-200 dark:bg-gray-700 animate-pulse"></span>
-              <span v-else>{{ stats.lockedCount }}</span>
-            </h3>
-          </div>
-        
-        </div>
-      </div>
-
-      <!-- SEARCH & FILTER TOOLBAR (ROW 1: SEARCH & FILTERS, ROW 2: DATE RANGE & SORTING) -->
-      <div :class="[
-        'p-3 rounded-3xl border shadow-md transition space-y-3 w-full',
-        props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
-      ]">
-        <!-- Toolbar Row 1: Search & Basic Filters -->
-        <div class="lg:flex gap-3 w-full">
-          <!-- Search Input -->
-          <div class="relative lg:w-6/12 w-full">
-            <i class="fas fa-search absolute left-3.5 top-3.5 text-xs text-gray-400"></i>
-            <input v-model="searchQuery" type="text" placeholder="Search Name, Reg ID, Bib #, Email, Batch..." :class="[
-              'w-full pl-9 pr-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-              props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-            ]" />
-          </div>
-
-          <!-- Category Filter -->
-          <div>
-            <select v-model="selectedCategory" :class="[
-              'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-              props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-            ]">
-              <option value="All">All Distance Categories</option>
-              <option value="1KM">1 KM (Pet Run)</option>
-              <option value="3KM">3 KM</option>
-              <option value="10KM">10 KM</option>
-              <option value="20KM">20 KM</option>
-            </select>
-          </div>
-
-          <!-- Status Filter -->
-          <div>
-            <select v-model="selectedStatus" :class="[
-              'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-              props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-            ]">
-              <option value="All">All Payment Statuses</option>
-              <option value="Confirmed">✅ Confirmed</option>
-              <option value="Pending">⏳ All Pending</option>
-              <option value="Pending Payment">💳 Pending Payment</option>
-              <option value="Pending Approval">🔍 Pending Approval</option>
-            </select>
-          </div>
-
-          <!-- Participant Type Filter -->
-          <div>
-            <select v-model="selectedParticipantType" :class="[
-              'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-              props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-            ]">
-              <option value="All">All Classifications</option>
-              <option value="LSU Exclusive - Enrolled Student">LSU Exclusive - Enrolled Student</option>
-              <option value="LSU Exclusive - Employee">LSU Exclusive - Employee</option>
-              <option value="LSU Exclusive - Alumni">LSU Exclusive - Alumni</option>
-              <option value="Open Category">Open Category</option>
-              <option value="Pet">Pet</option>
-            </select>
-          </div>
-
-          <!-- Age Group Filter -->
-          <div>
-            <select v-model="selectedAgeGroup" :class="[
-              'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-              props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-            ]">
-              <option value="All">All Age Groups</option>
-              <option value="Under 18">Under 18</option>
-              <option value="18–24">18–24</option>
-              <option value="25–34">25–34</option>
-              <option value="35–44">35–44</option>
-              <option value="45–54">45–54</option>
-              <option value="55+">55+</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Toolbar Row 2: Date Range Period, Supplier Batch Filter & Sorting -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5 pt-2.5 border-t dark:border-gray-700/60">
-          <!-- Date Range Period Inputs -->
-          <div class="lg:col-span-4 flex items-center gap-1.5">
-            <div class="relative w-1/2">
-              <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">From</span>
-              <input type="date" v-model="dateFrom" :class="[
-                'w-full pl-10 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+          <!-- Toolbar Row 1: Search & Basic Filters -->
+          <div class="lg:flex gap-3 w-full">
+            <!-- Search Input -->
+            <div class="relative lg:w-6/12 w-full">
+              <i class="fas fa-search absolute left-3.5 top-3.5 text-xs text-gray-400"></i>
+              <input v-model="searchQuery" type="text" placeholder="Search Name, Reg ID, Bib #, Email, Batch..." :class="[
+                'w-full pl-9 pr-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
               ]" />
             </div>
-            <div class="relative w-1/2">
-              <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">To</span>
-              <input type="date" v-model="dateTo" :class="[
-                'w-full pl-7 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-              ]" />
+
+            <!-- Category Filter -->
+            <div>
+              <select v-model="selectedCategory" :class="[
+                'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+              ]">
+                <option value="All">All Distance Categories</option>
+                <option value="1KM">1 KM (Pet Run)</option>
+                <option value="3KM">3 KM</option>
+                <option value="10KM">10 KM</option>
+                <option value="20KM">20 KM</option>
+              </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div>
+              <select v-model="selectedStatus" :class="[
+                'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+              ]">
+                <option value="All">All Payment Statuses</option>
+                <option value="Confirmed">✅ Confirmed</option>
+                <option value="Pending">⏳ All Pending</option>
+                <option value="Pending Payment">💳 Pending Payment</option>
+                <option value="Pending Approval">🔍 Pending Approval</option>
+              </select>
+            </div>
+
+            <!-- Participant Type Filter -->
+            <div>
+              <select v-model="selectedParticipantType" :class="[
+                'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+              ]">
+                <option value="All">All Classifications</option>
+                <option value="LSU Exclusive - Enrolled Student">LSU Exclusive - Enrolled Student</option>
+                <option value="LSU Exclusive - Employee">LSU Exclusive - Employee</option>
+                <option value="LSU Exclusive - Alumni">LSU Exclusive - Alumni</option>
+                <option value="Open Category">Open Category</option>
+                <option value="Pet">Pet</option>
+              </select>
+            </div>
+
+            <!-- Age Group Filter -->
+            <div>
+              <select v-model="selectedAgeGroup" :class="[
+                'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+              ]">
+                <option value="All">All Age Groups</option>
+                <option value="Under 18">Under 18</option>
+                <option value="18–24">18–24</option>
+                <option value="25–34">25–34</option>
+                <option value="35–44">35–44</option>
+                <option value="45–54">45–54</option>
+                <option value="55+">55+</option>
+              </select>
             </div>
           </div>
 
-          <!-- Quick Date Range Presets -->
-          <div class="lg:col-span-2 flex items-center gap-1">
-            <button type="button" @click="setDateRangePreset('today')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 cursor-pointer">
-              Today
-            </button>
-            <button type="button" @click="setDateRangePreset('7days')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 cursor-pointer">
-              7 Days
-            </button>
-            <button type="button" @click="setDateRangePreset('30days')" class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 cursor-pointer">
-              30 Days
-            </button>
-            <button v-if="dateFrom || dateTo" type="button" @click="clearDateRange" class="px-2 py-1.5 rounded-lg text-[10px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-600 transition cursor-pointer" title="Clear Date Filter">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
+          <!-- Toolbar Row 2: Date Range Period, Supplier Batch Filter & Sorting -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5 pt-2.5 border-t dark:border-gray-700/60">
+            <!-- Date Range Period Inputs -->
+            <div class="lg:col-span-4 flex items-center gap-1.5">
+              <div class="relative w-1/2">
+                <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">From</span>
+                <input type="date" v-model="dateFrom" :class="[
+                  'w-full pl-10 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                  props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+                ]" />
+              </div>
+              <div class="relative w-1/2">
+                <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">To</span>
+                <input type="date" v-model="dateTo" :class="[
+                  'w-full pl-7 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                  props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+                ]" />
+              </div>
+            </div>
 
-          <!-- Supplier Batch Filter -->
-          <div class="lg:col-span-2">
-            <select v-model="selectedBatch" :class="[
-              'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-              props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-            ]">
-              <option value="All">All Supplier Batches</option>
-              <option value="Unbatched">Unbatched Only</option>
-              <option v-for="b in availableBatches" :key="b" :value="b">{{ b }}</option>
-            </select>
-          </div>
+            <!-- Quick Date Range Presets -->
+            <div class="lg:col-span-2 flex items-center gap-1">
+              <button type="button" @click="setDateRangePreset('today')"
+                class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 cursor-pointer">
+                Today
+              </button>
+              <button type="button" @click="setDateRangePreset('7days')"
+                class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 cursor-pointer">
+                7 Days
+              </button>
+              <button type="button" @click="setDateRangePreset('30days')"
+                class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 cursor-pointer">
+                30 Days
+              </button>
+              <button v-if="dateFrom || dateTo" type="button" @click="clearDateRange"
+                class="px-2 py-1.5 rounded-lg text-[10px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-600 transition cursor-pointer"
+                title="Clear Date Filter">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
 
-          <!-- Lock Status Filter -->
-          <div class="lg:col-span-2">
-            <select v-model="selectedLockStatus" :class="[
-              'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-              props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-            ]">
-              <option value="All">All Lock Statuses</option>
-              <option value="Locked">🔒 Locked Orders Only</option>
-              <option value="Unlocked">🔓 Unlocked Orders</option>
-            </select>
-          </div>
+            <!-- Supplier Batch Filter -->
+            <div class="lg:col-span-2">
+              <select v-model="selectedBatch" :class="[
+                'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+              ]">
+                <option value="All">All Supplier Batches</option>
+                <option value="Unbatched">Unbatched Only</option>
+                <option v-for="b in availableBatches" :key="b" :value="b">{{ b }}</option>
+              </select>
+            </div>
 
-          <!-- Sorting Controls Dropdown -->
-          <div class="lg:col-span-2 flex items-center gap-1.5">
-            <select v-model="sortBy" :class="[
-              'w-full px-2.5 py-1.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-              props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-            ]">
-              <option value="date_desc">📅 Date: Latest → Oldest</option>
-              <option value="date_asc">📅 Date: Oldest → Latest</option>
-              <option value="name_asc">👤 Name: Ascending (A-Z)</option>
-              <option value="name_desc">👤 Name: Descending (Z-A)</option>
-              <option value="bib_asc">🔢 Race Bib #: Ascending</option>
-              <option value="batch_asc">📦 Supplier Batch: Ascending</option>
-              <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
-            </select>
+            <!-- Lock Status Filter -->
+            <div class="lg:col-span-2">
+              <select v-model="selectedLockStatus" :class="[
+                'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+              ]">
+                <option value="All">All Lock Statuses</option>
+                <option value="Locked">🔒 Locked Orders Only</option>
+                <option value="Unlocked">🔓 Unlocked Orders</option>
+              </select>
+            </div>
+
+            <!-- Sorting Controls Dropdown -->
+            <div class="lg:col-span-2 flex items-center gap-1.5">
+              <select v-model="sortBy" :class="[
+                'w-full px-2.5 py-1.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+              ]">
+                <option value="date_desc">📅 Date: Latest → Oldest</option>
+                <option value="date_asc">📅 Date: Oldest → Latest</option>
+                <option value="name_asc">👤 Name: Ascending (A-Z)</option>
+                <option value="name_desc">👤 Name: Descending (Z-A)</option>
+                <option value="bib_asc">🔢 Race Bib #: Ascending</option>
+                <option value="batch_asc">📦 Supplier Batch: Ascending</option>
+                <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
 
-    </div>
+      </div>
       <!-- PARTICIPANTS VIEW (RESPONSIVE: MOBILE CARDS + DESKTOP TABLE) -->
       <div :class="[
         'rounded-3xl border shadow-lg overflow-hidden transition',
@@ -1671,48 +1689,24 @@ onMounted(() => {
       ]">
         <!-- ── MOBILE CARD VIEW (VISIBLE ON PHONES / SMALL SCREENS < md) ── -->
         <div class="block md:hidden p-3 space-y-3">
-          <!-- SKELETON CARDS while fetching on mobile -->
-          <template v-if="isFetching">
-            <div v-for="n in 4" :key="'m-sk-' + n" :class="[
-              'p-4 rounded-2xl border animate-pulse space-y-3',
-              props.darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-slate-50 border-slate-200'
-            ]">
-              <div class="flex items-center justify-between">
-                <div :class="['h-3 w-16 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                <div :class="['h-5 w-20 rounded-full', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-              </div>
-              <div :class="['h-4 w-40 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-              <div :class="['h-3 w-32 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-              <div class="flex gap-2 pt-2">
-                <div :class="['h-8 flex-1 rounded-xl', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-              </div>
-            </div>
-          </template>
-
           <!-- MOBILE ACTUAL CARDS -->
-          <template v-else-if="filteredRegistrations.length > 0">
-            <div
-              v-for="runner in filteredRegistrations"
-              :key="'m-' + runner.id"
-              :class="[
-                'p-4 rounded-2xl border transition-all duration-200 shadow-sm space-y-3',
-                selectedIds.includes(runner.id)
-                  ? (props.darkMode ? 'bg-emerald-950/30 border-emerald-700' : 'bg-emerald-50/80 border-emerald-300')
-                  : (props.darkMode ? 'bg-gray-800/90 border-gray-700 hover:border-gray-600' : 'bg-white border-slate-200 hover:border-emerald-300')
-              ]"
-            >
+          <template v-if="filteredRegistrations.length > 0">
+            <div v-for="runner in filteredRegistrations" :key="'m-' + runner.id" :class="[
+              'p-4 rounded-2xl border transition-all duration-200 shadow-sm space-y-3',
+              selectedIds.includes(runner.id)
+                ? (props.darkMode ? 'bg-emerald-950/30 border-emerald-700' : 'bg-emerald-50/80 border-emerald-300')
+                : (props.darkMode ? 'bg-gray-800/90 border-gray-700 hover:border-gray-600' : 'bg-white border-slate-200 hover:border-emerald-300')
+            ]">
               <!-- Card Header: ID, Bib, Checkbox and Status -->
               <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 flex-wrap">
                   <!-- Mobile checkbox -->
-                  <input
-                    type="checkbox"
-                    :checked="selectedIds.includes(runner.id)"
-                    @change="toggleSelectOne(runner.id)"
-                    class="w-4 h-4 rounded accent-emerald-600 cursor-pointer shrink-0"
-                  />
-                  <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</span>
-                  <span class="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-[10px] uppercase">
+                  <input type="checkbox" :checked="selectedIds.includes(runner.id)" @change="toggleSelectOne(runner.id)"
+                    class="w-4 h-4 rounded accent-emerald-600 cursor-pointer shrink-0" />
+                  <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id
+                    }}</span>
+                  <span
+                    class="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-[10px] uppercase">
                     RACE BIB {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
                   </span>
                 </div>
@@ -1727,10 +1721,12 @@ onMounted(() => {
               <!-- Runner Info -->
               <div>
                 <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100 leading-snug">
-                  {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
+                  {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname
+                  }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
                 </h4>
                 <div class="flex items-center gap-3 text-xs text-gray-500 mt-1 flex-wrap">
-                  <span v-if="runner.contact_email || runner.email" class="flex items-center gap-1 truncate max-w-[200px]">
+                  <span v-if="runner.contact_email || runner.email"
+                    class="flex items-center gap-1 truncate max-w-[200px]">
                     <i class="fas fa-envelope text-[10px] text-gray-400"></i>
                     {{ runner.contact_email || runner.email }}
                   </span>
@@ -1749,7 +1745,8 @@ onMounted(() => {
                 ]">
                   <i class="fas fa-running text-[9px]"></i> {{ runner.run_category }}
                 </span>
-                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-slate-200 dark:border-gray-600">
+                <span
+                  class="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-slate-200 dark:border-gray-600">
                   {{ runner.participant_type || 'Individual' }}
                 </span>
               </div>
@@ -1762,7 +1759,8 @@ onMounted(() => {
                 <div class="text-gray-600 dark:text-gray-400">
                   <span class="font-medium text-[11px] block text-gray-500">Payment Option</span>
                   <span class="font-bold text-xs capitalize text-gray-800 dark:text-gray-200">
-                    {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' : 'Over the Counter / QR' }}
+                    {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type ===
+                      'add_to_tuition' ? 'Add to Tuition' : 'Over the Counter / QR' }}
                   </span>
                 </div>
                 <div class="text-right">
@@ -1775,19 +1773,13 @@ onMounted(() => {
 
               <!-- Card Action Button -->
               <div class="pt-1 flex gap-2">
-                <button
-                  type="button"
-                  @click="openDetails(runner)"
-                  class="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
-                >
+                <button type="button" @click="openDetails(runner)"
+                  class="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
                   <i class="fas fa-eye text-xs"></i> View Full Details
                 </button>
-                <button
-                  v-if="runner.payment_status && runner.payment_status.startsWith('Pending')"
-                  type="button"
+                <button v-if="runner.payment_status && runner.payment_status.startsWith('Pending')" type="button"
                   @click="promptConfirmPayment(runner)"
-                  class="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0"
-                >
+                  class="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0">
                   <i class="fas fa-check text-xs"></i> Confirm
                 </button>
               </div>
@@ -1813,22 +1805,16 @@ onMounted(() => {
               ]">
                 <!-- Select-all checkbox -->
                 <th class="p-3 w-10">
-                  <input
-                    type="checkbox"
-                    :checked="allSelected"
-                    :indeterminate.prop="someSelected"
-                    @change="toggleSelectAll"
-                    class="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
-                    title="Select all visible"
-                  />
+                  <input type="checkbox" :checked="allSelected" :indeterminate.prop="someSelected"
+                    @change="toggleSelectAll" class="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
+                    title="Select all visible" />
                 </th>
 
                 <!-- Dynamic Columns Header driven by selectedCsvColumns -->
-                <th v-for="col in activeTableColumns" :key="col.key"
-                  :class="[
-                    'p-3 transition select-none',
-                    ['race_bib', 'reg_id', 'full_name', 'firstname', 'lastname', 'batch', 'reg_date'].includes(col.key) ? 'cursor-pointer hover:text-emerald-500' : ''
-                  ]"
+                <th v-for="col in activeTableColumns" :key="col.key" :class="[
+                  'p-3 transition select-none',
+                  ['race_bib', 'reg_id', 'full_name', 'firstname', 'lastname', 'batch', 'reg_date'].includes(col.key) ? 'cursor-pointer hover:text-emerald-500' : ''
+                ]"
                   @click="['race_bib', 'reg_id'].includes(col.key) ? toggleSort('bib') : ['full_name', 'firstname', 'lastname'].includes(col.key) ? toggleSort('name') : col.key === 'batch' ? toggleSort('batch') : col.key === 'reg_date' ? toggleSort('date') : null">
                   {{ col.label }}
                   <i v-if="['race_bib', 'reg_id'].includes(col.key)" :class="[
@@ -1853,59 +1839,40 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700/60 text-xs">
-
-              <!-- SKELETON ROWS while fetching -->
-              <template v-if="isFetching">
-                <tr v-for="n in 8" :key="'sk-' + n" :class="[
-                  'animate-pulse',
-                  props.darkMode ? 'bg-gray-800' : 'bg-white',
-                ]">
-                  <td class="p-3 w-10"></td>
-                  <td v-for="col in activeTableColumns" :key="'sk-c-' + col.key" class="p-3">
-                    <div :class="['h-3.5 w-24 rounded', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                  </td>
-                  <td class="p-3 text-center">
-                    <div :class="['h-6 w-14 rounded-xl mx-auto', props.darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                  </td>
-                </tr>
-              </template>
-
-              <!-- ACTUAL DATA ROWS -->
-              <template v-else>
-                <tr v-for="runner in filteredRegistrations" :key="runner.id" :class="[
+              <tr v-for="runner in filteredRegistrations" :key="runner.id" :class="[
                   'hover:bg-emerald-50/70 dark:hover:bg-gray-700/40 transition',
                   selectedIds.includes(runner.id) ? (props.darkMode ? 'bg-emerald-950/30' : 'bg-emerald-50/80') : '',
                 ]">
 
                   <!-- Row checkbox -->
                   <td class="px-3 py-3 w-10">
-                    <input
-                      type="checkbox"
-                      :checked="selectedIds.includes(runner.id)"
-                      @change="toggleSelectOne(runner.id)"
-                      class="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
-                    />
+                    <input type="checkbox" :checked="selectedIds.includes(runner.id)"
+                      @change="toggleSelectOne(runner.id)" class="w-4 h-4 rounded accent-emerald-600 cursor-pointer" />
                   </td>
 
                   <!-- Dynamic columns rendered based on col.key -->
                   <td v-for="col in activeTableColumns" :key="col.key" class="px-3 py-3">
                     <!-- race_bib -->
                     <template v-if="col.key === 'race_bib'">
-                      <div class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</div>
-                      <span class="inline-block px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px] uppercase">
+                      <div class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id }}
+                      </div>
+                      <span
+                        class="inline-block px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px] uppercase">
                         {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
                       </span>
                     </template>
 
                     <!-- reg_id -->
                     <template v-else-if="col.key === 'reg_id'">
-                      <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id }}</span>
+                      <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id
+                        }}</span>
                     </template>
 
                     <!-- full_name -->
                     <template v-else-if="col.key === 'full_name'">
                       <div class="font-bold text-gray-900 dark:text-gray-100 uppercase leading-snug">
-                        {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
+                        {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{
+                        runner.lastname }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
                       </div>
                       <div class="text-[11px] text-gray-500 truncate max-w-[180px]">
                         {{ runner.contact_email || runner.email }}
@@ -1941,7 +1908,8 @@ onMounted(() => {
                             ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-700 dark:text-purple-300 border-purple-300 dark:border-purple-700'
                             : 'bg-slate-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-slate-300'
                         ]">
-                          <i :class="['fas', runner.batch_locked ? 'fa-lock text-purple-600 dark:text-purple-400' : 'fa-unlock text-emerald-500']"></i>
+                          <i
+                            :class="['fas', runner.batch_locked ? 'fa-lock text-purple-600 dark:text-purple-400' : 'fa-unlock text-emerald-500']"></i>
                           {{ runner.batch_name }}
                         </span>
                         <button type="button" @click="openUnlockPrompt(runner, 'runner')"
@@ -1975,22 +1943,28 @@ onMounted(() => {
 
                     <!-- tshirt_size -->
                     <template v-else-if="col.key === 'tshirt_size'">
-                      <div v-if="(runner.run_category || '').toUpperCase().startsWith('1K') || runner.pet_name" class="text-[10px] font-bold text-gray-500">
+                      <div v-if="(runner.run_category || '').toUpperCase().startsWith('1K') || runner.pet_name"
+                        class="text-[10px] font-bold text-gray-500">
                         Pet Bandana: <span class="text-gray-800 dark:text-gray-200">Standard</span>
                       </div>
-                      <div v-else class="text-[10px] font-bold text-gray-500">Size: <span class="text-gray-800 dark:text-gray-200 uppercase">{{ runner.tshirt_size || 'M' }}</span></div>
+                      <div v-else class="text-[10px] font-bold text-gray-500">Size: <span
+                          class="text-gray-800 dark:text-gray-200 uppercase">{{ runner.tshirt_size || 'M' }}</span>
+                      </div>
                     </template>
 
                     <!-- classification -->
                     <template v-else-if="col.key === 'classification'">
-                      <span class="inline-block px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-[10px] font-semibold">
+                      <span
+                        class="inline-block px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-[10px] font-semibold">
                         {{ runner.participant_type || 'Open Category' }}
                       </span>
                     </template>
 
                     <!-- pet_bandana -->
                     <template v-else-if="col.key === 'pet_bandana'">
-                      <span v-if="(runner.run_category || '').toUpperCase().startsWith('1K') || runner.pet_name || runner.pet_bandana_size" class="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Standard</span>
+                      <span
+                        v-if="(runner.run_category || '').toUpperCase().startsWith('1K') || runner.pet_name || runner.pet_bandana_size"
+                        class="text-emerald-600 dark:text-emerald-400 font-bold text-[11px]">Standard</span>
                       <span v-else class="text-gray-400 text-[11px]">-</span>
                     </template>
 
@@ -2001,12 +1975,14 @@ onMounted(() => {
 
                     <!-- pet_type -->
                     <template v-else-if="col.key === 'pet_type'">
-                      <span class="text-gray-700 dark:text-gray-300 capitalize">{{ runner.pet_type ? runner.pet_type.replace('_', ' ') : '-' }}</span>
+                      <span class="text-gray-700 dark:text-gray-300 capitalize">{{ runner.pet_type ?
+                        runner.pet_type.replace('_', ' ') : '-' }}</span>
                     </template>
 
                     <!-- pet_vaccinated -->
                     <template v-else-if="col.key === 'pet_vaccinated'">
-                      <span :class="runner.pet_vaccinated ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-gray-400'">
+                      <span
+                        :class="runner.pet_vaccinated ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-gray-400'">
                         {{ runner.pet_vaccinated ? 'Yes' : 'No' }}
                       </span>
                     </template>
@@ -2018,32 +1994,38 @@ onMounted(() => {
 
                     <!-- age -->
                     <template v-else-if="col.key === 'age'">
-                      <span class="text-gray-700 dark:text-gray-300">{{ computeAge(runner.birthdate) !== null ? computeAge(runner.birthdate) : '-' }}</span>
+                      <span class="text-gray-700 dark:text-gray-300">{{ computeAge(runner.birthdate) !== null ?
+                        computeAge(runner.birthdate) : '-' }}</span>
                     </template>
 
                     <!-- birthdate -->
                     <template v-else-if="col.key === 'birthdate'">
-                      <span class="text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ runner.birthdate || '-' }}</span>
+                      <span class="text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ runner.birthdate || '-'
+                        }}</span>
                     </template>
 
                     <!-- contact_number -->
                     <template v-else-if="col.key === 'contact_number'">
-                      <span class="text-gray-700 dark:text-gray-300 font-mono text-[11px]">{{ runner.contact_number || '-' }}</span>
+                      <span class="text-gray-700 dark:text-gray-300 font-mono text-[11px]">{{ runner.contact_number ||
+                        '-' }}</span>
                     </template>
 
                     <!-- email -->
                     <template v-else-if="col.key === 'email'">
-                      <span class="text-gray-700 dark:text-gray-300 text-[11px]">{{ runner.contact_email || runner.email || '-' }}</span>
+                      <span class="text-gray-700 dark:text-gray-300 text-[11px]">{{ runner.contact_email || runner.email
+                        || '-' }}</span>
                     </template>
 
                     <!-- address -->
                     <template v-else-if="col.key === 'address'">
-                      <span class="text-gray-700 dark:text-gray-300 text-[11px] line-clamp-1 max-w-[200px]" :title="runner.contact_address">{{ runner.contact_address || '-' }}</span>
+                      <span class="text-gray-700 dark:text-gray-300 text-[11px] line-clamp-1 max-w-[200px]"
+                        :title="runner.contact_address">{{ runner.contact_address || '-' }}</span>
                     </template>
 
                     <!-- lsu_id -->
                     <template v-else-if="col.key === 'lsu_id'">
-                      <span class="font-mono text-gray-700 dark:text-gray-300 text-[11px]">{{ runner.lsu_id_number || '-' }}</span>
+                      <span class="font-mono text-gray-700 dark:text-gray-300 text-[11px]">{{ runner.lsu_id_number ||
+                        '-' }}</span>
                     </template>
 
                     <!-- organization -->
@@ -2059,7 +2041,8 @@ onMounted(() => {
                     <!-- payment_option -->
                     <template v-else-if="col.key === 'payment_option'">
                       <span class="text-[10px] text-gray-600 dark:text-gray-300 capitalize">
-                        {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' : 'Over-the-Counter / QR' }}
+                        {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type ===
+                          'add_to_tuition' ? 'Add to Tuition' : 'Over-the-Counter / QR' }}
                       </span>
                     </template>
 
@@ -2088,14 +2071,19 @@ onMounted(() => {
                     <!-- reg_date -->
                     <template v-else-if="col.key === 'reg_date'">
                       <span class="text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                        {{ runner.created_at_formatted || (runner.created_at ? new Date(runner.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A') }}
+                        {{ runner.created_at_formatted || (runner.created_at ? new
+                          Date(runner.created_at).toLocaleDateString('en-US', {
+                            month: 'short', day: 'numeric', year:
+                        'numeric' }) : 'N/A') }}
                       </span>
                     </template>
 
                     <!-- confirmed_date -->
                     <template v-else-if="col.key === 'confirmed_date'">
                       <span class="text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                        {{ runner.confirmed_at ? new Date(runner.confirmed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-' }}
+                        {{ runner.confirmed_at ? new Date(runner.confirmed_at).toLocaleDateString('en-US', {
+                          month:
+                            'short', day: 'numeric', year: 'numeric' }) : '-' }}
                       </span>
                     </template>
 
@@ -2106,13 +2094,15 @@ onMounted(() => {
 
                     <!-- locked_by -->
                     <template v-else-if="col.key === 'locked_by'">
-                      <span class="text-[11px] text-gray-700 dark:text-gray-300">{{ runner.batch_locked_by || '-' }}</span>
+                      <span class="text-[11px] text-gray-700 dark:text-gray-300">{{ runner.batch_locked_by || '-'
+                        }}</span>
                     </template>
 
                     <!-- locked_at -->
                     <template v-else-if="col.key === 'locked_at'">
                       <span class="text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                        {{ runner.batch_locked_at ? new Date(runner.batch_locked_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '-' }}
+                        {{ runner.batch_locked_at ? new Date(runner.batch_locked_at).toLocaleDateString('en-US', {
+                          month: 'short', day: 'numeric', year: 'numeric' }) : '-' }}
                       </span>
                     </template>
 
@@ -2137,7 +2127,6 @@ onMounted(() => {
                     No registration records match your search criteria.
                   </td>
                 </tr>
-              </template>
             </tbody>
           </table>
         </div>
@@ -2145,21 +2134,16 @@ onMounted(() => {
     </div>
 
     <!-- ── BULK-ACTION TOOLBAR (sticky bottom, appears on selection) ──── -->
-    <Transition
-      enter-active-class="transition-all duration-300 ease-out"
-      enter-from-class="translate-y-full opacity-0"
-      enter-to-class="translate-y-0 opacity-100"
-      leave-active-class="transition-all duration-200 ease-in"
-      leave-from-class="translate-y-0 opacity-100"
-      leave-to-class="translate-y-full opacity-0"
-    >
+    <Transition enter-active-class="transition-all duration-300 ease-out" enter-from-class="translate-y-full opacity-0"
+      enter-to-class="translate-y-0 opacity-100" leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="translate-y-0 opacity-100" leave-to-class="translate-y-full opacity-0">
       <div v-if="selectedIds.length > 0"
         class="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md"
-        :class="props.darkMode ? 'bg-gray-900/90 border-gray-700 text-gray-100' : 'bg-white/90 border-slate-200 text-gray-800'"
-      >
+        :class="props.darkMode ? 'bg-gray-900/90 border-gray-700 text-gray-100' : 'bg-white/90 border-slate-200 text-gray-800'">
         <!-- Count badge -->
         <span class="flex items-center gap-1.5 text-xs font-bold">
-          <span class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px] font-black">
+          <span
+            class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px] font-black">
             {{ selectedIds.length }}
           </span>
           {{ selectedIds.length === 1 ? 'runner' : 'runners' }} selected
@@ -2169,24 +2153,22 @@ onMounted(() => {
 
         <!-- Clear selection -->
         <button type="button" @click="clearSelection"
-          class="text-xs font-semibold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition cursor-pointer flex items-center gap-1.5"
-        >
+          class="text-xs font-semibold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition cursor-pointer flex items-center gap-1.5">
           <i class="fas fa-times-circle"></i> Clear
         </button>
 
 
-                    <!-- Finalize Supplier Batch button -->
-            <button type="button" @click="openBatchFinalizeModal"
-              class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md border border-amber-400/40 cursor-pointer">
-              <i class="fas fa-layer-group"></i> Finalize Supplier Batch (CSV)
-            </button>
+        <!-- Finalize Supplier Batch button -->
+        <button type="button" @click="openBatchFinalizeModal"
+          class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md border border-amber-400/40 cursor-pointer">
+          <i class="fas fa-layer-group"></i> Finalize Supplier Batch (CSV)
+        </button>
 
 
 
         <!-- Delete selected -->
         <button type="button" @click="promptBulkDelete" :disabled="isBulkDeleting"
-          class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
-        >
+          class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md cursor-pointer flex items-center gap-1.5 disabled:opacity-60">
           <i v-if="!isBulkDeleting" class="fas fa-trash"></i>
           <i v-else class="fas fa-spinner fa-spin"></i>
           {{ isBulkDeleting ? 'Deleting...' : '' }}
@@ -2210,7 +2192,8 @@ onMounted(() => {
               </span>
               <h2 class="text-xl font-black">Runner Registration Details</h2>
               <!-- Edit mode badge -->
-              <span v-if="isEditMode" class="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-300 dark:border-amber-700 flex items-center gap-1">
+              <span v-if="isEditMode"
+                class="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[10px] font-bold border border-amber-300 dark:border-amber-700 flex items-center gap-1">
                 <i class="fas fa-pen text-[9px]"></i> Editing
               </span>
             </div>
@@ -2286,7 +2269,8 @@ onMounted(() => {
 
                 <div class="lg:flex">
                   <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Address</label>
-                  <p class="font-semibold">{{ selectedRunner.contact_address || selectedRunner.address || 'Ozamiz City' }}
+                  <p class="font-semibold">{{ selectedRunner.contact_address || selectedRunner.address || 'Ozamiz City'
+                    }}
                   </p>
                 </div>
               </template>
@@ -2321,8 +2305,11 @@ onMounted(() => {
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Suffix</label>
                     <select v-model="editForm.suffix" :class="inputCls">
                       <option value="">None</option>
-                      <option>Jr.</option><option>Sr.</option>
-                      <option>II</option><option>III</option><option>IV</option>
+                      <option>Jr.</option>
+                      <option>Sr.</option>
+                      <option>II</option>
+                      <option>III</option>
+                      <option>IV</option>
                     </select>
                   </div>
                 </div>
@@ -2416,8 +2403,10 @@ onMounted(() => {
                 <!-- Running Club & Batch -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Running Club / Organization</label>
-                    <input v-model="editForm.organization" :class="inputCls" placeholder="e.g. Ozamiz Lifestyle Runners" />
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Running Club /
+                      Organization</label>
+                    <input v-model="editForm.organization" :class="inputCls"
+                      placeholder="e.g. Ozamiz Lifestyle Runners" />
                   </div>
                   <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Affiliation / Batch</label>
@@ -2438,27 +2427,34 @@ onMounted(() => {
               <div class="flex items-center justify-between">
                 <span class="font-bold text-emerald-800 dark:text-emerald-300">Run Category</span>
                 <span class="font-black text-sm text-emerald-700 dark:text-emerald-400">
-                  {{ selectedRunner.run_category }} |   ₱{{ Number(selectedRunner.grand_total_payment || selectedRunner.grand_total || 0).toLocaleString() }}
+                  {{ selectedRunner.run_category }} | ₱{{ Number(selectedRunner.grand_total_payment ||
+                    selectedRunner.grand_total || 0).toLocaleString() }}
                 </span>
               </div>
 
               <!-- Pet details if 1K Pet Run -->
-              <div v-if="selectedRunner.pet_name || selectedRunner.run_category === '1KM' || selectedRunner.run_category === '1K'"
+              <div
+                v-if="selectedRunner.pet_name || selectedRunner.run_category === '1KM' || selectedRunner.run_category === '1K'"
                 class="p-3 rounded-xl bg-white/80 dark:bg-gray-800/80 border space-y-2.5">
                 <div class="flex items-center justify-between">
                   <span class="font-bold text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
                     <i class="fas fa-paw"></i> Pet Runner Details:
                   </span>
-                  <span v-if="selectedRunner.pet_vaccinated" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300">
+                  <span v-if="selectedRunner.pet_vaccinated"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-300">
                     <i class="fas fa-syringe mr-0.5"></i> Vaccinated
                   </span>
                 </div>
-                <p><strong>Name:</strong> {{ selectedRunner.pet_name || 'N/A' }} ({{ selectedRunner.pet_type || 'Dog' }})</p>
+                <p><strong>Name:</strong> {{ selectedRunner.pet_name || 'N/A' }} ({{ selectedRunner.pet_type || 'Dog'
+                  }})
+                </p>
                 <p><strong>Bandana:</strong> Standard</p>
 
                 <!-- Pet Vaccine Document -->
-                <div v-if="getDocumentUrl(selectedRunner.pet_vaccine_record)" class="pt-2 border-t dark:border-gray-700">
-                  <div class="flex items-center justify-between bg-emerald-50/70 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200/60 dark:border-emerald-800/50">
+                <div v-if="getDocumentUrl(selectedRunner.pet_vaccine_record)"
+                  class="pt-2 border-t dark:border-gray-700">
+                  <div
+                    class="flex items-center justify-between bg-emerald-50/70 dark:bg-emerald-950/40 p-2 rounded-lg border border-emerald-200/60 dark:border-emerald-800/50">
                     <div class="flex items-center gap-1.5 truncate mr-2">
                       <i class="fas fa-file-medical text-emerald-600"></i>
                       <span class="text-[11px] font-bold truncate">Vaccine Record / Anti-Rabies</span>
@@ -2472,9 +2468,11 @@ onMounted(() => {
                 </div>
 
                 <!-- Pet Consent Documents (Multi) -->
-                <div v-if="getDocumentList(selectedRunner.pet_consent_documents).length > 0" class="pt-2 border-t dark:border-gray-700 space-y-1.5">
+                <div v-if="getDocumentList(selectedRunner.pet_consent_documents).length > 0"
+                  class="pt-2 border-t dark:border-gray-700 space-y-1.5">
                   <span class="text-[10px] font-bold uppercase text-gray-500 dark:text-gray-400 block">
-                    <i class="fas fa-file-signature text-amber-600 mr-1"></i> Signed Non-Liability Consent Documents ({{ getDocumentList(selectedRunner.pet_consent_documents).length }}):
+                    <i class="fas fa-file-signature text-amber-600 mr-1"></i> Signed Non-Liability Consent Documents ({{
+                      getDocumentList(selectedRunner.pet_consent_documents).length }}):
                   </span>
                   <div v-for="(doc, dIdx) in getDocumentList(selectedRunner.pet_consent_documents)" :key="dIdx"
                     class="flex items-center justify-between bg-amber-50/70 dark:bg-amber-950/30 p-2 rounded-lg border border-amber-200/60 dark:border-amber-800/40">
@@ -2482,8 +2480,7 @@ onMounted(() => {
                       <i class="fas fa-file-pdf text-rose-500"></i>
                       <span class="text-[11px] font-medium truncate">{{ doc.name }}</span>
                     </div>
-                    <button type="button"
-                      @click="openReceiptModal(doc.url, `Consent Doc: ${doc.name}`, selectedRunner)"
+                    <button type="button" @click="openReceiptModal(doc.url, `Consent Doc: ${doc.name}`, selectedRunner)"
                       class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-700 text-white font-bold text-[10px] transition shrink-0 cursor-pointer">
                       <i class="fas fa-eye"></i> View
                     </button>
@@ -2491,7 +2488,7 @@ onMounted(() => {
                 </div>
               </div>
 
-             
+
             </div>
 
 
@@ -2500,12 +2497,14 @@ onMounted(() => {
               <div v-if="selectedRunner.proof_of_payment"
                 class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center text-sm font-bold">
+                  <div
+                    class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center text-sm font-bold">
                     <i class="fas fa-file-invoice"></i>
                   </div>
                   <div>
                     <p class="font-bold text-xs">Payment Receipt Attached</p>
-                    <p class="text-[10px] text-gray-500 dark:text-gray-400">Proof of payment recorded for {{ selectedRunner.firstname }}</p>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400">Proof of payment recorded for {{
+                      selectedRunner.firstname }}</p>
                   </div>
                 </div>
 
@@ -2519,11 +2518,10 @@ onMounted(() => {
                     class="px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold text-xs hover:bg-gray-300 dark:hover:bg-gray-600 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs">
                     <i :class="['fas', isAdminUploadingReceipt ? 'fa-spinner fa-spin' : 'fa-upload']"></i>
                     <span>{{ isAdminUploadingReceipt ? 'Uploading...' : 'Replace Receipt' }}</span>
-                    <input type="file" accept="image/*,.pdf" class="hidden" @change="handleAdminReceiptChange($event, selectedRunner)" :disabled="isAdminUploadingReceipt" />
+                    <input type="file" accept="image/*,.pdf" class="hidden"
+                      @change="handleAdminReceiptChange($event, selectedRunner)" :disabled="isAdminUploadingReceipt" />
                   </label>
-                  <button type="button"
-                    @click="promptDeleteReceipt(selectedRunner)"
-                    :disabled="isDeletingReceipt"
+                  <button type="button" @click="promptDeleteReceipt(selectedRunner)" :disabled="isDeletingReceipt"
                     class="px-3 py-1.5 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-bold text-xs hover:bg-rose-200 dark:hover:bg-rose-900/80 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-xs border border-rose-200 dark:border-rose-800 disabled:opacity-50">
                     <i :class="['fas', isDeletingReceipt ? 'fa-spinner fa-spin' : 'fa-trash']" class="text-xs"></i>
                     <span>{{ isDeletingReceipt ? 'Deleting...' : 'Delete Receipt' }}</span>
@@ -2534,13 +2532,20 @@ onMounted(() => {
               <div v-else
                 class="border-2 border-dashed border-amber-300 dark:border-amber-800/60 rounded-2xl p-3 bg-amber-50/50 dark:bg-amber-950/20 flex items-center justify-between flex-wrap gap-2">
                 <div class="flex items-center gap-2.5">
-                  <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-950/80 dark:text-amber-400 flex items-center justify-center text-sm font-bold">
+                  <div
+                    class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-950/80 dark:text-amber-400 flex items-center justify-center text-sm font-bold">
                     <i class="fas fa-receipt"></i>
                   </div>
                   <div>
-                    <p class="font-bold text-xs text-amber-900 dark:text-amber-200">Upload Receipt: Over The Counter Payment or On-Site Weekend Cash Payment</p>
-                    <p class="text-[10px] text-amber-700 dark:text-amber-400">To record proof of payment if any modification is made.</p>
-                     <p class="text-[10px] text-amber-700 dark:text-amber-400">Salary Deduction / Employee or Add  to Tuition / Currently Enrolled Students</p>
+                    <p class="font-bold text-xs text-amber-900 dark:text-amber-200">Upload Receipt: Over The Counter
+                      Payment
+                      or On-Site Weekend Cash Payment</p>
+                    <p class="text-[10px] text-amber-700 dark:text-amber-400">To record proof of payment if any
+                      modification
+                      is made.</p>
+                    <p class="text-[10px] text-amber-700 dark:text-amber-400">Salary Deduction / Employee or Add to
+                      Tuition
+                      / Currently Enrolled Students</p>
                   </div>
                 </div>
 
@@ -2548,22 +2553,24 @@ onMounted(() => {
                   class="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer">
                   <i :class="['fas', isAdminUploadingReceipt ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt']"></i>
                   <span>{{ isAdminUploadingReceipt ? 'Recording...' : 'Upload & Record Receipt' }}</span>
-                  <input type="file" accept="image/*,.pdf" class="hidden" @change="handleAdminReceiptChange($event, selectedRunner)" :disabled="isAdminUploadingReceipt" />
+                  <input type="file" accept="image/*,.pdf" class="hidden"
+                    @change="handleAdminReceiptChange($event, selectedRunner)" :disabled="isAdminUploadingReceipt" />
                 </label>
               </div>
             </div>
 
             <!-- Alumni Valid ID (Front and Back) if uploaded -->
-            <div v-if="getImageUrl(selectedRunner.valid_id_front) || getImageUrl(selectedRunner.valid_id_back)" class="lg:flex mt-3 gap-x-2">
-              
-              
+            <div v-if="getImageUrl(selectedRunner.valid_id_front) || getImageUrl(selectedRunner.valid_id_back)"
+              class="lg:flex mt-3 gap-x-2">
+
+
               <div v-if="getImageUrl(selectedRunner.valid_id_front)"
                 class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between w-full">
                 <div class="flex items-center gap-3">
-                 
+
                   <div>
                     <p class="font-bold text-xs">Alumni ID</p>
-                  
+
                   </div>
                 </div>
                 <button type="button"
@@ -2576,7 +2583,7 @@ onMounted(() => {
               <div v-if="getImageUrl(selectedRunner.valid_id_back)"
                 class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between w-full">
                 <div class="flex items-center gap-3">
-                
+
                   <div>
                     <p class="font-bold text-xs">Alumni ID </p>
                   </div>
@@ -2603,7 +2610,8 @@ onMounted(() => {
                 <p class="text-[10px] text-gray-500">{{ selectedRunner.run_number }}</p>
               </div>
               <div class="ml-auto flex items-center gap-1.5">
-                <span v-if="chatEmailSent" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold">
+                <span v-if="chatEmailSent"
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[9px] font-bold">
                   <i class="fas fa-envelope-check text-[9px]"></i> Email Sent
                 </span>
                 <button type="button" @click="loadChat(selectedRunner)" title="Refresh messages"
@@ -2628,11 +2636,10 @@ onMounted(() => {
               </div>
 
               <!-- Messages -->
-              <div v-for="msg in chatMessages" :key="msg.message_id || msg.timestamp"
-                :class="[
-                  'flex',
-                  msg.sender_type === 'admin' ? 'justify-end' : 'justify-start'
-                ]">
+              <div v-for="msg in chatMessages" :key="msg.message_id || msg.timestamp" :class="[
+                'flex',
+                msg.sender_type === 'admin' ? 'justify-end' : 'justify-start'
+              ]">
                 <div :class="[
                   'max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed shadow-sm',
                   msg.sender_type === 'admin'
@@ -2650,8 +2657,7 @@ onMounted(() => {
                       <i class="fas fa-external-link-alt text-[9px] opacity-60 ml-auto"></i>
                     </a>
                     <a v-else :href="msg.attachment_url" target="_blank" class="block">
-                      <img :src="msg.attachment_url" :alt="msg.attachment_name || 'Image'"
-                        @load="scrollChatToBottom"
+                      <img :src="msg.attachment_url" :alt="msg.attachment_name || 'Image'" @load="scrollChatToBottom"
                         class="mt-1 max-w-[180px] max-h-[160px] rounded-xl object-cover border border-white/20 shadow-sm cursor-pointer hover:opacity-90 transition" />
                     </a>
                   </div>
@@ -2670,39 +2676,38 @@ onMounted(() => {
               </p>
 
               <!-- Attachment Preview -->
-              <div v-if="chatAttachment" class="mb-2 flex items-center gap-2 p-2 rounded-xl border bg-slate-50 dark:bg-gray-800/60 border-emerald-200 dark:border-emerald-800">
-                <img v-if="chatAttachment.previewUrl" :src="chatAttachment.previewUrl" class="w-10 h-10 rounded-lg object-cover border border-emerald-200 shrink-0" alt="preview" />
-                <div v-else class="w-10 h-10 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-500 flex items-center justify-center shrink-0">
+              <div v-if="chatAttachment"
+                class="mb-2 flex items-center gap-2 p-2 rounded-xl border bg-slate-50 dark:bg-gray-800/60 border-emerald-200 dark:border-emerald-800">
+                <img v-if="chatAttachment.previewUrl" :src="chatAttachment.previewUrl"
+                  class="w-10 h-10 rounded-lg object-cover border border-emerald-200 shrink-0" alt="preview" />
+                <div v-else
+                  class="w-10 h-10 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-500 flex items-center justify-center shrink-0">
                   <i class="fas fa-file-pdf text-base"></i>
                 </div>
-                <span class="flex-1 text-[10px] text-gray-600 dark:text-gray-300 truncate">{{ chatAttachment.name }}</span>
-                <button type="button" @click="removeChatAttachment" class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-500 hover:bg-rose-100 hover:text-rose-500 flex items-center justify-center transition cursor-pointer">
+                <span class="flex-1 text-[10px] text-gray-600 dark:text-gray-300 truncate">{{ chatAttachment.name
+                  }}</span>
+                <button type="button" @click="removeChatAttachment"
+                  class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-500 hover:bg-rose-100 hover:text-rose-500 flex items-center justify-center transition cursor-pointer">
                   <i class="fas fa-times text-[9px]"></i>
                 </button>
               </div>
 
-              <textarea v-model="chatInput"
-                :disabled="isSendingChat"
-                @keydown.enter.ctrl="sendAdminMessage"
-                rows="3"
-                placeholder="Type your follow-up remarks here..."
-                :class="[
+              <textarea v-model="chatInput" :disabled="isSendingChat" @keydown.enter.ctrl="sendAdminMessage" rows="3"
+                placeholder="Type your follow-up remarks here..." :class="[
                   'w-full rounded-xl border text-xs px-3 py-2 resize-none focus:ring-2 focus:ring-emerald-400 focus:outline-none transition',
                   props.darkMode ? 'bg-gray-900 border-gray-600 text-gray-100 placeholder-gray-500' : 'bg-white border-gray-200 text-gray-800 placeholder-gray-400'
-                ]"
-              ></textarea>
+                ]"></textarea>
               <div class="mt-2 flex items-center gap-2">
                 <!-- Paperclip / Attach file -->
-                <label
-                  :class="[
-                    'flex items-center justify-center w-9 h-9 rounded-xl border cursor-pointer transition shrink-0',
-                    chatAttachment
-                      ? 'bg-emerald-100 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400'
-                      : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:border-emerald-300 hover:text-emerald-600'
-                  ]"
-                  title="Attach image or PDF (max 5 MB)">
+                <label :class="[
+                  'flex items-center justify-center w-9 h-9 rounded-xl border cursor-pointer transition shrink-0',
+                  chatAttachment
+                    ? 'bg-emerald-100 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:border-emerald-300 hover:text-emerald-600'
+                ]" title="Attach image or PDF (max 5 MB)">
                   <i class="fas fa-paperclip text-sm"></i>
-                  <input type="file" accept="image/jpeg,image/jpg,image/png,application/pdf" class="hidden" @change="handleChatAttachmentChange" :disabled="isSendingChat" />
+                  <input type="file" accept="image/jpeg,image/jpg,image/png,application/pdf" class="hidden"
+                    @change="handleChatAttachmentChange" :disabled="isSendingChat" />
                 </label>
                 <button type="button" @click="sendAdminMessage"
                   :disabled="isSendingChat || (!chatInput.trim() && !chatAttachment)"
@@ -2710,7 +2715,8 @@ onMounted(() => {
                   title="Send message and notify the runner by email">
                   <i :class="['fas', isSendingChat ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
                   <span>{{ isSendingChat ? 'Sending...' : 'Send Message' }}</span>
-                  <span v-if="!isSendingChat" class="ml-1 opacity-70 flex items-center gap-0.5"><i class="fas fa-envelope text-[9px]"></i></span>
+                  <span v-if="!isSendingChat" class="ml-1 opacity-70 flex items-center gap-0.5"><i
+                      class="fas fa-envelope text-[9px]"></i></span>
                 </button>
               </div>
             </div>
@@ -2725,10 +2731,10 @@ onMounted(() => {
               :class="['px-2.5 py-0.5 rounded-lg border font-bold text-xs', getStatusBadge(selectedRunner.payment_status)]">
               {{ selectedRunner.payment_status }}
             </span>
-           <span class="px-5 py-1 rounded-lg border font-bold text-xs bg-blue-600 text-white">
-           <i class="fa fa-credit-card mr-2" aria-hidden="true"></i>
-  {{ selectedRunner.payment_type.replaceAll('_', ' ').toUpperCase() }}
-</span>
+            <span class="px-5 py-1 rounded-lg border font-bold text-xs bg-blue-600 text-white">
+              <i class="fa fa-credit-card mr-2" aria-hidden="true"></i>
+              {{ selectedRunner.payment_type.replaceAll('_', ' ').toUpperCase() }}
+            </span>
             <span class="text-[10px] text-gray-500 dark:text-gray-400 font-medium ml-1">
               <i class="fas fa-shield-alt text-emerald-600 mr-1"></i> No Refund Policy
             </span>
@@ -2772,12 +2778,15 @@ onMounted(() => {
         <!-- Red accent bar -->
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-rose-500"></div>
 
-        <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400 flex items-center justify-center text-2xl shadow-sm mt-2">
+        <div
+          class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400 flex items-center justify-center text-2xl shadow-sm mt-2">
           <i class="fas fa-trash-alt"></i>
         </div>
 
         <div>
-          <h3 class="text-lg font-black tracking-tight">Delete {{ selectedIds.length }} Registration{{ selectedIds.length !== 1 ? 's' : '' }}?</h3>
+          <h3 class="text-lg font-black tracking-tight">Delete {{ selectedIds.length }} Registration{{
+            selectedIds.length
+            !== 1 ? 's' : '' }}?</h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
             This action is <strong class="text-rose-600">permanent</strong> and cannot be undone.
             All selected runner records will be removed from the system.
@@ -2809,7 +2818,8 @@ onMounted(() => {
       ]">
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-rose-500"></div>
 
-        <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400 flex items-center justify-center text-2xl shadow-sm mt-2">
+        <div
+          class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400 flex items-center justify-center text-2xl shadow-sm mt-2">
           <i class="fas fa-trash"></i>
         </div>
 
@@ -2817,10 +2827,12 @@ onMounted(() => {
           <h3 class="text-lg font-black tracking-tight">Delete Receipt?</h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Remove the uploaded payment receipt for
-            <strong class="text-rose-600 dark:text-rose-400">{{ deleteReceiptModal.runner.firstname }} {{ deleteReceiptModal.runner.lastname }}</strong>?
+            <strong class="text-rose-600 dark:text-rose-400">{{ deleteReceiptModal.runner.firstname }} {{
+              deleteReceiptModal.runner.lastname }}</strong>?
           </p>
           <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-2 leading-relaxed">
-            This will clear the <strong>proof of payment</strong> on record. The runner's payment status will remain unchanged. You can upload a new receipt at any time.
+            This will clear the <strong>proof of payment</strong> on record. The runner's payment status will remain
+            unchanged. You can upload a new receipt at any time.
           </p>
         </div>
 
@@ -2859,14 +2871,18 @@ onMounted(() => {
             Confirm Payment?
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Confirm payment for <strong class="text-emerald-600 dark:text-emerald-400">{{ confirmModal.runner.firstname }} {{ confirmModal.runner.lastname }}</strong>?
+            Confirm payment for <strong class="text-emerald-600 dark:text-emerald-400">{{ confirmModal.runner.firstname
+              }}
+              {{ confirmModal.runner.lastname }}</strong>?
           </p>
           <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 leading-relaxed">
-            An official confirmation email will be sent to <strong>{{ confirmModal.runner.contact_email || confirmModal.runner.email }}</strong> with BCC to <strong>animorun@lsu.edu.ph</strong>, <strong>calendar@lsu.edu.ph</strong>, and <strong>vpal@lsu.edu.ph</strong>.
+            An official confirmation email will be sent to <strong>{{ confirmModal.runner.contact_email ||
+              confirmModal.runner.email }}</strong> with BCC to <strong>animorun@lsu.edu.ph</strong>,
+            <strong>calendar@lsu.edu.ph</strong>, and <strong>vpal@lsu.edu.ph</strong>.
           </p>
         </div>
 
-       
+
 
         <div class="flex items-center gap-2 pt-2">
           <button type="button" @click="closeConfirmModal" :disabled="isConfirming"
@@ -2950,7 +2966,8 @@ onMounted(() => {
         <!-- Header -->
         <div class="px-5 py-3.5 border-b flex items-center justify-between dark:border-gray-800 shrink-0">
           <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center text-sm shadow-xs">
+            <div
+              class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center text-sm shadow-xs">
               <i class="fas fa-receipt"></i>
             </div>
             <div>
@@ -2958,8 +2975,10 @@ onMounted(() => {
                 {{ receiptModal.title }}
               </h3>
               <p v-if="receiptModal.runner" class="text-[11px] text-gray-500 dark:text-gray-400">
-                Runner: <span class="font-semibold text-emerald-600 dark:text-emerald-400 uppercase">{{ receiptModal.runner.firstname }} {{ receiptModal.runner.lastname }}</span>
-                <span v-if="receiptModal.runner.run_number || receiptModal.runner.bib_number"> • {{ receiptModal.runner.run_number || receiptModal.runner.bib_number }}</span>
+                Runner: <span class="font-semibold text-emerald-600 dark:text-emerald-400 uppercase">{{
+                  receiptModal.runner.firstname }} {{ receiptModal.runner.lastname }}</span>
+                <span v-if="receiptModal.runner.run_number || receiptModal.runner.bib_number"> • {{
+                  receiptModal.runner.run_number || receiptModal.runner.bib_number }}</span>
               </p>
             </div>
           </div>
@@ -2977,17 +2996,23 @@ onMounted(() => {
         </div>
 
         <!-- Document / Image Content Area -->
-        <div class="p-3 sm:p-5 overflow-auto flex-1 flex items-center justify-center bg-slate-900/5 dark:bg-black/50 min-h-[260px]">
-          <iframe v-if="isPdfUrl(receiptModal.url)" :src="receiptModal.url" class="w-full h-[66vh] rounded-xl border border-gray-200 dark:border-gray-800" />
+        <div
+          class="p-3 sm:p-5 overflow-auto flex-1 flex items-center justify-center bg-slate-900/5 dark:bg-black/50 min-h-[260px]">
+          <iframe v-if="isPdfUrl(receiptModal.url)" :src="receiptModal.url"
+            class="w-full h-[66vh] rounded-xl border border-gray-200 dark:border-gray-800" />
           <img v-else :src="receiptModal.url" :alt="receiptModal.title"
             class="max-h-[66vh] max-w-full w-auto object-contain rounded-xl border shadow-md border-gray-200 dark:border-gray-800 select-none" />
         </div>
 
         <!-- Footer -->
-        <div class="px-5 py-3 border-t dark:border-gray-800 flex items-center justify-between text-xs bg-slate-50/50 dark:bg-gray-900/50 shrink-0">
+        <div
+          class="px-5 py-3 border-t dark:border-gray-800 flex items-center justify-between text-xs bg-slate-50/50 dark:bg-gray-900/50 shrink-0">
           <div class="text-[11px] text-gray-500 dark:text-gray-400">
-            <span v-if="receiptModal.runner && (receiptModal.runner.grand_total_payment || receiptModal.runner.grand_total)">
-              Amount Due: <strong class="text-emerald-600 dark:text-emerald-400 font-bold">₱{{ Number(receiptModal.runner.grand_total_payment || receiptModal.runner.grand_total || 0).toLocaleString() }}</strong>
+            <span
+              v-if="receiptModal.runner && (receiptModal.runner.grand_total_payment || receiptModal.runner.grand_total)">
+              Amount Due: <strong class="text-emerald-600 dark:text-emerald-400 font-bold">₱{{
+                Number(receiptModal.runner.grand_total_payment || receiptModal.runner.grand_total || 0).toLocaleString()
+                }}</strong>
             </span>
           </div>
           <button type="button" @click="closeReceiptModal"
@@ -3007,64 +3032,61 @@ onMounted(() => {
         props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
       ]">
         <!-- Gold Accent Bar -->
-        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-emerald-500 to-amber-600"></div>
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-500 via-emerald-500 to-amber-600">
+        </div>
 
         <div class="flex items-center justify-between border-b pb-3 dark:border-gray-700">
           <div class="flex items-center gap-2.5">
-            <div class="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold shadow-sm">
+            <div
+              class="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center text-lg font-bold shadow-sm">
               <i class="fas fa-layer-group"></i>
             </div>
             <div>
               <h3 class="text-base sm:text-lg font-black tracking-tight">Finalize Supplier Batch Order</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Lock orders for production, generate CSV &amp; dispatch email notifications</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Lock orders for production, generate CSV &amp;
+                dispatch
+                email notifications</p>
             </div>
           </div>
-          <button type="button" @click="closeBatchFinalizeModal" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-rose-500 hover:text-white transition flex items-center justify-center font-bold text-xs cursor-pointer">
+          <button type="button" @click="closeBatchFinalizeModal"
+            class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-rose-500 hover:text-white transition flex items-center justify-center font-bold text-xs cursor-pointer">
             <i class="fas fa-times"></i>
           </button>
         </div>
 
         <div class="space-y-4 text-xs">
           <!-- Selection Scope radio options -->
-<div class="space-y-5">
+          <div class="space-y-5">
 
- 
 
-  <!-- Batch Details -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-    <!-- Batch Name -->
-    <div>
-      <label class="font-bold text-gray-500 uppercase text-[10px] block mb-1">
-        Batch Group Name <span class="text-red-500">*</span>
-      </label>
+            <!-- Batch Details -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-      <input
-        v-model="batchFinalizeModal.batchName"
-        :class="inputCls"
-        class="w-full"
-        placeholder="e.g. Batch 1, Batch 2"
-      />
-    </div>
+              <!-- Batch Name -->
+              <div>
+                <label class="font-bold text-gray-500 uppercase text-[10px] block mb-1">
+                  Batch Group Name <span class="text-red-500">*</span>
+                </label>
 
-    <!-- Locked By -->
-    <div>
-      <label class="font-bold text-gray-500 uppercase text-[10px] block mb-1">
-        Finalized &amp; Locked By
-      </label>
+                <input v-model="batchFinalizeModal.batchName" :class="inputCls" class="w-full"
+                  placeholder="e.g. Batch 1, Batch 2" />
+              </div>
 
-      <input
-        v-model="batchFinalizeModal.lockedBy"
-        :class="inputCls"
-        class="w-full bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
-        placeholder="Operator Email"
-        disabled
-      />
-    </div>
+              <!-- Locked By -->
+              <div>
+                <label class="font-bold text-gray-500 uppercase text-[10px] block mb-1">
+                  Finalized &amp; Locked By
+                </label>
 
-  </div>
+                <input v-model="batchFinalizeModal.lockedBy" :class="inputCls"
+                  class="w-full bg-gray-100 dark:bg-gray-800 cursor-not-allowed" placeholder="Operator Email"
+                  disabled />
+              </div>
 
-</div>
+            </div>
+
+          </div>
 
           <!-- Live Breakdown Summary Box -->
           <div :class="[
@@ -3081,21 +3103,17 @@ onMounted(() => {
             </div>
 
             <!-- Categories breakdown -->
-<div>
-  <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Distance Categories:</span>
-  <div class="flex flex-wrap gap-1.5">
-    <span 
-      v-for="(cnt, cat) in batchBreakdown.categories" 
-      :key="cat" 
-      :class="[
-        runCategories.find(c => c.id === cat || c.name === cat)?.color || 'bg-gray-700 text-white', 
-        'px-2.5 py-1 rounded-xl font-bold text-[11px] border border-white/20'
-      ]"
-    >
-      {{ cat }}: <strong>{{ cnt }}</strong>
-    </span>
-  </div>
-</div>
+            <div>
+              <span class="text-[10px] font-bold text-gray-400 uppercase block mb-1">Distance Categories:</span>
+              <div class="flex flex-wrap gap-1.5">
+                <span v-for="(cnt, cat) in batchBreakdown.categories" :key="cat" :class="[
+                  runCategories.find(c => c.id === cat || c.name === cat)?.color || 'bg-gray-700 text-white',
+                  'px-2.5 py-1 rounded-xl font-bold text-[11px] border border-white/20'
+                ]">
+                  {{ cat }}: <strong>{{ cnt }}</strong>
+                </span>
+              </div>
+            </div>
 
             <!-- T-Shirt sizes breakdown -->
 
@@ -3123,23 +3141,21 @@ onMounted(() => {
                 CSV Columns to Export
               </span>
               <label class="flex items-center gap-1.5 cursor-pointer text-[11px] font-semibold">
-                <input type="checkbox"
-                  :checked="allCsvColumnsSelected"
+                <input type="checkbox" :checked="allCsvColumnsSelected"
                   @change="e => toggleAllCsvColumns(e.target.checked)"
-                  class="w-3.5 h-3.5 rounded accent-amber-500 cursor-pointer"
-                />
+                  class="w-3.5 h-3.5 rounded accent-amber-500 cursor-pointer" />
                 <span class="text-gray-500 dark:text-gray-400">Select All ({{ CSV_ALL_COLUMNS.length }})</span>
-                <span class="text-amber-600 dark:text-amber-400 font-black">{{ selectedCsvColumns.length }} selected</span>
+                <span class="text-amber-600 dark:text-amber-400 font-black">{{ selectedCsvColumns.length }}
+                  selected</span>
               </label>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-1">
-              <label v-for="col in CSV_ALL_COLUMNS" :key="col.key"
-                :class="[
-                  'flex items-center gap-1.5 px-2 py-1.5 rounded-lg border cursor-pointer transition text-[11px]',
-                  selectedCsvColumns.includes(col.key)
-                    ? (props.darkMode ? 'bg-amber-900/30 border-amber-600 text-amber-300' : 'bg-amber-50 border-amber-400 text-amber-800')
-                    : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-400 hover:border-gray-500' : 'bg-white border-slate-200 text-gray-600 hover:border-amber-300')
-                ]">
+              <label v-for="col in CSV_ALL_COLUMNS" :key="col.key" :class="[
+                'flex items-center gap-1.5 px-2 py-1.5 rounded-lg border cursor-pointer transition text-[11px]',
+                selectedCsvColumns.includes(col.key)
+                  ? (props.darkMode ? 'bg-amber-900/30 border-amber-600 text-amber-300' : 'bg-amber-50 border-amber-400 text-amber-800')
+                  : (props.darkMode ? 'bg-gray-800 border-gray-600 text-gray-400 hover:border-gray-500' : 'bg-white border-slate-200 text-gray-600 hover:border-amber-300')
+              ]">
                 <input type="checkbox" :value="col.key" v-model="selectedCsvColumns"
                   class="w-3 h-3 rounded accent-amber-500 cursor-pointer shrink-0" />
                 <span class="font-medium leading-tight truncate">{{ col.label }}</span>
@@ -3148,17 +3164,20 @@ onMounted(() => {
           </div>
 
           <!-- Strict Policy Warning -->
-          <div class="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300 text-[11px] space-y-1">
+          <div
+            class="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800/40 text-rose-800 dark:text-rose-300 text-[11px] space-y-1">
             <p class="font-bold flex items-center gap-1.5">
               <i class="fas fa-exclamation-triangle text-rose-600"></i> Closed for Orders Supplier Policy:
             </p>
             <p class="leading-relaxed text-[10px]">
-              Once finalized, these {{ batchBreakdown.count }} orders will be assigned to <strong>{{ batchFinalizeModal.batchName }}</strong> and locked.
-              Strictly <strong>NO RETURN POLICY / NO UPGRADE / NO DOWNGRADE</strong> permitted. Superadmin bypass is required to modify.
+              Once finalized, these {{ batchBreakdown.count }} orders will be assigned to <strong>{{
+                batchFinalizeModal.batchName }}</strong> and locked.
+              Strictly <strong>NO RETURN POLICY / NO UPGRADE / NO DOWNGRADE</strong> permitted. Superadmin bypass is
+              required to modify.
             </p>
           </div>
 
-         
+
         </div>
 
         <div class="flex items-center gap-2 pt-2 border-t dark:border-gray-700">
@@ -3166,16 +3185,19 @@ onMounted(() => {
             class="py-2.5 px-3.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
             Cancel
           </button>
-          <button type="button" @click="downloadBatchCsvPreview" :disabled="isFinalizingBatch || batchBreakdown.count === 0 || selectedCsvColumns.length === 0"
+          <button type="button" @click="downloadBatchCsvPreview"
+            :disabled="isFinalizingBatch || batchBreakdown.count === 0 || selectedCsvColumns.length === 0"
             class="py-2.5 px-3.5 rounded-xl border border-emerald-500/50 hover:border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 text-xs font-bold transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50">
             <i class="fas fa-file-csv"></i>
             <span>Export CSV Only</span>
           </button>
-          <button type="button" @click="executeFinalizeBatch" :disabled="isFinalizingBatch || batchBreakdown.count === 0 || selectedCsvColumns.length === 0"
+          <button type="button" @click="executeFinalizeBatch"
+            :disabled="isFinalizingBatch || batchBreakdown.count === 0 || selectedCsvColumns.length === 0"
             class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50">
             <i v-if="!isFinalizingBatch" class="fas fa-lock"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
-            <span>{{ isFinalizingBatch ? 'Finalizing &amp; Sending...' : `Finalize, Lock &amp; Email CSV (${selectedCsvColumns.length} cols)` }}</span>
+            <span>{{ isFinalizingBatch ? 'Finalizing &amp; Sending...' : `Finalize, Lock &amp; Email CSV
+              (${selectedCsvColumns.length} cols)` }}</span>
           </button>
         </div>
       </div>
@@ -3191,15 +3213,18 @@ onMounted(() => {
       ]">
         <div class="flex items-center justify-between border-b pb-3 dark:border-gray-700">
           <div class="flex items-center gap-2.5">
-            <div class="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold shadow-sm">
+            <div
+              class="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg font-bold shadow-sm">
               <i class="fas fa-boxes"></i>
             </div>
             <div>
               <h3 class="text-base sm:text-lg font-black tracking-tight">Supplier Batches &amp; Fulfillment History</h3>
-              <p class="text-xs text-gray-500 dark:text-gray-400">View finalized batch breakdowns, re-download CSVs, or Superadmin unlock</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">View finalized batch breakdowns, re-download CSVs, or
+                Superadmin unlock</p>
             </div>
           </div>
-          <button type="button" @click="closeBatchHistoryModal" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-rose-500 hover:text-white transition flex items-center justify-center font-bold text-xs cursor-pointer">
+          <button type="button" @click="closeBatchHistoryModal"
+            class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-rose-500 hover:text-white transition flex items-center justify-center font-bold text-xs cursor-pointer">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -3229,7 +3254,7 @@ onMounted(() => {
               </div>
 
               <div class="flex items-center gap-2">
-            
+
                 <!-- Superadmin Toggle Lock -->
                 <button type="button" @click="openUnlockPrompt(b, 'batch')"
                   class="px-3 py-1.5 rounded-xl border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-950 font-bold text-xs transition flex items-center gap-1 cursor-pointer">
@@ -3247,7 +3272,7 @@ onMounted(() => {
               <div><strong>Date:</strong> {{ b.created_at_formatted || b.created_at }}</div>
             </div>
 
-           
+
           </div>
         </div>
 
@@ -3275,13 +3300,15 @@ onMounted(() => {
       ]">
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-purple-500"></div>
 
-        <div class="w-14 h-14 mx-auto rounded-2xl bg-purple-100 text-purple-600 dark:bg-purple-950/80 dark:text-purple-300 flex items-center justify-center text-2xl shadow-sm mt-2">
-          <i :class="['fas', unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked ? 'fa-unlock' : 'fa-lock']"></i>
+        <div
+          class="w-14 h-14 mx-auto rounded-2xl bg-purple-100 text-purple-600 dark:bg-purple-950/80 dark:text-purple-300 flex items-center justify-center text-2xl shadow-sm mt-2">
+          <i
+            :class="['fas', unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked ? 'fa-unlock' : 'fa-lock']"></i>
         </div>
 
         <div>
           <h3 class="text-lg font-black tracking-tight">
-            {{ unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked ? 'Superadmin Bypass: Unlock Order?' : 'Lock Order for Supplier?' }}
+            {{ (unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked) ? 'Superadmin Bypass: Unlock Order?' : 'Lock Order for Supplier?' }}
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
             <span v-if="unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked">
@@ -3304,9 +3331,10 @@ onMounted(() => {
           </button>
           <button type="button" @click="executeToggleLock" :disabled="isTogglingLock"
             class="flex-1 py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60">
-            <i v-if="!isTogglingLock" :class="['fas', unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked ? 'fa-unlock' : 'fa-lock']"></i>
+            <i v-if="!isTogglingLock"
+              :class="['fas', unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked ? 'fa-unlock' : 'fa-lock']"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
-            <span>{{ isTogglingLock ? 'Updating...' : (unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked ? 'Yes, Bypass & Unlock' : 'Yes, Lock Order') }}</span>
+            <span>{{ isTogglingLock ? 'Updating...' : ((unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked) ? 'Yes, Bypass & Unlock' : 'Yes, Lock Order') }}</span>
           </button>
         </div>
       </div>
@@ -3321,12 +3349,15 @@ onMounted(() => {
       ]">
         <div class="flex items-center justify-between border-b pb-3 dark:border-gray-700">
           <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm">
+            <div
+              class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm">
               <i class="fas fa-table-columns"></i>
             </div>
             <div>
               <h3 class="font-extrabold text-sm sm:text-base">Customize Table Columns</h3>
-              <p class="text-[11px] text-gray-500 dark:text-gray-400">Select which columns display on the table &amp; export in CSV</p>
+              <p class="text-[11px] text-gray-500 dark:text-gray-400">Select which columns display on the table &amp;
+                export
+                in CSV</p>
             </div>
           </div>
           <button type="button" @click="isColumnPickerModalOpen = false"
@@ -3340,28 +3371,30 @@ onMounted(() => {
             {{ selectedCsvColumns.length }} of {{ CSV_ALL_COLUMNS.length }} columns visible
           </span>
           <div class="flex items-center gap-2 text-xs">
-            <button type="button" @click="toggleAllCsvColumns(true)" class="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold cursor-pointer">
+            <button type="button" @click="toggleAllCsvColumns(true)"
+              class="text-emerald-600 dark:text-emerald-400 hover:underline font-semibold cursor-pointer">
               Select All
             </button>
             <span class="text-gray-300">|</span>
-            <button type="button" @click="toggleAllCsvColumns(false)" class="text-rose-500 hover:underline font-semibold cursor-pointer">
+            <button type="button" @click="toggleAllCsvColumns(false)"
+              class="text-rose-500 hover:underline font-semibold cursor-pointer">
               Deselect All
             </button>
             <span class="text-gray-300">|</span>
-            <button type="button" @click="resetToDefaultColumns" class="text-gray-500 hover:underline font-semibold cursor-pointer">
+            <button type="button" @click="resetToDefaultColumns"
+              class="text-gray-500 hover:underline font-semibold cursor-pointer">
               Reset Default
             </button>
           </div>
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-[60vh] overflow-y-auto p-1">
-          <label v-for="col in CSV_ALL_COLUMNS" :key="col.key"
-            :class="[
-              'flex items-center gap-2 px-2.5 py-2 rounded-xl border cursor-pointer transition text-xs select-none',
-              selectedCsvColumns.includes(col.key)
-                ? (props.darkMode ? 'bg-emerald-950/40 border-emerald-600 text-emerald-300' : 'bg-emerald-50 border-emerald-400 text-emerald-800')
-                : (props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-400' : 'bg-white border-slate-200 text-gray-600 hover:border-emerald-300')
-            ]">
+          <label v-for="col in CSV_ALL_COLUMNS" :key="col.key" :class="[
+            'flex items-center gap-2 px-2.5 py-2 rounded-xl border cursor-pointer transition text-xs select-none',
+            selectedCsvColumns.includes(col.key)
+              ? (props.darkMode ? 'bg-emerald-950/40 border-emerald-600 text-emerald-300' : 'bg-emerald-50 border-emerald-400 text-emerald-800')
+              : (props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-400' : 'bg-white border-slate-200 text-gray-600 hover:border-emerald-300')
+          ]">
             <input type="checkbox" :value="col.key" v-model="selectedCsvColumns"
               class="w-3.5 h-3.5 rounded accent-emerald-600 cursor-pointer shrink-0" />
             <span class="font-medium truncate">{{ col.label }}</span>

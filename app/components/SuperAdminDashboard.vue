@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, defineAsyncComponent, shallowRef, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
+import AnimoRunList from "~/components/AnimoRunList.vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -659,7 +660,7 @@ const lazyViewMap = {
   ViewDRSForm: { loader: () => import("~/components/DocumentReviewSystem/Form.vue"), class: "pb-20" },
   ViewRolePermissions: { loader: () => import("~/components/SuperAdminDashboardRolePermissions.vue"), class: "pb-32" },
   ViewAnimoRunRegistration: { loader: () => import("~/components/AnimoRunRegistration.vue"), class: "pb-32" },
-  ViewAnimoRunList: { loader: () => import("~/components/AnimoRunList.vue"), class: "pb-32" },
+  ViewAnimoRunList: { component: AnimoRunList, class: "pb-32" },
   ViewAddCandidates: { loader: () => import("~/components/CommissionOnElection/AddCandidates.vue"), class: "pb-32 p-10" },
   ViewCurrentEnrolledStudents: { loader: () => import("~/components/CommissionOnElection/ListEnrolledStudents.vue"), class: "pb-32 p-10" },
   ViewStudentElectionResults: { loader: () => import("~/components/CommissionOnElection/StudentElectionResults.vue"), class: "pb-32 p-10" },
@@ -698,10 +699,14 @@ watch(
   (viewName) => {
     const entry = lazyViewMap[viewName];
     if (entry) {
-      activeViewComponent.value = defineAsyncComponent({
-        loader: entry.loader,
-        delay: 0,
-      });
+      if (entry.component) {
+        activeViewComponent.value = entry.component;
+      } else {
+        activeViewComponent.value = defineAsyncComponent({
+          loader: entry.loader,
+          delay: 0,
+        });
+      }
       activeViewClass.value = entry.class;
     } else {
       activeViewComponent.value = null;
@@ -747,20 +752,7 @@ const logOut = () => logout();
                 :rolePermissions="rolePermissions"
                 @update:rolePermissions="(val) => rolePermissions = val"
               />
-              <template #fallback>
-                <div class="p-4 space-y-4 animate-pulse">
-                  <!-- Skeleton header bar -->
-                  <div :class="['h-10 rounded-2xl w-full', darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                  <!-- Skeleton card grid -->
-                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
-                    <div v-for="n in 6" :key="n"
-                      :class="['rounded-2xl p-4 space-y-2 border', darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200']">
-                      <div :class="['h-3 rounded w-3/4', darkMode ? 'bg-gray-700' : 'bg-slate-200']"></div>
-                      <div :class="['h-2.5 rounded w-1/2', darkMode ? 'bg-gray-700' : 'bg-slate-100']"></div>
-                    </div>
-                  </div>
-                </div>
-              </template>
+              <template #fallback></template>
             </Suspense>
           </div>
         </div>
