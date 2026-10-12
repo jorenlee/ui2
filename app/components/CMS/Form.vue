@@ -9,7 +9,9 @@ const endpoint = ref(config.public.apiUrl);
 // Define props
 const props = defineProps({
   darkMode: { type: Boolean, default: false },
-  editData: { type: Object, default: null }
+  editData: { type: Object, default: null },
+  formType: { type: String, default: "content" }, // "content" | "program"
+  isSuperAdmin: { type: Boolean, default: false },
 });
 
 // Define emit for parent
@@ -22,14 +24,65 @@ onMounted(() => {
   init();
 });
 
+const isSuperAdminUser = computed(() => {
+  if (props.isSuperAdmin) return true;
+  return (
+    user.value?.role === "Super Admin" ||
+    user.value?.is_superadmin === true ||
+    (Array.isArray(user.value?.role) && user.value.role.includes("Super Admin"))
+  );
+});
+
+const localFormType = ref(props.formType || "content");
+
+watch(
+  () => props.formType,
+  (val) => {
+    if (val) {
+      localFormType.value = val;
+    }
+  },
+  { immediate: true }
+);
+
+const isProgram = computed(() => {
+  const t = (localFormType.value || props.formType || "").toLowerCase().trim();
+  if (t === "program" || t === "programs") return true;
+  if (props.editData?.filters && (props.editData.filters.toLowerCase().includes("program") || props.editData.filters.toLowerCase().includes("programs"))) return true;
+  return false;
+});
+
+const setFormMode = (mode) => {
+  localFormType.value = mode;
+  if (mode === "program") {
+    if (!content.value.filters || !content.value.filters.toLowerCase().includes("programs")) {
+      content.value.filters = "Programs";
+    }
+    if (!content.value.date) {
+      content.value.date = moment().format("YYYY-MM-DD");
+    }
+  } else {
+    if (content.value.filters === "Programs") {
+      content.value.filters = "";
+    }
+  }
+};
+
+const formTitle = computed(() => {
+  if (isProgram.value) {
+    return props.editData ? "Edit Program" : "Add New Program";
+  }
+  return props.editData ? "Edit Content" : "Create New Content";
+});
+
 // ---------------- CONTENT MODEL ----------------
 const content = ref({
   content_id: "CMS" + moment().valueOf(),
   title: "",
   authors: "",
-  filters: "",
+  filters: isProgram.value ? "Programs" : "",
   descriptions: "",
-  date: "",
+  date: isProgram.value ? moment().format("YYYY-MM-DD") : "",
   links: [""], // ARRAY OF STRINGS (default one empty input)
   files: [], // ← ARRAY OF STRINGS e.g ['filename.jpg', filename.pdf, filename.mp4]
   is_verified: false,
@@ -547,9 +600,9 @@ watch(() => props.editData, (newVal) => {
       content_id: "CMS" + Date.now(),
       title: "",
       authors: "",
-      filters: "",
+      filters: isProgram.value ? "Programs" : "",
       descriptions: "",
-      date: "",
+      date: isProgram.value ? moment().format("YYYY-MM-DD") : "",
       links: [""],
       is_verified: false,
       is_approved: false,
@@ -566,6 +619,23 @@ watch(() => props.editData, (newVal) => {
     approvalPublished.value = false;
   }
 }, { immediate: true });
+
+watch(isProgram, (prog) => {
+  if (!props.editData) {
+    if (prog) {
+      if (!content.value.filters || !content.value.filters.toLowerCase().includes("programs")) {
+        content.value.filters = "Programs";
+      }
+      if (!content.value.date) {
+        content.value.date = moment().format("YYYY-MM-DD");
+      }
+    } else {
+      if (content.value.filters === "Programs") {
+        content.value.filters = "";
+      }
+    }
+  }
+});
 
 
 const ALLOWED_TYPES = [
@@ -922,6 +992,9 @@ const formatDescriptionText = () => {
 
 // Auto-detect Page Filters, Content Types, and Authors from title & description (SDGs are strictly manual)
 const runAutoDetect = () => {
+  if (isProgram.value) {
+    return;
+  }
   const titleText = content.value.title || "";
   const descText = content.value.descriptions || "";
   const text = (titleText + " " + descText).toLowerCase();
@@ -1030,18 +1103,34 @@ const submitMessage = ref("");
 const submitContent = async () => {
   // Validate required fields
   if (!content.value.title?.trim()) {
-    displayToast("❌ Please enter a title", "error");
+    displayToast(isProgram.value ? "❌ Please enter a program title" : "❌ Please enter a title", "error");
     return;
   }
 
   if (!content.value.descriptions?.trim()) {
-    displayToast("❌ Please enter a description", "error");
+    displayToast(isProgram.value ? "❌ Please enter a course description" : "❌ Please enter a description", "error");
     return;
   }
 
   try {
     submitting.value = true;
     submitMessage.value = "";
+
+    // Ensure 'Programs' filter and date are set for program mode
+    if (isProgram.value) {
+      if (!content.value.date) {
+        content.value.date = moment().format("YYYY-MM-DD");
+      }
+      if (!content.value.filters || !content.value.filters.trim()) {
+        content.value.filters = "Programs";
+      } else {
+        const parts = content.value.filters.split(",").map((p) => p.trim()).filter(Boolean);
+        if (!parts.some((p) => p.toLowerCase() === "programs" || p.toLowerCase() === "program")) {
+          parts.unshift("Programs");
+          content.value.filters = parts.join(", ");
+        }
+      }
+    }
 
     // Collect uploaded filenames
     const uploadedFilenames = selectedFiles.value
@@ -1081,8 +1170,9 @@ const submitContent = async () => {
     });
 
     // Success handling
-    displayToast("✅ Content submitted successfully!", "success", 2000);
-    submitMessage.value = "Content submitted successfully!";
+    const successMsg = isProgram.value ? "Program submitted successfully!" : "Content submitted successfully!";
+    displayToast(`✅ ${successMsg}`, "success", 2000);
+    submitMessage.value = successMsg;
 
     // Reset form immediately
     resetForm();
@@ -1109,9 +1199,9 @@ const resetForm = () => {
     content_id: "CMS" + Date.now(),
     title: "",
     authors: "",
-    filters: "",
+    filters: isProgram.value ? "Programs" : "",
     descriptions: "",
-    date: "",
+    date: isProgram.value ? moment().format("YYYY-MM-DD") : "",
     links: [""],
     is_verified: false,
     is_approved: false,
@@ -1192,17 +1282,44 @@ const displayToast = (message, type = "success", duration = 3000) => {
       <div class="">
         <div class="shadow-lg rounded-lg p-2"
           :class="darkMode ? 'bg-gray-800' : 'bg-white'">
-          <h1 class="text-xl font-bold mb-8"
-            :class="darkMode ? 'text-gray-200' : 'text-gray-800'">
-            {{ editData ? 'Edit Content' : 'Create New Content' }}
-          </h1>
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <h1 class="text-xl font-bold"
+              :class="darkMode ? 'text-gray-200' : 'text-gray-800'">
+              {{ formTitle }}
+            </h1>
+
+            <!-- Quick Mode Switcher (if creating new) -->
+            <div v-if="!editData" class="inline-flex p-1 rounded-lg border shadow-sm"
+              :class="darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-100 border-gray-200'">
+              <button
+                type="button"
+                @click="setFormMode('content')"
+                class="px-3 py-1 text-xs font-bold rounded-md transition flex items-center gap-1.5"
+                :class="!isProgram
+                  ? (darkMode ? 'bg-yellow-600 text-white shadow' : 'bg-yellow-500 text-white shadow')
+                  : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-900')">
+                <i class="fa fa-newspaper-o text-[10px]"></i>
+                Content Form
+              </button>
+              <button
+                type="button"
+                @click="setFormMode('program')"
+                class="px-3 py-1 text-xs font-bold rounded-md transition flex items-center gap-1.5"
+                :class="isProgram
+                  ? (darkMode ? 'bg-emerald-600 text-white shadow' : 'bg-emerald-600 text-white shadow')
+                  : (darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-900')">
+                <i class="fa fa-graduation-cap text-[10px]"></i>
+                Program Form
+              </button>
+            </div>
+          </div>
 
           <div class="w-full space-y-6">
             <!-- TITLE -->
             <div>
               <label class="block text-sm font-semibold mb-2"
                 :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-                Title
+                {{ isProgram ? 'Program Title' : 'Title' }}
                 <span class="text-red-500">*</span>
               </label>
               <input
@@ -1213,12 +1330,12 @@ const displayToast = (message, type = "success", duration = 3000) => {
                 :class="darkMode
                   ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
-                placeholder="Enter content title"
+                :placeholder="isProgram ? 'Enter program title' : 'Enter content title'"
               />
             </div>
 
             <!-- AUTHORS -->
-            <div>
+            <div v-if="!isProgram">
               <label class="block text-sm font-semibold mb-2"
                 :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                 >Author/Authors</label
@@ -1235,7 +1352,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
             </div>
 
             <!-- CONTENT CREATOR / AUTHOR EMAIL -->
-            <div>
+            <div v-if="!isProgram">
               <label class="block text-sm font-semibold mb-2"
                 :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                 >Content Creator Email (Author Email)</label
@@ -1252,7 +1369,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
             </div>
 
             <!-- Authors Selection -->
-            <div>
+            <div v-if="!isProgram">
               <label class="block text-xs font-semibold mb-3 uppercase"
                 :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
                 >Default Authors</label
@@ -1288,7 +1405,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
   <div class="flex justify-between items-center mb-2">
     <label class="block text-sm font-semibold"
       :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
-      Description
+      {{ isProgram ? 'Course Description' : 'Description' }}
       <span class="text-red-500">*</span>
     </label>
     <button
@@ -1322,11 +1439,11 @@ const displayToast = (message, type = "success", duration = 3000) => {
                 :class="darkMode
                   ? 'bg-gray-700 border-gray-600 text-gray-200 placeholder-gray-400'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'"
-                placeholder="Enter filters manually or select SDGs below"
+                :placeholder="isProgram ? 'Enter filters (e.g., Programs, CCSEA)' : 'Enter filters manually or select SDGs below'"
               />
 
               <!-- SDGs Selection -->
-              <div>
+              <div v-if="!isProgram">
                 <label
                   class="block text-xs font-semibold mb-3 uppercase"
                   :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
@@ -1377,7 +1494,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
               </div>
 
               <!-- Other Filters Group (By Page Filter) -->
-              <div class="mt-6">
+              <div v-if="!isProgram" class="mt-6">
                 <label
                   class="block text-xs font-semibold mb-3 uppercase"
                   :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
@@ -1415,7 +1532,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
               </div>
 
               <!-- News and Updates Content Type -->
-              <div class="mt-6">
+              <div v-if="!isProgram" class="mt-6">
                 <label
                   class="block text-xs font-semibold mb-3 uppercase"
                   :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
@@ -1453,7 +1570,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
               </div>
 
               <!-- Approval Status -->
-              <div class="mt-6">
+              <div v-if="!isProgram || isSuperAdminUser" class="mt-6">
                 <label
                   class="block text-xs font-semibold mb-3 uppercase tracking-wider"
                   :class="darkMode ? 'text-gray-400' : 'text-gray-600'"
@@ -1491,7 +1608,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
             </div>
 
             <!-- DATE -->
-            <div>
+            <div v-if="!isProgram">
               <label class="block text-sm font-semibold mb-2"
                 :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
                 >Date</label
@@ -1776,7 +1893,7 @@ const displayToast = (message, type = "success", duration = 3000) => {
                 class="flex-1 bg-green-800 hover:bg-green-900 disabled:bg-gray-400 text-white py-3 rounded-lg text-base font-bold transition-colors flex items-center justify-center"
               >
                 <i v-if="submitting" class="fa fa-spinner fa-spin mr-2"></i>
-                {{ submitting ? "Saving..." : (editData ? "Update Content" : "Submit Content") }}
+                {{ submitting ? "Saving..." : (editData ? (isProgram ? 'Update Program' : 'Update Content') : (isProgram ? 'Submit Program' : 'Submit Content')) }}
               </button>
               <button
                 @click="resetForm"

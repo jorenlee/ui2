@@ -16,8 +16,17 @@ onMounted(() => {
 });
 
 const addMoreToggle = ref(false);
+const formMode = ref("content"); // "content" | "program"
+
 const addMore = () => {
+  formMode.value = "content";
   addMoreToggle.value = !addMoreToggle.value;
+  scrollToTop();
+};
+
+const addMorePrograms = () => {
+  formMode.value = "program";
+  addMoreToggle.value = true;
   scrollToTop();
 };
 
@@ -33,8 +42,45 @@ const selectedItem = ref(null);
 
 const info = ref([]);
 const loading = ref(true);
+const isSyncing = ref(false);
 const errorMsg = ref("");
 const display = ref("desktop");
+
+// SWR Cache & Persistence for slow connections
+const cmsCache = useState("lsu_cms_content_list_cache", () => null);
+const rolePermsCache = useState("lsu_cms_role_perms_cache", () => []);
+const STORAGE_KEY = "lsu_cms_content_list_cache_v1";
+
+// Immediate hydration on setup if state cache is already warm
+if (cmsCache.value && Array.isArray(cmsCache.value) && cmsCache.value.length > 0) {
+  info.value = cmsCache.value;
+  loading.value = false;
+}
+
+const saveToLocalStorage = (data) => {
+  if (!process.client) return;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.warn("Could not save CMS cache to localStorage:", err);
+  }
+};
+
+const getFromLocalStorage = () => {
+  if (!process.client) return null;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn("Could not parse CMS cache from localStorage:", err);
+  }
+  return null;
+};
 
 
 // Add SDG colors mapping
@@ -258,10 +304,15 @@ const effectiveRolePermissions = computed(() => {
 
 const fetchLocalRolePermissions = async () => {
   if (props.rolePermissions && props.rolePermissions.length > 0) return;
+  if (rolePermsCache.value && rolePermsCache.value.length > 0) {
+    localRolePermissions.value = rolePermsCache.value;
+    return;
+  }
   try {
     const res = await $fetch(`${endpoint.value}/api/cits/role-permissions/list/`);
     if (Array.isArray(res)) {
       localRolePermissions.value = res;
+      rolePermsCache.value = res;
     }
   } catch (err) {
     console.error("Error fetching role permissions in List.vue:", err);
@@ -322,22 +373,62 @@ const canEdit = (item) => {
   return false;
 };
 
+let inFlightFetch = null;
+
 const fetchList = async (silent = false) => {
-  if (!silent) loading.value = true;
-  try {
-    const res = await $fetch(endpoint.value + "/api/cms/content/list/");
-    info.value = Array.isArray(res) ? res : [];
-  } catch (error) {
-    console.error("Error fetching list:", error);
-    if (!silent) errorMsg.value = "Failed to load news & updates.";
-  } finally {
-    if (!silent) loading.value = false;
+  if (inFlightFetch) {
+    return inFlightFetch;
   }
+
+  if (!silent) {
+    loading.value = true;
+  } else {
+    isSyncing.value = true;
+  }
+  errorMsg.value = "";
+
+  const task = (async () => {
+    try {
+      const res = await $fetch(endpoint.value + "/api/cms/content/list/", {
+        headers: {
+          "Accept": "application/json",
+        },
+      });
+      if (Array.isArray(res)) {
+        info.value = res;
+        cmsCache.value = res;
+        saveToLocalStorage(res);
+      }
+    } catch (error) {
+      console.error("Error fetching list:", error);
+      if (info.value.length === 0) {
+        if (!silent) errorMsg.value = "Failed to load news & updates.";
+      }
+    } finally {
+      if (!silent) loading.value = false;
+      isSyncing.value = false;
+      inFlightFetch = null;
+    }
+  })();
+
+  inFlightFetch = task;
+  return task;
 };
 
-onMounted(async () => {
-  await fetchLocalRolePermissions();
-  await fetchList();
+onMounted(() => {
+  // 1. If memory cache was empty, restore immediately from persistent local storage
+  if (info.value.length === 0) {
+    const cached = getFromLocalStorage();
+    if (cached) {
+      info.value = cached;
+      cmsCache.value = cached;
+      loading.value = false;
+    }
+  }
+
+  // 2. Fetch role permissions and content list in parallel without waterfall
+  fetchLocalRolePermissions();
+  fetchList(info.value.length > 0);
 });
 
 const handleFormSubmitted = async () => {
@@ -345,6 +436,8 @@ const handleFormSubmitted = async () => {
   showEditModal.value = false;
   editContent.value = null;
   await fetchList(true); // Silent refresh
+  cmsCache.value = info.value;
+  saveToLocalStorage(info.value);
   scrollToTop();
 };
 
@@ -360,6 +453,12 @@ const openEditModal = async (item) => {
       `${endpoint.value}/api/cms/content/${item.id}/`,
     );
     editContent.value = response;
+    const filterStr = (response?.filters || item?.filters || "").toLowerCase();
+    if (filterStr.includes("programs") || filterStr.includes("program")) {
+      formMode.value = "program";
+    } else {
+      formMode.value = "content";
+    }
     showEditModal.value = true;
   } catch (error) {
     console.error("Error fetching content:", error);
@@ -468,6 +567,7 @@ const selectedForDelete = ref([]);
 
 const selectAll = computed({
   get: () => {
+    if (!isSuperAdmin.value) return false;
     const editableItems = paginatedInfo.value.filter((item) => canEdit(item));
     if (editableItems.length > 0) {
       return editableItems.every((item) => selectedForDelete.value.includes(item.id));
@@ -475,6 +575,7 @@ const selectAll = computed({
     return false;
   },
   set: (val) => {
+    if (!isSuperAdmin.value) return;
     const editableItems = paginatedInfo.value.filter((item) => canEdit(item));
     if (val) {
       const newSelections = [...selectedForDelete.value];
@@ -659,6 +760,30 @@ const getSdgBadges = (item) => {
           </span>
         </div>
 
+        <!-- Sync / Refresh Button -->
+        <button
+          type="button"
+          @click="fetchList(info.length > 0)"
+          :disabled="isSyncing || loading"
+          class="flex items-center gap-1.5 px-2.5 h-9 rounded-lg border transition text-xs select-none"
+          :class="darkMode
+            ? 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-750 disabled:opacity-50'
+            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50'"
+          title="Refresh content list"
+        >
+          <i
+            class="fa fa-refresh text-xs"
+            :class="{ 'fa-spin text-green-500': isSyncing || loading }"
+          ></i>
+          <span
+            v-if="isSyncing"
+            class="text-[10px] font-semibold"
+            :class="darkMode ? 'text-green-400' : 'text-green-600'"
+          >
+            Syncing...
+          </span>
+        </button>
+
       </div>
 
 
@@ -786,25 +911,38 @@ const getSdgBadges = (item) => {
     <!-- Actions -->
     <div class="flex items-center gap-1.5">
 
-      <!-- Add -->
+      <!-- Add Content -->
       <button
         @click="addMore"
         v-if="!addMoreToggle"
-        class="h-8 px-3 rounded-lg text-[10px] font-bold uppercase text-white transition"
+        class="h-8 px-3 rounded-lg text-[10px] font-bold uppercase text-white transition flex items-center"
         :class="darkMode
           ? 'bg-yellow-600 hover:bg-yellow-500'
           : 'bg-yellow-500 hover:bg-yellow-400'"
       >
         <i class="fa fa-plus mr-1"></i>
-        Add More
+        Add More Content
+      </button>
+
+      <!-- Add Programs -->
+      <button
+        @click="addMorePrograms"
+        v-if="!addMoreToggle"
+        class="h-8 px-3 rounded-lg text-[10px] font-bold uppercase text-white transition flex items-center"
+        :class="darkMode
+          ? 'bg-emerald-600 hover:bg-emerald-500'
+          : 'bg-emerald-500 hover:bg-emerald-400'"
+      >
+        <i class="fa fa-plus mr-1"></i>
+        Add More Programs
       </button>
 
 
       <!-- CSV -->
       <button
         @click="showCsvModal = true"
-        v-if="!addMoreToggle"
-        class="h-8 px-3 rounded-lg text-[10px] font-bold uppercase text-white transition"
+        v-if="!addMoreToggle && isSuperAdmin"
+        class="h-8 px-3 rounded-lg text-[10px] font-bold uppercase text-white transition flex items-center"
         :class="darkMode
           ? 'bg-blue-600 hover:bg-blue-500'
           : 'bg-blue-500 hover:bg-blue-400'"
@@ -961,6 +1099,7 @@ const getSdgBadges = (item) => {
             :class="darkMode ? 'bg-gray-900' : 'bg-gray-50'"
           >
             <input
+              v-if="isSuperAdmin"
               type="checkbox"
               v-model="selectAll"
               class="w-3.5 h-3.5 text-red-600 focus:ring-red-500 border-gray-300 rounded cursor-pointer"
@@ -1138,6 +1277,8 @@ const getSdgBadges = (item) => {
               <img
                 v-if="j.files?.find(isImageFile)"
                 :src="getFileUrl(j.files.find(isImageFile))"
+                loading="lazy"
+                decoding="async"
                 class="w-full h-full object-cover"
                 @error="handleImageError($event, j.files.find(isImageFile))"
               />
@@ -1290,10 +1431,10 @@ const getSdgBadges = (item) => {
 
 </div>
 
-                  <SuperAdminDashboardLoading v-if="loading" />
+               
 
                   <!-- Mobile Card View -->
-                  <div v-else class="lg:hidden divide-y border shadow-sm" :class="darkMode ? 'divide-gray-700' : 'divide-gray-200'">
+                  <div v-if="!loading" class="lg:hidden divide-y border shadow-sm" :class="darkMode ? 'divide-gray-700' : 'divide-gray-200'">
                     <div v-for="j in paginatedInfo" :key="j.id" class="p-4 transition-colors cursor-pointer" :class="[
                       darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50',
                       selectedItem?.id === j.id
@@ -1307,6 +1448,8 @@ const getSdgBadges = (item) => {
                         <div class="flex-shrink-0 w-20 h-16">
                           <template v-if="j.files?.find(isImageFile)">
                             <img :src="getFileUrl(j.files.find(isImageFile))"
+                              loading="lazy"
+                              decoding="async"
                               class="w-full h-full object-cover rounded border"
                               :class="darkMode ? 'border-gray-700' : 'border-gray-200'"
                               @error="handleImageError($event, j.files.find(isImageFile))" />
@@ -1415,8 +1558,13 @@ const getSdgBadges = (item) => {
           </div>
 
           <!-- Form -->
-          <CMSForm :darkMode="darkMode" :editData="showEditModal ? editContent : null"
-            @content-submitted="handleFormSubmitted" />
+          <CMSForm
+            :darkMode="darkMode"
+            :editData="showEditModal ? editContent : null"
+            :formType="formMode"
+            :isSuperAdmin="isSuperAdmin"
+            @content-submitted="handleFormSubmitted"
+          />
         </div>
       </div>
     </div>
@@ -1424,7 +1572,7 @@ const getSdgBadges = (item) => {
 
 
     <!-- CSV Upload Modal -->
-    <div v-if="showCsvModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
+    <div v-if="showCsvModal && isSuperAdmin" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
       @click="closeCsvModal">
       <div class="w-full max-w-md rounded-lg shadow-lg overflow-hidden flex flex-col"
         :class="darkMode ? 'bg-gray-800' : 'bg-white'" @click.stop>
