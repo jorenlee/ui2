@@ -49,6 +49,18 @@ const removeChatAttachment = () => {
 
 const isPdfAttachment = (url) => (url || '').toLowerCase().includes('.pdf') || (url || '').endsWith('pdf');
 
+const cleanURL = (url) => {
+  if (!url) return "";
+  const match = String(url).match(/^(.*?\.(?:jpg|jpeg|png|gif|webp|bmp|svg|pdf|heic|heif))/i);
+  return match ? match[1] : url;
+};
+
+const getCleanUrl = (url) => {
+  if (!url) return "";
+  const match = String(url).match(/^(.*?\.(?:jpg|jpeg|png))/i);
+  return match ? match[1] : cleanURL(url);
+};
+
 const getCategoryBadge = (cat) => {
   if (!cat) return "bg-gray-500";
   const c = cat.toUpperCase();
@@ -209,7 +221,7 @@ const sendMessage = async (reg) => {
         method: 'POST',
         body: formData,
       });
-      attachmentUrl = uploadRes.url || '';
+      attachmentUrl = getCleanUrl(uploadRes.url) || uploadRes.url || '';
       attachmentName = attachment.name || 'Attachment';
     }
     const senderName = `${reg.firstname || ""} ${reg.lastname || ""}`.trim() || user.value?.email;
@@ -418,14 +430,14 @@ onMounted(() => fetchMyRegistrations());
                 <p v-if="msg.message" class="whitespace-pre-wrap break-words">{{ msg.message }}</p>
                 <!-- Attachment -->
                 <div v-if="msg.attachment_url" class="mt-1.5">
-                  <a v-if="isPdfAttachment(msg.attachment_url)" :href="msg.attachment_url" target="_blank"
+                  <a v-if="isPdfAttachment(msg.attachment_url)" :href="cleanURL(msg.attachment_url)" target="_blank"
                     :class="['flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition', msg.sender_type === 'admin' ? 'bg-white/20 hover:bg-white/30 text-white' : darkMode ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700']">
                     <i class="fas fa-file-pdf"></i>
                     <span class="truncate max-w-[140px]">{{ msg.attachment_name || 'View PDF' }}</span>
                     <i class="fas fa-external-link-alt text-[9px] opacity-60 ml-auto"></i>
                   </a>
-                  <a v-else :href="msg.attachment_url" target="_blank" class="block">
-                    <img :src="msg.attachment_url" :alt="msg.attachment_name || 'Image'"
+                  <a v-else :href="getCleanUrl(msg.attachment_url)" target="_blank" class="block">
+                    <img :src="getCleanUrl(msg.attachment_url)" :alt="msg.attachment_name || 'Image'"
                       @load="scrollToBottom(reg.id)"
                       class="mt-1 max-w-[180px] max-h-[150px] rounded-xl object-cover border border-white/20 shadow-sm cursor-pointer hover:opacity-90 transition" />
                   </a>

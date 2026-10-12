@@ -182,11 +182,19 @@ const closeReceiptModal = () => {
 
 // Strip everything after the file extension (removes query strings, tokens, extra params)
 const cleanURL = (url) => {
-  if (!url) return url;
+  if (!url) return "";
   // Match the URL up to and including the file extension (e.g. .jpg, .png, .pdf, .jpeg, .webp, .gif)
-  const match = url.match(/^(.*\.(?:jpg|jpeg|png|gif|webp|bmp|svg|pdf|heic|heif))/i);
+  const match = String(url).match(/^(.*?\.(?:jpg|jpeg|png|gif|webp|bmp|svg|pdf|heic|heif))/i);
   return match ? match[1] : url;
 };
+
+// Clean image URLs only until extension (.jpg, .jpeg, .png) removing query params/tokens
+const getCleanUrl = (url) => {
+  if (!url) return "";
+  const match = String(url).match(/^(.*?\.(?:jpg|jpeg|png))/i);
+  return match ? match[1] : cleanURL(url);
+};
+
 
 const runCategories = [
   { id: "1KM", name: "1 KM", color: "bg-[#123F38] text-white" }, // Green
@@ -607,11 +615,11 @@ onUnmounted(() => {
 
 const getImageUrl = (val) => {
   if (!val) return null;
-  if (typeof val === "string") return val;
-  if (typeof val === "object" && val.url) return val.url;
+  if (typeof val === "string") return getCleanUrl(val);
+  if (typeof val === "object" && val.url) return getCleanUrl(val.url);
   if (Array.isArray(val) && val.length > 0) {
-    if (typeof val[0] === "string") return val[0];
-    return val[0]?.url || null;
+    if (typeof val[0] === "string") return getCleanUrl(val[0]);
+    return getCleanUrl(val[0]?.url) || null;
   }
   return null;
 };
@@ -794,7 +802,17 @@ const filteredRegistrations = computed(() => {
       }
     }
 
-    return matchesQuery && matchesCategory && matchesStatus && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate;
+    // Chat / Message inquiries filter
+    let matchesChat = true;
+    if (selectedChatFilter.value === "new") {
+      matchesChat = getRunnerMessageStats(item).hasNew;
+    } else if (selectedChatFilter.value === "has_messages") {
+      matchesChat = getRunnerMessageStats(item).total > 0;
+    } else if (selectedChatFilter.value === "no_messages") {
+      matchesChat = getRunnerMessageStats(item).total === 0;
+    }
+
+    return matchesQuery && matchesCategory && matchesStatus && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate && matchesChat;
   });
 
   // Sorting
@@ -850,6 +868,7 @@ const openDetails = (runner) => {
   bypassWarningAcknowledged.value = false;
   chatInput.value = "";
   loadChat(runner);
+  markRunnerMessagesAsRead(runner);
   scrollChatToBottom();
 };
 
@@ -1168,6 +1187,7 @@ const CSV_ALL_COLUMNS = [
   { key: 'confirmed_by', label: 'Confirmed By' },
   { key: 'locked_by', label: 'Batch Locked By' },
   { key: 'locked_at', label: 'Batch Locked At' },
+  { key: 'messages_count', label: 'Messages Count' },
 ];
 
 const DEFAULT_COLUMNS = [
@@ -1248,6 +1268,7 @@ const generateCsvFromList = (list, batchLabel = "Export") => {
       confirmed_by: escapeCsv(r.confirmed_by || ""),
       locked_by: escapeCsv(r.batch_locked_by || ""),
       locked_at: escapeCsv(r.batch_locked_at || ""),
+      messages_count: escapeCsv(Array.isArray(r.communication_logs) ? r.communication_logs.length : 0),
     };
 
     return activeCols.map(c => colMap[c.key] || '""').join(",");
@@ -1539,15 +1560,22 @@ const chatAttachment = ref(null);  // { file, previewUrl, name }
 const isSendingChat = ref(false);
 const isChatLoading = ref(false);
 const chatMessagesContainer = ref(null);
+const quickChatMessagesContainer = ref(null);
 
 const scrollChatToBottom = () => {
   nextTick(() => {
     if (chatMessagesContainer.value) {
       chatMessagesContainer.value.scrollTop = chatMessagesContainer.value.scrollHeight;
     }
+    if (quickChatMessagesContainer.value) {
+      quickChatMessagesContainer.value.scrollTop = quickChatMessagesContainer.value.scrollHeight;
+    }
     setTimeout(() => {
       if (chatMessagesContainer.value) {
         chatMessagesContainer.value.scrollTop = chatMessagesContainer.value.scrollHeight;
+      }
+      if (quickChatMessagesContainer.value) {
+        quickChatMessagesContainer.value.scrollTop = quickChatMessagesContainer.value.scrollHeight;
       }
     }, 120);
   });
@@ -1627,7 +1655,7 @@ const sendAdminMessage = async () => {
         method: 'POST',
         body: formData,
       });
-      attachmentUrl = uploadRes.url || '';
+      attachmentUrl = getCleanUrl(uploadRes.url) || uploadRes.url || '';
       attachmentName = attachment.name || 'Attachment';
     }
 
@@ -1690,6 +1718,121 @@ const sendAdminMessage = async () => {
   } finally {
     isSendingChat.value = false;
   }
+};
+
+
+// ── Dedicated Quick Chat Modal & Message Query Tracking ──────────────────────
+const isChatModalOpen = ref(false);
+const chatModalRunner = ref(null);
+const selectedChatFilter = ref("All"); // "All", "new", "has_messages", "no_messages"
+const chatFilterActive = computed(() => selectedChatFilter.value === "new");
+
+const toggleChatFilter = () => {
+  selectedChatFilter.value = selectedChatFilter.value === "new" ? "All" : "new";
+};
+
+// Determines message stats for a given runner (total count, new unread queries)
+const getRunnerMessageStats = (runner) => {
+  if (!runner) return { total: 0, newCount: 0, hasNew: false, unreadQueries: [] };
+  const logs = Array.isArray(runner.communication_logs) ? runner.communication_logs : [];
+  if (!logs.length) return { total: 0, newCount: 0, hasNew: false, unreadQueries: [] };
+
+  let readIds = [];
+  try {
+    const stored = localStorage.getItem(`animorun_read_${runner.id}`);
+    if (stored) readIds = JSON.parse(stored);
+  } catch (e) {}
+
+  const unreadQueries = [];
+  logs.forEach((msg, idx) => {
+    // Only messages from registrant/runner can be new inquiries
+    const isRegistrant = msg.sender_type === 'registrant' || (msg.sender_type !== 'admin' && msg.sender !== 'Admin');
+    if (!isRegistrant) return;
+
+    if (msg.read_by_admin === true || msg.is_read === true) return;
+    if (msg.message_id && readIds.includes(msg.message_id)) return;
+    if (msg.timestamp && readIds.includes(msg.timestamp)) return;
+
+    // If an admin replied later in the conversation, the inquiry has been addressed
+    const hasSubsequentAdminReply = logs.slice(idx + 1).some(m => m.sender_type === 'admin' || m.sender === 'Admin');
+    if (hasSubsequentAdminReply) return;
+
+    unreadQueries.push(msg);
+  });
+
+  return {
+    total: logs.length,
+    newCount: unreadQueries.length,
+    hasNew: unreadQueries.length > 0,
+    unreadQueries,
+  };
+};
+
+const totalNewQueriesCount = computed(() => {
+  return registrations.value.reduce((acc, r) => {
+    return acc + getRunnerMessageStats(r).newCount;
+  }, 0);
+});
+
+const totalRunnersWithChatCount = computed(() => {
+  return registrations.value.filter((r) => {
+    return Array.isArray(r.communication_logs) && r.communication_logs.length > 0;
+  }).length;
+});
+
+const markRunnerMessagesAsRead = async (runner) => {
+  if (!runner || !Array.isArray(runner.communication_logs) || !runner.communication_logs.length) return;
+  const logs = runner.communication_logs;
+  const readIds = [];
+  let updatedAny = false;
+
+  const newLogs = logs.map((m) => {
+    if (m.message_id) readIds.push(m.message_id);
+    if (m.timestamp) readIds.push(m.timestamp);
+    if ((m.sender_type === 'registrant' || m.sender_type !== 'admin') && !m.read_by_admin) {
+      updatedAny = true;
+      return { ...m, read_by_admin: true, is_read: true };
+    }
+    return m;
+  });
+
+  try {
+    localStorage.setItem(`animorun_read_${runner.id}`, JSON.stringify(readIds));
+  } catch (e) {}
+
+  if (updatedAny) {
+    runner.communication_logs = newLogs;
+    try {
+      await $fetch(`${endpoint.value}/api/animorun/${runner.id}/edit/`, {
+        method: "PUT",
+        body: { communication_logs: newLogs, bypass_lock: true },
+      });
+    } catch (e) {
+      console.warn("Could not sync message read status to server:", e);
+    }
+  }
+};
+
+const openChatModal = async (runner) => {
+  if (!runner) return;
+  chatModalRunner.value = runner;
+  selectedRunner.value = runner; // keep synchronized for sendAdminMessage
+  isChatModalOpen.value = true;
+  chatInput.value = "";
+  chatEmailSent.value = false;
+  await loadChat(runner);
+  await markRunnerMessagesAsRead(runner);
+  scrollChatToBottom();
+};
+
+const closeChatModal = () => {
+  isChatModalOpen.value = false;
+  chatModalRunner.value = null;
+  removeChatAttachment();
+};
+
+const applyChatTemplate = (text) => {
+  chatInput.value = text;
 };
 
 
@@ -1846,6 +1989,29 @@ onMounted(() => {
               <span v-if="batchesList.length"
                 class="px-1.5 py-0.2 rounded-full bg-amber-400 text-gray-900 font-black text-[10px]">
                 {{ batchesList.length }}
+              </span>
+            </button>
+
+            <!-- Chat Inquiries Filter button / pill -->
+            <button type="button" @click="toggleChatFilter"
+              :class="[
+                'px-3 py-2 rounded-xl backdrop-blur font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer border select-none',
+                chatFilterActive
+                  ? 'bg-rose-500 text-white border-rose-300 ring-2 ring-rose-300 font-bold'
+                  : totalNewQueriesCount > 0
+                    ? 'bg-rose-500/80 hover:bg-rose-500 text-white border-rose-400/80 shadow-md animate-pulse'
+                    : 'bg-white/20 hover:bg-white/30 border-white/30 text-white'
+              ]"
+              :title="`Click to ${chatFilterActive ? 'clear filter' : 'filter runners with new message queries'} (${totalNewQueriesCount} new queries, ${totalRunnersWithChatCount} active threads)`">
+              <i class="fas fa-comments" :class="chatFilterActive ? 'text-white' : 'text-amber-300'"></i>
+              <span>Messages</span>
+              <span v-if="totalNewQueriesCount > 0"
+                class="px-1.5 py-0.2 rounded-full bg-white text-rose-700 font-black text-[10px] shadow-xs">
+                {{ totalNewQueriesCount }} NEW
+              </span>
+              <span v-else-if="totalRunnersWithChatCount > 0"
+                class="px-1.5 py-0.2 rounded-full bg-emerald-400 text-gray-900 font-black text-[10px]">
+                {{ totalRunnersWithChatCount }}
               </span>
             </button>
 
@@ -2057,6 +2223,20 @@ onMounted(() => {
                 <option value="55+">55+</option>
               </select>
             </div>
+
+            <!-- Messages / Queries Filter -->
+            <div>
+              <select v-model="selectedChatFilter" :class="[
+                'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                selectedChatFilter === 'new' ? 'ring-2 ring-rose-400 font-bold !border-rose-400 bg-rose-50/70 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300' : selectedChatFilter !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+              ]">
+                <option value="All">💬 All Messages</option>
+                <option value="new">🔴 New Queries ({{ totalNewQueriesCount }})</option>
+                <option value="has_messages">💬 With Chat History ({{ totalRunnersWithChatCount }})</option>
+                <option value="no_messages">⚪ No Messages</option>
+              </select>
+            </div>
           </div>
 
           <!-- Toolbar Row 2: Date Range Period, Supplier Batch Filter & Sorting -->
@@ -2244,8 +2424,30 @@ onMounted(() => {
               <!-- Card Action Button -->
               <div class="pt-1 flex gap-2">
                 <button type="button" @click="openDetails(runner)"
-                  class="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
-                  <i class="fas fa-eye text-xs"></i> View Full Details
+                  class="flex-1 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+                  <i class="fas fa-eye text-xs"></i> View Details
+                </button>
+                <!-- Mobile Message Button with NEW Badge -->
+                <button type="button" @click="openChatModal(runner)"
+                  :class="[
+                    'py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0 border select-none',
+                    getRunnerMessageStats(runner).hasNew
+                      ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700/80 animate-pulse'
+                      : getRunnerMessageStats(runner).total > 0
+                        ? 'bg-slate-100 hover:bg-emerald-50 dark:bg-gray-800 text-slate-700 dark:text-gray-200 border-slate-200 dark:border-gray-700 hover:text-emerald-700'
+                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 text-gray-500 hover:text-emerald-600 border-slate-200 dark:border-gray-700'
+                  ]"
+                  :title="getRunnerMessageStats(runner).hasNew ? `${getRunnerMessageStats(runner).newCount} new query` : `${getRunnerMessageStats(runner).total} messages`">
+                  <i :class="['fas text-xs', getRunnerMessageStats(runner).hasNew ? 'fa-comment-dots text-rose-600' : 'fa-comments text-emerald-600']"></i>
+                  <span v-if="getRunnerMessageStats(runner).hasNew" class="px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-black text-[10px]">
+                    {{ getRunnerMessageStats(runner).newCount }} NEW
+                  </span>
+                  <span v-else-if="getRunnerMessageStats(runner).total > 0" class="text-[11px] font-bold">
+                    {{ getRunnerMessageStats(runner).total }}
+                  </span>
+                  <span v-else class="text-[11px] font-normal opacity-70">
+                    Chat
+                  </span>
                 </button>
                 <button v-if="runner.payment_status && runner.payment_status.startsWith('Pending')" type="button"
                   @click="promptConfirmPayment(runner)"
@@ -2303,6 +2505,20 @@ onMounted(() => {
                     'fas ml-1 text-[10px]',
                     sortBy === 'date_desc' ? 'fa-sort-numeric-down text-emerald-600' : sortBy === 'date_asc' ? 'fa-sort-numeric-up text-emerald-600' : 'fa-sort text-gray-400'
                   ]"></i>
+                </th>
+
+                <!-- Messages / Chat Column Header (Red box in user's layout) -->
+                <th class="p-3 text-center whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1.5 cursor-pointer hover:text-emerald-500 transition select-none"
+                    @click="toggleChatFilter"
+                    :title="`Click to filter runners with new queries (${totalNewQueriesCount} new)`">
+                    <i class="fas fa-comments text-emerald-600 dark:text-emerald-400 text-xs"></i>
+                    <span>Messages</span>
+                    <span v-if="totalNewQueriesCount > 0"
+                      class="px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-black text-[9px] animate-pulse">
+                      {{ totalNewQueriesCount }} NEW
+                    </span>
+                  </span>
                 </th>
 
                 <th class="p-3 text-center">Actions</th>
@@ -2608,6 +2824,43 @@ onMounted(() => {
                     </template>
                   </td>
 
+                  <!-- Messages / Chat Column (Red box in user's layout) -->
+                  <td class="px-3 text-center whitespace-nowrap">
+                    <!-- Runner has NEW unread message query -->
+                    <button v-if="getRunnerMessageStats(runner).hasNew" type="button"
+                      @click="openChatModal(runner)"
+                      class="relative px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-300 dark:border-rose-700/80 text-rose-700 dark:text-rose-300 font-bold text-xs shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer group"
+                      :title="`${getRunnerMessageStats(runner).newCount} new message query · Click to view and reply`">
+                      <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                      </span>
+                      <i class="fas fa-comment-dots text-rose-600 dark:text-rose-400 text-sm group-hover:scale-110 transition-transform"></i>
+                      <span class="px-1.5 py-0.5 rounded-full bg-rose-600 text-white font-black text-[10px] tracking-tight shadow-2xs">
+                        {{ getRunnerMessageStats(runner).newCount }} NEW
+                      </span>
+                    </button>
+
+                    <!-- Runner has message history (all read / replied) -->
+                    <button v-else-if="getRunnerMessageStats(runner).total > 0" type="button"
+                      @click="openChatModal(runner)"
+                      class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 dark:bg-gray-800 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 text-slate-700 dark:text-gray-200 hover:text-emerald-700 dark:hover:text-emerald-400 font-semibold text-xs transition inline-flex items-center gap-1.5 cursor-pointer group"
+                      :title="`${getRunnerMessageStats(runner).total} message(s) in chat history · Click to view`">
+                      <i class="fas fa-comments text-emerald-600 dark:text-emerald-400 text-xs group-hover:scale-110 transition-transform"></i>
+                      <span class="px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-gray-700 text-slate-800 dark:text-gray-200 font-bold text-[10px]">
+                        {{ getRunnerMessageStats(runner).total }}
+                      </span>
+                    </button>
+
+                    <!-- No messages yet: subtle icon to start conversation -->
+                    <button v-else type="button"
+                      @click="openChatModal(runner)"
+                      class="px-2.5 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-400 hover:text-emerald-600 dark:text-gray-500 dark:hover:text-emerald-400 border border-transparent hover:border-slate-200 dark:hover:border-gray-700 transition inline-flex items-center justify-center cursor-pointer group"
+                      title="No chat history · Click to send message to runner">
+                      <i class="far fa-comment-dots text-sm group-hover:scale-110 transition-transform"></i>
+                    </button>
+                  </td>
+
                   <!-- Fixed Actions column -->
                   <td class="px-3 text-center whitespace-nowrap">
                     <button type="button" @click="openDetails(runner)"
@@ -2618,7 +2871,7 @@ onMounted(() => {
                 </tr>
 
                 <tr v-if="filteredRegistrations.length === 0">
-                  <td :colspan="activeTableColumns.length + 2" class="p-8 text-center text-gray-500">
+                  <td :colspan="activeTableColumns.length + 3" class="p-8 text-center text-gray-500">
                     <i class="fas fa-search text-3xl mb-2 text-gray-400 block"></i>
                     No registration records match your search criteria.
                   </td>
@@ -3197,14 +3450,14 @@ onMounted(() => {
                   <p v-if="msg.message" class="whitespace-pre-wrap break-words">{{ msg.message }}</p>
                   <!-- Attachment -->
                   <div v-if="msg.attachment_url" class="mt-1.5">
-                    <a v-if="isPdfAttachment(msg.attachment_url)" :href="msg.attachment_url" target="_blank"
+                    <a v-if="isPdfAttachment(msg.attachment_url)" :href="cleanURL(msg.attachment_url)" target="_blank"
                       :class="['flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition', msg.sender_type === 'admin' ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200']">
                       <i class="fas fa-file-pdf"></i>
                       <span class="truncate max-w-[140px]">{{ msg.attachment_name || 'View PDF' }}</span>
                       <i class="fas fa-external-link-alt text-[9px] opacity-60 ml-auto"></i>
                     </a>
-                    <a v-else :href="msg.attachment_url" target="_blank" class="block">
-                      <img :src="msg.attachment_url" :alt="msg.attachment_name || 'Image'" @load="scrollChatToBottom"
+                    <a v-else :href="getCleanUrl(msg.attachment_url)" target="_blank" class="block">
+                      <img :src="getCleanUrl(msg.attachment_url)" :alt="msg.attachment_name || 'Image'" @load="scrollChatToBottom"
                         class="mt-1 max-w-[180px] max-h-[160px] rounded-xl object-cover border border-white/20 shadow-sm cursor-pointer hover:opacity-90 transition" />
                     </a>
                   </div>
@@ -3954,6 +4207,267 @@ onMounted(() => {
             Done &amp; Apply
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- ── CHAT COMMUNICATION HISTORY MODAL (FAST TRACKING FOR ADMINS) ──────── -->
+    <div v-if="isChatModalOpen && chatModalRunner"
+      class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-sm overflow-y-auto"
+      @click.self="closeChatModal">
+      <div :class="[
+        'relative w-full max-w-3xl rounded-3xl shadow-2xl border transition-all flex flex-col max-h-[92vh] overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <!-- Modal Header -->
+        <div class="p-4 sm:p-5 border-b dark:border-gray-700 flex items-start justify-between gap-3 bg-slate-50/70 dark:bg-gray-900/50">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white font-extrabold text-xs uppercase shadow-xs">
+                {{ chatModalRunner.run_number || chatModalRunner.bib_number || ('AR-' + chatModalRunner.id) }}
+              </span>
+              <h2 class="text-base sm:text-lg font-black tracking-tight text-gray-900 dark:text-gray-100">
+                {{ chatModalRunner.firstname }} {{ chatModalRunner.lastname }}
+              </h2>
+              <span :class="[
+                'px-2 py-0.5 rounded-full text-[10px] font-bold border',
+                getStatusBadge(chatModalRunner.payment_status)
+              ]">
+                {{ chatModalRunner.payment_status }}
+              </span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                {{ chatModalRunner.run_category }}
+              </span>
+            </div>
+            <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+              <span class="flex items-center gap-1">
+                <i class="fas fa-envelope text-[11px] text-emerald-600"></i>
+                {{ chatModalRunner.contact_email || chatModalRunner.email || 'No email' }}
+              </span>
+              <span v-if="chatModalRunner.contact_number" class="flex items-center gap-1">
+                <i class="fas fa-phone text-[11px] text-emerald-600"></i>
+                {{ chatModalRunner.contact_number }}
+              </span>
+              <span class="text-[11px] opacity-70">
+                Registered: {{ chatModalRunner.created_at_formatted || 'N/A' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Header Action Buttons -->
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- Open Full Details Profile button -->
+            <button type="button" @click="closeChatModal(); openDetails(chatModalRunner)"
+              class="hidden sm:inline-flex px-3 py-1.5 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 text-gray-600 dark:text-gray-300 font-bold text-xs transition items-center gap-1.5 cursor-pointer"
+              title="View full registration profile">
+              <i class="fas fa-external-link-alt text-[10px]"></i> Full Profile
+            </button>
+            <!-- Reload chat -->
+            <button type="button" @click="loadChat(chatModalRunner)"
+              class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-gray-600 dark:text-gray-300 hover:text-emerald-700 flex items-center justify-center transition cursor-pointer"
+              title="Refresh conversation">
+              <i :class="['fas text-xs', isChatLoading ? 'fa-spinner fa-spin' : 'fa-sync-alt']"></i>
+            </button>
+            <!-- Close modal -->
+            <button type="button" @click="closeChatModal"
+              class="w-8 h-8 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-rose-500 hover:text-white text-gray-600 dark:text-gray-300 flex items-center justify-center transition cursor-pointer font-bold">
+              <i class="fas fa-times text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Notification Banner / Information Strip -->
+        <div class="px-4 py-2 bg-emerald-50/80 dark:bg-emerald-950/30 border-b border-emerald-100 dark:border-emerald-900/50 flex items-center justify-between gap-2 text-[11px]">
+          <div class="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-medium">
+            <i class="fas fa-info-circle text-emerald-600 dark:text-emerald-400"></i>
+            <span>Admin communication messages automatically notify the runner via email at <strong>{{ chatModalRunner.contact_email || 'their registered email' }}</strong>.</span>
+          </div>
+          <span v-if="chatEmailSent" class="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-bold text-[9px] shrink-0 flex items-center gap-1">
+            <i class="fas fa-check"></i> Email Dispatched
+          </span>
+        </div>
+
+        <!-- Quick Reply Suggestions / Templates -->
+        <div class="px-4 py-2 border-b dark:border-gray-700 bg-slate-50/50 dark:bg-gray-900/30 flex items-center gap-1.5 overflow-x-auto text-xs">
+          <span class="text-[10px] font-extrabold text-gray-400 uppercase shrink-0">
+            <i class="fas fa-bolt text-amber-400 mr-0.5"></i> Quick Reply:
+          </span>
+          <button type="button" @click="applyChatTemplate('Please upload a clearer copy or official screenshot of your payment receipt.')"
+            class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 hover:border-emerald-400 text-gray-700 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap transition cursor-pointer shrink-0">
+            Receipt Clarification
+          </button>
+          <button type="button" @click="applyChatTemplate('Payment verified! Your registration for The Emerald Run is officially confirmed.')"
+            class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 hover:border-emerald-400 text-gray-700 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap transition cursor-pointer shrink-0">
+            Payment Confirmed
+          </button>
+          <button type="button" @click="applyChatTemplate('Please confirm your preferred event t-shirt size so we can reserve your kit.')"
+            class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 hover:border-emerald-400 text-gray-700 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap transition cursor-pointer shrink-0">
+            T-Shirt Size
+          </button>
+          <button type="button" @click="applyChatTemplate('Please provide your valid LSU ID number for discount verification.')"
+            class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 hover:border-emerald-400 text-gray-700 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap transition cursor-pointer shrink-0">
+            LSU ID Query
+          </button>
+        </div>
+
+        <!-- Chat Message Thread / History Stream -->
+        <div ref="quickChatMessagesContainer"
+          class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 custom-scrollbar min-h-[260px] max-h-[420px] bg-white dark:bg-gray-800/80">
+          
+          <!-- Loading State -->
+          <div v-if="isChatLoading" class="flex flex-col items-center justify-center py-12 text-gray-400">
+            <i class="fas fa-spinner fa-spin text-emerald-500 text-2xl mb-2"></i>
+            <p class="text-xs">Loading conversation history...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else-if="!chatMessages.length" class="flex flex-col items-center justify-center py-12 text-center text-gray-400">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center text-xl mb-2">
+              <i class="far fa-comments"></i>
+            </div>
+            <p class="text-sm font-bold text-gray-600 dark:text-gray-300">No messages exchanged yet</p>
+            <p class="text-xs text-gray-400 max-w-sm mt-1">
+              Start the conversation by sending a follow-up remark or inquiry response to {{ chatModalRunner.firstname }} below.
+            </p>
+          </div>
+
+          <!-- Message Bubbles -->
+          <div v-for="msg in chatMessages" :key="msg.message_id || msg.timestamp" :class="[
+            'flex items-end gap-2',
+            msg.sender_type === 'admin' ? 'justify-end' : 'justify-start'
+          ]">
+            <!-- Runner Avatar / Icon on Left -->
+            <div v-if="msg.sender_type !== 'admin'"
+              class="w-7 h-7 rounded-full bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-gray-300 flex items-center justify-center text-[10px] font-bold shrink-0">
+              <i class="fas fa-user text-[10px]"></i>
+            </div>
+
+            <!-- Message Card -->
+            <div :class="[
+              'max-w-[82%] sm:max-w-[75%] rounded-2xl p-3 text-xs shadow-sm transition',
+              msg.sender_type === 'admin'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-br-xs'
+                : 'bg-slate-100 dark:bg-gray-700/80 text-gray-800 dark:text-gray-100 rounded-bl-xs border border-slate-200/80 dark:border-gray-600/60'
+            ]">
+              <!-- Sender Header -->
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <span :class="[
+                  'font-bold text-[10px] uppercase tracking-wide flex items-center gap-1',
+                  msg.sender_type === 'admin' ? 'text-emerald-100' : 'text-emerald-700 dark:text-emerald-400'
+                ]">
+                  <i :class="['fas text-[9px]', msg.sender_type === 'admin' ? 'fa-shield-alt' : 'fa-comment']"></i>
+                  {{ msg.sender_type === 'admin' ? (msg.sender || 'Admin') : (msg.sender || chatModalRunner.firstname || 'Runner') }}
+                </span>
+                <span :class="['text-[9px]', msg.sender_type === 'admin' ? 'text-emerald-200/80' : 'text-gray-400']">
+                  {{ msg.timestamp }}
+                </span>
+              </div>
+
+              <!-- Message Body -->
+              <p v-if="msg.message" class="whitespace-pre-wrap break-words leading-relaxed text-xs">
+                {{ msg.message }}
+              </p>
+
+              <!-- Attachment Preview (Image or PDF) -->
+              <div v-if="msg.attachment_url" class="mt-2 pt-2 border-t"
+                :class="msg.sender_type === 'admin' ? 'border-white/20' : 'border-gray-200 dark:border-gray-600'">
+                <!-- PDF Attachment -->
+                <a v-if="isPdfAttachment(msg.attachment_url)" :href="cleanURL(msg.attachment_url)" target="_blank"
+                  :class="[
+                    'flex items-center gap-2 p-2 rounded-xl text-[11px] font-bold transition',
+                    msg.sender_type === 'admin'
+                      ? 'bg-white/20 hover:bg-white/30 text-white'
+                      : 'bg-white dark:bg-gray-800 hover:bg-gray-50 border border-slate-200 dark:border-gray-600 text-gray-700 dark:text-gray-200'
+                  ]">
+                  <i class="fas fa-file-pdf text-rose-500 text-base"></i>
+                  <span class="truncate flex-1">{{ msg.attachment_name || 'Document.pdf' }}</span>
+                  <i class="fas fa-arrow-down text-[10px] opacity-70"></i>
+                </a>
+
+                <!-- Image Attachment -->
+                <div v-else class="space-y-1">
+                  <a :href="getCleanUrl(msg.attachment_url)" target="_blank" class="block group relative overflow-hidden rounded-xl">
+                    <img :src="getCleanUrl(msg.attachment_url)" :alt="msg.attachment_name || 'Attached Image'"
+                      class="max-w-[220px] max-h-[180px] rounded-xl object-cover border border-white/20 shadow-sm cursor-pointer group-hover:scale-105 transition-transform" />
+                  </a>
+                  <p class="text-[9px] opacity-70 truncate">{{ msg.attachment_name || 'Attachment' }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Admin Avatar on Right -->
+            <div v-if="msg.sender_type === 'admin'"
+              class="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 shadow-2xs">
+              <i class="fas fa-user-shield text-[10px]"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reply Composer Area -->
+        <div class="p-3 sm:p-4 border-t dark:border-gray-700 bg-slate-50/80 dark:bg-gray-900/50 space-y-2">
+          <!-- Pending Attachment Preview Chip -->
+          <div v-if="chatAttachment"
+            class="flex items-center gap-2 p-2 rounded-xl border bg-white dark:bg-gray-800 border-emerald-300 dark:border-emerald-700 shadow-2xs">
+            <img v-if="chatAttachment.previewUrl" :src="chatAttachment.previewUrl"
+              class="w-9 h-9 rounded-lg object-cover border border-emerald-200 shrink-0" alt="preview" />
+            <div v-else
+              class="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-500 flex items-center justify-center shrink-0">
+              <i class="fas fa-file-pdf text-base"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">{{ chatAttachment.name }}</p>
+              <p class="text-[9px] text-gray-400">Ready to attach with message</p>
+            </div>
+            <button type="button" @click="removeChatAttachment"
+              class="w-6 h-6 rounded-full bg-gray-100 hover:bg-rose-100 hover:text-rose-600 dark:bg-gray-700 text-gray-500 flex items-center justify-center transition cursor-pointer">
+              <i class="fas fa-times text-[10px]"></i>
+            </button>
+          </div>
+
+          <!-- Text Input Row -->
+          <div class="flex items-end gap-2">
+            <!-- Paperclip / Attach File -->
+            <label :class="[
+              'w-10 h-10 rounded-2xl border flex items-center justify-center cursor-pointer transition shrink-0',
+              chatAttachment
+                ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 border-emerald-300'
+                : 'bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-gray-700 text-gray-500 hover:text-emerald-600 border-gray-300 dark:border-gray-700'
+            ]" title="Attach image (PNG, JPG) or PDF document (max 5 MB)">
+              <i class="fas fa-paperclip text-sm"></i>
+              <input type="file" accept="image/jpeg,image/jpg,image/png,application/pdf" class="hidden"
+                @change="handleChatAttachmentChange" :disabled="isSendingChat" />
+            </label>
+
+            <!-- Textarea -->
+            <div class="flex-1 relative">
+              <textarea v-model="chatInput" :disabled="isSendingChat" @keydown.enter.ctrl="sendAdminMessage" rows="2"
+                placeholder="Type response or remarks to this runner... (Press Ctrl + Enter to send)"
+                :class="[
+                  'w-full px-3.5 py-2.5 rounded-2xl border text-xs resize-none focus:ring-2 focus:ring-emerald-500 focus:outline-none transition leading-relaxed',
+                  props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500' : 'bg-white border-gray-300 text-gray-800 placeholder-gray-400'
+                ]"></textarea>
+            </div>
+
+            <!-- Send Button -->
+            <button type="button" @click="sendAdminMessage"
+              :disabled="isSendingChat || (!chatInput.trim() && !chatAttachment)"
+              class="px-4 py-2.5 h-10 rounded-2xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer shrink-0"
+              title="Send reply and notify runner via email">
+              <i :class="['fas', isSendingChat ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
+              <span class="hidden sm:inline">{{ isSendingChat ? 'Sending...' : 'Send' }}</span>
+            </button>
+          </div>
+
+          <!-- Bottom Footer Note -->
+          <div class="flex items-center justify-between text-[10px] text-gray-400 px-1">
+            <span>
+              <i class="fas fa-keyboard mr-1 opacity-70"></i> <strong>Ctrl + Enter</strong> to send quickly
+            </span>
+            <span>
+              Logged in as: <strong>{{ currentOperator }}</strong>
+            </span>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
