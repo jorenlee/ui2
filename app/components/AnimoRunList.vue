@@ -237,14 +237,28 @@ const categoryCounts = computed(() => {
 });
 
 const CACHE_KEY = "animorun_registrations_cache";
+const BATCHES_CACHE_KEY = "animorun_batches_cache";
+
 let initialRegs = [];
 if (process.client) {
   try {
-    const cached = sessionStorage.getItem(CACHE_KEY);
+    const cached = localStorage.getItem(CACHE_KEY) || sessionStorage.getItem(CACHE_KEY);
     if (cached) initialRegs = JSON.parse(cached);
   } catch {}
 }
 const registrations = ref(initialRegs);
+
+const persistCache = (data) => {
+  if (process.client && Array.isArray(data)) {
+    try {
+      const serialized = JSON.stringify(data);
+      localStorage.setItem(CACHE_KEY, serialized);
+      sessionStorage.setItem(CACHE_KEY, serialized);
+    } catch {}
+  }
+};
+
+const isInitialLoading = computed(() => isFetching.value && registrations.value.length === 0);
 
 // ── HEU & BEU Academic Unit Classification ───────────────────────────────────
 // HEU: Higher Education Unit (All Bachelor Degrees & School of Graduate Studies - SGS)
@@ -570,13 +584,9 @@ const fetchRegistrations = async (silent = false) => {
     if (Array.isArray(res)) {
       registrations.value = res;
       lastUpdated.value = new Date();
-      if (process.client) {
-        try {
-          sessionStorage.setItem(CACHE_KEY, JSON.stringify(res));
-        } catch {}
-      }
-      // Run deduplication after every successful fetch
-      await deduplicateRegistrations();
+      persistCache(res);
+      // Run deduplication non-blocking in background so UI finishes immediately
+      deduplicateRegistrations();
     }
   } catch (err) {
     console.error("Error fetching Animo Run registrations:", err);
@@ -587,6 +597,7 @@ const fetchRegistrations = async (silent = false) => {
 };
 
 const startPolling = () => {
+  if (pollingInterval) clearInterval(pollingInterval);
   pollingInterval = setInterval(() => {
     fetchRegistrations(true);
   }, POLL_INTERVAL_MS);
@@ -605,7 +616,42 @@ const formatLastUpdated = computed(() => {
 });
 
 onMounted(() => {
-  fetchRegistrations();
+  let hasCache = false;
+  // Restore registrations from cache immediately for 0ms initial paint
+  if (process.client && registrations.value.length === 0) {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY) || sessionStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          registrations.value = parsed;
+          hasCache = true;
+        }
+      }
+    } catch (e) {
+      console.warn("[AnimoRunList] Failed to read cached registrations:", e);
+    }
+  } else if (registrations.value.length > 0) {
+    hasCache = true;
+  }
+
+  // Restore batches from cache immediately
+  if (process.client && batchesList.value.length === 0) {
+    try {
+      const cachedB = localStorage.getItem(BATCHES_CACHE_KEY) || sessionStorage.getItem(BATCHES_CACHE_KEY);
+      if (cachedB) {
+        const parsedB = JSON.parse(cachedB);
+        if (Array.isArray(parsedB) && parsedB.length > 0) {
+          batchesList.value = parsedB;
+        }
+      }
+    } catch {}
+  }
+
+  // Fetch data in parallel. If we already have cache, fetch silently in background (stale-while-revalidate),
+  // otherwise fetch with skeleton loaders.
+  fetchRegistrations(hasCache);
+  fetchBatches();
   startPolling();
 });
 
@@ -1300,9 +1346,26 @@ const downloadBatchCsvPreview = () => {
 };
 
 // ── Batch Finalization & Lock Modal ──────────────────────────────────────────────
-const batchesList = ref([]);
+let initialBatches = [];
+if (process.client) {
+  try {
+    const cachedB = localStorage.getItem(BATCHES_CACHE_KEY) || sessionStorage.getItem(BATCHES_CACHE_KEY);
+    if (cachedB) initialBatches = JSON.parse(cachedB);
+  } catch {}
+}
+const batchesList = ref(initialBatches);
 const isFetchingBatches = ref(false);
 const isFinalizingBatch = ref(false);
+
+const persistBatchesCache = (data) => {
+  if (process.client && Array.isArray(data)) {
+    try {
+      const serialized = JSON.stringify(data);
+      localStorage.setItem(BATCHES_CACHE_KEY, serialized);
+      sessionStorage.setItem(BATCHES_CACHE_KEY, serialized);
+    } catch {}
+  }
+};
 
 const batchFinalizeModal = ref({
   show: false,
@@ -1312,11 +1375,14 @@ const batchFinalizeModal = ref({
 });
 
 const fetchBatches = async () => {
-  isFetchingBatches.value = true;
+  if (batchesList.value.length === 0) {
+    isFetchingBatches.value = true;
+  }
   try {
     const res = await $fetch(`${endpoint.value}/api/animorun/batch/list/`);
     if (Array.isArray(res)) {
       batchesList.value = res;
+      persistBatchesCache(res);
     }
   } catch (err) {
     console.error("Error fetching batches:", err);
@@ -1836,10 +1902,36 @@ const applyChatTemplate = (text) => {
 };
 
 
-// Trigger fetch batches on mounted
-onMounted(() => {
-  fetchBatches();
+// ── Quick Filter Helpers for Empty States & UX ─────────────────────────
+const hasActiveFilters = computed(() => {
+  return (
+    searchQuery.value.trim() !== "" ||
+    selectedCategory.value !== "All" ||
+    selectedStatus.value !== "All" ||
+    selectedParticipantType.value !== "All" ||
+    selectedAgeGroup.value !== "All" ||
+    selectedAcademicUnit.value !== "All" ||
+    selectedBatch.value !== "All" ||
+    selectedLockStatus.value !== "All" ||
+    dateFrom.value !== "" ||
+    dateTo.value !== "" ||
+    selectedChatFilter.value === "new"
+  );
 });
+
+const resetAllFilters = () => {
+  searchQuery.value = "";
+  selectedCategory.value = "All";
+  selectedStatus.value = "All";
+  selectedParticipantType.value = "All";
+  selectedAgeGroup.value = "All";
+  selectedAcademicUnit.value = "All";
+  selectedBatch.value = "All";
+  selectedLockStatus.value = "All";
+  dateFrom.value = "";
+  dateTo.value = "";
+  selectedChatFilter.value = "All";
+};
 </script>
 
 <template>
@@ -1887,7 +1979,8 @@ onMounted(() => {
                   HEU -
                 </span>
                 <span class="font-black text-amber-300 lg:text-xs text-[10px]" :class="{ '!text-emerald-950': isHeuSelected }">
-                  {{ heuCount }}
+                  <span v-if="isInitialLoading" class="inline-block h-2.5 w-4 rounded bg-white/30 animate-pulse"></span>
+                  <span v-else>{{ heuCount }}</span>
                 </span>
               </button>
 
@@ -1908,7 +2001,8 @@ onMounted(() => {
                   BEU -
                 </span>
                 <span class="font-black text-sky-300 lg:text-xs text-[10px]" :class="{ '!text-sky-950': isBeuSelected }">
-                  {{ beuCount }}
+                  <span v-if="isInitialLoading" class="inline-block h-2.5 w-4 rounded bg-white/30 animate-pulse"></span>
+                  <span v-else>{{ beuCount }}</span>
                 </span>
               </button>
 
@@ -1977,7 +2071,8 @@ onMounted(() => {
                   {{ cat.id }} -
                 </span>
                 <span class="font-black text-amber-300 lg:text-xs text-[10px]" :class="{ '!text-emerald-900': selectedCategory === cat.id }">
-                  {{ categoryCounts[cat.id] || 0 }}
+                  <span v-if="isInitialLoading" class="inline-block h-2.5 w-3.5 rounded bg-white/30 animate-pulse"></span>
+                  <span v-else>{{ categoryCounts[cat.id] || 0 }}</span>
                 </span>
               </button>
             </div>
@@ -2025,14 +2120,20 @@ onMounted(() => {
             </button>
 
             <!-- Live indicator -->
-            <div
-              class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur border border-white/20 text-white text-[10px] font-medium">
+            <!-- Live indicator & Manual Refresh Button -->
+            <button
+              type="button"
+              @click="fetchRegistrations(false)"
+              :disabled="isFetching || isAutoRefreshing"
+              class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 text-white text-[10px] font-medium transition cursor-pointer disabled:opacity-75 select-none"
+              title="Click to refresh registrations">
               <span
-                :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', isAutoRefreshing ? 'bg-amber-300 animate-ping' : 'bg-emerald-400 animate-pulse']"></span>
-              <span v-if="isAutoRefreshing" class="text-amber-200">Syncing…</span>
-              <span v-else-if="formatLastUpdated" class="text-emerald-200">Live · {{ formatLastUpdated }}</span>
-              <span v-else class="text-white/60">Live</span>
-            </div>
+                :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', isAutoRefreshing || isFetching ? 'bg-amber-300 animate-ping' : 'bg-emerald-400 animate-pulse']"></span>
+              <span v-if="isFetching" class="text-emerald-100 flex items-center gap-1">Fetching… <i class="fas fa-spinner fa-spin text-[9px]"></i></span>
+              <span v-else-if="isAutoRefreshing" class="text-amber-200 flex items-center gap-1">Syncing… <i class="fas fa-arrows-rotate fa-spin text-[9px]"></i></span>
+              <span v-else-if="formatLastUpdated" class="text-emerald-200">Live · {{ formatLastUpdated }} <i class="fas fa-rotate text-[9px] ml-1 opacity-75"></i></span>
+              <span v-else class="text-white/60">Live <i class="fas fa-rotate text-[9px] ml-1 opacity-75"></i></span>
+            </button>
 
           </div>
         </div>
@@ -2042,7 +2143,7 @@ onMounted(() => {
         <!-- STATS SUMMARY CARDS (4 COLUMNS INCLUDING SUPPLIER BATCH LOCKED COUNT) -->
         <div class="grid grid-cols-2 lg:grid-cols-4 lg:w-5/12 w-full">
           <div :class="[
-            'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
+            'px-4 py-2.5 rounded-2xl border shadow-sm transition items-center whitespace-nowrap',
             props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
           ]">
             <div
@@ -2051,15 +2152,16 @@ onMounted(() => {
             </div>
             <div class="text-center">
               <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Runners</p>
-              <h3 class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-                {{ stats.totalRunners }}
+              <h3 class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center justify-center min-h-[28px]">
+                <span v-if="isInitialLoading" class="inline-block h-6 w-12 rounded bg-emerald-100 dark:bg-emerald-950/70 animate-pulse"></span>
+                <span v-else>{{ stats.totalRunners }}</span>
               </h3>
             </div>
 
           </div>
 
           <div :class="[
-            'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
+            'px-4 py-2.5 rounded-2xl border shadow-sm transition items-center whitespace-nowrap',
             props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
           ]">
             <div
@@ -2068,15 +2170,16 @@ onMounted(() => {
             </div>
             <div class="text-center">
               <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Confirmed Paid</p>
-              <h3 class="text-xl font-black text-green-600 dark:text-green-400 mt-0.5">
-                {{ stats.confirmed }}
+              <h3 class="text-xl font-black text-green-600 dark:text-green-400 mt-0.5 flex items-center justify-center min-h-[28px]">
+                <span v-if="isInitialLoading" class="inline-block h-6 w-12 rounded bg-green-100 dark:bg-green-950/70 animate-pulse"></span>
+                <span v-else>{{ stats.confirmed }}</span>
               </h3>
             </div>
 
           </div>
 
           <div :class="[
-            'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap cursor-pointer group',
+            'px-4 py-2.5 rounded-2xl border shadow-sm transition items-center whitespace-nowrap cursor-pointer group',
             selectedStatus === 'Pending'
               ? (props.darkMode ? 'bg-amber-950/40 border-amber-600 ring-2 ring-amber-500/40' : 'bg-amber-50 border-amber-400 ring-2 ring-amber-300/50')
               : (props.darkMode ? 'bg-gray-800 border-gray-700 hover:border-amber-600/50' : 'bg-white border-slate-200 hover:border-amber-300'),
@@ -2092,17 +2195,18 @@ onMounted(() => {
             </div>
             <div class="text-center">
               <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Pending Action</p>
-              <h3 class="text-xl font-black text-amber-500 dark:text-amber-400 mt-0.5">
-                {{ stats.pending }}
+              <h3 class="text-xl font-black text-amber-500 dark:text-amber-400 mt-0.5 flex items-center justify-center min-h-[28px]">
+                <span v-if="isInitialLoading" class="inline-block h-6 w-12 rounded bg-amber-100 dark:bg-amber-950/70 animate-pulse"></span>
+                <span v-else>{{ stats.pending }}</span>
               </h3>
-              <p v-if="selectedStatus === 'Pending'" class="text-[10px] text-amber-500 font-semibold mt-0.5">Filtering
+              <p v-if="!isInitialLoading && selectedStatus === 'Pending'" class="text-[10px] text-amber-500 font-semibold mt-0.5">Filtering
                 active ✓</p>
             </div>
 
           </div>
 
           <div :class="[
-            'px-4 py-2.5 rounded-2xl border shadow-sm transition  items-center  whitespace-nowrap',
+            'px-4 py-2.5 rounded-2xl border shadow-sm transition items-center whitespace-nowrap',
             props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
           ]">
             <div
@@ -2111,8 +2215,9 @@ onMounted(() => {
             </div>
             <div class="text-center">
               <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Batch Locked</p>
-              <h3 class="text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5">
-                {{ stats.lockedCount }}
+              <h3 class="text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5 flex items-center justify-center min-h-[28px]">
+                <span v-if="isInitialLoading" class="inline-block h-6 w-12 rounded bg-purple-100 dark:bg-purple-950/70 animate-pulse"></span>
+                <span v-else>{{ stats.lockedCount }}</span>
               </h3>
             </div>
 
@@ -2330,8 +2435,64 @@ onMounted(() => {
       ]">
         <!-- ── MOBILE CARD VIEW (VISIBLE ON PHONES / SMALL SCREENS < md) ── -->
         <div class="block md:hidden p-3 space-y-3">
+          <!-- MOBILE SKELETON CARDS -->
+          <template v-if="isInitialLoading">
+            <div v-for="n in 4" :key="'skel-m-' + n"
+              :class="[
+                'p-4 rounded-2xl border transition shadow-sm space-y-3 animate-pulse',
+                props.darkMode ? 'bg-gray-800/90 border-gray-700' : 'bg-white border-slate-200'
+              ]">
+              <!-- Card Header Skeleton -->
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <div class="w-4 h-4 rounded bg-slate-200 dark:bg-gray-700"></div>
+                  <div class="h-4 w-10 rounded bg-slate-200 dark:bg-gray-700"></div>
+                  <div class="h-5 w-24 rounded-md bg-emerald-100/80 dark:bg-emerald-950/70"></div>
+                </div>
+                <div class="h-5 w-20 rounded-xl bg-slate-200 dark:bg-gray-700"></div>
+              </div>
+
+              <!-- Runner Info Skeleton -->
+              <div class="space-y-1.5 pt-1">
+                <div class="h-4 w-44 rounded bg-slate-200 dark:bg-gray-700"></div>
+                <div class="flex items-center gap-3">
+                  <div class="h-3 w-28 rounded bg-slate-100 dark:bg-gray-700/60"></div>
+                  <div class="h-3 w-20 rounded bg-slate-100 dark:bg-gray-700/60"></div>
+                </div>
+              </div>
+
+              <!-- Badges Row Skeleton -->
+              <div class="flex items-center gap-2 pt-1">
+                <div class="h-5 w-14 rounded-full bg-slate-200 dark:bg-gray-700"></div>
+                <div class="h-5 w-20 rounded-full bg-slate-200 dark:bg-gray-700"></div>
+                <div class="h-5 w-24 rounded-full bg-slate-200 dark:bg-gray-700"></div>
+              </div>
+
+              <!-- Payment Summary Skeleton -->
+              <div :class="[
+                'p-2.5 rounded-xl flex items-center justify-between',
+                props.darkMode ? 'bg-gray-900/50' : 'bg-slate-50'
+              ]">
+                <div class="space-y-1">
+                  <div class="h-2.5 w-16 rounded bg-slate-200 dark:bg-gray-700"></div>
+                  <div class="h-3 w-24 rounded bg-slate-200 dark:bg-gray-700"></div>
+                </div>
+                <div class="space-y-1">
+                  <div class="h-2.5 w-12 rounded bg-slate-200 dark:bg-gray-700 ml-auto"></div>
+                  <div class="h-4 w-16 rounded bg-emerald-200/80 dark:bg-emerald-950/80 ml-auto"></div>
+                </div>
+              </div>
+
+              <!-- Actions Skeleton -->
+              <div class="pt-1 flex gap-2">
+                <div class="h-8 flex-1 rounded-xl bg-emerald-200/70 dark:bg-emerald-950/70"></div>
+                <div class="h-8 w-16 rounded-xl bg-slate-200 dark:bg-gray-700"></div>
+              </div>
+            </div>
+          </template>
+
           <!-- MOBILE ACTUAL CARDS -->
-          <template v-if="filteredRegistrations.length > 0">
+          <template v-else-if="filteredRegistrations.length > 0">
             <div v-for="runner in filteredRegistrations" :key="'m-' + runner.id" :class="[
               'p-4 rounded-2xl border transition-all duration-200 shadow-sm space-y-3',
               selectedIds.includes(runner.id)
@@ -2460,8 +2621,16 @@ onMounted(() => {
 
           <!-- MOBILE EMPTY STATE -->
           <div v-else class="p-8 text-center text-gray-500">
-            <i class="fas fa-search text-3xl mb-2 text-gray-400 block"></i>
-            <p class="text-xs">No registration records match your search criteria.</p>
+            <div class="max-w-xs mx-auto space-y-2">
+              <i class="fas fa-search text-3xl mb-1 text-gray-400 block"></i>
+              <p class="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                {{ registrations.length === 0 ? 'No registration records found yet.' : 'No registration records match your search criteria.' }}
+              </p>
+              <button v-if="hasActiveFilters" type="button" @click="resetAllFilters"
+                class="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition cursor-pointer">
+                <i class="fas fa-rotate-left text-xs"></i> Reset Filters
+              </button>
+            </div>
           </div>
         </div>
 
@@ -2525,7 +2694,78 @@ onMounted(() => {
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-gray-700/60 text-xs">
-              <tr v-for="runner in filteredRegistrations" :key="runner.id" :class="[
+              <!-- DESKTOP SKELETON ROWS -->
+              <template v-if="isInitialLoading">
+                <tr v-for="n in 8" :key="'skel-row-' + n"
+                  class="animate-pulse border-b border-gray-100 dark:border-gray-800">
+                  <!-- Checkbox -->
+                  <td class="px-3 py-3.5 w-10">
+                    <div class="w-4 h-4 rounded bg-slate-200 dark:bg-gray-700"></div>
+                  </td>
+
+                  <!-- Dynamic Columns -->
+                  <td v-for="col in activeTableColumns" :key="col.key" class="px-3 py-3.5">
+                    <!-- race_bib -->
+                    <div v-if="col.key === 'race_bib'"
+                      class="h-5 w-16 rounded bg-emerald-100/80 dark:bg-emerald-950/70"></div>
+
+                    <!-- reg_id -->
+                    <div v-else-if="col.key === 'reg_id'"
+                      class="h-4 w-10 rounded bg-slate-200 dark:bg-gray-700"></div>
+
+                    <!-- full_name -->
+                    <div v-else-if="col.key === 'full_name'" class="space-y-1.5">
+                      <div class="h-3.5 w-32 rounded bg-slate-200 dark:bg-gray-700"></div>
+                      <div class="h-2.5 w-24 rounded bg-slate-100 dark:bg-gray-800"></div>
+                    </div>
+
+                    <!-- names -->
+                    <div v-else-if="['firstname', 'lastname', 'middlename', 'suffix'].includes(col.key)"
+                      class="h-3.5 w-20 rounded bg-slate-200 dark:bg-gray-700"></div>
+
+                    <!-- batch -->
+                    <div v-else-if="col.key === 'batch'"
+                      class="h-5 w-20 rounded-xl bg-slate-200 dark:bg-gray-700"></div>
+
+                    <!-- category -->
+                    <div v-else-if="col.key === 'category'"
+                      class="h-5 w-14 rounded-full bg-slate-200 dark:bg-gray-700"></div>
+
+                    <!-- classification / academic unit -->
+                    <div v-else-if="['classification', 'academic_unit', 'college_course', 'college_year'].includes(col.key)"
+                      class="h-5 w-24 rounded-full bg-slate-200 dark:bg-gray-700"></div>
+
+                    <!-- tshirt_size -->
+                    <div v-else-if="col.key === 'tshirt_size'"
+                      class="h-5 w-8 rounded-md bg-slate-200 dark:bg-gray-700 mx-auto"></div>
+
+                    <!-- payment_status -->
+                    <div v-else-if="col.key === 'payment_status'"
+                      class="h-5 w-20 rounded-full bg-slate-200 dark:bg-gray-700"></div>
+
+                    <!-- date -->
+                    <div v-else-if="['reg_date', 'confirmed_date', 'birthdate'].includes(col.key)"
+                      class="h-3.5 w-20 rounded bg-slate-200 dark:bg-gray-700"></div>
+
+                    <!-- default -->
+                    <div v-else class="h-3.5 w-20 rounded bg-slate-200 dark:bg-gray-700"></div>
+                  </td>
+
+                  <!-- Messages Skeleton -->
+                  <td class="px-3 py-3.5 text-center">
+                    <div class="h-6 w-9 rounded-xl bg-slate-200 dark:bg-gray-700 mx-auto"></div>
+                  </td>
+
+                  <!-- Actions Skeleton -->
+                  <td class="px-3 py-3.5 text-center whitespace-nowrap">
+                    <div class="h-6 w-14 rounded-xl bg-emerald-200/70 dark:bg-emerald-950/70 mx-auto"></div>
+                  </td>
+                </tr>
+              </template>
+
+              <!-- DESKTOP ACTUAL ROWS -->
+              <template v-else-if="filteredRegistrations.length > 0">
+                <tr v-for="runner in filteredRegistrations" :key="runner.id" :class="[
                   'hover:bg-emerald-50/70 dark:hover:bg-gray-700/40 transition',
                   selectedIds.includes(runner.id) ? (props.darkMode ? 'bg-emerald-950/30' : 'bg-emerald-50/80') : '',
                 ]">
@@ -2869,13 +3109,26 @@ onMounted(() => {
                     </button>
                   </td>
                 </tr>
+              </template>
 
-                <tr v-if="filteredRegistrations.length === 0">
-                  <td :colspan="activeTableColumns.length + 3" class="p-8 text-center text-gray-500">
-                    <i class="fas fa-search text-3xl mb-2 text-gray-400 block"></i>
-                    No registration records match your search criteria.
-                  </td>
-                </tr>
+              <!-- DESKTOP EMPTY STATE -->
+              <tr v-else>
+                <td :colspan="activeTableColumns.length + 3" class="p-10 text-center text-gray-500">
+                  <div class="max-w-md mx-auto space-y-2">
+                    <i class="fas fa-search text-3xl mb-1 text-gray-400 block"></i>
+                    <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      {{ registrations.length === 0 ? 'No registration records found yet.' : 'No registration records match your search criteria.' }}
+                    </p>
+                    <p v-if="registrations.length > 0" class="text-xs text-gray-400">
+                      Try adjusting your search keywords, category, academic unit, or date range.
+                    </p>
+                    <button v-if="hasActiveFilters" type="button" @click="resetAllFilters"
+                      class="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition cursor-pointer">
+                      <i class="fas fa-rotate-left text-xs"></i> Reset Filters
+                    </button>
+                  </div>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
