@@ -1425,7 +1425,7 @@ onMounted(() => {
     <div class="space-y-1">
       <!-- HEADER BANNER -->
       <div :class="[
-        'relative overflow-hidden rounded-2xl px-4 py-3 sm:px-5 sm:py-3.5 border shadow-xl transition-all',
+        'relative overflow-hidden rounded-2xl lg:px-4 px-2 py-3 border shadow-xl transition-all',
         props.darkMode
           ? 'bg-gradient-to-r from-emerald-950 via-gray-900 to-emerald-950 border-green-800/40'
           : 'bg-gradient-to-r from-emerald-700 via-teal-700 to-green-800 border-emerald-600 text-white',
@@ -1444,14 +1444,14 @@ onMounted(() => {
           <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0 self-end sm:self-auto">
 
             <!-- Distance Category Counters (1KM, 3KM, 10KM, 20KM) -->
-            <div class="flex items-center gap-1 sm:gap-1.5 bg-black/20 backdrop-blur-md px-2 py-1.5 rounded-xl border border-white/15 shadow-inner">
+            <div class="flex items-center whitespace-nowrap gap-1 sm:gap-1.5 bg-black/20 backdrop-blur-md px-2 py-1.5 rounded-xl border border-white/15 shadow-inner">
               <button
                 v-for="cat in categoryCounters"
                 :key="cat.id"
                 type="button"
                 @click="selectedCategory = selectedCategory === cat.id ? 'All' : cat.id"
                 :class="[
-                  'px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none',
+                  'px-2 sm:px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer border select-none',
                   selectedCategory === cat.id
                     ? 'bg-white text-emerald-950 border-white shadow-md ring-2 ring-amber-300 scale-105'
                     : 'bg-white/10 hover:bg-white/20 text-white border-white/15 hover:border-white/30'
@@ -1459,10 +1459,10 @@ onMounted(() => {
                 :title="`Click to ${selectedCategory === cat.id ? 'clear filter' : 'filter by ' + cat.id} (${categoryCounts[cat.id] || 0} runners)`"
               >
                 <span :class="['w-1.5 h-1.5 rounded-full shrink-0', cat.dot]"></span>
-                <span class="tracking-tight text-white/90" :class="{ '!text-emerald-950': selectedCategory === cat.id }">
+                <span class="tracking-tight text-white/90 lg:text-xs text-[10px]" :class="{ '!text-emerald-950': selectedCategory === cat.id }">
                   {{ cat.id }} -
                 </span>
-                <span class="font-black text-amber-300 text-xs" :class="{ '!text-emerald-900': selectedCategory === cat.id }">
+                <span class="font-black text-amber-300 lg:text-xs text-[10px]" :class="{ '!text-emerald-900': selectedCategory === cat.id }">
                   {{ categoryCounts[cat.id] || 0 }}
                 </span>
               </button>
@@ -1905,17 +1905,15 @@ onMounted(() => {
                 ]">
 
                   <!-- Row checkbox -->
-                  <td class="px-3 py-3 w-10">
+                  <td class="px-3 w-10">
                     <input type="checkbox" :checked="selectedIds.includes(runner.id)"
                       @change="toggleSelectOne(runner.id)" class="w-4 h-4 rounded accent-emerald-600 cursor-pointer" />
                   </td>
 
                   <!-- Dynamic columns rendered based on col.key -->
-                  <td v-for="col in activeTableColumns" :key="col.key" class="px-3 py-3">
+                  <td v-for="col in activeTableColumns" :key="col.key" class="px-3">
                     <!-- race_bib -->
                     <template v-if="col.key === 'race_bib'">
-                      <div class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id }}
-                      </div>
                       <span
                         class="inline-block px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px] uppercase">
                         {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
@@ -2173,7 +2171,7 @@ onMounted(() => {
                   </td>
 
                   <!-- Fixed Actions column -->
-                  <td class="px-3 py-3 text-center whitespace-nowrap">
+                  <td class="px-3 text-center whitespace-nowrap">
                     <button type="button" @click="openDetails(runner)"
                       class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition inline-flex items-center gap-1 cursor-pointer">
                       <i class="fas fa-eye"></i> View

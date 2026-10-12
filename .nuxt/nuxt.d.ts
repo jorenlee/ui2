@@ -1,5 +1,5 @@
-/// <reference types="nuxt-lodash" />
 /// <reference types="@pinia/nuxt" />
+/// <reference types="nuxt-lodash" />
 /// <reference types="nuxt-gtag" />
 /// <reference types="@nuxtjs/google-adsense" />
 /// <reference types="@nuxt/telemetry" />
