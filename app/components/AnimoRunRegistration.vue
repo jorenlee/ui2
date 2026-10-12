@@ -235,6 +235,7 @@ const number_of_participants_per_group = ref(1);
 const activeParticipantIndex = ref(0);
 
 const isSubmitting = ref(false);
+const submissionStatusMessage = ref("");
 
 const waiver_agreed = ref(false);
 const privacy_consent_agreed = ref(false);
@@ -1127,9 +1128,186 @@ const checkDuplicates = async (participantsList) => {
   return allDups;
 };
 
+// ── Form Validation & Readiness Computed Properties ────────────────────────
+const formValidationIssues = computed(() => {
+  const issues = [];
+  if (!participants.value.length) {
+    issues.push("At least one participant is required.");
+    return issues;
+  }
+
+  // 1. Participant-specific validations
+  for (let i = 0; i < participants.value.length; i++) {
+    const p = participants.value[i];
+    const runnerLabel = form_type.value === "Group" ? `Runner #${i + 1}` : "Participant";
+
+    // Race category
+    const catId = p.run_category === "1K" ? "1KM" : p.run_category;
+    if (!catId) {
+      issues.push(`${runnerLabel}: Please select a race category.`);
+    } else {
+      const slot = getSlotInfo(catId);
+      if (slot && slot.is_full) {
+        issues.push(`${runnerLabel}: ${catId} category is already full.`);
+      }
+    }
+
+    // Name
+    if (!p.firstname?.trim() || !p.lastname?.trim()) {
+      issues.push(`${runnerLabel}: First and Last name required.`);
+    }
+
+    // Mobile number
+    const digits = (p.contact_number || "").replace(/\D/g, "");
+    if (digits.length !== 10 || !digits.startsWith("9")) {
+      issues.push(`${runnerLabel}: Valid 10-digit mobile number starting with 9 required.`);
+    }
+
+    // Email
+    const email = (p.contact_email || "").trim();
+    if (!email || !email.includes("@")) {
+      issues.push(`${runnerLabel}: Valid email address required.`);
+    }
+
+    // OTP for Public Form
+    if (!isDashboard.value && (i === 0 || form_type.value === "Individual")) {
+      const listerEmail = (participants.value[0]?.contact_email || "").trim().toLowerCase();
+      if (!isOtpVerified.value || verifiedEmail.value !== listerEmail) {
+        issues.push(
+          form_type.value === "Group"
+            ? "Runner #1: Email address must be verified via OTP."
+            : "Email address must be verified via OTP."
+        );
+      }
+    }
+
+    // Classification & category details
+    if (isPetCategory(p.run_category)) {
+      if (!p.pet_name?.trim()) {
+        issues.push(`${runnerLabel}: Pet name required.`);
+      }
+      if (p.pet_type === "Other" && !p.pet_other_type?.trim()) {
+        issues.push(`${runnerLabel}: Pet species / type required.`);
+      }
+      if (!p.pet_vaccine_record_file) {
+        issues.push(`${runnerLabel}: Pet vaccination record upload required.`);
+      }
+      if (!p.pet_vaccinated) {
+        issues.push(`${runnerLabel}: Pet safety assurance required.`);
+      }
+      if (!p.pet_consent_agreed) {
+        issues.push(`${runnerLabel}: Pet owner responsibility waiver required.`);
+      }
+    } else {
+      if (!p.participantGroup) {
+        issues.push(`${runnerLabel}: Participant classification required.`);
+      } else if (p.participantGroup === "LSU") {
+        if (!p.participant_type) {
+          issues.push(`${runnerLabel}: LSU category (Students, Employees, or Alumni) required.`);
+        } else if (["LSU Exclusive - Enrolled Student", "Currently Enrolled Students"].includes(p.participant_type)) {
+          if (!p.lsu_id_number?.trim()) {
+            issues.push(`${runnerLabel}: LSU Student ID number required.`);
+          } else {
+            const check = getLsuIdVerificationStatus(p.lsu_id_number, "student", p);
+            if (!check || !check.isValid) {
+              issues.push(`${runnerLabel}: Valid LSU Student ID verification required.`);
+            }
+          }
+        } else if (["LSU Exclusive - Employee", "Employees"].includes(p.participant_type)) {
+          if (!p.lsu_id_number?.trim()) {
+            issues.push(`${runnerLabel}: LSU Employee ID number required.`);
+          } else {
+            const check = getLsuIdVerificationStatus(p.lsu_id_number, "employee", p);
+            if (!check || !check.isValid) {
+              issues.push(`${runnerLabel}: Valid LSU Employee ID verification required.`);
+            }
+          }
+        } else if (["LSU Exclusive - Alumni", "Alumni"].includes(p.participant_type)) {
+          if (!p.alumni_id_front_file) {
+            issues.push(`${runnerLabel}: LSU Alumni ID photo upload required.`);
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Payment validations
+  const curP = currentParticipant.value;
+  const pType = curP?.payment_type || paymentType.value;
+  if (pType === "salary_deduction") {
+    if (!curP?.lsu_id_number?.trim()) {
+      issues.push("LSU Employee ID number required for salary deduction.");
+    }
+  } else if (pType === "add_to_tuition") {
+    if (!curP?.lsu_id_number?.trim()) {
+      issues.push("LSU Student ID number required for add to tuition.");
+    }
+  } else if (pType === "family_salary_deduction") {
+    if (!relativeFullname.value?.trim()) {
+      issues.push("LSU Employee relative full name required.");
+    }
+    if (!relativeLsuId.value?.trim()) {
+      issues.push("LSU Employee relative ID number required.");
+    }
+    const relCheck = getRelativeVerificationStatus.value;
+    if (!relCheck || !relCheck.isValid) {
+      issues.push("LSU Employee relative verification required.");
+    }
+  } else if (pType === "non_lsu_payment") {
+    const pMethod = curP?.non_lsu_payment_method || nonLsuPaymentMethod.value;
+    if (pMethod === "qr_payment") {
+      const hasReceipt = Boolean(receiptFile.value || participants.value.some((p) => p.receipt_file));
+      if (!hasReceipt) {
+        issues.push("Payment receipt upload required for QR Payment.");
+      }
+    }
+  }
+
+  // 3. Waiver & Consent
+  if (!waiver_agreed.value) {
+    issues.push("Waiver / Release of Liability agreement required.");
+  }
+  if (!privacy_consent_agreed.value) {
+    issues.push("Data Privacy & Media Consent agreement required.");
+  }
+
+  return issues;
+});
+
+const isFormReady = computed(() => {
+  return formValidationIssues.value.length === 0;
+});
+
+const formMissingHint = computed(() => {
+  if (!formValidationIssues.value.length) return "";
+  if (formValidationIssues.value.length === 1) {
+    return formValidationIssues.value[0];
+  }
+  return `${formValidationIssues.value[0]} (+${formValidationIssues.value.length - 1} more)`;
+});
+
 const submitRegistration = async () => {
-  // ── Slot Availability Check (re-fetch fresh counts before submit) ──────────
-  await fetchSlotCounts();
+  // Prevent double / triple clicks immediately for slow connections
+  if (isSubmitting.value) return;
+
+  if (!isFormReady.value) {
+    if (formValidationIssues.value.length > 0) {
+      showNotice(
+        `Please complete the following requirement(s) before submitting:\n\n• ${formValidationIssues.value.slice(0, 4).join("\n• ")}${formValidationIssues.value.length > 4 ? `\n...and ${formValidationIssues.value.length - 4} more item(s)` : ""}`,
+        "Incomplete Form",
+        "warning"
+      );
+    }
+    return;
+  }
+
+  // Lock submission state immediately so users on slow connection cannot re-trigger
+  isSubmitting.value = true;
+  submissionStatusMessage.value = "Verifying race category slots...";
+
+  try {
+    // ── Slot Availability Check (re-fetch fresh counts before submit) ──────────
+    await fetchSlotCounts();
   for (let i = 0; i < participants.value.length; i++) {
     const p = participants.value[i];
     const catId = p.run_category === '1K' ? '1KM' : p.run_category;
@@ -1458,11 +1636,10 @@ const submitRegistration = async () => {
     return;
   }
 
-  isSubmitting.value = true;
+  submissionStatusMessage.value = "Uploading documents and registration files...";
 
-  try {
-    // 1. Upload receipt files safely (cache to avoid redundant uploads)
-    const uploadedReceiptMap = new Map();
+  // 1. Upload receipt files safely (cache to avoid redundant uploads)
+  const uploadedReceiptMap = new Map();
     const uploadReceiptSafely = async (file) => {
       if (!file) return "";
       if (uploadedReceiptMap.has(file)) return uploadedReceiptMap.get(file);
@@ -1606,6 +1783,7 @@ const submitRegistration = async () => {
         detail_fees: itemizedFees.value,
       };
 
+      submissionStatusMessage.value = "Saving group registration to LSU database...";
       res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
         method: "POST",
         body: payload,
@@ -1712,12 +1890,14 @@ const submitRegistration = async () => {
         privacy_consent_agreed: privacy_consent_agreed.value,
       };
 
+      submissionStatusMessage.value = "Saving registration to LSU database...";
       res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
         method: "POST",
         body: payload,
       });
     }
 
+    submissionStatusMessage.value = "Registration confirmed! Displaying confirmation...";
     registrationResult.value = res;
     isSuccessModalOpen.value = true;
     if (typeof window !== "undefined") {
@@ -1733,6 +1913,7 @@ const submitRegistration = async () => {
     );
   } finally {
     isSubmitting.value = false;
+    submissionStatusMessage.value = "";
   }
 };
 
@@ -3977,12 +4158,76 @@ const sendChatWidgetMessage = async () => {
                   </span>
                 </div>
 
-                <button type="button" @click="submitRegistration" :disabled="isSubmitting"
-                  class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-6 rounded-2xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 lg:text-base text-sm cursor-pointer">
-                  <i v-if="!isSubmitting" class="fas fa-check-circle text-lg"></i>
-                  <i v-else class="fas fa-spinner fa-spin text-lg"></i>
-                  <span>{{ isSubmitting ? 'Submitting Registration...' : (form_type === 'Group' ? `Submit Group Registration (${participants.length} Entries)` : 'Submit Registration (PHP ' +
-                    grandTotal.toLocaleString() + ')') }}</span>
+                <!-- OTP warning before submit -->
+                <div
+                  v-if="!isDashboard && (!isOtpVerified || verifiedEmail !== (participants[0]?.contact_email || '').trim().toLowerCase())"
+                  class="flex items-center gap-2 px-4 py-2.5 mb-3 rounded-xl border border-amber-300 bg-amber-50 text-xs text-amber-700 font-medium"
+                >
+                  <i class="fas fa-lock text-amber-500 shrink-0"></i>
+                  <span>{{ form_type === 'Group'
+                    ? 'Please verify Runner #1 (group authorized email) via OTP before submitting.'
+                    : 'Please verify your email address via OTP before submitting.' }}</span>
+                </div>
+
+                <!-- Form Incomplete guidance hint -->
+                <div
+                  v-if="!isFormReady"
+                  class="flex items-start gap-2.5 px-4 py-2.5 mb-3 rounded-xl border border-amber-200 bg-amber-50/80 dark:bg-amber-950/30 dark:border-amber-800/50 text-xs text-amber-800 dark:text-amber-200"
+                >
+                  <i class="fas fa-circle-exclamation text-amber-500 shrink-0 mt-0.5 text-sm"></i>
+                  <div class="flex-1 leading-snug">
+                    <div class="font-bold">Complete required fields to submit:</div>
+                    <div class="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5">{{ formMissingHint }}</div>
+                  </div>
+                </div>
+
+                <!-- Form Ready success hint -->
+                <div
+                  v-else-if="!isSubmitting"
+                  class="flex items-center gap-2.5 px-4 py-2 mb-3 rounded-xl border border-emerald-200 bg-emerald-50/90 dark:bg-emerald-950/40 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200 font-semibold"
+                >
+                  <i class="fas fa-circle-check text-emerald-600 text-sm shrink-0"></i>
+                  <span>All information verified! You are ready to submit your registration.</span>
+                </div>
+
+                <!-- SUBMIT REGISTRATION BUTTON -->
+                <button
+                  type="button"
+                  @click="submitRegistration"
+                  :disabled="!isFormReady || isSubmitting"
+                  :class="[
+                    'w-full font-bold py-3.5 sm:py-4 px-6 rounded-2xl shadow-lg transition-all duration-300 flex items-center justify-center gap-2.5 lg:text-base text-sm whitespace-nowrap select-none',
+                    !isFormReady || isSubmitting
+                      ? 'bg-gray-300 text-gray-500 dark:bg-gray-800 dark:text-gray-400 border border-gray-300/80 dark:border-gray-700 cursor-not-allowed shadow-none opacity-80 pointer-events-none'
+                      : 'bg-emerald-800 hover:bg-emerald-700 active:bg-emerald-900 text-white shadow-emerald-700/30 hover:shadow-xl hover:shadow-emerald-700/40 ring-2 ring-emerald-400/50 cursor-pointer transform hover:scale-[1.01] active:scale-[0.99]'
+                  ]"
+                >
+                  <!-- Loading State -->
+                  <template v-if="isSubmitting">
+                    <i class="fas fa-spinner fa-spin text-lg text-emerald-200"></i>
+                    <span>Processing Registration...</span>
+                  </template>
+
+                  <!-- Ready State (Form complete) -->
+                  <template v-else-if="isFormReady">
+                    <span class="relative flex h-5 w-5 items-center justify-center">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>
+                      <i class="fas fa-check-circle text-lg text-white relative"></i>
+                    </span>
+                    <span class="tracking-wide">{{ form_type === 'Group' ? `Submit Group Registration (${participants.length} Entries)` : 'Submit Registration (PHP ' + grandTotal.toLocaleString() + ')' }}</span>
+                    <span class="ml-auto hidden sm:inline-flex items-center gap-1 text-[11px] font-black uppercase tracking-wider bg-white/20 py-0.5 px-2.5 rounded-full border border-white/30 text-white">
+                      READY <i class="fas fa-arrow-right text-[10px]"></i>
+                    </span>
+                  </template>
+
+                  <!-- Incomplete / Disabled State -->
+                  <template v-else>
+                    <i class="fas fa-lock text-base opacity-70"></i>
+                    <span>{{ form_type === 'Group' ? `Submit Group Registration (${participants.length} Entries)` : 'Submit Registration (PHP ' + grandTotal.toLocaleString() + ')' }}</span>
+                    <span class="ml-auto hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-gray-500 dark:text-gray-400 bg-gray-200/80 dark:bg-gray-700/60 py-0.5 px-2 rounded-full">
+                      Incomplete
+                    </span>
+                  </template>
                 </button>
               </div>
             </section>
@@ -4001,6 +4246,54 @@ const sendChatWidgetMessage = async () => {
 
 
 
+
+    <!-- PROCESSING / LOADING NOTIFICATION MODAL (PREVENTS DOUBLE/TRIPLE CLICKS ON SLOW CONNECTIONS) -->
+    <div
+      v-if="isSubmitting"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md transition-all duration-300"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        :class="[
+          'w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-2xl border text-center space-y-5 transition-all transform animate-in fade-in zoom-in-95',
+          props.darkMode
+            ? 'bg-gray-900 border-emerald-500/30 text-white'
+            : 'bg-white border-emerald-500/20 text-gray-800'
+        ]"
+      >
+        <!-- Animated Runner Icon with pulsing halo & spinner -->
+        <div class="relative w-24 h-24 mx-auto flex items-center justify-center">
+          <span class="animate-ping absolute inline-flex h-20 w-20 rounded-full bg-emerald-400 opacity-20"></span>
+          <div class="absolute inset-0 rounded-full border-4 border-emerald-100 dark:border-emerald-950 border-t-emerald-600 border-r-emerald-500 animate-spin"></div>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-800 to-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-700/40 relative z-10">
+            <i class="fas fa-running text-3xl animate-pulse"></i>
+          </div>
+        </div>
+
+        <!-- Title & description -->
+        <div>
+          <h3 class="text-xl sm:text-2xl font-black tracking-tight text-gray-900 dark:text-white">
+            Processing Registration
+          </h3>
+          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-2 font-medium leading-relaxed">
+            Please wait while we secure your slot and process your submission. Do not refresh or click again.
+          </p>
+        </div>
+
+        <!-- Live Step Feedback Badge -->
+        <div class="rounded-2xl border border-emerald-200 bg-emerald-50/90 dark:bg-emerald-950/60 dark:border-emerald-800/60 p-3.5 text-xs text-emerald-800 dark:text-emerald-200 flex items-center justify-center gap-2.5 font-semibold shadow-xs">
+          <i class="fas fa-spinner fa-spin text-emerald-600 dark:text-emerald-400 text-sm"></i>
+          <span>{{ submissionStatusMessage || 'Securing registration slot and uploading files...' }}</span>
+        </div>
+
+        <!-- Slow connection reassurance -->
+        <div class="flex items-center justify-center gap-2 text-[11px] text-gray-400 dark:text-gray-400 font-medium pt-1">
+          <i class="fas fa-shield-alt text-emerald-600"></i>
+          <span>Multiple clicks disabled &bull; Slow connection safe</span>
+        </div>
+      </div>
+    </div>
 
     <!-- SUCCESS CONFIRMATION MODAL -->
 

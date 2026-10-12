@@ -11,25 +11,38 @@ const props = defineProps({
 const { user, init } = useAuth();
 const rolePermissions = ref([]);
 
+watch(
+  () => props.rolePermissions,
+  (newVal) => {
+    if (Array.isArray(newVal) && newVal.length > 0) {
+      rolePermissions.value = newVal;
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(async () => {
   init();
 
-  if (props.rolePermissions && props.rolePermissions.length > 0) {
+  // 1. Fetch tickets immediately so data loads right away
+  await fetchRequests();
+  startRealtimeUpdates();
+
+  // 2. Fetch role permissions in background without blocking the tickets view
+  if (Array.isArray(props.rolePermissions) && props.rolePermissions.length > 0) {
     rolePermissions.value = props.rolePermissions;
   } else {
-    await fetchRolePermissions();
+    fetchRolePermissions().catch(() => {});
   }
 
-  // ✅ CHECK UNRATED TICKETS HERE
+  // 3. Check unrated tickets in background without blocking the tickets view
   if (user.value?.email) {
-    unratedTickets.value = await checkForUnratedTickets(
-      user.value.email,
-      npccMenuEmails.value
-    );
+    checkForUnratedTickets(user.value.email, npccMenuEmails.value)
+      .then((res) => {
+        if (res) unratedTickets.value = res;
+      })
+      .catch(() => {});
   }
-
-  fetchRequests();
-  startRealtimeUpdates();
 });
 
 const unratedTickets = ref(0);
@@ -104,11 +117,25 @@ const fetchRequests = async (silent = false) => {
   if (!silent) loading.value = true;
   try {
     const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
-    const newData = res.data || res;
+    const newData = Array.isArray(res)
+      ? res
+      : Array.isArray(res?.data)
+      ? res.data
+      : Array.isArray(res?.results)
+      ? res.results
+      : [];
 
-    // Only update if data has actually changed (performance optimization)
-    if (JSON.stringify(requests.value) !== JSON.stringify(newData)) {
+    if (requests.value.length === 0 || !silent) {
       requests.value = newData;
+    } else {
+      // Lightweight check: only update if count or top ticket changed
+      const current = requests.value;
+      if (
+        current.length !== newData.length ||
+        (newData.length > 0 && current[0]?.id !== newData[0]?.id)
+      ) {
+        requests.value = newData;
+      }
     }
   } catch (err) {
     console.error("Failed to fetch tech support list", err);
@@ -180,7 +207,7 @@ function addStatusLog() {
   // Special handling for ALL status changes - create log entry for each assigned technician
   // This applies to: Pending, Unsuccessful, In Progress, Completed, Cancelled, Reviewed, Closed
   if (
-    info.value.technicians_assigned &&
+    Array.isArray(info.value.technicians_assigned) &&
     info.value.technicians_assigned.length > 0
   ) {
     // Create a log entry for each assigned technician
@@ -773,9 +800,19 @@ const normalizeOffice = () => {
 // ---------------- FETCH ROLE PERMISSIONS ----------------
 const fetchRolePermissions = async () => {
   try {
-    rolePermissions.value = await $fetch(endpoint + "/api/cits/role-permissions/list/");
+    const res = await $fetch(endpoint.value + "/api/cits/role-permissions/list/");
+    if (Array.isArray(res)) {
+      rolePermissions.value = res;
+    } else if (res && Array.isArray(res.results)) {
+      rolePermissions.value = res.results;
+    } else if (res && Array.isArray(res.data)) {
+      rolePermissions.value = res.data;
+    } else {
+      rolePermissions.value = [];
+    }
   } catch (error) {
     console.error("Error loading role permissions:", error);
+    rolePermissions.value = [];
   }
 };
 
@@ -793,19 +830,22 @@ const rolesByEmail = computed(() => {
     superAdminPermission: [],
   };
 
-  rolePermissions.value.forEach((item) => {
-    item.role_filter_permissions?.forEach((role) => {
-      if (roles[role]) {
-        roles[role].push(item.email);
-      }
-    });
+  const perms = Array.isArray(rolePermissions.value) ? rolePermissions.value : [];
+  perms.forEach((item) => {
+    if (Array.isArray(item?.role_filter_permissions)) {
+      item.role_filter_permissions.forEach((role) => {
+        if (roles[role]) {
+          roles[role].push(item.email);
+        }
+      });
+    }
   });
 
   return roles;
 });
 
 
-const npccMenuEmails = computed(() => rolesByEmail.value.npccMenu);
+const npccMenuEmails = computed(() => rolesByEmail.value.npccMenu || []);
 const checkForUnratedTickets = async (email, npccMenuEmails = []) => {
   // Exception for npccMenu users and specific emails - skip rating requirement
   const exemptEmails = ['dev@lsu.edu.ph', 'npc@lsu.edu.ph'];
@@ -814,11 +854,14 @@ const checkForUnratedTickets = async (email, npccMenuEmails = []) => {
   }
 
   try {
-    const res = await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
+    const ticketList =
+      Array.isArray(requests.value) && requests.value.length > 0
+        ? requests.value
+        : await $fetch(endpoint.value + "/api/cits/request-ticket/list/");
 
-    if (res && Array.isArray(res)) {
+    if (ticketList && Array.isArray(ticketList)) {
       // Filter tickets for this user
-      const userTickets = res.filter(
+      const userTickets = ticketList.filter(
         (ticket) => ticket.requestor_lsu_email === email
       );
 
@@ -1198,7 +1241,8 @@ const confirmTransferTicket = async () => {
 
   // If ticket was completed, add "Completed" log for each new technician
   if (isCompleted && completedByTechnician) {
-    transferTechnicians.value.forEach((tech) => {
+    const techs = Array.isArray(transferTechnicians.value) ? transferTechnicians.value : [];
+    techs.forEach((tech) => {
       info.value.logs.push({
         status: "Completed",
         remarks:
