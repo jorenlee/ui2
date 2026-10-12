@@ -191,6 +191,39 @@ const runCategories = [
   { id: "20KM", name: "20 KM", color: "bg-[#1D2735] text-white" }, // Navy
 ];
 
+// Helper: Normalize category string to standard KM format ("1KM", "3KM", "10KM", "20KM")
+const normalizeCategory = (cat) => {
+  if (!cat) return "";
+  const val = String(cat).trim().toUpperCase();
+  if (val.includes("PET") || val.startsWith("1K") || val === "1") return "1KM";
+  if (val.startsWith("20K") || val === "20") return "20KM";
+  if (val.startsWith("10K") || val === "10") return "10KM";
+  if (val.startsWith("3K") || val === "3") return "3KM";
+  const prefix = val.split(" ")[0];
+  if (prefix.endsWith("KM")) return prefix;
+  if (prefix.endsWith("K")) return prefix + "M";
+  if (!isNaN(prefix) && prefix !== "") return prefix + "KM";
+  return prefix;
+};
+
+const categoryCounters = [
+  { id: "1KM", label: "1KM", dot: "bg-emerald-400" },
+  { id: "3KM", label: "3KM", dot: "bg-rose-400" },
+  { id: "10KM", label: "10KM", dot: "bg-amber-400" },
+  { id: "20KM", label: "20KM", dot: "bg-sky-400" },
+];
+
+const categoryCounts = computed(() => {
+  const counts = { "1KM": 0, "3KM": 0, "10KM": 0, "20KM": 0 };
+  registrations.value.forEach((r) => {
+    const norm = normalizeCategory(r.run_category);
+    if (counts[norm] !== undefined) {
+      counts[norm]++;
+    }
+  });
+  return counts;
+});
+
 const CACHE_KEY = "animorun_registrations_cache";
 let initialRegs = [];
 if (process.client) {
@@ -439,7 +472,10 @@ const filteredRegistrations = computed(() => {
       batch.includes(q);
 
     const category = item.run_category || "";
-    const matchesCategory = selectedCategory.value === "All" || category.startsWith(selectedCategory.value);
+    const matchesCategory =
+      selectedCategory.value === "All" ||
+      normalizeCategory(item.run_category) === selectedCategory.value ||
+      category.startsWith(selectedCategory.value);
     const matchesStatus =
       selectedStatus.value === "All" ||
       (selectedStatus.value === "Pending" ? (item.payment_status || "").startsWith("Pending") : item.payment_status === selectedStatus.value);
@@ -1405,12 +1441,36 @@ onMounted(() => {
             </h1>
           </div>
 
-          <div class="lg:flex hidden items-center gap-2 flex-wrap shrink-0 self-end sm:self-auto">
+          <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0 self-end sm:self-auto">
 
+            <!-- Distance Category Counters (1KM, 3KM, 10KM, 20KM) -->
+            <div class="flex items-center gap-1 sm:gap-1.5 bg-black/20 backdrop-blur-md px-2 py-1.5 rounded-xl border border-white/15 shadow-inner">
+              <button
+                v-for="cat in categoryCounters"
+                :key="cat.id"
+                type="button"
+                @click="selectedCategory = selectedCategory === cat.id ? 'All' : cat.id"
+                :class="[
+                  'px-2 sm:px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none',
+                  selectedCategory === cat.id
+                    ? 'bg-white text-emerald-950 border-white shadow-md ring-2 ring-amber-300 scale-105'
+                    : 'bg-white/10 hover:bg-white/20 text-white border-white/15 hover:border-white/30'
+                ]"
+                :title="`Click to ${selectedCategory === cat.id ? 'clear filter' : 'filter by ' + cat.id} (${categoryCounts[cat.id] || 0} runners)`"
+              >
+                <span :class="['w-1.5 h-1.5 rounded-full shrink-0', cat.dot]"></span>
+                <span class="tracking-tight text-white/90" :class="{ '!text-emerald-950': selectedCategory === cat.id }">
+                  {{ cat.id }} -
+                </span>
+                <span class="font-black text-amber-300 text-xs" :class="{ '!text-emerald-900': selectedCategory === cat.id }">
+                  {{ categoryCounts[cat.id] || 0 }}
+                </span>
+              </button>
+            </div>
 
             <!-- Supplier Batches History button -->
             <button type="button" @click="openBatchHistoryModal"
-              class="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+              class="hidden lg:flex px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition items-center gap-1.5 shadow-sm cursor-pointer">
               <i class="fas fa-boxes"></i> Batches
               <span v-if="batchesList.length"
                 class="px-1.5 py-0.2 rounded-full bg-amber-400 text-gray-900 font-black text-[10px]">
@@ -1420,7 +1480,7 @@ onMounted(() => {
 
             <!-- Table Columns Customizer button -->
             <button type="button" @click="isColumnPickerModalOpen = true"
-              class="px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer">
+              class="hidden lg:flex px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition items-center gap-1.5 shadow-sm cursor-pointer">
               <i class="fas fa-table-columns text-amber-300"></i> Columns
               <span class="px-1.5 py-0.2 rounded-full bg-emerald-400 text-gray-900 font-black text-[10px]">
                 {{ selectedCsvColumns.length }}
@@ -1429,7 +1489,7 @@ onMounted(() => {
 
             <!-- Live indicator -->
             <div
-              class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur border border-white/20 text-white text-[10px] font-medium">
+              class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 backdrop-blur border border-white/20 text-white text-[10px] font-medium">
               <span
                 :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', isAutoRefreshing ? 'bg-amber-300 animate-ping' : 'bg-emerald-400 animate-pulse']"></span>
               <span v-if="isAutoRefreshing" class="text-amber-200">Syncing…</span>
@@ -1935,7 +1995,7 @@ onMounted(() => {
                     <template v-else-if="col.key === 'category'">
                       <span :class="[
                         'px-2 py-0.5 rounded font-black text-[10px] text-white shadow-2xs inline-block',
-                        runCategories.find(c => runner.run_category && runner.run_category.startsWith(c.id))?.color || 'bg-emerald-700'
+                        runCategories.find(c => normalizeCategory(runner.run_category) === c.id || (runner.run_category && runner.run_category.startsWith(c.id)))?.color || 'bg-emerald-700'
                       ]">
                         {{ runner.run_category }}
                       </span>
