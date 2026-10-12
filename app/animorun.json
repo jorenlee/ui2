@@ -385,6 +385,42 @@
       "label": "Bachelor of Science in Medical Laboratory Science (BSMLS)"
     },
     {
+      "value": "MPA",
+      "label": "Master in Public Administration (MPA)"
+    },
+    {
+      "value": "MBA",
+      "label": "Master in Business Administration (MBA)"
+    },
+    {
+      "value": "DBA",
+      "label": "Doctor in Business Administration (DBA)"
+    },
+    {
+      "value": "PhDEd",
+      "label": "Doctor of Philosophy in Education major in Educational Management"
+    },
+    {
+      "value": "MAEd",
+      "label": "Master of Arts in Education (MAEd)"
+    },
+    {
+      "value": "MA-Educ",
+      "label": "Master of Arts in Education"
+    },
+    {
+      "value": "MEd",
+      "label": "Master in Education"
+    },
+    {
+      "value": "JD",
+      "label": "Juris Doctor (JD)"
+    },
+    {
+      "value": "PhD",
+      "label": "Doctor of Philosophy (PhD)"
+    },
+    {
       "value": "Grade School",
       "label": "Grade School"
     },

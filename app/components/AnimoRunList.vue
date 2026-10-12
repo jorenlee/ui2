@@ -1,5 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
+import animoRunData from "~/animorun.json";
+
+const COLLEGE_COURSE_OPTIONS = animoRunData?.COLLEGE_COURSE_OPTIONS || [];
 
 const props = defineProps({
   darkMode: {
@@ -127,6 +130,7 @@ const selectedCategory = ref("All");
 const selectedStatus = ref("All");
 const selectedParticipantType = ref("All");
 const selectedAgeGroup = ref("All");
+const selectedAcademicUnit = ref("All"); // "All", "HEU", "BEU", "Grade School", "JHS", "SHS", or specific course
 
 // Helper: compute age from birthdate string
 const computeAge = (birthdate) => {
@@ -233,6 +237,261 @@ if (process.client) {
   } catch {}
 }
 const registrations = ref(initialRegs);
+
+// ── HEU & BEU Academic Unit Classification ───────────────────────────────────
+// HEU: Higher Education Unit (All Bachelor Degrees & School of Graduate Studies - SGS)
+// BEU: Basic Education Unit (Grade School, JHS, SHS)
+
+// Helper: Check if a runner belongs to School of Graduate Studies (SGS)
+const isGraduateStudies = (runner) => {
+  if (!runner) return false;
+  const course = String(runner.college_course || "").trim();
+  const courseUpper = course.toUpperCase();
+
+  if (
+    courseUpper.includes("MASTER") ||
+    courseUpper.includes("DOCTOR") ||
+    courseUpper.includes("GRADUATE") ||
+    courseUpper.includes("JURIS") ||
+    courseUpper.includes("PHD") ||
+    courseUpper.includes("DBA") ||
+    courseUpper.includes("MBA") ||
+    courseUpper.includes("MPA") ||
+    courseUpper.includes("MAED") ||
+    courseUpper.includes("MED")
+  ) {
+    return true;
+  }
+
+  const sgsCodes = new Set([
+    "MPA", "MBA", "DBA", "PHDED", "MAED", "MA-EDUC", "MED", "JD", "PHD", "SGS"
+  ]);
+  return sgsCodes.has(courseUpper);
+};
+
+// Helper: Check if a runner belongs to HEU (All Bachelor Degrees + School of Graduate Studies)
+const isHEU = (runner) => {
+  if (!runner) return false;
+  const course = String(runner.college_course || "").trim();
+  const courseUpper = course.toUpperCase();
+
+  // If explicit BEU value, never HEU
+  if (
+    courseUpper === "GRADE SCHOOL" ||
+    courseUpper === "JHS" ||
+    courseUpper === "SHS" ||
+    courseUpper.includes("GRADE SCHOOL") ||
+    courseUpper.includes("JUNIOR HIGH") ||
+    courseUpper.includes("SENIOR HIGH")
+  ) {
+    return false;
+  }
+
+  // All Bachelor Degrees or Graduate Studies (Master, Doctor, Juris Doctor, PhD, DBA, etc.)
+  if (
+    courseUpper.includes("BACHELOR") ||
+    courseUpper.includes("MASTER") ||
+    courseUpper.includes("DOCTOR") ||
+    courseUpper.includes("GRADUATE") ||
+    courseUpper.includes("JURIS") ||
+    courseUpper.includes("PHD")
+  ) {
+    return true;
+  }
+
+  // Known HEU & SGS Codes
+  const heuAndSgsCodes = new Set([
+    "MPA", "MBA", "DBA", "PHDED", "MAED", "MA-EDUC", "MED", "JD", "PHD", "SGS",
+    "BSW", "BSPSYCH", "ABPOLSCI", "BSBA-MARKETING", "BSBA-FINANCIAL", "BSA",
+    "BSAIS", "BSCRIM", "BSCE-COMPUTER", "BSCE-CIVIL", "BSCE", "BLIS", "BSIT",
+    "BSCS", "BSARCH", "BSECE", "BSN", "BSNED", "BPED", "BSED-VALUES",
+    "BSED-SOCIALSTUDIES", "BSED-SCIENCE", "BSED-MATHEMATICS", "BSED-FILIPINO",
+    "BSED-ENGLISH", "BSED", "BEED", "BTLED", "BSHM", "BSTM", "BSMLS", "BSBA"
+  ]);
+  if (heuAndSgsCodes.has(courseUpper)) return true;
+
+  // Match against known course values in COLLEGE_COURSE_OPTIONS (excluding BEU)
+  const match = (COLLEGE_COURSE_OPTIONS || []).find(
+    (c) =>
+      c.value &&
+      (c.value.toUpperCase() === courseUpper || c.label.toUpperCase() === courseUpper) &&
+      !["GRADE SCHOOL", "JHS", "SHS"].includes(c.value.toUpperCase())
+  );
+  if (match) return true;
+
+  // Degree abbreviations (BS, AB, BEEd, BTLEd, MPA, MBA, DBA, PhD, JD, MAEd, MEd)
+  if (/^(BS|AB|BEED|BTLED|BPED|BSN|BLIS|MPA|MBA|DBA|PHD|MAED|MED|JD)/i.test(course)) return true;
+
+  // Fallback: LSU student in college year level (1st-5th Year) without BEU markers
+  const year = String(runner.college_year || "").trim();
+  if (
+    /^[1-5](st|nd|rd|th)\s*Year/i.test(year) &&
+    (runner.participant_type || "").includes("Student") &&
+    !runner.beu_grade
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+// Helper: Check if a runner belongs to BEU (Grade School, JHS, SHS)
+const isBEU = (runner) => {
+  if (!runner) return false;
+  const course = String(runner.college_course || "").trim().toUpperCase();
+  const beuGrade = String(runner.beu_grade || "").trim().toUpperCase();
+  const year = String(runner.college_year || "").trim().toUpperCase();
+
+  if (
+    course === "GRADE SCHOOL" ||
+    course === "JHS" ||
+    course === "SHS" ||
+    course.includes("GRADE SCHOOL") ||
+    course.includes("JUNIOR HIGH") ||
+    course.includes("SENIOR HIGH")
+  ) {
+    return true;
+  }
+
+  // If not HEU, check beu_grade or college_year for BEU indicators
+  if (
+    !isHEU(runner) &&
+    (beuGrade || /(GRADE\s*\d|SFTD|NURSERY|KINDER)/i.test(year))
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
+// Check specific BEU Level: "Grade School", "JHS", "SHS"
+const isBEULevel = (runner, level) => {
+  if (!runner || !isBEU(runner)) return false;
+  const course = String(runner.college_course || "").trim();
+  const combined = `${runner.college_course || ""} ${runner.beu_grade || ""} ${runner.college_year || ""}`.toUpperCase();
+  const lvl = level.toUpperCase();
+
+  if (lvl === "SHS") {
+    return (
+      course.toUpperCase() === "SHS" ||
+      combined.includes("SHS") ||
+      combined.includes("SENIOR HIGH") ||
+      combined.includes("GRADE 11") ||
+      combined.includes("GRADE 12")
+    );
+  }
+
+  if (lvl === "JHS") {
+    return (
+      course.toUpperCase() === "JHS" ||
+      combined.includes("JHS") ||
+      combined.includes("JUNIOR HIGH") ||
+      combined.includes("GRADE 7") ||
+      combined.includes("GRADE 8") ||
+      combined.includes("GRADE 9") ||
+      combined.includes("GRADE 10")
+    );
+  }
+
+  if (lvl === "GRADE SCHOOL") {
+    return (
+      course.toUpperCase() === "GRADE SCHOOL" ||
+      combined.includes("GRADE SCHOOL") ||
+      combined.includes("SFTD - GS") ||
+      combined.includes("NURSERY") ||
+      combined.includes("KINDER") ||
+      /(GRADE\s*[1-6]\b)/i.test(combined)
+    );
+  }
+
+  return false;
+};
+
+// Check specific Bachelor or Graduate course match
+const matchesSpecificCourse = (runner, courseValue) => {
+  if (!runner) return false;
+  const course = String(runner.college_course || "").trim().toLowerCase();
+  const target = String(courseValue).trim().toLowerCase();
+  if (!course || !target) return false;
+  if (course === target) return true;
+  const option = (COLLEGE_COURSE_OPTIONS || []).find((c) => c.value && c.value.toLowerCase() === target);
+  if (option && option.label.toLowerCase() === course) return true;
+  return false;
+};
+
+// Toggle academic unit filter
+const toggleAcademicUnit = (unit) => {
+  if (selectedAcademicUnit.value === unit) {
+    selectedAcademicUnit.value = "All";
+  } else {
+    selectedAcademicUnit.value = unit;
+  }
+};
+
+// Bachelor degree courses from COLLEGE_COURSE_OPTIONS
+const bachelorCourses = computed(() => {
+  return (COLLEGE_COURSE_OPTIONS || []).filter(
+    (c) => c.value && c.label.toLowerCase().includes("bachelor")
+  );
+});
+
+// School of Graduate Studies (SGS) degree courses from COLLEGE_COURSE_OPTIONS
+const graduateCourses = computed(() => {
+  return (COLLEGE_COURSE_OPTIONS || []).filter(
+    (c) =>
+      c.value &&
+      !["Grade School", "JHS", "SHS"].includes(c.value) &&
+      (c.label.toLowerCase().includes("master") ||
+        c.label.toLowerCase().includes("doctor") ||
+        c.label.toLowerCase().includes("juris") ||
+        c.label.toLowerCase().includes("philosophy") ||
+        ["MPA", "MBA", "DBA", "PhDEd", "MAEd", "MA-Educ", "MEd", "JD", "PhD"].includes(c.value))
+  );
+});
+
+// All HEU Courses combined
+const allHeuCourses = computed(() => {
+  return [...bachelorCourses.value, ...graduateCourses.value];
+});
+
+const isHeuSelected = computed(() => {
+  if (selectedAcademicUnit.value === "HEU" || selectedAcademicUnit.value === "SGS") return true;
+  return allHeuCourses.value.some((c) => c.value === selectedAcademicUnit.value);
+});
+
+const isBeuSelected = computed(() => {
+  return ["BEU", "Grade School", "JHS", "SHS"].includes(selectedAcademicUnit.value);
+});
+
+const heuCount = computed(() => {
+  return registrations.value.filter((r) => isHEU(r)).length;
+});
+
+const beuCount = computed(() => {
+  return registrations.value.filter((r) => isBEU(r)).length;
+});
+
+const beuGradeSchoolCount = computed(() => {
+  return registrations.value.filter((r) => isBEULevel(r, "Grade School")).length;
+});
+
+const beuJhsCount = computed(() => {
+  return registrations.value.filter((r) => isBEULevel(r, "JHS")).length;
+});
+
+const beuShsCount = computed(() => {
+  return registrations.value.filter((r) => isBEULevel(r, "SHS")).length;
+});
+
+// Format Course label
+const getCourseLabel = (val) => {
+  if (!val) return "";
+  const v = String(val).trim();
+  const match = (COLLEGE_COURSE_OPTIONS || []).find(
+    (c) => c.value && (c.value.toLowerCase() === v.toLowerCase() || c.label.toLowerCase() === v.toLowerCase())
+  );
+  return match ? match.label : v;
+};
 
 // ── Auto-Deduplication ────────────────────────────────────────────────────────
 // Groups registrations by (firstname + lastname + created_at minute).
@@ -462,6 +721,8 @@ const filteredRegistrations = computed(() => {
     const regId = String(item.id || "").toLowerCase();
     const batch = (item.batch_name || "").toLowerCase();
 
+    const courseText = `${item.college_course || ""} ${item.beu_grade || ""} ${item.college_year || ""}`.toLowerCase();
+
     const matchesQuery =
       !q ||
       fullName.includes(q) ||
@@ -469,7 +730,8 @@ const filteredRegistrations = computed(() => {
       bib.includes(q) ||
       email.includes(q) ||
       phone.includes(q) ||
-      batch.includes(q);
+      batch.includes(q) ||
+      courseText.includes(q);
 
     const category = item.run_category || "";
     const matchesCategory =
@@ -480,6 +742,22 @@ const filteredRegistrations = computed(() => {
       selectedStatus.value === "All" ||
       (selectedStatus.value === "Pending" ? (item.payment_status || "").startsWith("Pending") : item.payment_status === selectedStatus.value);
     const matchesType = selectedParticipantType.value === "All" || item.participant_type === selectedParticipantType.value;
+
+    // Academic Unit Filter (HEU: All Bachelor Degrees, BEU: Grade School, JHS, SHS)
+    let matchesAcademicUnit = true;
+    if (selectedAcademicUnit.value === "HEU") {
+      matchesAcademicUnit = isHEU(item);
+    } else if (selectedAcademicUnit.value === "BEU") {
+      matchesAcademicUnit = isBEU(item);
+    } else if (selectedAcademicUnit.value === "Grade School") {
+      matchesAcademicUnit = isBEULevel(item, "Grade School");
+    } else if (selectedAcademicUnit.value === "JHS") {
+      matchesAcademicUnit = isBEULevel(item, "JHS");
+    } else if (selectedAcademicUnit.value === "SHS") {
+      matchesAcademicUnit = isBEULevel(item, "SHS");
+    } else if (selectedAcademicUnit.value !== "All") {
+      matchesAcademicUnit = matchesSpecificCourse(item, selectedAcademicUnit.value);
+    }
 
     // Age group filter
     let matchesAge = true;
@@ -516,7 +794,7 @@ const filteredRegistrations = computed(() => {
       }
     }
 
-    return matchesQuery && matchesCategory && matchesStatus && matchesType && matchesAge && matchesBatch && matchesLock && matchesDate;
+    return matchesQuery && matchesCategory && matchesStatus && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate;
   });
 
   // Sorting
@@ -872,6 +1150,8 @@ const CSV_ALL_COLUMNS = [
   { key: 'email', label: 'Email Address' },
   { key: 'address', label: 'Address' },
   { key: 'classification', label: 'Classification' },
+  { key: 'college_course', label: 'Course / Program' },
+  { key: 'college_year', label: 'Year / Grade Level' },
   { key: 'lsu_id', label: 'LSU ID Number' },
   { key: 'organization', label: 'Club / Organization' },
   { key: 'affiliation', label: 'Batch / Affiliation' },
@@ -950,6 +1230,8 @@ const generateCsvFromList = (list, batchLabel = "Export") => {
       email: escapeCsv(r.contact_email || r.email || ""),
       address: escapeCsv(r.contact_address || r.address || ""),
       classification: escapeCsv(r.participant_type || ""),
+      college_course: escapeCsv(getCourseLabel(r.college_course) || r.college_course || ""),
+      college_year: escapeCsv(r.college_year || r.beu_grade || ""),
       lsu_id: escapeCsv(r.lsu_id_number || ""),
       organization: escapeCsv(r.organization || ""),
       affiliation: escapeCsv(r.alumni_batch || ""),
@@ -1425,7 +1707,7 @@ onMounted(() => {
     <div class="space-y-1">
       <!-- HEADER BANNER -->
       <div :class="[
-        'relative overflow-hidden rounded-2xl lg:px-4 px-2 py-3 border shadow-xl transition-all',
+        'relative overflow-hidden rounded-2xl lg:px-4 px-2 border shadow-xl transition-all',
         props.darkMode
           ? 'bg-gradient-to-r from-emerald-950 via-gray-900 to-emerald-950 border-green-800/40'
           : 'bg-gradient-to-r from-emerald-700 via-teal-700 to-green-800 border-emerald-600 text-white',
@@ -1442,6 +1724,95 @@ onMounted(() => {
           </div>
 
           <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0 self-end sm:self-auto">
+
+            <!-- Academic Unit Filter (HEU: All Bachelor Degrees, BEU: Grade School, JHS, SHS) -->
+            <div class="flex items-center whitespace-nowrap gap-1 sm:gap-1.5 bg-black/20 backdrop-blur-md px-2 py-1.5 rounded-xl border border-white/15 shadow-inner">
+              <!-- HEU (All Bachelor Degrees) Button -->
+              <button
+                type="button"
+                @click="toggleAcademicUnit('HEU')"
+                :class="[
+                  'px-2 sm:px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer border select-none',
+                  isHeuSelected
+                    ? 'bg-amber-400 text-emerald-950 border-amber-300 shadow-md ring-2 ring-amber-300 scale-105'
+                    : 'bg-white/10 hover:bg-white/20 text-white border-white/15 hover:border-white/30'
+                ]"
+                :title="`Click to ${selectedAcademicUnit === 'HEU' ? 'clear filter' : 'filter by Higher Education Unit (HEU - Bachelor Degrees & Graduate Studies)'} (${heuCount} runners)`"
+              >
+                <i class="fas fa-graduation-cap text-[10px]" :class="isHeuSelected ? 'text-emerald-950' : 'text-amber-300'"></i>
+                <span class="tracking-tight text-white/90 lg:text-xs text-[10px]" :class="{ '!text-emerald-950 font-black': isHeuSelected }">
+                  HEU -
+                </span>
+                <span class="font-black text-amber-300 lg:text-xs text-[10px]" :class="{ '!text-emerald-950': isHeuSelected }">
+                  {{ heuCount }}
+                </span>
+              </button>
+
+              <!-- BEU (Grade School, JHS, SHS) Button -->
+              <button
+                type="button"
+                @click="toggleAcademicUnit('BEU')"
+                :class="[
+                  'px-2 sm:px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer border select-none',
+                  isBeuSelected
+                    ? 'bg-sky-400 text-sky-950 border-sky-300 shadow-md ring-2 ring-sky-300 scale-105'
+                    : 'bg-white/10 hover:bg-white/20 text-white border-white/15 hover:border-white/30'
+                ]"
+                :title="`Click to ${selectedAcademicUnit === 'BEU' ? 'clear filter' : 'filter by Basic Education Unit (BEU - Grade School, JHS, SHS)'} (${beuCount} runners)`"
+              >
+                <i class="fas fa-school text-[10px]" :class="isBeuSelected ? 'text-sky-950' : 'text-sky-300'"></i>
+                <span class="tracking-tight text-white/90 lg:text-xs text-[10px]" :class="{ '!text-sky-950 font-black': isBeuSelected }">
+                  BEU -
+                </span>
+                <span class="font-black text-sky-300 lg:text-xs text-[10px]" :class="{ '!text-sky-950': isBeuSelected }">
+                  {{ beuCount }}
+                </span>
+              </button>
+
+              <!-- BEU Sub-level quick toggle pills when BEU is active -->
+              <template v-if="isBeuSelected">
+                <span class="h-4 w-px bg-white/20 mx-0.5"></span>
+                <button
+                  type="button"
+                  @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'Grade School' ? 'BEU' : 'Grade School'"
+                  :class="[
+                    'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
+                    selectedAcademicUnit === 'Grade School'
+                      ? 'bg-white text-sky-950 border-white shadow-xs font-black'
+                      : 'bg-white/10 hover:bg-white/20 text-white/90 border-white/10'
+                  ]"
+                  :title="`Grade School (${beuGradeSchoolCount} runners)`"
+                >
+                  GS ({{ beuGradeSchoolCount }})
+                </button>
+                <button
+                  type="button"
+                  @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'JHS' ? 'BEU' : 'JHS'"
+                  :class="[
+                    'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
+                    selectedAcademicUnit === 'JHS'
+                      ? 'bg-white text-sky-950 border-white shadow-xs font-black'
+                      : 'bg-white/10 hover:bg-white/20 text-white/90 border-white/10'
+                  ]"
+                  :title="`Junior High School (${beuJhsCount} runners)`"
+                >
+                  JHS ({{ beuJhsCount }})
+                </button>
+                <button
+                  type="button"
+                  @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'SHS' ? 'BEU' : 'SHS'"
+                  :class="[
+                    'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
+                    selectedAcademicUnit === 'SHS'
+                      ? 'bg-white text-sky-950 border-white shadow-xs font-black'
+                      : 'bg-white/10 hover:bg-white/20 text-white/90 border-white/10'
+                  ]"
+                  :title="`Senior High School (${beuShsCount} runners)`"
+                >
+                  SHS ({{ beuShsCount }})
+                </button>
+              </template>
+            </div>
 
             <!-- Distance Category Counters (1KM, 3KM, 10KM, 20KM) -->
             <div class="flex items-center whitespace-nowrap gap-1 sm:gap-1.5 bg-black/20 backdrop-blur-md px-2 py-1.5 rounded-xl border border-white/15 shadow-inner">
@@ -1588,14 +1959,44 @@ onMounted(() => {
           props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
         ]">
           <!-- Toolbar Row 1: Search & Basic Filters -->
-          <div class="lg:flex gap-3 w-full">
+          <div class="lg:flex gap-2.5 w-full flex-wrap">
             <!-- Search Input -->
-            <div class="relative lg:w-6/12 w-full">
+            <div class="relative lg:w-4/12 flex-1 min-w-[200px]">
               <i class="fas fa-search absolute left-3.5 top-3.5 text-xs text-gray-400"></i>
-              <input v-model="searchQuery" type="text" placeholder="Search Name, Reg ID, Bib #, Email, Batch..." :class="[
+              <input v-model="searchQuery" type="text" placeholder="Search Name, Reg ID, Bib #, Email, Course, Batch..." :class="[
                 'w-full pl-9 pr-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
                 props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
               ]" />
+            </div>
+
+            <!-- Academic Unit Filter (HEU / BEU) -->
+            <div class="min-w-[180px]">
+              <select v-model="selectedAcademicUnit" :class="[
+                'w-full px-3 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                selectedAcademicUnit !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+              ]">
+                <option value="All">All Units / Programs</option>
+                <optgroup label="🎓 HEU - All Higher Education">
+                  <option value="HEU">🎓 All HEU (Bachelor & Graduate Studies) ({{ heuCount }})</option>
+                </optgroup>
+                <optgroup label="🎓 HEU - Undergraduate (Bachelor Degrees)">
+                  <option v-for="c in bachelorCourses" :key="c.value" :value="c.value">
+                    &nbsp;&nbsp;↳ {{ c.label }}
+                  </option>
+                </optgroup>
+                <optgroup label="🏛️ HEU - School of Graduate Studies (SGS)">
+                  <option v-for="c in graduateCourses" :key="c.value" :value="c.value">
+                    &nbsp;&nbsp;↳ {{ c.label }}
+                  </option>
+                </optgroup>
+                <optgroup label="🏫 BEU - Basic Education Unit">
+                  <option value="BEU">🏫 All BEU (Grade School, JHS, SHS) ({{ beuCount }})</option>
+                  <option value="Grade School">&nbsp;&nbsp;↳ 🎒 Grade School ({{ beuGradeSchoolCount }})</option>
+                  <option value="JHS">&nbsp;&nbsp;↳ 📘 Junior High School (JHS) ({{ beuJhsCount }})</option>
+                  <option value="SHS">&nbsp;&nbsp;↳ 🎓 Senior High School (SHS) ({{ beuShsCount }})</option>
+                </optgroup>
+              </select>
             </div>
 
             <!-- Category Filter -->
@@ -1809,6 +2210,15 @@ onMounted(() => {
                   class="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-slate-200 dark:border-gray-600">
                   {{ runner.participant_type || 'Individual' }}
                 </span>
+                <span v-if="runner.college_course" :class="[
+                  'px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1',
+                  isHEU(runner)
+                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300'
+                    : 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border-sky-300'
+                ]" :title="getCourseLabel(runner.college_course)">
+                  <i :class="['fas text-[9px]', isHEU(runner) ? 'fa-graduation-cap' : 'fa-school']"></i>
+                  {{ isHEU(runner) ? 'HEU · ' : 'BEU · ' }}{{ runner.college_course }}
+                </span>
               </div>
 
               <!-- Payment Summary & Details -->
@@ -2015,6 +2425,34 @@ onMounted(() => {
                       <span
                         class="inline-block px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-[10px] font-semibold">
                         {{ runner.participant_type || 'Open Category' }}
+                      </span>
+                    </template>
+
+                    <!-- college_course -->
+                    <template v-else-if="col.key === 'college_course'">
+                      <div v-if="runner.college_course" class="space-y-0.5">
+                        <span :class="[
+                          'inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border',
+                          isHEU(runner)
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300 dark:border-amber-700'
+                            : 'bg-sky-100 text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 border-sky-300 dark:border-sky-700'
+                        ]" :title="getCourseLabel(runner.college_course)">
+                          <i :class="['fas text-[9px]', isHEU(runner) ? 'fa-graduation-cap text-amber-600 dark:text-amber-400' : 'fa-school text-sky-600 dark:text-sky-400']"></i>
+                          <span class="font-black uppercase">{{ isHEU(runner) ? 'HEU' : 'BEU' }}</span>
+                          <span class="opacity-40">·</span>
+                          <span class="font-bold">{{ runner.college_course }}</span>
+                        </span>
+                        <div class="text-[9px] text-gray-500 truncate max-w-[170px]" :title="getCourseLabel(runner.college_course)">
+                          {{ getCourseLabel(runner.college_course) }}
+                        </div>
+                      </div>
+                      <span v-else class="text-gray-400 text-[11px]">-</span>
+                    </template>
+
+                    <!-- college_year -->
+                    <template v-else-if="col.key === 'college_year'">
+                      <span class="text-gray-700 dark:text-gray-300 text-[11px] font-medium">
+                        {{ runner.college_year || runner.beu_grade || '-' }}
                       </span>
                     </template>
 
@@ -2315,6 +2753,28 @@ onMounted(() => {
                     selectedRunner.lsu_id_number + ')' : '' }}</p>
                 </div>
 
+                <div v-if="selectedRunner.college_course || selectedRunner.college_year || selectedRunner.beu_grade" class="lg:flex">
+                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Course / Program</label>
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span v-if="getCourseLabel(selectedRunner.college_course)" class="font-semibold text-emerald-700 dark:text-emerald-400">
+                        {{ getCourseLabel(selectedRunner.college_course) }}
+                      </span>
+                      <span v-if="isHEU(selectedRunner)"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300">
+                        <i class="fas fa-graduation-cap mr-1"></i> HEU ({{ isGraduateStudies(selectedRunner) ? 'School of Graduate Studies' : 'Bachelor Degree' }})
+                      </span>
+                      <span v-else-if="isBEU(selectedRunner)"
+                        class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-300">
+                        <i class="fas fa-school mr-1"></i> BEU ({{ isBEULevel(selectedRunner, 'SHS') ? 'Senior High School' : isBEULevel(selectedRunner, 'JHS') ? 'Junior High School' : 'Grade School' }})
+                      </span>
+                    </div>
+                    <p v-if="selectedRunner.college_year || selectedRunner.beu_grade" class="text-[11px] text-gray-500">
+                      Level: <strong class="text-gray-700 dark:text-gray-300">{{ selectedRunner.college_year || selectedRunner.beu_grade }}</strong>
+                    </p>
+                  </div>
+                </div>
+
                 <div v-if="selectedRunner.organization" class="lg:flex">
                   <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Running Club / Org</label>
                   <p class="font-semibold text-emerald-600 dark:text-emerald-400">{{ selectedRunner.organization }}</p>
@@ -2421,6 +2881,35 @@ onMounted(() => {
                   <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">LSU ID Number</label>
                     <input v-model="editForm.lsu_id_number" :class="inputCls" placeholder="e.g. 2021-00001" />
+                  </div>
+                </div>
+
+                <!-- Course / Program & Year / Grade Level -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Course / Program</label>
+                    <select v-model="editForm.college_course" :class="inputCls">
+                      <option value="">-- Select Course / Program --</option>
+                      <optgroup label="🎓 HEU - Undergraduate (Bachelor Degrees)">
+                        <option v-for="c in bachelorCourses" :key="c.value" :value="c.value">
+                          {{ c.label }}
+                        </option>
+                      </optgroup>
+                      <optgroup label="🏛️ HEU - School of Graduate Studies (SGS)">
+                        <option v-for="c in graduateCourses" :key="c.value" :value="c.value">
+                          {{ c.label }}
+                        </option>
+                      </optgroup>
+                      <optgroup label="🏫 BEU (Basic Education)">
+                        <option value="Grade School">Grade School</option>
+                        <option value="JHS">Junior High School (JHS)</option>
+                        <option value="SHS">Senior High School (SHS)</option>
+                      </optgroup>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Year / Grade Level</label>
+                    <input v-model="editForm.college_year" :class="inputCls" placeholder="e.g. 1st Year, Grade 11 STEM" />
                   </div>
                 </div>
 
