@@ -1349,7 +1349,7 @@ const CSV_ALL_COLUMNS = [
 ];
 
 const DEFAULT_COLUMNS = [
-  'race_bib', 'full_name', 'batch', 'category', 'tshirt_size', 'classification', 'reg_date', 'payment_status'
+  'full_name', 'category', 'classification', 'payment_status'
 ];
 
 // Default checked columns - controls both CSV export and live table column display
@@ -2028,21 +2028,25 @@ const applyChatTemplate = (text) => {
 };
 
 
-// ── Quick Filter Helpers for Empty States & UX ─────────────────────────
+// ── Quick Filter Helpers & Accordion State ─────────────────────────
+const isFilterExpanded = ref(false);
+
+const activeFilterCount = computed(() => {
+  let count = 0;
+  if (selectedAcademicUnit.value !== "All") count++;
+  if (selectedCategory.value !== "All") count++;
+  if (selectedStatus.value !== "All") count++;
+  if (selectedParticipantType.value !== "All") count++;
+  if (selectedAgeGroup.value !== "All") count++;
+  if (selectedChatFilter.value !== "All") count++;
+  if (selectedBatch.value !== "All") count++;
+  if (selectedLockStatus.value !== "All") count++;
+  if (dateFrom.value !== "" || dateTo.value !== "") count++;
+  return count;
+});
+
 const hasActiveFilters = computed(() => {
-  return (
-    searchQuery.value.trim() !== "" ||
-    selectedCategory.value !== "All" ||
-    selectedStatus.value !== "All" ||
-    selectedParticipantType.value !== "All" ||
-    selectedAgeGroup.value !== "All" ||
-    selectedAcademicUnit.value !== "All" ||
-    selectedBatch.value !== "All" ||
-    selectedLockStatus.value !== "All" ||
-    dateFrom.value !== "" ||
-    dateTo.value !== "" ||
-    selectedChatFilter.value === "new"
-  );
+  return searchQuery.value.trim() !== "" || activeFilterCount.value > 0;
 });
 
 const resetAllFilters = () => {
@@ -2068,491 +2072,752 @@ const resetAllFilters = () => {
     <div class="space-y-1">
       <!-- HEADER BANNER -->
       <div :class="[
-        'relative overflow-hidden rounded-2xl lg:px-4 px-2 border shadow-xl transition-all',
+        'relative overflow-hidden rounded-2xl lg:px-4 px-3 py-2.5 border shadow-md transition-all',
         props.darkMode
-          ? 'bg-gradient-to-r from-emerald-950 via-gray-900 to-emerald-950 border-green-800/40'
+          ? 'bg-gradient-to-r from-emerald-950 via-gray-900 to-emerald-950 border-green-800/40 text-white'
           : 'bg-gradient-to-r from-emerald-700 via-teal-700 to-green-800 border-emerald-600 text-white',
       ]">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 relative z-10">
-          <div class="space-y-1">
-            <h1 class="text-sm sm:text-base text-white font-black tracking-tight leading-snug">
-              THE EMERALD RUN
-              <span class="font-normal text-xs sm:text-sm text-emerald-200 block sm:inline sm:ml-1">
-                <i class="fas fa-list text-amber-300"></i> Track, verify & manage runner registrations & supplier
-                batches
-              </span>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4 relative z-10">
+          <div class="flex items-center gap-2">
+            <h1 class="text-sm sm:text-base text-white font-black tracking-tight leading-snug flex items-center gap-2">
+              <i class="fas fa-list text-amber-300"></i>
+              <span>THE EMERALD RUN</span>
             </h1>
+            <span class="hidden md:inline-block text-xs text-emerald-200/90 border-l border-white/20 pl-2">
+              Track, verify & manage runner registrations & supplier batches
+            </span>
           </div>
 
-          <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0 self-end sm:self-auto">
-
-            <!-- Academic Unit Filter (HEU: All Bachelor Degrees, BEU: Grade School, JHS, SHS) -->
-            <div class="flex items-center whitespace-nowrap gap-1 sm:gap-1.5 bg-black/20 backdrop-blur-md px-2 py-1.5 rounded-xl border border-white/15 shadow-inner">
-              <!-- HEU (All Bachelor Degrees) Button -->
-              <button
-                type="button"
-                @click="toggleAcademicUnit('HEU')"
-                :class="[
-                  'px-2 sm:px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer border select-none',
-                  isHeuSelected
-                    ? 'bg-amber-400 text-emerald-950 border-amber-300 shadow-md ring-2 ring-amber-300 scale-105'
-                    : 'bg-white/10 hover:bg-white/20 text-white border-white/15 hover:border-white/30'
-                ]"
-                :title="`Click to ${selectedAcademicUnit === 'HEU' ? 'clear filter' : 'filter by Higher Education Unit (HEU - Bachelor Degrees & Graduate Studies)'} (${heuCount} runners)`"
-              >
-                <i class="fas fa-graduation-cap text-[10px]" :class="isHeuSelected ? 'text-emerald-950' : 'text-amber-300'"></i>
-                <span class="tracking-tight text-white/90 lg:text-xs text-[10px]" :class="{ '!text-emerald-950 font-black': isHeuSelected }">
-                  HEU -
-                </span>
-                <span class="font-black text-amber-300 lg:text-xs text-[10px]" :class="{ '!text-emerald-950': isHeuSelected }">
-                  <span v-if="isInitialLoading" class="inline-block h-2.5 w-4 rounded bg-white/30 animate-pulse"></span>
-                  <span v-else>{{ heuCount }}</span>
-                </span>
-              </button>
-
-              <!-- BEU (Grade School, JHS, SHS) Button -->
-              <button
-                type="button"
-                @click="toggleAcademicUnit('BEU')"
-                :class="[
-                  'px-2 sm:px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer border select-none',
-                  isBeuSelected
-                    ? 'bg-sky-400 text-sky-950 border-sky-300 shadow-md ring-2 ring-sky-300 scale-105'
-                    : 'bg-white/10 hover:bg-white/20 text-white border-white/15 hover:border-white/30'
-                ]"
-                :title="`Click to ${selectedAcademicUnit === 'BEU' ? 'clear filter' : 'filter by Basic Education Unit (BEU - Grade School, JHS, SHS)'} (${beuCount} runners)`"
-              >
-                <i class="fas fa-school text-[10px]" :class="isBeuSelected ? 'text-sky-950' : 'text-sky-300'"></i>
-                <span class="tracking-tight text-white/90 lg:text-xs text-[10px]" :class="{ '!text-sky-950 font-black': isBeuSelected }">
-                  BEU -
-                </span>
-                <span class="font-black text-sky-300 lg:text-xs text-[10px]" :class="{ '!text-sky-950': isBeuSelected }">
-                  <span v-if="isInitialLoading" class="inline-block h-2.5 w-4 rounded bg-white/30 animate-pulse"></span>
-                  <span v-else>{{ beuCount }}</span>
-                </span>
-              </button>
-
-              <!-- BEU Sub-level quick toggle pills when BEU is active -->
-              <template v-if="isBeuSelected">
-                <span class="h-4 w-px bg-white/20 mx-0.5"></span>
-                <button
-                  type="button"
-                  @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'Grade School' ? 'BEU' : 'Grade School'"
-                  :class="[
-                    'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
-                    selectedAcademicUnit === 'Grade School'
-                      ? 'bg-white text-sky-950 border-white shadow-xs font-black'
-                      : 'bg-white/10 hover:bg-white/20 text-white/90 border-white/10'
-                  ]"
-                  :title="`Grade School (${beuGradeSchoolCount} runners)`"
-                >
-                  GS ({{ beuGradeSchoolCount }})
-                </button>
-                <button
-                  type="button"
-                  @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'JHS' ? 'BEU' : 'JHS'"
-                  :class="[
-                    'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
-                    selectedAcademicUnit === 'JHS'
-                      ? 'bg-white text-sky-950 border-white shadow-xs font-black'
-                      : 'bg-white/10 hover:bg-white/20 text-white/90 border-white/10'
-                  ]"
-                  :title="`Junior High School (${beuJhsCount} runners)`"
-                >
-                  JHS ({{ beuJhsCount }})
-                </button>
-                <button
-                  type="button"
-                  @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'SHS' ? 'BEU' : 'SHS'"
-                  :class="[
-                    'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
-                    selectedAcademicUnit === 'SHS'
-                      ? 'bg-white text-sky-950 border-white shadow-xs font-black'
-                      : 'bg-white/10 hover:bg-white/20 text-white/90 border-white/10'
-                  ]"
-                  :title="`Senior High School (${beuShsCount} runners)`"
-                >
-                  SHS ({{ beuShsCount }})
-                </button>
-              </template>
-            </div>
-
-            <!-- Distance Category Counters (1KM, 3KM, 10KM, 20KM) -->
-            <div class="flex items-center whitespace-nowrap gap-1 sm:gap-1.5 bg-black/20 backdrop-blur-md px-2 py-1.5 rounded-xl border border-white/15 shadow-inner">
-              <button
-                v-for="cat in categoryCounters"
-                :key="cat.id"
-                type="button"
-                @click="selectedCategory = selectedCategory === cat.id ? 'All' : cat.id"
-                :class="[
-                  'px-2 sm:px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer border select-none',
-                  selectedCategory === cat.id
-                    ? 'bg-white text-emerald-950 border-white shadow-md ring-2 ring-amber-300 scale-105'
-                    : 'bg-white/10 hover:bg-white/20 text-white border-white/15 hover:border-white/30'
-                ]"
-                :title="`Click to ${selectedCategory === cat.id ? 'clear filter' : 'filter by ' + cat.id} (${categoryCounts[cat.id] || 0} runners)`"
-              >
-                <span :class="['w-1.5 h-1.5 rounded-full shrink-0', cat.dot]"></span>
-                <span class="tracking-tight text-white/90 lg:text-xs text-[10px]" :class="{ '!text-emerald-950': selectedCategory === cat.id }">
-                  {{ cat.id }} -
-                </span>
-                <span class="font-black text-amber-300 lg:text-xs text-[10px]" :class="{ '!text-emerald-900': selectedCategory === cat.id }">
-                  <span v-if="isInitialLoading" class="inline-block h-2.5 w-3.5 rounded bg-white/30 animate-pulse"></span>
-                  <span v-else>{{ categoryCounts[cat.id] || 0 }}</span>
-                </span>
-              </button>
-            </div>
-
-            <!-- Supplier Batches History button -->
-            <button type="button" @click="openBatchHistoryModal"
-              class="hidden lg:flex px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition items-center gap-1.5 shadow-sm cursor-pointer">
-              <i class="fas fa-boxes"></i> Batches
-              <span v-if="batchesList.length"
-                class="px-1.5 py-0.2 rounded-full bg-amber-400 text-gray-900 font-black text-[10px]">
-                {{ batchesList.length }}
-              </span>
-            </button>
-
-            <!-- Chat Inquiries Filter button / pill -->
-            <button type="button" @click="toggleChatFilter"
-              :class="[
-                'px-3 py-2 rounded-xl backdrop-blur font-semibold text-xs transition flex items-center gap-1.5 shadow-sm cursor-pointer border select-none',
-                chatFilterActive
-                  ? 'bg-rose-500 text-white border-rose-300 ring-2 ring-rose-300 font-bold'
-                  : totalNewQueriesCount > 0
-                    ? 'bg-rose-500/80 hover:bg-rose-500 text-white border-rose-400/80 shadow-md animate-pulse'
-                    : 'bg-white/20 hover:bg-white/30 border-white/30 text-white'
-              ]"
-              :title="`Click to ${chatFilterActive ? 'clear filter' : 'filter runners with new message queries'} (${totalNewQueriesCount} new queries, ${totalRunnersWithChatCount} active threads)`">
-              <i class="fas fa-comments" :class="chatFilterActive ? 'text-white' : 'text-amber-300'"></i>
-              <span>Messages</span>
-              <span v-if="totalNewQueriesCount > 0"
-                class="px-1.5 py-0.2 rounded-full bg-white text-rose-700 font-black text-[10px] shadow-xs">
-                {{ totalNewQueriesCount }} NEW
-              </span>
-              <span v-else-if="totalRunnersWithChatCount > 0"
-                class="px-1.5 py-0.2 rounded-full bg-emerald-400 text-gray-900 font-black text-[10px]">
-                {{ totalRunnersWithChatCount }}
-              </span>
-            </button>
-
-            <!-- Table Columns Customizer button -->
-            <button type="button" @click="isColumnPickerModalOpen = true"
-              class="hidden lg:flex px-3 py-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur border border-white/30 text-white font-semibold text-xs transition items-center gap-1.5 shadow-sm cursor-pointer">
-              <i class="fas fa-table-columns text-amber-300"></i> Columns
-              <span class="px-1.5 py-0.2 rounded-full bg-emerald-400 text-gray-900 font-black text-[10px]">
-                {{ selectedCsvColumns.length }}
-              </span>
-            </button>
-
-            <!-- Live indicator -->
-            <!-- Live indicator & Manual Refresh Button -->
-            <button
-              type="button"
-              @click="fetchRegistrations(false)"
-              :disabled="isFetching || isAutoRefreshing"
-              class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 text-white text-[10px] font-medium transition cursor-pointer disabled:opacity-75 select-none"
-              title="Click to refresh registrations">
-              <span
-                :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', isAutoRefreshing || isFetching ? 'bg-amber-300 animate-ping' : 'bg-emerald-400 animate-pulse']"></span>
-              <span v-if="isFetching" class="text-emerald-100 flex items-center gap-1">Fetching… <i class="fas fa-spinner fa-spin text-[9px]"></i></span>
-              <span v-else-if="isAutoRefreshing" class="text-amber-200 flex items-center gap-1">Syncing… <i class="fas fa-arrows-rotate fa-spin text-[9px]"></i></span>
-              <span v-else-if="formatLastUpdated" class="text-emerald-200">Live · {{ formatLastUpdated }} <i class="fas fa-rotate text-[9px] ml-1 opacity-75"></i></span>
-              <span v-else class="text-white/60">Live <i class="fas fa-rotate text-[9px] ml-1 opacity-75"></i></span>
-            </button>
-
-          </div>
+          <!-- Live indicator & Manual Refresh Button -->
+          <button
+            type="button"
+            @click="fetchRegistrations(false)"
+            :disabled="isFetching || isAutoRefreshing"
+            class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 text-white text-[11px] font-medium transition cursor-pointer disabled:opacity-75 select-none"
+            title="Click to refresh registrations">
+            <span
+              :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', isAutoRefreshing || isFetching ? 'bg-amber-300 animate-ping' : 'bg-emerald-400 animate-pulse']"></span>
+            <span v-if="isFetching" class="text-emerald-100 flex items-center gap-1">Fetching… <i class="fas fa-spinner fa-spin text-[9px]"></i></span>
+            <span v-else-if="isAutoRefreshing" class="text-amber-200 flex items-center gap-1">Syncing… <i class="fas fa-arrows-rotate fa-spin text-[9px]"></i></span>
+            <span v-else-if="formatLastUpdated" class="text-emerald-200">Live · {{ formatLastUpdated }} <i class="fas fa-rotate text-[9px] ml-1 opacity-75"></i></span>
+            <span v-else class="text-white/80">Live <i class="fas fa-rotate text-[9px] ml-1 opacity-75"></i></span>
+          </button>
         </div>
       </div>
 
-      <div class="lg:flex">
-        <!-- STATS SUMMARY CARDS (4 COLUMNS INCLUDING SUPPLIER BATCH LOCKED COUNT) -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 lg:w-5/12 w-full">
-          <div :class="[
-            'px-4 py-2.5 rounded-2xl border shadow-sm transition items-center whitespace-nowrap',
-            props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
-          ]">
-            <div
-              class="w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-lg">
-              <i class="fas fa-running"></i>
-            </div>
-            <div class="text-center">
-              <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Total Runners</p>
-              <h3 class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center justify-center min-h-[28px]">
-                <span v-if="isInitialLoading" class="inline-block h-6 w-12 rounded bg-emerald-100 dark:bg-emerald-950/70 animate-pulse"></span>
-                <span v-else>{{ stats.totalRunners }}</span>
-              </h3>
-            </div>
-
-          </div>
-
-          <div :class="[
-            'px-4 py-2.5 rounded-2xl border shadow-sm transition items-center whitespace-nowrap',
-            props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
-          ]">
-            <div
-              class="w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 dark:bg-green-950/80 text-green-600 dark:text-green-400 flex items-center justify-center text-lg">
-              <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="text-center">
-              <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Confirmed Paid</p>
-              <h3 class="text-xl font-black text-green-600 dark:text-green-400 mt-0.5 flex items-center justify-center min-h-[28px]">
-                <span v-if="isInitialLoading" class="inline-block h-6 w-12 rounded bg-green-100 dark:bg-green-950/70 animate-pulse"></span>
-                <span v-else>{{ stats.confirmed }}</span>
-              </h3>
-            </div>
-
-          </div>
-
-          <div :class="[
-            'px-4 py-2.5 rounded-2xl border shadow-sm transition items-center whitespace-nowrap cursor-pointer group',
-            selectedStatus === 'Pending'
-              ? (props.darkMode ? 'bg-amber-950/40 border-amber-600 ring-2 ring-amber-500/40' : 'bg-amber-50 border-amber-400 ring-2 ring-amber-300/50')
-              : (props.darkMode ? 'bg-gray-800 border-gray-700 hover:border-amber-600/50' : 'bg-white border-slate-200 hover:border-amber-300'),
-          ]" @click="selectedStatus = selectedStatus === 'Pending' ? 'All' : 'Pending'"
-            :title="selectedStatus === 'Pending' ? 'Click to clear pending filter' : 'Click to filter by pending items'">
-            <div :class="[
-              'w-10 h-10 rounded-xl mx-auto mb-2 bg-emerald-100 flex items-center justify-center text-lg transition',
-              selectedStatus === 'Pending'
-                ? 'bg-amber-400 text-white'
-                : 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200'
-            ]">
-              <i class="fas fa-clock"></i>
-            </div>
-            <div class="text-center">
-              <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Pending Action</p>
-              <h3 class="text-xl font-black text-amber-500 dark:text-amber-400 mt-0.5 flex items-center justify-center min-h-[28px]">
-                <span v-if="isInitialLoading" class="inline-block h-6 w-12 rounded bg-amber-100 dark:bg-amber-950/70 animate-pulse"></span>
-                <span v-else>{{ stats.pending }}</span>
-              </h3>
-              <p v-if="!isInitialLoading && selectedStatus === 'Pending'" class="text-[10px] text-amber-500 font-semibold mt-0.5">Filtering
-                active ✓</p>
-            </div>
-
-          </div>
-
-          <div :class="[
-            'px-4 py-2.5 rounded-2xl border shadow-sm transition items-center whitespace-nowrap',
-            props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
-          ]">
-            <div
-              class="w-10 h-10 rounded-xl mx-auto mb-2 bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center text-lg">
-              <i class="fas fa-lock"></i>
-            </div>
-            <div class="text-center">
-              <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Batch Locked</p>
-              <h3 class="text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5 flex items-center justify-center min-h-[28px]">
-                <span v-if="isInitialLoading" class="inline-block h-6 w-12 rounded bg-purple-100 dark:bg-purple-950/70 animate-pulse"></span>
-                <span v-else>{{ stats.lockedCount }}</span>
-              </h3>
-            </div>
-
-          </div>
-        </div>
-
-        <!-- SEARCH & FILTER TOOLBAR (ROW 1: SEARCH & FILTERS, ROW 2: DATE RANGE & SORTING) -->
+      <!-- ── ADVANCED SEARCH & FILTER TOOLBAR (MINIMIZED ACCORDION DESIGN) ── -->
+      <div class="w-full">
         <div :class="[
-          'p-3 rounded-3xl border shadow-md transition space-y-3 w-full',
+          'p-2.5 sm:p-3 rounded-2xl sm:rounded-3xl border shadow-sm transition-all duration-300 w-full',
           props.darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-slate-200',
         ]">
-          <!-- Toolbar Row 1: Search & Basic Filters -->
-          <div class="lg:flex gap-2.5 w-full flex-wrap">
-            <!-- Search Input -->
-            <div class="relative lg:w-4/12 flex-1 min-w-[200px]">
-              <i class="fas fa-search absolute left-3.5 top-3.5 text-xs text-gray-400"></i>
-              <input v-model="searchQuery" type="text" placeholder="Search Name, Reg ID, Bib #, Email, Course, Batch..." :class="[
-                'w-full pl-9 pr-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-              ]" />
-            </div>
-
-            <!-- Academic Unit Filter (HEU / BEU) -->
-            <div class="min-w-[180px]">
-              <select v-model="selectedAcademicUnit" :class="[
-                'w-full px-3 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-                selectedAcademicUnit !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
-              ]">
-                <option value="All">All Units / Programs</option>
-                <optgroup label="🎓 HEU - All Higher Education">
-                  <option value="HEU">🎓 All HEU (Bachelor & Graduate Studies) ({{ heuCount }})</option>
-                </optgroup>
-                <optgroup label="🎓 HEU - Undergraduate (Bachelor Degrees)">
-                  <option v-for="c in bachelorCourses" :key="c.value" :value="c.value">
-                    &nbsp;&nbsp;↳ {{ c.label }}
-                  </option>
-                </optgroup>
-                <optgroup label="🏛️ HEU - School of Graduate Studies (SGS)">
-                  <option v-for="c in graduateCourses" :key="c.value" :value="c.value">
-                    &nbsp;&nbsp;↳ {{ c.label }}
-                  </option>
-                </optgroup>
-                <optgroup label="🏫 BEU - Basic Education Unit">
-                  <option value="BEU">🏫 All BEU (Grade School, JHS, SHS) ({{ beuCount }})</option>
-                  <option value="Grade School">&nbsp;&nbsp;↳ 🎒 Grade School ({{ beuGradeSchoolCount }})</option>
-                  <option value="JHS">&nbsp;&nbsp;↳ 📘 Junior High School (JHS) ({{ beuJhsCount }})</option>
-                  <option value="SHS">&nbsp;&nbsp;↳ 🎓 Senior High School (SHS) ({{ beuShsCount }})</option>
-                </optgroup>
-              </select>
-            </div>
-
-            <!-- Category Filter -->
-            <div>
-              <select v-model="selectedCategory" :class="[
-                'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-              ]">
-                <option value="All">All Distance Categories</option>
-                <option value="1KM">1 KM (Pet Run)</option>
-                <option value="3KM">3 KM</option>
-                <option value="10KM">10 KM</option>
-                <option value="20KM">20 KM</option>
-              </select>
-            </div>
-
-            <!-- Status Filter -->
-            <div>
-              <select v-model="selectedStatus" :class="[
-                'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-              ]">
-                <option value="All">All Payment Statuses</option>
-                <option value="Confirmed">✅ Confirmed</option>
-                <option value="Pending">⏳ All Pending</option>
-                <option value="Pending Payment">💳 Pending Payment</option>
-                <option value="Pending Approval">🔍 Pending Approval</option>
-              </select>
-            </div>
-
-            <!-- Participant Type Filter -->
-            <div>
-              <select v-model="selectedParticipantType" :class="[
-                'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-              ]">
-                <option value="All">All Classifications</option>
-                <option value="LSU Exclusive - Enrolled Student">LSU Exclusive - Enrolled Student</option>
-                <option value="LSU Exclusive - Employee">LSU Exclusive - Employee</option>
-                <option value="LSU Exclusive - Alumni">LSU Exclusive - Alumni</option>
-                <option value="Open Category">Open Category</option>
-                <option value="Pet">Pet</option>
-              </select>
-            </div>
-
-            <!-- Age Group Filter -->
-            <div>
-              <select v-model="selectedAgeGroup" :class="[
-                'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-              ]">
-                <option value="All">All Age Groups</option>
-                <option value="Under 18">Under 18</option>
-                <option value="18–24">18–24</option>
-                <option value="25–34">25–34</option>
-                <option value="35–44">35–44</option>
-                <option value="45–54">45–54</option>
-                <option value="55+">55+</option>
-              </select>
-            </div>
-
-            <!-- Messages / Queries Filter -->
-            <div>
-              <select v-model="selectedChatFilter" :class="[
-                'w-full px-3.5 py-2 rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-                selectedChatFilter === 'new' ? 'ring-2 ring-rose-400 font-bold !border-rose-400 bg-rose-50/70 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300' : selectedChatFilter !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
-              ]">
-                <option value="All">💬 All Messages</option>
-                <option value="new">🔴 New Queries ({{ totalNewQueriesCount }})</option>
-                <option value="has_messages">💬 With Chat History ({{ totalRunnersWithChatCount }})</option>
-                <option value="no_messages">⚪ No Messages</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Toolbar Row 2: Date Range Period, Supplier Batch Filter & Sorting -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5 pt-2.5 border-t dark:border-gray-700/60">
-            <!-- Date Range Period Inputs -->
-            <div class="lg:col-span-4 flex items-center gap-1.5">
-              <div class="relative w-1/2">
-                <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">From</span>
-                <input type="date" v-model="dateFrom" :class="[
-                  'w-full pl-10 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                  props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-                ]" />
-              </div>
-              <div class="relative w-1/2">
-                <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">To</span>
-                <input type="date" v-model="dateTo" :class="[
-                  'w-full pl-7 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                  props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-                ]" />
-              </div>
-            </div>
-
-            <!-- Quick Date Range Presets -->
-            <div class="lg:col-span-2 flex items-center gap-1">
-              <button type="button" @click="setDateRangePreset('today')"
-                class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 cursor-pointer">
-                Today
-              </button>
-              <button type="button" @click="setDateRangePreset('7days')"
-                class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 cursor-pointer">
-                7 Days
-              </button>
-              <button type="button" @click="setDateRangePreset('30days')"
-                class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 cursor-pointer">
-                30 Days
-              </button>
-              <button v-if="dateFrom || dateTo" type="button" @click="clearDateRange"
-                class="px-2 py-1.5 rounded-lg text-[10px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-600 transition cursor-pointer"
-                title="Clear Date Filter">
+          <!-- ── ROW 1: DEFAULT COMPACT BAR (SEARCH INPUT RETAINED BY DEFAULT) ── -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-2.5">
+            
+            <!-- SEARCH INPUT (Retained as primary default filter) -->
+            <div class="relative flex-1 min-w-[220px]">
+              <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400"></i>
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search Name, Reg ID, Bib #, Email, Course, Batch..."
+                :class="[
+                  'w-full pl-9 pr-8 py-2 rounded-xl sm:rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                  props.darkMode
+                    ? 'bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500'
+                    : 'bg-slate-50 border-gray-300 text-gray-800 placeholder-gray-400',
+                ]"
+              />
+              <!-- Clear Search button -->
+              <button
+                v-if="searchQuery"
+                type="button"
+                @click="searchQuery = ''"
+                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition text-xs p-1"
+                title="Clear search"
+              >
                 <i class="fas fa-times"></i>
               </button>
             </div>
 
-            <!-- Supplier Batch Filter -->
-            <div class="lg:col-span-2">
-              <select v-model="selectedBatch" :class="[
-                'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-              ]">
-                <option value="All">All Supplier Batches</option>
-                <option value="Unbatched">Unbatched Only</option>
-                <option v-for="b in availableBatches" :key="b" :value="b">{{ b }}</option>
-              </select>
-            </div>
+            <!-- CONTROLS & ACTIONS GROUP -->
+            <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap shrink-0">
+              
+              <!-- ACCORDION / TOGGLE MINIMIZE BUTTON -->
+              <button
+                type="button"
+                @click="isFilterExpanded = !isFilterExpanded"
+                :class="[
+                  'px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border select-none shadow-xs',
+                  isFilterExpanded
+                    ? (props.darkMode ? 'bg-emerald-600 text-white border-emerald-500 shadow-md' : 'bg-emerald-600 text-white border-emerald-600 shadow-md')
+                    : activeFilterCount > 0
+                      ? (props.darkMode ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300 ring-2 ring-emerald-500/30' : 'bg-emerald-50 border-emerald-400 text-emerald-800 ring-2 ring-emerald-400/30')
+                      : (props.darkMode ? 'bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-200' : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-gray-700')
+                ]"
+                :title="isFilterExpanded ? 'Minimize / Collapse filters' : 'Expand / Show advanced filters'"
+              >
+                <i :class="['fas fa-sliders text-[11px] transition-transform duration-200', isFilterExpanded ? 'text-amber-300' : '']"></i>
+                <span>Filters</span>
+                <!-- Active badge count if any advanced filter is set -->
+                <span
+                  v-if="activeFilterCount > 0"
+                  :class="[
+                    'px-1.5 py-0.2 rounded-full text-[10px] font-black',
+                    isFilterExpanded
+                      ? 'bg-amber-400 text-gray-900'
+                      : 'bg-emerald-600 text-white dark:bg-emerald-500'
+                  ]"
+                >
+                  {{ activeFilterCount }}
+                </span>
+                <!-- Accordion Chevron Arrow -->
+                <i :class="[
+                  'fas fa-chevron-down text-[10px] transition-transform duration-200 ml-0.5',
+                  isFilterExpanded ? 'rotate-180' : ''
+                ]"></i>
+              </button>
 
-            <!-- Lock Status Filter -->
-            <div class="lg:col-span-2">
-              <select v-model="selectedLockStatus" :class="[
-                'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-              ]">
-                <option value="All">All Lock Statuses</option>
-                <option value="Locked">🔒 Locked Orders Only</option>
-                <option value="Unlocked">🔓 Unlocked Orders</option>
-              </select>
-            </div>
+              <!-- Quick Reset button (visible whenever any filter or search is active) -->
+              <button
+                v-if="hasActiveFilters"
+                type="button"
+                @click="resetAllFilters"
+                :class="[
+                  'px-2.5 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer border',
+                  props.darkMode ? 'bg-rose-950/40 hover:bg-rose-900/60 border-rose-800/60 text-rose-300' : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700'
+                ]"
+                title="Reset all filters and search"
+              >
+                <i class="fas fa-rotate-left text-[10px]"></i>
+                <span class="hidden sm:inline">Reset</span>
+              </button>
 
-            <!-- Sorting Controls Dropdown -->
-            <div class="lg:col-span-2 flex items-center gap-1.5">
-              <select v-model="sortBy" :class="[
-                'w-full px-2.5 py-1.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-              ]">
-                <option value="date_desc">📅 Date: Latest → Oldest</option>
-                <option value="date_asc">📅 Date: Oldest → Latest</option>
-                <option value="name_asc">👤 Name: Ascending (A-Z)</option>
-                <option value="name_desc">👤 Name: Descending (Z-A)</option>
-                <option value="bib_asc">🔢 Race Bib #: Ascending</option>
-                <option value="batch_asc">📦 Supplier Batch: Ascending</option>
-                <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
-              </select>
+              <!-- Supplier Batches History button -->
+              <button
+                type="button"
+                @click="openBatchHistoryModal"
+                :class="[
+                  'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs',
+                  props.darkMode ? 'bg-emerald-900/40 hover:bg-emerald-900/60 border-emerald-700/60 text-emerald-200' : 'bg-emerald-700 hover:bg-emerald-800 border-emerald-800 text-white'
+                ]"
+                title="Supplier Batches History"
+              >
+                <i class="fas fa-boxes text-[11px]"></i>
+                <span class="hidden md:inline">Batches</span>
+                <span v-if="batchesList.length" class="px-1.5 py-0.2 rounded-full bg-amber-400 text-gray-900 font-black text-[10px]">
+                  {{ batchesList.length }}
+                </span>
+              </button>
+
+              <!-- Messages / Chat Inquiry Filter button -->
+              <button
+                type="button"
+                @click="toggleChatFilter"
+                :class="[
+                  'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs select-none',
+                  chatFilterActive
+                    ? 'bg-rose-500 text-white border-rose-300 ring-2 ring-rose-300 font-bold'
+                    : totalNewQueriesCount > 0
+                      ? 'bg-rose-500/90 hover:bg-rose-500 text-white border-rose-400 shadow-md animate-pulse'
+                      : (props.darkMode ? 'bg-emerald-900/40 hover:bg-emerald-900/60 border-emerald-700/60 text-emerald-200' : 'bg-emerald-700 hover:bg-emerald-800 border-emerald-800 text-white')
+                ]"
+                :title="`Click to ${chatFilterActive ? 'clear filter' : 'filter runners with new message queries'} (${totalNewQueriesCount} new queries, ${totalRunnersWithChatCount} active threads)`"
+              >
+                <i class="fas fa-comments text-[11px]" :class="chatFilterActive ? 'text-white' : 'text-amber-300'"></i>
+                <span class="hidden md:inline">Messages</span>
+                <span v-if="totalNewQueriesCount > 0" class="px-1.5 py-0.2 rounded-full bg-white text-rose-700 font-black text-[10px] shadow-xs">
+                  {{ totalNewQueriesCount }} NEW
+                </span>
+                <span v-else-if="totalRunnersWithChatCount > 0" class="px-1.5 py-0.2 rounded-full bg-emerald-400 text-gray-900 font-black text-[10px]">
+                  {{ totalRunnersWithChatCount }}
+                </span>
+              </button>
+
+              <!-- Table Columns Customizer button -->
+              <button
+                type="button"
+                @click="isColumnPickerModalOpen = true"
+                :class="[
+                  'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs',
+                  props.darkMode ? 'bg-emerald-900/40 hover:bg-emerald-900/60 border-emerald-700/60 text-emerald-200' : 'bg-emerald-700 hover:bg-emerald-800 border-emerald-800 text-white'
+                ]"
+                title="Customize Visible Columns"
+              >
+                <i class="fas fa-table-columns text-amber-300 text-[11px]"></i>
+                <span class="hidden md:inline">Columns</span>
+                <span class="px-1.5 py-0.2 rounded-full bg-emerald-400 text-gray-900 font-black text-[10px]">
+                  {{ selectedCsvColumns.length }}
+                </span>
+              </button>
+
             </div>
           </div>
-        </div>
 
+          <!-- ── ACTIVE FILTER PILLS (SHOWN WHEN MINIMIZED BUT ADVANCED FILTERS ACTIVE) ── -->
+          <div
+            v-if="!isFilterExpanded && activeFilterCount > 0"
+            class="flex items-center gap-1.5 pt-2.5 mt-2 border-t dark:border-gray-700/60 flex-wrap text-xs"
+          >
+            <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1 mr-1">
+              <i class="fas fa-filter text-[10px] text-emerald-500"></i> Active:
+            </span>
+
+            <!-- Academic Unit pill -->
+            <span
+              v-if="selectedAcademicUnit !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+            >
+              Unit: {{ selectedAcademicUnit }}
+              <button type="button" @click="selectedAcademicUnit = 'All'" class="hover:text-emerald-950 dark:hover:text-white ml-0.5" title="Remove unit filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
+            <!-- Category pill -->
+            <span
+              v-if="selectedCategory !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+            >
+              Cat: {{ selectedCategory }}
+              <button type="button" @click="selectedCategory = 'All'" class="hover:text-amber-950 dark:hover:text-white ml-0.5" title="Remove category filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
+            <!-- Status pill -->
+            <span
+              v-if="selectedStatus !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
+            >
+              Status: {{ selectedStatus }}
+              <button type="button" @click="selectedStatus = 'All'" class="hover:text-blue-950 dark:hover:text-white ml-0.5" title="Remove status filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
+            <!-- Classification pill -->
+            <span
+              v-if="selectedParticipantType !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-700"
+            >
+              {{ selectedParticipantType }}
+              <button type="button" @click="selectedParticipantType = 'All'" class="hover:text-purple-950 dark:hover:text-white ml-0.5" title="Remove classification filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
+            <!-- Age group pill -->
+            <span
+              v-if="selectedAgeGroup !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700"
+            >
+              Age: {{ selectedAgeGroup }}
+              <button type="button" @click="selectedAgeGroup = 'All'" class="hover:text-teal-950 dark:hover:text-white ml-0.5" title="Remove age filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
+            <!-- Chat filter pill -->
+            <span
+              v-if="selectedChatFilter !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700"
+            >
+              Msg: {{ selectedChatFilter }}
+              <button type="button" @click="selectedChatFilter = 'All'" class="hover:text-rose-950 dark:hover:text-white ml-0.5" title="Remove message filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
+            <!-- Date range pill -->
+            <span
+              v-if="dateFrom || dateTo"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700"
+            >
+              Date: {{ dateFrom || '...' }} → {{ dateTo || '...' }}
+              <button type="button" @click="clearDateRange" class="hover:text-indigo-950 dark:hover:text-white ml-0.5" title="Clear date range">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
+            <!-- Batch pill -->
+            <span
+              v-if="selectedBatch !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700"
+            >
+              Batch: {{ selectedBatch }}
+              <button type="button" @click="selectedBatch = 'All'" class="hover:text-orange-950 dark:hover:text-white ml-0.5" title="Remove batch filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
+            <!-- Lock status pill -->
+            <span
+              v-if="selectedLockStatus !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-violet-100 dark:bg-violet-950/60 text-violet-800 dark:text-violet-300 border border-violet-300 dark:border-violet-700"
+            >
+              Lock: {{ selectedLockStatus }}
+              <button type="button" @click="selectedLockStatus = 'All'" class="hover:text-violet-950 dark:hover:text-white ml-0.5" title="Remove lock filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+          </div>
+
+          <!-- ── ACCORDION EXPANDED SECTION (TOGGLE MINIMIZE / EXPAND) ── -->
+          <transition
+            enter-active-class="transition-all duration-300 ease-out"
+            enter-from-class="opacity-0 max-h-0 overflow-hidden"
+            enter-to-class="opacity-100 max-h-[1500px]"
+            leave-active-class="transition-all duration-200 ease-in"
+            leave-from-class="opacity-100 max-h-[1500px]"
+            leave-to-class="opacity-0 max-h-0 overflow-hidden"
+          >
+            <div v-show="isFilterExpanded" class="pt-3.5 mt-3 border-t dark:border-gray-700/70 space-y-3.5">
+              
+              <!-- ── STATS SUMMARY CARDS (4 CLEAN METRIC BOXES) ── -->
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <!-- Total Runners -->
+                <div :class="[
+                  'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between',
+                  props.darkMode ? 'bg-gray-900/60 border-gray-700/80' : 'bg-slate-50 border-slate-200',
+                ]">
+                  <div>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                      <i class="fas fa-running text-emerald-500 mr-1"></i> Total Runners
+                    </p>
+                    <h3 class="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 min-h-[26px] flex items-center">
+                      <span v-if="isInitialLoading" class="inline-block h-5 w-12 rounded bg-emerald-100 dark:bg-emerald-950/70 animate-pulse"></span>
+                      <span v-else>{{ stats.totalRunners }}</span>
+                    </h3>
+                  </div>
+                  <div class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm shrink-0">
+                    <i class="fas fa-users"></i>
+                  </div>
+                </div>
+
+                <!-- Confirmed Paid -->
+                <div :class="[
+                  'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between',
+                  props.darkMode ? 'bg-gray-900/60 border-gray-700/80' : 'bg-slate-50 border-slate-200',
+                ]">
+                  <div>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                      <i class="fas fa-check-circle text-green-500 mr-1"></i> Confirmed Paid
+                    </p>
+                    <h3 class="text-lg sm:text-xl font-black text-green-600 dark:text-green-400 mt-0.5 min-h-[26px] flex items-center">
+                      <span v-if="isInitialLoading" class="inline-block h-5 w-12 rounded bg-green-100 dark:bg-green-950/70 animate-pulse"></span>
+                      <span v-else>{{ stats.confirmed }}</span>
+                    </h3>
+                  </div>
+                  <div class="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-950/80 text-green-600 dark:text-green-400 flex items-center justify-center text-sm shrink-0">
+                    <i class="fas fa-receipt"></i>
+                  </div>
+                </div>
+
+                <!-- Pending Action (Clickable) -->
+                <div :class="[
+                  'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between cursor-pointer group',
+                  selectedStatus === 'Pending'
+                    ? (props.darkMode ? 'bg-amber-950/50 border-amber-500 ring-2 ring-amber-500/40' : 'bg-amber-50 border-amber-400 ring-2 ring-amber-300/60')
+                    : (props.darkMode ? 'bg-gray-900/60 border-gray-700/80 hover:border-amber-500/50' : 'bg-slate-50 border-slate-200 hover:border-amber-300'),
+                ]" @click="selectedStatus = selectedStatus === 'Pending' ? 'All' : 'Pending'"
+                  :title="selectedStatus === 'Pending' ? 'Click to clear pending filter' : 'Click to filter by pending items'">
+                  <div>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                      <i class="fas fa-clock text-amber-500 mr-1"></i> Pending Action
+                    </p>
+                    <h3 class="text-lg sm:text-xl font-black text-amber-500 dark:text-amber-400 mt-0.5 min-h-[26px] flex items-center">
+                      <span v-if="isInitialLoading" class="inline-block h-5 w-12 rounded bg-amber-100 dark:bg-amber-950/70 animate-pulse"></span>
+                      <span v-else>{{ stats.pending }}</span>
+                    </h3>
+                  </div>
+                  <div :class="[
+                    'w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 transition',
+                    selectedStatus === 'Pending'
+                      ? 'bg-amber-500 text-white'
+                      : 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200'
+                  ]">
+                    <i class="fas fa-hourglass-half"></i>
+                  </div>
+                </div>
+
+                <!-- Batch Locked -->
+                <div :class="[
+                  'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between',
+                  props.darkMode ? 'bg-gray-900/60 border-gray-700/80' : 'bg-slate-50 border-slate-200',
+                ]">
+                  <div>
+                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                      <i class="fas fa-lock text-purple-500 mr-1"></i> Batch Locked
+                    </p>
+                    <h3 class="text-lg sm:text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5 min-h-[26px] flex items-center">
+                      <span v-if="isInitialLoading" class="inline-block h-5 w-12 rounded bg-purple-100 dark:bg-purple-950/70 animate-pulse"></span>
+                      <span v-else>{{ stats.lockedCount }}</span>
+                    </h3>
+                  </div>
+                  <div class="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center text-sm shrink-0">
+                    <i class="fas fa-box-archive"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── FILTER SELECT CONTROLS (6 CATEGORIES IN A CLEAN GRID) ── -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5">
+                <!-- Academic Unit Filter (HEU / BEU) -->
+                <div>
+                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    <i class="fas fa-graduation-cap text-emerald-500 mr-0.5"></i> Academic Unit
+                  </label>
+                  <select v-model="selectedAcademicUnit" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                    selectedAcademicUnit !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                  ]">
+                    <option value="All">All Units / Programs</option>
+                    <optgroup label="🎓 HEU - All Higher Education">
+                      <option value="HEU">🎓 All HEU (Bachelor & SGS) ({{ heuCount }})</option>
+                    </optgroup>
+                    <optgroup label="🎓 HEU - Undergraduate (Bachelor Degrees)">
+                      <option v-for="c in bachelorCourses" :key="c.value" :value="c.value">
+                        &nbsp;&nbsp;↳ {{ c.label }}
+                      </option>
+                    </optgroup>
+                    <optgroup label="🏛️ HEU - School of Graduate Studies (SGS)">
+                      <option v-for="c in graduateCourses" :key="c.value" :value="c.value">
+                        &nbsp;&nbsp;↳ {{ c.label }}
+                      </option>
+                    </optgroup>
+                    <optgroup label="🏫 BEU - Basic Education Unit">
+                      <option value="BEU">🏫 All BEU (Grade School, JHS, SHS) ({{ beuCount }})</option>
+                      <option value="Grade School">&nbsp;&nbsp;↳ 🎒 Grade School ({{ beuGradeSchoolCount }})</option>
+                      <option value="JHS">&nbsp;&nbsp;↳ 📘 Junior High School (JHS) ({{ beuJhsCount }})</option>
+                      <option value="SHS">&nbsp;&nbsp;↳ 🎓 Senior High School (SHS) ({{ beuShsCount }})</option>
+                    </optgroup>
+                  </select>
+                </div>
+
+                <!-- Distance Category Filter -->
+                <div>
+                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    <i class="fas fa-route text-emerald-500 mr-0.5"></i> Distance Category
+                  </label>
+                  <select v-model="selectedCategory" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                    selectedCategory !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                  ]">
+                    <option value="All">All Distance Categories</option>
+                    <option value="1KM">1 KM (Pet Run)</option>
+                    <option value="3KM">3 KM</option>
+                    <option value="10KM">10 KM</option>
+                    <option value="20KM">20 KM</option>
+                  </select>
+                </div>
+
+                <!-- Payment Status Filter -->
+                <div>
+                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    <i class="fas fa-credit-card text-emerald-500 mr-0.5"></i> Payment Status
+                  </label>
+                  <select v-model="selectedStatus" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                    selectedStatus !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                  ]">
+                    <option value="All">All Payment Statuses</option>
+                    <option value="Confirmed">✅ Confirmed</option>
+                    <option value="Pending">⏳ All Pending</option>
+                    <option value="Pending Payment">💳 Pending Payment</option>
+                    <option value="Pending Approval">🔍 Pending Approval</option>
+                  </select>
+                </div>
+
+                <!-- Participant Classification Filter -->
+                <div>
+                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    <i class="fas fa-id-badge text-emerald-500 mr-0.5"></i> Classification
+                  </label>
+                  <select v-model="selectedParticipantType" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                    selectedParticipantType !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                  ]">
+                    <option value="All">All Classifications</option>
+                    <option value="LSU Exclusive - Enrolled Student">LSU Exclusive - Enrolled Student</option>
+                    <option value="LSU Exclusive - Employee">LSU Exclusive - Employee</option>
+                    <option value="LSU Exclusive - Alumni">LSU Exclusive - Alumni</option>
+                    <option value="Open Category">Open Category</option>
+                    <option value="Pet">Pet</option>
+                  </select>
+                </div>
+
+                <!-- Age Group Filter -->
+                <div>
+                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    <i class="fas fa-user-clock text-emerald-500 mr-0.5"></i> Age Group
+                  </label>
+                  <select v-model="selectedAgeGroup" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                    selectedAgeGroup !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                  ]">
+                    <option value="All">All Age Groups</option>
+                    <option value="Under 18">Under 18</option>
+                    <option value="18–24">18–24</option>
+                    <option value="25–34">25–34</option>
+                    <option value="35–44">35–44</option>
+                    <option value="45–54">45–54</option>
+                    <option value="55+">55+</option>
+                  </select>
+                </div>
+
+                <!-- Messages / Queries Filter -->
+                <div>
+                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    <i class="fas fa-comment-dots text-emerald-500 mr-0.5"></i> Chat & Inquiries
+                  </label>
+                  <select v-model="selectedChatFilter" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                    selectedChatFilter === 'new'
+                      ? 'ring-2 ring-rose-400 font-bold !border-rose-400 bg-rose-50/70 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                      : selectedChatFilter !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                  ]">
+                    <option value="All">💬 All Messages</option>
+                    <option value="new">🔴 New Queries ({{ totalNewQueriesCount }})</option>
+                    <option value="has_messages">💬 With Chat History ({{ totalRunnersWithChatCount }})</option>
+                    <option value="no_messages">⚪ No Messages</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- ── QUICK PILLS & TOGGLES (ACADEMIC UNITS & CATEGORY COUNTERS) ── -->
+              <div class="flex items-center justify-between gap-3 flex-wrap pt-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  
+                  <!-- Academic Unit Quick Buttons -->
+                  <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase mr-1">Unit:</span>
+                    <!-- HEU -->
+                    <button
+                      type="button"
+                      @click="toggleAcademicUnit('HEU')"
+                      :class="[
+                        'px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none',
+                        isHeuSelected
+                          ? 'bg-amber-400 text-emerald-950 border-amber-300 shadow-xs scale-105'
+                          : 'bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
+                      ]"
+                      :title="`Higher Education Unit (${heuCount} runners)`"
+                    >
+                      <i class="fas fa-graduation-cap text-[10px]"></i>
+                      <span>HEU</span>
+                      <span class="font-black text-amber-600 dark:text-amber-400" :class="{ '!text-emerald-950': isHeuSelected }">
+                        {{ isInitialLoading ? '...' : heuCount }}
+                      </span>
+                    </button>
+
+                    <!-- BEU -->
+                    <button
+                      type="button"
+                      @click="toggleAcademicUnit('BEU')"
+                      :class="[
+                        'px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none',
+                        isBeuSelected
+                          ? 'bg-sky-400 text-sky-950 border-sky-300 shadow-xs scale-105'
+                          : 'bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
+                      ]"
+                      :title="`Basic Education Unit (${beuCount} runners)`"
+                    >
+                      <i class="fas fa-school text-[10px]"></i>
+                      <span>BEU</span>
+                      <span class="font-black text-sky-600 dark:text-sky-300" :class="{ '!text-sky-950': isBeuSelected }">
+                        {{ isInitialLoading ? '...' : beuCount }}
+                      </span>
+                    </button>
+
+                    <!-- Sub-level BEU Pills -->
+                    <template v-if="isBeuSelected">
+                      <span class="h-3 w-px bg-gray-300 dark:bg-gray-700 mx-0.5"></span>
+                      <button
+                        type="button"
+                        @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'Grade School' ? 'BEU' : 'Grade School'"
+                        :class="[
+                          'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
+                          selectedAcademicUnit === 'Grade School'
+                            ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                            : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+                        ]"
+                      >
+                        GS ({{ beuGradeSchoolCount }})
+                      </button>
+                      <button
+                        type="button"
+                        @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'JHS' ? 'BEU' : 'JHS'"
+                        :class="[
+                          'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
+                          selectedAcademicUnit === 'JHS'
+                            ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                            : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+                        ]"
+                      >
+                        JHS ({{ beuJhsCount }})
+                      </button>
+                      <button
+                        type="button"
+                        @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'SHS' ? 'BEU' : 'SHS'"
+                        :class="[
+                          'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
+                          selectedAcademicUnit === 'SHS'
+                            ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                            : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+                        ]"
+                      >
+                        SHS ({{ beuShsCount }})
+                      </button>
+                    </template>
+                  </div>
+
+                  <!-- Distance Category Counters Quick Pills -->
+                  <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase mr-1">Distance:</span>
+                    <button
+                      v-for="cat in categoryCounters"
+                      :key="cat.id"
+                      type="button"
+                      @click="selectedCategory = selectedCategory === cat.id ? 'All' : cat.id"
+                      :class="[
+                        'px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none',
+                        selectedCategory === cat.id
+                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs scale-105'
+                          : 'bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
+                      ]"
+                      :title="`Filter by ${cat.id} (${categoryCounts[cat.id] || 0} runners)`"
+                    >
+                      <span :class="['w-1.5 h-1.5 rounded-full shrink-0', cat.dot]"></span>
+                      <span>{{ cat.id }}</span>
+                      <span class="font-black text-amber-500 dark:text-amber-400" :class="{ '!text-white': selectedCategory === cat.id }">
+                        {{ isInitialLoading ? '...' : (categoryCounts[cat.id] || 0) }}
+                      </span>
+                    </button>
+                  </div>
+
+                </div>
+
+                <!-- Runners Results Count -->
+                <div class="text-[11px] font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  <i class="fas fa-filter text-emerald-500 text-[10px]"></i>
+                  <span>Showing <strong class="text-emerald-600 dark:text-emerald-400">{{ filteredRegistrations.length }}</strong> of {{ registrations.length }} runners</span>
+                </div>
+              </div>
+
+              <!-- ── DATE RANGE, BATCH, LOCK STATUS & SORTING ── -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5 pt-3 border-t dark:border-gray-700/60">
+                <!-- Date Range Inputs -->
+                <div class="lg:col-span-4 flex items-center gap-1.5">
+                  <div class="relative w-1/2">
+                    <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">From</span>
+                    <input type="date" v-model="dateFrom" :class="[
+                      'w-full pl-10 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+                    ]" />
+                  </div>
+                  <div class="relative w-1/2">
+                    <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">To</span>
+                    <input type="date" v-model="dateTo" :class="[
+                      'w-full pl-7 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+                    ]" />
+                  </div>
+                </div>
+
+                <!-- Quick Date Range Presets -->
+                <div class="lg:col-span-2 flex items-center gap-1">
+                  <button type="button" @click="setDateRangePreset('today')"
+                    class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 cursor-pointer">
+                    Today
+                  </button>
+                  <button type="button" @click="setDateRangePreset('7days')"
+                    class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 cursor-pointer">
+                    7 Days
+                  </button>
+                  <button type="button" @click="setDateRangePreset('30days')"
+                    class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 cursor-pointer">
+                    30 Days
+                  </button>
+                  <button v-if="dateFrom || dateTo" type="button" @click="clearDateRange"
+                    class="px-2 py-1.5 rounded-lg text-[10px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-600 transition cursor-pointer"
+                    title="Clear Date Filter">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+
+                <!-- Supplier Batch Filter -->
+                <div class="lg:col-span-2">
+                  <select v-model="selectedBatch" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+                  ]">
+                    <option value="All">All Supplier Batches</option>
+                    <option value="Unbatched">Unbatched Only</option>
+                    <option v-for="b in availableBatches" :key="b" :value="b">{{ b }}</option>
+                  </select>
+                </div>
+
+                <!-- Lock Status Filter -->
+                <div class="lg:col-span-2">
+                  <select v-model="selectedLockStatus" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+                  ]">
+                    <option value="All">All Lock Statuses</option>
+                    <option value="Locked">🔒 Locked Orders Only</option>
+                    <option value="Unlocked">🔓 Unlocked Orders</option>
+                  </select>
+                </div>
+
+                <!-- Sorting Controls Dropdown -->
+                <div class="lg:col-span-2 flex items-center gap-1.5">
+                  <select v-model="sortBy" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+                  ]">
+                    <option value="date_desc">📅 Date: Latest → Oldest</option>
+                    <option value="date_asc">📅 Date: Oldest → Latest</option>
+                    <option value="name_asc">👤 Name: Ascending (A-Z)</option>
+                    <option value="name_desc">👤 Name: Descending (Z-A)</option>
+                    <option value="bib_asc">🔢 Race Bib #: Ascending</option>
+                    <option value="batch_asc">📦 Supplier Batch: Ascending</option>
+                    <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- ── ACCORDION FOOTER (COLLAPSE & RESET SHORTCUTS) ── -->
+              <div class="flex items-center justify-between pt-2 border-t dark:border-gray-700/60 text-xs">
+                <button
+                  v-if="hasActiveFilters"
+                  type="button"
+                  @click="resetAllFilters"
+                  class="text-rose-600 dark:text-rose-400 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                >
+                  <i class="fas fa-rotate-left text-[11px]"></i> Reset all filters
+                </button>
+                <div v-else></div>
+
+                <button
+                  type="button"
+                  @click="isFilterExpanded = false"
+                  class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-semibold flex items-center gap-1 cursor-pointer ml-auto"
+                >
+                  <span>Collapse filters</span>
+                  <i class="fas fa-chevron-up text-[10px]"></i>
+                </button>
+              </div>
+
+            </div>
+          </transition>
+        </div>
       </div>
       <!-- PARTICIPANTS VIEW (RESPONSIVE: MOBILE CARDS + DESKTOP TABLE) -->
       <div :class="[
