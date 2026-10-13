@@ -979,15 +979,23 @@ const executeConfirmPayment = async () => {
 
 const isAdminUploadingReceipt = ref(false);
 const MAX_FILE_UPLOAD_MB = 10;
-const MAX_FILE_UPLOAD_BYTES = MAX_FILE_UPLOAD_MB * 1024 * 1024; // 10 MB for HD images
+const MAX_FILE_UPLOAD_BYTES = MAX_FILE_UPLOAD_MB * 1024 * 1024; // 10 MB for HD images and documents
 
 /**
- * Optimizes/compresses HD image if it exceeds target bytes (or to prevent HTTP 413 payload limits)
- * while maintaining high visual clarity (HD/4K resolution).
+ * Optimizes HD receipt images in the browser before upload:
+ * - Passes through small images (<1.2 MB) and non-images (PDFs) directly.
+ * - For larger images (>1.2 MB or up to 10MB+ phone camera shots), downscales to 2560px (Ultra-HD/QHD)
+ *   and encodes to 0.88 JPEG with white background, ensuring fine text, reference numbers,
+ *   and bank stamps remain razor sharp while reducing 5-15MB payloads down to ~400KB-900KB.
+ * - Prevents HTTP 413 (Request Entity Too Large) errors on web servers (Nginx/Cloudflare).
  */
 const compressImageIfNeeded = async (file, maxBytes = MAX_FILE_UPLOAD_BYTES) => {
-  if (!file || !file.type || !file.type.startsWith("image/")) return file;
-  if (file.size <= maxBytes) return file;
+  if (!file) return file;
+  const isImage = file.type?.startsWith("image/") || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+  if (!isImage) return file;
+
+  // If already small and within limits, keep as-is
+  if (file.size <= 1.2 * 1024 * 1024 && file.size <= maxBytes) return file;
 
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -996,7 +1004,7 @@ const compressImageIfNeeded = async (file, maxBytes = MAX_FILE_UPLOAD_BYTES) => 
       img.onload = () => {
         const canvas = document.createElement("canvas");
         let { width, height } = img;
-        const maxDim = 3840; // 4K max dimension preserves ultra HD text & stamps
+        const maxDim = 2560; // 2K/QHD dimension preserves ultra-sharp receipt text, amounts & stamps
         if (width > maxDim || height > maxDim) {
           if (width > height) {
             height = Math.round((height * maxDim) / width);
@@ -1010,12 +1018,19 @@ const compressImageIfNeeded = async (file, maxBytes = MAX_FILE_UPLOAD_BYTES) => 
         canvas.height = height;
         const ctx = canvas.getContext("2d");
         if (!ctx) return resolve(file);
+
+        // Fill white background in case source is transparent PNG
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
+
+        const newFileName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+
         canvas.toBlob(
           (blob) => {
-            if (blob && blob.size < file.size) {
-              const compressedFile = new File([blob], file.name, {
-                type: blob.type || file.type || "image/jpeg",
+            if (blob && (blob.size < file.size || blob.size <= maxBytes)) {
+              const compressedFile = new File([blob], newFileName, {
+                type: "image/jpeg",
                 lastModified: Date.now(),
               });
               resolve(compressedFile);
@@ -1023,8 +1038,8 @@ const compressImageIfNeeded = async (file, maxBytes = MAX_FILE_UPLOAD_BYTES) => 
               resolve(file);
             }
           },
-          file.type === "image/png" ? "image/png" : "image/jpeg",
-          0.90
+          "image/jpeg",
+          0.88
         );
       };
       img.onerror = () => resolve(file);
@@ -1076,11 +1091,11 @@ const uploadAdminReceipt = async (file, runner) => {
     const rawError = (err?.data?.error || err?.message || "").toLowerCase();
 
     if (status === 413 || rawError.includes("413") || rawError.includes("too large") || rawError.includes("entity too large")) {
-      errorMsg = "File size exceeds server upload limit (HTTP 413). Please upload an image under 10 MB or compress the file.";
+      errorMsg = "File size exceeds server upload limit (HTTP 413). Please ensure server Nginx has client_max_body_size set to 20M, or upload a smaller file.";
     } else if (err?.data?.error) {
       errorMsg = err.data.error;
     } else if (rawError.includes("failed to fetch")) {
-      errorMsg = "Upload failed: Server connection issue or request payload exceeds server limits (HTTP 413 / CORS). Please ensure file size is within 10 MB.";
+      errorMsg = "Upload failed: Server connection issue or request payload exceeds server limits (HTTP 413 / CORS). Please ensure server Nginx has client_max_body_size set to 20M.";
     }
 
     showNotice(
@@ -1097,7 +1112,7 @@ const handleAdminReceiptChange = async (event, runner) => {
   const file = event.target.files?.[0];
   if (!file) return;
 
-  const isImageOrPdf = file.type.startsWith("image/") || file.type === "application/pdf" || /\.(jpe?g|png|webp|gif|pdf)$/i.test(file.name);
+  const isImageOrPdf = file.type?.startsWith("image/") || file.type === "application/pdf" || /\.(jpe?g|png|webp|gif|pdf)$/i.test(file.name);
   if (!isImageOrPdf) {
     showNotice(
       "Only image files (JPG, PNG, WEBP) or PDF receipts are allowed.",
@@ -1109,14 +1124,15 @@ const handleAdminReceiptChange = async (event, runner) => {
   }
 
   let fileToUpload = file;
-  if (file.type.startsWith("image/") && file.size > MAX_FILE_UPLOAD_BYTES) {
+  const isImage = file.type?.startsWith("image/") || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+  if (isImage) {
     fileToUpload = await compressImageIfNeeded(file, MAX_FILE_UPLOAD_BYTES);
   }
 
   if (fileToUpload.size > MAX_FILE_UPLOAD_BYTES) {
     const sizeMb = (fileToUpload.size / (1024 * 1024)).toFixed(2);
     showNotice(
-      `File size (${sizeMb} MB) exceeds the maximum allowed limit of 10 MB. Please compress the HD image or choose a smaller file.`,
+      `File size (${sizeMb} MB) exceeds the maximum allowed limit of ${MAX_FILE_UPLOAD_MB} MB. Please compress the file or choose a smaller file.`,
       "File Too Large",
       "error"
     );
@@ -1762,7 +1778,8 @@ const handleChatAttachmentChange = async (event) => {
     return;
   }
   let targetFile = file;
-  if (file.type.startsWith('image/') && file.size > CHAT_MAX_SIZE) {
+  const isImage = file.type?.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+  if (isImage) {
     targetFile = await compressImageIfNeeded(file, CHAT_MAX_SIZE);
   }
   if (targetFile.size > CHAT_MAX_SIZE) {
