@@ -978,6 +978,62 @@ const executeConfirmPayment = async () => {
 };
 
 const isAdminUploadingReceipt = ref(false);
+const MAX_FILE_UPLOAD_MB = 10;
+const MAX_FILE_UPLOAD_BYTES = MAX_FILE_UPLOAD_MB * 1024 * 1024; // 10 MB for HD images
+
+/**
+ * Optimizes/compresses HD image if it exceeds target bytes (or to prevent HTTP 413 payload limits)
+ * while maintaining high visual clarity (HD/4K resolution).
+ */
+const compressImageIfNeeded = async (file, maxBytes = MAX_FILE_UPLOAD_BYTES) => {
+  if (!file || !file.type || !file.type.startsWith("image/")) return file;
+  if (file.size <= maxBytes) return file;
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let { width, height } = img;
+        const maxDim = 3840; // 4K max dimension preserves ultra HD text & stamps
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(file);
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob && blob.size < file.size) {
+              const compressedFile = new File([blob], file.name, {
+                type: blob.type || file.type || "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(file);
+            }
+          },
+          file.type === "image/png" ? "image/png" : "image/jpeg",
+          0.90
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+};
 
 const uploadAdminReceipt = async (file, runner) => {
   if (!file || !runner) return;
@@ -1015,8 +1071,20 @@ const uploadAdminReceipt = async (file, runner) => {
     );
   } catch (err) {
     console.error("Admin receipt upload error:", err);
+    let errorMsg = "Failed to upload and record receipt file. Please try again.";
+    const status = err?.response?.status || err?.status || err?.statusCode;
+    const rawError = (err?.data?.error || err?.message || "").toLowerCase();
+
+    if (status === 413 || rawError.includes("413") || rawError.includes("too large") || rawError.includes("entity too large")) {
+      errorMsg = "File size exceeds server upload limit (HTTP 413). Please upload an image under 10 MB or compress the file.";
+    } else if (err?.data?.error) {
+      errorMsg = err.data.error;
+    } else if (rawError.includes("failed to fetch")) {
+      errorMsg = "Upload failed: Server connection issue or request payload exceeds server limits (HTTP 413 / CORS). Please ensure file size is within 10 MB.";
+    }
+
     showNotice(
-      "Failed to upload and record receipt file. Please try again.",
+      errorMsg,
       "Upload Failed",
       "error"
     );
@@ -1025,11 +1093,39 @@ const uploadAdminReceipt = async (file, runner) => {
   }
 };
 
-const handleAdminReceiptChange = (event, runner) => {
-  const file = event.target.files[0];
-  if (file) {
-    uploadAdminReceipt(file, runner);
+const handleAdminReceiptChange = async (event, runner) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  const isImageOrPdf = file.type.startsWith("image/") || file.type === "application/pdf" || /\.(jpe?g|png|webp|gif|pdf)$/i.test(file.name);
+  if (!isImageOrPdf) {
+    showNotice(
+      "Only image files (JPG, PNG, WEBP) or PDF receipts are allowed.",
+      "Invalid File Type",
+      "error"
+    );
+    event.target.value = "";
+    return;
   }
+
+  let fileToUpload = file;
+  if (file.type.startsWith("image/") && file.size > MAX_FILE_UPLOAD_BYTES) {
+    fileToUpload = await compressImageIfNeeded(file, MAX_FILE_UPLOAD_BYTES);
+  }
+
+  if (fileToUpload.size > MAX_FILE_UPLOAD_BYTES) {
+    const sizeMb = (fileToUpload.size / (1024 * 1024)).toFixed(2);
+    showNotice(
+      `File size (${sizeMb} MB) exceeds the maximum allowed limit of 10 MB. Please compress the HD image or choose a smaller file.`,
+      "File Too Large",
+      "error"
+    );
+    event.target.value = "";
+    return;
+  }
+
+  uploadAdminReceipt(fileToUpload, runner);
+  event.target.value = "";
 };
 
 // ── Delete Receipt ──────────────────────────────────────────────────────────
@@ -1653,24 +1749,29 @@ watch(chatMessages, () => {
 // Tracks whether the last message also triggered an email notification to the runner
 const chatEmailSent = ref(false);
 
-const CHAT_ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-const CHAT_MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+const CHAT_ACCEPTED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+const CHAT_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 
-const handleChatAttachmentChange = (event) => {
-  const file = event.target.files[0];
+const handleChatAttachmentChange = async (event) => {
+  const file = event.target.files?.[0];
   if (!file) return;
-  if (!CHAT_ACCEPTED_TYPES.includes(file.type)) {
-    showNotice('Only JPG, JPEG, PNG, or PDF files are allowed.', 'Invalid File Type', 'error');
+  const isAllowed = CHAT_ACCEPTED_TYPES.includes(file.type) || file.type.startsWith('image/');
+  if (!isAllowed) {
+    showNotice('Only JPG, JPEG, PNG, WEBP, or PDF files are allowed.', 'Invalid File Type', 'error');
     event.target.value = '';
     return;
   }
-  if (file.size > CHAT_MAX_SIZE) {
-    showNotice(`File exceeds the 5 MB limit (${(file.size / 1024 / 1024).toFixed(2)} MB).`, 'File Too Large', 'error');
+  let targetFile = file;
+  if (file.type.startsWith('image/') && file.size > CHAT_MAX_SIZE) {
+    targetFile = await compressImageIfNeeded(file, CHAT_MAX_SIZE);
+  }
+  if (targetFile.size > CHAT_MAX_SIZE) {
+    showNotice(`File exceeds the 10 MB limit (${(targetFile.size / 1024 / 1024).toFixed(2)} MB). Please compress or choose a file under 10 MB.`, 'File Too Large', 'error');
     event.target.value = '';
     return;
   }
-  const previewUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
-  chatAttachment.value = { file, previewUrl, name: file.name };
+  const previewUrl = targetFile.type.startsWith('image/') ? URL.createObjectURL(targetFile) : null;
+  chatAttachment.value = { file: targetFile, previewUrl, name: targetFile.name };
   event.target.value = '';
 };
 
@@ -1780,7 +1881,15 @@ const sendAdminMessage = async () => {
     }
   } catch (e) {
     console.error("Send admin message error:", e);
-    showNotice("Failed to send message. Please try again.", "Send Failed", "error");
+    const status = e?.response?.status || e?.status || e?.statusCode;
+    const rawError = (e?.data?.error || e?.message || "").toLowerCase();
+    let msg = "Failed to send message. Please try again.";
+    if (status === 413 || rawError.includes("413") || rawError.includes("too large") || rawError.includes("entity too large")) {
+      msg = "Attachment is too large for the server (HTTP 413). Please attach an image under 10 MB or compress the file.";
+    } else if (e?.data?.error) {
+      msg = e.data.error;
+    }
+    showNotice(msg, "Send Failed", "error");
   } finally {
     isSendingChat.value = false;
   }
@@ -3757,9 +3866,9 @@ const resetAllFilters = () => {
                   chatAttachment
                     ? 'bg-emerald-100 dark:bg-emerald-900/50 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400'
                     : 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 hover:border-emerald-300 hover:text-emerald-600'
-                ]" title="Attach image or PDF (max 5 MB)">
+                ]" title="Attach image or PDF (max 10 MB)">
                   <i class="fas fa-paperclip text-sm"></i>
-                  <input type="file" accept="image/jpeg,image/jpg,image/png,application/pdf" class="hidden"
+                  <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf" class="hidden"
                     @change="handleChatAttachmentChange" :disabled="isSendingChat" />
                 </label>
                 <button type="button" @click="sendAdminMessage"
@@ -4684,9 +4793,9 @@ const resetAllFilters = () => {
               chatAttachment
                 ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 border-emerald-300'
                 : 'bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-gray-700 text-gray-500 hover:text-emerald-600 border-gray-300 dark:border-gray-700'
-            ]" title="Attach image (PNG, JPG) or PDF document (max 5 MB)">
+            ]" title="Attach image (PNG, JPG, WEBP) or PDF document (max 10 MB)">
               <i class="fas fa-paperclip text-sm"></i>
-              <input type="file" accept="image/jpeg,image/jpg,image/png,application/pdf" class="hidden"
+              <input type="file" accept="image/jpeg,image/jpg,image/png,image/webp,application/pdf" class="hidden"
                 @change="handleChatAttachmentChange" :disabled="isSendingChat" />
             </label>
 
