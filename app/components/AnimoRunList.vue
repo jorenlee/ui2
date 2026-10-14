@@ -3620,7 +3620,7 @@ const resetAllFilters = () => {
               <!-- ── VIEW MODE ───────────────────────────────────────────── -->
               <template v-if="!isEditMode">
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Full Name</label>
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Full Name</label>
                   <p class="font-semibold uppercase">
                     {{ selectedRunner.firstname }} {{ selectedRunner.middlename }} {{ selectedRunner.lastname }}{{
                       selectedRunner.suffix ? ' ' + selectedRunner.suffix : '' }}
@@ -3628,43 +3628,36 @@ const resetAllFilters = () => {
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Gender &amp; Birthdate</label>
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Gender &amp; Birthdate</label>
                   <p class="font-semibold">
                     {{ selectedRunner.gender || 'Not specified' }} • {{ selectedRunner.birthdate || 'N/A' }}
                   </p>
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Contact Phone</label>
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Contact Phone</label>
                   <p class="font-semibold">{{ selectedRunner.contact_number || selectedRunner.phone || 'N/A' }}</p>
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Email Address</label>
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Email Address</label>
                   <p class="font-semibold">{{ selectedRunner.contact_email || selectedRunner.email }}</p>
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Classification</label>
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Classification</label>
                   <p class="font-semibold">{{ selectedRunner.participant_type }} {{ selectedRunner.lsu_id_number ? '(' +
                     selectedRunner.lsu_id_number + ')' : '' }}</p>
                 </div>
 
                 <div v-if="selectedRunner.college_course || selectedRunner.college_year || selectedRunner.beu_grade" class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Course / Program</label>
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Course / Program</label>
                   <div class="space-y-1">
                     <div class="flex items-center gap-2 flex-wrap">
                       <span v-if="getCourseLabel(selectedRunner.college_course)" class="font-semibold text-emerald-700 dark:text-emerald-400">
                         {{ getCourseLabel(selectedRunner.college_course) }}
                       </span>
-                      <span v-if="isHEU(selectedRunner)"
-                        class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300">
-                        <i class="fas fa-graduation-cap mr-1"></i> HEU ({{ isGraduateStudies(selectedRunner) ? 'School of Graduate Studies' : 'Bachelor Degree' }})
-                      </span>
-                      <span v-else-if="isBEU(selectedRunner)"
-                        class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-300">
-                        <i class="fas fa-school mr-1"></i> BEU ({{ isBEULevel(selectedRunner, 'SHS') ? 'Senior High School' : isBEULevel(selectedRunner, 'JHS') ? 'Junior High School' : 'Grade School' }})
-                      </span>
+                     
                     </div>
                     <p v-if="selectedRunner.college_year || selectedRunner.beu_grade" class="text-[11px] text-gray-500">
                       Level: <strong class="text-gray-700 dark:text-gray-300">{{ selectedRunner.college_year || selectedRunner.beu_grade }}</strong>
@@ -3673,17 +3666,17 @@ const resetAllFilters = () => {
                 </div>
 
                 <div v-if="selectedRunner.organization" class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Running Club / Org</label>
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Running Club / Org</label>
                   <p class="font-semibold text-emerald-600 dark:text-emerald-400">{{ selectedRunner.organization }}</p>
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">T-Shirt Size</label>
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">T-Shirt Size</label>
                   <p class="font-semibold">{{ selectedRunner.tshirt_size || 'M' }}</p>
                 </div>
 
                 <div class="lg:flex">
-                  <label class="font-bold text-gray-500 block lg:w-5/12 uppercase">Address</label>
+                  <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Address</label>
                   <p class="font-semibold">{{ selectedRunner.contact_address || selectedRunner.address || 'Ozamiz City'
                     }}
                   </p>
@@ -3862,7 +3855,7 @@ const resetAllFilters = () => {
             </div>
           </div>
 
-          <div class="lg:w-10/12">
+          <div class="lg:w-7/12">
             <!-- Category & Addons / Pet Details -->
             <div :class="[
               'p-4 rounded-2xl border space-y-3 text-xs',
