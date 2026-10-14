@@ -661,8 +661,8 @@ const shortcutLinks = ref([
         v-if="menuDetails"
         class="fixed left-0 z-30 w-full overflow-y-auto border-t-2 border-green-800 bg-white shadow-2xl"
         :style="isScrolled
-          ? 'top: 86px; max-height: calc(100vh - 86px)'
-          : 'top: 80px; max-height: calc(100vh - 80px)'"
+          ? 'top: 56px; max-height: calc(100vh - 56px)'
+          : 'top: 50px; max-height: calc(100vh - 50px)'"
       >
         <!-- Mobile LSU Central & Shortcuts -->
         <div class="p-4 bg-gradient-to-b from-green-50 to-white border-b border-green-200">
