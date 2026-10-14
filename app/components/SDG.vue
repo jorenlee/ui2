@@ -31,7 +31,7 @@ const sdgs = [
 
       <!-- Header & Partner Logos -->
       <div class="relative z-10 flex flex-col items-center text-center lg:w-11/12 mx-auto mb-8 sm:mb-10">
-        <span class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-100/90 text-emerald-800 text-xs font-bold uppercase tracking-widest rounded-full mb-4 border border-emerald-200/60">
+        <span class="inline-flex items-center gap-1.5 px-3.5 py-1 bg-white text-emerald-800 text-xs font-bold uppercase tracking-widest rounded-full mb-4 border border-emerald-200/60">
           <i class="fas fa-seedling text-emerald-600"></i> Institutional Commitment
         </span>
 
@@ -49,14 +49,11 @@ const sdgs = [
           />
         </div>
 
-        <p class="lg:text-3xl text-xs font-extrabold text-green-950 mt-4">
+        <!-- <p class="lg:text-3xl text-xs font-extrabold text-green-950 mt-4">
           La Salle University supports the 
-        </p>
+        </p> -->
 
-        <p class="lg:text-4xl text-sm font-extrabold text-slate-900 mb-5 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-800 to-teal-700 uppercase">Sustainable Development Goals</p>
-
-
-
+        <p class="lg:text-4xl text-sm font-extrabold text-slate-900 mb-1 tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-emerald-800 to-teal-700 uppercase">Sustainable Development Goals</p>
         <p class="text-slate-600 text-xs w-full">
           Driving meaningful impact through campus research, social action, environmental stewardship, and inclusive education.
         </p>
@@ -64,12 +61,12 @@ const sdgs = [
 
       <!-- Interactive SDGs Mini Grid -->
       <div class="relative z-10 mb-8 sm:mb-10">
-        <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-9 gap-2.5 sm:gap-3.5 lg:w-11/12 mx-auto">
+        <div class="lg:flex grid grid-cols-4 gap-2.5">
           <NuxtLink
             v-for="s in sdgs"
             :key="s.id"
             :to="`/sdgs/${s.id}`"
-            class="group relative aspect-square rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white border border-slate-100 flex items-center justify-center p-0.5"
+            class="group relative aspect-square overflow-hidden rounded shadow-xl transition-all duration-300 hover:-translate-y-1  flex items-center justify-center"
             :title="`Goal ${s.number}: ${s.title}`"
           >
             <img
