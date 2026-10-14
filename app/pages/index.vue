@@ -70,9 +70,9 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
     ════════════════════════════════════════ -->
       <section id="animo-run-banner" class="relative w-full overflow-hidden bg-white">
         <!-- Top vignette blend -->
-        <div
+        <!-- <div
           class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-white/60 to-transparent z-10 pointer-events-none">
-        </div>
+        </div> -->
 
         <!-- Full-width banner image -->
         <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/PMILES2026.png"
@@ -82,9 +82,9 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
         <!-- https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/LSUANIMORUN.png -->
 
         <!-- Bottom vignette blend -->
-        <div
+        <!-- <div
           class="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-slate-50 to-transparent z-10 pointer-events-none">
-        </div>
+        </div> -->
 
         <!-- CTA ribbon -->
         <!-- <div class="absolute lg:bottom-32 bottom-5 left-0 w-full z-20 flex items-center justify-center pb-3">
