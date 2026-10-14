@@ -65,30 +65,29 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
       </div> -->
 
 
-    <!-- ═══════════════════════════════════════
+      <!-- ═══════════════════════════════════════
          ANIMO RUN BANNER
     ════════════════════════════════════════ -->
-    <section id="animo-run-banner" class="relative w-full overflow-hidden bg-white">
-      <!-- Top vignette blend -->
-      <div class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-white/60 to-transparent z-10 pointer-events-none"></div>
+      <section id="animo-run-banner" class="relative w-full overflow-hidden bg-white">
+        <!-- Top vignette blend -->
+        <div
+          class="absolute top-0 left-0 w-full h-16 bg-gradient-to-b from-white/60 to-transparent z-10 pointer-events-none">
+        </div>
 
-      <!-- Full-width banner image -->
-     <img
-        src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/LSUANIMORUN.png"
-        alt="LSU Animo Run 2026 – The Emerald Run, November 14, 2026, Aguada, Ozamiz City"
-        class="w-full h-auto block"
-        loading="lazy"
-        decoding="async"
-        fetchpriority="low"
-      />
+        <!-- Full-width banner image -->
+        <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/PMILES2026.png"
+          alt="LSU Animo Run 2026 – The Emerald Run, November 14, 2026, Aguada, Ozamiz City" class="w-full h-auto block"
+          loading="lazy" decoding="async" fetchpriority="low" />
 
+        <!-- https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/LSUANIMORUN.png -->
 
-    
-      <!-- Bottom vignette blend -->
-       <div class="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-slate-50 to-transparent z-10 pointer-events-none"></div> 
+        <!-- Bottom vignette blend -->
+        <div
+          class="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-slate-50 to-transparent z-10 pointer-events-none">
+        </div>
 
-      <!-- CTA ribbon -->
-   <div class="absolute lg:bottom-32 bottom-5 left-0 w-full z-20 flex items-center justify-center pb-3">
+        <!-- CTA ribbon -->
+        <!-- <div class="absolute lg:bottom-32 bottom-5 left-0 w-full z-20 flex items-center justify-center pb-3">
         <NuxtLink
           to="https://animorun.lsu.edu.ph"
           class="inline-flex items-center gap-2 lg:px-20 px-5  py-2.5 rounded-full font-black uppercase tracking-widest bg-emerald-600 text-white shadow-lg hover:bg-emerald-500 transition-all duration-200 hover:scale-105 active:scale-95 lg:text-xl text-sm animate-bounce"
@@ -96,16 +95,11 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
           <i class="fas fa-running"></i>
           Register Now
         </NuxtLink>
-      </div> 
-    </section>
-<!-- <div class="bg-[#a7d4aa]">
+      </div>  -->
+      </section>
+      <!-- <div class="bg-[#a7d4aa]">
 <HeroLanding/>
 </div> -->
-
-
-
-
-
 
       <div class="lg:hidden w-full z-20">
         <Shortcuts />
@@ -137,8 +131,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
     <!-- ═══════════════════════════════════════
          ANIMO RUN TRAILER B
     ════════════════════════════════════════ -->
-<TUKIB/>
- 
+    <TUKIB />
+
 
     <!-- ═══════════════════════════════════════
          SUSTAINABILITY / SDGs
@@ -161,18 +155,23 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
       <!-- Rich dark background -->
       <div class="bg-gradient-to-br from-[#031d03] via-[#042804] to-[#073a07] pt-12 sm:py-16 px-4 sm:px-6">
         <!-- Decorative ambient glows -->
-        <div class="absolute -top-20 -right-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-20 -left-20 w-72 h-72 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -top-20 -right-20 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none">
+        </div>
+        <div class="absolute -bottom-20 -left-20 w-72 h-72 bg-teal-500/10 rounded-full blur-3xl pointer-events-none">
+        </div>
 
         <!-- Section header -->
-        <div class="max-w-7xl mx-auto relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div
+          class="max-w-7xl mx-auto relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <span class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-900/80 text-emerald-300 text-xs font-bold uppercase tracking-widest rounded-full border border-emerald-700/40 mb-3">
+            <span
+              class="inline-flex items-center gap-2 px-3 py-1 bg-emerald-900/80 text-emerald-300 text-xs font-bold uppercase tracking-widest rounded-full border border-emerald-700/40 mb-3">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
               Live Updates
             </span>
             <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
-              University <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-200">Announcements</span>
+              University <span
+                class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-200">Announcements</span>
             </h2>
             <p class="text-emerald-200/70 text-xs sm:text-sm mt-1">
               Stay updated with the latest news from La Salle University Ozamiz.
@@ -236,23 +235,15 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
     <!-- ═══════════════════════════════════════
          FLOATING SCROLL TO TOP
     ════════════════════════════════════════ -->
-    <Transition
-      enter-active-class="transition-all duration-300 ease-out"
-      enter-from-class="opacity-0 scale-75 translate-y-4"
-      enter-to-class="opacity-100 scale-100 translate-y-0"
-      leave-active-class="transition-all duration-200 ease-in"
-      leave-from-class="opacity-100 scale-100 translate-y-0"
-      leave-to-class="opacity-0 scale-75 translate-y-4"
-    >
-      <button
-        v-show="showScrollButton"
-        @click="scrollToTop"
+    <Transition enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="opacity-0 scale-75 translate-y-4" enter-to-class="opacity-100 scale-100 translate-y-0"
+      leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 scale-100 translate-y-0"
+      leave-to-class="opacity-0 scale-75 translate-y-4">
+      <button v-show="showScrollButton" @click="scrollToTop"
         class="fixed bottom-6 right-6 z-50 w-12 h-12 flex items-center justify-center bg-gradient-to-br from-emerald-700 to-teal-900 hover:from-emerald-600 hover:to-teal-800 text-white rounded-2xl shadow-xl shadow-emerald-950/30 hover:shadow-2xl transition-all duration-300 group"
-        aria-label="Scroll to top"
-      >
+        aria-label="Scroll to top">
         <i class="fas fa-chevron-up text-sm group-hover:-translate-y-0.5 transition-transform duration-200"></i>
       </button>
     </Transition>
   </div>
 </template>
-
