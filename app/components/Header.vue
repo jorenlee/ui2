@@ -479,25 +479,28 @@ const shortcutLinks = ref([
   {
     name: "Enrollment",
     link: "/enrollment",
-    image:
-      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-1-apply-now.png",
+    // image:
+    //   "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-1-apply-now.png",
+    icon: "fa fa-mouse-pointer",
   },
   {
     name: "Scholarships",
     link: "/scholarships",
-    image:
-      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-2-apply-for-scholarships.png",
+    // image:
+    //   "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-2-apply-for-scholarships.png",
+    icon: "fa fa-graduation-cap",
   },
   {
     name: "Library",
     link: "/library",
-    image:
-      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-3-programs.png",
+    // image:
+    //   "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-3-programs.png",
+    icon: "fa fa-book-open",
   },
   {
     name: "FAQs",
     link: "/faqs",
-    icon: "fa fa-question-circle text-emerald-400",
+    icon: "fa fa-question-circle",
   },
   {
     name: "Canvas",
@@ -511,8 +514,9 @@ const shortcutLinks = ref([
   {
     name: "My.LSU",
     link: "/mylsu",
-    image:
-      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-4-my-lsu.png",
+    // image:
+    //   "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-4-my-lsu.png",
+    icon: "fa fa-user",
   },
 ]);
 </script>
@@ -527,7 +531,7 @@ const shortcutLinks = ref([
     <!-- Top Utility Bar (Shortcuts & LSU Central Login) -->
 <div class="lg:flex hidden w-full">
       <div class="w-full bg-gradient-to-r from-green-950 via-green-900 to-green-950 text-white border-b border-green-800/60">
-      <div class="px-3 sm:px-6">
+      <div class="px-4">
         <div class="flex justify-between items-center h-8 sm:h-9">
           <!-- Left: Shortcut Links -->
           <div class="flex items-center gap-1 sm:gap-3 overflow-x-auto no-scrollbar py-0.5">
@@ -537,7 +541,7 @@ const shortcutLinks = ref([
               :href="item.link"
               :target="item.link.startsWith('http') ? '_blank' : '_self'"
               :rel="item.link.startsWith('http') ? 'noopener noreferrer' : ''"
-              class="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold text-white hover:text-green-100 hover:bg-white/10 transition-colors shrink-0"
+              class="shadow flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold text-white hover:text-green-800 hover:bg-white transition-colors shrink-0"
             >
               <span
                 v-if="item.name === 'Canvas'"
