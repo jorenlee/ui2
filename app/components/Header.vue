@@ -474,15 +474,106 @@ const desktopNav = [
     ],
   },
 ];
+
+const shortcutLinks = ref([
+  {
+    name: "Enrollment",
+    link: "/enrollment",
+    image:
+      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-1-apply-now.png",
+  },
+  {
+    name: "Scholarships",
+    link: "/scholarships",
+    image:
+      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-2-apply-for-scholarships.png",
+  },
+  {
+    name: "Library",
+    link: "/library",
+    image:
+      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-3-programs.png",
+  },
+  {
+    name: "FAQs",
+    link: "/faqs",
+    icon: "fa fa-question-circle text-emerald-400",
+  },
+  {
+    name: "Canvas",
+    link: "https://lsu.instructure.com/login/canvas",
+    image:
+      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/Logo_Canvas_Red_Horizontal.png",
+    image_mobile:
+      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/Logo_Canvas_Red_Vertical.png",
+    hideLabel: true,
+  },
+  {
+    name: "My.LSU",
+    link: "/mylsu",
+    image:
+      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-4-my-lsu.png",
+  },
+]);
 </script>
 
 <template>
   <div
     class="z-50 w-full font-montserrat border-b-4 border-green-800 transition-all duration-300"
     :class="
-      isScrolled ? 'bg-white backdrop-blur-md shadow-lg fixed' : ''
+      isScrolled ? 'bg-white backdrop-blur-md shadow-lg fixed top-0' : ''
     "
   >
+    <!-- Top Utility Bar (Shortcuts & LSU Central Login) -->
+<div class="lg:flex hidden w-full">
+      <div class="w-full bg-gradient-to-r from-green-950 via-green-900 to-green-950 text-white border-b border-green-800/60">
+      <div class="px-3 sm:px-6">
+        <div class="flex justify-between items-center h-8 sm:h-9">
+          <!-- Left: Shortcut Links -->
+          <div class="flex items-center gap-1 sm:gap-3 overflow-x-auto no-scrollbar py-0.5">
+            <a
+              v-for="item in shortcutLinks"
+              :key="item.name"
+              :href="item.link"
+              :target="item.link.startsWith('http') ? '_blank' : '_self'"
+              :rel="item.link.startsWith('http') ? 'noopener noreferrer' : ''"
+              class="flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold text-white hover:text-green-100 hover:bg-white/10 transition-colors shrink-0"
+            >
+              <span
+                v-if="item.name === 'Canvas'"
+                class="bg-white px-1.5 py-0.5 rounded flex items-center shrink-0"
+              >
+                <img :src="item.image" :alt="item.name" class="h-3 w-auto object-contain" />
+              </span>
+              <img
+                v-else-if="item.image"
+                :src="item.image"
+                :alt="item.name"
+                class="w-3.5 h-3.5 object-contain shrink-0"
+              />
+              <i
+                v-else-if="item.icon"
+                :class="[item.icon, 'text-xs shrink-0']"
+              ></i>
+              <span v-if="!item.hideLabel" class="tracking-wide">{{ item.name }}</span>
+            </a>
+          </div>
+
+          <!-- Right Most Part: LSU CENTRAL WITH LOGIN ICON -->
+          <div class="flex items-center shrink-0 pl-3">
+            <a
+              href="/login"
+              class="group inline-flex items-center gap-1.5 bg-white hover:bg-green-100 text-green-950 font-bold px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-[11px] tracking-wider uppercase shadow-sm transition-all duration-200 hover:scale-105"
+            >
+              <i class="fa fa-right-to-bracket text-xs transition-transform group-hover:translate-x-0.5"></i>
+              <span>LSU Central</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>
+
     <div class="px-3">
       <div class="flex justify-between items-center">
         <!-- Logo + Search -->
@@ -570,9 +661,41 @@ const desktopNav = [
         v-if="menuDetails"
         class="fixed left-0 z-30 w-full overflow-y-auto border-t-2 border-green-800 bg-white shadow-2xl"
         :style="isScrolled
-          ? 'top: 50px; max-height: calc(100vh - 50px)'
-          : 'top: 52px; max-height: calc(100vh - 52px)'"
+          ? 'top: 86px; max-height: calc(100vh - 86px)'
+          : 'top: 80px; max-height: calc(100vh - 80px)'"
       >
+        <!-- Mobile LSU Central & Shortcuts -->
+        <div class="p-4 bg-gradient-to-b from-green-50 to-white border-b border-green-200">
+          <a
+            href="/login"
+            class="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-white hover:bg-green-100 text-green-950 font-bold text-xs tracking-wider uppercase shadow-sm transition"
+          >
+            <i class="fa fa-right-to-bracket text-sm"></i>
+            <span>LSU Central</span>
+          </a>
+
+          <div class="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-green-200/70">
+            <a
+              v-for="item in shortcutLinks"
+              :key="item.name"
+              :href="item.link"
+              :target="item.link.startsWith('http') ? '_blank' : '_self'"
+              class="flex flex-col items-center justify-center p-2 rounded-lg bg-white border border-gray-200 hover:border-green-400 text-center shadow-2xs transition"
+            >
+              <img
+                v-if="item.image"
+                :src="item.image_mobile || item.image"
+                :alt="item.name"
+                class="w-6 h-6 object-contain mb-1"
+              />
+              <i v-else-if="item.icon" :class="[item.icon, 'text-lg text-emerald-800 mb-1']"></i>
+              <span class="text-[10px] font-bold text-gray-700 leading-tight">
+                {{ item.name }}
+              </span>
+            </a>
+          </div>
+        </div>
+
         <ul class="pb-20">
           <li v-for="item in desktopNav" :key="item.label" class="border-b">
             <button

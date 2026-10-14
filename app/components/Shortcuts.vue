@@ -15,18 +15,17 @@ const majorComponents = ref([
       "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-2-apply-for-scholarships.png",
   },
   {
-    name: "My.LSU",
-    link: "/mylsu",
-    image:
-      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-4-my-lsu.png",
-  },
-  {
     name: "Library",
     link: "/library",
     image:
       "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-3-programs.png",
   },
   {
+    name: "FAQs",
+    link: "/faqs",
+    icon: "fa fa-question-circle text-emerald-800",
+  },
+    {
     name: "Canvas",
     link: "https://lsu.instructure.com/login/canvas",
     image:
@@ -35,10 +34,11 @@ const majorComponents = ref([
       "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/Logo_Canvas_Red_Vertical.png",
     hideLabel: true,
   },
-  {
-    name: "FAQs",
-    link: "/faqs",
-    icon: "fa fa-question-circle text-emerald-800",
+    {
+    name: "My.LSU",
+    link: "/mylsu",
+    image:
+      "https://raw.githubusercontent.com/jorenlee/lsu-public-images/main/images/images/icons/btn-4-my-lsu.png",
   },
 ]);
 </script>

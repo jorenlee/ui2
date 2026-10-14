@@ -107,7 +107,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
 
 
 
-      <div class="lg:absolute bottom-0 w-full z-20 shadow-2xl">
+      <div class="lg:hidden w-full z-20">
         <Shortcuts />
       </div>
     </section>

@@ -47,11 +47,6 @@ const quickLinks = [
     href: "/social-media",
     icon: "fa-share-alt",
   },
-  {
-    label: "Login",
-    href: "/login",
-    icon: "fa-users-gear",
-  },
 ];
 </script>
 
