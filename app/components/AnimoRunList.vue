@@ -505,6 +505,18 @@ const beuShsCount = computed(() => {
   return registrations.value.filter((r) => isBEULevel(r, "SHS")).length;
 });
 
+const vvipCount = computed(() => {
+  return registrations.value.filter((r) => r.participant_type === "VVIP").length;
+});
+
+const brothersCount = computed(() => {
+  return registrations.value.filter((r) => r.participant_type === "De La Salle Brothers").length;
+});
+
+const sponsorsCount = computed(() => {
+  return registrations.value.filter((r) => r.participant_type === "Sponsors").length;
+});
+
 // Format Course label
 const getCourseLabel = (val) => {
   if (!val) return "";
@@ -1306,6 +1318,436 @@ const downloadCsvFile = (csvContent, filename) => {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+};
+
+// ── CSV Template Download & Upload for VVIP, De La Salle Brothers, Sponsors ─────
+const csvFileInputRef = ref(null);
+const isCsvImportModalOpen = ref(false);
+const csvParsedRunners = ref([]);
+const csvParseErrors = ref([]);
+const isImportingCsv = ref(false);
+const csvUploadFileName = ref("");
+
+const csvImportStats = computed(() => {
+  const list = csvParsedRunners.value;
+  return {
+    total: list.length,
+    vvip: list.filter((r) => r.participant_type === "VVIP").length,
+    brothers: list.filter((r) => r.participant_type === "De La Salle Brothers").length,
+    sponsors: list.filter((r) => r.participant_type === "Sponsors").length,
+    others: list.filter((r) => !["VVIP", "De La Salle Brothers", "Sponsors"].includes(r.participant_type)).length,
+  };
+});
+
+// Download official CSV template
+const downloadCsvTemplate = () => {
+  const headers = [
+    "Classification",
+    "First Name",
+    "Last Name",
+    "Middle Name",
+    "Suffix",
+    "Category",
+    "T-Shirt Size",
+    "Gender",
+    "Birthdate",
+    "Contact Number",
+    "Email",
+    "Address",
+    "Organization / Sponsor",
+    "Payment Status",
+    "Payment Option",
+    "Race BIB Number",
+  ];
+
+  const sampleRows = [
+    [
+      "VVIP",
+      "Armin",
+      "Luistro",
+      "A",
+      "FSC",
+      "3KM",
+      "L",
+      "Male",
+      "1961-12-24",
+      "09171234567",
+      "armin.luistro@delasalle.ph",
+      "Mandaluyong City",
+      "De La Salle Philippines",
+      "Confirmed",
+      "Complimentary",
+      "",
+    ],
+    [
+      "De La Salle Brothers",
+      "Felipe",
+      "Belleza",
+      "C",
+      "FSC",
+      "3KM",
+      "XL",
+      "Male",
+      "1965-05-15",
+      "09181234567",
+      "felipe.belleza@lsu.edu.ph",
+      "La Salle University Ozamiz",
+      "De La Salle Brothers",
+      "Confirmed",
+      "Complimentary",
+      "",
+    ],
+    [
+      "Sponsors",
+      "Juan",
+      "Dela Cruz",
+      "M",
+      "",
+      "10KM",
+      "M",
+      "Male",
+      "1988-08-18",
+      "09201234567",
+      "juan.delacruz@sponsorcorp.ph",
+      "Ozamiz City",
+      "Ayala Foundation / Sponsor Partner",
+      "Confirmed",
+      "Sponsor",
+      "",
+    ],
+    [
+      "VVIP",
+      "Maria",
+      "Santos",
+      "B",
+      "",
+      "3KM",
+      "M",
+      "Female",
+      "1975-03-10",
+      "09191234567",
+      "maria.santos@partner.org",
+      "Cagayan de Oro City",
+      "City Government of Ozamiz",
+      "Confirmed",
+      "Complimentary",
+      "",
+    ],
+    [
+      "De La Salle Brothers",
+      "Raymundo",
+      "Suplido",
+      "B",
+      "FSC",
+      "3KM",
+      "L",
+      "Male",
+      "1957-02-14",
+      "09221234567",
+      "raymundo.suplido@delasalle.ph",
+      "Ozamiz City",
+      "De La Salle Brothers Community",
+      "Confirmed",
+      "Complimentary",
+      "",
+    ],
+    [
+      "Sponsors",
+      "Elena",
+      "Torres",
+      "R",
+      "",
+      "20KM",
+      "S",
+      "Female",
+      "1992-11-20",
+      "09179876543",
+      "elena.torres@sponsor.com",
+      "Cebu City",
+      "San Miguel Foods / Major Sponsor",
+      "Confirmed",
+      "Sponsor",
+      "",
+    ],
+  ];
+
+  const escapeCol = (val) => {
+    if (val === null || val === undefined) return '""';
+    return `"${String(val).replace(/"/g, '""')}"`;
+  };
+
+  const csvRows = [
+    headers.map(escapeCol).join(","),
+    ...sampleRows.map((row) => row.map(escapeCol).join(",")),
+  ];
+
+  const csvContent = csvRows.join("\r\n");
+  downloadCsvFile(csvContent, "AnimoRun_Template_VVIP_Brothers_Sponsors.csv");
+  showNotice(
+    "Template downloaded! Open in Excel or Google Sheets, fill in your VVIP, De La Salle Brothers, or Sponsors, and click 'Upload CSV' to add them directly.",
+    "Template Downloaded",
+    "success"
+  );
+};
+
+// Trigger file input click
+const triggerCsvUpload = () => {
+  if (csvFileInputRef.value) {
+    csvFileInputRef.value.value = "";
+    csvFileInputRef.value.click();
+  }
+};
+
+// Robust CSV Line Parser supporting RFC 4180 quotes & escaped commas
+const parseCsvText = (text) => {
+  const lines = [];
+  let currentRow = [];
+  let currentField = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (inQuotes) {
+      if (char === '"' && nextChar === '"') {
+        currentField += '"';
+        i++; // skip escaped quote
+      } else if (char === '"') {
+        inQuotes = false;
+      } else {
+        currentField += char;
+      }
+    } else {
+      if (char === '"') {
+        inQuotes = true;
+      } else if (char === ",") {
+        currentRow.push(currentField.trim());
+        currentField = "";
+      } else if (char === "\r" || char === "\n") {
+        currentRow.push(currentField.trim());
+        currentField = "";
+        if (currentRow.some((field) => field.length > 0)) {
+          lines.push(currentRow);
+        }
+        currentRow = [];
+        if (char === "\r" && nextChar === "\n") {
+          i++;
+        }
+      } else {
+        currentField += char;
+      }
+    }
+  }
+
+  if (currentField.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentField.trim());
+    if (currentRow.some((field) => field.length > 0)) {
+      lines.push(currentRow);
+    }
+  }
+
+  return lines;
+};
+
+// Handle CSV File Selection
+const handleCsvFileSelected = async (event) => {
+  const file = event.target?.files?.[0];
+  if (!file) return;
+
+  csvUploadFileName.value = file.name;
+  csvParseErrors.value = [];
+  csvParsedRunners.value = [];
+
+  try {
+    const text = await file.text();
+    const rows = parseCsvText(text);
+
+    if (rows.length < 2) {
+      showNotice("The selected CSV file appears to be empty or has no data rows.", "Empty CSV", "error");
+      return;
+    }
+
+    const rawHeaders = rows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));
+
+    // Find column index matching multiple alias keys
+    const getIndex = (aliases) => {
+      return rawHeaders.findIndex((h) => aliases.some((a) => h.includes(a)));
+    };
+
+    const colIdx = {
+      classification: getIndex(["classification", "participanttype", "parttype", "type", "role"]),
+      firstname: getIndex(["firstname", "first", "fname"]),
+      lastname: getIndex(["lastname", "last", "lname", "surname"]),
+      middlename: getIndex(["middlename", "middle", "mname", "mi"]),
+      suffix: getIndex(["suffix", "ext"]),
+      category: getIndex(["category", "runcategory", "distance", "km"]),
+      tshirt_size: getIndex(["tshirtsize", "shirtsize", "tshirt", "size", "shirt"]),
+      gender: getIndex(["gender", "sex"]),
+      birthdate: getIndex(["birthdate", "birth", "dob", "bday"]),
+      contact_number: getIndex(["contactnumber", "phone", "mobile", "contact", "cellphone"]),
+      contact_email: getIndex(["email", "contactemail", "mail"]),
+      contact_address: getIndex(["address", "contactaddress", "city", "location"]),
+      organization: getIndex(["organization", "sponsor", "company", "affiliation", "org"]),
+      payment_status: getIndex(["paymentstatus", "paystatus", "status"]),
+      payment_type: getIndex(["paymentoption", "paymenttype", "paytype", "mode"]),
+      run_number: getIndex(["racebib", "runnumber", "bibnumber", "bib"]),
+    };
+
+    const parsed = [];
+    const errors = [];
+
+    for (let r = 1; r < rows.length; r++) {
+      const row = rows[r];
+      if (!row || row.length === 0 || row.every((c) => !c)) continue;
+
+      const getVal = (idx, fallback = "") => (idx !== -1 && row[idx] !== undefined ? row[idx].trim() : fallback);
+
+      const firstname = getVal(colIdx.firstname);
+      const lastname = getVal(colIdx.lastname);
+
+      if (!firstname && !lastname) {
+        // Skip purely empty trailing rows
+        continue;
+      }
+
+      let rawType = getVal(colIdx.classification, "VVIP");
+      let typeUpper = rawType.toUpperCase();
+      let participant_type = "Open Category";
+
+      if (typeUpper.includes("VVIP") || typeUpper === "VIP") {
+        participant_type = "VVIP";
+      } else if (
+        typeUpper.includes("BROTHER") ||
+        typeUpper.includes("FSC") ||
+        typeUpper.includes("DE LA SALLE") ||
+        typeUpper.includes("DLS")
+      ) {
+        participant_type = "De La Salle Brothers";
+      } else if (typeUpper.includes("SPONSOR")) {
+        participant_type = "Sponsors";
+      } else if (typeUpper.includes("STUDENT")) {
+        participant_type = "LSU Exclusive - Enrolled Student";
+      } else if (typeUpper.includes("EMPLOYEE") || typeUpper.includes("FACULTY") || typeUpper.includes("STAFF")) {
+        participant_type = "LSU Exclusive - Employee";
+      } else if (typeUpper.includes("ALUMNI")) {
+        participant_type = "LSU Exclusive - Alumni";
+      } else if (rawType) {
+        participant_type = rawType;
+      }
+
+      let rawCat = getVal(colIdx.category, "3KM");
+      let category = normalizeCategory(rawCat) || "3KM";
+
+      let rawSize = getVal(colIdx.tshirt_size, "M").toUpperCase();
+      let tshirt_size = rawSize || "M";
+
+      let payment_status = getVal(colIdx.payment_status, "Confirmed");
+      if (!payment_status) payment_status = "Confirmed";
+
+      let payment_type = getVal(colIdx.payment_type);
+      if (!payment_type) {
+        if (participant_type === "VVIP" || participant_type === "De La Salle Brothers") {
+          payment_type = "complimentary";
+        } else if (participant_type === "Sponsors") {
+          payment_type = "sponsor";
+        } else {
+          payment_type = "cash_payment";
+        }
+      }
+
+      parsed.push({
+        classification: participant_type,
+        participant_type,
+        firstname,
+        lastname,
+        middlename: getVal(colIdx.middlename),
+        suffix: getVal(colIdx.suffix),
+        run_category: category,
+        category,
+        tshirt_size,
+        gender: getVal(colIdx.gender, "Male"),
+        birthdate: getVal(colIdx.birthdate),
+        contact_number: getVal(colIdx.contact_number),
+        contact_email: getVal(colIdx.contact_email),
+        contact_address: getVal(colIdx.contact_address),
+        organization: getVal(colIdx.organization),
+        payment_status,
+        payment_type,
+        run_number: getVal(colIdx.run_number),
+        row_number: r + 1,
+      });
+    }
+
+    if (!parsed.length) {
+      showNotice("No valid runner entries could be extracted from this CSV.", "Parsing Failed", "error");
+      return;
+    }
+
+    csvParsedRunners.value = parsed;
+    csvParseErrors.value = errors;
+    isCsvImportModalOpen.value = true;
+  } catch (err) {
+    console.error("Error reading CSV file:", err);
+    showNotice("Failed to read CSV file. Please make sure it is a valid .csv file.", "File Read Error", "error");
+  }
+};
+
+// Execute bulk import to backend
+const executeCsvImport = async () => {
+  if (!csvParsedRunners.value.length || isImportingCsv.value) return;
+
+  isImportingCsv.value = true;
+  try {
+    const payload = {
+      is_dashboard: true,
+      participants: csvParsedRunners.value,
+    };
+
+    const res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
+      method: "POST",
+      body: payload,
+    });
+
+    const count = res.count || csvParsedRunners.value.length;
+    const stats = csvImportStats.value;
+
+    if (res.runners && Array.isArray(res.runners)) {
+      // Prepend newly created runners to registrations list immediately
+      const newRunners = res.runners;
+      const existingIds = new Set(registrations.value.map((r) => r.id));
+      const filteredNew = newRunners.filter((r) => !existingIds.has(r.id));
+      registrations.value = [...filteredNew, ...registrations.value];
+      persistCache(registrations.value);
+    } else {
+      await fetchRegistrations(true);
+    }
+
+    isCsvImportModalOpen.value = false;
+    csvParsedRunners.value = [];
+    if (csvFileInputRef.value) csvFileInputRef.value.value = "";
+
+    const details = [];
+    if (stats.vvip) details.push(`${stats.vvip} VVIP`);
+    if (stats.brothers) details.push(`${stats.brothers} Brothers`);
+    if (stats.sponsors) details.push(`${stats.sponsors} Sponsors`);
+    if (stats.others) details.push(`${stats.others} Others`);
+
+    showNotice(
+      `🎉 Successfully added ${count} runner(s) directly via CSV!\n\n${details.join(" · ")}\n\nRace BIB numbers have been automatically allocated and payment status marked as Confirmed.`,
+      "CSV Import Successful",
+      "success"
+    );
+  } catch (err) {
+    console.error("CSV import error:", err);
+    showNotice(
+      err?.data?.message || err?.message || "Failed to import runners from CSV. Please check the data format and try again.",
+      "Import Failed",
+      "error"
+    );
+  } finally {
+    isImportingCsv.value = false;
+  }
 };
 
 // ── CSV Column Picker for Supplier Fulfillment ──────────────────────────────────
@@ -2543,6 +2985,9 @@ const resetAllFilters = () => {
                     selectedParticipantType !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
                   ]">
                     <option value="All">All Classifications</option>
+                    <option value="VVIP">VVIP ({{ vvipCount }})</option>
+                    <option value="De La Salle Brothers">De La Salle Brothers ({{ brothersCount }})</option>
+                    <option value="Sponsors">Sponsors ({{ sponsorsCount }})</option>
                     <option value="LSU Exclusive - Enrolled Student">LSU Exclusive - Enrolled Student</option>
                     <option value="LSU Exclusive - Employee">LSU Exclusive - Employee</option>
                     <option value="LSU Exclusive - Alumni">LSU Exclusive - Alumni</option>
@@ -2700,6 +3145,41 @@ const resetAllFilters = () => {
                         {{ isInitialLoading ? '...' : (categoryCounts[cat.id] || 0) }}
                       </span>
                     </button>
+                  </div>
+
+                  <!-- ── CSV TEMPLATE ACTIONS (DOWNLOAD & UPLOAD CSV FOR VVIP, DE LA SALLE BROTHERS, SPONSORS) ── -->
+                  <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
+                      <i class="fas fa-file-csv text-emerald-500 text-[11px]"></i> Template:
+                    </span>
+                    <!-- Download CSV Button -->
+                    <button
+                      type="button"
+                      @click="downloadCsvTemplate"
+                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-emerald-700 dark:hover:text-emerald-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-emerald-300 active:scale-95"
+                      title="Download official CSV template for VVIP, De La Salle Brothers, and Sponsors"
+                    >
+                      <i class="fas fa-download text-emerald-600 dark:text-emerald-400 text-[10px]"></i>
+                      <span>Download CSV</span>
+                    </button>
+                    <!-- Upload CSV Button -->
+                    <button
+                      type="button"
+                      @click="triggerCsvUpload"
+                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs active:scale-95"
+                      title="Upload CSV to add VVIP, De La Salle Brothers, and Sponsors directly"
+                    >
+                      <i class="fas fa-upload text-white text-[10px]"></i>
+                      <span>Upload CSV</span>
+                    </button>
+                    <!-- Hidden file input for CSV selection -->
+                    <input
+                      ref="csvFileInputRef"
+                      type="file"
+                      accept=".csv,text/csv"
+                      class="hidden"
+                      @change="handleCsvFileSelected"
+                    />
                   </div>
 
                 </div>
@@ -2939,8 +3419,20 @@ const resetAllFilters = () => {
                   <i class="fas fa-running text-[9px]"></i> {{ runner.run_category }}
                 </span>
                 <span
-                  class="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-slate-200 dark:border-gray-600">
-                  {{ runner.participant_type || 'Individual' }}
+                  :class="[
+                    'px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1',
+                    runner.participant_type === 'VVIP'
+                      ? 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300 border-purple-300 shadow-xs'
+                      : runner.participant_type === 'De La Salle Brothers'
+                        ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 shadow-xs'
+                        : runner.participant_type === 'Sponsors'
+                          ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300 shadow-xs'
+                          : 'bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-gray-600'
+                  ]">
+                  <i v-if="runner.participant_type === 'VVIP'" class="fas fa-crown text-amber-500 text-[9px]"></i>
+                  <i v-else-if="runner.participant_type === 'De La Salle Brothers'" class="fas fa-cross text-emerald-600 text-[9px]"></i>
+                  <i v-else-if="runner.participant_type === 'Sponsors'" class="fas fa-handshake text-blue-600 text-[9px]"></i>
+                  <span>{{ runner.participant_type || 'Individual' }}</span>
                 </span>
                 <span v-if="runner.college_course" :class="[
                   'px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1',
@@ -3270,8 +3762,20 @@ const resetAllFilters = () => {
                     <!-- classification -->
                     <template v-else-if="col.key === 'classification'">
                       <span
-                        class="inline-block px-2 py-0.5 rounded bg-slate-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 text-[10px] font-semibold">
-                        {{ runner.participant_type || 'Open Category' }}
+                        :class="[
+                          'inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border',
+                          runner.participant_type === 'VVIP'
+                            ? 'bg-purple-100 text-purple-900 dark:bg-purple-950/80 dark:text-purple-300 border-purple-300'
+                            : runner.participant_type === 'De La Salle Brothers'
+                              ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-300'
+                              : runner.participant_type === 'Sponsors'
+                                ? 'bg-blue-100 text-blue-900 dark:bg-blue-950/80 dark:text-blue-300 border-blue-300'
+                                : 'bg-slate-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-transparent'
+                        ]">
+                        <i v-if="runner.participant_type === 'VVIP'" class="fas fa-crown text-amber-500 text-[9px]"></i>
+                        <i v-else-if="runner.participant_type === 'De La Salle Brothers'" class="fas fa-cross text-emerald-600 text-[9px]"></i>
+                        <i v-else-if="runner.participant_type === 'Sponsors'" class="fas fa-handshake text-blue-600 text-[9px]"></i>
+                        <span>{{ runner.participant_type || 'Open Category' }}</span>
                       </span>
                     </template>
 
@@ -3761,6 +4265,9 @@ const resetAllFilters = () => {
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Classification</label>
                     <select v-model="editForm.participant_type" :class="inputCls">
                       <option value="">-- Select --</option>
+                      <option value="VVIP">VVIP</option>
+                      <option value="De La Salle Brothers">De La Salle Brothers</option>
+                      <option value="Sponsors">Sponsors</option>
                       <option value="LSU Exclusive - Enrolled Student">LSU Exclusive - Enrolled Student</option>
                       <option value="LSU Exclusive - Employee">LSU Exclusive - Employee</option>
                       <option value="LSU Exclusive - Alumni">LSU Exclusive - Alumni</option>
@@ -5107,6 +5614,201 @@ const resetAllFilters = () => {
 
       </div>
     </div>
+
+    <!-- ── CSV TEMPLATE IMPORT PREVIEW MODAL (VVIP, BROTHERS, SPONSORS DIRECT IMPORT) ── -->
+    <div
+      v-if="isCsvImportModalOpen"
+      class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm overflow-y-auto"
+      @click.self="isCsvImportModalOpen = false"
+    >
+      <div
+        :class="[
+          'relative w-full max-w-4xl rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all space-y-4 overflow-hidden max-h-[92vh] flex flex-col',
+          props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+        ]"
+      >
+        <!-- Top Gradient Accent Bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 via-emerald-500 to-blue-500"></div>
+
+        <!-- Modal Header -->
+        <div class="flex items-start justify-between border-b pb-3.5 dark:border-gray-700 shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl font-bold shadow-xs">
+              <i class="fas fa-file-csv"></i>
+            </div>
+            <div>
+              <h3 class="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
+                Import Runners from CSV
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                  {{ csvParsedRunners.length }} Found
+                </span>
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                File: <strong class="text-emerald-600 dark:text-emerald-400">{{ csvUploadFileName }}</strong> · Review parsed runners before confirming direct import
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            @click="isCsvImportModalOpen = false"
+            class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer transition"
+          >
+            <i class="fas fa-times text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Breakdown Chips (VVIP, Brothers, Sponsors, Others) -->
+        <div class="flex items-center gap-2 flex-wrap shrink-0 pt-0.5">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-purple-100 dark:bg-purple-950/70 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800 shadow-xs">
+            <i class="fas fa-crown text-amber-500 text-xs"></i>
+            <span>VVIP:</span>
+            <span class="font-black text-sm">{{ csvImportStats.vvip }}</span>
+          </div>
+
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-xs">
+            <i class="fas fa-cross text-emerald-600 text-xs"></i>
+            <span>De La Salle Brothers:</span>
+            <span class="font-black text-sm">{{ csvImportStats.brothers }}</span>
+          </div>
+
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-800 shadow-xs">
+            <i class="fas fa-handshake text-blue-600 text-xs"></i>
+            <span>Sponsors:</span>
+            <span class="font-black text-sm">{{ csvImportStats.sponsors }}</span>
+          </div>
+
+          <div v-if="csvImportStats.others > 0" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700 shadow-xs">
+            <i class="fas fa-users text-gray-500 text-xs"></i>
+            <span>Others:</span>
+            <span class="font-black text-sm">{{ csvImportStats.others }}</span>
+          </div>
+        </div>
+
+        <!-- Scrollable Table Preview -->
+        <div class="flex-1 overflow-y-auto border rounded-2xl dark:border-gray-700 min-h-[220px]">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead class="sticky top-0 bg-slate-100 dark:bg-gray-900/90 backdrop-blur-sm border-b dark:border-gray-700 text-gray-500 uppercase text-[10px] font-bold z-10">
+              <tr>
+                <th class="py-2.5 px-3">#</th>
+                <th class="py-2.5 px-3">Classification</th>
+                <th class="py-2.5 px-3">Runner Name</th>
+                <th class="py-2.5 px-3">Category</th>
+                <th class="py-2.5 px-3">Shirt Size</th>
+                <th class="py-2.5 px-3">Contact / Email</th>
+                <th class="py-2.5 px-3">Organization / Sponsor</th>
+                <th class="py-2.5 px-3">Payment</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y dark:divide-gray-700/60 font-medium">
+              <tr
+                v-for="(r, idx) in csvParsedRunners"
+                :key="idx"
+                class="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition"
+              >
+                <td class="py-2 px-3 text-gray-400 text-[11px] font-bold">{{ idx + 1 }}</td>
+
+                <!-- Classification -->
+                <td class="py-2 px-3 whitespace-nowrap">
+                  <span
+                    :class="[
+                      'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border',
+                      r.participant_type === 'VVIP'
+                        ? 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300 border-purple-300'
+                        : r.participant_type === 'De La Salle Brothers'
+                          ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300'
+                          : r.participant_type === 'Sponsors'
+                            ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300'
+                            : 'bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-gray-600'
+                    ]"
+                  >
+                    <i v-if="r.participant_type === 'VVIP'" class="fas fa-crown text-amber-500 text-[9px]"></i>
+                    <i v-else-if="r.participant_type === 'De La Salle Brothers'" class="fas fa-cross text-emerald-600 text-[9px]"></i>
+                    <i v-else-if="r.participant_type === 'Sponsors'" class="fas fa-handshake text-blue-600 text-[9px]"></i>
+                    <span>{{ r.participant_type }}</span>
+                  </span>
+                </td>
+
+                <!-- Name -->
+                <td class="py-2 px-3 font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                  {{ r.firstname }} {{ r.middlename ? r.middlename[0] + '.' : '' }} {{ r.lastname }}{{ r.suffix ? ' ' + r.suffix : '' }}
+                </td>
+
+                <!-- Category -->
+                <td class="py-2 px-3 whitespace-nowrap">
+                  <span :class="[
+                    'px-2 py-0.5 rounded-full font-black text-[10px] text-white shadow-xs',
+                    runCategories.find(c => r.run_category && r.run_category.startsWith(c.id))?.color || 'bg-emerald-700'
+                  ]">
+                    {{ r.run_category }}
+                  </span>
+                </td>
+
+                <!-- Shirt Size -->
+                <td class="py-2 px-3 text-gray-700 dark:text-gray-300 font-semibold uppercase">
+                  {{ r.tshirt_size || 'M' }}
+                </td>
+
+                <!-- Contact / Email -->
+                <td class="py-2 px-3 text-gray-500 text-[11px]">
+                  <div v-if="r.contact_email" class="truncate max-w-[170px]" :title="r.contact_email">
+                    <i class="fas fa-envelope text-[9px] mr-1 opacity-70"></i>{{ r.contact_email }}
+                  </div>
+                  <div v-if="r.contact_number" class="text-[10px]">
+                    <i class="fas fa-phone text-[9px] mr-1 opacity-70"></i>{{ r.contact_number }}
+                  </div>
+                  <span v-if="!r.contact_email && !r.contact_number" class="text-gray-400 italic">None</span>
+                </td>
+
+                <!-- Organization / Sponsor -->
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 text-[11px] max-w-[150px] truncate" :title="r.organization">
+                  {{ r.organization || '-' }}
+                </td>
+
+                <!-- Payment Status -->
+                <td class="py-2 px-3 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 dark:bg-green-950/70 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-800">
+                    <i class="fas fa-check-circle text-[9px]"></i>
+                    {{ r.payment_status || 'Confirmed' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Modal Bottom Actions & Instructions -->
+        <div class="pt-3 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+          <div class="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+            <i class="fas fa-info-circle text-emerald-500"></i>
+            <span>
+              BIB numbers are automatically allocated per KM category. Payment will be marked <strong>Confirmed</strong>.
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              @click="isCsvImportModalOpen = false"
+              :disabled="isImportingCsv"
+              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              @click="executeCsvImport"
+              :disabled="isImportingCsv || !csvParsedRunners.length"
+              class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <i :class="['fas', isImportingCsv ? 'fa-spinner fa-spin' : 'fa-check']"></i>
+              <span>{{ isImportingCsv ? 'Importing Runners...' : `Confirm & Import ${csvParsedRunners.length} Runners` }}</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 
 
