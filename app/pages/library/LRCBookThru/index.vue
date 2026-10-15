@@ -945,9 +945,9 @@ const submitAppointmentToGmail = async () => {
                               <a
                                 class="font-bold underline hover:text-green-600 transition-colors"
                                 target="_blank"
-                                href="https://lsu-opac.follettdestiny.com"
+                                href="https://security.follettsoftware.com/aasp/service/sso/mmform/show"
                               >
-                                OPAC
+                                LSU EISI
                               </a>
                               for the available resources or use the search
                               below.
