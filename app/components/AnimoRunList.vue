@@ -236,6 +236,117 @@ const categoryCounts = computed(() => {
   return counts;
 });
 
+// ── Slot Capacity & Allocation Management ───────────────────────────────────
+const slotData = ref({});
+const slotDataLoaded = ref(false);
+const isSlotModalOpen = ref(false);
+const isSavingSlots = ref(false);
+const slotEditValues = ref({});
+const newCategoryCode = ref("");
+
+const totalSlotsAvailable = computed(() => {
+  if (!slotData.value) return 0;
+  return Object.values(slotData.value).reduce((sum, item) => sum + (Number(item?.max) || 0), 0);
+});
+
+const totalSlotsFilled = computed(() => {
+  if (!slotData.value) return 0;
+  return Object.values(slotData.value).reduce((sum, item) => sum + (Number(item?.filled) || 0), 0);
+});
+
+const modalTotalSlots = computed(() => {
+  return Object.values(slotEditValues.value || {}).reduce((sum, val) => sum + (Number(val) || 0), 0);
+});
+
+const fetchSlotCounts = async () => {
+  try {
+    const rawUrl = endpoint.value || config?.public?.apiUrl || 'http://127.0.0.1:8000';
+    const url = String(rawUrl).replace(/\/+$/, '');
+    const res = await $fetch(`${url}/api/animorun/slot-count/`);
+    if (res && typeof res === "object") {
+      slotData.value = res;
+      slotDataLoaded.value = true;
+    }
+  } catch (err) {
+    console.warn("[AnimoRunList] Failed to fetch slot counts:", err);
+  }
+};
+
+const openSlotAdjustmentModal = () => {
+  const standardCats = ["1KM", "3KM", "10KM", "20KM"];
+  const initial = {};
+  for (const [cat, data] of Object.entries(slotData.value || {})) {
+    initial[cat] = data.max ?? 1000;
+  }
+  for (const cat of standardCats) {
+    if (initial[cat] === undefined) {
+      initial[cat] = cat === "1KM" ? 50 : (cat === "10KM" ? 375 : (cat === "20KM" ? 300 : 1000));
+    }
+  }
+  slotEditValues.value = initial;
+  newCategoryCode.value = "";
+  isSlotModalOpen.value = true;
+};
+
+const closeSlotAdjustmentModal = () => {
+  if (isSavingSlots.value) return;
+  isSlotModalOpen.value = false;
+};
+
+const adjustSlotBy = (catKey, delta) => {
+  const current = Number(slotEditValues.value[catKey]) || 0;
+  slotEditValues.value[catKey] = Math.max(0, current + delta);
+};
+
+const resetSlotDefaults = () => {
+  slotEditValues.value = {
+    "1KM": 50,
+    "3KM": 1000,
+    "10KM": 375,
+    "20KM": 300,
+  };
+};
+
+const addNewCategorySlot = () => {
+  const raw = newCategoryCode.value.trim().toUpperCase();
+  if (!raw) return;
+  const norm = normalizeCategory(raw);
+  if (slotEditValues.value[norm] === undefined) {
+    slotEditValues.value = { ...slotEditValues.value, [norm]: 1000 };
+  }
+  newCategoryCode.value = "";
+};
+
+const saveSlotAdjustments = async () => {
+  isSavingSlots.value = true;
+  try {
+    const rawUrl = endpoint.value || config?.public?.apiUrl || 'http://127.0.0.1:8000';
+    const url = String(rawUrl).replace(/\/+$/, '');
+    const payload = {};
+    for (const [cat, val] of Object.entries(slotEditValues.value)) {
+      const parsed = parseInt(val, 10);
+      payload[cat] = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+    }
+    const res = await $fetch(`${url}/api/animorun/slot-count/`, {
+      method: "POST",
+      body: { slots: payload },
+    });
+    if (res && typeof res === "object") {
+      slotData.value = res;
+      slotDataLoaded.value = true;
+    } else {
+      await fetchSlotCounts();
+    }
+    showNotice("Category slot limits successfully updated and synced!", "Slots Updated", "success");
+    isSlotModalOpen.value = false;
+  } catch (err) {
+    console.error("[AnimoRunList] Failed to save slot adjustments:", err);
+    showNotice(err?.data?.message || err?.message || "Failed to update slot allocations.", "Update Failed", "error");
+  } finally {
+    isSavingSlots.value = false;
+  }
+};
+
 const CACHE_KEY = "animorun_registrations_cache";
 const BATCHES_CACHE_KEY = "animorun_batches_cache";
 
@@ -612,6 +723,7 @@ const startPolling = () => {
   if (pollingInterval) clearInterval(pollingInterval);
   pollingInterval = setInterval(() => {
     fetchRegistrations(true);
+    fetchSlotCounts();
   }, POLL_INTERVAL_MS);
 };
 
@@ -664,6 +776,7 @@ onMounted(() => {
   // otherwise fetch with skeleton loaders.
   fetchRegistrations(hasCache);
   fetchBatches();
+  fetchSlotCounts();
   startPolling();
 });
 
@@ -3180,6 +3293,26 @@ const resetAllFilters = () => {
                       class="hidden"
                       @change="handleCsvFileSelected"
                     />
+                  </div>
+
+                  <!-- ── SLOT ALLOCATION ACTIONS (ADJUST RUNNER SLOTS) ── -->
+                  <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
+                      <i class="fas fa-gauge-high text-emerald-500 text-[11px]"></i> Slots:
+                    </span>
+                    <!-- Adjust Slots Button -->
+                    <button
+                      type="button"
+                      @click="openSlotAdjustmentModal"
+                      class="px-2.5 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-emerald-700 dark:hover:text-emerald-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-emerald-300 active:scale-95"
+                      title="Adjust slot capacity limits for all race categories"
+                    >
+                      <i class="fas fa-sliders text-emerald-600 dark:text-emerald-400 text-[10px]"></i>
+                      <span>Adjust Slots</span>
+                      <span v-if="slotDataLoaded && totalSlotsAvailable > 0" class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 ml-0.5">
+                        {{ totalSlotsFilled }}/{{ totalSlotsAvailable }}
+                      </span>
+                    </button>
                   </div>
 
                 </div>
@@ -5802,6 +5935,229 @@ const resetAllFilters = () => {
             >
               <i :class="['fas', isImportingCsv ? 'fa-spinner fa-spin' : 'fa-check']"></i>
               <span>{{ isImportingCsv ? 'Importing Runners...' : `Confirm & Import ${csvParsedRunners.length} Runners` }}</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SLOT ALLOCATION ADJUSTMENT MODAL ── -->
+    <div v-if="isSlotModalOpen"
+      class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm overflow-y-auto"
+      @click.self="closeSlotAdjustmentModal">
+      <div :class="[
+        'w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all space-y-5 relative overflow-hidden my-auto',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <!-- Top decorative gradient strip -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500"></div>
+
+        <!-- Header -->
+        <div class="flex items-start justify-between gap-3 border-b pb-4 dark:border-gray-700">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xl shadow-md shrink-0">
+              <i class="fas fa-gauge-high"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-lg font-black tracking-tight">Adjust Category Slot Limits</h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                  Live Dynamic
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Update max slot capacities per race distance. Changes apply instantly to both registration portals.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            @click="closeSlotAdjustmentModal"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+          >
+            <i class="fas fa-times text-base"></i>
+          </button>
+        </div>
+
+        <!-- Summary Metric Cards -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="p-3 rounded-2xl border bg-slate-50 dark:bg-gray-900/60 dark:border-gray-700 text-center">
+            <span class="text-[10px] uppercase font-bold text-gray-400 block">Total Slots</span>
+            <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">
+              {{ modalTotalSlots.toLocaleString() }}
+            </span>
+          </div>
+          <div class="p-3 rounded-2xl border bg-slate-50 dark:bg-gray-900/60 dark:border-gray-700 text-center">
+            <span class="text-[10px] uppercase font-bold text-gray-400 block">Total Registered</span>
+            <span class="text-xl font-black text-amber-500">
+              {{ totalSlotsFilled.toLocaleString() }}
+            </span>
+          </div>
+          <div class="p-3 rounded-2xl border bg-slate-50 dark:bg-gray-900/60 dark:border-gray-700 text-center">
+            <span class="text-[10px] uppercase font-bold text-gray-400 block">Total Remaining</span>
+            <span class="text-xl font-black text-sky-500">
+              {{ Math.max(0, modalTotalSlots - totalSlotsFilled).toLocaleString() }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Categories List -->
+        <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+          <div
+            v-for="catKey in Object.keys(slotEditValues)"
+            :key="catKey"
+            :class="[
+              'p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col gap-2.5',
+              props.darkMode ? 'bg-gray-900/40 border-gray-700/80 hover:border-gray-600' : 'bg-slate-50/70 border-slate-200 hover:border-emerald-300'
+            ]"
+          >
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm shadow-xs shrink-0"
+                  :class="[
+                    catKey === '1KM' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' :
+                    catKey === '3KM' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' :
+                    catKey === '10KM' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
+                    'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
+                  ]"
+                >
+                  <i :class="['fas', catKey === '1KM' ? 'fa-paw' : (catKey === '20KM' ? 'fa-trophy' : (catKey === '10KM' ? 'fa-medal' : 'fa-person-running'))]"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-base font-black tracking-tight">{{ catKey }}</span>
+                    <span class="text-xs text-gray-400 font-medium">
+                      {{ catKey === '1KM' ? 'Pet Run' : (catKey === '3KM' ? 'Fun Run' : (catKey === '10KM' ? 'Challenge Run' : 'Half Marathon')) }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    <span>Filled: <strong class="text-gray-700 dark:text-gray-200">{{ (slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) }}</strong></span>
+                    <span>·</span>
+                    <span>Remaining: <strong :class="(slotEditValues[catKey] - (slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0))) <= 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'">
+                      {{ Math.max(0, slotEditValues[catKey] - (slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0))) }}
+                    </strong></span>
+                    <span v-if="(slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) >= slotEditValues[catKey]" class="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-red-500 text-white">
+                      FULL
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Input & Quick Steppers -->
+              <div class="flex items-center gap-2">
+                <div class="flex items-center border rounded-xl overflow-hidden shadow-xs dark:border-gray-600 bg-white dark:bg-gray-800">
+                  <button
+                    type="button"
+                    @click="adjustSlotBy(catKey, -25)"
+                    class="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition text-xs font-bold"
+                    title="Decrease by 25"
+                  >
+                    <i class="fas fa-minus text-[10px]"></i>
+                  </button>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    v-model.number="slotEditValues[catKey]"
+                    class="w-20 sm:w-24 py-1.5 text-center font-black text-sm bg-transparent outline-none focus:ring-0 border-x dark:border-gray-600 text-gray-800 dark:text-white"
+                  />
+                  <button
+                    type="button"
+                    @click="adjustSlotBy(catKey, 25)"
+                    class="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition text-xs font-bold"
+                    title="Increase by 25"
+                  >
+                    <i class="fas fa-plus text-[10px]"></i>
+                  </button>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="hidden sm:flex items-center gap-1">
+                  <button
+                    type="button"
+                    @click="adjustSlotBy(catKey, 50)"
+                    class="px-2 py-1 rounded-lg text-[10px] font-bold border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                  >
+                    +50
+                  </button>
+                  <button
+                    type="button"
+                    @click="adjustSlotBy(catKey, 100)"
+                    class="px-2 py-1 rounded-lg text-[10px] font-bold border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                  >
+                    +100
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mini Progress Bar -->
+            <div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
+              <div
+                class="h-full transition-all duration-300 rounded-full"
+                :class="[
+                  ((slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) / (slotEditValues[catKey] || 1)) >= 1 ? 'bg-red-500' :
+                  ((slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) / (slotEditValues[catKey] || 1)) >= 0.8 ? 'bg-amber-500' : 'bg-emerald-500'
+                ]"
+                :style="{ width: `${Math.min(100, Math.round(((slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) / (slotEditValues[catKey] || 1)) * 100))}%` }"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Custom Category & Reset Defaults -->
+        <div class="pt-2 border-t dark:border-gray-700 flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-2">
+            <input
+              type="text"
+              v-model="newCategoryCode"
+              placeholder="e.g. 5KM or 42KM"
+              class="w-32 px-3 py-1.5 rounded-xl border text-xs dark:bg-gray-900 dark:border-gray-700 outline-none uppercase font-bold"
+            />
+            <button
+              type="button"
+              @click="addNewCategorySlot"
+              :disabled="!newCategoryCode.trim()"
+              class="px-3 py-1.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 hover:border-emerald-500 text-xs font-bold transition flex items-center gap-1 disabled:opacity-40"
+            >
+              <i class="fas fa-plus text-[10px]"></i> Add Category
+            </button>
+          </div>
+
+          <button
+            type="button"
+            @click="resetSlotDefaults"
+            class="text-[11px] font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1 transition cursor-pointer"
+          >
+            <i class="fas fa-rotate-left text-[10px]"></i> Reset to Defaults (50/1000/375/300)
+          </button>
+        </div>
+
+        <!-- Modal Bottom Actions -->
+        <div class="pt-3 border-t dark:border-gray-700 flex items-center justify-between gap-3">
+          <span class="text-[11px] text-gray-400 hidden sm:inline">
+            <i class="fas fa-shield-halved text-emerald-500 mr-1"></i>
+            Stored directly in AnimoRunSlotAllocation table
+          </span>
+
+          <div class="flex items-center gap-2 ml-auto">
+            <button
+              type="button"
+              @click="closeSlotAdjustmentModal"
+              :disabled="isSavingSlots"
+              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              @click="saveSlotAdjustments"
+              :disabled="isSavingSlots"
+              class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <i :class="['fas', isSavingSlots ? 'fa-spinner fa-spin' : 'fa-floppy-disk']"></i>
+              <span>{{ isSavingSlots ? 'Saving Slots...' : 'Save & Update Slots' }}</span>
             </button>
           </div>
         </div>

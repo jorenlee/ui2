@@ -9,87 +9,78 @@ import lsuIdVerifierLocalData from "~/animorun_lsuid_verifier.json";
 const lsuIdVerifierData = ref([]);
 
 // ── Slot Capacity Limits & Availability ─────────────────────────────────────
-const SLOT_LIMITS = {
-  "1KM": 50,   // Pet Run
-  "3KM": 1000,
-  "10KM": 1000,
-  "20KM": 1000,
-};
-
-const slotData = ref({
-  "1KM": { filled: 0, max: 50, remaining: 50, is_full: false },
-  "3KM": { filled: 0, max: 1000, remaining: 1000, is_full: false },
-  "10KM": { filled: 0, max: 1000, remaining: 1000, is_full: false },
-  "20KM": { filled: 0, max: 1000, remaining: 1000, is_full: false },
-});
+// Dynamically fetched from backend /api/animorun/slot-count/ (models.AnimoRunSlotAllocation)
+const slotData = ref({});
 const slotDataLoaded = ref(false);
 
-const fetchSlotCounts = async () => {
+const fetchSlotCounts = async (endpointUrl) => {
   try {
-    const rawUrl = config?.public?.apiUrl || 'http://127.0.0.1:8000';
+    const rawUrl = endpointUrl || config?.public?.apiUrl || 'http://127.0.0.1:8000';
     const url = String(rawUrl).replace(/\/+$/, '');
 
-    // 1. Try /api/animorun/list/ first (actual live database from AnimoRunList)
-    try {
-      const list = await $fetch(`${url}/api/animorun/list/`);
-      if (Array.isArray(list)) {
-        const counts = { "1KM": 0, "3KM": 0, "10KM": 0, "20KM": 0 };
-        list.forEach((r) => {
-          const val = String(r.run_category || "").trim().toUpperCase();
-          let norm = "3KM";
-          if (val.includes("PET") || val.startsWith("1K") || val === "1") norm = "1KM";
-          else if (val.startsWith("20K") || val === "20") norm = "20KM";
-          else if (val.startsWith("10K") || val === "10") norm = "10KM";
-          else if (val.startsWith("3K") || val === "3") norm = "3KM";
-          else {
-            const prefix = val.split(" ")[0];
-            if (prefix.endsWith("KM")) norm = prefix;
-            else if (prefix.endsWith("K")) norm = prefix + "M";
-            else if (!isNaN(prefix)) norm = prefix + "KM";
-          }
-          if (norm in counts) counts[norm]++;
-        });
-
-        const newSlots = {};
-        for (const [cat, max] of Object.entries(SLOT_LIMITS)) {
-          const filled = counts[cat] || 0;
-          newSlots[cat] = {
-            filled,
-            max,
-            remaining: Math.max(0, max - filled),
-            is_full: filled >= max,
-          };
-        }
-        slotData.value = { ...slotData.value, ...newSlots };
-        slotDataLoaded.value = true;
-        return;
-      }
-    } catch (listErr) {
-      // list endpoint not reached, proceed to slot-count
-    }
-
-    // 2. Fallback to /api/animorun/slot-count/
+    // 1. Primary: fetch live dynamic slot allocation & counts from models.py via /api/animorun/slot-count/
     const res = await $fetch(`${url}/api/animorun/slot-count/`);
-    if (res && typeof res === "object") {
+    if (res && typeof res === "object" && Object.keys(res).length > 0) {
       slotData.value = { ...slotData.value, ...res };
       slotDataLoaded.value = true;
+      return;
     }
   } catch (err) {
-    console.warn("Failed to fetch slot counts:", err);
+    console.warn("Failed to fetch dynamic slot counts from /api/animorun/slot-count/:", err);
+  }
+
+  // 2. Fallback: if slot-count endpoint is unreachable, query list count
+  try {
+    const rawUrl = endpointUrl || config?.public?.apiUrl || 'http://127.0.0.1:8000';
+    const url = String(rawUrl).replace(/\/+$/, '');
+    const list = await $fetch(`${url}/api/animorun/list/`);
+    if (Array.isArray(list)) {
+      const counts = {};
+      list.forEach((r) => {
+        const val = String(r.run_category || "").trim().toUpperCase();
+        let norm = "3KM";
+        if (val.includes("PET") || val.startsWith("1K") || val === "1") norm = "1KM";
+        else if (val.startsWith("20K") || val === "20") norm = "20KM";
+        else if (val.startsWith("10K") || val === "10") norm = "10KM";
+        else if (val.startsWith("3K") || val === "3") norm = "3KM";
+        else {
+          const prefix = val.split(" ")[0];
+          if (prefix.endsWith("KM")) norm = prefix;
+          else if (prefix.endsWith("K")) norm = prefix + "M";
+          else if (!isNaN(prefix)) norm = prefix + "KM";
+        }
+        counts[norm] = (counts[norm] || 0) + 1;
+      });
+
+      const fallbackSlots = {};
+      for (const [cat, filled] of Object.entries(counts)) {
+        const existingMax = slotData.value[cat]?.max || 1000;
+        fallbackSlots[cat] = {
+          filled,
+          max: existingMax,
+          remaining: Math.max(0, existingMax - filled),
+          is_full: filled >= existingMax,
+        };
+      }
+      slotData.value = { ...slotData.value, ...fallbackSlots };
+      slotDataLoaded.value = true;
+    }
+  } catch (fallbackErr) {
+    console.warn("Fallback slot count also failed:", fallbackErr);
   }
 };
 
 const getSlotInfo = (categoryId) => {
-  const norm = categoryId === '1K' ? '1KM' : categoryId;
-  return slotData.value[norm] || { filled: 0, max: 1000, remaining: 1000, is_full: false };
+  const norm = categoryId === '1K' ? '1KM' : (categoryId || '3KM');
+  return slotData.value[norm] || { filled: 0, max: 0, remaining: 9999, is_full: false };
 };
 
 const isCategoryFull = (categoryId) => {
-  return getSlotInfo(categoryId).is_full;
+  return Boolean(getSlotInfo(categoryId)?.is_full);
 };
 
 const getRemainingSlots = (categoryId) => {
-  return getSlotInfo(categoryId).remaining;
+  return getSlotInfo(categoryId)?.remaining ?? 0;
 };
 
 const props = defineProps({
@@ -2209,7 +2200,7 @@ const sendChatWidgetMessage = async () => {
                 <!-- HUMAN RUN CARDS -->
                 <div class="contents">
                   <div v-for="cat in runCategories.filter(c => c.categoryType === 'human')" :key="cat.id"
-                    @click="currentParticipant.run_category = cat.id"
+                    @click="isCategoryFull(cat.id) ? showNotice(`Sorry, registration for ${cat.name} (${cat.id}) is already full (${getSlotInfo(cat.id).max} slots). Please select another race category.`, 'Category Full — No Slots Available', 'error') : currentParticipant.run_category = cat.id"
                     class="relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between overflow-hidden select-none w-full shrink-0 snap-center lg:shrink"
                     :style="currentParticipant.run_category === cat.id
                       ? {
@@ -2221,7 +2212,7 @@ const sendChatWidgetMessage = async () => {
                       : {
                         background: `linear-gradient(145deg, ${cat.colors.dark}, ${cat.colors.secondary})`,
                         borderColor: cat.colors.primary + '55',
-                        opacity: '0.92',
+                        opacity: isCategoryFull(cat.id) ? '0.55' : '0.92',
                       }">
 
                     <!-- Watermark -->
@@ -2242,24 +2233,16 @@ const sendChatWidgetMessage = async () => {
                             <i class="fas fa-check"></i>
                           </div>
 
-                          <!-- Distance label -->
-                          <h2 class="text-4xl font-black tracking-tight whitespace-nowrap"
-                            :style="{ color: currentParticipant.run_category === cat.id ? '#fff' : 'rgba(255,255,255,0.7)' }">
-                            {{ cat.name }}
-                          </h2>
-
-
+                          <!-- Distance label & dynamic slot counter -->
+                          <div>
+                            <h2 class="text-4xl font-black tracking-tight whitespace-nowrap"
+                              :style="{ color: currentParticipant.run_category === cat.id ? '#fff' : 'rgba(255,255,255,0.7)' }">
+                              {{ cat.name }}
+                            </h2>
+                           
+                          </div>
 
                         </div>
-                        <!-- Fee -->
-                        <!-- <div>
-                        
-                          <span class="text-xl font-black mt-1 block whitespace-nowrap"
-                            :style="{ color: currentParticipant.run_category === cat.id ? cat.colors.highlight || '#fff' : 'rgba(255,255,255,0.55)' }">
-                            PHP {{ cat.fee.toLocaleString() }}
-                          </span>
-                        </div> -->
-
                       </div>
 
 
@@ -2283,10 +2266,6 @@ const sendChatWidgetMessage = async () => {
                     <!-- Price -->
                     <div class="mt-5 pt-3 border-t flex items-center justify-between text-xs"
                       :style="{ borderColor: 'rgba(255,255,255,0.15)' }">
-                      <!-- <span class="font-medium flex items-center gap-1" style="color: rgba(255,255,255,0.6)">
-                        <i class="fas fa-flag-checkered"
-                          :style="{ color: cat.colors.highlight || cat.colors.accent }"></i> Gun Time:
-                      </span> -->
                       <span class="font-black text-xl" :style="{ color: cat.colors.highlight || '#fff' }">PHP {{
                         cat.fee.toLocaleString() }}</span>
                     </div>
@@ -2333,7 +2312,8 @@ const sendChatWidgetMessage = async () => {
                     : {
                       background: 'linear-gradient(145deg, #0B0A09, #035751)',
                       borderColor: 'rgba(2,133,125,0.4)',
-                    }" @click="currentParticipant.run_category = '1K'">
+                      opacity: isCategoryFull('1KM') ? '0.55' : '1',
+                    }" @click="isCategoryFull('1KM') ? showNotice(`Sorry, registration for Pet Run (1KM) is already full (${getSlotInfo('1KM').max} slots). Please select another race category.`, 'Category Full — No Slots Available', 'error') : currentParticipant.run_category = '1K'">
 
                   <!-- Watermark -->
                   <div class="absolute -right-4 -bottom-4 text-8xl pointer-events-none select-none"
@@ -2358,11 +2338,14 @@ const sendChatWidgetMessage = async () => {
                       </div>
                     </div>
 
-                    <!-- Distance & Fee -->
+                    <!-- Distance & Fee & Dynamic Slot Counter -->
                     <div class="flex items-baseline justify-between pt-1">
-                      <h2 class="text-3xl font-black tracking-tight"
-                        :style="{ color: currentParticipant.run_category === '1K' ? '#fff' : 'rgba(255,255,255,0.7)' }">
-                        PETS</h2>
+                      <div>
+                        <h2 class="text-3xl font-black tracking-tight"
+                          :style="{ color: currentParticipant.run_category === '1K' ? '#fff' : 'rgba(255,255,255,0.7)' }">
+                          PETS</h2>
+                       
+                      </div>
                       <span class="text-xl font-black"
                         :style="{ color: currentParticipant.run_category === '1K' ? '#93CAC5' : 'rgba(255,255,255,0.5)' }">PHP
                         1,000</span>
