@@ -9,17 +9,8 @@ import lsuIdVerifierLocalData from "~/animorun_lsuid_verifier.json";
 const lsuIdVerifierData = ref([]);
 
 // ── Slot Capacity Limits & Availability ─────────────────────────────────────
-// Dynamically fetched from backend /api/animorun/slot-count/ and /api/animorun/list/
+// Dynamically fetched from backend /api/animorun/slot-count/ (AnimoRunSlotAllocation) and /api/animorun/list/
 // Base acceptance submission is confirmed (paid registrations), not the total.
-// A gap allowance of 20 pending registrations is included beyond capacity.
-const GAP_ALLOWANCE = 20;
-
-const DEFAULT_SLOT_LIMITS = {
-  "1KM": 50,
-  "3KM": 350,
-  "10KM": 350,
-  "20KM": 350,
-};
 
 const slotData = ref({});
 const slotDataLoaded = ref(false);
@@ -41,16 +32,13 @@ const calculateSlotState = (conf, pend, maxSlots) => {
   const confirmed = Math.max(0, Number(conf) || 0);
   const pending = Math.max(0, Number(pend) || 0);
   const total = confirmed + pending;
-  const max = Math.max(0, Number(maxSlots) || 350);
+  const max = Math.max(0, Number(maxSlots) || 0);
 
   // Base acceptance submission is CONFIRMED, not the total.
-  // Add gap allowance of 20 pending registrations.
-  // Registration is full ONLY IF:
-  // 1) Total submissions reach/exceed base capacity + gap allowance (max + 20)
-  // OR 2) Confirmed has reached max capacity AND pending registrations have exhausted the 20 gap allowance
-  const is_full = (total >= max + GAP_ALLOWANCE) || (confirmed >= max && pending >= GAP_ALLOWANCE);
-  const remaining = Math.max(0, (max + GAP_ALLOWANCE) - total);
-  const confirmed_remaining = Math.max(0, max - confirmed);
+  // Registration is full when confirmed registrations reach max capacity.
+  const is_full = max > 0 && confirmed >= max;
+  const remaining = max > 0 ? Math.max(0, max - confirmed) : 9999;
+  const confirmed_remaining = remaining;
 
   return {
     filled: confirmed, // base filled is confirmed, not total
@@ -58,8 +46,7 @@ const calculateSlotState = (conf, pend, maxSlots) => {
     pending,
     total,
     max,
-    gap_allowance: GAP_ALLOWANCE,
-    effective_max: max + GAP_ALLOWANCE,
+    effective_max: max,
     remaining,
     confirmed_remaining,
     is_full,
@@ -70,7 +57,7 @@ const fetchSlotCounts = async (endpointUrl) => {
   const rawUrl = endpointUrl || config?.public?.apiUrl || endpoint?.value || 'http://127.0.0.1:8000';
   const url = String(rawUrl).replace(/\/+$/, '');
 
-  // 1. Fetch dynamic slot limits from models via /api/animorun/slot-count/
+  // 1. Fetch dynamic slot limits from AnimoRunSlotAllocation via /api/animorun/slot-count/
   let dynamicLimits = {};
   try {
     const res = await $fetch(`${url}/api/animorun/slot-count/`, { timeout: 10000, cache: "no-store" });
@@ -93,12 +80,11 @@ const fetchSlotCounts = async (endpointUrl) => {
     }
 
     if (Array.isArray(list)) {
-      const breakdown = {
-        "1KM": { total: 0, confirmed: 0, pending: 0 },
-        "3KM": { total: 0, confirmed: 0, pending: 0 },
-        "10KM": { total: 0, confirmed: 0, pending: 0 },
-        "20KM": { total: 0, confirmed: 0, pending: 0 },
-      };
+      const breakdown = {};
+      const knownCats = Object.keys(dynamicLimits);
+      for (const cat of (knownCats.length > 0 ? knownCats : ["1KM", "3KM", "10KM", "20KM"])) {
+        breakdown[cat] = { total: 0, confirmed: 0, pending: 0 };
+      }
 
       list.forEach((r) => {
         const norm = normalizeSlotCategory(r.run_category);
@@ -116,10 +102,10 @@ const fetchSlotCounts = async (endpointUrl) => {
       });
 
       const updatedSlots = {};
-      const categories = ["1KM", "3KM", "10KM", "20KM"];
-      for (const cat of categories) {
+      const allCategories = new Set([...Object.keys(dynamicLimits), ...Object.keys(breakdown)]);
+      for (const cat of allCategories) {
         const catStats = breakdown[cat] || { total: 0, confirmed: 0, pending: 0 };
-        const maxSlots = Number(dynamicLimits[cat]?.max) || DEFAULT_SLOT_LIMITS[cat] || 350;
+        const maxSlots = Number(dynamicLimits[cat]?.max) || 0;
         updatedSlots[cat] = calculateSlotState(catStats.confirmed, catStats.pending, maxSlots);
       }
 
@@ -135,7 +121,7 @@ const fetchSlotCounts = async (endpointUrl) => {
   if (Object.keys(dynamicLimits).length > 0) {
     const fallbackSlots = {};
     for (const [cat, data] of Object.entries(dynamicLimits)) {
-      const maxSlots = Number(data.max) || DEFAULT_SLOT_LIMITS[cat] || 350;
+      const maxSlots = Number(data.max) || 0;
       const conf = Number(data.confirmed ?? data.filled) || 0;
       const pend = Number(data.pending) || 0;
       fallbackSlots[cat] = calculateSlotState(conf, pend, maxSlots);
@@ -152,9 +138,8 @@ const getSlotInfo = (categoryId) => {
     confirmed: 0,
     pending: 0,
     total: 0,
-    max: DEFAULT_SLOT_LIMITS[norm] || 350,
-    gap_allowance: GAP_ALLOWANCE,
-    effective_max: (DEFAULT_SLOT_LIMITS[norm] || 350) + GAP_ALLOWANCE,
+    max: 0,
+    effective_max: 0,
     remaining: 9999,
     confirmed_remaining: 9999,
     is_full: false,

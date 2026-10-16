@@ -3,6 +3,8 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import animoRunData from "~/animorun.json";
 
 const COLLEGE_COURSE_OPTIONS = animoRunData?.COLLEGE_COURSE_OPTIONS || [];
+const OFFICIAL_SHIRT_CONFIGS = animoRunData?.OFFICIAL_SHIRT_CONFIGS || [];
+const FINISHER_SHIRT_CONFIG = animoRunData?.FINISHER_SHIRT_CONFIG || null;
 
 const props = defineProps({
   darkMode: {
@@ -1342,6 +1344,135 @@ const isSaving = ref(false);
 const editForm = ref({});
 const bypassWarningAcknowledged = ref(false);
 
+// Helper: list of all standard main shirt option values (e.g. "Event Shirt: S;", "Singlet: M;")
+const allStandardMainShirtOptions = computed(() => {
+  const opts = [];
+  (OFFICIAL_SHIRT_CONFIGS || []).forEach((sc) => {
+    (sc.sizes || []).forEach((sz) => {
+      opts.push(`${sc.shortLabel}: ${sz};`);
+    });
+  });
+  return opts;
+});
+
+const isStandardShirtOption = (val) => {
+  return allStandardMainShirtOptions.value.includes(val);
+};
+
+// Helper: list of all standard finisher shirt option values (e.g. "Finisher Shirt: M;")
+const allStandardFinisherOptions = computed(() => {
+  const opts = [];
+  if (FINISHER_SHIRT_CONFIG && FINISHER_SHIRT_CONFIG.sizes) {
+    FINISHER_SHIRT_CONFIG.sizes.forEach((sz) => {
+      opts.push(`Finisher Shirt: ${sz};`);
+    });
+  }
+  return opts;
+});
+
+const isStandardFinisherOption = (val) => {
+  return allStandardFinisherOptions.value.includes(val);
+};
+
+// Robust parser: splits and normalizes stored tshirt_size string into main shirt and finisher shirt
+const parseRunnerShirtSelection = (runner) => {
+  if (!runner) return { mainShirt: "", finisherShirt: "" };
+
+  const tshirtStr = String(runner.tshirt_size || "").trim();
+  let rawMain = "";
+  let rawFinisher = String(runner.finisher_shirt_size || "").trim();
+
+  if (tshirtStr) {
+    const parts = tshirtStr.split(";").map((p) => p.trim()).filter(Boolean);
+    for (const part of parts) {
+      if (/finisher/i.test(part)) {
+        rawFinisher = part;
+      } else if (!rawMain) {
+        rawMain = part;
+      }
+    }
+    // If no semicolon existed and regex didn't match finisher:
+    if (!rawMain && !rawFinisher) {
+      rawMain = tshirtStr;
+    }
+  }
+
+  // Normalize main shirt
+  let mainShirt = "";
+  if (rawMain) {
+    let clean = rawMain.replace(/;+$/, "").trim();
+    if (clean.includes(":")) {
+      const [typePart, sizePart] = clean.split(":", 2).map((s) => s.trim());
+      const lType = typePart.toLowerCase();
+      const uSize = sizePart.toUpperCase();
+
+      if (lType.includes("semi")) {
+        mainShirt = `Semi-Crop Top: ${uSize};`;
+      } else if (lType.includes("crop")) {
+        mainShirt = `Crop Top: ${uSize};`;
+      } else if (lType.includes("singlet")) {
+        mainShirt = `Singlet: ${uSize};`;
+      } else if (lType.includes("kid")) {
+        mainShirt = `Kids Shirt: ${sizePart};`;
+      } else if (lType.includes("event") || lType.includes("shirt")) {
+        mainShirt = `Event Shirt: ${uSize};`;
+      } else {
+        mainShirt = `${typePart}: ${uSize};`;
+      }
+    } else {
+      // Just raw size string (e.g. "M", "7-8")
+      const uClean = clean.toUpperCase();
+      if (["1-2", "3-4", "5-6", "7-8", "9-11"].includes(clean)) {
+        mainShirt = `Kids Shirt: ${clean};`;
+      } else if (["2XS", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"].includes(uClean)) {
+        mainShirt = `Event Shirt: ${uClean};`;
+      } else {
+        mainShirt = `${clean};`;
+      }
+    }
+  }
+
+  // Normalize finisher shirt
+  let finisherShirt = "";
+  if (rawFinisher) {
+    let cleanF = rawFinisher.replace(/;+$/, "").trim();
+    if (cleanF.includes(":")) {
+      const [, sizePart] = cleanF.split(":", 2).map((s) => s.trim());
+      finisherShirt = `Finisher Shirt: ${sizePart.toUpperCase()};`;
+    } else {
+      const uClean = cleanF.toUpperCase();
+      if (["2XS", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"].includes(uClean)) {
+        finisherShirt = `Finisher Shirt: ${uClean};`;
+      } else {
+        finisherShirt = cleanF.startsWith("Finisher Shirt:") ? `${cleanF};` : `Finisher Shirt: ${cleanF};`;
+      }
+    }
+  }
+
+  // If 20KM and no finisher shirt found, default to "Finisher Shirt: M;"
+  const is20KM = String(runner.run_category || "").toUpperCase().startsWith("20K");
+  if (is20KM && !finisherShirt) {
+    finisherShirt = "Finisher Shirt: M;";
+  }
+
+  return { mainShirt, finisherShirt };
+};
+
+const onRunCategoryChange = () => {
+  if (editForm.value.run_category === "20KM" && !editForm.value.finisher_shirt_size) {
+    editForm.value.finisher_shirt_size = "Finisher Shirt: M;";
+  }
+};
+
+watch(
+  () => editForm.value?.run_category,
+  (newCat) => {
+    if (newCat === "20KM" && !editForm.value.finisher_shirt_size) {
+      editForm.value.finisher_shirt_size = "Finisher Shirt: M;";
+    }
+  }
+);
+
 const openEdit = () => {
   if (!selectedRunner.value) return;
 
@@ -1350,6 +1481,8 @@ const openEdit = () => {
     openUnlockPrompt(selectedRunner.value, "runner");
     return;
   }
+
+  const parsedShirts = parseRunnerShirtSelection(selectedRunner.value);
 
   // Deep-clone the relevant editable fields into editForm
   editForm.value = {
@@ -1364,10 +1497,12 @@ const openEdit = () => {
     contact_address: selectedRunner.value.contact_address || selectedRunner.value.address || "",
     participant_type: selectedRunner.value.participant_type || "",
     lsu_id_number: selectedRunner.value.lsu_id_number || "",
-    tshirt_size: selectedRunner.value.tshirt_size || "",
+    tshirt_size: parsedShirts.mainShirt,
     run_category: selectedRunner.value.run_category || "",
     run_number: selectedRunner.value.run_number || selectedRunner.value.bib_number || "",
     payment_status: selectedRunner.value.payment_status || "",
+    payment_type: selectedRunner.value.payment_type || "",
+    finisher_shirt_size: parsedShirts.finisherShirt,
     college_course: selectedRunner.value.college_course || "",
     college_year: selectedRunner.value.college_year || "",
     partner_office: selectedRunner.value.partner_office || "",
@@ -1389,18 +1524,65 @@ const saveEdit = async () => {
   if (!selectedRunner.value || isSaving.value) return;
   isSaving.value = true;
   try {
+    const is20KM = (editForm.value.run_category || selectedRunner.value.run_category || "").toUpperCase().startsWith("20K");
+
+    let mainShirt = (editForm.value.tshirt_size || "").trim();
+    if (mainShirt && !mainShirt.endsWith(";")) {
+      mainShirt += ";";
+    }
+
+    let combinedTshirt = mainShirt;
+    let finisherVal = (editForm.value.finisher_shirt_size || "").trim();
+    if (is20KM) {
+      if (!finisherVal) finisherVal = "Finisher Shirt: M;";
+      if (!finisherVal.startsWith("Finisher Shirt:")) {
+        finisherVal = `Finisher Shirt: ${finisherVal.replace(/;/g, "").trim()};`;
+      }
+      if (!finisherVal.endsWith(";")) {
+        finisherVal += ";";
+      }
+
+      // Strip any existing finisher shirt from mainShirt to prevent duplication
+      const cleanMain = mainShirt
+        .split(";")
+        .map((s) => s.trim())
+        .filter((s) => s && !/finisher/i.test(s))
+        .join("; ");
+      const finalMain = cleanMain ? (cleanMain.endsWith(";") ? cleanMain : cleanMain + ";") : "Event Shirt: M;";
+      combinedTshirt = `${finalMain} ${finisherVal}`.trim();
+    } else {
+      // Non-20KM: strip finisher shirt
+      const cleanMain = mainShirt
+        .split(";")
+        .map((s) => s.trim())
+        .filter((s) => s && !/finisher/i.test(s))
+        .join("; ");
+      combinedTshirt = cleanMain ? (cleanMain.endsWith(";") ? cleanMain : cleanMain + ";") : "";
+    }
+
+    const payload = {
+      ...editForm.value,
+      tshirt_size: combinedTshirt,
+      finisher_shirt_size: is20KM ? finisherVal : "",
+      bypass_lock: true,
+    };
+
     const res = await $fetch(`${endpoint.value}/api/animorun/${selectedRunner.value.id}/edit/`, {
       method: "PUT",
-      body: {
-        ...editForm.value,
-        bypass_lock: true,
-      },
+      body: payload,
     });
     // Merge changes back into both the list and the detail view
-    const updated = res.data || editForm.value;
+    const updated = res.data || payload;
     Object.assign(selectedRunner.value, updated);
+    selectedRunner.value.tshirt_size = combinedTshirt;
+    selectedRunner.value.finisher_shirt_size = is20KM ? finisherVal : "";
+
     const idx = registrations.value.findIndex((r) => r.id === selectedRunner.value.id);
-    if (idx !== -1) Object.assign(registrations.value[idx], updated);
+    if (idx !== -1) {
+      Object.assign(registrations.value[idx], updated);
+      registrations.value[idx].tshirt_size = combinedTshirt;
+      registrations.value[idx].finisher_shirt_size = is20KM ? finisherVal : "";
+    }
     isEditMode.value = false;
     editForm.value = {};
     showNotice(
@@ -3586,8 +3768,11 @@ const resetAllFilters = () => {
                 <div class="text-gray-600 dark:text-gray-400">
                   <span class="font-medium text-[11px] block text-gray-500">Payment Option</span>
                   <span class="font-bold text-xs capitalize text-gray-800 dark:text-gray-200">
-                    {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type ===
-                      'add_to_tuition' ? 'Add to Tuition' : 'Over the Counter / QR' }}
+                    {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' :
+                       runner.payment_type === 'family_salary_deduction' ? 'Family Salary Deduction' :
+                       runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' :
+                       runner.payment_type === 'over_the_counter' ? 'Over the Counter' :
+                       runner.payment_type === 'qr' ? 'QR' : 'Over-the-Counter / QR' }}
                   </span>
                 </div>
                 <div class="text-right">
@@ -4021,8 +4206,11 @@ const resetAllFilters = () => {
                     <!-- payment_option -->
                     <template v-else-if="col.key === 'payment_option'">
                       <span class="text-[10px] text-gray-600 dark:text-gray-300 capitalize">
-                        {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' : runner.payment_type ===
-                          'add_to_tuition' ? 'Add to Tuition' : 'Over-the-Counter / QR' }}
+                        {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' :
+                           runner.payment_type === 'family_salary_deduction' ? 'Family Salary Deduction' :
+                           runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' :
+                           runner.payment_type === 'over_the_counter' ? 'Over the Counter' :
+                           runner.payment_type === 'qr' ? 'QR' : 'Over-the-Counter / QR' }}
                       </span>
                     </template>
 
@@ -4447,11 +4635,27 @@ const resetAllFilters = () => {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">T-Shirt Size</label>
-                    <input v-model="editForm.tshirt_size" :class="inputCls" placeholder="e.g. M, L, XL" />
+                    <select v-model="editForm.tshirt_size" :class="inputCls">
+                      <option value="">-- Select Size --</option>
+                      <template v-for="shirtConfig in OFFICIAL_SHIRT_CONFIGS" :key="shirtConfig.id">
+                        <optgroup :label="shirtConfig.sizesGroupLabel">
+                          <option
+                            v-for="size in shirtConfig.sizes"
+                            :key="shirtConfig.id + '-' + size"
+                            :value="shirtConfig.shortLabel + ': ' + size + ';'">
+                            {{ shirtConfig.shortLabel }}: {{ size }};
+                          </option>
+                        </optgroup>
+                      </template>
+                      <!-- Fallback option for custom/non-standard values so dropdown is never blank -->
+                      <option v-if="editForm.tshirt_size && !isStandardShirtOption(editForm.tshirt_size)" :value="editForm.tshirt_size">
+                        {{ editForm.tshirt_size }}
+                      </option>
+                    </select>
                   </div>
                   <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Run Category</label>
-                    <select v-model="editForm.run_category" :class="inputCls">
+                    <select v-model="editForm.run_category" @change="onRunCategoryChange" :class="inputCls">
                       <option value="">-- Select --</option>
                       <option value="1KM">1 KM (Pet Run)</option>
                       <option value="3KM">3 KM</option>
@@ -4459,6 +4663,31 @@ const resetAllFilters = () => {
                       <option value="20KM">20 KM</option>
                     </select>
                   </div>
+                </div>
+
+                <!-- Finisher Shirt Size (20KM only) -->
+                <div v-if="editForm.run_category === '20KM' || (selectedRunner && selectedRunner.run_category === '20KM')">
+                  <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">
+                    <i class="fas fa-medal text-amber-500 mr-1"></i>Finisher Shirt Size
+                    <span class="ml-1 px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[9px] font-bold border border-amber-300 normal-case">20KM Inclusion</span>
+                  </label>
+                  <select v-model="editForm.finisher_shirt_size" :class="inputCls">
+                    <option value="">-- Select Finisher Shirt Size --</option>
+                    <template v-if="FINISHER_SHIRT_CONFIG">
+                      <optgroup :label="FINISHER_SHIRT_CONFIG.sizesGroupLabel">
+                        <option
+                          v-for="size in FINISHER_SHIRT_CONFIG.sizes"
+                          :key="'finisher-' + size"
+                          :value="'Finisher Shirt: ' + size + ';'">
+                          Finisher Shirt: {{ size }};
+                        </option>
+                      </optgroup>
+                    </template>
+                    <!-- Fallback option for custom/non-standard values so dropdown is never blank -->
+                    <option v-if="editForm.finisher_shirt_size && !isStandardFinisherOption(editForm.finisher_shirt_size)" :value="editForm.finisher_shirt_size">
+                      {{ editForm.finisher_shirt_size }}
+                    </option>
+                  </select>
                 </div>
 
                 <!-- Bib number -->
@@ -4475,6 +4704,19 @@ const resetAllFilters = () => {
                       <option value="Confirmed">Confirmed</option>
                     </select>
                   </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div>
+                  <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Payment Method</label>
+                  <select v-model="editForm.payment_type" :class="inputCls">
+                    <option value="">-- Select Payment Method --</option>
+                    <option value="salary_deduction">Salary Deduction</option>
+                    <option value="family_salary_deduction">Family Salary Deduction</option>
+                    <option value="add_to_tuition">Add to Tuition</option>
+                    <option value="over_the_counter">Over the Counter</option>
+                    <option value="qr">QR / GCash / Maya</option>
+                  </select>
                 </div>
 
                 <!-- Running Club & Batch -->
@@ -4495,7 +4737,7 @@ const resetAllFilters = () => {
             </div>
           </div>
 
-          <div class="lg:w-7/12">
+          <div class="lg:w-7/12" v-if="!isEditMode">
             <!-- Category & Addons / Pet Details -->
             <div :class="[
               'p-4 rounded-2xl border space-y-3 text-xs',
@@ -4676,7 +4918,8 @@ const resetAllFilters = () => {
           </div><!-- /Personal Details -->
 
           <!-- ── COMMUNICATION CHAT PANEL ────────────────────────────────────────────── -->
-          <div class="lg:w-80 shrink-0 flex flex-col mt-6 lg:mt-0">
+          <div class="lg:w-80 shrink-0 flex flex-col mt-6 lg:mt-0" v-if="!isEditMode">
+            
             <!-- Header -->
             <div class="flex items-center gap-2 mb-3 pb-2 border-b dark:border-gray-700">
               <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm">
