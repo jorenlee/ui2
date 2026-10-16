@@ -274,15 +274,34 @@ const fetchSlotCounts = async () => {
   }
 };
 
+const sortedSlotCategories = computed(() => {
+  const standardOrder = ["1KM", "3KM", "10KM", "20KM"];
+  return Object.keys(slotEditValues.value || {}).sort((a, b) => {
+    const idxA = standardOrder.indexOf(a);
+    const idxB = standardOrder.indexOf(b);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    const numA = parseInt(a, 10);
+    const numB = parseInt(b, 10);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return a.localeCompare(b);
+  });
+});
+
 const openSlotAdjustmentModal = () => {
   const standardCats = ["1KM", "3KM", "10KM", "20KM"];
   const initial = {};
-  for (const [cat, data] of Object.entries(slotData.value || {})) {
-    initial[cat] = data.max ?? 1000;
-  }
   for (const cat of standardCats) {
-    if (initial[cat] === undefined) {
+    if (slotData.value && slotData.value[cat] !== undefined) {
+      initial[cat] = slotData.value[cat]?.max ?? 1000;
+    } else {
       initial[cat] = cat === "1KM" ? 50 : (cat === "10KM" ? 375 : (cat === "20KM" ? 300 : 1000));
+    }
+  }
+  for (const [cat, data] of Object.entries(slotData.value || {})) {
+    if (initial[cat] === undefined) {
+      initial[cat] = data?.max ?? 1000;
     }
   }
   slotEditValues.value = initial;
@@ -6190,7 +6209,7 @@ const resetAllFilters = () => {
       class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm overflow-y-auto"
       @click.self="closeSlotAdjustmentModal">
       <div :class="[
-        'w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all space-y-5 relative overflow-hidden my-auto',
+        ' lg:max-w-xl w-full rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all relative overflow-hidden',
         props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
       ]">
         <!-- Top decorative gradient strip -->
@@ -6205,13 +6224,7 @@ const resetAllFilters = () => {
             <div>
               <div class="flex items-center gap-2">
                 <h3 class="text-lg font-black tracking-tight">Adjust Category Slot Limits</h3>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                  Live Dynamic
-                </span>
               </div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                Update max slot capacities per race distance. Changes apply instantly to both registration portals.
-              </p>
             </div>
           </div>
           <button
@@ -6224,7 +6237,7 @@ const resetAllFilters = () => {
         </div>
 
         <!-- Summary Metric Cards -->
-        <div class="grid grid-cols-3 gap-3">
+        <div class="grid grid-cols-3 gap-3 my-3">
           <div class="p-3 rounded-2xl border bg-slate-50 dark:bg-gray-900/60 dark:border-gray-700 text-center">
             <span class="text-[10px] uppercase font-bold text-gray-400 block">Total Slots</span>
             <span class="text-xl font-black text-emerald-600 dark:text-emerald-400">
@@ -6232,13 +6245,13 @@ const resetAllFilters = () => {
             </span>
           </div>
           <div class="p-3 rounded-2xl border bg-slate-50 dark:bg-gray-900/60 dark:border-gray-700 text-center">
-            <span class="text-[10px] uppercase font-bold text-gray-400 block">Total Registered</span>
+            <span class="text-[10px] uppercase font-bold text-gray-400 block"> Registered</span>
             <span class="text-xl font-black text-amber-500">
               {{ totalSlotsFilled.toLocaleString() }}
             </span>
           </div>
           <div class="p-3 rounded-2xl border bg-slate-50 dark:bg-gray-900/60 dark:border-gray-700 text-center">
-            <span class="text-[10px] uppercase font-bold text-gray-400 block">Total Remaining</span>
+            <span class="text-[10px] uppercase font-bold text-gray-400 block"> Remaining</span>
             <span class="text-xl font-black text-sky-500">
               {{ Math.max(0, modalTotalSlots - totalSlotsFilled).toLocaleString() }}
             </span>
@@ -6248,7 +6261,7 @@ const resetAllFilters = () => {
         <!-- Categories List -->
         <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
           <div
-            v-for="catKey in Object.keys(slotEditValues)"
+            v-for="catKey in sortedSlotCategories"
             :key="catKey"
             :class="[
               'p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col gap-2.5',
@@ -6257,22 +6270,10 @@ const resetAllFilters = () => {
           >
             <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2.5">
-                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm shadow-xs shrink-0"
-                  :class="[
-                    catKey === '1KM' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' :
-                    catKey === '3KM' ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' :
-                    catKey === '10KM' ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' :
-                    'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300'
-                  ]"
-                >
-                  <i :class="['fas', catKey === '1KM' ? 'fa-paw' : (catKey === '20KM' ? 'fa-trophy' : (catKey === '10KM' ? 'fa-medal' : 'fa-person-running'))]"></i>
-                </div>
+                
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="text-base font-black tracking-tight">{{ catKey }}</span>
-                    <span class="text-xs text-gray-400 font-medium">
-                      {{ catKey === '1KM' ? 'Pet Run' : (catKey === '3KM' ? 'Fun Run' : (catKey === '10KM' ? 'Challenge Run' : 'Half Marathon')) }}
-                    </span>
                   </div>
                   <div class="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
                     <span>Filled: <strong class="text-gray-700 dark:text-gray-200">{{ (slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) }}</strong></span>
@@ -6319,17 +6320,10 @@ const resetAllFilters = () => {
                 <div class="hidden sm:flex items-center gap-1">
                   <button
                     type="button"
-                    @click="adjustSlotBy(catKey, 50)"
+                    @click="adjustSlotBy(catKey, 500)"
                     class="px-2 py-1 rounded-lg text-[10px] font-bold border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
                   >
-                    +50
-                  </button>
-                  <button
-                    type="button"
-                    @click="adjustSlotBy(catKey, 100)"
-                    class="px-2 py-1 rounded-lg text-[10px] font-bold border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-                  >
-                    +100
+                    +500
                   </button>
                 </div>
               </div>
@@ -6350,7 +6344,7 @@ const resetAllFilters = () => {
         </div>
 
         <!-- Add Custom Category & Reset Defaults -->
-        <div class="pt-2 border-t dark:border-gray-700 flex items-center justify-between flex-wrap gap-2">
+        <div class="pt-2 border-t dark:border-gray-700 flex items-center justify-between flex-wrap gap-2 my-3">
           <div class="flex items-center gap-2">
             <input
               type="text"
@@ -6381,7 +6375,7 @@ const resetAllFilters = () => {
         <div class="pt-3 border-t dark:border-gray-700 flex items-center justify-between gap-3">
           <span class="text-[11px] text-gray-400 hidden sm:inline">
             <i class="fas fa-shield-halved text-emerald-500 mr-1"></i>
-            Stored directly in AnimoRunSlotAllocation table
+            The Emerald Run
           </span>
 
           <div class="flex items-center gap-2 ml-auto">
