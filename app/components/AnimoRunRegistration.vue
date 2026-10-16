@@ -9,70 +9,156 @@ import lsuIdVerifierLocalData from "~/animorun_lsuid_verifier.json";
 const lsuIdVerifierData = ref([]);
 
 // ── Slot Capacity Limits & Availability ─────────────────────────────────────
-// Dynamically fetched from backend /api/animorun/slot-count/ (models.AnimoRunSlotAllocation)
+// Dynamically fetched from backend /api/animorun/slot-count/ and /api/animorun/list/
+// Base acceptance submission is confirmed (paid registrations), not the total.
+// A gap allowance of 20 pending registrations is included beyond capacity.
+const GAP_ALLOWANCE = 20;
+
+const DEFAULT_SLOT_LIMITS = {
+  "1KM": 50,
+  "3KM": 350,
+  "10KM": 350,
+  "20KM": 350,
+};
+
 const slotData = ref({});
 const slotDataLoaded = ref(false);
 
-const fetchSlotCounts = async (endpointUrl) => {
-  try {
-    const rawUrl = endpointUrl || config?.public?.apiUrl || 'http://127.0.0.1:8000';
-    const url = String(rawUrl).replace(/\/+$/, '');
+const normalizeSlotCategory = (val) => {
+  const str = String(val || "").trim().toUpperCase();
+  if (str.includes("PET") || str.startsWith("1K") || str === "1") return "1KM";
+  if (str.startsWith("20K") || str === "20") return "20KM";
+  if (str.startsWith("10K") || str === "10") return "10KM";
+  if (str.startsWith("3K") || str === "3") return "3KM";
+  const prefix = str.split(" ")[0];
+  if (prefix.endsWith("KM")) return prefix;
+  if (prefix.endsWith("K")) return prefix + "M";
+  if (!isNaN(prefix)) return prefix + "KM";
+  return "3KM";
+};
 
-    // 1. Primary: fetch live dynamic slot allocation & counts from models.py via /api/animorun/slot-count/
-    const res = await $fetch(`${url}/api/animorun/slot-count/`);
-    if (res && typeof res === "object" && Object.keys(res).length > 0) {
-      slotData.value = { ...slotData.value, ...res };
-      slotDataLoaded.value = true;
-      return;
+const calculateSlotState = (conf, pend, maxSlots) => {
+  const confirmed = Math.max(0, Number(conf) || 0);
+  const pending = Math.max(0, Number(pend) || 0);
+  const total = confirmed + pending;
+  const max = Math.max(0, Number(maxSlots) || 350);
+
+  // Base acceptance submission is CONFIRMED, not the total.
+  // Add gap allowance of 20 pending registrations.
+  // Registration is full ONLY IF:
+  // 1) Total submissions reach/exceed base capacity + gap allowance (max + 20)
+  // OR 2) Confirmed has reached max capacity AND pending registrations have exhausted the 20 gap allowance
+  const is_full = (total >= max + GAP_ALLOWANCE) || (confirmed >= max && pending >= GAP_ALLOWANCE);
+  const remaining = Math.max(0, (max + GAP_ALLOWANCE) - total);
+  const confirmed_remaining = Math.max(0, max - confirmed);
+
+  return {
+    filled: confirmed, // base filled is confirmed, not total
+    confirmed,
+    pending,
+    total,
+    max,
+    gap_allowance: GAP_ALLOWANCE,
+    effective_max: max + GAP_ALLOWANCE,
+    remaining,
+    confirmed_remaining,
+    is_full,
+  };
+};
+
+const fetchSlotCounts = async (endpointUrl) => {
+  const rawUrl = endpointUrl || config?.public?.apiUrl || endpoint?.value || 'http://127.0.0.1:8000';
+  const url = String(rawUrl).replace(/\/+$/, '');
+
+  // 1. Fetch dynamic slot limits from models via /api/animorun/slot-count/
+  let dynamicLimits = {};
+  try {
+    const res = await $fetch(`${url}/api/animorun/slot-count/`, { timeout: 10000, cache: "no-store" });
+    if (res && typeof res === "object" && !Array.isArray(res) && Object.keys(res).length > 0) {
+      dynamicLimits = res;
     }
   } catch (err) {
     console.warn("Failed to fetch dynamic slot counts from /api/animorun/slot-count/:", err);
   }
 
-  // 2. Fallback: if slot-count endpoint is unreachable, query list count
+  // 2. Fetch full registration list from /api/animorun/list/ to get exact confirmed and pending counts
   try {
-    const rawUrl = endpointUrl || config?.public?.apiUrl || 'http://127.0.0.1:8000';
-    const url = String(rawUrl).replace(/\/+$/, '');
-    const list = await $fetch(`${url}/api/animorun/list/`);
+    let list = null;
+    try {
+      list = await $fetch(`${url}/api/animorun/list/`, { timeout: 15000, cache: "no-store" });
+    } catch (e) {
+      if (typeof window !== "undefined") {
+        list = await $fetch('/api/animorun/list/', { timeout: 15000, cache: "no-store" });
+      }
+    }
+
     if (Array.isArray(list)) {
-      const counts = {};
+      const breakdown = {
+        "1KM": { total: 0, confirmed: 0, pending: 0 },
+        "3KM": { total: 0, confirmed: 0, pending: 0 },
+        "10KM": { total: 0, confirmed: 0, pending: 0 },
+        "20KM": { total: 0, confirmed: 0, pending: 0 },
+      };
+
       list.forEach((r) => {
-        const val = String(r.run_category || "").trim().toUpperCase();
-        let norm = "3KM";
-        if (val.includes("PET") || val.startsWith("1K") || val === "1") norm = "1KM";
-        else if (val.startsWith("20K") || val === "20") norm = "20KM";
-        else if (val.startsWith("10K") || val === "10") norm = "10KM";
-        else if (val.startsWith("3K") || val === "3") norm = "3KM";
-        else {
-          const prefix = val.split(" ")[0];
-          if (prefix.endsWith("KM")) norm = prefix;
-          else if (prefix.endsWith("K")) norm = prefix + "M";
-          else if (!isNaN(prefix)) norm = prefix + "KM";
+        const norm = normalizeSlotCategory(r.run_category);
+        if (!breakdown[norm]) {
+          breakdown[norm] = { total: 0, confirmed: 0, pending: 0 };
         }
-        counts[norm] = (counts[norm] || 0) + 1;
+
+        const paymentStatus = String(r.payment_status || "").trim().toLowerCase();
+        const isConfirmed = paymentStatus === "confirmed";
+        const isPending = !paymentStatus || paymentStatus.startsWith("pending");
+
+        breakdown[norm].total++;
+        if (isConfirmed) breakdown[norm].confirmed++;
+        if (isPending) breakdown[norm].pending++;
       });
 
-      const fallbackSlots = {};
-      for (const [cat, filled] of Object.entries(counts)) {
-        const existingMax = slotData.value[cat]?.max || 1000;
-        fallbackSlots[cat] = {
-          filled,
-          max: existingMax,
-          remaining: Math.max(0, existingMax - filled),
-          is_full: filled >= existingMax,
-        };
+      const updatedSlots = {};
+      const categories = ["1KM", "3KM", "10KM", "20KM"];
+      for (const cat of categories) {
+        const catStats = breakdown[cat] || { total: 0, confirmed: 0, pending: 0 };
+        const maxSlots = Number(dynamicLimits[cat]?.max) || DEFAULT_SLOT_LIMITS[cat] || 350;
+        updatedSlots[cat] = calculateSlotState(catStats.confirmed, catStats.pending, maxSlots);
       }
-      slotData.value = { ...slotData.value, ...fallbackSlots };
+
+      slotData.value = updatedSlots;
       slotDataLoaded.value = true;
+      return;
     }
-  } catch (fallbackErr) {
-    console.warn("Fallback slot count also failed:", fallbackErr);
+  } catch (listErr) {
+    console.warn("Fallback to slot-count endpoint limits:", listErr);
+  }
+
+  // 3. Fallback: if list was unreachable, use dynamicLimits from /api/animorun/slot-count/
+  if (Object.keys(dynamicLimits).length > 0) {
+    const fallbackSlots = {};
+    for (const [cat, data] of Object.entries(dynamicLimits)) {
+      const maxSlots = Number(data.max) || DEFAULT_SLOT_LIMITS[cat] || 350;
+      const conf = Number(data.confirmed ?? data.filled) || 0;
+      const pend = Number(data.pending) || 0;
+      fallbackSlots[cat] = calculateSlotState(conf, pend, maxSlots);
+    }
+    slotData.value = fallbackSlots;
+    slotDataLoaded.value = true;
   }
 };
 
 const getSlotInfo = (categoryId) => {
   const norm = categoryId === '1K' ? '1KM' : (categoryId || '3KM');
-  return slotData.value[norm] || { filled: 0, max: 0, remaining: 9999, is_full: false };
+  return slotData.value[norm] || {
+    filled: 0,
+    confirmed: 0,
+    pending: 0,
+    total: 0,
+    max: DEFAULT_SLOT_LIMITS[norm] || 350,
+    gap_allowance: GAP_ALLOWANCE,
+    effective_max: (DEFAULT_SLOT_LIMITS[norm] || 350) + GAP_ALLOWANCE,
+    remaining: 9999,
+    confirmed_remaining: 9999,
+    is_full: false,
+  };
 };
 
 const isCategoryFull = (categoryId) => {
