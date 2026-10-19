@@ -75,7 +75,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
         </div> -->
   <!-- <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/ANIMORUN/LSUANIMORUN.png" -->
         <!-- Full-width banner image -->
-        <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/RQAT.gif"
+        <img src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/RQAT.png"
           alt="LSU Animo Run 2026 – The Emerald Run, November 14, 2026, Aguada, Ozamiz City" class="w-full h-auto block"
           loading="lazy" decoding="async" fetchpriority="low" />
         <!-- Bottom vignette blend -->
