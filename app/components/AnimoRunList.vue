@@ -231,8 +231,8 @@ const categoryCounts = computed(() => {
   const counts = { "1KM": 0, "3KM": 0, "10KM": 0, "20KM": 0 };
   registrations.value.forEach((r) => {
     const norm = normalizeCategory(r.run_category);
-    if (counts[norm] !== undefined) {
-      counts[norm]++;
+    if (norm) {
+      counts[norm] = (counts[norm] || 0) + 1;
     }
   });
   return counts;
@@ -246,14 +246,82 @@ const isSavingSlots = ref(false);
 const slotEditValues = ref({});
 const newCategoryCode = ref("");
 
+// Helper: get total registered runners for a category including pending
+const getSlotCategoryTotal = (catKey) => {
+  const item = slotData.value?.[catKey];
+  if (item) {
+    if (item.total !== undefined && item.total !== null) {
+      return Number(item.total) || 0;
+    }
+    const conf = Number(item.confirmed ?? item.filled) || 0;
+    const pend = Number(item.pending) || 0;
+    return conf + pend;
+  }
+  return categoryCounts.value?.[catKey] || 0;
+};
+
+// Helper: get confirmed registered count for a category
+const getSlotCategoryConfirmed = (catKey) => {
+  const item = slotData.value?.[catKey];
+  if (item && item.confirmed !== undefined && item.confirmed !== null) {
+    return Number(item.confirmed) || 0;
+  }
+  if (item && item.filled !== undefined && item.filled !== null && item.pending !== undefined) {
+    return Number(item.filled) || 0;
+  }
+  return registrations.value.filter((r) => normalizeCategory(r.run_category) === catKey && r.payment_status === "Confirmed").length;
+};
+
+// Helper: get pending registered count for a category
+const getSlotCategoryPending = (catKey) => {
+  const item = slotData.value?.[catKey];
+  if (item && item.pending !== undefined && item.pending !== null) {
+    return Number(item.pending) || 0;
+  }
+  return registrations.value.filter((r) => {
+    if (normalizeCategory(r.run_category) !== catKey) return false;
+    const status = String(r.payment_status || "").trim().toLowerCase();
+    return !status || status.startsWith("pending");
+  }).length;
+};
+
 const totalSlotsAvailable = computed(() => {
   if (!slotData.value) return 0;
   return Object.values(slotData.value).reduce((sum, item) => sum + (Number(item?.max) || 0), 0);
 });
 
+// Total slots filled across all categories (confirmed + pending)
 const totalSlotsFilled = computed(() => {
-  if (!slotData.value) return 0;
-  return Object.values(slotData.value).reduce((sum, item) => sum + (Number(item?.filled) || 0), 0);
+  if (slotData.value && Object.keys(slotData.value).length > 0) {
+    return Object.values(slotData.value).reduce((sum, item) => {
+      const catTotal = item?.total !== undefined && item?.total !== null
+        ? Number(item.total)
+        : ((Number(item?.confirmed ?? item?.filled) || 0) + (Number(item?.pending) || 0));
+      return sum + (Number(catTotal) || 0);
+    }, 0);
+  }
+  return registrations.value.length;
+});
+
+const totalSlotsConfirmed = computed(() => {
+  if (slotData.value && Object.keys(slotData.value).length > 0) {
+    return Object.values(slotData.value).reduce((sum, item) => {
+      return sum + (Number(item?.confirmed ?? item?.filled) || 0);
+    }, 0);
+  }
+  return registrations.value.filter((r) => r.payment_status === "Confirmed").length;
+});
+
+const totalSlotsPending = computed(() => {
+  if (slotData.value && Object.keys(slotData.value).length > 0) {
+    return Object.values(slotData.value).reduce((sum, item) => {
+      return sum + (Number(item?.pending) || 0);
+    }, 0);
+  }
+  return registrations.value.filter((r) => {
+    const s = String(r.payment_status || "").trim().toLowerCase();
+    return !s || s.startsWith("pending");
+  }).length;
 });
 
 const modalTotalSlots = computed(() => {
@@ -6249,6 +6317,9 @@ const resetAllFilters = () => {
             <span class="text-xl font-black text-amber-500">
               {{ totalSlotsFilled.toLocaleString() }}
             </span>
+            <span v-if="totalSlotsPending > 0" class="text-[9px] text-gray-400 block mt-0.5 truncate" :title="`${totalSlotsConfirmed.toLocaleString()} Confirmed · ${totalSlotsPending.toLocaleString()} Pending`">
+              {{ totalSlotsConfirmed.toLocaleString() }} conf + {{ totalSlotsPending.toLocaleString() }} pend
+            </span>
           </div>
           <div class="p-3 rounded-2xl border bg-slate-50 dark:bg-gray-900/60 dark:border-gray-700 text-center">
             <span class="text-[10px] uppercase font-bold text-gray-400 block"> Remaining</span>
@@ -6270,18 +6341,21 @@ const resetAllFilters = () => {
           >
             <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2.5">
-                
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="text-base font-black tracking-tight">{{ catKey }}</span>
                   </div>
-                  <div class="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">
-                    <span>Filled: <strong class="text-gray-700 dark:text-gray-200">{{ (slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) }}</strong></span>
-                    <span>·</span>
-                    <span>Remaining: <strong :class="(slotEditValues[catKey] - (slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0))) <= 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'">
-                      {{ Math.max(0, slotEditValues[catKey] - (slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0))) }}
+                  <div class="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 flex-wrap">
+                   
+                    <span v-if="getSlotCategoryPending(catKey) > 0" class="text-[10px] text-amber-600 dark:text-amber-400 font-medium uppercase">
+                      ({{ getSlotCategoryConfirmed(catKey) }} confirm + {{ getSlotCategoryPending(catKey) }} pending)
+                    </span>
+                     <span>= <strong class="text-gray-700 dark:text-gray-200">{{ getSlotCategoryTotal(catKey) }}</strong></span>
+                    <span>+</span>
+                    <span>Remaining: <strong :class="(slotEditValues[catKey] - getSlotCategoryTotal(catKey)) <= 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'">
+                      {{ Math.max(0, slotEditValues[catKey] - getSlotCategoryTotal(catKey)) }}
                     </strong></span>
-                    <span v-if="(slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) >= slotEditValues[catKey]" class="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-red-500 text-white">
+                    <span v-if="getSlotCategoryTotal(catKey) >= slotEditValues[catKey]" class="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-red-500 text-white">
                       FULL
                     </span>
                   </div>
@@ -6304,20 +6378,20 @@ const resetAllFilters = () => {
                     min="0"
                     step="1"
                     v-model.number="slotEditValues[catKey]"
-                    class="w-20 sm:w-24 py-1.5 text-center font-black text-sm bg-transparent outline-none focus:ring-0 border-x dark:border-gray-600 text-gray-800 dark:text-white"
+                    class="w-16 py-1.5 text-center font-black text-sm bg-transparent outline-none focus:ring-0 border-x dark:border-gray-600 text-gray-800 dark:text-white"
                   />
                   <button
                     type="button"
-                    @click="adjustSlotBy(catKey, 25)"
+                    @click="adjustSlotBy(catKey, 500)"
                     class="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition text-xs font-bold"
-                    title="Increase by 25"
+                    title="Increase by 500"
                   >
                     <i class="fas fa-plus text-[10px]"></i>
                   </button>
                 </div>
 
                 <!-- Quick Presets -->
-                <div class="hidden sm:flex items-center gap-1">
+                <!-- <div class="hidden sm:flex items-center gap-1">
                   <button
                     type="button"
                     @click="adjustSlotBy(catKey, 500)"
@@ -6325,7 +6399,7 @@ const resetAllFilters = () => {
                   >
                     +500
                   </button>
-                </div>
+                </div> -->
               </div>
             </div>
 
@@ -6334,10 +6408,10 @@ const resetAllFilters = () => {
               <div
                 class="h-full transition-all duration-300 rounded-full"
                 :class="[
-                  ((slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) / (slotEditValues[catKey] || 1)) >= 1 ? 'bg-red-500' :
-                  ((slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) / (slotEditValues[catKey] || 1)) >= 0.8 ? 'bg-amber-500' : 'bg-emerald-500'
+                  (getSlotCategoryTotal(catKey) / (slotEditValues[catKey] || 1)) >= 1 ? 'bg-red-500' :
+                  (getSlotCategoryTotal(catKey) / (slotEditValues[catKey] || 1)) >= 0.8 ? 'bg-amber-500' : 'bg-emerald-500'
                 ]"
-                :style="{ width: `${Math.min(100, Math.round(((slotData[catKey]?.filled !== undefined ? slotData[catKey]?.filled : (categoryCounts[catKey] || 0)) / (slotEditValues[catKey] || 1)) * 100))}%` }"
+                :style="{ width: `${Math.min(100, Math.round((getSlotCategoryTotal(catKey) / (slotEditValues[catKey] || 1)) * 100))}%` }"
               ></div>
             </div>
           </div>
