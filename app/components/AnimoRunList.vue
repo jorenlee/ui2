@@ -867,10 +867,19 @@ onMounted(() => {
   fetchBatches();
   fetchSlotCounts();
   startPolling();
+  initScrollObservers();
 });
 
 onUnmounted(() => {
   stopPolling();
+  if (mobileObserver) {
+    mobileObserver.disconnect();
+    mobileObserver = null;
+  }
+  if (desktopObserver) {
+    desktopObserver.disconnect();
+    desktopObserver = null;
+  }
 });
 
 const getImageUrl = (val) => {
@@ -2747,41 +2756,49 @@ const toggleChatFilter = () => {
   selectedChatFilter.value = selectedChatFilter.value === "new" ? "All" : "new";
 };
 
+// ── High-Performance Caching for Runner Message Queries & LocalStorage ──
+const readIdsCache = new Map();
+const messageStatsCache = new Map();
+
+const getCachedReadIds = (runnerId) => {
+  if (readIdsCache.has(runnerId)) return readIdsCache.get(runnerId);
+  let ids = [];
+  try {
+    const stored = localStorage.getItem(`animorun_read_${runnerId}`);
+    if (stored) ids = JSON.parse(stored);
+  } catch (e) {}
+  readIdsCache.set(runnerId, ids);
+  return ids;
+};
+
 // Determines message stats for a given runner (total count, new unread queries)
+// Memoized to avoid synchronous localStorage blocking on thousands of runners
 const getRunnerMessageStats = (runner) => {
   if (!runner) return { total: 0, newCount: 0, hasNew: false, unreadQueries: [] };
   const logs = Array.isArray(runner.communication_logs) ? runner.communication_logs : [];
   if (!logs.length) return { total: 0, newCount: 0, hasNew: false, unreadQueries: [] };
 
-  let readIds = [];
-  try {
-    const stored = localStorage.getItem(`animorun_read_${runner.id}`);
-    if (stored) readIds = JSON.parse(stored);
-  } catch (e) {}
+  const lastMsgTime = logs[logs.length - 1]?.timestamp || logs[logs.length - 1]?.created_at || '';
+  const cacheKey = `${runner.id}_${logs.length}_${lastMsgTime}`;
+  if (messageStatsCache.has(cacheKey)) return messageStatsCache.get(cacheKey);
 
+  const readIds = getCachedReadIds(runner.id);
   const unreadQueries = [];
-  logs.forEach((msg, idx) => {
-    // Only messages from registrant/runner can be new inquiries
+  for (let idx = 0; idx < logs.length; idx++) {
+    const msg = logs[idx];
     const isRegistrant = msg.sender_type === 'registrant' || (msg.sender_type !== 'admin' && msg.sender !== 'Admin');
-    if (!isRegistrant) return;
-
-    if (msg.read_by_admin === true || msg.is_read === true) return;
-    if (msg.message_id && readIds.includes(msg.message_id)) return;
-    if (msg.timestamp && readIds.includes(msg.timestamp)) return;
-
-    // If an admin replied later in the conversation, the inquiry has been addressed
+    if (!isRegistrant) continue;
+    if (msg.read_by_admin === true || msg.is_read === true) continue;
+    if (msg.message_id && readIds.includes(msg.message_id)) continue;
+    if (msg.timestamp && readIds.includes(msg.timestamp)) continue;
     const hasSubsequentAdminReply = logs.slice(idx + 1).some(m => m.sender_type === 'admin' || m.sender === 'Admin');
-    if (hasSubsequentAdminReply) return;
-
+    if (hasSubsequentAdminReply) continue;
     unreadQueries.push(msg);
-  });
+  }
 
-  return {
-    total: logs.length,
-    newCount: unreadQueries.length,
-    hasNew: unreadQueries.length > 0,
-    unreadQueries,
-  };
+  const result = { total: logs.length, newCount: unreadQueries.length, hasNew: unreadQueries.length > 0, unreadQueries };
+  messageStatsCache.set(cacheKey, result);
+  return result;
 };
 
 const totalNewQueriesCount = computed(() => {
@@ -2815,6 +2832,8 @@ const markRunnerMessagesAsRead = async (runner) => {
   try {
     localStorage.setItem(`animorun_read_${runner.id}`, JSON.stringify(readIds));
   } catch (e) {}
+  readIdsCache.set(runner.id, readIds);
+  messageStatsCache.clear();
 
   if (updatedAny) {
     runner.communication_logs = newLogs;
@@ -2852,8 +2871,51 @@ const applyChatTemplate = (text) => {
 };
 
 
+// ── Progressive Rendering for faster load & smooth transitions ────────────
+const INITIAL_CHUNK = 80;
+const CHUNK_STEP = 60;
+const renderLimit = ref(INITIAL_CHUNK);
+const loadMoreSentinelMobile = ref(null);
+const loadMoreSentinelDesktop = ref(null);
+let mobileObserver = null;
+let desktopObserver = null;
+
+const displayedRegistrations = computed(() => filteredRegistrations.value.slice(0, renderLimit.value));
+const hasMoreToRender = computed(() => renderLimit.value < filteredRegistrations.value.length);
+
+const loadMoreRegistrations = () => {
+  renderLimit.value = Math.min(renderLimit.value + CHUNK_STEP, filteredRegistrations.value.length);
+};
+const loadAllRegistrations = () => {
+  renderLimit.value = filteredRegistrations.value.length;
+};
+
+const initScrollObservers = () => {
+  if (typeof IntersectionObserver === 'undefined') return;
+  if (mobileObserver) mobileObserver.disconnect();
+  if (desktopObserver) desktopObserver.disconnect();
+  const handleIntersect = (entries) => {
+    if (entries[0]?.isIntersecting && hasMoreToRender.value) loadMoreRegistrations();
+  };
+  mobileObserver = new IntersectionObserver(handleIntersect, { rootMargin: '300px' });
+  desktopObserver = new IntersectionObserver(handleIntersect, { rootMargin: '300px' });
+  nextTick(() => {
+    if (loadMoreSentinelMobile.value) mobileObserver.observe(loadMoreSentinelMobile.value);
+    if (loadMoreSentinelDesktop.value) desktopObserver.observe(loadMoreSentinelDesktop.value);
+  });
+};
+
+watch(loadMoreSentinelMobile, (el) => { if (mobileObserver && el) mobileObserver.observe(el); });
+watch(loadMoreSentinelDesktop, (el) => { if (desktopObserver && el) desktopObserver.observe(el); });
+
 // ── Quick Filter Helpers & Accordion State ─────────────────────────
 const isFilterExpanded = ref(false);
+
+// Reset render limit when filters change
+watch(
+  [searchQuery, selectedAcademicUnit, selectedCategory, selectedStatus, selectedParticipantType, selectedAgeGroup, selectedChatFilter, selectedBatch, selectedLockStatus, dateFrom, dateTo, sortBy],
+  () => { renderLimit.value = INITIAL_CHUNK; }
+);
 
 const activeFilterCount = computed(() => {
   let count = 0;
@@ -2981,7 +3043,7 @@ const resetAllFilters = () => {
                 ]"
                 :title="isFilterExpanded ? 'Minimize / Collapse filters' : 'Expand / Show advanced filters'"
               >
-                <i :class="['fas fa-sliders text-[11px] transition-transform duration-200', isFilterExpanded ? 'text-amber-300' : '']"></i>
+                <i :class="['fas fa-sliders text-[11px] transition-transform duration-300 ease-in-out', isFilterExpanded ? 'text-amber-300 rotate-90' : '']"></i>
                 <span>Filters</span>
                 <!-- Active badge count if any advanced filter is set -->
                 <span
@@ -2997,7 +3059,7 @@ const resetAllFilters = () => {
                 </span>
                 <!-- Accordion Chevron Arrow -->
                 <i :class="[
-                  'fas fa-chevron-down text-[10px] transition-transform duration-200 ml-0.5',
+                  'fas fa-chevron-down text-[10px] transition-transform duration-300 ease-in-out ml-0.5',
                   isFilterExpanded ? 'rotate-180' : ''
                 ]"></i>
               </button>
@@ -3081,7 +3143,7 @@ const resetAllFilters = () => {
           <!-- ── ACTIVE FILTER PILLS (SHOWN WHEN MINIMIZED BUT ADVANCED FILTERS ACTIVE) ── -->
           <div
             v-if="!isFilterExpanded && activeFilterCount > 0"
-            class="flex items-center gap-1.5 pt-2.5 mt-2 border-t dark:border-gray-700/60 flex-wrap text-xs"
+            class="flex items-center gap-1.5 pt-2.5 mt-2 border-t dark:border-gray-700/60 flex-wrap text-xs animate-[fadeSlideIn_0.2s_ease-out]"
           >
             <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1 mr-1">
               <i class="fas fa-filter text-[10px] text-emerald-500"></i> Active:
@@ -3188,15 +3250,12 @@ const resetAllFilters = () => {
           </div>
 
           <!-- ── ACCORDION EXPANDED SECTION (TOGGLE MINIMIZE / EXPAND) ── -->
-          <transition
-            enter-active-class="transition-all duration-300 ease-out"
-            enter-from-class="opacity-0 max-h-0 overflow-hidden"
-            enter-to-class="opacity-100 max-h-[1500px]"
-            leave-active-class="transition-all duration-200 ease-in"
-            leave-from-class="opacity-100 max-h-[1500px]"
-            leave-to-class="opacity-0 max-h-0 overflow-hidden"
+          <div
+            class="accordion-wrapper"
+            :class="{ 'is-expanded': isFilterExpanded }"
           >
-            <div v-show="isFilterExpanded" class="pt-3.5 mt-3 border-t dark:border-gray-700/70 space-y-3.5">
+            <div class="accordion-inner">
+              <div class="pt-3.5 mt-3 border-t dark:border-gray-700/70 space-y-3.5">
               
               <!-- ── STATS SUMMARY CARDS (4 CLEAN METRIC BOXES) ── -->
               <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -3690,15 +3749,15 @@ const resetAllFilters = () => {
                 <button
                   type="button"
                   @click="isFilterExpanded = false"
-                  class="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 font-semibold flex items-center gap-1 cursor-pointer ml-auto"
+                  class="text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-semibold flex items-center gap-1 cursor-pointer ml-auto transition hover:scale-105 active:scale-95"
                 >
                   <span>Collapse filters</span>
-                  <i class="fas fa-chevron-up text-[10px]"></i>
+                  <i class="fas fa-chevron-up text-[10px] transition-transform duration-200"></i>
                 </button>
               </div>
-
             </div>
-          </transition>
+            </div>
+          </div>
         </div>
       </div>
       <!-- PARTICIPANTS VIEW (RESPONSIVE: MOBILE CARDS + DESKTOP TABLE) -->
@@ -3766,7 +3825,7 @@ const resetAllFilters = () => {
 
           <!-- MOBILE ACTUAL CARDS -->
           <template v-else-if="filteredRegistrations.length > 0">
-            <div v-for="runner in filteredRegistrations" :key="'m-' + runner.id" :class="[
+            <div v-for="runner in displayedRegistrations" :key="'m-' + runner.id" :class="[
               'p-4 rounded-2xl border transition-all duration-200 shadow-sm space-y-3',
               selectedIds.includes(runner.id)
                 ? (props.darkMode ? 'bg-emerald-950/30 border-emerald-700' : 'bg-emerald-50/80 border-emerald-300')
@@ -3905,6 +3964,25 @@ const resetAllFilters = () => {
                 </button>
               </div>
             </div>
+
+            <!-- Mobile Progressive Load More -->
+            <div v-if="hasMoreToRender && !isInitialLoading"
+              class="p-3 text-center bg-slate-50/50 dark:bg-gray-900/30 rounded-2xl space-y-2 mt-1">
+              <div class="text-[11px] text-gray-500 dark:text-gray-400">
+                Showing <strong class="text-emerald-600 dark:text-emerald-400">{{ displayedRegistrations.length }}</strong> of {{ filteredRegistrations.length }}
+              </div>
+              <div class="flex items-center justify-center gap-2">
+                <button type="button" @click="loadMoreRegistrations"
+                  class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold transition cursor-pointer active:scale-95">
+                  <i class="fas fa-angles-down text-[10px] mr-1"></i> Load More
+                </button>
+                <button type="button" @click="loadAllRegistrations"
+                  class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 text-xs font-semibold transition cursor-pointer active:scale-95">
+                  Show All ({{ filteredRegistrations.length }})
+                </button>
+              </div>
+            </div>
+            <div ref="loadMoreSentinelMobile" class="h-1 w-full"></div>
           </template>
 
           <!-- MOBILE EMPTY STATE -->
@@ -4053,7 +4131,7 @@ const resetAllFilters = () => {
 
               <!-- DESKTOP ACTUAL ROWS -->
               <template v-else-if="filteredRegistrations.length > 0">
-                <tr v-for="runner in filteredRegistrations" :key="runner.id" :class="[
+                <tr v-for="runner in displayedRegistrations" :key="runner.id" :class="[
                   'hover:bg-emerald-50/70 dark:hover:bg-gray-700/40 transition',
                   selectedIds.includes(runner.id) ? (props.darkMode ? 'bg-emerald-950/30' : 'bg-emerald-50/80') : '',
                 ]">
@@ -4412,6 +4490,27 @@ const resetAllFilters = () => {
                     </button>
                   </td>
                 </tr>
+                <!-- Desktop Progressive Load More Row -->
+                <tr v-if="hasMoreToRender">
+                  <td :colspan="activeTableColumns.length + 3" class="p-3 text-center bg-slate-50/60 dark:bg-gray-900/40">
+                    <div class="flex items-center justify-between px-3 py-1">
+                      <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                        <i class="fas fa-layer-group text-emerald-500"></i>
+                        Showing <strong class="text-gray-800 dark:text-gray-200 mx-1">{{ displayedRegistrations.length }}</strong> of {{ filteredRegistrations.length }} runners
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <button type="button" @click="loadMoreRegistrations"
+                          class="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer active:scale-95">
+                          <i class="fas fa-angles-down text-[10px]"></i> Load More
+                        </button>
+                        <button type="button" @click="loadAllRegistrations"
+                          class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 text-xs font-semibold transition cursor-pointer active:scale-95">
+                          Show All ({{ filteredRegistrations.length }})
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
               </template>
 
               <!-- DESKTOP EMPTY STATE -->
@@ -4434,6 +4533,7 @@ const resetAllFilters = () => {
               </tr>
             </tbody>
           </table>
+          <div ref="loadMoreSentinelDesktop" class="h-1 w-full"></div>
         </div>
       </div>
     </div>
@@ -6481,4 +6581,29 @@ const resetAllFilters = () => {
 
 </template>
 
-<style scoped></style>
+<style scoped>
+/* 60fps CSS Grid Accordion */
+.accordion-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 320ms cubic-bezier(0.25, 1, 0.5, 1), opacity 260ms cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: grid-template-rows, opacity;
+  pointer-events: none;
+}
+.accordion-wrapper.is-expanded {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  pointer-events: auto;
+}
+.accordion-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Fade-slide-in for pills */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
