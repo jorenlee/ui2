@@ -152,6 +152,7 @@ const searchQuery = ref("");
 const selectedCategory = ref("All");
 const selectedStatus = ref("All");
 const selectedPaymentType = ref("All"); // "All", "add_to_tuition", "salary_deduction", "family_salary_deduction", "over_the_counter", "qr", "complimentary", "sponsor"
+const selectedReceipt = ref("All"); // "All", "has_receipt", "without_receipt"
 const selectedParticipantType = ref("All");
 const selectedAgeGroup = ref("All");
 const selectedAcademicUnit = ref("All"); // "All", "HEU", "BEU", "Grade School", "JHS", "SHS", or specific course
@@ -376,6 +377,19 @@ const paymentMethodCounts = computed(() => {
     }
   });
   return counts;
+});
+
+const receiptCounts = computed(() => {
+  let hasReceipt = 0;
+  let withoutReceipt = 0;
+  registrations.value.forEach((r) => {
+    if (r.proof_of_payment) {
+      hasReceipt++;
+    } else {
+      withoutReceipt++;
+    }
+  });
+  return { hasReceipt, withoutReceipt };
 });
 
 // ── Multi-Confirm State ─────────────────────────────────────────────────────
@@ -1143,7 +1157,7 @@ const currentOperator = computed(() => user.value?.email || user.value?.name || 
 
 // ── Sorting state ──────────────────────────────────────────────────────────
 const sortBy = ref("date_desc");
-// Options: "date_desc", "date_asc", "name_asc", "name_desc", "bib_asc", "batch_asc"
+// Options: "date_desc", "date_asc", "name_asc", "name_desc", "bib_asc", "batch_asc", "shirt_asc", "receipt_desc", "receipt_asc"
 
 const toggleSort = (field) => {
   if (field === "name") {
@@ -1156,6 +1170,8 @@ const toggleSort = (field) => {
     sortBy.value = sortBy.value === "batch_asc" ? "date_desc" : "batch_asc";
   } else if (field === "shirt") {
     sortBy.value = sortBy.value === "shirt_asc" ? "date_desc" : "shirt_asc";
+  } else if (field === "receipt") {
+    sortBy.value = sortBy.value === "receipt_desc" ? "receipt_asc" : "receipt_desc";
   }
 };
 
@@ -1261,6 +1277,14 @@ const filteredRegistrations = computed(() => {
       }
     }
 
+    // Receipt Filter
+    let matchesReceipt = true;
+    if (selectedReceipt.value === "has_receipt") {
+      matchesReceipt = !!item.proof_of_payment;
+    } else if (selectedReceipt.value === "without_receipt") {
+      matchesReceipt = !item.proof_of_payment;
+    }
+
     const matchesType = selectedParticipantType.value === "All" || item.participant_type === selectedParticipantType.value;
 
     // Academic Unit Filter (HEU: All Bachelor Degrees, BEU: Grade School, JHS, SHS)
@@ -1324,7 +1348,7 @@ const filteredRegistrations = computed(() => {
       matchesChat = getRunnerMessageStats(item).total === 0;
     }
 
-    return matchesQuery && matchesCategory && matchesStatus && matchesPaymentType && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate && matchesChat;
+    return matchesQuery && matchesCategory && matchesStatus && matchesPaymentType && matchesReceipt && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate && matchesChat;
   });
 
   // Sorting
@@ -1358,6 +1382,18 @@ const filteredRegistrations = computed(() => {
       const idxA = sizeOrder.indexOf(szA);
       const idxB = sizeOrder.indexOf(szB);
       return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+    }
+    if (sortBy.value === "receipt_desc") {
+      const hasA = a.proof_of_payment ? 1 : 0;
+      const hasB = b.proof_of_payment ? 1 : 0;
+      if (hasA !== hasB) return hasB - hasA;
+      return (new Date(b.created_at || 0)) - (new Date(a.created_at || 0));
+    }
+    if (sortBy.value === "receipt_asc") {
+      const hasA = a.proof_of_payment ? 1 : 0;
+      const hasB = b.proof_of_payment ? 1 : 0;
+      if (hasA !== hasB) return hasA - hasB;
+      return (new Date(b.created_at || 0)) - (new Date(a.created_at || 0));
     }
     return 0;
   });
@@ -2011,6 +2047,17 @@ const csvParseErrors = ref([]);
 const isImportingCsv = ref(false);
 const csvUploadFileName = ref("");
 
+// ── CSV Import for BEU & HEU Students ──────────────────────────────────────────
+const studentCsvFileInputRef = ref(null);
+const isStudentCsvModalOpen = ref(false);
+const studentImportUnit = ref("BEU"); // "BEU" or "HEU"
+const studentRawRows = ref([]);
+const studentParsedRunners = ref([]);
+const studentSkippedRunners = ref([]);
+const studentCsvUploadFileName = ref("");
+const isImportingStudentCsv = ref(false);
+const studentCsvActiveTab = ref("valid"); // "valid" or "skipped"
+
 const csvImportStats = computed(() => {
   const list = csvParsedRunners.value;
   return {
@@ -2181,8 +2228,16 @@ const triggerCsvUpload = () => {
   }
 };
 
-// Robust CSV Line Parser supporting RFC 4180 quotes & escaped commas
+// Robust CSV Line Parser supporting RFC 4180 quotes & escaped commas, tabs, and semicolons
 const parseCsvText = (text) => {
+  const firstLine = text.split(/\r\n|\r|\n/)[0] || "";
+  let delimiter = ",";
+  if (!firstLine.includes(",") && firstLine.includes("\t")) {
+    delimiter = "\t";
+  } else if (!firstLine.includes(",") && firstLine.includes(";")) {
+    delimiter = ";";
+  }
+
   const lines = [];
   let currentRow = [];
   let currentField = "";
@@ -2204,7 +2259,7 @@ const parseCsvText = (text) => {
     } else {
       if (char === '"') {
         inQuotes = true;
-      } else if (char === ",") {
+      } else if (char === delimiter) {
         currentRow.push(currentField.trim());
         currentField = "";
       } else if (char === "\r" || char === "\n") {
@@ -2252,6 +2307,38 @@ const handleCsvFileSelected = async (event) => {
     }
 
     const rawHeaders = rows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));
+
+    // Check if this CSV is specifically a BEU/HEU Student CSV
+    const isStudentCsv =
+      rawHeaders.some(
+        (h) => h.includes("studentid") || h.includes("studentnumber") || (h.includes("student") && h.includes("id"))
+      ) || (rawHeaders.includes("gradelevel") && rawHeaders.includes("section"));
+
+    if (isStudentCsv) {
+      // Auto-detect unit from file content
+      const firstDataRows = rows.slice(1, 15);
+      const isBeuContent = firstDataRows.some((r) => {
+        const text = r.join(" ").toUpperCase();
+        return (
+          text.includes("JUNIOR HIGH") ||
+          text.includes("SENIOR HIGH") ||
+          text.includes("ELEMENTARY") ||
+          text.includes("PREPARATORY") ||
+          text.includes("KINDER") ||
+          text.includes("BE-") ||
+          text.includes("GRADE")
+        );
+      });
+      studentImportUnit.value = isBeuContent ? "BEU" : "HEU";
+      studentRawRows.value = rows;
+      studentCsvUploadFileName.value = file.name;
+      const { valid, skipped } = parseStudentCsvData(rows, studentImportUnit.value);
+      studentParsedRunners.value = valid;
+      studentSkippedRunners.value = skipped;
+      studentCsvActiveTab.value = valid.length ? "valid" : "skipped";
+      isStudentCsvModalOpen.value = true;
+      return;
+    }
 
     // Find column index matching multiple alias keys
     const getIndex = (aliases) => {
@@ -2430,6 +2517,409 @@ const executeCsvImport = async () => {
     );
   } finally {
     isImportingCsv.value = false;
+  }
+};
+
+// ── STUDENT CSV IMPORT LOGIC (BEU & HEU) ──────────────────────────────────────────
+
+const normalizeStudentDob = (val) => {
+  if (!val) return "";
+  const s = String(val).trim();
+  // Check MM/DD/YYYY or M/D/YYYY
+  const mdy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (mdy) {
+    const [, m, d, y] = mdy;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  // Check YYYY-MM-DD
+  const ymd = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (ymd) {
+    const [, y, m, d] = ymd;
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+  }
+  return s;
+};
+
+const normalizeStudentMobile = (val) => {
+  if (!val) return "";
+  let digits = String(val).replace(/[^0-9]/g, "");
+  if (!digits) return "";
+  if (digits.length === 10 && digits.startsWith("9")) {
+    digits = "0" + digits;
+  }
+  return digits;
+};
+
+const normalizeStudentGender = (val) => {
+  if (!val) return "Male";
+  const s = String(val).trim().toUpperCase();
+  if (s.startsWith("F")) return "Female";
+  if (s.startsWith("M")) return "Male";
+  return val.trim();
+};
+
+const parseStudentCsvData = (rows, unit = "BEU") => {
+  if (!rows || rows.length < 2) return { valid: [], skipped: [] };
+
+  const rawHeaders = rows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));
+  const getIndex = (aliases, fallbackIdx) => {
+    const idx = rawHeaders.findIndex((h) => aliases.some((a) => h.includes(a)));
+    return idx !== -1 ? idx : fallbackIdx;
+  };
+
+  const colIdx = {
+    student_id: getIndex(["studentid", "studentnumber", "studentno", "lsuid", "idnumber", "studid", "id"], 0),
+    last_name: getIndex(["lastname", "last", "lname", "surname"], 1),
+    first_name: getIndex(["firstname", "first", "fname"], 2),
+    middle_name: getIndex(["middlename", "middle", "mname", "mi"], 3),
+    gender: getIndex(["gender", "sex"], 4),
+    dob: getIndex(["dob", "birthdate", "birth", "bday", "dateofbirth"], 5),
+    grade_level: getIndex(["gradelevel", "grade", "level", "yearlevel", "course", "program"], 6),
+    section: getIndex(["section", "class", "strand"], 7),
+    student_email: getIndex(["studentemail", "email", "mail", "contactemail"], 8),
+    student_mobile: getIndex(["studentmobile", "mobile", "phone", "contactnumber", "cellphone"], 9),
+  };
+
+  const valid = [];
+  const skipped = [];
+  const currentRegs = registrations.value || [];
+  const defaultEmail = unit === "BEU" ? "is@lsu.edu.ph" : "dev@lsu.edu.ph";
+
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || row.length === 0 || row.every((c) => !c)) continue;
+
+    const getVal = (idx, fallback = "") => (idx !== -1 && row[idx] !== undefined ? row[idx].trim() : fallback);
+
+    const studentId = getVal(colIdx.student_id);
+    const lastName = getVal(colIdx.last_name);
+    const firstName = getVal(colIdx.first_name);
+    const middleName = getVal(colIdx.middle_name);
+
+    if (!studentId && !lastName && !firstName) continue;
+
+    const rawDob = getVal(colIdx.dob);
+    const birthdate = normalizeStudentDob(rawDob);
+    const gender = normalizeStudentGender(getVal(colIdx.gender));
+    const gradeLevel = getVal(colIdx.grade_level);
+    const section = getVal(colIdx.section);
+    const rawEmail = getVal(colIdx.student_email);
+    const mobile = normalizeStudentMobile(getVal(colIdx.student_mobile));
+
+    // Handle email: use provided student email if valid, otherwise fallback to is@lsu.edu.ph (BEU) or dev@lsu.edu.ph (HEU)
+    let contactEmail = "";
+    let isDefaultEmail = false;
+    const cleanMail = String(rawEmail || "").trim().toLowerCase();
+    if (cleanMail && cleanMail !== "-" && cleanMail !== "n/a" && cleanMail !== "none" && cleanMail !== "null" && cleanMail.includes("@")) {
+      contactEmail = cleanMail;
+      isDefaultEmail = false;
+    } else {
+      contactEmail = defaultEmail;
+      isDefaultEmail = true;
+    }
+
+    // Determine Academic Fields
+    let collegeCourse = "";
+    let collegeYear = gradeLevel;
+    let beuGrade = "";
+    let partnerOffice = section ? `Section: ${section}` : "";
+
+    if (unit === "BEU") {
+      const glUpper = gradeLevel.toUpperCase();
+      if (
+        glUpper.includes("SENIOR HIGH") ||
+        glUpper.includes("GRADE 11") ||
+        glUpper.includes("GRADE 12") ||
+        glUpper.includes("SHS") ||
+        glUpper.includes("HUMSS") ||
+        glUpper.includes("STEM") ||
+        glUpper.includes("ABM") ||
+        glUpper.includes("TVL")
+      ) {
+        collegeCourse = "SHS";
+      } else if (
+        glUpper.includes("JUNIOR HIGH") ||
+        glUpper.includes("GRADE 7") ||
+        glUpper.includes("GRADE 8") ||
+        glUpper.includes("GRADE 9") ||
+        glUpper.includes("GRADE 10") ||
+        glUpper.includes("JHS")
+      ) {
+        collegeCourse = "JHS";
+      } else if (
+        glUpper.includes("ELEMENTARY") ||
+        glUpper.includes("PREPARATORY") ||
+        glUpper.includes("KINDER") ||
+        /GRADE\s*[1-6]\b/i.test(glUpper)
+      ) {
+        collegeCourse = "Grade School";
+      } else {
+        collegeCourse = "BEU";
+      }
+      collegeYear = gradeLevel;
+      beuGrade = section ? `${gradeLevel} - ${section}` : gradeLevel;
+    } else {
+      collegeCourse = gradeLevel || "College";
+      collegeYear = section || "Enrolled";
+      beuGrade = "";
+    }
+
+    const runnerData = {
+      lsu_id_number: studentId,
+      firstname: firstName,
+      lastname: lastName,
+      middlename: middleName,
+      gender,
+      birthdate,
+      raw_dob: rawDob,
+      grade_level: gradeLevel,
+      section,
+      contact_email: contactEmail,
+      is_default_email: isDefaultEmail,
+      contact_number: mobile,
+      run_category: "3KM",
+      category: "3KM",
+      tshirt_size: "Event Shirt: L;",
+      participant_type: "LSU Exclusive - Enrolled Student",
+      college_course: collegeCourse,
+      college_year: collegeYear,
+      beu_grade: beuGrade,
+      partner_office: partnerOffice,
+      contact_address: "La Salle University Ozamiz",
+      organization: unit === "BEU" ? "Basic Education Unit (BEU)" : "Higher Education Unit (HEU)",
+      payment_status: "Confirmed",
+      payment_type: "add_to_tuition",
+      grand_total_payment: "1000",
+      row_number: r + 1,
+    };
+
+    // ── Detect done registered students -> Skip ─────────────────────────
+    const cleanId = String(studentId || "").trim().toLowerCase();
+    const cleanFirst = String(firstName || "").trim().toLowerCase();
+    const cleanLast = String(lastName || "").trim().toLowerCase();
+
+    let matched = null;
+    let skipReason = "";
+
+    // 1. Match by Student ID
+    if (cleanId) {
+      matched = currentRegs.find((reg) => {
+        const regId = String(reg.lsu_id_number || "").trim().toLowerCase();
+        return regId && regId === cleanId;
+      });
+      if (matched) {
+        skipReason = `Matched Student ID: ${matched.lsu_id_number} (BIB: ${matched.run_number || matched.id})`;
+      }
+    }
+
+    // 2. Match by First Name & Last Name
+    if (!matched && cleanFirst && cleanLast) {
+      matched = currentRegs.find((reg) => {
+        const rFirst = String(reg.firstname || "").trim().toLowerCase();
+        const rLast = String(reg.lastname || "").trim().toLowerCase();
+        return rFirst === cleanFirst && rLast === cleanLast;
+      });
+      if (matched) {
+        skipReason = `Matched Name: ${matched.firstname} ${matched.lastname} (BIB: ${matched.run_number || matched.id})`;
+      }
+    }
+
+    // 3. Match by non-generic Email
+    if (!matched && !isDefaultEmail && contactEmail) {
+      matched = currentRegs.find((reg) => {
+        const rMail = String(reg.contact_email || reg.email || "").trim().toLowerCase();
+        return rMail && rMail === contactEmail;
+      });
+      if (matched) {
+        skipReason = `Matched Email: ${matched.contact_email || matched.email} (BIB: ${matched.run_number || matched.id})`;
+      }
+    }
+
+    // 4. In-batch duplicate check
+    if (!matched) {
+      const inBatch = valid.find((v) => {
+        const vId = String(v.lsu_id_number || "").trim().toLowerCase();
+        const vFirst = String(v.firstname || "").trim().toLowerCase();
+        const vLast = String(v.lastname || "").trim().toLowerCase();
+        return (cleanId && vId === cleanId) || (cleanFirst && cleanLast && vFirst === cleanFirst && vLast === cleanLast);
+      });
+      if (inBatch) {
+        skipped.push({
+          ...runnerData,
+          skip_reason: "Duplicate entry within this CSV file",
+          matched_runner: null,
+        });
+        continue;
+      }
+    }
+
+    if (matched) {
+      skipped.push({
+        ...runnerData,
+        skip_reason: skipReason,
+        matched_runner: matched,
+      });
+    } else {
+      valid.push(runnerData);
+    }
+  }
+
+  return { valid, skipped };
+};
+
+// Handle Student CSV File Selection
+const handleStudentCsvFileSelected = async (event) => {
+  const file = event.target?.files?.[0];
+  if (!file) return;
+
+  studentCsvUploadFileName.value = file.name;
+  try {
+    const text = await file.text();
+    const rows = parseCsvText(text);
+
+    if (rows.length < 2) {
+      showNotice("The selected CSV file appears to be empty or has no data rows.", "Empty CSV", "error");
+      return;
+    }
+
+    studentRawRows.value = rows;
+    const { valid, skipped } = parseStudentCsvData(rows, studentImportUnit.value);
+
+    if (!valid.length && !skipped.length) {
+      showNotice("No valid student entries could be extracted from this CSV.", "Parsing Failed", "error");
+      return;
+    }
+
+    studentParsedRunners.value = valid;
+    studentSkippedRunners.value = skipped;
+    studentCsvActiveTab.value = valid.length ? "valid" : "skipped";
+    isStudentCsvModalOpen.value = true;
+  } catch (err) {
+    console.error("Error reading Student CSV file:", err);
+    showNotice("Failed to read CSV file. Please make sure it is a valid .csv file.", "File Read Error", "error");
+  }
+};
+
+// Trigger Student CSV File Selection
+const triggerStudentCsvUpload = (unit = "BEU") => {
+  studentImportUnit.value = unit;
+  if (studentCsvFileInputRef.value) {
+    studentCsvFileInputRef.value.value = "";
+    studentCsvFileInputRef.value.click();
+  }
+};
+
+// Change unit inside the modal and re-parse
+const setStudentImportUnit = (unit) => {
+  studentImportUnit.value = unit;
+  if (studentRawRows.value.length > 0) {
+    const { valid, skipped } = parseStudentCsvData(studentRawRows.value, unit);
+    studentParsedRunners.value = valid;
+    studentSkippedRunners.value = skipped;
+  }
+};
+
+// Download official student CSV template for BEU or HEU
+const downloadStudentCsvTemplate = (unit = "BEU") => {
+  const headers = [
+    "STUDENT ID",
+    "LAST NAME",
+    "FIRST NAME",
+    "MIDDLE NAME",
+    "GENDER",
+    "DOB",
+    "GRADE LEVEL",
+    "SECTION",
+    "STUDENT EMAIL",
+    "STUDENT MOBILE",
+  ];
+
+  const beuRows = [
+    ["11722243", "Abadilla", "Summer Louisse", "J", "F", "11/04/2009", "Junior High - Grade 10", "BE-BR. FIDELIS LEDDY FSC", "summerlouise.abadilla@lsu.edu.ph", "09108804256"],
+    ["200669746", "Abadilla", "Therese Elizabeth", "", "F", "11/07/2014", "Elementary - Grade 6", "BE-BR. ANTHONY FERDINAND FSC", "", "0906916781"],
+    ["260337826", "Abaquita", "Jasmine", "S", "F", "01/27/2012", "Junior High - Grade 9", "BE-BR. HUGH WESTER FSC", "", "09102918665"],
+    ["G11480654", "Ablong", "Dale Dexter", "P", "M", "11/23/2008", "Senior High - Grade 12-STEM-MED", "BE-BR. BERTRAN FRANCISCO FSC", "", "09391868853"],
+    ["G11658006", "Abucay", "Aaron James", "B", "M", "06/08/2010", "Senior High - Grade 11 - STEM - Engineering", "BE-BR. ESTEBAN VICENTE FSC", "aaronabucay2@gmail.com", "09063656905"],
+    ["260070844", "Abejuela", "Xanleigh Myrth", "P", "M", "04/04/2021", "Preparatory - Universal Kindergarten", "BE-ISUK", "jvpabejuela@yahoo.com", "09614889432"],
+  ];
+
+  const heuRows = [
+    ["202100123", "Dela Cruz", "Juan", "M", "M", "05/14/2003", "BSIT", "4th Year", "juan.delacruz@lsu.edu.ph", "09171234567"],
+    ["202200456", "Santos", "Maria", "C", "F", "09/21/2004", "BSBA-MARKETING", "3rd Year", "", "09181234567"],
+    ["202300789", "Reyes", "Carlo", "G", "M", "01/15/2005", "BSN", "2nd Year", "", "09201234567"],
+  ];
+
+  const rows = unit === "HEU" ? heuRows : beuRows;
+  const escapeCol = (val) => {
+    if (val === null || val === undefined) return '""';
+    return `"${String(val).replace(/"/g, '""')}"`;
+  };
+
+  const csvRows = [
+    headers.map(escapeCol).join(","),
+    ...rows.map((row) => row.map(escapeCol).join(",")),
+  ];
+
+  const csvContent = csvRows.join("\r\n");
+  const filename = unit === "HEU" ? "AnimoRun_HEU_Students_Template.csv" : "AnimoRun_BEU_Students_Template.csv";
+  downloadCsvFile(csvContent, filename);
+
+  showNotice(
+    `${unit} Student CSV template downloaded! Columns: STUDENT ID, LAST NAME, FIRST NAME, MIDDLE NAME, GENDER, DOB, GRADE LEVEL, SECTION, STUDENT EMAIL, STUDENT MOBILE.`,
+    "Template Downloaded",
+    "success"
+  );
+};
+
+// Execute bulk student import to backend
+const executeStudentCsvImport = async () => {
+  if (!studentParsedRunners.value.length || isImportingStudentCsv.value) return;
+
+  isImportingStudentCsv.value = true;
+  try {
+    const payload = {
+      is_dashboard: true,
+      participants: studentParsedRunners.value,
+    };
+
+    const res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
+      method: "POST",
+      body: payload,
+    });
+
+    const count = res.count || studentParsedRunners.value.length;
+    const skippedCount = studentSkippedRunners.value.length;
+
+    if (res.runners && Array.isArray(res.runners)) {
+      const newRunners = res.runners;
+      const existingIds = new Set(registrations.value.map((r) => r.id));
+      const filteredNew = newRunners.filter((r) => !existingIds.has(r.id));
+      registrations.value = [...filteredNew, ...registrations.value];
+      persistCache(registrations.value);
+    } else {
+      await fetchRegistrations(true);
+    }
+
+    isStudentCsvModalOpen.value = false;
+    studentParsedRunners.value = [];
+    studentSkippedRunners.value = [];
+    studentRawRows.value = [];
+    if (studentCsvFileInputRef.value) studentCsvFileInputRef.value.value = "";
+
+    showNotice(
+      `🎉 Successfully added ${count} ${studentImportUnit.value} student(s) directly via CSV!\n\n• Category: 3KM\n• Shirt: Event Shirt (Large)\n• Default Email: ${studentImportUnit.value === "BEU" ? "is@lsu.edu.ph" : "dev@lsu.edu.ph"}\n• Skipped: ${skippedCount} already-registered student(s)\n\nRace BIB numbers have been automatically allocated and payment status marked as Confirmed.`,
+      "Students CSV Import Successful",
+      "success"
+    );
+  } catch (err) {
+    console.error("Student CSV import error:", err);
+    showNotice(
+      err?.data?.message || err?.message || "Failed to import students from CSV. Please check the data format and try again.",
+      "Import Failed",
+      "error"
+    );
+  } finally {
+    isImportingStudentCsv.value = false;
   }
 };
 
@@ -3207,7 +3697,7 @@ const isFilterExpanded = ref(false);
 
 // Reset render limit when filters change
 watch(
-  [searchQuery, selectedAcademicUnit, selectedCategory, selectedStatus, selectedPaymentType, selectedParticipantType, selectedAgeGroup, selectedChatFilter, selectedBatch, selectedLockStatus, dateFrom, dateTo, sortBy],
+  [searchQuery, selectedAcademicUnit, selectedCategory, selectedStatus, selectedPaymentType, selectedReceipt, selectedParticipantType, selectedAgeGroup, selectedChatFilter, selectedBatch, selectedLockStatus, dateFrom, dateTo, sortBy],
   () => { renderLimit.value = INITIAL_CHUNK; }
 );
 
@@ -3217,6 +3707,7 @@ const activeFilterCount = computed(() => {
   if (selectedCategory.value !== "All") count++;
   if (selectedStatus.value !== "All") count++;
   if (selectedPaymentType.value !== "All") count++;
+  if (selectedReceipt.value !== "All") count++;
   if (selectedParticipantType.value !== "All") count++;
   if (selectedAgeGroup.value !== "All") count++;
   if (selectedChatFilter.value !== "All") count++;
@@ -3235,6 +3726,7 @@ const resetAllFilters = () => {
   selectedCategory.value = "All";
   selectedStatus.value = "All";
   selectedPaymentType.value = "All";
+  selectedReceipt.value = "All";
   selectedParticipantType.value = "All";
   selectedAgeGroup.value = "All";
   selectedAcademicUnit.value = "All";
@@ -3489,6 +3981,17 @@ const resetAllFilters = () => {
               </button>
             </span>
 
+            <!-- Receipt pill -->
+            <span
+              v-if="selectedReceipt !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+            >
+              Receipt: {{ selectedReceipt === 'has_receipt' ? 'Has Receipt' : 'Without Receipt' }}
+              <button type="button" @click="selectedReceipt = 'All'" class="hover:text-emerald-950 dark:hover:text-white ml-0.5" title="Remove receipt filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
             <!-- Classification pill -->
             <span
               v-if="selectedParticipantType !== 'All'"
@@ -3651,8 +4154,8 @@ const resetAllFilters = () => {
                 </div>
               </div>
 
-              <!-- ── FILTER SELECT CONTROLS (7 CATEGORIES IN A CLEAN GRID) ── -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
+              <!-- ── FILTER SELECT CONTROLS (8 CATEGORIES IN A CLEAN GRID) ── -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2.5">
                 <!-- Academic Unit Filter (HEU / BEU) -->
                 <div>
                   <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
@@ -3740,6 +4243,22 @@ const resetAllFilters = () => {
                     <option value="qr">📱 QR / GCash / Maya ({{ paymentMethodCounts.qr }})</option>
                     <option value="complimentary">🎁 Complimentary ({{ paymentMethodCounts.complimentary }})</option>
                     <option value="sponsor">🤝 Sponsor ({{ paymentMethodCounts.sponsor }})</option>
+                  </select>
+                </div>
+
+                <!-- Receipt Filter -->
+                <div>
+                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    <i class="fas fa-receipt text-emerald-500 mr-0.5"></i> Receipt
+                  </label>
+                  <select v-model="selectedReceipt" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                    selectedReceipt !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                  ]">
+                    <option value="All">All Receipts</option>
+                    <option value="has_receipt">🧾 Has Receipt ({{ receiptCounts.hasReceipt }})</option>
+                    <option value="without_receipt">🚫 Without Receipt ({{ receiptCounts.withoutReceipt }})</option>
                   </select>
                 </div>
 
@@ -3951,6 +4470,61 @@ const resetAllFilters = () => {
                     />
                   </div>
 
+                  <!-- ── STUDENT CSV IMPORT ACTIONS (BEU / HEU STUDENTS) ── -->
+                  <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
+                      <i class="fas fa-user-graduate text-sky-500 text-[11px]"></i> Students:
+                    </span>
+                    <!-- Upload BEU Button -->
+                    <button
+                      type="button"
+                      @click="triggerStudentCsvUpload('BEU')"
+                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-sky-600 hover:bg-sky-700 text-white border-sky-600 shadow-xs active:scale-95"
+                      title="Upload CSV for Basic Education Unit (BEU) Students (Defaults: 3KM, Event Shirt Large, is@lsu.edu.ph)"
+                    >
+                      <i class="fas fa-school text-white text-[10px]"></i>
+                      <span>Import BEU</span>
+                    </button>
+                    <!-- Upload HEU Button -->
+                    <button
+                      type="button"
+                      @click="triggerStudentCsvUpload('HEU')"
+                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600 shadow-xs active:scale-95"
+                      title="Upload CSV for Higher Education Unit (HEU) Students (Defaults: 3KM, Event Shirt Large, dev@lsu.edu.ph)"
+                    >
+                      <i class="fas fa-graduation-cap text-white text-[10px]"></i>
+                      <span>Import HEU</span>
+                    </button>
+                    <!-- BEU Template Download -->
+                    <button
+                      type="button"
+                      @click="downloadStudentCsvTemplate('BEU')"
+                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-sky-300 active:scale-95"
+                      title="Download BEU Students CSV Template (STUDENT ID, LAST NAME, FIRST NAME, MIDDLE NAME, GENDER, DOB, GRADE LEVEL, SECTION, STUDENT EMAIL, STUDENT MOBILE)"
+                    >
+                      <i class="fas fa-download text-sky-600 dark:text-sky-400 text-[10px]"></i>
+                      <span>BEU Template</span>
+                    </button>
+                    <!-- HEU Template Download -->
+                    <button
+                      type="button"
+                      @click="downloadStudentCsvTemplate('HEU')"
+                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-700 dark:hover:text-indigo-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-indigo-300 active:scale-95"
+                      title="Download HEU Students CSV Template"
+                    >
+                      <i class="fas fa-download text-indigo-600 dark:text-indigo-400 text-[10px]"></i>
+                      <span>HEU Template</span>
+                    </button>
+                    <!-- Hidden file input for Student CSV selection -->
+                    <input
+                      ref="studentCsvFileInputRef"
+                      type="file"
+                      accept=".csv,text/csv"
+                      class="hidden"
+                      @change="handleStudentCsvFileSelected"
+                    />
+                  </div>
+
                   <!-- ── SLOT ALLOCATION ACTIONS (ADJUST RUNNER SLOTS) ── -->
                   <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
                     <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
@@ -4058,6 +4632,8 @@ const resetAllFilters = () => {
                     <option value="bib_asc">🔢 Race Bib #: Ascending</option>
                     <option value="batch_asc">📦 Supplier Batch: Ascending</option>
                     <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
+                    <option value="receipt_desc">🧾 Receipt: Has Receipt First</option>
+                    <option value="receipt_asc">🧾 Receipt: Without Receipt First</option>
                   </select>
                 </div>
               </div>
@@ -4406,9 +4982,9 @@ const resetAllFilters = () => {
                 <th v-for="col in activeTableColumns" :key="col.key" :class="[
                   'p-3 transition select-none',
                   col.key === 'receipt' ? 'text-center' : '',
-                  ['race_bib', 'reg_id', 'full_name', 'firstname', 'lastname', 'batch', 'reg_date'].includes(col.key) ? 'cursor-pointer hover:text-emerald-500' : ''
+                  ['race_bib', 'reg_id', 'full_name', 'firstname', 'lastname', 'batch', 'reg_date', 'receipt'].includes(col.key) ? 'cursor-pointer hover:text-emerald-500' : ''
                 ]"
-                  @click="['race_bib', 'reg_id'].includes(col.key) ? toggleSort('bib') : ['full_name', 'firstname', 'lastname'].includes(col.key) ? toggleSort('name') : col.key === 'batch' ? toggleSort('batch') : col.key === 'reg_date' ? toggleSort('date') : null">
+                  @click="['race_bib', 'reg_id'].includes(col.key) ? toggleSort('bib') : ['full_name', 'firstname', 'lastname'].includes(col.key) ? toggleSort('name') : col.key === 'batch' ? toggleSort('batch') : col.key === 'reg_date' ? toggleSort('date') : col.key === 'receipt' ? toggleSort('receipt') : null">
                   {{ col.label }}
                   <i v-if="['race_bib', 'reg_id'].includes(col.key)" :class="[
                     'fas ml-1 text-[10px]',
@@ -4425,6 +5001,10 @@ const resetAllFilters = () => {
                   <i v-else-if="col.key === 'reg_date'" :class="[
                     'fas ml-1 text-[10px]',
                     sortBy === 'date_desc' ? 'fa-sort-numeric-down text-emerald-600' : sortBy === 'date_asc' ? 'fa-sort-numeric-up text-emerald-600' : 'fa-sort text-gray-400'
+                  ]"></i>
+                  <i v-else-if="col.key === 'receipt'" :class="[
+                    'fas ml-1 text-[10px]',
+                    sortBy === 'receipt_desc' ? 'fa-sort-amount-down text-emerald-600' : sortBy === 'receipt_asc' ? 'fa-sort-amount-up text-emerald-600' : 'fa-sort text-gray-400'
                   ]"></i>
                 </th>
 
@@ -4804,9 +5384,9 @@ const resetAllFilters = () => {
                           <div v-else class="relative group cursor-pointer"
                             @click.stop="openReceiptModal(runner.proof_of_payment, 'Payment Receipt', runner)"
                             title="Click to view & zoom receipt">
-                            <img :src="runner.proof_of_payment" :alt="runner.firstname + ' Receipt'"
-                              loading="lazy"
-                              class="w-10 h-10 object-cover rounded-lg border border-slate-300 dark:border-gray-600 shadow-2xs group-hover:border-emerald-500 group-hover:ring-2 group-hover:ring-emerald-500/30 group-hover:scale-105 transition-all duration-150" />
+                            <span class="text-green-800 hover:underline text-[11px]">
+                              <i class="fa fa-receipt text-3xl"></i>
+                            </span>
                             <div
                               class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center text-white text-[10px]">
                               <i class="fas fa-search-plus"></i>
@@ -6989,6 +7569,299 @@ const resetAllFilters = () => {
             >
               <i :class="['fas', isImportingCsv ? 'fa-spinner fa-spin' : 'fa-check']"></i>
               <span>{{ isImportingCsv ? 'Importing Runners...' : `Confirm & Import ${csvParsedRunners.length} Runners` }}</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── STUDENT CSV IMPORT PREVIEW MODAL (BEU / HEU DIRECT IMPORT) ── -->
+    <div
+      v-if="isStudentCsvModalOpen"
+      class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm overflow-y-auto"
+      @click.self="isStudentCsvModalOpen = false"
+    >
+      <div
+        :class="[
+          'relative w-full max-w-5xl rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all space-y-4 overflow-hidden max-h-[94vh] flex flex-col',
+          props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+        ]"
+      >
+        <!-- Top Gradient Accent Bar (Sky to Indigo to Purple) -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500"></div>
+
+        <!-- Modal Header -->
+        <div class="flex items-start justify-between border-b pb-3.5 dark:border-gray-700 shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center text-xl font-bold shadow-xs">
+              <i class="fas fa-user-graduate"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
+                  Import {{ studentImportUnit }} Students from CSV
+                </h3>
+                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700">
+                  {{ studentParsedRunners.length }} Ready
+                </span>
+                <span v-if="studentSkippedRunners.length > 0" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                  {{ studentSkippedRunners.length }} Skipped (Already Registered)
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                File: <strong class="text-sky-600 dark:text-sky-400">{{ studentCsvUploadFileName }}</strong> · Detecting duplicates, mapping academic records & shirt sizes
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            @click="isStudentCsvModalOpen = false"
+            class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer transition"
+          >
+            <i class="fas fa-times text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Student Unit Selector & Preset Settings Banner -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Target Unit:</span>
+            <div class="inline-flex rounded-xl p-0.5 bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-xs">
+              <button
+                type="button"
+                @click="setStudentImportUnit('BEU')"
+                :class="[
+                  'px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer',
+                  studentImportUnit === 'BEU'
+                    ? 'bg-sky-600 text-white shadow-xs'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-sky-600'
+                ]"
+              >
+                <i class="fas fa-school text-[11px]"></i>
+                <span>BEU (Basic Education)</span>
+              </button>
+              <button
+                type="button"
+                @click="setStudentImportUnit('HEU')"
+                :class="[
+                  'px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer',
+                  studentImportUnit === 'HEU'
+                    ? 'bg-indigo-600 text-white shadow-xs'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-indigo-600'
+                ]"
+              >
+                <i class="fas fa-graduation-cap text-[11px]"></i>
+                <span>HEU (Higher Education)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Configuration pills -->
+          <div class="flex items-center gap-2 flex-wrap text-[11px] text-gray-600 dark:text-gray-300">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
+              <i class="fas fa-person-running text-red-500"></i> Category: <strong class="text-red-600 dark:text-red-400">3KM</strong>
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
+              <i class="fas fa-shirt text-emerald-500"></i> Shirt: <strong class="text-emerald-600 dark:text-emerald-400">Event Shirt: Large</strong>
+            </span>
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
+              <i class="fas fa-envelope text-blue-500"></i> Default Email: <strong class="text-blue-600 dark:text-blue-400 font-mono">{{ studentImportUnit === 'BEU' ? 'is@lsu.edu.ph' : 'dev@lsu.edu.ph' }}</strong>
+            </span>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs: Ready vs Skipped -->
+        <div class="flex items-center justify-between gap-2 border-b dark:border-gray-700 pb-1 shrink-0">
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              @click="studentCsvActiveTab = 'valid'"
+              :class="[
+                'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border',
+                studentCsvActiveTab === 'valid'
+                  ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+              ]"
+            >
+              <i class="fas fa-check-circle text-[11px]"></i>
+              <span>Ready to Register</span>
+              <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white font-black">
+                {{ studentParsedRunners.length }}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              @click="studentCsvActiveTab = 'skipped'"
+              :class="[
+                'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border',
+                studentCsvActiveTab === 'skipped'
+                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+              ]"
+            >
+              <i class="fas fa-ban text-[11px]"></i>
+              <span>Already Registered (Skipped)</span>
+              <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-900 dark:text-amber-200 font-black" :class="{ '!bg-white/20 !text-white': studentCsvActiveTab === 'skipped' }">
+                {{ studentSkippedRunners.length }}
+              </span>
+            </button>
+          </div>
+
+          <div class="text-[11px] text-gray-400 hidden sm:block">
+            Showing <strong class="text-gray-700 dark:text-gray-200">{{ studentCsvActiveTab === 'valid' ? studentParsedRunners.length : studentSkippedRunners.length }}</strong> student(s)
+          </div>
+        </div>
+
+        <!-- Table View: Ready to Register -->
+        <div v-if="studentCsvActiveTab === 'valid'" class="flex-1 overflow-y-auto border rounded-2xl dark:border-gray-700 min-h-[240px]">
+          <div v-if="studentParsedRunners.length === 0" class="flex flex-col items-center justify-center p-8 text-center text-gray-400">
+            <i class="fas fa-user-check text-3xl mb-2 text-emerald-400 opacity-60"></i>
+            <p class="font-bold text-sm">All students from this CSV are already registered!</p>
+            <p class="text-xs mt-1">Check the "Already Registered (Skipped)" tab above to view them.</p>
+          </div>
+          <table v-else class="w-full text-left text-xs border-collapse">
+            <thead class="sticky top-0 bg-slate-100 dark:bg-gray-900/90 backdrop-blur-sm border-b dark:border-gray-700 text-gray-500 uppercase text-[10px] font-bold z-10">
+              <tr>
+                <th class="py-2.5 px-3">#</th>
+                <th class="py-2.5 px-3">Student ID</th>
+                <th class="py-2.5 px-3">Student Name</th>
+                <th class="py-2.5 px-3">Gender / DOB</th>
+                <th class="py-2.5 px-3">Grade Level & Section</th>
+                <th class="py-2.5 px-3">Student Email</th>
+                <th class="py-2.5 px-3">Mobile</th>
+                <th class="py-2.5 px-3">Category</th>
+                <th class="py-2.5 px-3">Shirt Size</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y dark:divide-gray-700/60 font-medium">
+              <tr
+                v-for="(s, idx) in studentParsedRunners"
+                :key="idx"
+                class="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition"
+              >
+                <td class="py-2 px-3 text-gray-400 text-[11px] font-bold">{{ idx + 1 }}</td>
+                <td class="py-2 px-3 whitespace-nowrap font-mono font-bold text-sky-700 dark:text-sky-300">
+                  {{ s.lsu_id_number || '-' }}
+                </td>
+                <td class="py-2 px-3 whitespace-nowrap font-bold text-gray-900 dark:text-gray-100">
+                  {{ s.firstname }} {{ s.middlename ? s.middlename + '.' : '' }} {{ s.lastname }}
+                </td>
+                <td class="py-2 px-3 whitespace-nowrap text-gray-600 dark:text-gray-300 text-[11px]">
+                  <span>{{ s.gender }}</span>
+                  <span v-if="s.birthdate" class="text-gray-400 ml-1">({{ s.birthdate }})</span>
+                </td>
+                <td class="py-2 px-3 text-gray-700 dark:text-gray-300 text-[11px] max-w-[200px]">
+                  <div class="font-bold truncate" :title="s.grade_level">{{ s.grade_level }}</div>
+                  <div v-if="s.section" class="text-[10px] text-gray-500 truncate" :title="s.section">
+                    {{ s.section }}
+                  </div>
+                </td>
+                <td class="py-2 px-3 whitespace-nowrap text-[11px]">
+                  <div v-if="s.is_default_email" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-mono text-[10px]" :title="'Default email used because none provided in CSV'">
+                    <i class="fas fa-wand-magic-sparkles text-[9px]"></i>
+                    {{ s.contact_email }}
+                  </div>
+                  <div v-else class="text-gray-700 dark:text-gray-300 font-mono text-[11px] truncate max-w-[170px]" :title="s.contact_email">
+                    {{ s.contact_email }}
+                  </div>
+                </td>
+                <td class="py-2 px-3 whitespace-nowrap text-gray-500 text-[11px] font-mono">
+                  {{ s.contact_number || '-' }}
+                </td>
+                <td class="py-2 px-3 whitespace-nowrap">
+                  <span class="px-2 py-0.5 rounded-full font-black text-[10px] text-white bg-red-600 shadow-xs">
+                    3KM
+                  </span>
+                </td>
+                <td class="py-2 px-3 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                    <i class="fas fa-shirt text-[9px]"></i>
+                    Event Shirt: Large
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Table View: Skipped / Already Registered -->
+        <div v-else class="flex-1 overflow-y-auto border rounded-2xl dark:border-gray-700 min-h-[240px]">
+          <div v-if="studentSkippedRunners.length === 0" class="flex flex-col items-center justify-center p-8 text-center text-gray-400">
+            <i class="fas fa-check-double text-3xl mb-2 text-emerald-400 opacity-60"></i>
+            <p class="font-bold text-sm">No duplicate registrations detected!</p>
+            <p class="text-xs mt-1">All {{ studentParsedRunners.length }} student(s) in this CSV are new and ready to be registered.</p>
+          </div>
+          <table v-else class="w-full text-left text-xs border-collapse">
+            <thead class="sticky top-0 bg-amber-50 dark:bg-amber-950/60 backdrop-blur-sm border-b dark:border-gray-700 text-amber-800 dark:text-amber-300 uppercase text-[10px] font-bold z-10">
+              <tr>
+                <th class="py-2.5 px-3">#</th>
+                <th class="py-2.5 px-3">Student ID</th>
+                <th class="py-2.5 px-3">Student Name</th>
+                <th class="py-2.5 px-3">Grade & Section</th>
+                <th class="py-2.5 px-3">Skip Reason / Duplicate Match</th>
+                <th class="py-2.5 px-3">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y dark:divide-gray-700/60 font-medium">
+              <tr
+                v-for="(s, idx) in studentSkippedRunners"
+                :key="idx"
+                class="bg-amber-50/30 dark:bg-amber-950/20 hover:bg-amber-50/70 dark:hover:bg-amber-950/40 transition"
+              >
+                <td class="py-2 px-3 text-gray-400 text-[11px] font-bold">{{ idx + 1 }}</td>
+                <td class="py-2 px-3 whitespace-nowrap font-mono font-bold text-gray-700 dark:text-gray-300">
+                  {{ s.lsu_id_number || '-' }}
+                </td>
+                <td class="py-2 px-3 whitespace-nowrap font-bold text-gray-800 dark:text-gray-200">
+                  {{ s.firstname }} {{ s.middlename ? s.middlename + '.' : '' }} {{ s.lastname }}
+                </td>
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-400 text-[11px] max-w-[180px] truncate">
+                  {{ s.grade_level }} {{ s.section ? '· ' + s.section : '' }}
+                </td>
+                <td class="py-2 px-3 text-amber-700 dark:text-amber-400 font-semibold text-[11px]">
+                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-700">
+                    <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400 text-[10px]"></i>
+                    {{ s.skip_reason }}
+                  </span>
+                </td>
+                <td class="py-2 px-3 whitespace-nowrap">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                    <i class="fas fa-forward text-[9px]"></i> Skipped
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Modal Bottom Actions -->
+        <div class="pt-3 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+          <div class="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+            <i class="fas fa-shield-halved text-sky-500"></i>
+            <span>
+              <strong>{{ studentSkippedRunners.length }}</strong> registered student(s) skipped to prevent duplicates. <strong>{{ studentParsedRunners.length }}</strong> will be registered with BIB numbers.
+            </span>
+          </div>
+
+          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              @click="isStudentCsvModalOpen = false"
+              :disabled="isImportingStudentCsv"
+              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              @click="executeStudentCsvImport"
+              :disabled="isImportingStudentCsv || !studentParsedRunners.length"
+              class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <i :class="['fas', isImportingStudentCsv ? 'fa-spinner fa-spin' : 'fa-check']"></i>
+              <span>{{ isImportingStudentCsv ? 'Registering Students...' : `Confirm & Register ${studentParsedRunners.length} Students` }}</span>
             </button>
           </div>
         </div>
