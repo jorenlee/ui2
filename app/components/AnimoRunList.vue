@@ -156,6 +156,7 @@ const selectedReceipt = ref("All"); // "All", "has_receipt", "without_receipt"
 const selectedParticipantType = ref("All");
 const selectedAgeGroup = ref("All");
 const selectedAcademicUnit = ref("All"); // "All", "HEU", "BEU", "Grade School", "JHS", "SHS", or specific course
+const selectedKitStatus = ref("All"); // "All", "claimed", "ready", "pending"
 
 // Helper: compute age from birthdate string
 const computeAge = (birthdate) => {
@@ -676,7 +677,7 @@ if (process.client) {
   try {
     const cached = localStorage.getItem(CACHE_KEY) || sessionStorage.getItem(CACHE_KEY);
     if (cached) initialRegs = JSON.parse(cached);
-  } catch {}
+  } catch { }
 }
 const registrations = ref(initialRegs);
 
@@ -686,7 +687,7 @@ const persistCache = (data) => {
       const serialized = JSON.stringify(data);
       localStorage.setItem(CACHE_KEY, serialized);
       sessionStorage.setItem(CACHE_KEY, serialized);
-    } catch {}
+    } catch { }
   }
 };
 
@@ -1090,7 +1091,7 @@ onMounted(() => {
           batchesList.value = parsedB;
         }
       }
-    } catch {}
+    } catch { }
   }
 
   // Fetch data in parallel. If we already have cache, fetch silently in background (stale-while-revalidate),
@@ -1348,7 +1349,17 @@ const filteredRegistrations = computed(() => {
       matchesChat = getRunnerMessageStats(item).total === 0;
     }
 
-    return matchesQuery && matchesCategory && matchesStatus && matchesPaymentType && matchesReceipt && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate && matchesChat;
+    // Race Kit Status filter
+    let matchesKit = true;
+    if (selectedKitStatus.value === "claimed") {
+      matchesKit = !!item.kit_claimed;
+    } else if (selectedKitStatus.value === "ready") {
+      matchesKit = !!item.kit_ready && !item.kit_claimed;
+    } else if (selectedKitStatus.value === "pending") {
+      matchesKit = !item.kit_ready && !item.kit_claimed;
+    }
+
+    return matchesQuery && matchesCategory && matchesStatus && matchesPaymentType && matchesReceipt && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate && matchesChat && matchesKit;
   });
 
   // Sorting
@@ -3080,7 +3091,7 @@ if (process.client) {
   try {
     const cachedB = localStorage.getItem(BATCHES_CACHE_KEY) || sessionStorage.getItem(BATCHES_CACHE_KEY);
     if (cachedB) initialBatches = JSON.parse(cachedB);
-  } catch {}
+  } catch { }
 }
 const batchesList = ref(initialBatches);
 const isFetchingBatches = ref(false);
@@ -3092,7 +3103,7 @@ const persistBatchesCache = (data) => {
       const serialized = JSON.stringify(data);
       localStorage.setItem(BATCHES_CACHE_KEY, serialized);
       sessionStorage.setItem(BATCHES_CACHE_KEY, serialized);
-    } catch {}
+    } catch { }
   }
 };
 
@@ -3550,7 +3561,7 @@ const getCachedReadIds = (runnerId) => {
   try {
     const stored = localStorage.getItem(`animorun_read_${runnerId}`);
     if (stored) ids = JSON.parse(stored);
-  } catch (e) {}
+  } catch (e) { }
   readIdsCache.set(runnerId, ids);
   return ids;
 };
@@ -3615,7 +3626,7 @@ const markRunnerMessagesAsRead = async (runner) => {
 
   try {
     localStorage.setItem(`animorun_read_${runner.id}`, JSON.stringify(readIds));
-  } catch (e) {}
+  } catch (e) { }
   readIdsCache.set(runner.id, readIds);
   messageStatsCache.clear();
 
@@ -3697,7 +3708,7 @@ const isFilterExpanded = ref(false);
 
 // Reset render limit when filters change
 watch(
-  [searchQuery, selectedAcademicUnit, selectedCategory, selectedStatus, selectedPaymentType, selectedReceipt, selectedParticipantType, selectedAgeGroup, selectedChatFilter, selectedBatch, selectedLockStatus, dateFrom, dateTo, sortBy],
+  [searchQuery, selectedAcademicUnit, selectedCategory, selectedStatus, selectedPaymentType, selectedReceipt, selectedParticipantType, selectedAgeGroup, selectedChatFilter, selectedBatch, selectedLockStatus, selectedKitStatus, dateFrom, dateTo, sortBy],
   () => { renderLimit.value = INITIAL_CHUNK; }
 );
 
@@ -3713,6 +3724,7 @@ const activeFilterCount = computed(() => {
   if (selectedChatFilter.value !== "All") count++;
   if (selectedBatch.value !== "All") count++;
   if (selectedLockStatus.value !== "All") count++;
+  if (selectedKitStatus.value !== "All") count++;
   if (dateFrom.value !== "" || dateTo.value !== "") count++;
   return count;
 });
@@ -3732,9 +3744,419 @@ const resetAllFilters = () => {
   selectedAcademicUnit.value = "All";
   selectedBatch.value = "All";
   selectedLockStatus.value = "All";
+  selectedKitStatus.value = "All";
   dateFrom.value = "";
   dateTo.value = "";
   selectedChatFilter.value = "All";
+};
+
+// ── Race Kit Claiming & Inclusions Checklist State ──────────────────────
+const isQrScannerModalOpen = ref(false);
+const isClaimVerificationModalOpen = ref(false);
+const isRunnerQrPassModalOpen = ref(false);
+const isMarkingKitReady = ref(false);
+const isConfirmingClaim = ref(false);
+const isBulkMarkingReady = ref(false);
+const isResendingClaimEmail = ref(false);
+const isUnclaiming = ref(false);
+const unclaimConfirmModal = ref({
+  show: false,
+  runner: null,
+});
+
+const activeClaimRunner = ref(null);
+const claimInclusions = ref([]);
+const selectedClaimInclusions = ref([]);
+const claimQrPassData = ref(null);
+const manualSearchQuery = ref("");
+const isVerifyingCode = ref(false);
+const scannerErrorMessage = ref("");
+let html5QrCodeScanner = null;
+
+const allInclusionsChecked = computed(() => {
+  return claimInclusions.value.length > 0 && selectedClaimInclusions.value.length === claimInclusions.value.length;
+});
+
+const toggleAllInclusions = () => {
+  if (allInclusionsChecked.value) {
+    selectedClaimInclusions.value = [];
+  } else {
+    selectedClaimInclusions.value = [...claimInclusions.value];
+  }
+};
+
+const getInclusionsForRunner = (runner) => {
+  if (!runner) return [];
+  const cat = (runner.run_category || "").toUpperCase().trim();
+  const tshirtStr = (runner.tshirt_size || "").trim();
+  let parsedShirts = [];
+  if (tshirtStr) {
+    const parts = tshirtStr.split(";").map((p) => p.trim()).filter(Boolean);
+    parts.forEach((p) => {
+      if (p.includes(":")) {
+        const [stype, sz] = p.split(":");
+        if (stype && sz) parsedShirts.push(`${stype.trim()}: ${sz.trim().toUpperCase()}`);
+      } else {
+        parsedShirts.push(`Event Shirt: ${p.toUpperCase()}`);
+      }
+    });
+  }
+  if (!parsedShirts.length) {
+    parsedShirts.push("Event Shirt: M");
+  }
+
+  const items = [];
+  if (cat.startsWith("1K")) {
+    items.push(`Pet Owner's Shirt: ${parsedShirts[0] || "Event Shirt"}`);
+    items.push("Pet Bandana");
+    items.push("Race Bib");
+    items.push("Post-Meal");
+    if (runner.pet_name) items.push(`Pet Treat (${runner.pet_name})`);
+    else items.push("Pet Treat");
+    items.push("Acrylic Finisher Medal");
+  } else if (cat.startsWith("3K")) {
+    parsedShirts.forEach((s) => items.push(s));
+    items.push("Post-Meal");
+    items.push("Race Bib");
+    items.push("Metal Finisher Medal");
+  } else if (cat.startsWith("10K")) {
+    parsedShirts.forEach((s) => items.push(s));
+    items.push("Post-Meal");
+    items.push("Race Bib");
+    items.push("Metal Finisher Medal");
+  } else if (cat.startsWith("20K")) {
+    parsedShirts.forEach((s) => items.push(s));
+    const hasFinisher = parsedShirts.some((s) => s.toLowerCase().includes("finisher"));
+    if (!hasFinisher) items.push("Finisher Shirt");
+    items.push("Post-Meal");
+    items.push("Race Bib");
+    items.push("Metal Finisher Medal");
+  } else {
+    parsedShirts.forEach((s) => items.push(s));
+    items.push("Post-Meal");
+    items.push("Race Bib");
+    items.push("Finisher Medal");
+  }
+  return items;
+};
+
+const openQrClaimScanner = async () => {
+  isQrScannerModalOpen.value = true;
+  scannerErrorMessage.value = "";
+  manualSearchQuery.value = "";
+  await nextTick();
+  startCameraScanner();
+};
+
+const closeQrClaimScanner = () => {
+  stopCameraScanner();
+  isQrScannerModalOpen.value = false;
+};
+
+const startCameraScanner = async () => {
+  try {
+    const { Html5Qrcode } = await import("html5-qrcode");
+    const container = document.getElementById("qr-reader-camera");
+    if (!container) return;
+
+    if (html5QrCodeScanner) {
+      try {
+        await html5QrCodeScanner.stop();
+      } catch (e) { }
+    }
+
+    html5QrCodeScanner = new Html5Qrcode("qr-reader-camera");
+    const config = { fps: 15, qrbox: { width: 240, height: 240 } };
+
+    await html5QrCodeScanner.start(
+      { facingMode: "environment" },
+      config,
+      (decodedText) => {
+        handleQrCodeDetected(decodedText);
+      }
+    );
+  } catch (err) {
+    console.warn("Camera start failed, falling back to manual entry:", err);
+    scannerErrorMessage.value = "Camera access not allowed or unavailable. You can search by Bib # or Name below.";
+  }
+};
+
+const stopCameraScanner = () => {
+  if (html5QrCodeScanner) {
+    try {
+      html5QrCodeScanner.stop().catch(() => { });
+      html5QrCodeScanner.clear().catch(() => { });
+    } catch (e) { }
+    html5QrCodeScanner = null;
+  }
+};
+
+const handleQrCodeDetected = async (code) => {
+  if (!code || isVerifyingCode.value) return;
+  try {
+    if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+  } catch (e) { }
+  stopCameraScanner();
+  isQrScannerModalOpen.value = false;
+  await verifyAndOpenClaimModal(code);
+};
+
+const verifyAndOpenClaimModal = async (code) => {
+  if (!code) return;
+  isVerifyingCode.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/claim-verify/`, {
+      method: "POST",
+      body: { code },
+    });
+    if (res && res.found && res.runner) {
+      activeClaimRunner.value = res.runner;
+      claimInclusions.value = res.inclusions || getInclusionsForRunner(res.runner);
+      if (res.is_claimed && res.claimed_inclusions && res.claimed_inclusions.length) {
+        selectedClaimInclusions.value = [...res.claimed_inclusions];
+      } else {
+        selectedClaimInclusions.value = [...claimInclusions.value];
+      }
+      isClaimVerificationModalOpen.value = true;
+    } else {
+      showNotice(res?.error || `No runner found for "${code}".`, "Runner Not Found", "error");
+    }
+  } catch (err) {
+    console.error("Verification error:", err);
+    showNotice(err.data?.error || `Unable to find runner with code or Bib "${code}".`, "Verification Error", "error");
+  } finally {
+    isVerifyingCode.value = false;
+  }
+};
+
+const openRunnerClaimModal = (runner) => {
+  activeClaimRunner.value = runner;
+  const inc = getInclusionsForRunner(runner);
+  claimInclusions.value = inc;
+  if (runner.kit_claimed && runner.kit_inclusions_claimed && runner.kit_inclusions_claimed.length) {
+    selectedClaimInclusions.value = [...runner.kit_inclusions_claimed];
+  } else {
+    selectedClaimInclusions.value = [...inc];
+  }
+  isClaimVerificationModalOpen.value = true;
+};
+
+const closeClaimVerificationModal = () => {
+  isClaimVerificationModalOpen.value = false;
+  activeClaimRunner.value = null;
+};
+
+const executeConfirmClaim = async () => {
+  if (!activeClaimRunner.value || isConfirmingClaim.value) return;
+  isConfirmingClaim.value = true;
+  const runnerId = activeClaimRunner.value.id;
+  const operator = currentOperator.value;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/${runnerId}/confirm-claim/`, {
+      method: "POST",
+      body: {
+        claimed_by: operator,
+        inclusions: selectedClaimInclusions.value,
+      },
+    });
+
+    if (res?.data) {
+      const idx = registrations.value.findIndex((r) => r.id === runnerId);
+      if (idx !== -1) {
+        registrations.value[idx] = { ...registrations.value[idx], ...res.data };
+      }
+      if (selectedRunner.value && selectedRunner.value.id === runnerId) {
+        selectedRunner.value = { ...selectedRunner.value, ...res.data };
+      }
+      activeClaimRunner.value = { ...activeClaimRunner.value, ...res.data };
+    } else {
+      const nowStr = new Date().toISOString();
+      const updated = {
+        kit_claimed: true,
+        kit_claimed_at: nowStr,
+        kit_claimed_by: operator,
+        kit_inclusions_claimed: selectedClaimInclusions.value,
+        kit_ready: true,
+      };
+      const idx = registrations.value.findIndex((r) => r.id === runnerId);
+      if (idx !== -1) registrations.value[idx] = { ...registrations.value[idx], ...updated };
+      if (selectedRunner.value && selectedRunner.value.id === runnerId) selectedRunner.value = { ...selectedRunner.value, ...updated };
+    }
+
+    const emailNotice = activeClaimRunner.value?.contact_email ? ` Confirmation email with "See you in the event day!" dispatched to ${activeClaimRunner.value.contact_email}.` : '';
+    showNotice(
+      `Race kit successfully released to ${activeClaimRunner.value.firstname} ${activeClaimRunner.value.lastname} (${activeClaimRunner.value.run_number})!${emailNotice}`,
+      "Kit Claimed & Released",
+      "success"
+    );
+    closeClaimVerificationModal();
+  } catch (err) {
+    console.error("Claim confirmation error:", err);
+    showNotice(err.data?.error || "Failed to confirm kit claiming. Please try again.", "Error", "error");
+  } finally {
+    isConfirmingClaim.value = false;
+  }
+};
+
+const resendClaimEmail = async (runner) => {
+  const target = (runner && runner.id) ? runner : (activeClaimRunner.value || unclaimConfirmModal.value?.runner);
+  if (!target || !target.id || isResendingClaimEmail.value) return;
+  isResendingClaimEmail.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/${target.id}/resend-claim-email/`, {
+      method: "POST",
+    });
+    showNotice(
+      res.message || `Claim confirmation email sent to ${target.contact_email || target.email}!`,
+      "Email Dispatched",
+      "success"
+    );
+  } catch (err) {
+    console.error("Resend claim email error:", err);
+    showNotice(err.data?.error || "Failed to resend claim email.", "Error", "error");
+  } finally {
+    isResendingClaimEmail.value = false;
+  }
+};
+
+const promptUnclaim = (runner) => {
+  const target = (runner && runner.id) ? runner : activeClaimRunner.value;
+  if (!target || !target.id) return;
+  unclaimConfirmModal.value = {
+    show: true,
+    runner: target,
+  };
+};
+
+const closeUnclaimConfirmModal = () => {
+  unclaimConfirmModal.value = {
+    show: false,
+    runner: null,
+  };
+};
+
+const executeUnclaim = async (runner) => {
+  const target = (runner && runner.id) ? runner : (unclaimConfirmModal.value?.runner || activeClaimRunner.value);
+  if (!target || !target.id || isUnclaiming.value) return;
+  isUnclaiming.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/${target.id}/unclaim/`, {
+      method: "POST",
+    });
+    if (res?.data) {
+      const idx = registrations.value.findIndex((r) => r.id === target.id);
+      if (idx !== -1) registrations.value[idx] = { ...registrations.value[idx], ...res.data };
+      if (selectedRunner.value && selectedRunner.value.id === target.id) selectedRunner.value = { ...selectedRunner.value, ...res.data };
+      if (activeClaimRunner.value && activeClaimRunner.value.id === target.id) activeClaimRunner.value = { ...activeClaimRunner.value, ...res.data };
+    }
+    closeUnclaimConfirmModal();
+    showNotice(`Claim status reverted for ${target.firstname} ${target.lastname}.`, "Claim Reverted", "success");
+    showFastToast(`Claim status reverted for ${target.firstname} ${target.lastname}.`, "success");
+    closeClaimVerificationModal();
+  } catch (err) {
+    console.error("Unclaim error:", err);
+    closeUnclaimConfirmModal();
+    showNotice(err.data?.error || "Failed to revert claim status.", "Error", "error");
+  } finally {
+    isUnclaiming.value = false;
+  }
+};
+
+const markKitReadyAndNotify = async (runner) => {
+  if (!runner || isMarkingKitReady.value) return;
+  isMarkingKitReady.value = true;
+  const operator = currentOperator.value;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/mark-kit-ready/`, {
+      method: "POST",
+      body: { operator },
+    });
+
+    if (res?.data) {
+      const idx = registrations.value.findIndex((r) => r.id === runner.id);
+      if (idx !== -1) registrations.value[idx] = { ...registrations.value[idx], ...res.data };
+      if (selectedRunner.value && selectedRunner.value.id === runner.id) {
+        selectedRunner.value = { ...selectedRunner.value, ...res.data };
+      }
+    } else {
+      const idx = registrations.value.findIndex((r) => r.id === runner.id);
+      if (idx !== -1) {
+        registrations.value[idx].kit_ready = true;
+        registrations.value[idx].kit_ready_by = operator;
+        registrations.value[idx].kit_ready_at = new Date().toISOString();
+      }
+    }
+
+    showNotice(
+      `Race kit marked ready for ${runner.firstname} ${runner.lastname}. Email with QR code sent to ${runner.contact_email || runner.email}!`,
+      "Claiming Email Notified",
+      "success"
+    );
+  } catch (err) {
+    console.error("Mark ready error:", err);
+    showNotice("Failed to send kit claiming email. Please try again.", "Email Failed", "error");
+  } finally {
+    isMarkingKitReady.value = false;
+  }
+};
+
+const executeBulkMarkKitReady = async () => {
+  if (!selectedIds.value.length || isBulkMarkingReady.value) return;
+  isBulkMarkingReady.value = true;
+  const ids = [...selectedIds.value];
+  const operator = currentOperator.value;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/bulk-mark-kit-ready/`, {
+      method: "POST",
+      body: { ids, operator },
+    });
+    const nowStr = new Date().toISOString();
+    registrations.value.forEach((r) => {
+      if (ids.includes(r.id)) {
+        r.kit_ready = true;
+        r.kit_ready_at = nowStr;
+        r.kit_ready_by = operator;
+      }
+    });
+    showNotice(
+      res.message || `${ids.length} runner(s) notified! Claiming emails with QR codes have been dispatched.`,
+      "Claiming Emails Notified",
+      "success"
+    );
+  } catch (err) {
+    console.error("Bulk mark ready error:", err);
+    showNotice("Failed to dispatch claiming emails.", "Bulk Notice Failed", "error");
+  } finally {
+    isBulkMarkingReady.value = false;
+  }
+};
+
+const openRunnerQrPassModal = async (runner) => {
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/qr-code/`);
+    claimQrPassData.value = {
+      runner,
+      qr_code_base64: res.qr_code_base64,
+      qr_code_url: res.qr_code_url,
+      claim_code: res.claim_code,
+      inclusions: res.inclusions || getInclusionsForRunner(runner),
+    };
+    isRunnerQrPassModalOpen.value = true;
+  } catch (err) {
+    const fallbackCode = runner.claim_qr_code || `ANIMORUN-CLAIM:${runner.id}:${runner.run_number}`;
+    claimQrPassData.value = {
+      runner,
+      claim_code: fallbackCode,
+      qr_code_url: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(fallbackCode)}&color=064e3b`,
+      inclusions: getInclusionsForRunner(runner),
+    };
+    isRunnerQrPassModalOpen.value = true;
+  }
+};
+
+const closeRunnerQrPassModal = () => {
+  isRunnerQrPassModalOpen.value = false;
+  claimQrPassData.value = null;
 };
 </script>
 
@@ -3763,17 +4185,17 @@ const resetAllFilters = () => {
           </div>
 
           <!-- Live indicator & Manual Refresh Button -->
-          <button
-            type="button"
-            @click="fetchRegistrations(false)"
-            :disabled="isFetching || isAutoRefreshing"
+          <button type="button" @click="fetchRegistrations(false)" :disabled="isFetching || isAutoRefreshing"
             class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 text-white text-[11px] font-medium transition cursor-pointer disabled:opacity-75 select-none"
             title="Click to refresh registrations">
             <span
               :class="['w-1.5 h-1.5 rounded-full flex-shrink-0', isAutoRefreshing || isFetching ? 'bg-amber-300 animate-ping' : 'bg-emerald-400 animate-pulse']"></span>
-            <span v-if="isFetching" class="text-emerald-100 flex items-center gap-1">Fetching… <i class="fas fa-spinner fa-spin text-[9px]"></i></span>
-            <span v-else-if="isAutoRefreshing" class="text-amber-200 flex items-center gap-1">Syncing… <i class="fas fa-arrows-rotate fa-spin text-[9px]"></i></span>
-            <span v-else-if="formatLastUpdated" class="text-emerald-200">Live · {{ formatLastUpdated }} <i class="fas fa-rotate text-[9px] ml-1 opacity-75"></i></span>
+            <span v-if="isFetching" class="text-emerald-100 flex items-center gap-1">Fetching… <i
+                class="fas fa-spinner fa-spin text-[9px]"></i></span>
+            <span v-else-if="isAutoRefreshing" class="text-amber-200 flex items-center gap-1">Syncing… <i
+                class="fas fa-arrows-rotate fa-spin text-[9px]"></i></span>
+            <span v-else-if="formatLastUpdated" class="text-emerald-200">Live · {{ formatLastUpdated }} <i
+                class="fas fa-rotate text-[9px] ml-1 opacity-75"></i></span>
             <span v-else class="text-white/80">Live <i class="fas fa-rotate text-[9px] ml-1 opacity-75"></i></span>
           </button>
         </div>
@@ -3787,62 +4209,47 @@ const resetAllFilters = () => {
         ]">
           <!-- ── ROW 1: DEFAULT COMPACT BAR (SEARCH INPUT RETAINED BY DEFAULT) ── -->
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-2.5">
-            
+
             <!-- SEARCH INPUT (Retained as primary default filter) -->
             <div class="relative flex-1 min-w-[220px]">
               <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400"></i>
-              <input
-                v-model="searchQuery"
-                type="text"
-                placeholder="Search Name, Reg ID, Bib #, Email, Course, Batch..."
+              <input v-model="searchQuery" type="text" placeholder="Search Name, Reg ID, Bib #, Email, Course, Batch..."
                 :class="[
                   'w-full pl-9 pr-8 py-2 rounded-xl sm:rounded-2xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
                   props.darkMode
                     ? 'bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500'
                     : 'bg-slate-50 border-gray-300 text-gray-800 placeholder-gray-400',
-                ]"
-              />
+                ]" />
               <!-- Clear Search button -->
-              <button
-                v-if="searchQuery"
-                type="button"
-                @click="searchQuery = ''"
+              <button v-if="searchQuery" type="button" @click="searchQuery = ''"
                 class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition text-xs p-1"
-                title="Clear search"
-              >
+                title="Clear search">
                 <i class="fas fa-times"></i>
               </button>
             </div>
 
             <!-- CONTROLS & ACTIONS GROUP -->
             <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap shrink-0">
-              
+
               <!-- ACCORDION / TOGGLE MINIMIZE BUTTON -->
-              <button
-                type="button"
-                @click="isFilterExpanded = !isFilterExpanded"
-                :class="[
-                  'px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border select-none shadow-xs',
-                  isFilterExpanded
-                    ? (props.darkMode ? 'bg-emerald-600 text-white border-emerald-500 shadow-md' : 'bg-emerald-600 text-white border-emerald-600 shadow-md')
-                    : activeFilterCount > 0
-                      ? (props.darkMode ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300 ring-2 ring-emerald-500/30' : 'bg-emerald-50 border-emerald-400 text-emerald-800 ring-2 ring-emerald-400/30')
-                      : (props.darkMode ? 'bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-200' : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-gray-700')
-                ]"
-                :title="isFilterExpanded ? 'Minimize / Collapse filters' : 'Expand / Show advanced filters'"
-              >
-                <i :class="['fas fa-sliders text-[11px] transition-transform duration-300 ease-in-out', isFilterExpanded ? 'text-amber-300 rotate-90' : '']"></i>
+              <button type="button" @click="isFilterExpanded = !isFilterExpanded" :class="[
+                'px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer border select-none shadow-xs',
+                isFilterExpanded
+                  ? (props.darkMode ? 'bg-emerald-600 text-white border-emerald-500 shadow-md' : 'bg-emerald-600 text-white border-emerald-600 shadow-md')
+                  : activeFilterCount > 0
+                    ? (props.darkMode ? 'bg-emerald-950/60 border-emerald-500 text-emerald-300 ring-2 ring-emerald-500/30' : 'bg-emerald-50 border-emerald-400 text-emerald-800 ring-2 ring-emerald-400/30')
+                    : (props.darkMode ? 'bg-gray-700 hover:bg-gray-600 border-gray-600 text-gray-200' : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-gray-700')
+              ]" :title="isFilterExpanded ? 'Minimize / Collapse filters' : 'Expand / Show advanced filters'">
+                <i
+                  :class="['fas fa-sliders text-[11px] transition-transform duration-300 ease-in-out', isFilterExpanded ? 'text-amber-300 rotate-90' : '']"></i>
                 <span>Filters</span>
                 <!-- Active badge count if any advanced filter is set -->
-                <span
-                  v-if="activeFilterCount > 0"
-                  :class="[
-                    'px-1.5 py-0.2 rounded-full text-[10px] font-black',
-                    isFilterExpanded
-                      ? 'bg-amber-400 text-gray-900'
-                      : 'bg-emerald-600 text-white dark:bg-emerald-500'
-                  ]"
-                >
+                <span v-if="activeFilterCount > 0" :class="[
+                  'px-1.5 py-0.2 rounded-full text-[10px] font-black',
+                  isFilterExpanded
+                    ? 'bg-amber-400 text-gray-900'
+                    : 'bg-emerald-600 text-white dark:bg-emerald-500'
+                ]">
                   {{ activeFilterCount }}
                 </span>
                 <!-- Accordion Chevron Arrow -->
@@ -3853,71 +4260,62 @@ const resetAllFilters = () => {
               </button>
 
               <!-- Quick Reset button (visible whenever any filter or search is active) -->
-              <button
-                v-if="hasActiveFilters"
-                type="button"
-                @click="resetAllFilters"
-                :class="[
-                  'px-2.5 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer border',
-                  props.darkMode ? 'bg-rose-950/40 hover:bg-rose-900/60 border-rose-800/60 text-rose-300' : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700'
-                ]"
-                title="Reset all filters and search"
-              >
+              <button v-if="hasActiveFilters" type="button" @click="resetAllFilters" :class="[
+                'px-2.5 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1 cursor-pointer border',
+                props.darkMode ? 'bg-rose-950/40 hover:bg-rose-900/60 border-rose-800/60 text-rose-300' : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-700'
+              ]" title="Reset all filters and search">
                 <i class="fas fa-rotate-left text-[10px]"></i>
                 <span class="hidden sm:inline">Reset</span>
               </button>
 
+              <!-- Scan QR Code for Claiming button (Mobile & Desktop) -->
+              <button type="button" @click="openQrClaimScanner"
+                class="px-2.5 sm:px-3.5 py-2 rounded-xl sm:rounded-2xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border shadow-sm select-none active:scale-95 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white border-emerald-500 hover:shadow-md"
+                title="Scan QR Code to Verify Details & Claim Race Kit">
+                <i class="fas fa-qrcode text-amber-300 text-sm"></i>
+                <span>Scan QR Code</span>
+              </button>
+
               <!-- Supplier Batches History button -->
-              <button
-                type="button"
-                @click="openBatchHistoryModal"
-                :class="[
-                  'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs',
-                  props.darkMode ? 'bg-emerald-900/40 hover:bg-emerald-900/60 border-emerald-700/60 text-emerald-200' : 'bg-emerald-700 hover:bg-emerald-800 border-emerald-800 text-white'
-                ]"
-                title="Supplier Batches History"
-              >
+              <button type="button" @click="openBatchHistoryModal" :class="[
+                'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs',
+                props.darkMode ? 'bg-emerald-900/40 hover:bg-emerald-900/60 border-emerald-700/60 text-emerald-200' : 'bg-emerald-700 hover:bg-emerald-800 border-emerald-800 text-white'
+              ]" title="Supplier Batches History">
                 <i class="fas fa-boxes text-[11px]"></i>
                 <span class="hidden md:inline">Batches</span>
-                <span v-if="batchesList.length" class="px-1.5 py-0.2 rounded-full bg-amber-400 text-gray-900 font-black text-[10px]">
+                <span v-if="batchesList.length"
+                  class="px-1.5 py-0.2 rounded-full bg-amber-400 text-gray-900 font-black text-[10px]">
                   {{ batchesList.length }}
                 </span>
               </button>
 
               <!-- Messages / Chat Inquiry Filter button -->
-              <button
-                type="button"
-                @click="toggleChatFilter"
-                :class="[
-                  'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs select-none',
-                  chatFilterActive
-                    ? 'bg-rose-500 text-white border-rose-300 ring-2 ring-rose-300 font-bold'
-                    : totalNewQueriesCount > 0
-                      ? 'bg-rose-500/90 hover:bg-rose-500 text-white border-rose-400 shadow-md animate-pulse'
-                      : (props.darkMode ? 'bg-emerald-900/40 hover:bg-emerald-900/60 border-emerald-700/60 text-emerald-200' : 'bg-emerald-700 hover:bg-emerald-800 border-emerald-800 text-white')
-                ]"
-                :title="`Click to ${chatFilterActive ? 'clear filter' : 'filter runners with new message queries'} (${totalNewQueriesCount} new queries, ${totalRunnersWithChatCount} active threads)`"
-              >
+              <button type="button" @click="toggleChatFilter" :class="[
+                'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs select-none',
+                chatFilterActive
+                  ? 'bg-rose-500 text-white border-rose-300 ring-2 ring-rose-300 font-bold'
+                  : totalNewQueriesCount > 0
+                    ? 'bg-rose-500/90 hover:bg-rose-500 text-white border-rose-400 shadow-md animate-pulse'
+                    : (props.darkMode ? 'bg-emerald-900/40 hover:bg-emerald-900/60 border-emerald-700/60 text-emerald-200' : 'bg-emerald-700 hover:bg-emerald-800 border-emerald-800 text-white')
+              ]"
+                :title="`Click to ${chatFilterActive ? 'clear filter' : 'filter runners with new message queries'} (${totalNewQueriesCount} new queries, ${totalRunnersWithChatCount} active threads)`">
                 <i class="fas fa-comments text-[11px]" :class="chatFilterActive ? 'text-white' : 'text-amber-300'"></i>
                 <span class="hidden md:inline">Messages</span>
-                <span v-if="totalNewQueriesCount > 0" class="px-1.5 py-0.2 rounded-full bg-white text-rose-700 font-black text-[10px] shadow-xs">
+                <span v-if="totalNewQueriesCount > 0"
+                  class="px-1.5 py-0.2 rounded-full bg-white text-rose-700 font-black text-[10px] shadow-xs">
                   {{ totalNewQueriesCount }} NEW
                 </span>
-                <span v-else-if="totalRunnersWithChatCount > 0" class="px-1.5 py-0.2 rounded-full bg-emerald-400 text-gray-900 font-black text-[10px]">
+                <span v-else-if="totalRunnersWithChatCount > 0"
+                  class="px-1.5 py-0.2 rounded-full bg-emerald-400 text-gray-900 font-black text-[10px]">
                   {{ totalRunnersWithChatCount }}
                 </span>
               </button>
 
               <!-- Table Columns Customizer button -->
-              <button
-                type="button"
-                @click="isColumnPickerModalOpen = true"
-                :class="[
-                  'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs',
-                  props.darkMode ? 'bg-emerald-900/40 hover:bg-emerald-900/60 border-emerald-700/60 text-emerald-200' : 'bg-emerald-700 hover:bg-emerald-800 border-emerald-800 text-white'
-                ]"
-                title="Customize Visible Columns"
-              >
+              <button type="button" @click="isColumnPickerModalOpen = true" :class="[
+                'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs',
+                props.darkMode ? 'bg-emerald-900/40 hover:bg-emerald-900/60 border-emerald-700/60 text-emerald-200' : 'bg-emerald-700 hover:bg-emerald-800 border-emerald-800 text-white'
+              ]" title="Customize Visible Columns">
                 <i class="fas fa-table-columns text-amber-300 text-[11px]"></i>
                 <span class="hidden md:inline">Columns</span>
                 <span class="px-1.5 py-0.2 rounded-full bg-emerald-400 text-gray-900 font-black text-[10px]">
@@ -3929,737 +4327,703 @@ const resetAllFilters = () => {
           </div>
 
           <!-- ── ACTIVE FILTER PILLS (SHOWN WHEN MINIMIZED BUT ADVANCED FILTERS ACTIVE) ── -->
-          <div
-            v-if="!isFilterExpanded && activeFilterCount > 0"
-            class="flex items-center gap-1.5 pt-2.5 mt-2 border-t dark:border-gray-700/60 flex-wrap text-xs animate-[fadeSlideIn_0.2s_ease-out]"
-          >
+          <div v-if="!isFilterExpanded && activeFilterCount > 0"
+            class="flex items-center gap-1.5 pt-2.5 mt-2 border-t dark:border-gray-700/60 flex-wrap text-xs animate-[fadeSlideIn_0.2s_ease-out]">
             <span class="text-[11px] font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1 mr-1">
               <i class="fas fa-filter text-[10px] text-emerald-500"></i> Active:
             </span>
 
             <!-- Academic Unit pill -->
-            <span
-              v-if="selectedAcademicUnit !== 'All'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
-            >
+            <span v-if="selectedAcademicUnit !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
               Unit: {{ selectedAcademicUnit }}
-              <button type="button" @click="selectedAcademicUnit = 'All'" class="hover:text-emerald-950 dark:hover:text-white ml-0.5" title="Remove unit filter">
+              <button type="button" @click="selectedAcademicUnit = 'All'"
+                class="hover:text-emerald-950 dark:hover:text-white ml-0.5" title="Remove unit filter">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
 
             <!-- Category pill -->
-            <span
-              v-if="selectedCategory !== 'All'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
-            >
+            <span v-if="selectedCategory !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
               Cat: {{ selectedCategory }}
-              <button type="button" @click="selectedCategory = 'All'" class="hover:text-amber-950 dark:hover:text-white ml-0.5" title="Remove category filter">
+              <button type="button" @click="selectedCategory = 'All'"
+                class="hover:text-amber-950 dark:hover:text-white ml-0.5" title="Remove category filter">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
 
             <!-- Status pill -->
-            <span
-              v-if="selectedStatus !== 'All'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700"
-            >
+            <span v-if="selectedStatus !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-700">
               Status: {{ selectedStatus }}
-              <button type="button" @click="selectedStatus = 'All'" class="hover:text-blue-950 dark:hover:text-white ml-0.5" title="Remove status filter">
+              <button type="button" @click="selectedStatus = 'All'"
+                class="hover:text-blue-950 dark:hover:text-white ml-0.5" title="Remove status filter">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
 
             <!-- Payment Method pill -->
-            <span
-              v-if="selectedPaymentType !== 'All'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
-            >
+            <span v-if="selectedPaymentType !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
               Method: {{ formatPaymentType(selectedPaymentType) }}
-              <button type="button" @click="selectedPaymentType = 'All'" class="hover:text-emerald-950 dark:hover:text-white ml-0.5" title="Remove payment method filter">
+              <button type="button" @click="selectedPaymentType = 'All'"
+                class="hover:text-emerald-950 dark:hover:text-white ml-0.5" title="Remove payment method filter">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
 
             <!-- Receipt pill -->
-            <span
-              v-if="selectedReceipt !== 'All'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
-            >
+            <span v-if="selectedReceipt !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
               Receipt: {{ selectedReceipt === 'has_receipt' ? 'Has Receipt' : 'Without Receipt' }}
-              <button type="button" @click="selectedReceipt = 'All'" class="hover:text-emerald-950 dark:hover:text-white ml-0.5" title="Remove receipt filter">
+              <button type="button" @click="selectedReceipt = 'All'"
+                class="hover:text-emerald-950 dark:hover:text-white ml-0.5" title="Remove receipt filter">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
 
             <!-- Classification pill -->
-            <span
-              v-if="selectedParticipantType !== 'All'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-700"
-            >
+            <span v-if="selectedParticipantType !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-700">
               {{ selectedParticipantType }}
-              <button type="button" @click="selectedParticipantType = 'All'" class="hover:text-purple-950 dark:hover:text-white ml-0.5" title="Remove classification filter">
+              <button type="button" @click="selectedParticipantType = 'All'"
+                class="hover:text-purple-950 dark:hover:text-white ml-0.5" title="Remove classification filter">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
 
             <!-- Age group pill -->
-            <span
-              v-if="selectedAgeGroup !== 'All'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700"
-            >
+            <span v-if="selectedAgeGroup !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-teal-100 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border border-teal-300 dark:border-teal-700">
               Age: {{ selectedAgeGroup }}
-              <button type="button" @click="selectedAgeGroup = 'All'" class="hover:text-teal-950 dark:hover:text-white ml-0.5" title="Remove age filter">
+              <button type="button" @click="selectedAgeGroup = 'All'"
+                class="hover:text-teal-950 dark:hover:text-white ml-0.5" title="Remove age filter">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
 
             <!-- Chat filter pill -->
-            <span
-              v-if="selectedChatFilter !== 'All'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700"
-            >
+            <span v-if="selectedChatFilter !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
               Msg: {{ selectedChatFilter }}
-              <button type="button" @click="selectedChatFilter = 'All'" class="hover:text-rose-950 dark:hover:text-white ml-0.5" title="Remove message filter">
+              <button type="button" @click="selectedChatFilter = 'All'"
+                class="hover:text-rose-950 dark:hover:text-white ml-0.5" title="Remove message filter">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
 
             <!-- Date range pill -->
-            <span
-              v-if="dateFrom || dateTo"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700"
-            >
+            <span v-if="dateFrom || dateTo"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-700">
               Date: {{ dateFrom || '...' }} → {{ dateTo || '...' }}
-              <button type="button" @click="clearDateRange" class="hover:text-indigo-950 dark:hover:text-white ml-0.5" title="Clear date range">
+              <button type="button" @click="clearDateRange" class="hover:text-indigo-950 dark:hover:text-white ml-0.5"
+                title="Clear date range">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
 
             <!-- Batch pill -->
-            <span
-              v-if="selectedBatch !== 'All'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700"
-            >
+            <span v-if="selectedBatch !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-orange-100 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700">
               Batch: {{ selectedBatch }}
-              <button type="button" @click="selectedBatch = 'All'" class="hover:text-orange-950 dark:hover:text-white ml-0.5" title="Remove batch filter">
+              <button type="button" @click="selectedBatch = 'All'"
+                class="hover:text-orange-950 dark:hover:text-white ml-0.5" title="Remove batch filter">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
 
             <!-- Lock status pill -->
-            <span
-              v-if="selectedLockStatus !== 'All'"
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-violet-100 dark:bg-violet-950/60 text-violet-800 dark:text-violet-300 border border-violet-300 dark:border-violet-700"
-            >
+            <span v-if="selectedLockStatus !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-violet-100 dark:bg-violet-950/60 text-violet-800 dark:text-violet-300 border border-violet-300 dark:border-violet-700">
               Lock: {{ selectedLockStatus }}
-              <button type="button" @click="selectedLockStatus = 'All'" class="hover:text-violet-950 dark:hover:text-white ml-0.5" title="Remove lock filter">
+              <button type="button" @click="selectedLockStatus = 'All'"
+                class="hover:text-violet-950 dark:hover:text-white ml-0.5" title="Remove lock filter">
                 <i class="fas fa-times text-[10px]"></i>
               </button>
             </span>
           </div>
 
           <!-- ── ACCORDION EXPANDED SECTION (TOGGLE MINIMIZE / EXPAND) ── -->
-          <div
-            class="accordion-wrapper"
-            :class="{ 'is-expanded': isFilterExpanded }"
-          >
+          <div class="accordion-wrapper" :class="{ 'is-expanded': isFilterExpanded }">
             <div class="accordion-inner">
               <div class="pt-3.5 mt-3 border-t dark:border-gray-700/70 space-y-3.5">
-              
-              <!-- ── STATS SUMMARY CARDS (4 CLEAN METRIC BOXES) ── -->
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
-                <!-- Total Runners -->
-                <div :class="[
-                  'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between',
-                  props.darkMode ? 'bg-gray-900/60 border-gray-700/80' : 'bg-slate-50 border-slate-200',
-                ]">
-                  <div>
-                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                      <i class="fas fa-running text-emerald-500 mr-1"></i> Total Runners
-                    </p>
-                    <h3 class="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 min-h-[26px] flex items-center">
-                      <span v-if="isInitialLoading" class="inline-block h-5 w-12 rounded bg-emerald-100 dark:bg-emerald-950/70 animate-pulse"></span>
-                      <span v-else>{{ stats.totalRunners }}</span>
-                    </h3>
-                  </div>
-                  <div class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm shrink-0">
-                    <i class="fas fa-users"></i>
-                  </div>
-                </div>
 
-                <!-- Confirmed Paid -->
-                <div :class="[
-                  'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between',
-                  props.darkMode ? 'bg-gray-900/60 border-gray-700/80' : 'bg-slate-50 border-slate-200',
-                ]">
-                  <div>
-                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                      <i class="fas fa-check-circle text-green-500 mr-1"></i> Confirmed Paid
-                    </p>
-                    <h3 class="text-lg sm:text-xl font-black text-green-600 dark:text-green-400 mt-0.5 min-h-[26px] flex items-center">
-                      <span v-if="isInitialLoading" class="inline-block h-5 w-12 rounded bg-green-100 dark:bg-green-950/70 animate-pulse"></span>
-                      <span v-else>{{ stats.confirmed }}</span>
-                    </h3>
-                  </div>
-                  <div class="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-950/80 text-green-600 dark:text-green-400 flex items-center justify-center text-sm shrink-0">
-                    <i class="fas fa-receipt"></i>
-                  </div>
-                </div>
-
-                <!-- Pending Action (Clickable) -->
-                <div :class="[
-                  'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between cursor-pointer group',
-                  selectedStatus === 'Pending'
-                    ? (props.darkMode ? 'bg-amber-950/50 border-amber-500 ring-2 ring-amber-500/40' : 'bg-amber-50 border-amber-400 ring-2 ring-amber-300/60')
-                    : (props.darkMode ? 'bg-gray-900/60 border-gray-700/80 hover:border-amber-500/50' : 'bg-slate-50 border-slate-200 hover:border-amber-300'),
-                ]" @click="selectedStatus = selectedStatus === 'Pending' ? 'All' : 'Pending'"
-                  :title="selectedStatus === 'Pending' ? 'Click to clear pending filter' : 'Click to filter by pending items'">
-                  <div>
-                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                      <i class="fas fa-clock text-amber-500 mr-1"></i> Pending Action
-                    </p>
-                    <h3 class="text-lg sm:text-xl font-black text-amber-500 dark:text-amber-400 mt-0.5 min-h-[26px] flex items-center">
-                      <span v-if="isInitialLoading" class="inline-block h-5 w-12 rounded bg-amber-100 dark:bg-amber-950/70 animate-pulse"></span>
-                      <span v-else>{{ stats.pending }}</span>
-                    </h3>
-                  </div>
+                <!-- ── STATS SUMMARY CARDS (4 CLEAN METRIC BOXES) ── -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  <!-- Total Runners -->
                   <div :class="[
-                    'w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 transition',
+                    'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between',
+                    props.darkMode ? 'bg-gray-900/60 border-gray-700/80' : 'bg-slate-50 border-slate-200',
+                  ]">
+                    <div>
+                      <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                        <i class="fas fa-running text-emerald-500 mr-1"></i> Total Runners
+                      </p>
+                      <h3
+                        class="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 min-h-[26px] flex items-center">
+                        <span v-if="isInitialLoading"
+                          class="inline-block h-5 w-12 rounded bg-emerald-100 dark:bg-emerald-950/70 animate-pulse"></span>
+                        <span v-else>{{ stats.totalRunners }}</span>
+                      </h3>
+                    </div>
+                    <div
+                      class="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm shrink-0">
+                      <i class="fas fa-users"></i>
+                    </div>
+                  </div>
+
+                  <!-- Confirmed Paid -->
+                  <div :class="[
+                    'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between',
+                    props.darkMode ? 'bg-gray-900/60 border-gray-700/80' : 'bg-slate-50 border-slate-200',
+                  ]">
+                    <div>
+                      <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                        <i class="fas fa-check-circle text-green-500 mr-1"></i> Confirmed Paid
+                      </p>
+                      <h3
+                        class="text-lg sm:text-xl font-black text-green-600 dark:text-green-400 mt-0.5 min-h-[26px] flex items-center">
+                        <span v-if="isInitialLoading"
+                          class="inline-block h-5 w-12 rounded bg-green-100 dark:bg-green-950/70 animate-pulse"></span>
+                        <span v-else>{{ stats.confirmed }}</span>
+                      </h3>
+                    </div>
+                    <div
+                      class="w-8 h-8 rounded-xl bg-green-100 dark:bg-green-950/80 text-green-600 dark:text-green-400 flex items-center justify-center text-sm shrink-0">
+                      <i class="fas fa-receipt"></i>
+                    </div>
+                  </div>
+
+                  <!-- Pending Action (Clickable) -->
+                  <div :class="[
+                    'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between cursor-pointer group',
                     selectedStatus === 'Pending'
-                      ? 'bg-amber-500 text-white'
-                      : 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200'
+                      ? (props.darkMode ? 'bg-amber-950/50 border-amber-500 ring-2 ring-amber-500/40' : 'bg-amber-50 border-amber-400 ring-2 ring-amber-300/60')
+                      : (props.darkMode ? 'bg-gray-900/60 border-gray-700/80 hover:border-amber-500/50' : 'bg-slate-50 border-slate-200 hover:border-amber-300'),
+                  ]" @click="selectedStatus = selectedStatus === 'Pending' ? 'All' : 'Pending'"
+                    :title="selectedStatus === 'Pending' ? 'Click to clear pending filter' : 'Click to filter by pending items'">
+                    <div>
+                      <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                        <i class="fas fa-clock text-amber-500 mr-1"></i> Pending Action
+                      </p>
+                      <h3
+                        class="text-lg sm:text-xl font-black text-amber-500 dark:text-amber-400 mt-0.5 min-h-[26px] flex items-center">
+                        <span v-if="isInitialLoading"
+                          class="inline-block h-5 w-12 rounded bg-amber-100 dark:bg-amber-950/70 animate-pulse"></span>
+                        <span v-else>{{ stats.pending }}</span>
+                      </h3>
+                    </div>
+                    <div :class="[
+                      'w-8 h-8 rounded-xl flex items-center justify-center text-sm shrink-0 transition',
+                      selectedStatus === 'Pending'
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 group-hover:bg-amber-200'
+                    ]">
+                      <i class="fas fa-hourglass-half"></i>
+                    </div>
+                  </div>
+
+                  <!-- Batch Locked -->
+                  <div :class="[
+                    'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between',
+                    props.darkMode ? 'bg-gray-900/60 border-gray-700/80' : 'bg-slate-50 border-slate-200',
                   ]">
-                    <i class="fas fa-hourglass-half"></i>
+                    <div>
+                      <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                        <i class="fas fa-lock text-purple-500 mr-1"></i> Batch Locked
+                      </p>
+                      <h3
+                        class="text-lg sm:text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5 min-h-[26px] flex items-center">
+                        <span v-if="isInitialLoading"
+                          class="inline-block h-5 w-12 rounded bg-purple-100 dark:bg-purple-950/70 animate-pulse"></span>
+                        <span v-else>{{ stats.lockedCount }}</span>
+                      </h3>
+                    </div>
+                    <div
+                      class="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center text-sm shrink-0">
+                      <i class="fas fa-box-archive"></i>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Batch Locked -->
-                <div :class="[
-                  'px-3.5 py-2.5 rounded-2xl border shadow-xs transition flex items-center justify-between',
-                  props.darkMode ? 'bg-gray-900/60 border-gray-700/80' : 'bg-slate-50 border-slate-200',
-                ]">
+                <!-- ── FILTER SELECT CONTROLS (9 CATEGORIES IN A CLEAN GRID) ── -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-9 gap-2.5">
+                  <!-- Academic Unit Filter (HEU / BEU) -->
                   <div>
-                    <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                      <i class="fas fa-lock text-purple-500 mr-1"></i> Batch Locked
-                    </p>
-                    <h3 class="text-lg sm:text-xl font-black text-purple-600 dark:text-purple-400 mt-0.5 min-h-[26px] flex items-center">
-                      <span v-if="isInitialLoading" class="inline-block h-5 w-12 rounded bg-purple-100 dark:bg-purple-950/70 animate-pulse"></span>
-                      <span v-else>{{ stats.lockedCount }}</span>
-                    </h3>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      <i class="fas fa-graduation-cap text-emerald-500 mr-0.5"></i> Academic Unit
+                    </label>
+                    <select v-model="selectedAcademicUnit" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                      selectedAcademicUnit !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                    ]">
+                      <option value="All">All Units / Programs</option>
+                      <optgroup label="🎓 HEU - All Higher Education">
+                        <option value="HEU">🎓 All HEU (Bachelor & SGS) ({{ heuCount }})</option>
+                      </optgroup>
+                      <optgroup label="🎓 HEU - Undergraduate (Bachelor Degrees)">
+                        <option v-for="c in bachelorCourses" :key="c.value" :value="c.value">
+                          &nbsp;&nbsp;↳ {{ c.label }}
+                        </option>
+                      </optgroup>
+                      <optgroup label="🏛️ HEU - School of Graduate Studies (SGS)">
+                        <option v-for="c in graduateCourses" :key="c.value" :value="c.value">
+                          &nbsp;&nbsp;↳ {{ c.label }}
+                        </option>
+                      </optgroup>
+                      <optgroup label="🏫 BEU - Basic Education Unit">
+                        <option value="BEU">🏫 All BEU (Grade School, JHS, SHS) ({{ beuCount }})</option>
+                        <option value="Grade School">&nbsp;&nbsp;↳ 🎒 Grade School ({{ beuGradeSchoolCount }})</option>
+                        <option value="JHS">&nbsp;&nbsp;↳ 📘 Junior High School (JHS) ({{ beuJhsCount }})</option>
+                        <option value="SHS">&nbsp;&nbsp;↳ 🎓 Senior High School (SHS) ({{ beuShsCount }})</option>
+                      </optgroup>
+                    </select>
                   </div>
-                  <div class="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center text-sm shrink-0">
-                    <i class="fas fa-box-archive"></i>
+
+                  <!-- Distance Category Filter -->
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      <i class="fas fa-route text-emerald-500 mr-0.5"></i> Distance Category
+                    </label>
+                    <select v-model="selectedCategory" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                      selectedCategory !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                    ]">
+                      <option value="All">All Distance Categories</option>
+                      <option value="1KM">1 KM (Pet Run)</option>
+                      <option value="3KM">3 KM</option>
+                      <option value="10KM">10 KM</option>
+                      <option value="20KM">20 KM</option>
+                    </select>
+                  </div>
+
+                  <!-- Payment Status Filter -->
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      <i class="fas fa-credit-card text-emerald-500 mr-0.5"></i> Payment Status
+                    </label>
+                    <select v-model="selectedStatus" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                      selectedStatus !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                    ]">
+                      <option value="All">All Payment Statuses</option>
+                      <option value="Confirmed">✅ Confirmed</option>
+                      <option value="Pending">⏳ All Pending</option>
+                      <option value="Pending Payment">💳 Pending Payment</option>
+                      <option value="Pending Approval">🔍 Pending Approval</option>
+                    </select>
+                  </div>
+
+                  <!-- Payment Method Filter -->
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      <i class="fas fa-money-bill-transfer text-emerald-500 mr-0.5"></i> Payment Method
+                    </label>
+                    <select v-model="selectedPaymentType" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                      selectedPaymentType !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                    ]">
+                      <option value="All">All Payment Methods</option>
+                      <option value="add_to_tuition">🏫 Add to Tuition ({{ paymentMethodCounts.add_to_tuition }})
+                      </option>
+                      <option value="salary_deduction">💼 Salary Deduction ({{ paymentMethodCounts.salary_deduction }})
+                      </option>
+                      <option value="family_salary_deduction">👨‍👩‍👧 Family Salary ({{
+                        paymentMethodCounts.family_salary_deduction }})</option>
+                      <option value="over_the_counter">💵 Over the Counter / Cash ({{
+                        paymentMethodCounts.over_the_counter }})</option>
+                      <option value="qr">📱 QR / GCash / Maya ({{ paymentMethodCounts.qr }})</option>
+                      <option value="complimentary">🎁 Complimentary ({{ paymentMethodCounts.complimentary }})</option>
+                      <option value="sponsor">🤝 Sponsor ({{ paymentMethodCounts.sponsor }})</option>
+                    </select>
+                  </div>
+
+                  <!-- Receipt Filter -->
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      <i class="fas fa-receipt text-emerald-500 mr-0.5"></i> Receipt
+                    </label>
+                    <select v-model="selectedReceipt" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                      selectedReceipt !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                    ]">
+                      <option value="All">All Receipts</option>
+                      <option value="has_receipt">🧾 Has Receipt ({{ receiptCounts.hasReceipt }})</option>
+                      <option value="without_receipt">🚫 Without Receipt ({{ receiptCounts.withoutReceipt }})</option>
+                    </select>
+                  </div>
+
+                  <!-- Participant Classification Filter -->
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      <i class="fas fa-id-badge text-emerald-500 mr-0.5"></i> Classification
+                    </label>
+                    <select v-model="selectedParticipantType" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                      selectedParticipantType !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                    ]">
+                      <option value="All">All Classifications</option>
+                      <option value="VVIP">VVIP ({{ vvipCount }})</option>
+                      <option value="De La Salle Brothers">De La Salle Brothers ({{ brothersCount }})</option>
+                      <option value="Sponsors">Sponsors ({{ sponsorsCount }})</option>
+                      <option value="LSU Exclusive - Enrolled Student">LSU Exclusive - Enrolled Student</option>
+                      <option value="LSU Exclusive - Employee">LSU Exclusive - Employee</option>
+                      <option value="LSU Exclusive - Alumni">LSU Exclusive - Alumni</option>
+                      <option value="Open Category">Open Category</option>
+                      <option value="Pet">Pet</option>
+                    </select>
+                  </div>
+
+                  <!-- Age Group Filter -->
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      <i class="fas fa-user-clock text-emerald-500 mr-0.5"></i> Age Group
+                    </label>
+                    <select v-model="selectedAgeGroup" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                      selectedAgeGroup !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                    ]">
+                      <option value="All">All Age Groups</option>
+                      <option value="Under 18">Under 18</option>
+                      <option value="18–24">18–24</option>
+                      <option value="25–34">25–34</option>
+                      <option value="35–44">35–44</option>
+                      <option value="45–54">45–54</option>
+                      <option value="55+">55+</option>
+                    </select>
+                  </div>
+
+                  <!-- Messages / Queries Filter -->
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      <i class="fas fa-comment-dots text-emerald-500 mr-0.5"></i> Chat & Inquiries
+                    </label>
+                    <select v-model="selectedChatFilter" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                      selectedChatFilter === 'new'
+                        ? 'ring-2 ring-rose-400 font-bold !border-rose-400 bg-rose-50/70 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
+                        : selectedChatFilter !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                    ]">
+                      <option value="All">💬 All Messages</option>
+                      <option value="new">🔴 New Queries ({{ totalNewQueriesCount }})</option>
+                      <option value="has_messages">💬 With Chat History ({{ totalRunnersWithChatCount }})</option>
+                      <option value="no_messages">⚪ No Messages</option>
+                    </select>
+                  </div>
+
+                  <!-- Race Kit Claiming Status Filter -->
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      <i class="fas fa-box-archive text-emerald-500 mr-0.5"></i> Race Kit Status
+                    </label>
+                    <select v-model="selectedKitStatus" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                      selectedKitStatus !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                    ]">
+                      <option value="All">📦 All Kit Statuses</option>
+                      <option value="ready">📫 Ready for Claiming</option>
+                      <option value="claimed">✅ Claimed Kits</option>
+                      <option value="pending">⏳ Not Ready / Pending</option>
+                    </select>
                   </div>
                 </div>
-              </div>
 
-              <!-- ── FILTER SELECT CONTROLS (8 CATEGORIES IN A CLEAN GRID) ── -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-2.5">
-                <!-- Academic Unit Filter (HEU / BEU) -->
-                <div>
-                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    <i class="fas fa-graduation-cap text-emerald-500 mr-0.5"></i> Academic Unit
-                  </label>
-                  <select v-model="selectedAcademicUnit" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-                    selectedAcademicUnit !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
-                  ]">
-                    <option value="All">All Units / Programs</option>
-                    <optgroup label="🎓 HEU - All Higher Education">
-                      <option value="HEU">🎓 All HEU (Bachelor & SGS) ({{ heuCount }})</option>
-                    </optgroup>
-                    <optgroup label="🎓 HEU - Undergraduate (Bachelor Degrees)">
-                      <option v-for="c in bachelorCourses" :key="c.value" :value="c.value">
-                        &nbsp;&nbsp;↳ {{ c.label }}
-                      </option>
-                    </optgroup>
-                    <optgroup label="🏛️ HEU - School of Graduate Studies (SGS)">
-                      <option v-for="c in graduateCourses" :key="c.value" :value="c.value">
-                        &nbsp;&nbsp;↳ {{ c.label }}
-                      </option>
-                    </optgroup>
-                    <optgroup label="🏫 BEU - Basic Education Unit">
-                      <option value="BEU">🏫 All BEU (Grade School, JHS, SHS) ({{ beuCount }})</option>
-                      <option value="Grade School">&nbsp;&nbsp;↳ 🎒 Grade School ({{ beuGradeSchoolCount }})</option>
-                      <option value="JHS">&nbsp;&nbsp;↳ 📘 Junior High School (JHS) ({{ beuJhsCount }})</option>
-                      <option value="SHS">&nbsp;&nbsp;↳ 🎓 Senior High School (SHS) ({{ beuShsCount }})</option>
-                    </optgroup>
-                  </select>
-                </div>
+                <!-- ── QUICK PILLS & TOGGLES (ACADEMIC UNITS & CATEGORY COUNTERS) ── -->
+                <div class="flex items-center justify-between gap-3 flex-wrap pt-1">
+                  <div class="flex items-center gap-2 flex-wrap">
 
-                <!-- Distance Category Filter -->
-                <div>
-                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    <i class="fas fa-route text-emerald-500 mr-0.5"></i> Distance Category
-                  </label>
-                  <select v-model="selectedCategory" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-                    selectedCategory !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
-                  ]">
-                    <option value="All">All Distance Categories</option>
-                    <option value="1KM">1 KM (Pet Run)</option>
-                    <option value="3KM">3 KM</option>
-                    <option value="10KM">10 KM</option>
-                    <option value="20KM">20 KM</option>
-                  </select>
-                </div>
-
-                <!-- Payment Status Filter -->
-                <div>
-                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    <i class="fas fa-credit-card text-emerald-500 mr-0.5"></i> Payment Status
-                  </label>
-                  <select v-model="selectedStatus" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-                    selectedStatus !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
-                  ]">
-                    <option value="All">All Payment Statuses</option>
-                    <option value="Confirmed">✅ Confirmed</option>
-                    <option value="Pending">⏳ All Pending</option>
-                    <option value="Pending Payment">💳 Pending Payment</option>
-                    <option value="Pending Approval">🔍 Pending Approval</option>
-                  </select>
-                </div>
-
-                <!-- Payment Method Filter -->
-                <div>
-                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    <i class="fas fa-money-bill-transfer text-emerald-500 mr-0.5"></i> Payment Method
-                  </label>
-                  <select v-model="selectedPaymentType" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-                    selectedPaymentType !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
-                  ]">
-                    <option value="All">All Payment Methods</option>
-                    <option value="add_to_tuition">🏫 Add to Tuition ({{ paymentMethodCounts.add_to_tuition }})</option>
-                    <option value="salary_deduction">💼 Salary Deduction ({{ paymentMethodCounts.salary_deduction }})</option>
-                    <option value="family_salary_deduction">👨‍👩‍👧 Family Salary ({{ paymentMethodCounts.family_salary_deduction }})</option>
-                    <option value="over_the_counter">💵 Over the Counter / Cash ({{ paymentMethodCounts.over_the_counter }})</option>
-                    <option value="qr">📱 QR / GCash / Maya ({{ paymentMethodCounts.qr }})</option>
-                    <option value="complimentary">🎁 Complimentary ({{ paymentMethodCounts.complimentary }})</option>
-                    <option value="sponsor">🤝 Sponsor ({{ paymentMethodCounts.sponsor }})</option>
-                  </select>
-                </div>
-
-                <!-- Receipt Filter -->
-                <div>
-                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    <i class="fas fa-receipt text-emerald-500 mr-0.5"></i> Receipt
-                  </label>
-                  <select v-model="selectedReceipt" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-                    selectedReceipt !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
-                  ]">
-                    <option value="All">All Receipts</option>
-                    <option value="has_receipt">🧾 Has Receipt ({{ receiptCounts.hasReceipt }})</option>
-                    <option value="without_receipt">🚫 Without Receipt ({{ receiptCounts.withoutReceipt }})</option>
-                  </select>
-                </div>
-
-                <!-- Participant Classification Filter -->
-                <div>
-                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    <i class="fas fa-id-badge text-emerald-500 mr-0.5"></i> Classification
-                  </label>
-                  <select v-model="selectedParticipantType" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-                    selectedParticipantType !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
-                  ]">
-                    <option value="All">All Classifications</option>
-                    <option value="VVIP">VVIP ({{ vvipCount }})</option>
-                    <option value="De La Salle Brothers">De La Salle Brothers ({{ brothersCount }})</option>
-                    <option value="Sponsors">Sponsors ({{ sponsorsCount }})</option>
-                    <option value="LSU Exclusive - Enrolled Student">LSU Exclusive - Enrolled Student</option>
-                    <option value="LSU Exclusive - Employee">LSU Exclusive - Employee</option>
-                    <option value="LSU Exclusive - Alumni">LSU Exclusive - Alumni</option>
-                    <option value="Open Category">Open Category</option>
-                    <option value="Pet">Pet</option>
-                  </select>
-                </div>
-
-                <!-- Age Group Filter -->
-                <div>
-                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    <i class="fas fa-user-clock text-emerald-500 mr-0.5"></i> Age Group
-                  </label>
-                  <select v-model="selectedAgeGroup" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-                    selectedAgeGroup !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
-                  ]">
-                    <option value="All">All Age Groups</option>
-                    <option value="Under 18">Under 18</option>
-                    <option value="18–24">18–24</option>
-                    <option value="25–34">25–34</option>
-                    <option value="35–44">35–44</option>
-                    <option value="45–54">45–54</option>
-                    <option value="55+">55+</option>
-                  </select>
-                </div>
-
-                <!-- Messages / Queries Filter -->
-                <div>
-                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                    <i class="fas fa-comment-dots text-emerald-500 mr-0.5"></i> Chat & Inquiries
-                  </label>
-                  <select v-model="selectedChatFilter" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
-                    selectedChatFilter === 'new'
-                      ? 'ring-2 ring-rose-400 font-bold !border-rose-400 bg-rose-50/70 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300'
-                      : selectedChatFilter !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
-                  ]">
-                    <option value="All">💬 All Messages</option>
-                    <option value="new">🔴 New Queries ({{ totalNewQueriesCount }})</option>
-                    <option value="has_messages">💬 With Chat History ({{ totalRunnersWithChatCount }})</option>
-                    <option value="no_messages">⚪ No Messages</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- ── QUICK PILLS & TOGGLES (ACADEMIC UNITS & CATEGORY COUNTERS) ── -->
-              <div class="flex items-center justify-between gap-3 flex-wrap pt-1">
-                <div class="flex items-center gap-2 flex-wrap">
-                  
-                  <!-- Academic Unit Quick Buttons -->
-                  <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase mr-1">Unit:</span>
-                    <!-- HEU -->
-                    <button
-                      type="button"
-                      @click="toggleAcademicUnit('HEU')"
-                      :class="[
+                    <!-- Academic Unit Quick Buttons -->
+                    <div
+                      class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                      <span class="text-[10px] font-bold text-gray-400 uppercase mr-1">Unit:</span>
+                      <!-- HEU -->
+                      <button type="button" @click="toggleAcademicUnit('HEU')" :class="[
                         'px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none',
                         isHeuSelected
                           ? 'bg-amber-400 text-emerald-950 border-amber-300 shadow-xs scale-105'
                           : 'bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
-                      ]"
-                      :title="`Higher Education Unit (${heuCount} runners)`"
-                    >
-                      <i class="fas fa-graduation-cap text-[10px]"></i>
-                      <span>HEU</span>
-                      <span class="font-black text-amber-600 dark:text-amber-400" :class="{ '!text-emerald-950': isHeuSelected }">
-                        {{ isInitialLoading ? '...' : heuCount }}
-                      </span>
-                    </button>
+                      ]" :title="`Higher Education Unit (${heuCount} runners)`">
+                        <i class="fas fa-graduation-cap text-[10px]"></i>
+                        <span>HEU</span>
+                        <span class="font-black text-amber-600 dark:text-amber-400"
+                          :class="{ '!text-emerald-950': isHeuSelected }">
+                          {{ isInitialLoading ? '...' : heuCount }}
+                        </span>
+                      </button>
 
-                    <!-- BEU -->
-                    <button
-                      type="button"
-                      @click="toggleAcademicUnit('BEU')"
-                      :class="[
+                      <!-- BEU -->
+                      <button type="button" @click="toggleAcademicUnit('BEU')" :class="[
                         'px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none',
                         isBeuSelected
                           ? 'bg-sky-400 text-sky-950 border-sky-300 shadow-xs scale-105'
                           : 'bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
-                      ]"
-                      :title="`Basic Education Unit (${beuCount} runners)`"
-                    >
-                      <i class="fas fa-school text-[10px]"></i>
-                      <span>BEU</span>
-                      <span class="font-black text-sky-600 dark:text-sky-300" :class="{ '!text-sky-950': isBeuSelected }">
-                        {{ isInitialLoading ? '...' : beuCount }}
-                      </span>
-                    </button>
-
-                    <!-- Sub-level BEU Pills -->
-                    <template v-if="isBeuSelected">
-                      <span class="h-3 w-px bg-gray-300 dark:bg-gray-700 mx-0.5"></span>
-                      <button
-                        type="button"
-                        @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'Grade School' ? 'BEU' : 'Grade School'"
-                        :class="[
-                          'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
-                          selectedAcademicUnit === 'Grade School'
-                            ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
-                            : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
-                        ]"
-                      >
-                        GS ({{ beuGradeSchoolCount }})
+                      ]" :title="`Basic Education Unit (${beuCount} runners)`">
+                        <i class="fas fa-school text-[10px]"></i>
+                        <span>BEU</span>
+                        <span class="font-black text-sky-600 dark:text-sky-300"
+                          :class="{ '!text-sky-950': isBeuSelected }">
+                          {{ isInitialLoading ? '...' : beuCount }}
+                        </span>
                       </button>
-                      <button
-                        type="button"
-                        @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'JHS' ? 'BEU' : 'JHS'"
-                        :class="[
-                          'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
-                          selectedAcademicUnit === 'JHS'
-                            ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
-                            : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
-                        ]"
-                      >
-                        JHS ({{ beuJhsCount }})
+
+                      <!-- Sub-level BEU Pills -->
+                      <template v-if="isBeuSelected">
+                        <span class="h-3 w-px bg-gray-300 dark:bg-gray-700 mx-0.5"></span>
+                        <button type="button"
+                          @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'Grade School' ? 'BEU' : 'Grade School'"
+                          :class="[
+                            'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
+                            selectedAcademicUnit === 'Grade School'
+                              ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+                          ]">
+                          GS ({{ beuGradeSchoolCount }})
+                        </button>
+                        <button type="button"
+                          @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'JHS' ? 'BEU' : 'JHS'" :class="[
+                            'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
+                            selectedAcademicUnit === 'JHS'
+                              ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+                          ]">
+                          JHS ({{ beuJhsCount }})
+                        </button>
+                        <button type="button"
+                          @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'SHS' ? 'BEU' : 'SHS'" :class="[
+                            'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
+                            selectedAcademicUnit === 'SHS'
+                              ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                              : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+                          ]">
+                          SHS ({{ beuShsCount }})
+                        </button>
+                      </template>
+                    </div>
+
+                    <!-- Distance Category Counters Quick Pills -->
+                    <div
+                      class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                      <span class="text-[10px] font-bold text-gray-400 uppercase mr-1">Distance:</span>
+                      <button v-for="cat in categoryCounters" :key="cat.id" type="button"
+                        @click="selectedCategory = selectedCategory === cat.id ? 'All' : cat.id" :class="[
+                          'px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none',
+                          selectedCategory === cat.id
+                            ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs scale-105'
+                            : 'bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
+                        ]" :title="`Filter by ${cat.id} (${categoryCounts[cat.id] || 0} runners)`">
+                        <span :class="['w-1.5 h-1.5 rounded-full shrink-0', cat.dot]"></span>
+                        <span>{{ cat.id }}</span>
+                        <span class="font-black text-amber-500 dark:text-amber-400"
+                          :class="{ '!text-white': selectedCategory === cat.id }">
+                          {{ isInitialLoading ? '...' : (categoryCounts[cat.id] || 0) }}
+                        </span>
                       </button>
-                      <button
-                        type="button"
-                        @click.stop="selectedAcademicUnit = selectedAcademicUnit === 'SHS' ? 'BEU' : 'SHS'"
-                        :class="[
-                          'px-1.5 py-0.5 rounded text-[9px] font-bold border transition cursor-pointer select-none',
-                          selectedAcademicUnit === 'SHS'
-                            ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
-                            : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
-                        ]"
-                      >
-                        SHS ({{ beuShsCount }})
+                    </div>
+
+                    <!-- ── CSV TEMPLATE ACTIONS (DOWNLOAD & UPLOAD CSV FOR VVIP, DE LA SALLE BROTHERS, SPONSORS) ── -->
+                    <div
+                      class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                      <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
+                        <i class="fas fa-file-csv text-emerald-500 text-[11px]"></i> Template:
+                      </span>
+                      <!-- Download CSV Button -->
+                      <button type="button" @click="downloadCsvTemplate"
+                        class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-emerald-700 dark:hover:text-emerald-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-emerald-300 active:scale-95"
+                        title="Download official CSV template for VVIP, De La Salle Brothers, and Sponsors">
+                        <i class="fas fa-download text-emerald-600 dark:text-emerald-400 text-[10px]"></i>
+                        <span>Download CSV</span>
                       </button>
-                    </template>
-                  </div>
+                      <!-- Upload CSV Button -->
+                      <button type="button" @click="triggerCsvUpload"
+                        class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs active:scale-95"
+                        title="Upload CSV to add VVIP, De La Salle Brothers, and Sponsors directly">
+                        <i class="fas fa-upload text-white text-[10px]"></i>
+                        <span>Upload CSV</span>
+                      </button>
+                      <!-- Hidden file input for CSV selection -->
+                      <input ref="csvFileInputRef" type="file" accept=".csv,text/csv" class="hidden"
+                        @change="handleCsvFileSelected" />
+                    </div>
 
-                  <!-- Distance Category Counters Quick Pills -->
-                  <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase mr-1">Distance:</span>
-                    <button
-                      v-for="cat in categoryCounters"
-                      :key="cat.id"
-                      type="button"
-                      @click="selectedCategory = selectedCategory === cat.id ? 'All' : cat.id"
-                      :class="[
-                        'px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none',
-                        selectedCategory === cat.id
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs scale-105'
-                          : 'bg-white dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700'
-                      ]"
-                      :title="`Filter by ${cat.id} (${categoryCounts[cat.id] || 0} runners)`"
-                    >
-                      <span :class="['w-1.5 h-1.5 rounded-full shrink-0', cat.dot]"></span>
-                      <span>{{ cat.id }}</span>
-                      <span class="font-black text-amber-500 dark:text-amber-400" :class="{ '!text-white': selectedCategory === cat.id }">
-                        {{ isInitialLoading ? '...' : (categoryCounts[cat.id] || 0) }}
+                    <!-- ── STUDENT CSV IMPORT ACTIONS (BEU / HEU STUDENTS) ── -->
+                    <div
+                      class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                      <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
+                        <i class="fas fa-user-graduate text-sky-500 text-[11px]"></i> Students:
                       </span>
-                    </button>
-                  </div>
+                      <!-- Upload BEU Button -->
+                      <button type="button" @click="triggerStudentCsvUpload('BEU')"
+                        class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-sky-600 hover:bg-sky-700 text-white border-sky-600 shadow-xs active:scale-95"
+                        title="Upload CSV for Basic Education Unit (BEU) Students (Defaults: 3KM, Event Shirt Large, is@lsu.edu.ph)">
+                        <i class="fas fa-school text-white text-[10px]"></i>
+                        <span>Import BEU</span>
+                      </button>
+                      <!-- Upload HEU Button -->
+                      <button type="button" @click="triggerStudentCsvUpload('HEU')"
+                        class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600 shadow-xs active:scale-95"
+                        title="Upload CSV for Higher Education Unit (HEU) Students (Defaults: 3KM, Event Shirt Large, dev@lsu.edu.ph)">
+                        <i class="fas fa-graduation-cap text-white text-[10px]"></i>
+                        <span>Import HEU</span>
+                      </button>
+                      <!-- BEU Template Download -->
+                      <button type="button" @click="downloadStudentCsvTemplate('BEU')"
+                        class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-sky-300 active:scale-95"
+                        title="Download BEU Students CSV Template (STUDENT ID, LAST NAME, FIRST NAME, MIDDLE NAME, GENDER, DOB, GRADE LEVEL, SECTION, STUDENT EMAIL, STUDENT MOBILE)">
+                        <i class="fas fa-download text-sky-600 dark:text-sky-400 text-[10px]"></i>
+                        <span>BEU Template</span>
+                      </button>
+                      <!-- HEU Template Download -->
+                      <button type="button" @click="downloadStudentCsvTemplate('HEU')"
+                        class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-700 dark:hover:text-indigo-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-indigo-300 active:scale-95"
+                        title="Download HEU Students CSV Template">
+                        <i class="fas fa-download text-indigo-600 dark:text-indigo-400 text-[10px]"></i>
+                        <span>HEU Template</span>
+                      </button>
+                      <!-- Hidden file input for Student CSV selection -->
+                      <input ref="studentCsvFileInputRef" type="file" accept=".csv,text/csv" class="hidden"
+                        @change="handleStudentCsvFileSelected" />
+                    </div>
 
-                  <!-- ── CSV TEMPLATE ACTIONS (DOWNLOAD & UPLOAD CSV FOR VVIP, DE LA SALLE BROTHERS, SPONSORS) ── -->
-                  <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
-                      <i class="fas fa-file-csv text-emerald-500 text-[11px]"></i> Template:
-                    </span>
-                    <!-- Download CSV Button -->
-                    <button
-                      type="button"
-                      @click="downloadCsvTemplate"
-                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-emerald-700 dark:hover:text-emerald-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-emerald-300 active:scale-95"
-                      title="Download official CSV template for VVIP, De La Salle Brothers, and Sponsors"
-                    >
-                      <i class="fas fa-download text-emerald-600 dark:text-emerald-400 text-[10px]"></i>
-                      <span>Download CSV</span>
-                    </button>
-                    <!-- Upload CSV Button -->
-                    <button
-                      type="button"
-                      @click="triggerCsvUpload"
-                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-xs active:scale-95"
-                      title="Upload CSV to add VVIP, De La Salle Brothers, and Sponsors directly"
-                    >
-                      <i class="fas fa-upload text-white text-[10px]"></i>
-                      <span>Upload CSV</span>
-                    </button>
-                    <!-- Hidden file input for CSV selection -->
-                    <input
-                      ref="csvFileInputRef"
-                      type="file"
-                      accept=".csv,text/csv"
-                      class="hidden"
-                      @change="handleCsvFileSelected"
-                    />
-                  </div>
-
-                  <!-- ── STUDENT CSV IMPORT ACTIONS (BEU / HEU STUDENTS) ── -->
-                  <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
-                      <i class="fas fa-user-graduate text-sky-500 text-[11px]"></i> Students:
-                    </span>
-                    <!-- Upload BEU Button -->
-                    <button
-                      type="button"
-                      @click="triggerStudentCsvUpload('BEU')"
-                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-sky-600 hover:bg-sky-700 text-white border-sky-600 shadow-xs active:scale-95"
-                      title="Upload CSV for Basic Education Unit (BEU) Students (Defaults: 3KM, Event Shirt Large, is@lsu.edu.ph)"
-                    >
-                      <i class="fas fa-school text-white text-[10px]"></i>
-                      <span>Import BEU</span>
-                    </button>
-                    <!-- Upload HEU Button -->
-                    <button
-                      type="button"
-                      @click="triggerStudentCsvUpload('HEU')"
-                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600 shadow-xs active:scale-95"
-                      title="Upload CSV for Higher Education Unit (HEU) Students (Defaults: 3KM, Event Shirt Large, dev@lsu.edu.ph)"
-                    >
-                      <i class="fas fa-graduation-cap text-white text-[10px]"></i>
-                      <span>Import HEU</span>
-                    </button>
-                    <!-- BEU Template Download -->
-                    <button
-                      type="button"
-                      @click="downloadStudentCsvTemplate('BEU')"
-                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-sky-300 active:scale-95"
-                      title="Download BEU Students CSV Template (STUDENT ID, LAST NAME, FIRST NAME, MIDDLE NAME, GENDER, DOB, GRADE LEVEL, SECTION, STUDENT EMAIL, STUDENT MOBILE)"
-                    >
-                      <i class="fas fa-download text-sky-600 dark:text-sky-400 text-[10px]"></i>
-                      <span>BEU Template</span>
-                    </button>
-                    <!-- HEU Template Download -->
-                    <button
-                      type="button"
-                      @click="downloadStudentCsvTemplate('HEU')"
-                      class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-700 dark:hover:text-indigo-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-indigo-300 active:scale-95"
-                      title="Download HEU Students CSV Template"
-                    >
-                      <i class="fas fa-download text-indigo-600 dark:text-indigo-400 text-[10px]"></i>
-                      <span>HEU Template</span>
-                    </button>
-                    <!-- Hidden file input for Student CSV selection -->
-                    <input
-                      ref="studentCsvFileInputRef"
-                      type="file"
-                      accept=".csv,text/csv"
-                      class="hidden"
-                      @change="handleStudentCsvFileSelected"
-                    />
-                  </div>
-
-                  <!-- ── SLOT ALLOCATION ACTIONS (ADJUST RUNNER SLOTS) ── -->
-                  <div class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
-                      <i class="fas fa-gauge-high text-emerald-500 text-[11px]"></i> Slots:
-                    </span>
-                    <!-- Adjust Slots Button -->
-                    <button
-                      type="button"
-                      @click="openSlotAdjustmentModal"
-                      class="px-2.5 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-emerald-700 dark:hover:text-emerald-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-emerald-300 active:scale-95"
-                      title="Adjust slot capacity limits for all race categories"
-                    >
-                      <i class="fas fa-sliders text-emerald-600 dark:text-emerald-400 text-[10px]"></i>
-                      <span>Adjust Slots</span>
-                      <span v-if="slotDataLoaded && totalSlotsAvailable > 0" class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 ml-0.5">
-                        {{ totalSlotsFilled }}/{{ totalSlotsAvailable }}
+                    <!-- ── SLOT ALLOCATION ACTIONS (ADJUST RUNNER SLOTS) ── -->
+                    <div
+                      class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                      <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
+                        <i class="fas fa-gauge-high text-emerald-500 text-[11px]"></i> Slots:
                       </span>
-                    </button>
+                      <!-- Adjust Slots Button -->
+                      <button type="button" @click="openSlotAdjustmentModal"
+                        class="px-2.5 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 hover:text-emerald-700 dark:hover:text-emerald-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-emerald-300 active:scale-95"
+                        title="Adjust slot capacity limits for all race categories">
+                        <i class="fas fa-sliders text-emerald-600 dark:text-emerald-400 text-[10px]"></i>
+                        <span>Adjust Slots</span>
+                        <span v-if="slotDataLoaded && totalSlotsAvailable > 0"
+                          class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 ml-0.5">
+                          {{ totalSlotsFilled }}/{{ totalSlotsAvailable }}
+                        </span>
+                      </button>
+                    </div>
+
                   </div>
 
+                  <!-- Runners Results Count -->
+                  <div class="text-[11px] font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <i class="fas fa-filter text-emerald-500 text-[10px]"></i>
+                    <span>Showing <strong class="text-emerald-600 dark:text-emerald-400">{{ filteredRegistrations.length
+                        }}</strong> of {{
+                      registrations.length }} runners</span>
+                  </div>
                 </div>
 
-                <!-- Runners Results Count -->
-                <div class="text-[11px] font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                  <i class="fas fa-filter text-emerald-500 text-[10px]"></i>
-                  <span>Showing <strong class="text-emerald-600 dark:text-emerald-400">{{ filteredRegistrations.length }}</strong> of {{ registrations.length }} runners</span>
-                </div>
-              </div>
+                <!-- ── DATE RANGE, BATCH, LOCK STATUS & SORTING ── -->
+                <div
+                  class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5 pt-3 border-t dark:border-gray-700/60">
+                  <!-- Date Range Inputs -->
+                  <div class="lg:col-span-4 flex items-center gap-1.5">
+                    <div class="relative w-1/2">
+                      <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">From</span>
+                      <input type="date" v-model="dateFrom" :class="[
+                        'w-full pl-10 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                        props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+                      ]" />
+                    </div>
+                    <div class="relative w-1/2">
+                      <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">To</span>
+                      <input type="date" v-model="dateTo" :class="[
+                        'w-full pl-7 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                        props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+                      ]" />
+                    </div>
+                  </div>
 
-              <!-- ── DATE RANGE, BATCH, LOCK STATUS & SORTING ── -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-2.5 pt-3 border-t dark:border-gray-700/60">
-                <!-- Date Range Inputs -->
-                <div class="lg:col-span-4 flex items-center gap-1.5">
-                  <div class="relative w-1/2">
-                    <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">From</span>
-                    <input type="date" v-model="dateFrom" :class="[
-                      'w-full pl-10 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                  <!-- Quick Date Range Presets -->
+                  <div class="lg:col-span-2 flex items-center gap-1">
+                    <button type="button" @click="setDateRangePreset('today')"
+                      class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 cursor-pointer">
+                      Today
+                    </button>
+                    <button type="button" @click="setDateRangePreset('7days')"
+                      class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 cursor-pointer">
+                      7 Days
+                    </button>
+                    <button type="button" @click="setDateRangePreset('30days')"
+                      class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 cursor-pointer">
+                      30 Days
+                    </button>
+                    <button v-if="dateFrom || dateTo" type="button" @click="clearDateRange"
+                      class="px-2 py-1.5 rounded-lg text-[10px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-600 transition cursor-pointer"
+                      title="Clear Date Filter">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+
+                  <!-- Supplier Batch Filter -->
+                  <div class="lg:col-span-2">
+                    <select v-model="selectedBatch" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
                       props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-                    ]" />
+                    ]">
+                      <option value="All">All Supplier Batches</option>
+                      <option value="Unbatched">Unbatched Only</option>
+                      <option v-for="b in availableBatches" :key="b" :value="b">{{ b }}</option>
+                    </select>
                   </div>
-                  <div class="relative w-1/2">
-                    <span class="absolute left-2.5 top-2 text-[9px] font-bold text-gray-400 uppercase">To</span>
-                    <input type="date" v-model="dateTo" :class="[
-                      'w-full pl-7 pr-1.5 py-1.5 rounded-xl border text-[11px] focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+
+                  <!-- Lock Status Filter -->
+                  <div class="lg:col-span-2">
+                    <select v-model="selectedLockStatus" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
                       props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-                    ]" />
+                    ]">
+                      <option value="All">All Lock Statuses</option>
+                      <option value="Locked">🔒 Locked Orders Only</option>
+                      <option value="Unlocked">🔓 Unlocked Orders</option>
+                    </select>
+                  </div>
+
+                  <!-- Sorting Controls Dropdown -->
+                  <div class="lg:col-span-2 flex items-center gap-1.5">
+                    <select v-model="sortBy" :class="[
+                      'w-full px-2.5 py-1.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
+                    ]">
+                      <option value="date_desc">📅 Date: Latest → Oldest</option>
+                      <option value="date_asc">📅 Date: Oldest → Latest</option>
+                      <option value="name_asc">👤 Name: Ascending (A-Z)</option>
+                      <option value="name_desc">👤 Name: Descending (Z-A)</option>
+                      <option value="bib_asc">🔢 Race Bib #: Ascending</option>
+                      <option value="batch_asc">📦 Supplier Batch: Ascending</option>
+                      <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
+                      <option value="receipt_desc">🧾 Receipt: Has Receipt First</option>
+                      <option value="receipt_asc">🧾 Receipt: Without Receipt First</option>
+                    </select>
                   </div>
                 </div>
 
-                <!-- Quick Date Range Presets -->
-                <div class="lg:col-span-2 flex items-center gap-1">
-                  <button type="button" @click="setDateRangePreset('today')"
-                    class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 cursor-pointer">
-                    Today
+                <!-- ── ACCORDION FOOTER (COLLAPSE & RESET SHORTCUTS) ── -->
+                <div class="flex items-center justify-between pt-2 border-t dark:border-gray-700/60 text-xs">
+                  <button v-if="hasActiveFilters" type="button" @click="resetAllFilters"
+                    class="text-rose-600 dark:text-rose-400 hover:underline font-semibold flex items-center gap-1 cursor-pointer">
+                    <i class="fas fa-rotate-left text-[11px]"></i> Reset all filters
                   </button>
-                  <button type="button" @click="setDateRangePreset('7days')"
-                    class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 cursor-pointer">
-                    7 Days
-                  </button>
-                  <button type="button" @click="setDateRangePreset('30days')"
-                    class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 cursor-pointer">
-                    30 Days
-                  </button>
-                  <button v-if="dateFrom || dateTo" type="button" @click="clearDateRange"
-                    class="px-2 py-1.5 rounded-lg text-[10px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-600 transition cursor-pointer"
-                    title="Clear Date Filter">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
+                  <div v-else></div>
 
-                <!-- Supplier Batch Filter -->
-                <div class="lg:col-span-2">
-                  <select v-model="selectedBatch" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-                  ]">
-                    <option value="All">All Supplier Batches</option>
-                    <option value="Unbatched">Unbatched Only</option>
-                    <option v-for="b in availableBatches" :key="b" :value="b">{{ b }}</option>
-                  </select>
-                </div>
-
-                <!-- Lock Status Filter -->
-                <div class="lg:col-span-2">
-                  <select v-model="selectedLockStatus" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-                  ]">
-                    <option value="All">All Lock Statuses</option>
-                    <option value="Locked">🔒 Locked Orders Only</option>
-                    <option value="Unlocked">🔓 Unlocked Orders</option>
-                  </select>
-                </div>
-
-                <!-- Sorting Controls Dropdown -->
-                <div class="lg:col-span-2 flex items-center gap-1.5">
-                  <select v-model="sortBy" :class="[
-                    'w-full px-2.5 py-1.5 rounded-xl border text-xs font-semibold focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
-                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800'
-                  ]">
-                    <option value="date_desc">📅 Date: Latest → Oldest</option>
-                    <option value="date_asc">📅 Date: Oldest → Latest</option>
-                    <option value="name_asc">👤 Name: Ascending (A-Z)</option>
-                    <option value="name_desc">👤 Name: Descending (Z-A)</option>
-                    <option value="bib_asc">🔢 Race Bib #: Ascending</option>
-                    <option value="batch_asc">📦 Supplier Batch: Ascending</option>
-                    <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
-                    <option value="receipt_desc">🧾 Receipt: Has Receipt First</option>
-                    <option value="receipt_asc">🧾 Receipt: Without Receipt First</option>
-                  </select>
+                  <button type="button" @click="isFilterExpanded = false"
+                    class="text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-semibold flex items-center gap-1 cursor-pointer ml-auto transition hover:scale-105 active:scale-95">
+                    <span>Collapse filters</span>
+                    <i class="fas fa-chevron-up text-[10px] transition-transform duration-200"></i>
+                  </button>
                 </div>
               </div>
-
-              <!-- ── ACCORDION FOOTER (COLLAPSE & RESET SHORTCUTS) ── -->
-              <div class="flex items-center justify-between pt-2 border-t dark:border-gray-700/60 text-xs">
-                <button
-                  v-if="hasActiveFilters"
-                  type="button"
-                  @click="resetAllFilters"
-                  class="text-rose-600 dark:text-rose-400 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-                >
-                  <i class="fas fa-rotate-left text-[11px]"></i> Reset all filters
-                </button>
-                <div v-else></div>
-
-                <button
-                  type="button"
-                  @click="isFilterExpanded = false"
-                  class="text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-semibold flex items-center gap-1 cursor-pointer ml-auto transition hover:scale-105 active:scale-95"
-                >
-                  <span>Collapse filters</span>
-                  <i class="fas fa-chevron-up text-[10px] transition-transform duration-200"></i>
-                </button>
-              </div>
-            </div>
             </div>
           </div>
         </div>
@@ -4673,11 +5037,10 @@ const resetAllFilters = () => {
         <div class="block md:hidden p-3 space-y-3">
           <!-- MOBILE SKELETON CARDS -->
           <template v-if="isInitialLoading">
-            <div v-for="n in 4" :key="'skel-m-' + n"
-              :class="[
-                'p-4 rounded-2xl border transition shadow-sm space-y-3 animate-pulse',
-                props.darkMode ? 'bg-gray-800/90 border-gray-700' : 'bg-white border-slate-200'
-              ]">
+            <div v-for="n in 4" :key="'skel-m-' + n" :class="[
+              'p-4 rounded-2xl border transition shadow-sm space-y-3 animate-pulse',
+              props.darkMode ? 'bg-gray-800/90 border-gray-700' : 'bg-white border-slate-200'
+            ]">
               <!-- Card Header Skeleton -->
               <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2">
@@ -4742,7 +5105,7 @@ const resetAllFilters = () => {
                   <input type="checkbox" :checked="selectedIds.includes(runner.id)" @change="toggleSelectOne(runner.id)"
                     class="w-4 h-4 rounded accent-emerald-600 cursor-pointer shrink-0" />
                   <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id
-                    }}</span>
+                  }}</span>
                   <span
                     class="px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-black text-[10px] uppercase">
                     RACE BIB {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
@@ -4783,20 +5146,21 @@ const resetAllFilters = () => {
                 ]">
                   <i class="fas fa-running text-[9px]"></i> {{ runner.run_category }}
                 </span>
-                <span
-                  :class="[
-                    'px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1',
-                    runner.participant_type === 'VVIP'
-                      ? 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300 border-purple-300 shadow-xs'
-                      : runner.participant_type === 'De La Salle Brothers'
-                        ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 shadow-xs'
-                        : runner.participant_type === 'Sponsors'
-                          ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300 shadow-xs'
-                          : 'bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-gray-600'
-                  ]">
+                <span :class="[
+                  'px-2.5 py-0.5 rounded-full text-[10px] font-bold border flex items-center gap-1',
+                  runner.participant_type === 'VVIP'
+                    ? 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300 border-purple-300 shadow-xs'
+                    : runner.participant_type === 'De La Salle Brothers'
+                      ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 shadow-xs'
+                      : runner.participant_type === 'Sponsors'
+                        ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300 shadow-xs'
+                        : 'bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-gray-600'
+                ]">
                   <i v-if="runner.participant_type === 'VVIP'" class="fas fa-crown text-amber-500 text-[9px]"></i>
-                  <i v-else-if="runner.participant_type === 'De La Salle Brothers'" class="fas fa-cross text-emerald-600 text-[9px]"></i>
-                  <i v-else-if="runner.participant_type === 'Sponsors'" class="fas fa-handshake text-blue-600 text-[9px]"></i>
+                  <i v-else-if="runner.participant_type === 'De La Salle Brothers'"
+                    class="fas fa-cross text-emerald-600 text-[9px]"></i>
+                  <i v-else-if="runner.participant_type === 'Sponsors'"
+                    class="fas fa-handshake text-blue-600 text-[9px]"></i>
                   <span>{{ runner.participant_type || 'Individual' }}</span>
                 </span>
                 <span v-if="runner.college_course" :class="[
@@ -4819,10 +5183,10 @@ const resetAllFilters = () => {
                   <span class="font-medium text-[11px] block text-gray-500">Payment Option</span>
                   <span class="font-bold text-xs capitalize text-gray-800 dark:text-gray-200">
                     {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' :
-                       runner.payment_type === 'family_salary_deduction' ? 'Family Salary Deduction' :
-                       runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' :
-                       runner.payment_type === 'over_the_counter' ? 'Over the Counter' :
-                       runner.payment_type === 'qr' ? 'QR' : 'Over-the-Counter / QR' }}
+                      runner.payment_type === 'family_salary_deduction' ? 'Family Salary Deduction' :
+                        runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' :
+                          runner.payment_type === 'over_the_counter' ? 'Over the Counter' :
+                            runner.payment_type === 'qr' ? 'QR' : 'Over-the-Counter / QR' }}
                   </span>
                 </div>
                 <div class="text-right">
@@ -4844,7 +5208,8 @@ const resetAllFilters = () => {
                     <img :src="runner.proof_of_payment" :alt="runner.firstname + ' Receipt'"
                       class="w-8 h-8 rounded-lg object-cover border border-slate-300 dark:border-gray-600 shadow-2xs" />
                   </div>
-                  <div v-else class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center text-xs shrink-0">
+                  <div v-else
+                    class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center text-xs shrink-0">
                     <i class="fas fa-file-pdf"></i>
                   </div>
                   <div class="leading-tight">
@@ -4858,6 +5223,69 @@ const resetAllFilters = () => {
                 </button>
               </div>
 
+              <!-- Mobile Race Kit Claiming Section -->
+              <div :class="[
+                'p-2.5 rounded-xl text-xs flex items-center justify-between gap-2 border',
+                runner.kit_claimed
+                  ? (props.darkMode ? 'bg-emerald-950/40 border-emerald-800' : 'bg-emerald-50 border-emerald-200')
+                  : runner.kit_ready
+                    ? (props.darkMode ? 'bg-sky-950/40 border-sky-800' : 'bg-sky-50 border-sky-200')
+                    : (props.darkMode ? 'bg-gray-900/40 border-gray-700/60' : 'bg-slate-50 border-slate-200')
+              ]">
+                <div class="flex items-center gap-2">
+                  <div :class="[
+                    'w-7 h-7 rounded-lg flex items-center justify-center text-xs shrink-0',
+                    runner.kit_claimed ? 'bg-emerald-600 text-white' : runner.kit_ready ? 'bg-sky-600 text-white' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                  ]">
+                    <i
+                      :class="['fas', runner.kit_claimed ? 'fa-check-double' : runner.kit_ready ? 'fa-box-open' : 'fa-bell']"></i>
+                  </div>
+                  <div class="leading-tight">
+                    <span class="font-bold text-[11px] block text-gray-900 dark:text-gray-100">
+                      {{ runner.kit_claimed ? 'Race Kit Claimed' : (runner.kit_ready ? 'Ready for Claiming' : 'Kit Pending Claim') }}
+                    </span>
+                    <span v-if="runner.kit_claimed && runner.kit_claimed_by"
+                      class="text-[9px] text-emerald-700 dark:text-emerald-400">
+                      Claimed by {{ runner.kit_claimed_by.split('@')[0] }}
+                    </span>
+                    <span v-else-if="runner.kit_ready" class="text-[9px] text-sky-700 dark:text-sky-400">
+                      Claim Pass Email Sent
+                    </span>
+                    <span v-else class="text-[9px] text-gray-500">
+                      Not yet notified
+                    </span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 shrink-0">
+                  <button v-if="!runner.kit_claimed && !runner.kit_ready" type="button"
+                    @click="markKitReadyAndNotify(runner)" :disabled="isMarkingKitReady"
+                    class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-[10px] shadow-xs transition flex items-center gap-1 cursor-pointer">
+                    <i class="fas fa-paper-plane text-[9px]"></i> Notify
+                  </button>
+                  <button v-if="!runner.kit_claimed" type="button" @click="openRunnerClaimModal(runner)"
+                    class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-[10px] shadow-xs transition flex items-center gap-1 cursor-pointer">
+                    <i class="fas fa-hand-holding-box text-[9px]"></i> Claim
+                  </button>
+                  <button v-else type="button" @click="openRunnerClaimModal(runner)"
+                    class="px-2 py-1.5 rounded-xl bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 text-gray-700 dark:text-gray-200 font-semibold text-[10px] transition flex items-center gap-1 cursor-pointer">
+                    <i class="fas fa-receipt text-[9px]"></i> Inclusions
+                  </button>
+                  <button v-if="runner.kit_claimed" type="button" @click="resendClaimEmail(runner)"
+                    :disabled="isResendingClaimEmail"
+                    class="w-7 h-7 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center justify-center text-xs shadow-2xs"
+                    title="Resend Claim Confirmation Email">
+                    <i
+                      :class="['fas', isResendingClaimEmail ? 'fa-spinner fa-spin' : 'fa-envelope-circle-check text-[10px]']"></i>
+                  </button>
+                  <button type="button" @click="openRunnerQrPassModal(runner)"
+                    class="w-7 h-7 rounded-xl bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-400 border border-gray-300 dark:border-gray-600 flex items-center justify-center text-xs shadow-2xs"
+                    title="View Claim QR Pass">
+                    <i class="fas fa-qrcode"></i>
+                  </button>
+                </div>
+              </div>
+
               <!-- Card Action Button -->
               <div class="pt-1 flex gap-2">
                 <button type="button" @click="openDetails(runner)"
@@ -4865,18 +5293,19 @@ const resetAllFilters = () => {
                   <i class="fas fa-eye text-xs"></i> View Details
                 </button>
                 <!-- Mobile Message Button with NEW Badge -->
-                <button type="button" @click="openChatModal(runner)"
-                  :class="[
-                    'py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0 border select-none',
-                    getRunnerMessageStats(runner).hasNew
-                      ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700/80 animate-pulse'
-                      : getRunnerMessageStats(runner).total > 0
-                        ? 'bg-slate-100 hover:bg-emerald-50 dark:bg-gray-800 text-slate-700 dark:text-gray-200 border-slate-200 dark:border-gray-700 hover:text-emerald-700'
-                        : 'bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 text-gray-500 hover:text-emerald-600 border-slate-200 dark:border-gray-700'
-                  ]"
+                <button type="button" @click="openChatModal(runner)" :class="[
+                  'py-2 px-3 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0 border select-none',
+                  getRunnerMessageStats(runner).hasNew
+                    ? 'bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-300 dark:border-rose-700/80 animate-pulse'
+                    : getRunnerMessageStats(runner).total > 0
+                      ? 'bg-slate-100 hover:bg-emerald-50 dark:bg-gray-800 text-slate-700 dark:text-gray-200 border-slate-200 dark:border-gray-700 hover:text-emerald-700'
+                      : 'bg-slate-100 hover:bg-slate-200 dark:bg-gray-800 text-gray-500 hover:text-emerald-600 border-slate-200 dark:border-gray-700'
+                ]"
                   :title="getRunnerMessageStats(runner).hasNew ? `${getRunnerMessageStats(runner).newCount} new query` : `${getRunnerMessageStats(runner).total} messages`">
-                  <i :class="['fas text-xs', getRunnerMessageStats(runner).hasNew ? 'fa-comment-dots text-rose-600' : 'fa-comments text-emerald-600']"></i>
-                  <span v-if="getRunnerMessageStats(runner).hasNew" class="px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-black text-[10px]">
+                  <i
+                    :class="['fas text-xs', getRunnerMessageStats(runner).hasNew ? 'fa-comment-dots text-rose-600' : 'fa-comments text-emerald-600']"></i>
+                  <span v-if="getRunnerMessageStats(runner).hasNew"
+                    class="px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-black text-[10px]">
                     {{ getRunnerMessageStats(runner).newCount }} NEW
                   </span>
                   <span v-else-if="getRunnerMessageStats(runner).total > 0" class="text-[11px] font-bold">
@@ -4902,7 +5331,8 @@ const resetAllFilters = () => {
             <div v-if="hasMoreToRender && !isInitialLoading"
               class="p-3 text-center bg-slate-50/50 dark:bg-gray-900/30 rounded-2xl space-y-2 mt-1">
               <div class="text-[11px] text-gray-500 dark:text-gray-400">
-                Showing <strong class="text-emerald-600 dark:text-emerald-400">{{ displayedRegistrations.length }}</strong> of {{ filteredRegistrations.length }}
+                Showing <strong class="text-emerald-600 dark:text-emerald-400">{{ displayedRegistrations.length
+                  }}</strong> of {{ filteredRegistrations.length }}
               </div>
               <div class="flex items-center justify-center gap-2">
                 <button type="button" @click="loadMoreRegistrations"
@@ -4937,22 +5367,32 @@ const resetAllFilters = () => {
         <div v-if="selectedIds.length > 0"
           class="px-4 py-2 border-b dark:border-gray-800 bg-emerald-50/80 dark:bg-emerald-950/40 flex items-center justify-between gap-3 text-xs transition flex-wrap">
           <div class="flex items-center gap-2">
-            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white font-bold text-[10px]">
+            <span
+              class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white font-bold text-[10px]">
               {{ selectedIds.length }}
             </span>
             <span class="font-semibold text-emerald-900 dark:text-emerald-200">
-              {{ selectedIds.length }} runner{{ selectedIds.length !== 1 ? 's' : '' }} selected based on current filters.
+              {{ selectedIds.length }} runner{{ selectedIds.length !== 1 ? 's' : '' }} selected based on current
+              filters.
               <span v-if="selectedPendingRunners.length > 0" class="text-amber-700 dark:text-amber-300 font-bold ml-1">
                 ({{ selectedPendingRunners.length }} pending confirmation)
               </span>
             </span>
           </div>
           <div class="flex items-center gap-2">
-            <button v-if="selectedPendingRunners.length > 0" type="button" @click="promptBulkConfirm" :disabled="isBulkConfirming"
+            <button v-if="selectedPendingRunners.length > 0" type="button" @click="promptBulkConfirm"
+              :disabled="isBulkConfirming"
               class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60">
               <i v-if="!isBulkConfirming" class="fas fa-check-double text-[11px]"></i>
               <i v-else class="fas fa-spinner fa-spin text-[11px]"></i>
               <span>Confirm Selected ({{ selectedPendingRunners.length }})</span>
+            </button>
+            <button type="button" @click="executeBulkMarkKitReady" :disabled="isBulkMarkingReady"
+              class="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+              title="Send claiming notification email with QR code to all selected runners">
+              <i v-if="!isBulkMarkingReady" class="fas fa-qrcode text-[11px]"></i>
+              <i v-else class="fas fa-spinner fa-spin text-[11px]"></i>
+              <span>Notify Ready ({{ selectedIds.length }})</span>
             </button>
             <button type="button" @click="clearSelection"
               class="text-xs text-gray-500 hover:text-rose-600 dark:text-gray-400 dark:hover:text-rose-300 font-semibold cursor-pointer px-2 py-1">
@@ -5010,7 +5450,8 @@ const resetAllFilters = () => {
 
                 <!-- Messages / Chat Column Header (Red box in user's layout) -->
                 <th class="p-3 text-center whitespace-nowrap">
-                  <span class="inline-flex items-center gap-1.5 cursor-pointer hover:text-emerald-500 transition select-none"
+                  <span
+                    class="inline-flex items-center gap-1.5 cursor-pointer hover:text-emerald-500 transition select-none"
                     @click="toggleChatFilter"
                     :title="`Click to filter runners with new queries (${totalNewQueriesCount} new)`">
                     <i class="fas fa-comments text-emerald-600 dark:text-emerald-400 text-xs"></i>
@@ -5018,6 +5459,21 @@ const resetAllFilters = () => {
                     <span v-if="totalNewQueriesCount > 0"
                       class="px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-black text-[9px] animate-pulse">
                       {{ totalNewQueriesCount }} NEW
+                    </span>
+                  </span>
+                </th>
+
+                <!-- Race Kit Status Column Header (Red box in user's layout) -->
+                <th class="p-3 text-center whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center gap-1.5 cursor-pointer hover:text-emerald-500 transition select-none"
+                    @click="selectedKitStatus = selectedKitStatus === 'All' ? 'ready' : selectedKitStatus === 'ready' ? 'claimed' : 'All'"
+                    :title="`Click to cycle kit filters (Current: ${selectedKitStatus})`">
+                    <i class="fas fa-box-archive text-emerald-600 dark:text-emerald-400 text-xs"></i>
+                    <span>Race Kit</span>
+                    <span v-if="selectedKitStatus !== 'All'"
+                      class="px-1.5 py-0.2 rounded-full bg-emerald-600 text-white font-black text-[9px] uppercase">
+                      {{ selectedKitStatus }}
                     </span>
                   </span>
                 </th>
@@ -5042,8 +5498,7 @@ const resetAllFilters = () => {
                       class="h-5 w-16 rounded bg-emerald-100/80 dark:bg-emerald-950/70"></div>
 
                     <!-- reg_id -->
-                    <div v-else-if="col.key === 'reg_id'"
-                      class="h-4 w-10 rounded bg-slate-200 dark:bg-gray-700"></div>
+                    <div v-else-if="col.key === 'reg_id'" class="h-4 w-10 rounded bg-slate-200 dark:bg-gray-700"></div>
 
                     <!-- full_name -->
                     <div v-else-if="col.key === 'full_name'" class="space-y-1.5">
@@ -5056,15 +5511,16 @@ const resetAllFilters = () => {
                       class="h-3.5 w-20 rounded bg-slate-200 dark:bg-gray-700"></div>
 
                     <!-- batch -->
-                    <div v-else-if="col.key === 'batch'"
-                      class="h-5 w-20 rounded-xl bg-slate-200 dark:bg-gray-700"></div>
+                    <div v-else-if="col.key === 'batch'" class="h-5 w-20 rounded-xl bg-slate-200 dark:bg-gray-700">
+                    </div>
 
                     <!-- category -->
-                    <div v-else-if="col.key === 'category'"
-                      class="h-5 w-14 rounded-full bg-slate-200 dark:bg-gray-700"></div>
+                    <div v-else-if="col.key === 'category'" class="h-5 w-14 rounded-full bg-slate-200 dark:bg-gray-700">
+                    </div>
 
                     <!-- classification / academic unit -->
-                    <div v-else-if="['classification', 'academic_unit', 'college_course', 'college_year'].includes(col.key)"
+                    <div
+                      v-else-if="['classification', 'academic_unit', 'college_course', 'college_year'].includes(col.key)"
                       class="h-5 w-24 rounded-full bg-slate-200 dark:bg-gray-700"></div>
 
                     <!-- tshirt_size -->
@@ -5092,6 +5548,11 @@ const resetAllFilters = () => {
                     <div class="h-6 w-9 rounded-xl bg-slate-200 dark:bg-gray-700 mx-auto"></div>
                   </td>
 
+                  <!-- Race Kit Skeleton -->
+                  <td class="px-3 py-3.5 text-center">
+                    <div class="h-6 w-20 rounded-xl bg-slate-200 dark:bg-gray-700 mx-auto"></div>
+                  </td>
+
                   <!-- Actions Skeleton -->
                   <td class="px-3 py-3.5 text-center whitespace-nowrap">
                     <div class="flex items-center justify-center gap-1.5">
@@ -5116,7 +5577,8 @@ const resetAllFilters = () => {
                   </td>
 
                   <!-- Dynamic columns rendered based on col.key -->
-                  <td v-for="col in activeTableColumns" :key="col.key" :class="['px-3', col.key === 'receipt' ? 'text-center' : '']">
+                  <td v-for="col in activeTableColumns" :key="col.key"
+                    :class="['px-3', col.key === 'receipt' ? 'text-center' : '']">
                     <!-- race_bib -->
                     <template v-if="col.key === 'race_bib'">
                       <span
@@ -5128,14 +5590,14 @@ const resetAllFilters = () => {
                     <!-- reg_id -->
                     <template v-else-if="col.key === 'reg_id'">
                       <span class="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">#{{ runner.id
-                        }}</span>
+                      }}</span>
                     </template>
 
                     <!-- full_name -->
                     <template v-else-if="col.key === 'full_name'">
                       <div class="font-bold text-gray-900 dark:text-gray-100 uppercase leading-snug">
                         {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{
-                        runner.lastname }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
+                          runner.lastname }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
                       </div>
                       <div class="text-[11px] text-gray-500 truncate max-w-[180px]">
                         {{ runner.contact_email || runner.email }}
@@ -5217,20 +5679,21 @@ const resetAllFilters = () => {
 
                     <!-- classification -->
                     <template v-else-if="col.key === 'classification'">
-                      <span
-                        :class="[
-                          'inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border',
-                          runner.participant_type === 'VVIP'
-                            ? 'bg-purple-100 text-purple-900 dark:bg-purple-950/80 dark:text-purple-300 border-purple-300'
-                            : runner.participant_type === 'De La Salle Brothers'
-                              ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-300'
-                              : runner.participant_type === 'Sponsors'
-                                ? 'bg-blue-100 text-blue-900 dark:bg-blue-950/80 dark:text-blue-300 border-blue-300'
-                                : 'bg-slate-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-transparent'
-                        ]">
+                      <span :class="[
+                        'inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold border',
+                        runner.participant_type === 'VVIP'
+                          ? 'bg-purple-100 text-purple-900 dark:bg-purple-950/80 dark:text-purple-300 border-purple-300'
+                          : runner.participant_type === 'De La Salle Brothers'
+                            ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-300'
+                            : runner.participant_type === 'Sponsors'
+                              ? 'bg-blue-100 text-blue-900 dark:bg-blue-950/80 dark:text-blue-300 border-blue-300'
+                              : 'bg-slate-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-transparent'
+                      ]">
                         <i v-if="runner.participant_type === 'VVIP'" class="fas fa-crown text-amber-500 text-[9px]"></i>
-                        <i v-else-if="runner.participant_type === 'De La Salle Brothers'" class="fas fa-cross text-emerald-600 text-[9px]"></i>
-                        <i v-else-if="runner.participant_type === 'Sponsors'" class="fas fa-handshake text-blue-600 text-[9px]"></i>
+                        <i v-else-if="runner.participant_type === 'De La Salle Brothers'"
+                          class="fas fa-cross text-emerald-600 text-[9px]"></i>
+                        <i v-else-if="runner.participant_type === 'Sponsors'"
+                          class="fas fa-handshake text-blue-600 text-[9px]"></i>
                         <span>{{ runner.participant_type || 'Open Category' }}</span>
                       </span>
                     </template>
@@ -5244,12 +5707,14 @@ const resetAllFilters = () => {
                             ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border-amber-300 dark:border-amber-700'
                             : 'bg-sky-100 text-sky-800 dark:bg-sky-950/80 dark:text-sky-300 border-sky-300 dark:border-sky-700'
                         ]" :title="getCourseLabel(runner.college_course)">
-                          <i :class="['fas text-[9px]', isHEU(runner) ? 'fa-graduation-cap text-amber-600 dark:text-amber-400' : 'fa-school text-sky-600 dark:text-sky-400']"></i>
+                          <i
+                            :class="['fas text-[9px]', isHEU(runner) ? 'fa-graduation-cap text-amber-600 dark:text-amber-400' : 'fa-school text-sky-600 dark:text-sky-400']"></i>
                           <span class="font-black uppercase">{{ isHEU(runner) ? 'HEU' : 'BEU' }}</span>
                           <span class="opacity-40">·</span>
                           <span class="font-bold">{{ runner.college_course }}</span>
                         </span>
-                        <div class="text-[9px] text-gray-500 truncate max-w-[170px]" :title="getCourseLabel(runner.college_course)">
+                        <div class="text-[9px] text-gray-500 truncate max-w-[170px]"
+                          :title="getCourseLabel(runner.college_course)">
                           {{ getCourseLabel(runner.college_course) }}
                         </div>
                       </div>
@@ -5304,7 +5769,7 @@ const resetAllFilters = () => {
                     <!-- birthdate -->
                     <template v-else-if="col.key === 'birthdate'">
                       <span class="text-gray-700 dark:text-gray-300 whitespace-nowrap">{{ runner.birthdate || '-'
-                        }}</span>
+                      }}</span>
                     </template>
 
                     <!-- contact_number -->
@@ -5345,10 +5810,10 @@ const resetAllFilters = () => {
                     <template v-else-if="col.key === 'payment_option'">
                       <span class="text-[10px] text-gray-600 dark:text-gray-300 capitalize">
                         {{ runner.payment_type === 'salary_deduction' ? 'Salary Deduction' :
-                           runner.payment_type === 'family_salary_deduction' ? 'Family Salary Deduction' :
-                           runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' :
-                           runner.payment_type === 'over_the_counter' ? 'Over the Counter' :
-                           runner.payment_type === 'qr' ? 'QR' : 'Over-the-Counter / QR' }}
+                          runner.payment_type === 'family_salary_deduction' ? 'Family Salary Deduction' :
+                            runner.payment_type === 'add_to_tuition' ? 'Add to Tuition' :
+                              runner.payment_type === 'over_the_counter' ? 'Over the Counter' :
+                                runner.payment_type === 'qr' ? 'QR' : 'Over-the-Counter / QR' }}
                       </span>
                     </template>
 
@@ -5414,7 +5879,8 @@ const resetAllFilters = () => {
                         {{ runner.created_at_formatted || (runner.created_at ? new
                           Date(runner.created_at).toLocaleDateString('en-US', {
                             month: 'short', day: 'numeric', year:
-                        'numeric' }) : 'N/A') }}
+                              'numeric'
+                          }) : 'N/A') }}
                       </span>
                     </template>
 
@@ -5423,7 +5889,8 @@ const resetAllFilters = () => {
                       <span class="text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
                         {{ runner.confirmed_at ? new Date(runner.confirmed_at).toLocaleDateString('en-US', {
                           month:
-                            'short', day: 'numeric', year: 'numeric' }) : '-' }}
+                            'short', day: 'numeric', year: 'numeric'
+                        }) : '-' }}
                       </span>
                     </template>
 
@@ -5435,14 +5902,15 @@ const resetAllFilters = () => {
                     <!-- locked_by -->
                     <template v-else-if="col.key === 'locked_by'">
                       <span class="text-[11px] text-gray-700 dark:text-gray-300">{{ runner.batch_locked_by || '-'
-                        }}</span>
+                      }}</span>
                     </template>
 
                     <!-- locked_at -->
                     <template v-else-if="col.key === 'locked_at'">
                       <span class="text-[11px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
                         {{ runner.batch_locked_at ? new Date(runner.batch_locked_at).toLocaleDateString('en-US', {
-                          month: 'short', day: 'numeric', year: 'numeric' }) : '-' }}
+                          month: 'short', day: 'numeric', year: 'numeric'
+                        }) : '-' }}
                       </span>
                     </template>
 
@@ -5455,16 +5923,18 @@ const resetAllFilters = () => {
                   <!-- Messages / Chat Column (Red box in user's layout) -->
                   <td class="px-3 text-center whitespace-nowrap">
                     <!-- Runner has NEW unread message query -->
-                    <button v-if="getRunnerMessageStats(runner).hasNew" type="button"
-                      @click="openChatModal(runner)"
+                    <button v-if="getRunnerMessageStats(runner).hasNew" type="button" @click="openChatModal(runner)"
                       class="relative px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-300 dark:border-rose-700/80 text-rose-700 dark:text-rose-300 font-bold text-xs shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer group"
                       :title="`${getRunnerMessageStats(runner).newCount} new message query · Click to view and reply`">
                       <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                        <span
+                          class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
                       </span>
-                      <i class="fas fa-comment-dots text-rose-600 dark:text-rose-400 text-sm group-hover:scale-110 transition-transform"></i>
-                      <span class="px-1.5 py-0.5 rounded-full bg-rose-600 text-white font-black text-[10px] tracking-tight shadow-2xs">
+                      <i
+                        class="fas fa-comment-dots text-rose-600 dark:text-rose-400 text-sm group-hover:scale-110 transition-transform"></i>
+                      <span
+                        class="px-1.5 py-0.5 rounded-full bg-rose-600 text-white font-black text-[10px] tracking-tight shadow-2xs">
                         {{ getRunnerMessageStats(runner).newCount }} NEW
                       </span>
                     </button>
@@ -5474,21 +5944,54 @@ const resetAllFilters = () => {
                       @click="openChatModal(runner)"
                       class="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 dark:bg-gray-800 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 text-slate-700 dark:text-gray-200 hover:text-emerald-700 dark:hover:text-emerald-400 font-semibold text-xs transition inline-flex items-center gap-1.5 cursor-pointer group"
                       :title="`${getRunnerMessageStats(runner).total} message(s) in chat history · Click to view`">
-                      <i class="fas fa-comments text-emerald-600 dark:text-emerald-400 text-xs group-hover:scale-110 transition-transform"></i>
-                      <span class="px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-gray-700 text-slate-800 dark:text-gray-200 font-bold text-[10px]">
+                      <i
+                        class="fas fa-comments text-emerald-600 dark:text-emerald-400 text-xs group-hover:scale-110 transition-transform"></i>
+                      <span
+                        class="px-1.5 py-0.5 rounded-full bg-slate-200 dark:bg-gray-700 text-slate-800 dark:text-gray-200 font-bold text-[10px]">
                         {{ getRunnerMessageStats(runner).total }}
                       </span>
                     </button>
 
                     <!-- No messages yet: subtle icon to start conversation -->
-                    <button v-else type="button"
-                      @click="openChatModal(runner)"
+                    <button v-else type="button" @click="openChatModal(runner)"
                       class="px-2.5 py-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-gray-800 text-gray-400 hover:text-emerald-600 dark:text-gray-500 dark:hover:text-emerald-400 border border-transparent hover:border-slate-200 dark:hover:border-gray-700 transition inline-flex items-center justify-center cursor-pointer group"
                       title="No chat history · Click to send message to runner">
                       <i class="far fa-comment-dots text-sm group-hover:scale-110 transition-transform"></i>
                     </button>
                   </td>
 
+                  <!-- Race Kit Status Column (Red box in user's layout) -->
+                  <td class="px-3 text-center whitespace-nowrap">
+                    <!-- Case 1: Kit Already Claimed -->
+                    <div v-if="runner.kit_claimed" class="inline-flex flex-col items-center gap-0.5">
+                      <div class="inline-flex items-center gap-1">
+                        <button type="button" @click="openRunnerClaimModal(runner)"
+                          class="px-2.5 py-1 rounded-xl bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-950/80 dark:hover:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 font-bold text-[11px] shadow-2xs transition inline-flex items-center gap-1 cursor-pointer group"
+                          :title="`Kit claimed on ${runner.kit_claimed_at ? new Date(runner.kit_claimed_at).toLocaleDateString() : 'N/A'} by ${runner.kit_claimed_by || 'Admin'}. Click to view or update claimed inclusions.`">
+                          <i
+                            class="fas fa-check-double text-emerald-600 dark:text-emerald-400 text-xs group-hover:scale-110 transition-transform"></i>
+                          <span>Claimed</span>
+                        </button>
+
+
+                      </div>
+                      <span v-if="runner.kit_claimed_by"
+                        class="text-[9px] text-gray-500 dark:text-gray-400 truncate max-w-[120px]"
+                        :title="runner.kit_claimed_by">
+                        by {{ runner.kit_claimed_by.split('@')[0] }}
+                      </span>
+                    </div>
+
+                    <!-- Case 2: Kit Marked Ready for Claiming (Email dispatched with QR code) -->
+                    <div v-else-if="runner.kit_ready" class="inline-flex items-center gap-1.5">
+
+                      <button type="button" @click="openRunnerQrPassModal(runner)"
+                        class="px-1.5 py-0.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700/80 transition inline-flex items-center justify-center cursor-pointer"
+                        title="View or print Runner Claim Pass with QR code">
+                        <i class="fas fa-qrcode text-3xl"></i>
+                      </button>
+                    </div>
+                  </td>
                   <!-- Fixed Actions column -->
                   <td class="px-3 text-center whitespace-nowrap">
                     <div class="inline-flex items-center justify-center gap-1.5">
@@ -5497,31 +6000,18 @@ const resetAllFilters = () => {
                         title="View registration details">
                         <i class="fas fa-eye"></i> View
                       </button>
-
-                      <!-- Approved / Approve button beside View button -->
-                      <span v-if="runner.payment_status === 'Confirmed'"
-                        class="px-2.5 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold text-xs border border-emerald-300 dark:border-emerald-700 inline-flex items-center gap-1 select-none shadow-2xs"
-                        title="Payment Confirmed / Approved">
-                        <i class="fas fa-check-circle text-emerald-600 dark:text-emerald-400"></i>
-                        <span>Approved</span>
-                      </span>
-                      <button v-else type="button" @click.stop="promptConfirmPayment(runner)" :disabled="isConfirming"
-                        class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs shadow-xs transition inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                        title="Approve / Confirm Payment">
-                        <i v-if="!isConfirming || confirmModal.runner?.id !== runner.id" class="fas fa-check"></i>
-                        <i v-else class="fas fa-spinner fa-spin"></i>
-                        <span>Approve</span>
-                      </button>
                     </div>
                   </td>
                 </tr>
                 <!-- Desktop Progressive Load More Row -->
                 <tr v-if="hasMoreToRender">
-                  <td :colspan="activeTableColumns.length + 3" class="p-3 text-center bg-slate-50/60 dark:bg-gray-900/40">
+                  <td :colspan="activeTableColumns.length + 4"
+                    class="p-3 text-center bg-slate-50/60 dark:bg-gray-900/40">
                     <div class="flex items-center justify-between px-3 py-1">
                       <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                         <i class="fas fa-layer-group text-emerald-500"></i>
-                        Showing <strong class="text-gray-800 dark:text-gray-200 mx-1">{{ displayedRegistrations.length }}</strong> of {{ filteredRegistrations.length }} runners
+                        Showing <strong class="text-gray-800 dark:text-gray-200 mx-1">{{ displayedRegistrations.length
+                          }}</strong> of {{ filteredRegistrations.length }} runners
                       </div>
                       <div class="flex items-center gap-2">
                         <button type="button" @click="loadMoreRegistrations"
@@ -5540,7 +6030,7 @@ const resetAllFilters = () => {
 
               <!-- DESKTOP EMPTY STATE -->
               <tr v-else>
-                <td :colspan="activeTableColumns.length + 3" class="p-10 text-center text-gray-500">
+                <td :colspan="activeTableColumns.length + 4" class="p-10 text-center text-gray-500">
                   <div class="max-w-md mx-auto space-y-2">
                     <i class="fas fa-search text-3xl mb-1 text-gray-400 block"></i>
                     <p class="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -5589,7 +6079,8 @@ const resetAllFilters = () => {
 
 
         <!-- Multi-Confirm Payment button -->
-        <button v-if="selectedPendingRunners.length > 0" type="button" @click="promptBulkConfirm" :disabled="isBulkConfirming"
+        <button v-if="selectedPendingRunners.length > 0" type="button" @click="promptBulkConfirm"
+          :disabled="isBulkConfirming"
           class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs transition shadow-lg flex items-center gap-1.5 border border-emerald-400/40 cursor-pointer active:scale-95 disabled:opacity-60"
           title="Approve / Confirm payment for all selected pending runners">
           <i v-if="!isBulkConfirming" class="fas fa-check-double"></i>
@@ -5694,17 +6185,20 @@ const resetAllFilters = () => {
                     selectedRunner.lsu_id_number + ')' : '' }}</p>
                 </div>
 
-                <div v-if="selectedRunner.college_course || selectedRunner.college_year || selectedRunner.beu_grade" class="lg:flex">
+                <div v-if="selectedRunner.college_course || selectedRunner.college_year || selectedRunner.beu_grade"
+                  class="lg:flex">
                   <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Course / Program</label>
                   <div class="space-y-1">
                     <div class="flex items-center gap-2 flex-wrap">
-                      <span v-if="getCourseLabel(selectedRunner.college_course)" class="font-semibold text-emerald-700 dark:text-emerald-400">
+                      <span v-if="getCourseLabel(selectedRunner.college_course)"
+                        class="font-semibold text-emerald-700 dark:text-emerald-400">
                         {{ getCourseLabel(selectedRunner.college_course) }}
                       </span>
-                     
+
                     </div>
                     <p v-if="selectedRunner.college_year || selectedRunner.beu_grade" class="text-[11px] text-gray-500">
-                      Level: <strong class="text-gray-700 dark:text-gray-300">{{ selectedRunner.college_year || selectedRunner.beu_grade }}</strong>
+                      Level: <strong class="text-gray-700 dark:text-gray-300">{{ selectedRunner.college_year ||
+                        selectedRunner.beu_grade }}</strong>
                     </p>
                   </div>
                 </div>
@@ -5722,7 +6216,7 @@ const resetAllFilters = () => {
                 <div class="lg:flex">
                   <label class="font-bold text-gray-500 block lg:w-3/12 uppercase">Address</label>
                   <p class="font-semibold">{{ selectedRunner.contact_address || selectedRunner.address || 'Ozamiz City'
-                    }}
+                  }}
                   </p>
                 </div>
               </template>
@@ -5846,7 +6340,8 @@ const resetAllFilters = () => {
                   </div>
                   <div>
                     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Year / Grade Level</label>
-                    <input v-model="editForm.college_year" :class="inputCls" placeholder="e.g. 1st Year, Grade 11 STEM" />
+                    <input v-model="editForm.college_year" :class="inputCls"
+                      placeholder="e.g. 1st Year, Grade 11 STEM" />
                   </div>
                 </div>
 
@@ -5858,16 +6353,15 @@ const resetAllFilters = () => {
                       <option value="">-- Select Size --</option>
                       <template v-for="shirtConfig in OFFICIAL_SHIRT_CONFIGS" :key="shirtConfig.id">
                         <optgroup :label="shirtConfig.sizesGroupLabel">
-                          <option
-                            v-for="size in shirtConfig.sizes"
-                            :key="shirtConfig.id + '-' + size"
+                          <option v-for="size in shirtConfig.sizes" :key="shirtConfig.id + '-' + size"
                             :value="shirtConfig.shortLabel + ': ' + size + ';'">
                             {{ shirtConfig.shortLabel }}: {{ size }};
                           </option>
                         </optgroup>
                       </template>
                       <!-- Fallback option for custom/non-standard values so dropdown is never blank -->
-                      <option v-if="editForm.tshirt_size && !isStandardShirtOption(editForm.tshirt_size)" :value="editForm.tshirt_size">
+                      <option v-if="editForm.tshirt_size && !isStandardShirtOption(editForm.tshirt_size)"
+                        :value="editForm.tshirt_size">
                         {{ editForm.tshirt_size }}
                       </option>
                     </select>
@@ -5885,25 +6379,28 @@ const resetAllFilters = () => {
                 </div>
 
                 <!-- Finisher Shirt Size (20KM only) -->
-                <div v-if="editForm.run_category === '20KM' || (selectedRunner && selectedRunner.run_category === '20KM')">
+                <div
+                  v-if="editForm.run_category === '20KM' || (selectedRunner && selectedRunner.run_category === '20KM')">
                   <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">
                     <i class="fas fa-medal text-amber-500 mr-1"></i>Finisher Shirt Size
-                    <span class="ml-1 px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[9px] font-bold border border-amber-300 normal-case">20KM Inclusion</span>
+                    <span
+                      class="ml-1 px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 text-[9px] font-bold border border-amber-300 normal-case">20KM
+                      Inclusion</span>
                   </label>
                   <select v-model="editForm.finisher_shirt_size" :class="inputCls">
                     <option value="">-- Select Finisher Shirt Size --</option>
                     <template v-if="FINISHER_SHIRT_CONFIG">
                       <optgroup :label="FINISHER_SHIRT_CONFIG.sizesGroupLabel">
-                        <option
-                          v-for="size in FINISHER_SHIRT_CONFIG.sizes"
-                          :key="'finisher-' + size"
+                        <option v-for="size in FINISHER_SHIRT_CONFIG.sizes" :key="'finisher-' + size"
                           :value="'Finisher Shirt: ' + size + ';'">
                           Finisher Shirt: {{ size }};
                         </option>
                       </optgroup>
                     </template>
                     <!-- Fallback option for custom/non-standard values so dropdown is never blank -->
-                    <option v-if="editForm.finisher_shirt_size && !isStandardFinisherOption(editForm.finisher_shirt_size)" :value="editForm.finisher_shirt_size">
+                    <option
+                      v-if="editForm.finisher_shirt_size && !isStandardFinisherOption(editForm.finisher_shirt_size)"
+                      :value="editForm.finisher_shirt_size">
                       {{ editForm.finisher_shirt_size }}
                     </option>
                   </select>
@@ -5984,7 +6481,7 @@ const resetAllFilters = () => {
                   </span>
                 </div>
                 <p><strong>Name:</strong> {{ selectedRunner.pet_name || 'N/A' }} ({{ selectedRunner.pet_type || 'Dog'
-                  }})
+                }})
                 </p>
                 <p><strong>Bandana:</strong> Standard</p>
 
@@ -6138,7 +6635,7 @@ const resetAllFilters = () => {
 
           <!-- ── COMMUNICATION CHAT PANEL ────────────────────────────────────────────── -->
           <div class="lg:w-80 shrink-0 flex flex-col mt-6 lg:mt-0" v-if="!isEditMode">
-            
+
             <!-- Header -->
             <div class="flex items-center gap-2 mb-3 pb-2 border-b dark:border-gray-700">
               <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm">
@@ -6196,7 +6693,8 @@ const resetAllFilters = () => {
                       <i class="fas fa-external-link-alt text-[9px] opacity-60 ml-auto"></i>
                     </a>
                     <a v-else :href="getCleanUrl(msg.attachment_url)" target="_blank" class="block">
-                      <img :src="getCleanUrl(msg.attachment_url)" :alt="msg.attachment_name || 'Image'" @load="scrollChatToBottom"
+                      <img :src="getCleanUrl(msg.attachment_url)" :alt="msg.attachment_name || 'Image'"
+                        @load="scrollChatToBottom"
                         class="mt-1 max-w-[180px] max-h-[160px] rounded-xl object-cover border border-white/20 shadow-sm cursor-pointer hover:opacity-90 transition" />
                     </a>
                   </div>
@@ -6224,7 +6722,7 @@ const resetAllFilters = () => {
                   <i class="fas fa-file-pdf text-base"></i>
                 </div>
                 <span class="flex-1 text-[10px] text-gray-600 dark:text-gray-300 truncate">{{ chatAttachment.name
-                  }}</span>
+                }}</span>
                 <button type="button" @click="removeChatAttachment"
                   class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-500 hover:bg-rose-100 hover:text-rose-500 flex items-center justify-center transition cursor-pointer">
                   <i class="fas fa-times text-[9px]"></i>
@@ -6308,7 +6806,7 @@ const resetAllFilters = () => {
 
     <!-- BULK-CONFIRM PAYMENT MODAL ──────────────────────────────────── -->
     <div v-if="bulkConfirmModal.show"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       @click.self="closeBulkConfirmModal">
       <div :class="[
         'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
@@ -6324,15 +6822,21 @@ const resetAllFilters = () => {
 
         <div>
           <h3 class="text-lg font-black tracking-tight">
-            Confirm {{ selectedPendingRunners.length }} Runner Payment{{ selectedPendingRunners.length !== 1 ? 's' : '' }}?
+            Confirm {{ selectedPendingRunners.length }} Runner Payment{{ selectedPendingRunners.length !== 1 ? 's' : ''
+            }}?
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-            This will mark all <strong class="text-emerald-600 dark:text-emerald-400">{{ selectedPendingRunners.length }} pending registrations</strong> as <strong class="text-emerald-600 dark:text-emerald-400">Confirmed</strong> and queue their official registration confirmation emails.
+            This will mark all <strong class="text-emerald-600 dark:text-emerald-400">{{ selectedPendingRunners.length
+              }}
+              pending registrations</strong> as <strong
+              class="text-emerald-600 dark:text-emerald-400">Confirmed</strong>
+            and queue their official registration confirmation emails.
           </p>
         </div>
 
         <!-- Quick Summary Box -->
-        <div class="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 text-left text-xs space-y-1.5">
+        <div
+          class="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 text-left text-xs space-y-1.5">
           <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
             <span>Operator:</span>
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ currentOperator || 'Admin' }}</span>
@@ -6341,7 +6845,8 @@ const resetAllFilters = () => {
             <span>Runners to Confirm:</span>
             <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ selectedPendingRunners.length }}</span>
           </div>
-          <div v-if="selectedIds.length > selectedPendingRunners.length" class="flex justify-between items-center text-gray-400 text-[11px]">
+          <div v-if="selectedIds.length > selectedPendingRunners.length"
+            class="flex justify-between items-center text-gray-400 text-[11px]">
             <span>Already confirmed (skipped):</span>
             <span>{{ selectedIds.length - selectedPendingRunners.length }}</span>
           </div>
@@ -6364,7 +6869,7 @@ const resetAllFilters = () => {
 
     <!-- BULK-DELETE CONFIRMATION MODAL ──────────────────────────────── -->
     <div v-if="bulkDeleteModal.show"
-      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
       @click.self="closeBulkDeleteModal">
       <div :class="[
         'w-full max-w-sm rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
@@ -6381,7 +6886,7 @@ const resetAllFilters = () => {
         <div>
           <h3 class="text-lg font-black tracking-tight">Delete {{ selectedIds.length }} Registration{{
             selectedIds.length
-            !== 1 ? 's' : '' }}?</h3>
+              !== 1 ? 's' : '' }}?</h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
             This action is <strong class="text-rose-600">permanent</strong> and cannot be undone.
             All selected runner records will be removed from the system.
@@ -6405,7 +6910,7 @@ const resetAllFilters = () => {
 
     <!-- DELETE RECEIPT CONFIRMATION MODAL -->
     <div v-if="deleteReceiptModal.show && deleteReceiptModal.runner"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       @click.self="closeDeleteReceiptModal">
       <div :class="[
         'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
@@ -6448,7 +6953,7 @@ const resetAllFilters = () => {
 
     <!-- ADMIN CONFIRMATION DIALOG MODAL (REPLACES BROWSER CONFIRM) -->
     <div v-if="confirmModal.show && confirmModal.runner"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       @click.self="closeConfirmModal">
       <div :class="[
         'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
@@ -6467,7 +6972,7 @@ const resetAllFilters = () => {
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Confirm payment for <strong class="text-emerald-600 dark:text-emerald-400">{{ confirmModal.runner.firstname
-              }}
+            }}
               {{ confirmModal.runner.lastname }}</strong>?
           </p>
           <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 leading-relaxed">
@@ -6494,14 +6999,57 @@ const resetAllFilters = () => {
       </div>
     </div>
 
+    <!-- UNCLAIM CONFIRMATION MODAL (REPLACES BROWSER CONFIRM) -->
+    <div v-if="unclaimConfirmModal.show && unclaimConfirmModal.runner"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      @click.self="closeUnclaimConfirmModal">
+      <div :class="[
+        'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-rose-500"></div>
+
+        <div
+          class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400 flex items-center justify-center text-2xl shadow-sm mt-2">
+          <i class="fas fa-rotate-left"></i>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-black tracking-tight">
+            Revert Claim Status?
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Are you sure you want to revert claimed status for
+            <strong class="text-rose-600 dark:text-rose-400">
+              {{ unclaimConfirmModal.runner.firstname }} {{ unclaimConfirmModal.runner.lastname }}
+              ({{ unclaimConfirmModal.runner.run_number || ('AR-' + unclaimConfirmModal.runner.id) }})
+            </strong>?
+          </p>
+          <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-2 leading-relaxed">
+            This will mark the race kit as uncollected and clear the claimed handover record.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" @click="closeUnclaimConfirmModal" :disabled="isUnclaiming"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="button" @click="executeUnclaim()" :disabled="isUnclaiming"
+            class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60">
+            <i v-if="!isUnclaiming" class="fas fa-rotate-left"></i>
+            <i v-else class="fas fa-spinner fa-spin"></i>
+            <span>{{ isUnclaiming ? 'Reverting...' : 'Yes, Revert Claim' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- FAST FLOATING TOAST NOTIFICATION (NON-BLOCKING) -->
-    <transition
-      enter-active-class="transform transition ease-out duration-300"
+    <transition enter-active-class="transform transition ease-out duration-300"
       enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
-      enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
-      leave-active-class="transition ease-in duration-200"
-      leave-from-class="opacity-100"
-      leave-to-class="opacity-0">
+      enter-to-class="translate-y-0 opacity-100 sm:translate-x-0" leave-active-class="transition ease-in duration-200"
+      leave-from-class="opacity-100" leave-to-class="opacity-0">
       <div v-if="fastToast.show"
         class="fixed top-6 right-6 z-[9999] max-w-sm w-full shadow-2xl rounded-2xl p-4 border flex items-center gap-3 backdrop-blur-md pointer-events-auto"
         :class="[
@@ -6511,10 +7059,9 @@ const resetAllFilters = () => {
               ? 'bg-amber-900/95 text-amber-100 border-amber-700 shadow-amber-950/40'
               : 'bg-emerald-900/95 text-emerald-100 border-emerald-700 shadow-emerald-950/40'
         ]">
-        <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-          :class="[
-            fastToast.type === 'error' ? 'bg-rose-500/30 text-rose-300' : 'bg-emerald-500/30 text-emerald-300'
-          ]">
+        <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" :class="[
+          fastToast.type === 'error' ? 'bg-rose-500/30 text-rose-300' : 'bg-emerald-500/30 text-emerald-300'
+        ]">
           <i :class="['fas text-sm', fastToast.type === 'error' ? 'fa-circle-xmark' : 'fa-circle-check']"></i>
         </div>
         <div class="flex-1 text-xs font-semibold leading-snug">
@@ -6529,7 +7076,7 @@ const resetAllFilters = () => {
 
     <!-- TOAST NOTIFICATION MODAL (REPLACES BROWSER ALERT) -->
     <div v-if="toastModal.show"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      class="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
       @click.self="closeNotice">
       <div :class="[
         'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
@@ -6592,7 +7139,8 @@ const resetAllFilters = () => {
         props.darkMode ? 'bg-gray-900 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-slate-200'
       ]">
         <!-- Header -->
-        <div class="px-5 py-3.5 border-b flex items-center justify-between dark:border-gray-800 shrink-0 flex-wrap gap-2">
+        <div
+          class="px-5 py-3.5 border-b flex items-center justify-between dark:border-gray-800 shrink-0 flex-wrap gap-2">
           <div class="flex items-center gap-2.5">
             <div
               class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center text-sm shadow-xs">
@@ -6615,7 +7163,8 @@ const resetAllFilters = () => {
           <div class="flex items-center gap-1.5 sm:gap-2">
             <!-- Zoom Controls (for image receipts) -->
             <template v-if="!isPdfUrl(receiptModal.url)">
-              <div class="flex items-center bg-gray-100 dark:bg-gray-800/80 rounded-xl p-0.5 border border-gray-200 dark:border-gray-700">
+              <div
+                class="flex items-center bg-gray-100 dark:bg-gray-800/80 rounded-xl p-0.5 border border-gray-200 dark:border-gray-700">
                 <button type="button" @click="zoomOutReceipt" :disabled="receiptZoom <= 0.5"
                   class="w-7 h-7 rounded-lg hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-40 flex items-center justify-center text-xs transition cursor-pointer"
                   title="Zoom Out (-)">
@@ -6667,12 +7216,8 @@ const resetAllFilters = () => {
         <!-- Document / Image Content Area with Interactive Zoom & Drag Pan -->
         <div
           class="p-3 sm:p-5 overflow-hidden flex-1 flex items-center justify-center bg-slate-900/5 dark:bg-black/50 min-h-[320px] select-none relative"
-          @wheel="onReceiptWheel"
-          @mousedown="startReceiptDrag"
-          @mousemove="onReceiptDrag"
-          @mouseup="stopReceiptDrag"
-          @mouseleave="stopReceiptDrag"
-          :class="[
+          @wheel="onReceiptWheel" @mousedown="startReceiptDrag" @mousemove="onReceiptDrag" @mouseup="stopReceiptDrag"
+          @mouseleave="stopReceiptDrag" :class="[
             receiptZoom > 1 || receiptRotation !== 0
               ? (isReceiptDragging ? 'cursor-grabbing' : 'cursor-grab')
               : 'cursor-default'
@@ -6680,16 +7225,13 @@ const resetAllFilters = () => {
           <iframe v-if="isPdfUrl(receiptModal.url)" :src="receiptModal.url"
             class="w-full h-[68vh] rounded-xl border border-gray-200 dark:border-gray-800" />
           <div v-else class="w-full h-full flex items-center justify-center overflow-hidden">
-            <img :src="receiptModal.url" :alt="receiptModal.title"
-              @dblclick="toggleReceiptZoomFit"
-              :style="{
-                transform: `translate(${receiptPan.x}px, ${receiptPan.y}px) scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
-                transformOrigin: 'center center',
-                transition: isReceiptDragging ? 'none' : 'transform 0.15s ease-out'
-              }"
+            <img :src="receiptModal.url" :alt="receiptModal.title" @dblclick="toggleReceiptZoomFit" :style="{
+              transform: `translate(${receiptPan.x}px, ${receiptPan.y}px) scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
+              transformOrigin: 'center center',
+              transition: isReceiptDragging ? 'none' : 'transform 0.15s ease-out'
+            }"
               class="max-h-[68vh] max-w-full w-auto object-contain rounded-xl border shadow-md border-gray-200 dark:border-gray-800 select-none pointer-events-auto"
-              draggable="false"
-              title="Double-click: 200% zoom/reset · Wheel: Zoom · Drag: Pan" />
+              draggable="false" title="Double-click: 200% zoom/reset · Wheel: Zoom · Drag: Pan" />
           </div>
 
           <!-- Zoom Interaction Hint -->
@@ -6707,7 +7249,7 @@ const resetAllFilters = () => {
               v-if="receiptModal.runner && (receiptModal.runner.grand_total_payment || receiptModal.runner.grand_total)">
               Amount Due: <strong class="text-emerald-600 dark:text-emerald-400 font-bold">₱{{
                 Number(receiptModal.runner.grand_total_payment || receiptModal.runner.grand_total || 0).toLocaleString()
-                }}</strong>
+              }}</strong>
             </span>
           </div>
 
@@ -7023,7 +7565,8 @@ const resetAllFilters = () => {
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
             <span v-if="unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked">
-              This order is locked under <strong class="text-purple-600 dark:text-purple-400">{{ unlockPromptModal.target.batch_name }}</strong>.
+              This order is locked under <strong class="text-purple-600 dark:text-purple-400">{{
+                unlockPromptModal.target.batch_name }}</strong>.
               Unlocking allows emergency modifications to t-shirt size, bib, or category specifications.
             </span>
             <span v-else>
@@ -7045,7 +7588,8 @@ const resetAllFilters = () => {
             <i v-if="!isTogglingLock"
               :class="['fas', unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked ? 'fa-unlock' : 'fa-lock']"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
-            <span>{{ isTogglingLock ? 'Updating...' : ((unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked) ? 'Yes, Bypass & Unlock' : 'Yes, Lock Order') }}</span>
+            <span>{{ isTogglingLock ? 'Updating...' : ((unlockPromptModal.target.batch_locked ||
+              unlockPromptModal.target.is_locked) ? 'Yes, Bypass & Unlock' : 'Yes, Lock Order') }}</span>
           </button>
         </div>
       </div>
@@ -7130,10 +7674,12 @@ const resetAllFilters = () => {
         props.darkMode ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-slate-200'
       ]">
         <!-- Modal Header -->
-        <div class="p-4 sm:p-5 border-b dark:border-gray-700 flex items-start justify-between gap-3 bg-slate-50/70 dark:bg-gray-900/50">
+        <div
+          class="p-4 sm:p-5 border-b dark:border-gray-700 flex items-start justify-between gap-3 bg-slate-50/70 dark:bg-gray-900/50">
           <div class="space-y-1">
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white font-extrabold text-xs uppercase shadow-xs">
+              <span
+                class="px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white font-extrabold text-xs uppercase shadow-xs">
                 {{ chatModalRunner.run_number || chatModalRunner.bib_number || ('AR-' + chatModalRunner.id) }}
               </span>
               <h2 class="text-base sm:text-lg font-black tracking-tight text-gray-900 dark:text-gray-100">
@@ -7145,7 +7691,8 @@ const resetAllFilters = () => {
               ]">
                 {{ chatModalRunner.payment_status }}
               </span>
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+              <span
+                class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                 {{ chatModalRunner.run_category }}
               </span>
             </div>
@@ -7187,34 +7734,42 @@ const resetAllFilters = () => {
         </div>
 
         <!-- Notification Banner / Information Strip -->
-        <div class="px-4 py-2 bg-emerald-50/80 dark:bg-emerald-950/30 border-b border-emerald-100 dark:border-emerald-900/50 flex items-center justify-between gap-2 text-[11px]">
+        <div
+          class="px-4 py-2 bg-emerald-50/80 dark:bg-emerald-950/30 border-b border-emerald-100 dark:border-emerald-900/50 flex items-center justify-between gap-2 text-[11px]">
           <div class="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 font-medium">
             <i class="fas fa-info-circle text-emerald-600 dark:text-emerald-400"></i>
-            <span>Admin communication messages automatically notify the runner via email at <strong>{{ chatModalRunner.contact_email || 'their registered email' }}</strong>.</span>
+            <span>Admin communication messages automatically notify the runner via email at <strong>{{
+              chatModalRunner.contact_email || 'their registered email' }}</strong>.</span>
           </div>
-          <span v-if="chatEmailSent" class="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-bold text-[9px] shrink-0 flex items-center gap-1">
+          <span v-if="chatEmailSent"
+            class="px-2 py-0.5 rounded-full bg-emerald-600 text-white font-bold text-[9px] shrink-0 flex items-center gap-1">
             <i class="fas fa-check"></i> Email Dispatched
           </span>
         </div>
 
         <!-- Quick Reply Suggestions / Templates -->
-        <div class="px-4 py-2 border-b dark:border-gray-700 bg-slate-50/50 dark:bg-gray-900/30 flex items-center gap-1.5 overflow-x-auto text-xs">
+        <div
+          class="px-4 py-2 border-b dark:border-gray-700 bg-slate-50/50 dark:bg-gray-900/30 flex items-center gap-1.5 overflow-x-auto text-xs">
           <span class="text-[10px] font-extrabold text-gray-400 uppercase shrink-0">
             <i class="fas fa-bolt text-amber-400 mr-0.5"></i> Quick Reply:
           </span>
-          <button type="button" @click="applyChatTemplate('Please upload a clearer copy or official screenshot of your payment receipt.')"
+          <button type="button"
+            @click="applyChatTemplate('Please upload a clearer copy or official screenshot of your payment receipt.')"
             class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 hover:border-emerald-400 text-gray-700 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap transition cursor-pointer shrink-0">
             Receipt Clarification
           </button>
-          <button type="button" @click="applyChatTemplate('Payment verified! Your registration for The Emerald Run is officially confirmed.')"
+          <button type="button"
+            @click="applyChatTemplate('Payment verified! Your registration for The Emerald Run is officially confirmed.')"
             class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 hover:border-emerald-400 text-gray-700 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap transition cursor-pointer shrink-0">
             Payment Confirmed
           </button>
-          <button type="button" @click="applyChatTemplate('Please confirm your preferred event t-shirt size so we can reserve your kit.')"
+          <button type="button"
+            @click="applyChatTemplate('Please confirm your preferred event t-shirt size so we can reserve your kit.')"
             class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 hover:border-emerald-400 text-gray-700 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap transition cursor-pointer shrink-0">
             T-Shirt Size
           </button>
-          <button type="button" @click="applyChatTemplate('Please provide your valid LSU ID number for discount verification.')"
+          <button type="button"
+            @click="applyChatTemplate('Please provide your valid LSU ID number for discount verification.')"
             class="px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-white dark:bg-gray-800 border border-slate-200 dark:border-gray-700 hover:border-emerald-400 text-gray-700 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap transition cursor-pointer shrink-0">
             LSU ID Query
           </button>
@@ -7223,7 +7778,7 @@ const resetAllFilters = () => {
         <!-- Chat Message Thread / History Stream -->
         <div ref="quickChatMessagesContainer"
           class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 custom-scrollbar min-h-[260px] max-h-[420px] bg-white dark:bg-gray-800/80">
-          
+
           <!-- Loading State -->
           <div v-if="isChatLoading" class="flex flex-col items-center justify-center py-12 text-gray-400">
             <i class="fas fa-spinner fa-spin text-emerald-500 text-2xl mb-2"></i>
@@ -7231,13 +7786,17 @@ const resetAllFilters = () => {
           </div>
 
           <!-- Empty State -->
-          <div v-else-if="!chatMessages.length" class="flex flex-col items-center justify-center py-12 text-center text-gray-400">
-            <div class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center text-xl mb-2">
+          <div v-else-if="!chatMessages.length"
+            class="flex flex-col items-center justify-center py-12 text-center text-gray-400">
+            <div
+              class="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center text-xl mb-2">
               <i class="far fa-comments"></i>
             </div>
             <p class="text-sm font-bold text-gray-600 dark:text-gray-300">No messages exchanged yet</p>
             <p class="text-xs text-gray-400 max-w-sm mt-1">
-              Start the conversation by sending a follow-up remark or inquiry response to {{ chatModalRunner.firstname }} below.
+              Start the conversation by sending a follow-up remark or inquiry response to {{ chatModalRunner.firstname
+              }}
+              below.
             </p>
           </div>
 
@@ -7266,7 +7825,8 @@ const resetAllFilters = () => {
                   msg.sender_type === 'admin' ? 'text-emerald-100' : 'text-emerald-700 dark:text-emerald-400'
                 ]">
                   <i :class="['fas text-[9px]', msg.sender_type === 'admin' ? 'fa-shield-alt' : 'fa-comment']"></i>
-                  {{ msg.sender_type === 'admin' ? (msg.sender || 'Admin') : (msg.sender || chatModalRunner.firstname || 'Runner') }}
+                  {{ msg.sender_type === 'admin' ? (msg.sender || 'Admin') : (msg.sender || chatModalRunner.firstname ||
+                  'Runner') }}
                 </span>
                 <span :class="['text-[9px]', msg.sender_type === 'admin' ? 'text-emerald-200/80' : 'text-gray-400']">
                   {{ msg.timestamp }}
@@ -7296,7 +7856,8 @@ const resetAllFilters = () => {
 
                 <!-- Image Attachment -->
                 <div v-else class="space-y-1">
-                  <a :href="getCleanUrl(msg.attachment_url)" target="_blank" class="block group relative overflow-hidden rounded-xl">
+                  <a :href="getCleanUrl(msg.attachment_url)" target="_blank"
+                    class="block group relative overflow-hidden rounded-xl">
                     <img :src="getCleanUrl(msg.attachment_url)" :alt="msg.attachment_name || 'Attached Image'"
                       class="max-w-[220px] max-h-[180px] rounded-xl object-cover border border-white/20 shadow-sm cursor-pointer group-hover:scale-105 transition-transform" />
                   </a>
@@ -7351,8 +7912,7 @@ const resetAllFilters = () => {
             <!-- Textarea -->
             <div class="flex-1 relative">
               <textarea v-model="chatInput" :disabled="isSendingChat" @keydown.enter.ctrl="sendAdminMessage" rows="2"
-                placeholder="Type response or remarks to this runner... (Press Ctrl + Enter to send)"
-                :class="[
+                placeholder="Type response or remarks to this runner... (Press Ctrl + Enter to send)" :class="[
                   'w-full px-3.5 py-2.5 rounded-2xl border text-xs resize-none focus:ring-2 focus:ring-emerald-500 focus:outline-none transition leading-relaxed',
                   props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100 placeholder-gray-500' : 'bg-white border-gray-300 text-gray-800 placeholder-gray-400'
                 ]"></textarea>
@@ -7383,68 +7943,69 @@ const resetAllFilters = () => {
     </div>
 
     <!-- ── CSV TEMPLATE IMPORT PREVIEW MODAL (VVIP, BROTHERS, SPONSORS DIRECT IMPORT) ── -->
-    <div
-      v-if="isCsvImportModalOpen"
+    <div v-if="isCsvImportModalOpen"
       class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm overflow-y-auto"
-      @click.self="isCsvImportModalOpen = false"
-    >
-      <div
-        :class="[
-          'relative w-full max-w-4xl rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all space-y-4 overflow-hidden max-h-[92vh] flex flex-col',
-          props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
-        ]"
-      >
+      @click.self="isCsvImportModalOpen = false">
+      <div :class="[
+        'relative w-full max-w-4xl rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all space-y-4 overflow-hidden max-h-[92vh] flex flex-col',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
         <!-- Top Gradient Accent Bar -->
-        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 via-emerald-500 to-blue-500"></div>
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 via-emerald-500 to-blue-500">
+        </div>
 
         <!-- Modal Header -->
         <div class="flex items-start justify-between border-b pb-3.5 dark:border-gray-700 shrink-0">
           <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl font-bold shadow-xs">
+            <div
+              class="w-11 h-11 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl font-bold shadow-xs">
               <i class="fas fa-file-csv"></i>
             </div>
             <div>
               <h3 class="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
                 Import Runners from CSV
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+                <span
+                  class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
                   {{ csvParsedRunners.length }} Found
                 </span>
               </h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                File: <strong class="text-emerald-600 dark:text-emerald-400">{{ csvUploadFileName }}</strong> · Review parsed runners before confirming direct import
+                File: <strong class="text-emerald-600 dark:text-emerald-400">{{ csvUploadFileName }}</strong> · Review
+                parsed runners before confirming direct import
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            @click="isCsvImportModalOpen = false"
-            class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer transition"
-          >
+          <button type="button" @click="isCsvImportModalOpen = false"
+            class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer transition">
             <i class="fas fa-times text-xs"></i>
           </button>
         </div>
 
         <!-- Breakdown Chips (VVIP, Brothers, Sponsors, Others) -->
         <div class="flex items-center gap-2 flex-wrap shrink-0 pt-0.5">
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-purple-100 dark:bg-purple-950/70 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800 shadow-xs">
+          <div
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-purple-100 dark:bg-purple-950/70 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800 shadow-xs">
             <i class="fas fa-crown text-amber-500 text-xs"></i>
             <span>VVIP:</span>
             <span class="font-black text-sm">{{ csvImportStats.vvip }}</span>
           </div>
 
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-xs">
+          <div
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-xs">
             <i class="fas fa-cross text-emerald-600 text-xs"></i>
             <span>De La Salle Brothers:</span>
             <span class="font-black text-sm">{{ csvImportStats.brothers }}</span>
           </div>
 
-          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-800 shadow-xs">
+          <div
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-800 shadow-xs">
             <i class="fas fa-handshake text-blue-600 text-xs"></i>
             <span>Sponsors:</span>
             <span class="font-black text-sm">{{ csvImportStats.sponsors }}</span>
           </div>
 
-          <div v-if="csvImportStats.others > 0" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700 shadow-xs">
+          <div v-if="csvImportStats.others > 0"
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border border-gray-300 dark:border-gray-700 shadow-xs">
             <i class="fas fa-users text-gray-500 text-xs"></i>
             <span>Others:</span>
             <span class="font-black text-sm">{{ csvImportStats.others }}</span>
@@ -7454,7 +8015,8 @@ const resetAllFilters = () => {
         <!-- Scrollable Table Preview -->
         <div class="flex-1 overflow-y-auto border rounded-2xl dark:border-gray-700 min-h-[220px]">
           <table class="w-full text-left text-xs border-collapse">
-            <thead class="sticky top-0 bg-slate-100 dark:bg-gray-900/90 backdrop-blur-sm border-b dark:border-gray-700 text-gray-500 uppercase text-[10px] font-bold z-10">
+            <thead
+              class="sticky top-0 bg-slate-100 dark:bg-gray-900/90 backdrop-blur-sm border-b dark:border-gray-700 text-gray-500 uppercase text-[10px] font-bold z-10">
               <tr>
                 <th class="py-2.5 px-3">#</th>
                 <th class="py-2.5 px-3">Classification</th>
@@ -7467,37 +8029,35 @@ const resetAllFilters = () => {
               </tr>
             </thead>
             <tbody class="divide-y dark:divide-gray-700/60 font-medium">
-              <tr
-                v-for="(r, idx) in csvParsedRunners"
-                :key="idx"
-                class="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition"
-              >
+              <tr v-for="(r, idx) in csvParsedRunners" :key="idx"
+                class="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition">
                 <td class="py-2 px-3 text-gray-400 text-[11px] font-bold">{{ idx + 1 }}</td>
 
                 <!-- Classification -->
                 <td class="py-2 px-3 whitespace-nowrap">
-                  <span
-                    :class="[
-                      'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border',
-                      r.participant_type === 'VVIP'
-                        ? 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300 border-purple-300'
-                        : r.participant_type === 'De La Salle Brothers'
-                          ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300'
-                          : r.participant_type === 'Sponsors'
-                            ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300'
-                            : 'bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-gray-600'
-                    ]"
-                  >
+                  <span :class="[
+                    'inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border',
+                    r.participant_type === 'VVIP'
+                      ? 'bg-purple-100 text-purple-900 dark:bg-purple-950 dark:text-purple-300 border-purple-300'
+                      : r.participant_type === 'De La Salle Brothers'
+                        ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300'
+                        : r.participant_type === 'Sponsors'
+                          ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300'
+                          : 'bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-gray-600'
+                  ]">
                     <i v-if="r.participant_type === 'VVIP'" class="fas fa-crown text-amber-500 text-[9px]"></i>
-                    <i v-else-if="r.participant_type === 'De La Salle Brothers'" class="fas fa-cross text-emerald-600 text-[9px]"></i>
-                    <i v-else-if="r.participant_type === 'Sponsors'" class="fas fa-handshake text-blue-600 text-[9px]"></i>
+                    <i v-else-if="r.participant_type === 'De La Salle Brothers'"
+                      class="fas fa-cross text-emerald-600 text-[9px]"></i>
+                    <i v-else-if="r.participant_type === 'Sponsors'"
+                      class="fas fa-handshake text-blue-600 text-[9px]"></i>
                     <span>{{ r.participant_type }}</span>
                   </span>
                 </td>
 
                 <!-- Name -->
                 <td class="py-2 px-3 font-bold text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                  {{ r.firstname }} {{ r.middlename ? r.middlename[0] + '.' : '' }} {{ r.lastname }}{{ r.suffix ? ' ' + r.suffix : '' }}
+                  {{ r.firstname }} {{ r.middlename ? r.middlename[0] + '.' : '' }} {{ r.lastname }}{{ r.suffix ? ' ' +
+                  r.suffix : '' }}
                 </td>
 
                 <!-- Category -->
@@ -7527,13 +8087,15 @@ const resetAllFilters = () => {
                 </td>
 
                 <!-- Organization / Sponsor -->
-                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 text-[11px] max-w-[150px] truncate" :title="r.organization">
+                <td class="py-2 px-3 text-gray-600 dark:text-gray-300 text-[11px] max-w-[150px] truncate"
+                  :title="r.organization">
                   {{ r.organization || '-' }}
                 </td>
 
                 <!-- Payment Status -->
                 <td class="py-2 px-3 whitespace-nowrap">
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 dark:bg-green-950/70 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-800">
+                  <span
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 dark:bg-green-950/70 text-green-800 dark:text-green-300 border border-green-300 dark:border-green-800">
                     <i class="fas fa-check-circle text-[9px]"></i>
                     {{ r.payment_status || 'Confirmed' }}
                   </span>
@@ -7544,31 +8106,26 @@ const resetAllFilters = () => {
         </div>
 
         <!-- Modal Bottom Actions & Instructions -->
-        <div class="pt-3 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+        <div
+          class="pt-3 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div class="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
             <i class="fas fa-info-circle text-emerald-500"></i>
             <span>
-              BIB numbers are automatically allocated per KM category. Payment will be marked <strong>Confirmed</strong>.
+              BIB numbers are automatically allocated per KM category. Payment will be marked
+              <strong>Confirmed</strong>.
             </span>
           </div>
 
           <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <button
-              type="button"
-              @click="isCsvImportModalOpen = false"
-              :disabled="isImportingCsv"
-              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer"
-            >
+            <button type="button" @click="isCsvImportModalOpen = false" :disabled="isImportingCsv"
+              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
               Cancel
             </button>
-            <button
-              type="button"
-              @click="executeCsvImport"
-              :disabled="isImportingCsv || !csvParsedRunners.length"
-              class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
-            >
+            <button type="button" @click="executeCsvImport" :disabled="isImportingCsv || !csvParsedRunners.length"
+              class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer">
               <i :class="['fas', isImportingCsv ? 'fa-spinner fa-spin' : 'fa-check']"></i>
-              <span>{{ isImportingCsv ? 'Importing Runners...' : `Confirm & Import ${csvParsedRunners.length} Runners` }}</span>
+              <span>{{ isImportingCsv ? 'Importing Runners...' : `Confirm & Import ${csvParsedRunners.length} Runners`
+                }}</span>
             </button>
           </div>
         </div>
@@ -7577,24 +8134,22 @@ const resetAllFilters = () => {
     </div>
 
     <!-- ── STUDENT CSV IMPORT PREVIEW MODAL (BEU / HEU DIRECT IMPORT) ── -->
-    <div
-      v-if="isStudentCsvModalOpen"
+    <div v-if="isStudentCsvModalOpen"
       class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm overflow-y-auto"
-      @click.self="isStudentCsvModalOpen = false"
-    >
-      <div
-        :class="[
-          'relative w-full max-w-5xl rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all space-y-4 overflow-hidden max-h-[94vh] flex flex-col',
-          props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
-        ]"
-      >
+      @click.self="isStudentCsvModalOpen = false">
+      <div :class="[
+        'relative w-full max-w-5xl rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all space-y-4 overflow-hidden max-h-[94vh] flex flex-col',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
         <!-- Top Gradient Accent Bar (Sky to Indigo to Purple) -->
-        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500"></div>
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500">
+        </div>
 
         <!-- Modal Header -->
         <div class="flex items-start justify-between border-b pb-3.5 dark:border-gray-700 shrink-0">
           <div class="flex items-center gap-3">
-            <div class="w-11 h-11 rounded-2xl bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center text-xl font-bold shadow-xs">
+            <div
+              class="w-11 h-11 rounded-2xl bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center text-xl font-bold shadow-xs">
               <i class="fas fa-user-graduate"></i>
             </div>
             <div>
@@ -7602,55 +8157,48 @@ const resetAllFilters = () => {
                 <h3 class="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
                   Import {{ studentImportUnit }} Students from CSV
                 </h3>
-                <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700">
+                <span
+                  class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700">
                   {{ studentParsedRunners.length }} Ready
                 </span>
-                <span v-if="studentSkippedRunners.length > 0" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                <span v-if="studentSkippedRunners.length > 0"
+                  class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
                   {{ studentSkippedRunners.length }} Skipped (Already Registered)
                 </span>
               </div>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                File: <strong class="text-sky-600 dark:text-sky-400">{{ studentCsvUploadFileName }}</strong> · Detecting duplicates, mapping academic records & shirt sizes
+                File: <strong class="text-sky-600 dark:text-sky-400">{{ studentCsvUploadFileName }}</strong> · Detecting
+                duplicates, mapping academic records & shirt sizes
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            @click="isStudentCsvModalOpen = false"
-            class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer transition"
-          >
+          <button type="button" @click="isStudentCsvModalOpen = false"
+            class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer transition">
             <i class="fas fa-times text-xs"></i>
           </button>
         </div>
 
         <!-- Student Unit Selector & Preset Settings Banner -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 shrink-0">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 shrink-0">
           <div class="flex items-center gap-2">
             <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Target Unit:</span>
             <div class="inline-flex rounded-xl p-0.5 bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-xs">
-              <button
-                type="button"
-                @click="setStudentImportUnit('BEU')"
-                :class="[
-                  'px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer',
-                  studentImportUnit === 'BEU'
-                    ? 'bg-sky-600 text-white shadow-xs'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-sky-600'
-                ]"
-              >
+              <button type="button" @click="setStudentImportUnit('BEU')" :class="[
+                'px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer',
+                studentImportUnit === 'BEU'
+                  ? 'bg-sky-600 text-white shadow-xs'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-sky-600'
+              ]">
                 <i class="fas fa-school text-[11px]"></i>
                 <span>BEU (Basic Education)</span>
               </button>
-              <button
-                type="button"
-                @click="setStudentImportUnit('HEU')"
-                :class="[
-                  'px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer',
-                  studentImportUnit === 'HEU'
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-indigo-600'
-                ]"
-              >
+              <button type="button" @click="setStudentImportUnit('HEU')" :class="[
+                'px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer',
+                studentImportUnit === 'HEU'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-indigo-600'
+              ]">
                 <i class="fas fa-graduation-cap text-[11px]"></i>
                 <span>HEU (Higher Education)</span>
               </button>
@@ -7659,14 +8207,21 @@ const resetAllFilters = () => {
 
           <!-- Configuration pills -->
           <div class="flex items-center gap-2 flex-wrap text-[11px] text-gray-600 dark:text-gray-300">
-            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
-              <i class="fas fa-person-running text-red-500"></i> Category: <strong class="text-red-600 dark:text-red-400">3KM</strong>
+            <span
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
+              <i class="fas fa-person-running text-red-500"></i> Category: <strong
+                class="text-red-600 dark:text-red-400">3KM</strong>
             </span>
-            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
-              <i class="fas fa-shirt text-emerald-500"></i> Shirt: <strong class="text-emerald-600 dark:text-emerald-400">Event Shirt: Large</strong>
+            <span
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
+              <i class="fas fa-shirt text-emerald-500"></i> Shirt: <strong
+                class="text-emerald-600 dark:text-emerald-400">Event Shirt: Large</strong>
             </span>
-            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
-              <i class="fas fa-envelope text-blue-500"></i> Default Email: <strong class="text-blue-600 dark:text-blue-400 font-mono">{{ studentImportUnit === 'BEU' ? 'is@lsu.edu.ph' : 'dev@lsu.edu.ph' }}</strong>
+            <span
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
+              <i class="fas fa-envelope text-blue-500"></i> Default Email: <strong
+                class="text-blue-600 dark:text-blue-400 font-mono">{{ studentImportUnit === 'BEU' ? 'is@lsu.edu.ph' :
+                'dev@lsu.edu.ph' }}</strong>
             </span>
           </div>
         </div>
@@ -7674,16 +8229,12 @@ const resetAllFilters = () => {
         <!-- Navigation Tabs: Ready vs Skipped -->
         <div class="flex items-center justify-between gap-2 border-b dark:border-gray-700 pb-1 shrink-0">
           <div class="flex items-center gap-2">
-            <button
-              type="button"
-              @click="studentCsvActiveTab = 'valid'"
-              :class="[
-                'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border',
-                studentCsvActiveTab === 'valid'
-                  ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
-              ]"
-            >
+            <button type="button" @click="studentCsvActiveTab = 'valid'" :class="[
+              'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border',
+              studentCsvActiveTab === 'valid'
+                ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+            ]">
               <i class="fas fa-check-circle text-[11px]"></i>
               <span>Ready to Register</span>
               <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white font-black">
@@ -7691,38 +8242,40 @@ const resetAllFilters = () => {
               </span>
             </button>
 
-            <button
-              type="button"
-              @click="studentCsvActiveTab = 'skipped'"
-              :class="[
-                'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border',
-                studentCsvActiveTab === 'skipped'
-                  ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
-              ]"
-            >
+            <button type="button" @click="studentCsvActiveTab = 'skipped'" :class="[
+              'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border',
+              studentCsvActiveTab === 'skipped'
+                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+            ]">
               <i class="fas fa-ban text-[11px]"></i>
               <span>Already Registered (Skipped)</span>
-              <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-900 dark:text-amber-200 font-black" :class="{ '!bg-white/20 !text-white': studentCsvActiveTab === 'skipped' }">
+              <span
+                class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-900 dark:text-amber-200 font-black"
+                :class="{ '!bg-white/20 !text-white': studentCsvActiveTab === 'skipped' }">
                 {{ studentSkippedRunners.length }}
               </span>
             </button>
           </div>
 
           <div class="text-[11px] text-gray-400 hidden sm:block">
-            Showing <strong class="text-gray-700 dark:text-gray-200">{{ studentCsvActiveTab === 'valid' ? studentParsedRunners.length : studentSkippedRunners.length }}</strong> student(s)
+            Showing <strong class="text-gray-700 dark:text-gray-200">{{ studentCsvActiveTab === 'valid' ?
+              studentParsedRunners.length : studentSkippedRunners.length }}</strong> student(s)
           </div>
         </div>
 
         <!-- Table View: Ready to Register -->
-        <div v-if="studentCsvActiveTab === 'valid'" class="flex-1 overflow-y-auto border rounded-2xl dark:border-gray-700 min-h-[240px]">
-          <div v-if="studentParsedRunners.length === 0" class="flex flex-col items-center justify-center p-8 text-center text-gray-400">
+        <div v-if="studentCsvActiveTab === 'valid'"
+          class="flex-1 overflow-y-auto border rounded-2xl dark:border-gray-700 min-h-[240px]">
+          <div v-if="studentParsedRunners.length === 0"
+            class="flex flex-col items-center justify-center p-8 text-center text-gray-400">
             <i class="fas fa-user-check text-3xl mb-2 text-emerald-400 opacity-60"></i>
             <p class="font-bold text-sm">All students from this CSV are already registered!</p>
             <p class="text-xs mt-1">Check the "Already Registered (Skipped)" tab above to view them.</p>
           </div>
           <table v-else class="w-full text-left text-xs border-collapse">
-            <thead class="sticky top-0 bg-slate-100 dark:bg-gray-900/90 backdrop-blur-sm border-b dark:border-gray-700 text-gray-500 uppercase text-[10px] font-bold z-10">
+            <thead
+              class="sticky top-0 bg-slate-100 dark:bg-gray-900/90 backdrop-blur-sm border-b dark:border-gray-700 text-gray-500 uppercase text-[10px] font-bold z-10">
               <tr>
                 <th class="py-2.5 px-3">#</th>
                 <th class="py-2.5 px-3">Student ID</th>
@@ -7736,11 +8289,8 @@ const resetAllFilters = () => {
               </tr>
             </thead>
             <tbody class="divide-y dark:divide-gray-700/60 font-medium">
-              <tr
-                v-for="(s, idx) in studentParsedRunners"
-                :key="idx"
-                class="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition"
-              >
+              <tr v-for="(s, idx) in studentParsedRunners" :key="idx"
+                class="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition">
                 <td class="py-2 px-3 text-gray-400 text-[11px] font-bold">{{ idx + 1 }}</td>
                 <td class="py-2 px-3 whitespace-nowrap font-mono font-bold text-sky-700 dark:text-sky-300">
                   {{ s.lsu_id_number || '-' }}
@@ -7759,11 +8309,14 @@ const resetAllFilters = () => {
                   </div>
                 </td>
                 <td class="py-2 px-3 whitespace-nowrap text-[11px]">
-                  <div v-if="s.is_default_email" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-mono text-[10px]" :title="'Default email used because none provided in CSV'">
+                  <div v-if="s.is_default_email"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-mono text-[10px]"
+                    :title="'Default email used because none provided in CSV'">
                     <i class="fas fa-wand-magic-sparkles text-[9px]"></i>
                     {{ s.contact_email }}
                   </div>
-                  <div v-else class="text-gray-700 dark:text-gray-300 font-mono text-[11px] truncate max-w-[170px]" :title="s.contact_email">
+                  <div v-else class="text-gray-700 dark:text-gray-300 font-mono text-[11px] truncate max-w-[170px]"
+                    :title="s.contact_email">
                     {{ s.contact_email }}
                   </div>
                 </td>
@@ -7776,7 +8329,8 @@ const resetAllFilters = () => {
                   </span>
                 </td>
                 <td class="py-2 px-3 whitespace-nowrap">
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                  <span
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                     <i class="fas fa-shirt text-[9px]"></i>
                     Event Shirt: Large
                   </span>
@@ -7788,13 +8342,16 @@ const resetAllFilters = () => {
 
         <!-- Table View: Skipped / Already Registered -->
         <div v-else class="flex-1 overflow-y-auto border rounded-2xl dark:border-gray-700 min-h-[240px]">
-          <div v-if="studentSkippedRunners.length === 0" class="flex flex-col items-center justify-center p-8 text-center text-gray-400">
+          <div v-if="studentSkippedRunners.length === 0"
+            class="flex flex-col items-center justify-center p-8 text-center text-gray-400">
             <i class="fas fa-check-double text-3xl mb-2 text-emerald-400 opacity-60"></i>
             <p class="font-bold text-sm">No duplicate registrations detected!</p>
-            <p class="text-xs mt-1">All {{ studentParsedRunners.length }} student(s) in this CSV are new and ready to be registered.</p>
+            <p class="text-xs mt-1">All {{ studentParsedRunners.length }} student(s) in this CSV are new and ready to be
+              registered.</p>
           </div>
           <table v-else class="w-full text-left text-xs border-collapse">
-            <thead class="sticky top-0 bg-amber-50 dark:bg-amber-950/60 backdrop-blur-sm border-b dark:border-gray-700 text-amber-800 dark:text-amber-300 uppercase text-[10px] font-bold z-10">
+            <thead
+              class="sticky top-0 bg-amber-50 dark:bg-amber-950/60 backdrop-blur-sm border-b dark:border-gray-700 text-amber-800 dark:text-amber-300 uppercase text-[10px] font-bold z-10">
               <tr>
                 <th class="py-2.5 px-3">#</th>
                 <th class="py-2.5 px-3">Student ID</th>
@@ -7805,11 +8362,8 @@ const resetAllFilters = () => {
               </tr>
             </thead>
             <tbody class="divide-y dark:divide-gray-700/60 font-medium">
-              <tr
-                v-for="(s, idx) in studentSkippedRunners"
-                :key="idx"
-                class="bg-amber-50/30 dark:bg-amber-950/20 hover:bg-amber-50/70 dark:hover:bg-amber-950/40 transition"
-              >
+              <tr v-for="(s, idx) in studentSkippedRunners" :key="idx"
+                class="bg-amber-50/30 dark:bg-amber-950/20 hover:bg-amber-50/70 dark:hover:bg-amber-950/40 transition">
                 <td class="py-2 px-3 text-gray-400 text-[11px] font-bold">{{ idx + 1 }}</td>
                 <td class="py-2 px-3 whitespace-nowrap font-mono font-bold text-gray-700 dark:text-gray-300">
                   {{ s.lsu_id_number || '-' }}
@@ -7821,13 +8375,15 @@ const resetAllFilters = () => {
                   {{ s.grade_level }} {{ s.section ? '· ' + s.section : '' }}
                 </td>
                 <td class="py-2 px-3 text-amber-700 dark:text-amber-400 font-semibold text-[11px]">
-                  <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-700">
+                  <span
+                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-700">
                     <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400 text-[10px]"></i>
                     {{ s.skip_reason }}
                   </span>
                 </td>
                 <td class="py-2 px-3 whitespace-nowrap">
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                  <span
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                     <i class="fas fa-forward text-[9px]"></i> Skipped
                   </span>
                 </td>
@@ -7837,31 +8393,27 @@ const resetAllFilters = () => {
         </div>
 
         <!-- Modal Bottom Actions -->
-        <div class="pt-3 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+        <div
+          class="pt-3 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div class="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
             <i class="fas fa-shield-halved text-sky-500"></i>
             <span>
-              <strong>{{ studentSkippedRunners.length }}</strong> registered student(s) skipped to prevent duplicates. <strong>{{ studentParsedRunners.length }}</strong> will be registered with BIB numbers.
+              <strong>{{ studentSkippedRunners.length }}</strong> registered student(s) skipped to prevent duplicates.
+              <strong>{{ studentParsedRunners.length }}</strong> will be registered with BIB numbers.
             </span>
           </div>
 
           <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <button
-              type="button"
-              @click="isStudentCsvModalOpen = false"
-              :disabled="isImportingStudentCsv"
-              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer"
-            >
+            <button type="button" @click="isStudentCsvModalOpen = false" :disabled="isImportingStudentCsv"
+              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
               Cancel
             </button>
-            <button
-              type="button"
-              @click="executeStudentCsvImport"
+            <button type="button" @click="executeStudentCsvImport"
               :disabled="isImportingStudentCsv || !studentParsedRunners.length"
-              class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
-            >
+              class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer">
               <i :class="['fas', isImportingStudentCsv ? 'fa-spinner fa-spin' : 'fa-check']"></i>
-              <span>{{ isImportingStudentCsv ? 'Registering Students...' : `Confirm & Register ${studentParsedRunners.length} Students` }}</span>
+              <span>{{ isImportingStudentCsv ? 'Registering Students...' : `Confirm & Register
+                ${studentParsedRunners.length} Students` }}</span>
             </button>
           </div>
         </div>
@@ -7878,12 +8430,14 @@ const resetAllFilters = () => {
         props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
       ]">
         <!-- Top decorative gradient strip -->
-        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500"></div>
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-sky-500">
+        </div>
 
         <!-- Header -->
         <div class="flex items-start justify-between gap-3 border-b pb-4 dark:border-gray-700">
           <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xl shadow-md shrink-0">
+            <div
+              class="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center text-xl shadow-md shrink-0">
               <i class="fas fa-gauge-high"></i>
             </div>
             <div>
@@ -7892,11 +8446,8 @@ const resetAllFilters = () => {
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            @click="closeSlotAdjustmentModal"
-            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-          >
+          <button type="button" @click="closeSlotAdjustmentModal"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
             <i class="fas fa-times text-base"></i>
           </button>
         </div>
@@ -7914,7 +8465,8 @@ const resetAllFilters = () => {
             <span class="text-xl font-black text-amber-500">
               {{ totalSlotsFilled.toLocaleString() }}
             </span>
-            <span v-if="totalSlotsPending > 0" class="text-[9px] text-gray-400 block mt-0.5 truncate" :title="`${totalSlotsConfirmed.toLocaleString()} Confirmed · ${totalSlotsPending.toLocaleString()} Pending`">
+            <span v-if="totalSlotsPending > 0" class="text-[9px] text-gray-400 block mt-0.5 truncate"
+              :title="`${totalSlotsConfirmed.toLocaleString()} Confirmed · ${totalSlotsPending.toLocaleString()} Pending`">
               {{ totalSlotsConfirmed.toLocaleString() }} conf + {{ totalSlotsPending.toLocaleString() }} pend
             </span>
           </div>
@@ -7928,14 +8480,10 @@ const resetAllFilters = () => {
 
         <!-- Categories List -->
         <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
-          <div
-            v-for="catKey in sortedSlotCategories"
-            :key="catKey"
-            :class="[
-              'p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col gap-2.5',
-              props.darkMode ? 'bg-gray-900/40 border-gray-700/80 hover:border-gray-600' : 'bg-slate-50/70 border-slate-200 hover:border-emerald-300'
-            ]"
-          >
+          <div v-for="catKey in sortedSlotCategories" :key="catKey" :class="[
+            'p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col gap-2.5',
+            props.darkMode ? 'bg-gray-900/40 border-gray-700/80 hover:border-gray-600' : 'bg-slate-50/70 border-slate-200 hover:border-emerald-300'
+          ]">
             <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2.5">
                 <div>
@@ -7943,16 +8491,20 @@ const resetAllFilters = () => {
                     <span class="text-base font-black tracking-tight">{{ catKey }}</span>
                   </div>
                   <div class="flex items-center gap-2 text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 flex-wrap">
-                   
-                    <span v-if="getSlotCategoryPending(catKey) > 0" class="text-[10px] text-amber-600 dark:text-amber-400 font-medium uppercase">
+
+                    <span v-if="getSlotCategoryPending(catKey) > 0"
+                      class="text-[10px] text-amber-600 dark:text-amber-400 font-medium uppercase">
                       ({{ getSlotCategoryConfirmed(catKey) }} confirm + {{ getSlotCategoryPending(catKey) }} pending)
                     </span>
-                     <span>= <strong class="text-gray-700 dark:text-gray-200">{{ getSlotCategoryTotal(catKey) }}</strong></span>
+                    <span>= <strong class="text-gray-700 dark:text-gray-200">{{ getSlotCategoryTotal(catKey)
+                        }}</strong></span>
                     <span>+</span>
-                    <span>Remaining: <strong :class="(slotEditValues[catKey] - getSlotCategoryTotal(catKey)) <= 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'">
-                      {{ Math.max(0, slotEditValues[catKey] - getSlotCategoryTotal(catKey)) }}
-                    </strong></span>
-                    <span v-if="getSlotCategoryTotal(catKey) >= slotEditValues[catKey]" class="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-red-500 text-white">
+                    <span>Remaining: <strong
+                        :class="(slotEditValues[catKey] - getSlotCategoryTotal(catKey)) <= 0 ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'">
+                        {{ Math.max(0, slotEditValues[catKey] - getSlotCategoryTotal(catKey)) }}
+                      </strong></span>
+                    <span v-if="getSlotCategoryTotal(catKey) >= slotEditValues[catKey]"
+                      class="px-1.5 py-0.2 rounded text-[9px] font-black uppercase bg-red-500 text-white">
                       FULL
                     </span>
                   </div>
@@ -7961,28 +8513,18 @@ const resetAllFilters = () => {
 
               <!-- Input & Quick Steppers -->
               <div class="flex items-center gap-2">
-                <div class="flex items-center border rounded-xl overflow-hidden shadow-xs dark:border-gray-600 bg-white dark:bg-gray-800">
-                  <button
-                    type="button"
-                    @click="adjustSlotBy(catKey, -25)"
+                <div
+                  class="flex items-center border rounded-xl overflow-hidden shadow-xs dark:border-gray-600 bg-white dark:bg-gray-800">
+                  <button type="button" @click="adjustSlotBy(catKey, -25)"
                     class="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition text-xs font-bold"
-                    title="Decrease by 25"
-                  >
+                    title="Decrease by 25">
                     <i class="fas fa-minus text-[10px]"></i>
                   </button>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    v-model.number="slotEditValues[catKey]"
-                    class="w-16 py-1.5 text-center font-black text-sm bg-transparent outline-none focus:ring-0 border-x dark:border-gray-600 text-gray-800 dark:text-white"
-                  />
-                  <button
-                    type="button"
-                    @click="adjustSlotBy(catKey, 500)"
+                  <input type="number" min="0" step="1" v-model.number="slotEditValues[catKey]"
+                    class="w-16 py-1.5 text-center font-black text-sm bg-transparent outline-none focus:ring-0 border-x dark:border-gray-600 text-gray-800 dark:text-white" />
+                  <button type="button" @click="adjustSlotBy(catKey, 500)"
                     class="px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition text-xs font-bold"
-                    title="Increase by 500"
-                  >
+                    title="Increase by 500">
                     <i class="fas fa-plus text-[10px]"></i>
                   </button>
                 </div>
@@ -8002,14 +8544,12 @@ const resetAllFilters = () => {
 
             <!-- Mini Progress Bar -->
             <div class="w-full bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
-              <div
-                class="h-full transition-all duration-300 rounded-full"
-                :class="[
-                  (getSlotCategoryTotal(catKey) / (slotEditValues[catKey] || 1)) >= 1 ? 'bg-red-500' :
+              <div class="h-full transition-all duration-300 rounded-full" :class="[
+                (getSlotCategoryTotal(catKey) / (slotEditValues[catKey] || 1)) >= 1 ? 'bg-red-500' :
                   (getSlotCategoryTotal(catKey) / (slotEditValues[catKey] || 1)) >= 0.8 ? 'bg-amber-500' : 'bg-emerald-500'
-                ]"
-                :style="{ width: `${Math.min(100, Math.round((getSlotCategoryTotal(catKey) / (slotEditValues[catKey] || 1)) * 100))}%` }"
-              ></div>
+              ]"
+                :style="{ width: `${Math.min(100, Math.round((getSlotCategoryTotal(catKey) / (slotEditValues[catKey] || 1)) * 100))}%` }">
+              </div>
             </div>
           </div>
         </div>
@@ -8017,27 +8557,16 @@ const resetAllFilters = () => {
         <!-- Add Custom Category & Reset Defaults -->
         <div class="pt-2 border-t dark:border-gray-700 flex items-center justify-between flex-wrap gap-2 my-3">
           <div class="flex items-center gap-2">
-            <input
-              type="text"
-              v-model="newCategoryCode"
-              placeholder="e.g. 5KM or 42KM"
-              class="w-32 px-3 py-1.5 rounded-xl border text-xs dark:bg-gray-900 dark:border-gray-700 outline-none uppercase font-bold"
-            />
-            <button
-              type="button"
-              @click="addNewCategorySlot"
-              :disabled="!newCategoryCode.trim()"
-              class="px-3 py-1.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 hover:border-emerald-500 text-xs font-bold transition flex items-center gap-1 disabled:opacity-40"
-            >
+            <input type="text" v-model="newCategoryCode" placeholder="e.g. 5KM or 42KM"
+              class="w-32 px-3 py-1.5 rounded-xl border text-xs dark:bg-gray-900 dark:border-gray-700 outline-none uppercase font-bold" />
+            <button type="button" @click="addNewCategorySlot" :disabled="!newCategoryCode.trim()"
+              class="px-3 py-1.5 rounded-xl border border-dashed border-gray-300 dark:border-gray-600 hover:border-emerald-500 text-xs font-bold transition flex items-center gap-1 disabled:opacity-40">
               <i class="fas fa-plus text-[10px]"></i> Add Category
             </button>
           </div>
 
-          <button
-            type="button"
-            @click="resetSlotDefaults"
-            class="text-[11px] font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1 transition cursor-pointer"
-          >
+          <button type="button" @click="resetSlotDefaults"
+            class="text-[11px] font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1 transition cursor-pointer">
             <i class="fas fa-rotate-left text-[10px]"></i> Reset to Defaults (50/1000/375/300)
           </button>
         </div>
@@ -8050,26 +8579,371 @@ const resetAllFilters = () => {
           </span>
 
           <div class="flex items-center gap-2 ml-auto">
-            <button
-              type="button"
-              @click="closeSlotAdjustmentModal"
-              :disabled="isSavingSlots"
-              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer"
-            >
+            <button type="button" @click="closeSlotAdjustmentModal" :disabled="isSavingSlots"
+              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
               Cancel
             </button>
-            <button
-              type="button"
-              @click="saveSlotAdjustments"
-              :disabled="isSavingSlots"
-              class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
-            >
+            <button type="button" @click="saveSlotAdjustments" :disabled="isSavingSlots"
+              class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer">
               <i :class="['fas', isSavingSlots ? 'fa-spinner fa-spin' : 'fa-floppy-disk']"></i>
               <span>{{ isSavingSlots ? 'Saving Slots...' : 'Save & Update Slots' }}</span>
             </button>
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MODAL 1: MOBILE QR SCANNER MODAL FOR RACE KIT CLAIMING
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div v-if="isQrScannerModalOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md transition-opacity">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col max-h-[92vh]">
+        <!-- Scanner Header -->
+        <div
+          class="p-4 border-b dark:border-gray-700/80 flex items-center justify-between bg-gradient-to-r from-emerald-700 to-teal-800 text-white">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
+              <i class="fas fa-qrcode text-amber-300 text-sm"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm tracking-tight leading-tight">Scan QR for Claiming</h3>
+              <p class="text-[10px] text-emerald-200">Point phone camera at runner's QR pass</p>
+            </div>
+          </div>
+          <button type="button" @click="closeQrClaimScanner"
+            class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center cursor-pointer">
+            <i class="fas fa-times text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Camera Viewport / Reader -->
+        <div class="p-4 flex flex-col items-center justify-center relative bg-slate-900 min-h-[300px]">
+          <div id="qr-reader-camera"
+            class="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-inner border-2 border-emerald-500/50 relative bg-black">
+          </div>
+
+          <!-- Helper alert if error or camera blocked -->
+          <div v-if="scannerErrorMessage"
+            class="mt-3 p-3 rounded-xl bg-rose-950/70 border border-rose-800 text-rose-200 text-xs text-center">
+            <i class="fas fa-triangle-exclamation text-rose-400 mr-1"></i>
+            {{ scannerErrorMessage }}
+          </div>
+
+          <div v-else class="mt-3 text-center">
+            <p class="text-[11px] text-gray-400 flex items-center justify-center gap-1.5">
+              <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              Auto-detecting QR code... hold steady
+            </p>
+          </div>
+        </div>
+
+        <!-- Manual Bib/ID Search Fallback -->
+        <div class="p-4 border-t dark:border-gray-700/80 bg-slate-50 dark:bg-gray-900/60 space-y-2">
+          <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+            Or Enter Bib # or Reg ID manually:
+          </label>
+          <div class="flex gap-2">
+            <div class="relative flex-1">
+              <i class="fas fa-barcode absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+              <input type="text" v-model="manualSearchQuery" @keyup.enter="verifyAndOpenClaimModal(manualSearchQuery)"
+                placeholder="e.g. 10-0005, 01-0012, or #123"
+                class="w-full pl-8 pr-3 py-2 rounded-xl border text-xs dark:bg-gray-800 dark:border-gray-700 outline-none uppercase font-bold" />
+            </div>
+            <button type="button" @click="verifyAndOpenClaimModal(manualSearchQuery)"
+              :disabled="!manualSearchQuery.trim() || isVerifyingCode"
+              class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+              <i :class="['fas', isVerifyingCode ? 'fa-spinner fa-spin' : 'fa-search']"></i>
+              <span>Verify</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div
+          class="p-3 border-t dark:border-gray-700 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800">
+          <span class="text-[10px]">
+            <i class="fas fa-user-shield text-emerald-600 mr-1"></i>
+            Claimer: {{ currentOperator.split('@')[0] }}
+          </span>
+          <button type="button" @click="closeQrClaimScanner"
+            class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold text-xs hover:bg-gray-100 dark:hover:bg-gray-700">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MODAL 2: CLAIM VERIFICATION & INCLUSIONS CHECKLIST MODAL
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div v-if="isClaimVerificationModalOpen && activeClaimRunner"
+      class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm transition-opacity">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col max-h-[94vh]">
+        <!-- Header -->
+        <div
+          class="p-4 border-b dark:border-gray-700/80 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-2xl bg-white/20 flex items-center justify-center">
+              <i class="fas fa-box-check text-amber-300 text-base"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm sm:text-base tracking-tight leading-tight">Race Kit Claiming &
+                Inclusions
+              </h3>
+              <p class="text-[10px] text-emerald-200">Verify items before releasing to participant</p>
+            </div>
+          </div>
+          <button type="button" @click="closeClaimVerificationModal"
+            class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center cursor-pointer">
+            <i class="fas fa-times text-xs"></i>
+          </button>
+        </div>
+
+        <div class="p-4 sm:p-5 overflow-y-auto space-y-4">
+          <!-- ALREADY CLAIMED WARNING BANNER -->
+          <div v-if="activeClaimRunner.kit_claimed"
+            class="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-800 flex items-start gap-3">
+            <div
+              class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center text-sm shrink-0 mt-0.5">
+              <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <div class="flex-1">
+              <h4 class="text-xs font-black text-rose-900 dark:text-rose-200 uppercase tracking-wide">
+                Notice: Kit Already Claimed
+              </h4>
+              <p class="text-[11px] text-rose-800 dark:text-rose-300 mt-0.5">
+                This runner's kit was marked claimed on
+                <strong>{{ activeClaimRunner.kit_claimed_at ? new
+                  Date(activeClaimRunner.kit_claimed_at).toLocaleString() :
+                  'N/A' }}</strong>
+                by <strong>{{ activeClaimRunner.kit_claimed_by || 'Admin' }}</strong>.
+              </p>
+              <div class="mt-2.5 flex items-center gap-2 flex-wrap">
+                <button type="button" @click="resendClaimEmail(activeClaimRunner)" :disabled="isResendingClaimEmail"
+                  class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-60 shadow-2xs">
+                  <i :class="['fas', isResendingClaimEmail ? 'fa-spinner fa-spin' : 'fa-paper-plane text-[10px]']"></i>
+                  <span>{{ isResendingClaimEmail ? 'Sending...' : 'Resend Claim Email' }}</span>
+                </button>
+                <button type="button" @click="promptUnclaim(activeClaimRunner)" :disabled="isUnclaiming"
+                  class="px-2.5 py-1 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer disabled:opacity-60 border border-rose-300 dark:border-rose-700">
+                  <i :class="['fas', isUnclaiming ? 'fa-spinner fa-spin' : 'fa-rotate-left text-[10px]']"></i>
+                  <span>{{ isUnclaiming ? 'Reverting...' : 'Undo Claim' }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- RUNNER PROFILE SUMMARY CARD -->
+          <div
+            class="p-4 rounded-2xl border border-slate-200 dark:border-gray-700/80 bg-slate-50 dark:bg-gray-900/40 space-y-2.5">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-2">
+                <span
+                  class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-black text-xs tracking-wider uppercase shadow-2xs">
+                  BIB # {{ activeClaimRunner.run_number || ('AR-' + activeClaimRunner.id) }}
+                </span>
+                <span :class="[
+                  'px-2 py-0.5 rounded font-black text-[10px] text-white uppercase shadow-2xs',
+                  runCategories.find(c => normalizeCategory(activeClaimRunner.run_category) === c.id)?.color || 'bg-emerald-700'
+                ]">
+                  {{ activeClaimRunner.run_category }}
+                </span>
+              </div>
+              <span :class="[
+                'px-2 py-0.5 rounded-full text-[10px] font-bold',
+                activeClaimRunner.payment_status === 'Confirmed'
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+              ]">
+                <i
+                  :class="['fas mr-0.5', activeClaimRunner.payment_status === 'Confirmed' ? 'fa-check-circle text-emerald-600' : 'fa-clock text-amber-500']"></i>
+                {{ activeClaimRunner.payment_status || 'Pending Payment' }}
+              </span>
+            </div>
+
+            <div>
+              <h4 class="font-black text-base text-gray-900 dark:text-gray-100 uppercase">
+                {{ activeClaimRunner.firstname }} {{ activeClaimRunner.middlename ? activeClaimRunner.middlename[0] +
+                '.' :
+                '' }} {{ activeClaimRunner.lastname }} {{ activeClaimRunner.suffix || '' }}
+              </h4>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ activeClaimRunner.contact_email || activeClaimRunner.email }} &middot; {{
+                  activeClaimRunner.contact_number || 'No phone' }}
+              </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t dark:border-gray-800 text-xs">
+              <div>
+                <span class="text-[10px] font-bold text-gray-400 uppercase block">Classification</span>
+                <span class="font-bold text-gray-800 dark:text-gray-200">{{ activeClaimRunner.participant_type || 'Open Category' }}</span>
+              </div>
+              <div>
+                <span class="text-[10px] font-bold text-gray-400 uppercase block">Official Shirt Size</span>
+                <span class="font-black text-emerald-700 dark:text-emerald-400 uppercase">{{
+                  activeClaimRunner.tshirt_size
+                  || 'M' }}</span>
+              </div>
+              <div v-if="activeClaimRunner.pet_name">
+                <span class="text-[10px] font-bold text-gray-400 uppercase block">Pet Companion</span>
+                <span class="font-bold text-gray-800 dark:text-gray-200">{{ activeClaimRunner.pet_name }} ({{
+                  activeClaimRunner.pet_type || 'Pet' }})</span>
+              </div>
+              <div>
+                <span class="text-[10px] font-bold text-gray-400 uppercase block">Claim Code</span>
+                <span class="font-mono text-[11px] font-bold text-gray-600 dark:text-gray-300">{{
+                  activeClaimRunner.claim_qr_code || ('AR-' + activeClaimRunner.id) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- INCLUSIONS CHECKLIST SECTION -->
+          <div class="space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div>
+                <h5
+                  class="font-extrabold text-xs text-gray-900 dark:text-gray-100 uppercase tracking-wide flex items-center gap-1.5">
+                  <i class="fas fa-list-check text-emerald-600"></i>
+                  <span>Kit Inclusions Checklist</span>
+                </h5>
+                <p class="text-[10px] text-gray-500">Check off each item as you hand it to the runner:</p>
+              </div>
+
+              <!-- Check All / Clear Button -->
+              <button type="button" @click="toggleAllInclusions"
+                class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 cursor-pointer">
+                {{ allInclusionsChecked ? 'Uncheck All' : 'Check All' }}
+              </button>
+            </div>
+
+            <!-- Inclusions Items list -->
+            <div class="space-y-1.5">
+              <label v-for="item in claimInclusions" :key="item" :class="[
+                'flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.99]',
+                selectedClaimInclusions.includes(item)
+                  ? (props.darkMode ? 'bg-emerald-950/40 border-emerald-700 text-white' : 'bg-emerald-50/80 border-emerald-300 text-emerald-950 font-semibold shadow-2xs')
+                  : (props.darkMode ? 'bg-gray-900/40 border-gray-700 text-gray-400' : 'bg-white border-slate-200 text-gray-700 hover:bg-slate-50')
+              ]">
+                <input type="checkbox" :value="item" v-model="selectedClaimInclusions"
+                  class="w-5 h-5 rounded-md accent-emerald-600 cursor-pointer" />
+                <div class="flex-1 flex items-center justify-between text-xs sm:text-sm">
+                  <span>{{ item }}</span>
+                  <i v-if="selectedClaimInclusions.includes(item)"
+                    class="fas fa-check text-emerald-600 text-xs font-black"></i>
+                </div>
+              </label>
+            </div>
+
+            <div class="text-right text-[11px] text-gray-500">
+              Selected <strong>{{ selectedClaimInclusions.length }}</strong> of {{ claimInclusions.length }} inclusions
+            </div>
+          </div>
+
+          <!-- Claim Operator Notice -->
+          <div
+            class="p-3 rounded-xl bg-slate-100 dark:bg-gray-900 text-xs text-gray-600 dark:text-gray-300 flex items-center justify-between">
+            <span class="text-[11px]">
+              <i class="fas fa-user-check text-emerald-500 mr-1"></i>
+              Disbursed By: <strong>{{ currentOperator }}</strong>
+            </span>
+            <span class="text-[10px] text-gray-400">
+              {{ new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div
+          class="p-4 border-t dark:border-gray-700 bg-slate-50 dark:bg-gray-900/60 flex items-center justify-between gap-3">
+          <button type="button" @click="closeClaimVerificationModal"
+            class="px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-bold text-xs hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+            Cancel
+          </button>
+
+          <button type="button" @click="executeConfirmClaim" :disabled="isConfirmingClaim"
+            class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 text-white font-extrabold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60">
+            <i
+              :class="['fas', isConfirmingClaim ? 'fa-spinner fa-spin' : (activeClaimRunner.kit_claimed ? 'fa-check-double' : 'fa-box-check')]"></i>
+            <span>{{ isConfirmingClaim ? 'Recording Claim...' : (activeClaimRunner.kit_claimed ? 'Update Claim Inclusions' : 'Confirm & Release Kit (Sends Email)') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MODAL 3: RUNNER QR CLAIM PASS PREVIEW MODAL
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div v-if="isRunnerQrPassModalOpen && claimQrPassData"
+      class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md transition-opacity">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col text-center">
+        <!-- Header -->
+        <div class="p-4 bg-gradient-to-r from-emerald-700 via-teal-700 to-green-800 text-white relative">
+          <span
+            class="inline-block px-3 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 text-[10px] font-black uppercase tracking-wider mb-1">
+            Official Claim Pass
+          </span>
+          <h3 class="font-black text-lg leading-tight uppercase">
+            {{ claimQrPassData.runner.firstname }} {{ claimQrPassData.runner.lastname }}
+          </h3>
+          <p class="text-xs text-emerald-200 font-bold">
+            BIB # {{ claimQrPassData.runner.run_number || ('AR-' + claimQrPassData.runner.id) }} &middot; {{
+              claimQrPassData.runner.run_category }}
+          </p>
+          <button type="button" @click="closeRunnerQrPassModal"
+            class="absolute right-3 top-3 w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 text-white flex items-center justify-center text-xs cursor-pointer">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Body with QR -->
+        <div class="p-6 space-y-3 bg-white dark:bg-gray-800 flex flex-col items-center">
+          <div class="p-3 bg-white rounded-2xl shadow-md border-2 border-dashed border-emerald-500 inline-block">
+            <img v-if="claimQrPassData.qr_code_url || claimQrPassData.qr_code_base64"
+              :src="claimQrPassData.qr_code_url || claimQrPassData.qr_code_base64" alt="Claim QR Code"
+              class="w-48 h-48 rounded-xl object-contain mx-auto" />
+            <div v-else class="w-48 h-48 flex items-center justify-center bg-gray-100 rounded-xl text-gray-400">
+              <i class="fas fa-qrcode text-5xl text-emerald-600"></i>
+            </div>
+          </div>
+
+          <div
+            class="font-mono text-xs font-black text-emerald-800 dark:text-emerald-300 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/60 rounded-lg">
+            {{ claimQrPassData.claim_code }}
+          </div>
+
+          <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug max-w-xs">
+            Present this QR code on mobile screen or printout to the distribution desk to verify and claim your race
+            kit.
+          </p>
+
+          <div class="w-full text-left pt-2 border-t dark:border-gray-700 text-xs space-y-1">
+            <span class="text-[10px] font-bold text-gray-400 uppercase block">Inclusions</span>
+            <div class="flex flex-wrap gap-1">
+              <span v-for="inc in claimQrPassData.inclusions" :key="inc"
+                class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-gray-700 text-[10px] text-gray-700 dark:text-gray-300 font-semibold">
+                {{ inc }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div
+          class="p-3 border-t dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex items-center justify-between gap-2">
+          <button type="button" @click="markKitReadyAndNotify(claimQrPassData.runner)" :disabled="isMarkingKitReady"
+            class="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1 cursor-pointer">
+            <i class="fas fa-paper-plane text-[10px]"></i> Send Email
+          </button>
+          <button type="button" @click="openRunnerClaimModal(claimQrPassData.runner); closeRunnerQrPassModal();"
+            class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer">
+            <i class="fas fa-hand-holding-box text-[10px]"></i> Claim Kit Now
+          </button>
+        </div>
       </div>
     </div>
 
@@ -8088,11 +8962,13 @@ const resetAllFilters = () => {
   will-change: grid-template-rows, opacity;
   pointer-events: none;
 }
+
 .accordion-wrapper.is-expanded {
   grid-template-rows: 1fr;
   opacity: 1;
   pointer-events: auto;
 }
+
 .accordion-inner {
   overflow: hidden;
   min-height: 0;
@@ -8100,7 +8976,14 @@ const resetAllFilters = () => {
 
 /* Fade-slide-in for pills */
 @keyframes fadeSlideIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
