@@ -188,8 +188,75 @@ const receiptModal = ref({
   runner: null,
 });
 
+// Interactive Receipt Zoom & Pan state
+const receiptZoom = ref(1);
+const receiptRotation = ref(0);
+const receiptPan = ref({ x: 0, y: 0 });
+const isReceiptDragging = ref(false);
+const dragStart = ref({ x: 0, y: 0 });
+
+const resetReceiptView = () => {
+  receiptZoom.value = 1;
+  receiptRotation.value = 0;
+  receiptPan.value = { x: 0, y: 0 };
+  isReceiptDragging.value = false;
+};
+
+const zoomInReceipt = () => {
+  receiptZoom.value = Math.min(Number((receiptZoom.value + 0.25).toFixed(2)), 4);
+};
+
+const zoomOutReceipt = () => {
+  receiptZoom.value = Math.max(Number((receiptZoom.value - 0.25).toFixed(2)), 0.5);
+};
+
+const rotateReceipt = () => {
+  receiptRotation.value = (receiptRotation.value + 90) % 360;
+};
+
+const toggleReceiptZoomFit = () => {
+  if (receiptZoom.value === 1) {
+    receiptZoom.value = 2;
+  } else {
+    resetReceiptView();
+  }
+};
+
+const onReceiptWheel = (e) => {
+  if (isPdfUrl(receiptModal.value?.url)) return;
+  e.preventDefault();
+  if (e.deltaY < 0) {
+    zoomInReceipt();
+  } else {
+    zoomOutReceipt();
+  }
+};
+
+const startReceiptDrag = (e) => {
+  if (isPdfUrl(receiptModal.value?.url)) return;
+  if (receiptZoom.value <= 1 && receiptRotation.value === 0) return;
+  isReceiptDragging.value = true;
+  dragStart.value = {
+    x: e.clientX - receiptPan.value.x,
+    y: e.clientY - receiptPan.value.y,
+  };
+};
+
+const onReceiptDrag = (e) => {
+  if (!isReceiptDragging.value) return;
+  receiptPan.value = {
+    x: e.clientX - dragStart.value.x,
+    y: e.clientY - dragStart.value.y,
+  };
+};
+
+const stopReceiptDrag = () => {
+  isReceiptDragging.value = false;
+};
+
 const openReceiptModal = (url, title = "Payment Receipt", runner = null) => {
   if (!url) return;
+  resetReceiptView();
   receiptModal.value = {
     show: true,
     url: cleanURL(url),
@@ -202,6 +269,7 @@ const closeReceiptModal = () => {
   receiptModal.value.show = false;
   receiptModal.value.url = "";
   receiptModal.value.runner = null;
+  resetReceiptView();
 };
 
 // Strip everything after the file extension (removes query strings, tokens, extra params)
@@ -2396,6 +2464,7 @@ const CSV_ALL_COLUMNS = [
   { key: 'pet_vaccinated', label: 'Pet Vaccinated' },
   { key: 'payment_option', label: 'Payment Option' },
   { key: 'payment_status', label: 'Payment Status' },
+  { key: 'receipt', label: 'Receipt' },
   { key: 'total_amount', label: 'Total Amount (PHP)' },
   { key: 'reg_date', label: 'Registration Date' },
   { key: 'confirmed_date', label: 'Confirmed Date' },
@@ -2406,7 +2475,7 @@ const CSV_ALL_COLUMNS = [
 ];
 
 const DEFAULT_COLUMNS = [
-  'full_name', 'category', 'classification', 'payment_status'
+  'full_name', 'category', 'classification', 'payment_status', 'receipt'
 ];
 
 // Default checked columns - controls both CSV export and live table column display
@@ -2477,6 +2546,7 @@ const generateCsvFromList = (list, batchLabel = "Export") => {
       pet_vaccinated: escapeCsv(r.pet_vaccinated ? "Yes" : "No"),
       payment_option: escapeCsv(r.payment_type || ""),
       payment_status: escapeCsv(r.payment_status || ""),
+      receipt: escapeCsv(r.proof_of_payment || ""),
       total_amount: escapeCsv(r.grand_total_payment || r.grand_total || 0),
       reg_date: escapeCsv(r.created_at_formatted || r.created_at || ""),
       confirmed_date: escapeCsv(r.confirmed_at || ""),
@@ -4187,6 +4257,31 @@ const resetAllFilters = () => {
                 </div>
               </div>
 
+              <!-- Mobile Receipt Preview Banner if available -->
+              <div v-if="runner.proof_of_payment" :class="[
+                'p-2 rounded-xl text-xs flex items-center justify-between gap-2 border',
+                props.darkMode ? 'bg-gray-900/40 border-gray-700/60' : 'bg-emerald-50/50 border-emerald-200/60'
+              ]">
+                <div class="flex items-center gap-2">
+                  <div v-if="!isPdfUrl(runner.proof_of_payment)" class="relative cursor-pointer shrink-0"
+                    @click.stop="openReceiptModal(runner.proof_of_payment, 'Payment Receipt', runner)">
+                    <img :src="runner.proof_of_payment" :alt="runner.firstname + ' Receipt'"
+                      class="w-8 h-8 rounded-lg object-cover border border-slate-300 dark:border-gray-600 shadow-2xs" />
+                  </div>
+                  <div v-else class="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center text-xs shrink-0">
+                    <i class="fas fa-file-pdf"></i>
+                  </div>
+                  <div class="leading-tight">
+                    <span class="font-bold text-[11px] block">Payment Receipt</span>
+                    <span class="text-[9px] text-gray-500">Tap to inspect & zoom</span>
+                  </div>
+                </div>
+                <button type="button" @click.stop="openReceiptModal(runner.proof_of_payment, 'Payment Receipt', runner)"
+                  class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] shadow-2xs transition flex items-center gap-1 cursor-pointer">
+                  <i class="fas fa-search-plus text-[9px]"></i> View
+                </button>
+              </div>
+
               <!-- Card Action Button -->
               <div class="pt-1 flex gap-2">
                 <button type="button" @click="openDetails(runner)"
@@ -4218,8 +4313,12 @@ const resetAllFilters = () => {
                 <button v-if="runner.payment_status && runner.payment_status.startsWith('Pending')" type="button"
                   @click="executeConfirmPayment(runner)"
                   class="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0">
-                  <i class="fas fa-check text-xs"></i> Confirm
+                  <i class="fas fa-check text-xs"></i> Approve
                 </button>
+                <span v-else-if="runner.payment_status === 'Confirmed'"
+                  class="py-2 px-3 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold text-xs border border-emerald-300 dark:border-emerald-700 flex items-center justify-center gap-1 shadow-2xs shrink-0 select-none">
+                  <i class="fas fa-check-circle text-xs text-emerald-600 dark:text-emerald-400"></i> Approved
+                </span>
               </div>
             </div>
 
@@ -4306,6 +4405,7 @@ const resetAllFilters = () => {
                 <!-- Dynamic Columns Header driven by selectedCsvColumns -->
                 <th v-for="col in activeTableColumns" :key="col.key" :class="[
                   'p-3 transition select-none',
+                  col.key === 'receipt' ? 'text-center' : '',
                   ['race_bib', 'reg_id', 'full_name', 'firstname', 'lastname', 'batch', 'reg_date'].includes(col.key) ? 'cursor-pointer hover:text-emerald-500' : ''
                 ]"
                   @click="['race_bib', 'reg_id'].includes(col.key) ? toggleSort('bib') : ['full_name', 'firstname', 'lastname'].includes(col.key) ? toggleSort('name') : col.key === 'batch' ? toggleSort('batch') : col.key === 'reg_date' ? toggleSort('date') : null">
@@ -4395,6 +4495,10 @@ const resetAllFilters = () => {
                     <div v-else-if="col.key === 'payment_status'"
                       class="h-5 w-20 rounded-full bg-slate-200 dark:bg-gray-700"></div>
 
+                    <!-- receipt -->
+                    <div v-else-if="col.key === 'receipt'"
+                      class="h-10 w-10 rounded-lg bg-slate-200 dark:bg-gray-700 mx-auto"></div>
+
                     <!-- date -->
                     <div v-else-if="['reg_date', 'confirmed_date', 'birthdate'].includes(col.key)"
                       class="h-3.5 w-20 rounded bg-slate-200 dark:bg-gray-700"></div>
@@ -4410,7 +4514,10 @@ const resetAllFilters = () => {
 
                   <!-- Actions Skeleton -->
                   <td class="px-3 py-3.5 text-center whitespace-nowrap">
-                    <div class="h-6 w-14 rounded-xl bg-emerald-200/70 dark:bg-emerald-950/70 mx-auto"></div>
+                    <div class="flex items-center justify-center gap-1.5">
+                      <div class="h-6 w-14 rounded-xl bg-emerald-200/70 dark:bg-emerald-950/70"></div>
+                      <div class="h-6 w-16 rounded-xl bg-amber-200/60 dark:bg-amber-950/60"></div>
+                    </div>
                   </td>
                 </tr>
               </template>
@@ -4429,7 +4536,7 @@ const resetAllFilters = () => {
                   </td>
 
                   <!-- Dynamic columns rendered based on col.key -->
-                  <td v-for="col in activeTableColumns" :key="col.key" class="px-3">
+                  <td v-for="col in activeTableColumns" :key="col.key" :class="['px-3', col.key === 'receipt' ? 'text-center' : '']">
                     <!-- race_bib -->
                     <template v-if="col.key === 'race_bib'">
                       <span
@@ -4680,6 +4787,40 @@ const resetAllFilters = () => {
                       </div>
                     </template>
 
+                    <!-- receipt -->
+                    <template v-else-if="col.key === 'receipt'">
+                      <div class="flex items-center justify-center">
+                        <div v-if="runner.proof_of_payment" class="inline-flex items-center justify-center">
+                          <!-- PDF Receipt button -->
+                          <button v-if="isPdfUrl(runner.proof_of_payment)" type="button"
+                            @click.stop="openReceiptModal(runner.proof_of_payment, 'Payment Receipt (PDF)', runner)"
+                            class="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-[11px] font-bold flex items-center gap-1.5 transition shadow-2xs cursor-pointer group"
+                            title="View PDF Receipt">
+                            <i class="fas fa-file-pdf text-xs group-hover:scale-110 transition-transform"></i>
+                            <span>PDF</span>
+                          </button>
+
+                          <!-- Image Receipt Thumbnail Preview -->
+                          <div v-else class="relative group cursor-pointer"
+                            @click.stop="openReceiptModal(runner.proof_of_payment, 'Payment Receipt', runner)"
+                            title="Click to view & zoom receipt">
+                            <img :src="runner.proof_of_payment" :alt="runner.firstname + ' Receipt'"
+                              loading="lazy"
+                              class="w-10 h-10 object-cover rounded-lg border border-slate-300 dark:border-gray-600 shadow-2xs group-hover:border-emerald-500 group-hover:ring-2 group-hover:ring-emerald-500/30 group-hover:scale-105 transition-all duration-150" />
+                            <div
+                              class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center text-white text-[10px]">
+                              <i class="fas fa-search-plus"></i>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- No Receipt -->
+                        <span v-else class="text-[10px] text-gray-400 dark:text-gray-500 italic select-none">
+                          No receipt
+                        </span>
+                      </div>
+                    </template>
+
                     <!-- total_amount -->
                     <template v-else-if="col.key === 'total_amount'">
                       <div class="text-[11px] font-extrabold text-emerald-600 dark:text-emerald-400">
@@ -4770,10 +4911,28 @@ const resetAllFilters = () => {
 
                   <!-- Fixed Actions column -->
                   <td class="px-3 text-center whitespace-nowrap">
-                    <button type="button" @click="openDetails(runner)"
-                      class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition inline-flex items-center gap-1 cursor-pointer">
-                      <i class="fas fa-eye"></i> View
-                    </button>
+                    <div class="inline-flex items-center justify-center gap-1.5">
+                      <button type="button" @click="openDetails(runner)"
+                        class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition inline-flex items-center gap-1 cursor-pointer"
+                        title="View registration details">
+                        <i class="fas fa-eye"></i> View
+                      </button>
+
+                      <!-- Approved / Approve button beside View button -->
+                      <span v-if="runner.payment_status === 'Confirmed'"
+                        class="px-2.5 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold text-xs border border-emerald-300 dark:border-emerald-700 inline-flex items-center gap-1 select-none shadow-2xs"
+                        title="Payment Confirmed / Approved">
+                        <i class="fas fa-check-circle text-emerald-600 dark:text-emerald-400"></i>
+                        <span>Approved</span>
+                      </span>
+                      <button v-else type="button" @click.stop="promptConfirmPayment(runner)" :disabled="isConfirming"
+                        class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs shadow-xs transition inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        title="Approve / Confirm Payment">
+                        <i v-if="!isConfirming || confirmModal.runner?.id !== runner.id" class="fas fa-check"></i>
+                        <i v-else class="fas fa-spinner fa-spin"></i>
+                        <span>Approve</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 <!-- Desktop Progressive Load More Row -->
@@ -5844,16 +6003,16 @@ const resetAllFilters = () => {
       </div>
     </div>
 
-    <!-- PAYMENT RECEIPT & IMAGE PREVIEW MODAL -->
+    <!-- PAYMENT RECEIPT & IMAGE PREVIEW MODAL WITH INTERACTIVE ZOOM & PAN -->
     <div v-if="receiptModal.show && receiptModal.url"
       class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm"
       @click.self="closeReceiptModal">
       <div :class="[
-        'relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl shadow-2xl border overflow-hidden transition-all',
+        'relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-3xl shadow-2xl border overflow-hidden transition-all',
         props.darkMode ? 'bg-gray-900 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-slate-200'
       ]">
         <!-- Header -->
-        <div class="px-5 py-3.5 border-b flex items-center justify-between dark:border-gray-800 shrink-0">
+        <div class="px-5 py-3.5 border-b flex items-center justify-between dark:border-gray-800 shrink-0 flex-wrap gap-2">
           <div class="flex items-center gap-2.5">
             <div
               class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center text-sm shadow-xs">
@@ -5872,30 +6031,97 @@ const resetAllFilters = () => {
             </div>
           </div>
 
-          <div class="flex items-center gap-2">
-            <!-- <a :href="receiptModal.url" target="_blank" title="Open full image in new tab if needed"
-              class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-emerald-600 transition flex items-center justify-center text-xs cursor-pointer">
-              <i class="fas fa-external-link-alt"></i>
-            </a> -->
+          <!-- Zoom & Modal Controls Toolbar -->
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <!-- Zoom Controls (for image receipts) -->
+            <template v-if="!isPdfUrl(receiptModal.url)">
+              <div class="flex items-center bg-gray-100 dark:bg-gray-800/80 rounded-xl p-0.5 border border-gray-200 dark:border-gray-700">
+                <button type="button" @click="zoomOutReceipt" :disabled="receiptZoom <= 0.5"
+                  class="w-7 h-7 rounded-lg hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-40 flex items-center justify-center text-xs transition cursor-pointer"
+                  title="Zoom Out (-)">
+                  <i class="fas fa-search-minus"></i>
+                </button>
+                <button type="button" @click="resetReceiptView"
+                  class="px-2 py-0.5 text-[11px] font-bold text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 cursor-pointer min-w-[46px] text-center"
+                  title="Click to reset zoom (100%)">
+                  {{ Math.round(receiptZoom * 100) }}%
+                </button>
+                <button type="button" @click="zoomInReceipt" :disabled="receiptZoom >= 4"
+                  class="w-7 h-7 rounded-lg hover:bg-white dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 disabled:opacity-40 flex items-center justify-center text-xs transition cursor-pointer"
+                  title="Zoom In (+)">
+                  <i class="fas fa-search-plus"></i>
+                </button>
+              </div>
+
+              <!-- Reset Zoom button -->
+              <button type="button" @click="resetReceiptView"
+                class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs transition cursor-pointer"
+                title="Reset Zoom & Pan">
+                <i class="fas fa-arrows-rotate"></i>
+              </button>
+
+              <!-- Rotate button -->
+              <button type="button" @click="rotateReceipt"
+                class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs transition cursor-pointer"
+                title="Rotate 90°">
+                <i class="fas fa-rotate-right"></i>
+              </button>
+            </template>
+
+            <!-- Open in new tab -->
+            <a :href="receiptModal.url" target="_blank" rel="noopener noreferrer"
+              class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-emerald-50 hover:text-emerald-600 dark:hover:bg-emerald-950/60 text-gray-700 dark:text-gray-300 flex items-center justify-center text-xs transition cursor-pointer"
+              title="Open full file in new tab">
+              <i class="fas fa-arrow-up-right-from-square"></i>
+            </a>
+
+            <!-- Close button -->
             <button type="button" @click="closeReceiptModal"
-              class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-rose-500 hover:text-white text-gray-600 dark:text-gray-300 transition flex items-center justify-center text-xs font-bold cursor-pointer">
+              class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-rose-500 hover:text-white text-gray-600 dark:text-gray-300 transition flex items-center justify-center text-xs font-bold cursor-pointer"
+              title="Close modal (Esc)">
               <i class="fas fa-times"></i>
             </button>
           </div>
         </div>
 
-        <!-- Document / Image Content Area -->
+        <!-- Document / Image Content Area with Interactive Zoom & Drag Pan -->
         <div
-          class="p-3 sm:p-5 overflow-auto flex-1 flex items-center justify-center bg-slate-900/5 dark:bg-black/50 min-h-[260px]">
+          class="p-3 sm:p-5 overflow-hidden flex-1 flex items-center justify-center bg-slate-900/5 dark:bg-black/50 min-h-[320px] select-none relative"
+          @wheel="onReceiptWheel"
+          @mousedown="startReceiptDrag"
+          @mousemove="onReceiptDrag"
+          @mouseup="stopReceiptDrag"
+          @mouseleave="stopReceiptDrag"
+          :class="[
+            receiptZoom > 1 || receiptRotation !== 0
+              ? (isReceiptDragging ? 'cursor-grabbing' : 'cursor-grab')
+              : 'cursor-default'
+          ]">
           <iframe v-if="isPdfUrl(receiptModal.url)" :src="receiptModal.url"
-            class="w-full h-[66vh] rounded-xl border border-gray-200 dark:border-gray-800" />
-          <img v-else :src="receiptModal.url" :alt="receiptModal.title"
-            class="max-h-[66vh] max-w-full w-auto object-contain rounded-xl border shadow-md border-gray-200 dark:border-gray-800 select-none" />
+            class="w-full h-[68vh] rounded-xl border border-gray-200 dark:border-gray-800" />
+          <div v-else class="w-full h-full flex items-center justify-center overflow-hidden">
+            <img :src="receiptModal.url" :alt="receiptModal.title"
+              @dblclick="toggleReceiptZoomFit"
+              :style="{
+                transform: `translate(${receiptPan.x}px, ${receiptPan.y}px) scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
+                transformOrigin: 'center center',
+                transition: isReceiptDragging ? 'none' : 'transform 0.15s ease-out'
+              }"
+              class="max-h-[68vh] max-w-full w-auto object-contain rounded-xl border shadow-md border-gray-200 dark:border-gray-800 select-none pointer-events-auto"
+              draggable="false"
+              title="Double-click: 200% zoom/reset · Wheel: Zoom · Drag: Pan" />
+          </div>
+
+          <!-- Zoom Interaction Hint -->
+          <div v-if="!isPdfUrl(receiptModal.url)"
+            class="absolute bottom-3 left-3 px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-[10px] pointer-events-none flex items-center gap-1.5 opacity-70">
+            <i class="fas fa-mouse text-[9px]"></i> Scroll to zoom · Drag to pan · Double-click
+          </div>
         </div>
 
         <!-- Footer -->
         <div
-          class="px-5 py-3 border-t dark:border-gray-800 flex items-center justify-between text-xs bg-slate-50/50 dark:bg-gray-900/50 shrink-0">
+          class="px-5 py-3 border-t dark:border-gray-800 flex items-center justify-between text-xs bg-slate-50/50 dark:bg-gray-900/50 shrink-0 flex-wrap gap-2">
           <div class="text-[11px] text-gray-500 dark:text-gray-400">
             <span
               v-if="receiptModal.runner && (receiptModal.runner.grand_total_payment || receiptModal.runner.grand_total)">
@@ -5904,10 +6130,26 @@ const resetAllFilters = () => {
                 }}</strong>
             </span>
           </div>
-          <button type="button" @click="closeReceiptModal"
-            class="px-4 py-1.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold text-xs transition cursor-pointer">
-            Close
-          </button>
+
+          <div class="flex items-center gap-2">
+            <!-- Quick Approve inside Receipt Modal -->
+            <button v-if="receiptModal.runner && receiptModal.runner.payment_status !== 'Confirmed'" type="button"
+              @click="executeConfirmPayment(receiptModal.runner); closeReceiptModal();" :disabled="isConfirming"
+              class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 cursor-pointer transition active:scale-95 disabled:opacity-50"
+              title="Approve / Confirm payment for this runner">
+              <i class="fas fa-check"></i>
+              <span>Approve Payment</span>
+            </button>
+            <span v-else-if="receiptModal.runner && receiptModal.runner.payment_status === 'Confirmed'"
+              class="px-3 py-1.5 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold text-xs border border-emerald-300 dark:border-emerald-700 flex items-center gap-1 shadow-2xs select-none">
+              <i class="fas fa-check-circle text-emerald-600 dark:text-emerald-400"></i> Approved
+            </span>
+
+            <button type="button" @click="closeReceiptModal"
+              class="px-4 py-1.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold text-xs transition cursor-pointer">
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
