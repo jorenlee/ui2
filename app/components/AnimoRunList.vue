@@ -5258,26 +5258,6 @@ const closeRunnerQrPassModal = () => {
                 </div>
 
                 <div class="flex items-center gap-1.5 shrink-0">
-                  <button v-if="!runner.kit_claimed && !runner.kit_ready" type="button"
-                    @click="markKitReadyAndNotify(runner)" :disabled="isMarkingKitReady"
-                    class="px-2.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-[10px] shadow-xs transition flex items-center gap-1 cursor-pointer">
-                    <i class="fas fa-paper-plane text-[9px]"></i> Notify
-                  </button>
-                  <button v-if="!runner.kit_claimed" type="button" @click="openRunnerClaimModal(runner)"
-                    class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-[10px] shadow-xs transition flex items-center gap-1 cursor-pointer">
-                    <i class="fas fa-hand-holding-box text-[9px]"></i> Claim
-                  </button>
-                  <button v-else type="button" @click="openRunnerClaimModal(runner)"
-                    class="px-2 py-1.5 rounded-xl bg-slate-200 dark:bg-gray-700 hover:bg-slate-300 text-gray-700 dark:text-gray-200 font-semibold text-[10px] transition flex items-center gap-1 cursor-pointer">
-                    <i class="fas fa-receipt text-[9px]"></i> Inclusions
-                  </button>
-                  <button v-if="runner.kit_claimed" type="button" @click="resendClaimEmail(runner)"
-                    :disabled="isResendingClaimEmail"
-                    class="w-7 h-7 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center justify-center text-xs shadow-2xs"
-                    title="Resend Claim Confirmation Email">
-                    <i
-                      :class="['fas', isResendingClaimEmail ? 'fa-spinner fa-spin' : 'fa-envelope-circle-check text-[10px]']"></i>
-                  </button>
                   <button type="button" @click="openRunnerQrPassModal(runner)"
                     class="w-7 h-7 rounded-xl bg-white dark:bg-gray-800 text-emerald-700 dark:text-emerald-400 border border-gray-300 dark:border-gray-600 flex items-center justify-center text-xs shadow-2xs"
                     title="View Claim QR Pass">
@@ -5315,18 +5295,12 @@ const closeRunnerQrPassModal = () => {
                     Chat
                   </span>
                 </button>
-                <button v-if="runner.payment_status && runner.payment_status.startsWith('Pending')" type="button"
-                  @click="executeConfirmPayment(runner)"
-                  class="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0">
-                  <i class="fas fa-check text-xs"></i> Approve
-                </button>
-                <span v-else-if="runner.payment_status === 'Confirmed'"
-                  class="py-2 px-3 rounded-xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold text-xs border border-emerald-300 dark:border-emerald-700 flex items-center justify-center gap-1 shadow-2xs shrink-0 select-none">
-                  <i class="fas fa-check-circle text-xs text-emerald-600 dark:text-emerald-400"></i> Approved
-                </span>
+               
               </div>
             </div>
 
+
+            
             <!-- Mobile Progressive Load More -->
             <div v-if="hasMoreToRender && !isInitialLoading"
               class="p-3 text-center bg-slate-50/50 dark:bg-gray-900/30 rounded-2xl space-y-2 mt-1">
