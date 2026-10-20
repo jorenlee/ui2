@@ -127,9 +127,31 @@ const closeNotice = () => {
   toastModal.value.show = false;
 };
 
+const fastToast = ref({
+  show: false,
+  message: "",
+  type: "success",
+  timer: null,
+});
+
+const showFastToast = (message, type = "success", duration = 3500) => {
+  if (fastToast.value.timer) {
+    clearTimeout(fastToast.value.timer);
+  }
+  fastToast.value = {
+    show: true,
+    message,
+    type,
+    timer: setTimeout(() => {
+      fastToast.value.show = false;
+    }, duration),
+  };
+};
+
 const searchQuery = ref("");
 const selectedCategory = ref("All");
 const selectedStatus = ref("All");
+const selectedPaymentType = ref("All"); // "All", "add_to_tuition", "salary_deduction", "family_salary_deduction", "over_the_counter", "qr", "complimentary", "sponsor"
 const selectedParticipantType = ref("All");
 const selectedAgeGroup = ref("All");
 const selectedAcademicUnit = ref("All"); // "All", "HEU", "BEU", "Grade School", "JHS", "SHS", or specific course
@@ -237,6 +259,134 @@ const categoryCounts = computed(() => {
   });
   return counts;
 });
+
+const formatPaymentType = (type) => {
+  if (!type || type === "All") return "All";
+  const map = {
+    salary_deduction: "Salary Deduction",
+    family_salary_deduction: "Family Salary Deduction",
+    add_to_tuition: "Add to Tuition",
+    over_the_counter: "Over the Counter",
+    cash_payment: "Over the Counter / Cash",
+    qr: "QR / GCash / Maya",
+    complimentary: "Complimentary",
+    sponsor: "Sponsor",
+    non_lsu_payment: "Over the Counter / QR",
+  };
+  return map[type] || type.replaceAll("_", " ").toUpperCase();
+};
+
+const paymentMethodCounts = computed(() => {
+  const counts = {
+    add_to_tuition: 0,
+    salary_deduction: 0,
+    family_salary_deduction: 0,
+    over_the_counter: 0,
+    qr: 0,
+    complimentary: 0,
+    sponsor: 0,
+  };
+  registrations.value.forEach((r) => {
+    const pt = String(r.payment_type || "").trim().toLowerCase();
+    if (pt === "add_to_tuition" || pt.includes("tuition")) {
+      counts.add_to_tuition++;
+    } else if (pt === "family_salary_deduction") {
+      counts.family_salary_deduction++;
+    } else if (pt === "salary_deduction") {
+      counts.salary_deduction++;
+    } else if (pt === "over_the_counter" || pt === "cash_payment" || pt === "cash") {
+      counts.over_the_counter++;
+    } else if (pt === "qr" || pt.includes("gcash") || pt.includes("maya")) {
+      counts.qr++;
+    } else if (pt === "complimentary") {
+      counts.complimentary++;
+    } else if (pt === "sponsor") {
+      counts.sponsor++;
+    } else if (pt === "non_lsu_payment") {
+      if (r.proof_of_payment) counts.qr++;
+      else counts.over_the_counter++;
+    }
+  });
+  return counts;
+});
+
+// ── Multi-Confirm State ─────────────────────────────────────────────────────
+const selectedPendingRunners = computed(() => {
+  return registrations.value.filter(
+    (r) => selectedIds.value.includes(r.id) && r.payment_status && r.payment_status !== "Confirmed"
+  );
+});
+
+// ── Bulk Confirm Modal & State ──────────────────────────────────────────────
+const isBulkConfirming = ref(false);
+const bulkConfirmModal = ref({ show: false });
+
+const promptBulkConfirm = () => {
+  if (!selectedPendingRunners.value.length || isBulkConfirming.value) {
+    if (selectedIds.value.length > 0 && selectedPendingRunners.value.length === 0) {
+      showFastToast("All selected runners are already confirmed!", "info");
+    }
+    return;
+  }
+  bulkConfirmModal.value.show = true;
+};
+
+const closeBulkConfirmModal = () => {
+  bulkConfirmModal.value.show = false;
+};
+
+const executeBulkConfirm = async () => {
+  const runnersToConfirm = [...selectedPendingRunners.value];
+  if (!runnersToConfirm.length || isBulkConfirming.value) return;
+
+  const idsToConfirm = runnersToConfirm.map((r) => r.id);
+  const operator = currentOperator.value || "Admin";
+  const nowIso = new Date().toISOString();
+
+  // 1. OPTIMISTIC UPDATE: instant visual confirmation
+  runnersToConfirm.forEach((r) => {
+    r.payment_status = "Confirmed";
+    r.confirmed_at = nowIso;
+    r.confirmed_by = operator;
+    const inList = registrations.value.find((item) => item.id === r.id);
+    if (inList) {
+      inList.payment_status = "Confirmed";
+      inList.confirmed_at = nowIso;
+      inList.confirmed_by = operator;
+    }
+    if (selectedRunner.value && selectedRunner.value.id === r.id) {
+      selectedRunner.value.payment_status = "Confirmed";
+      selectedRunner.value.confirmed_at = nowIso;
+      selectedRunner.value.confirmed_by = operator;
+    }
+  });
+
+  const count = runnersToConfirm.length;
+  closeBulkConfirmModal();
+  clearSelection();
+  showFastToast(`🎉 Successfully confirmed payment for ${count} runner(s)! Confirmation emails queued.`, "success", 4500);
+
+  // 2. Perform backend API request
+  isBulkConfirming.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/bulk-confirm/`, {
+      method: "POST",
+      body: {
+        ids: idsToConfirm,
+        confirmed_by: operator,
+      },
+    });
+  } catch (err) {
+    console.error("Bulk confirm error:", err);
+    showNotice(
+      "Bulk confirmation completed locally, but server encountered an issue. Please verify connection or server logs.",
+      "Sync Notice",
+      "warning"
+    );
+  } finally {
+    isBulkConfirming.value = false;
+  }
+};
 
 // ── Slot Capacity & Allocation Management ───────────────────────────────────
 const slotData = ref({});
@@ -1018,6 +1168,31 @@ const filteredRegistrations = computed(() => {
     const matchesStatus =
       selectedStatus.value === "All" ||
       (selectedStatus.value === "Pending" ? (item.payment_status || "").startsWith("Pending") : item.payment_status === selectedStatus.value);
+
+    // Payment Method Type Filter
+    let matchesPaymentType = true;
+    if (selectedPaymentType.value !== "All") {
+      const pType = String(item.payment_type || "").trim().toLowerCase();
+      const target = selectedPaymentType.value.toLowerCase();
+      if (target === "salary_deduction") {
+        matchesPaymentType = pType === "salary_deduction" || pType === "salary deduction";
+      } else if (target === "family_salary_deduction") {
+        matchesPaymentType = pType === "family_salary_deduction" || pType === "family salary deduction";
+      } else if (target === "add_to_tuition") {
+        matchesPaymentType = pType === "add_to_tuition" || pType === "add to tuition" || pType.includes("tuition");
+      } else if (target === "over_the_counter") {
+        matchesPaymentType = pType === "over_the_counter" || pType === "over the counter" || pType === "cash_payment" || pType === "cash" || (pType === "non_lsu_payment" && !item.proof_of_payment);
+      } else if (target === "qr") {
+        matchesPaymentType = pType === "qr" || pType.includes("gcash") || pType.includes("maya") || (pType === "non_lsu_payment" && !!item.proof_of_payment);
+      } else if (target === "sponsor") {
+        matchesPaymentType = pType === "sponsor" || pType.includes("sponsor");
+      } else if (target === "complimentary") {
+        matchesPaymentType = pType === "complimentary" || pType.includes("complimentary");
+      } else {
+        matchesPaymentType = pType === target;
+      }
+    }
+
     const matchesType = selectedParticipantType.value === "All" || item.participant_type === selectedParticipantType.value;
 
     // Academic Unit Filter (HEU: All Bachelor Degrees, BEU: Grade School, JHS, SHS)
@@ -1081,7 +1256,7 @@ const filteredRegistrations = computed(() => {
       matchesChat = getRunnerMessageStats(item).total === 0;
     }
 
-    return matchesQuery && matchesCategory && matchesStatus && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate && matchesChat;
+    return matchesQuery && matchesCategory && matchesStatus && matchesPaymentType && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate && matchesChat;
   });
 
   // Sorting
@@ -1164,34 +1339,83 @@ const closeConfirmModal = () => {
   };
 };
 
-const executeConfirmPayment = async () => {
-  const runner = confirmModal.value.runner;
+const executeConfirmPayment = async (targetRunner = null) => {
+  const runner = targetRunner || confirmModal.value.runner || selectedRunner.value;
   if (!runner || isConfirming.value) return;
 
+  // Preserve previous state for rollback if server error occurs
+  const prevStatus = runner.payment_status;
+  const prevConfirmedAt = runner.confirmed_at;
+  const prevConfirmedBy = runner.confirmed_by;
+
+  // 1. OPTIMISTIC UPDATE: instant visual feedback (0ms latency!)
+  const nowIso = new Date().toISOString();
+  const operator = currentOperator.value || "Admin";
+
+  runner.payment_status = "Confirmed";
+  runner.confirmed_at = nowIso;
+  runner.confirmed_by = operator;
+
+  if (selectedRunner.value && selectedRunner.value.id === runner.id) {
+    selectedRunner.value.payment_status = "Confirmed";
+    selectedRunner.value.confirmed_at = nowIso;
+    selectedRunner.value.confirmed_by = operator;
+  }
+
+  // Also update reactive registrations array so summary cards, counters and list reflect instantly
+  const inList = registrations.value.find((r) => r.id === runner.id);
+  if (inList) {
+    inList.payment_status = "Confirmed";
+    inList.confirmed_at = nowIso;
+    inList.confirmed_by = operator;
+  }
+
+  // Close confirmation modal immediately if open (no waiting on spinner)
+  closeConfirmModal();
+
+  // Instant non-blocking notification toast
+  const runnerName = `${runner.firstname || ''} ${runner.lastname || ''}`.trim() || runner.run_number || 'Runner';
+  showFastToast(`Payment confirmed for ${runnerName}! Confirmation email dispatched.`, "success");
+
+  // 2. Perform backend API request asynchronously
   isConfirming.value = true;
   try {
     const res = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/confirm/`, {
       method: "POST",
       body: {
-        confirmed_by: currentOperator.value,
+        confirmed_by: operator,
       },
     });
 
-    runner.payment_status = "Confirmed";
-    if (selectedRunner.value && selectedRunner.value.id === runner.id) {
-      selectedRunner.value.payment_status = "Confirmed";
+    if (res?.data) {
+      Object.assign(runner, res.data);
+      if (selectedRunner.value && selectedRunner.value.id === runner.id) {
+        Object.assign(selectedRunner.value, res.data);
+      }
+      if (inList) {
+        Object.assign(inList, res.data);
+      }
     }
-    closeConfirmModal();
-    showNotice(
-      `Registration and payment confirmed successfully for ${runner.firstname} ${runner.lastname}.\n\nAn official confirmation email has been sent to ${runner.contact_email || runner.email} (BCC: animorun@lsu.edu.ph, calendar@lsu.edu.ph, vpal@lsu.edu.ph).`,
-      "Payment Confirmed!",
-      "success"
-    );
   } catch (err) {
     console.error("Error confirming payment:", err);
-    closeConfirmModal();
+    // ROLLBACK on failure
+    runner.payment_status = prevStatus;
+    runner.confirmed_at = prevConfirmedAt;
+    runner.confirmed_by = prevConfirmedBy;
+
+    if (selectedRunner.value && selectedRunner.value.id === runner.id) {
+      selectedRunner.value.payment_status = prevStatus;
+      selectedRunner.value.confirmed_at = prevConfirmedAt;
+      selectedRunner.value.confirmed_by = prevConfirmedBy;
+    }
+    if (inList) {
+      inList.payment_status = prevStatus;
+      inList.confirmed_at = prevConfirmedAt;
+      inList.confirmed_by = prevConfirmedBy;
+    }
+
     showNotice(
-      "Failed to confirm payment on the server. Please verify your local Django server is running on http://127.0.0.1:8000.",
+      "Failed to confirm payment on the server. Please verify your connection or local Django server.",
       "Confirmation Failed",
       "error"
     );
@@ -2913,7 +3137,7 @@ const isFilterExpanded = ref(false);
 
 // Reset render limit when filters change
 watch(
-  [searchQuery, selectedAcademicUnit, selectedCategory, selectedStatus, selectedParticipantType, selectedAgeGroup, selectedChatFilter, selectedBatch, selectedLockStatus, dateFrom, dateTo, sortBy],
+  [searchQuery, selectedAcademicUnit, selectedCategory, selectedStatus, selectedPaymentType, selectedParticipantType, selectedAgeGroup, selectedChatFilter, selectedBatch, selectedLockStatus, dateFrom, dateTo, sortBy],
   () => { renderLimit.value = INITIAL_CHUNK; }
 );
 
@@ -2922,6 +3146,7 @@ const activeFilterCount = computed(() => {
   if (selectedAcademicUnit.value !== "All") count++;
   if (selectedCategory.value !== "All") count++;
   if (selectedStatus.value !== "All") count++;
+  if (selectedPaymentType.value !== "All") count++;
   if (selectedParticipantType.value !== "All") count++;
   if (selectedAgeGroup.value !== "All") count++;
   if (selectedChatFilter.value !== "All") count++;
@@ -2939,6 +3164,7 @@ const resetAllFilters = () => {
   searchQuery.value = "";
   selectedCategory.value = "All";
   selectedStatus.value = "All";
+  selectedPaymentType.value = "All";
   selectedParticipantType.value = "All";
   selectedAgeGroup.value = "All";
   selectedAcademicUnit.value = "All";
@@ -3182,6 +3408,17 @@ const resetAllFilters = () => {
               </button>
             </span>
 
+            <!-- Payment Method pill -->
+            <span
+              v-if="selectedPaymentType !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700"
+            >
+              Method: {{ formatPaymentType(selectedPaymentType) }}
+              <button type="button" @click="selectedPaymentType = 'All'" class="hover:text-emerald-950 dark:hover:text-white ml-0.5" title="Remove payment method filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
             <!-- Classification pill -->
             <span
               v-if="selectedParticipantType !== 'All'"
@@ -3344,8 +3581,8 @@ const resetAllFilters = () => {
                 </div>
               </div>
 
-              <!-- ── FILTER SELECT CONTROLS (6 CATEGORIES IN A CLEAN GRID) ── -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2.5">
+              <!-- ── FILTER SELECT CONTROLS (7 CATEGORIES IN A CLEAN GRID) ── -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2.5">
                 <!-- Academic Unit Filter (HEU / BEU) -->
                 <div>
                   <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
@@ -3412,6 +3649,27 @@ const resetAllFilters = () => {
                     <option value="Pending">⏳ All Pending</option>
                     <option value="Pending Payment">💳 Pending Payment</option>
                     <option value="Pending Approval">🔍 Pending Approval</option>
+                  </select>
+                </div>
+
+                <!-- Payment Method Filter -->
+                <div>
+                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    <i class="fas fa-money-bill-transfer text-emerald-500 mr-0.5"></i> Payment Method
+                  </label>
+                  <select v-model="selectedPaymentType" :class="[
+                    'w-full px-2.5 py-1.5 rounded-xl border text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none transition',
+                    props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                    selectedPaymentType !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                  ]">
+                    <option value="All">All Payment Methods</option>
+                    <option value="add_to_tuition">🏫 Add to Tuition ({{ paymentMethodCounts.add_to_tuition }})</option>
+                    <option value="salary_deduction">💼 Salary Deduction ({{ paymentMethodCounts.salary_deduction }})</option>
+                    <option value="family_salary_deduction">👨‍👩‍👧 Family Salary ({{ paymentMethodCounts.family_salary_deduction }})</option>
+                    <option value="over_the_counter">💵 Over the Counter / Cash ({{ paymentMethodCounts.over_the_counter }})</option>
+                    <option value="qr">📱 QR / GCash / Maya ({{ paymentMethodCounts.qr }})</option>
+                    <option value="complimentary">🎁 Complimentary ({{ paymentMethodCounts.complimentary }})</option>
+                    <option value="sponsor">🤝 Sponsor ({{ paymentMethodCounts.sponsor }})</option>
                   </select>
                 </div>
 
@@ -3958,8 +4216,8 @@ const resetAllFilters = () => {
                   </span>
                 </button>
                 <button v-if="runner.payment_status && runner.payment_status.startsWith('Pending')" type="button"
-                  @click="promptConfirmPayment(runner)"
-                  class="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0">
+                  @click="executeConfirmPayment(runner)"
+                  class="py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-semibold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer shrink-0">
                   <i class="fas fa-check text-xs"></i> Confirm
                 </button>
               </div>
@@ -4000,6 +4258,34 @@ const resetAllFilters = () => {
           </div>
         </div>
 
+        <!-- ── CURRENT FILTER SELECTION NOTIFICATION BAR ── -->
+        <div v-if="selectedIds.length > 0"
+          class="px-4 py-2 border-b dark:border-gray-800 bg-emerald-50/80 dark:bg-emerald-950/40 flex items-center justify-between gap-3 text-xs transition flex-wrap">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-600 text-white font-bold text-[10px]">
+              {{ selectedIds.length }}
+            </span>
+            <span class="font-semibold text-emerald-900 dark:text-emerald-200">
+              {{ selectedIds.length }} runner{{ selectedIds.length !== 1 ? 's' : '' }} selected based on current filters.
+              <span v-if="selectedPendingRunners.length > 0" class="text-amber-700 dark:text-amber-300 font-bold ml-1">
+                ({{ selectedPendingRunners.length }} pending confirmation)
+              </span>
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button v-if="selectedPendingRunners.length > 0" type="button" @click="promptBulkConfirm" :disabled="isBulkConfirming"
+              class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60">
+              <i v-if="!isBulkConfirming" class="fas fa-check-double text-[11px]"></i>
+              <i v-else class="fas fa-spinner fa-spin text-[11px]"></i>
+              <span>Confirm Selected ({{ selectedPendingRunners.length }})</span>
+            </button>
+            <button type="button" @click="clearSelection"
+              class="text-xs text-gray-500 hover:text-rose-600 dark:text-gray-400 dark:hover:text-rose-300 font-semibold cursor-pointer px-2 py-1">
+              Clear
+            </button>
+          </div>
+        </div>
+
         <!-- ── DESKTOP TABLE VIEW (VISIBLE ON md+) ───────────────────── -->
         <div class="hidden md:block overflow-x-auto">
           <table class="w-full text-left border-collapse">
@@ -4010,11 +4296,11 @@ const resetAllFilters = () => {
                   ? 'bg-gray-900/80 border-gray-700 text-gray-400'
                   : 'bg-emerald-50/60 border-slate-200 text-emerald-900',
               ]">
-                <!-- Select-all checkbox -->
-                <th class="p-3 w-10">
+                <!-- Clean Select-all checkbox based on current filters -->
+                <th class="p-3 w-10 whitespace-nowrap">
                   <input type="checkbox" :checked="allSelected" :indeterminate.prop="someSelected"
                     @change="toggleSelectAll" class="w-4 h-4 rounded accent-emerald-600 cursor-pointer"
-                    title="Select all visible" />
+                    :title="allSelected ? 'Deselect all' : `Select all ${filteredRegistrations.length} in current filters`" />
                 </th>
 
                 <!-- Dynamic Columns Header driven by selectedCsvColumns -->
@@ -4563,13 +4849,20 @@ const resetAllFilters = () => {
         </button>
 
 
+        <!-- Multi-Confirm Payment button -->
+        <button v-if="selectedPendingRunners.length > 0" type="button" @click="promptBulkConfirm" :disabled="isBulkConfirming"
+          class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs transition shadow-lg flex items-center gap-1.5 border border-emerald-400/40 cursor-pointer active:scale-95 disabled:opacity-60"
+          title="Approve / Confirm payment for all selected pending runners">
+          <i v-if="!isBulkConfirming" class="fas fa-check-double"></i>
+          <i v-else class="fas fa-spinner fa-spin"></i>
+          <span>Multi-Confirm ({{ selectedPendingRunners.length }})</span>
+        </button>
+
         <!-- Finalize Supplier Batch button -->
         <button type="button" @click="openBatchFinalizeModal"
           class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md border border-amber-400/40 cursor-pointer">
           <i class="fas fa-layer-group"></i> Finalize Supplier Batch (CSV)
         </button>
-
-
 
         <!-- Delete selected -->
         <button type="button" @click="promptBulkDelete" :disabled="isBulkDeleting"
@@ -5259,8 +5552,8 @@ const resetAllFilters = () => {
             <!-- Confirm Payment button (view mode) -->
             <template v-if="!isEditMode">
               <button v-if="selectedRunner.payment_status !== 'Confirmed'" type="button"
-                @click="promptConfirmPayment(selectedRunner)" :disabled="isConfirming"
-                class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5">
+                @click="executeConfirmPayment(selectedRunner)" :disabled="isConfirming"
+                class="flex-1 sm:flex-none px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5">
                 <i v-if="!isConfirming" class="fas fa-check"></i>
                 <i v-else class="fas fa-spinner fa-spin"></i>
                 <span>{{ isConfirming ? 'Processing...' : 'Approve / Confirm Payment' }}</span>
@@ -5270,6 +5563,62 @@ const resetAllFilters = () => {
               </span>
             </template>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BULK-CONFIRM PAYMENT MODAL ──────────────────────────────────── -->
+    <div v-if="bulkConfirmModal.show"
+      class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      @click.self="closeBulkConfirmModal">
+      <div :class="[
+        'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <!-- Emerald accent bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+
+        <div
+          class="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center text-2xl shadow-sm mt-2">
+          <i class="fas fa-check-double"></i>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-black tracking-tight">
+            Confirm {{ selectedPendingRunners.length }} Runner Payment{{ selectedPendingRunners.length !== 1 ? 's' : '' }}?
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+            This will mark all <strong class="text-emerald-600 dark:text-emerald-400">{{ selectedPendingRunners.length }} pending registrations</strong> as <strong class="text-emerald-600 dark:text-emerald-400">Confirmed</strong> and queue their official registration confirmation emails.
+          </p>
+        </div>
+
+        <!-- Quick Summary Box -->
+        <div class="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 text-left text-xs space-y-1.5">
+          <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
+            <span>Operator:</span>
+            <span class="font-bold text-gray-800 dark:text-gray-100">{{ currentOperator || 'Admin' }}</span>
+          </div>
+          <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
+            <span>Runners to Confirm:</span>
+            <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ selectedPendingRunners.length }}</span>
+          </div>
+          <div v-if="selectedIds.length > selectedPendingRunners.length" class="flex justify-between items-center text-gray-400 text-[11px]">
+            <span>Already confirmed (skipped):</span>
+            <span>{{ selectedIds.length - selectedPendingRunners.length }}</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" @click="closeBulkConfirmModal" :disabled="isBulkConfirming"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="button" @click="executeBulkConfirm" :disabled="isBulkConfirming"
+            class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 active:scale-95">
+            <i v-if="!isBulkConfirming" class="fas fa-check-double"></i>
+            <i v-else class="fas fa-spinner fa-spin"></i>
+            <span>{{ isBulkConfirming ? 'Confirming...' : 'Yes, Confirm All' }}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -5405,6 +5754,39 @@ const resetAllFilters = () => {
         </div>
       </div>
     </div>
+
+    <!-- FAST FLOATING TOAST NOTIFICATION (NON-BLOCKING) -->
+    <transition
+      enter-active-class="transform transition ease-out duration-300"
+      enter-from-class="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+      enter-to-class="translate-y-0 opacity-100 sm:translate-x-0"
+      leave-active-class="transition ease-in duration-200"
+      leave-from-class="opacity-100"
+      leave-to-class="opacity-0">
+      <div v-if="fastToast.show"
+        class="fixed top-6 right-6 z-[9999] max-w-sm w-full shadow-2xl rounded-2xl p-4 border flex items-center gap-3 backdrop-blur-md pointer-events-auto"
+        :class="[
+          fastToast.type === 'error'
+            ? 'bg-rose-900/95 text-rose-100 border-rose-700 shadow-rose-950/40'
+            : fastToast.type === 'warning'
+              ? 'bg-amber-900/95 text-amber-100 border-amber-700 shadow-amber-950/40'
+              : 'bg-emerald-900/95 text-emerald-100 border-emerald-700 shadow-emerald-950/40'
+        ]">
+        <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+          :class="[
+            fastToast.type === 'error' ? 'bg-rose-500/30 text-rose-300' : 'bg-emerald-500/30 text-emerald-300'
+          ]">
+          <i :class="['fas text-sm', fastToast.type === 'error' ? 'fa-circle-xmark' : 'fa-circle-check']"></i>
+        </div>
+        <div class="flex-1 text-xs font-semibold leading-snug">
+          {{ fastToast.message }}
+        </div>
+        <button type="button" @click="fastToast.show = false"
+          class="text-white/60 hover:text-white transition p-1 text-xs cursor-pointer">
+          <i class="fas fa-xmark"></i>
+        </button>
+      </div>
+    </transition>
 
     <!-- TOAST NOTIFICATION MODAL (REPLACES BROWSER ALERT) -->
     <div v-if="toastModal.show"
