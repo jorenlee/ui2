@@ -960,61 +960,390 @@ const getCourseLabel = (val) => {
   return match ? match.label : v;
 };
 
-// ── Auto-Deduplication ────────────────────────────────────────────────────────
-// Groups registrations by (firstname + lastname + created_at minute).
-// Within each duplicate group, the entry with the smallest id is kept (first
-// submission); all others are deleted via the bulk-delete API and removed from
-// the local list immediately so the UI updates without waiting for the next poll.
-const isDeduplicating = ref(false);
+// ── Duplicate Scanner State & Scanning Logic ──────────────────────────────────
+const isDuplicateModalOpen = ref(false);
+const duplicateSearchQuery = ref("");
+const duplicateTypeFilter = ref("all"); // 'all', 'bib', 'name', 'contact'
+const selectedBibFilter = ref("");
+const selectedDuplicateRunnerIds = ref([]);
+const isDeletingDuplicateRunner = ref(false);
+const duplicateRunnerToDelete = ref(null);
+const isDuplicateDeleteConfirmOpen = ref(false);
 
-const deduplicateRegistrations = async () => {
-  if (isDeduplicating.value) return;
+const openDuplicateScannerModal = () => {
+  duplicateSearchQuery.value = "";
+  duplicateTypeFilter.value = "all";
+  selectedBibFilter.value = "";
+  selectedDuplicateRunnerIds.value = [];
+  isDuplicateModalOpen.value = true;
+};
 
-  // Build a map keyed by "firstname|lastname|created_at-minute"
-  const groups = new Map();
-  for (const r of registrations.value) {
-    const firstName = (r.firstname || "").trim().toLowerCase();
-    const lastName = (r.lastname || "").trim().toLowerCase();
-    // Truncate timestamp to the minute so entries within the same minute are grouped
-    const minute = r.created_at
-      ? r.created_at.substring(0, 16) // "YYYY-MM-DDTHH:MM" or "YYYY-MM-DD HH:MM"
-      : "__no_ts__";
-    const key = `${firstName}|${lastName}|${minute}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(r);
+const closeDuplicateScannerModal = () => {
+  isDuplicateModalOpen.value = false;
+  selectedDuplicateRunnerIds.value = [];
+  duplicateRunnerToDelete.value = null;
+  isDuplicateDeleteConfirmOpen.value = false;
+};
+
+const formatDuplicateDate = (dateVal) => {
+  if (!dateVal) return "N/A";
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return String(dateVal);
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return String(dateVal);
   }
+};
 
-  // Collect IDs to delete (all but the first/lowest id in each group)
-  const toDeleteIds = [];
-  for (const [, group] of groups) {
-    if (group.length < 2) continue;
-    // Sort ascending by id so the smallest (first) id is index 0
-    group.sort((a, b) => Number(a.id) - Number(b.id));
-    // Keep group[0], delete the rest
-    for (let i = 1; i < group.length; i++) {
-      toDeleteIds.push(group[i].id);
+const scanDuplicateClusters = computed(() => {
+  const list = registrations.value || [];
+  if (list.length === 0) return [];
+
+  // Helper sets for ignored dummy values
+  const dummyEmails = new Set([
+    "is@lsu.edu.ph",
+    "dev@lsu.edu.ph",
+    "animorun@lsu.edu.ph",
+    "none@lsu.edu.ph",
+    "na@lsu.edu.ph",
+    "test@lsu.edu.ph",
+    "none",
+    "n/a",
+    "na",
+    "null",
+    "-",
+    ""
+  ]);
+
+  const cleanEmail = (em) => {
+    if (!em) return "";
+    const s = String(em).trim().toLowerCase();
+    return dummyEmails.has(s) || s.length < 5 || !s.includes("@") ? "" : s;
+  };
+
+  const cleanPhone = (ph) => {
+    if (!ph) return "";
+    const digits = String(ph).replace(/\D/g, "");
+    if (digits.length < 10) return "";
+    if (/^(\d)\1+$/.test(digits) || digits === "1234567890" || digits === "09123456789") return "";
+    return digits.slice(-10);
+  };
+
+  const cleanBib = (b) => {
+    if (!b) return "";
+    const s = String(b).trim().toUpperCase();
+    if (!s || s === "TBD" || s === "PENDING" || s === "UNALLOCATED" || s === "NONE" || s === "N/A" || s === "-" || s.startsWith("AR-")) return "";
+    return s;
+  };
+
+  const cleanName = (fn, ln) => {
+    const f = (fn || "").trim().toLowerCase().replace(/\s+/g, " ");
+    const l = (ln || "").trim().toLowerCase().replace(/\s+/g, " ");
+    if (!f || !l) return "";
+    return `${f}|${l}`;
+  };
+
+  const cleanLsuId = (id) => {
+    if (!id) return "";
+    const s = String(id).trim().toUpperCase();
+    if (!s || s === "N/A" || s === "NONE" || s === "-" || s === "0") return "";
+    return s;
+  };
+
+  // Disjoint Set Union (DSU) to connect duplicate records
+  const parent = new Map();
+  const find = (id) => {
+    if (!parent.has(id)) parent.set(id, id);
+    if (parent.get(id) !== id) {
+      parent.set(id, find(parent.get(id)));
+    }
+    return parent.get(id);
+  };
+  const union = (id1, id2) => {
+    const root1 = find(id1);
+    const root2 = find(id2);
+    if (root1 !== root2) {
+      parent.set(root1, root2);
+    }
+  };
+
+  const keyToRunner = new Map();
+  const runnerReasons = new Map();
+
+  for (const r of list) {
+    const rId = r.id;
+    if (!rId) continue;
+    if (!runnerReasons.has(rId)) runnerReasons.set(rId, new Set());
+
+    const keys = [];
+    const bib = cleanBib(r.run_number || r.bib_number);
+    if (bib) keys.push({ key: `bib:${bib}`, type: 'bib', val: bib, label: `BIB ${bib}` });
+
+    const name = cleanName(r.firstname, r.lastname);
+    if (name) keys.push({ key: `name:${name}`, type: 'name', val: name, label: `Name: ${(r.firstname || '').trim()} ${(r.lastname || '').trim()}` });
+
+    const em = cleanEmail(r.contact_email || r.email);
+    if (em) keys.push({ key: `email:${em}`, type: 'email', val: em, label: `Email: ${em}` });
+
+    const ph = cleanPhone(r.contact_number || r.mobile);
+    if (ph) keys.push({ key: `phone:${ph}`, type: 'phone', val: ph, label: `Mobile: ...${ph.slice(-4)}` });
+
+    const lsuId = cleanLsuId(r.lsu_id);
+    if (lsuId) keys.push({ key: `lsuid:${lsuId}`, type: 'lsuid', val: lsuId, label: `LSU ID: ${lsuId}` });
+
+    for (const item of keys) {
+      if (keyToRunner.has(item.key)) {
+        const otherId = keyToRunner.get(item.key);
+        union(rId, otherId);
+        runnerReasons.get(rId).add(item.label);
+        runnerReasons.get(otherId).add(item.label);
+      } else {
+        keyToRunner.set(item.key, rId);
+      }
     }
   }
 
-  if (!toDeleteIds.length) return;
+  const groupsByRoot = new Map();
+  for (const r of list) {
+    if (!r.id) continue;
+    const root = find(r.id);
+    if (!groupsByRoot.has(root)) groupsByRoot.set(root, []);
+    groupsByRoot.get(root).push(r);
+  }
 
-  isDeduplicating.value = true;
-  try {
-    // Remove from local list immediately for instant UI update
-    registrations.value = registrations.value.filter((r) => !toDeleteIds.includes(r.id));
-    // Also clear any stale selections
-    selectedIds.value = selectedIds.value.filter((id) => !toDeleteIds.includes(id));
+  const resultClusters = [];
+  let clusterIndex = 1;
 
-    // Persist the deletion to the server
-    await $fetch(`${endpoint.value}/api/animorun/bulk-delete/`, {
-      method: "DELETE",
-      body: { ids: toDeleteIds },
+  for (const [, runners] of groupsByRoot) {
+    if (runners.length < 2) continue;
+
+    // Sort ascending by ID (earliest submission first)
+    runners.sort((a, b) => Number(a.id) - Number(b.id));
+
+    // Analyze BIB numbers in this group
+    const bibsInGroup = [];
+    const bibCountMap = new Map();
+    for (const r of runners) {
+      const b = cleanBib(r.run_number || r.bib_number);
+      if (b) {
+        bibCountMap.set(b, (bibCountMap.get(b) || 0) + 1);
+        if (!bibsInGroup.includes(b)) bibsInGroup.push(b);
+      }
+    }
+
+    let hasBibCollision = false;
+    const collidingBibs = [];
+    for (const [bib, count] of bibCountMap.entries()) {
+      if (count > 1) {
+        hasBibCollision = true;
+        collidingBibs.push(bib);
+      }
+    }
+
+    let primaryType = 'name';
+    let severity = 'warning';
+    if (hasBibCollision) {
+      primaryType = 'bib';
+      severity = 'critical';
+    } else if (runners.some(r => cleanName(runners[0].firstname, runners[0].lastname) === cleanName(r.firstname, r.lastname))) {
+      primaryType = 'name';
+      severity = 'warning';
+    } else {
+      primaryType = 'contact';
+      severity = 'info';
+    }
+
+    const allReasons = new Set();
+    for (const r of runners) {
+      const reasons = runnerReasons.get(r.id);
+      if (reasons) {
+        for (const re of reasons) allReasons.add(re);
+      }
+    }
+    if (hasBibCollision) {
+      allReasons.add(`Exact BIB Collision: ${collidingBibs.join(', ')}`);
+    }
+
+    const representativeName = `${runners[0].firstname || ''} ${runners[0].lastname || ''}`.trim() || `Duplicate Group #${clusterIndex}`;
+
+    resultClusters.push({
+      id: `cluster-${clusterIndex++}`,
+      runners,
+      bibs: bibsInGroup,
+      collidingBibs,
+      hasBibCollision,
+      primaryType,
+      severity,
+      name: representativeName,
+      reasons: Array.from(allReasons),
     });
-    console.info(`[AnimoRunList] Auto-removed ${toDeleteIds.length} duplicate registration(s).`);
+  }
+
+  resultClusters.sort((a, b) => {
+    if (a.hasBibCollision && !b.hasBibCollision) return -1;
+    if (!a.hasBibCollision && b.hasBibCollision) return 1;
+    return b.runners.length - a.runners.length;
+  });
+
+  return resultClusters;
+});
+
+const allDuplicateBibs = computed(() => {
+  const bibs = new Set();
+  for (const c of scanDuplicateClusters.value) {
+    for (const b of c.bibs) {
+      bibs.add(b);
+    }
+  }
+  return Array.from(bibs).sort();
+});
+
+const duplicateStats = computed(() => {
+  const clusters = scanDuplicateClusters.value;
+  let bibCollisions = 0;
+  let totalDuplicateRunners = 0;
+  for (const c of clusters) {
+    if (c.hasBibCollision) bibCollisions++;
+    totalDuplicateRunners += c.runners.length;
+  }
+  return {
+    totalGroups: clusters.length,
+    totalRunners: totalDuplicateRunners,
+    bibCollisions,
+    distinctBibs: allDuplicateBibs.value.length,
+  };
+});
+
+const duplicateScanCount = computed(() => {
+  return scanDuplicateClusters.value.length;
+});
+
+const filteredDuplicateClusters = computed(() => {
+  let list = scanDuplicateClusters.value;
+
+  if (duplicateTypeFilter.value === 'bib') {
+    list = list.filter((c) => c.hasBibCollision || c.bibs.length > 0);
+  } else if (duplicateTypeFilter.value === 'name') {
+    list = list.filter((c) => c.primaryType === 'name');
+  } else if (duplicateTypeFilter.value === 'contact') {
+    list = list.filter((c) => c.primaryType === 'contact');
+  }
+
+  if (selectedBibFilter.value) {
+    const targetBib = selectedBibFilter.value.toUpperCase();
+    list = list.filter((c) => c.bibs.some((b) => b.toUpperCase() === targetBib));
+  }
+
+  if (duplicateSearchQuery.value && duplicateSearchQuery.value.trim()) {
+    const q = duplicateSearchQuery.value.trim().toLowerCase();
+    list = list.filter((c) => {
+      if (c.name.toLowerCase().includes(q)) return true;
+      if (c.bibs.some((b) => b.toLowerCase().includes(q))) return true;
+      return c.runners.some((r) => {
+        const fn = (r.firstname || "").toLowerCase();
+        const ln = (r.lastname || "").toLowerCase();
+        const bib = (r.run_number || r.bib_number || "").toLowerCase();
+        const email = (r.contact_email || r.email || "").toLowerCase();
+        const phone = (r.contact_number || r.mobile || "").toLowerCase();
+        const idStr = String(r.id);
+        return fn.includes(q) || ln.includes(q) || bib.includes(q) || email.includes(q) || phone.includes(q) || idStr.includes(q);
+      });
+    });
+  }
+
+  return list;
+});
+
+const toggleSelectDuplicateRunner = (runnerId) => {
+  const idx = selectedDuplicateRunnerIds.value.indexOf(runnerId);
+  if (idx >= 0) {
+    selectedDuplicateRunnerIds.value.splice(idx, 1);
+  } else {
+    selectedDuplicateRunnerIds.value.push(runnerId);
+  }
+};
+
+const isDuplicateRunnerSelected = (runnerId) => {
+  return selectedDuplicateRunnerIds.value.includes(runnerId);
+};
+
+const promptDeleteDuplicateRunner = (runner) => {
+  duplicateRunnerToDelete.value = runner;
+  isDuplicateDeleteConfirmOpen.value = true;
+};
+
+const closeDuplicateDeleteConfirm = () => {
+  duplicateRunnerToDelete.value = null;
+  isDuplicateDeleteConfirmOpen.value = false;
+};
+
+const executeDeleteDuplicateRunner = async (runner) => {
+  const target = runner || duplicateRunnerToDelete.value;
+  if (!target || !target.id || isDeletingDuplicateRunner.value) return;
+
+  isDeletingDuplicateRunner.value = true;
+  const targetId = target.id;
+  const runnerBib = target.run_number || target.bib_number || 'Unallocated';
+  const runnerFullName = `${target.firstname || ''} ${target.lastname || ''}`.trim() || `Runner #${targetId}`;
+
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/bulk-delete/`, {
+      method: "DELETE",
+      body: { ids: [targetId] },
+    });
+
+    // Remove from local list immediately
+    registrations.value = registrations.value.filter((r) => r.id !== targetId);
+    selectedDuplicateRunnerIds.value = selectedDuplicateRunnerIds.value.filter((id) => id !== targetId);
+    selectedIds.value = selectedIds.value.filter((id) => id !== targetId);
+
+    closeDuplicateDeleteConfirm();
+
+    showFastToast(
+      res.message || `Deleted duplicate record for ${runnerFullName} (BIB: ${runnerBib}).`,
+      "success"
+    );
   } catch (err) {
-    console.error("[AnimoRunList] Auto-deduplication delete error:", err);
+    console.error("Error deleting duplicate runner:", err);
+    closeDuplicateDeleteConfirm();
+    showNotice("Failed to delete duplicate runner. Please try again.", "Error", "error");
   } finally {
-    isDeduplicating.value = false;
+    isDeletingDuplicateRunner.value = false;
+  }
+};
+
+const executeBulkDeleteSelectedDuplicates = async () => {
+  const ids = [...selectedDuplicateRunnerIds.value];
+  if (!ids.length || isDeletingDuplicateRunner.value) return;
+
+  isDeletingDuplicateRunner.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/bulk-delete/`, {
+      method: "DELETE",
+      body: { ids },
+    });
+
+    registrations.value = registrations.value.filter((r) => !ids.includes(r.id));
+    selectedDuplicateRunnerIds.value = [];
+    selectedIds.value = selectedIds.value.filter((id) => !ids.includes(id));
+
+    showFastToast(
+      res.message || `Successfully removed ${ids.length} duplicate registration(s).`,
+      "success"
+    );
+  } catch (err) {
+    console.error("Bulk delete duplicates error:", err);
+    showNotice("Failed to delete selected duplicates. Please try again.", "Error", "error");
+  } finally {
+    isDeletingDuplicateRunner.value = false;
   }
 };
 
@@ -1030,8 +1359,7 @@ const fetchRegistrations = async (silent = false) => {
       registrations.value = res;
       lastUpdated.value = new Date();
       persistCache(res);
-      // Run deduplication non-blocking in background so UI finishes immediately
-      deduplicateRegistrations();
+      // Auto-deduplication removed to allow manual review via Duplicate Scanner modal
     }
   } catch (err) {
     console.error("Error fetching Animo Run registrations:", err);
@@ -1158,10 +1486,14 @@ const currentOperator = computed(() => user.value?.email || user.value?.name || 
 
 // ── Sorting state ──────────────────────────────────────────────────────────
 const sortBy = ref("date_desc");
-// Options: "date_desc", "date_asc", "name_asc", "name_desc", "bib_asc", "batch_asc", "shirt_asc", "receipt_desc", "receipt_asc"
+// Options: "date_desc", "date_asc", "firstname_asc", "firstname_desc", "lastname_asc", "lastname_desc", "name_asc", "name_desc", "bib_asc", "batch_asc", "shirt_asc", "receipt_desc", "receipt_asc"
 
 const toggleSort = (field) => {
-  if (field === "name") {
+  if (field === "firstname") {
+    sortBy.value = sortBy.value === "firstname_asc" ? "firstname_desc" : "firstname_asc";
+  } else if (field === "lastname") {
+    sortBy.value = sortBy.value === "lastname_asc" ? "lastname_desc" : "lastname_asc";
+  } else if (field === "name") {
     sortBy.value = sortBy.value === "name_asc" ? "name_desc" : "name_asc";
   } else if (field === "date") {
     sortBy.value = sortBy.value === "date_desc" ? "date_asc" : "date_desc";
@@ -1174,6 +1506,40 @@ const toggleSort = (field) => {
   } else if (field === "receipt") {
     sortBy.value = sortBy.value === "receipt_desc" ? "receipt_asc" : "receipt_desc";
   }
+};
+
+// ── Same Name / Duplicate Quick-Check Helpers ─────────────────────────────
+const firstNameCounts = computed(() => {
+  const map = new Map();
+  for (const r of registrations.value) {
+    const fn = (r.firstname || "").trim().toLowerCase();
+    if (fn) {
+      map.set(fn, (map.get(fn) || 0) + 1);
+    }
+  }
+  return map;
+});
+
+const getFirstNameCount = (firstname) => {
+  if (!firstname) return 0;
+  return firstNameCounts.value.get(firstname.trim().toLowerCase()) || 0;
+};
+
+const fullNameCounts = computed(() => {
+  const map = new Map();
+  for (const r of registrations.value) {
+    const key = `${(r.firstname || "").trim()} ${(r.lastname || "").trim()}`.toLowerCase();
+    if (key.trim()) {
+      map.set(key, (map.get(key) || 0) + 1);
+    }
+  }
+  return map;
+});
+
+const getFullNameCount = (runner) => {
+  if (!runner) return 0;
+  const key = `${(runner.firstname || "").trim()} ${(runner.lastname || "").trim()}`.toLowerCase();
+  return fullNameCounts.value.get(key) || 0;
 };
 
 // ── Date Range Period state ────────────────────────────────────────────────
@@ -1369,6 +1735,50 @@ const filteredRegistrations = computed(() => {
     }
     if (sortBy.value === "date_asc") {
       return (new Date(a.created_at || 0)) - (new Date(b.created_at || 0));
+    }
+    if (sortBy.value === "firstname_asc") {
+      const fA = (a.firstname || "").trim().toLowerCase();
+      const fB = (b.firstname || "").trim().toLowerCase();
+      const cmp = fA.localeCompare(fB);
+      if (cmp !== 0) return cmp;
+      const lA = (a.lastname || "").trim().toLowerCase();
+      const lB = (b.lastname || "").trim().toLowerCase();
+      const cmpL = lA.localeCompare(lB);
+      if (cmpL !== 0) return cmpL;
+      const mA = (a.middlename || "").trim().toLowerCase();
+      const mB = (b.middlename || "").trim().toLowerCase();
+      return mA.localeCompare(mB);
+    }
+    if (sortBy.value === "firstname_desc") {
+      const fA = (a.firstname || "").trim().toLowerCase();
+      const fB = (b.firstname || "").trim().toLowerCase();
+      const cmp = fB.localeCompare(fA);
+      if (cmp !== 0) return cmp;
+      const lA = (a.lastname || "").trim().toLowerCase();
+      const lB = (b.lastname || "").trim().toLowerCase();
+      const cmpL = lA.localeCompare(lB);
+      if (cmpL !== 0) return cmpL;
+      const mA = (a.middlename || "").trim().toLowerCase();
+      const mB = (b.middlename || "").trim().toLowerCase();
+      return mA.localeCompare(mB);
+    }
+    if (sortBy.value === "lastname_asc") {
+      const lA = (a.lastname || "").trim().toLowerCase();
+      const lB = (b.lastname || "").trim().toLowerCase();
+      const cmp = lA.localeCompare(lB);
+      if (cmp !== 0) return cmp;
+      const fA = (a.firstname || "").trim().toLowerCase();
+      const fB = (b.firstname || "").trim().toLowerCase();
+      return fA.localeCompare(fB);
+    }
+    if (sortBy.value === "lastname_desc") {
+      const lA = (a.lastname || "").trim().toLowerCase();
+      const lB = (b.lastname || "").trim().toLowerCase();
+      const cmp = lB.localeCompare(lA);
+      if (cmp !== 0) return cmp;
+      const fA = (a.firstname || "").trim().toLowerCase();
+      const fB = (b.firstname || "").trim().toLowerCase();
+      return fA.localeCompare(fB);
     }
     if (sortBy.value === "name_asc") {
       const nameA = `${a.lastname || ""} ${a.firstname || ""}`.toLowerCase();
@@ -2076,9 +2486,70 @@ const csvImportStats = computed(() => {
     vvip: list.filter((r) => r.participant_type === "VVIP").length,
     brothers: list.filter((r) => r.participant_type === "De La Salle Brothers").length,
     sponsors: list.filter((r) => r.participant_type === "Sponsors").length,
-    others: list.filter((r) => !["VVIP", "De La Salle Brothers", "Sponsors"].includes(r.participant_type)).length,
+    employees: list.filter(
+      (r) =>
+        r.participant_type === "LSU Exclusive - Employee" ||
+        r.participant_type === "GSC" ||
+        r.participant_type === "GSO"
+    ).length,
+    students: list.filter((r) => r.participant_type === "LSU Exclusive - Enrolled Student").length,
+    alumni: list.filter((r) => r.participant_type === "LSU Exclusive - Alumni").length,
+    others: list.filter(
+      (r) =>
+        ![
+          "VVIP",
+          "De La Salle Brothers",
+          "Sponsors",
+          "LSU Exclusive - Employee",
+          "LSU Exclusive - Enrolled Student",
+          "LSU Exclusive - Alumni",
+          "GSC",
+          "GSO",
+        ].includes(r.participant_type)
+    ).length,
   };
 });
+
+// Normalizes flexible CSV shirt inputs (e.g. "M - Singlet", "L", "XXL", "XXXXL") to official format
+const normalizeCsvShirtSize = (rawSize, category = "3KM") => {
+  if (!rawSize) return "Event Shirt: M;";
+  const s = String(rawSize).trim();
+
+  if (s.includes(":") && s.includes(";")) return s;
+  if (s.includes(":")) return s.endsWith(";") ? s : `${s};`;
+
+  const upper = s.toUpperCase();
+
+  // Detect size
+  let detectedSize = "M";
+  if (upper.includes("5XL") || upper.includes("XXXXXL")) detectedSize = "5XL";
+  else if (upper.includes("4XL") || upper.includes("XXXXL")) detectedSize = "4XL";
+  else if (upper.includes("3XL") || upper.includes("XXXL")) detectedSize = "3XL";
+  else if (upper.includes("2XL") || upper.includes("XXL")) detectedSize = "2XL";
+  else if (/\bXL\b/.test(upper) || upper.includes(" XL") || upper.includes("XL ") || upper === "XL") detectedSize = "XL";
+  else if (/\b2XS\b/.test(upper) || upper === "2XS") detectedSize = "2XS";
+  else if (/\bXS\b/.test(upper) || upper === "XS") detectedSize = "XS";
+  else if (/\bS\b/.test(upper) || upper.startsWith("S ") || upper.startsWith("S-") || upper.endsWith(" S") || upper.endsWith("-S")) detectedSize = "S";
+  else if (/\bL\b/.test(upper) || upper.startsWith("L ") || upper.startsWith("L-") || upper.endsWith(" L") || upper.endsWith("-L")) detectedSize = "L";
+  else if (/\bM\b/.test(upper) || upper.startsWith("M ") || upper.startsWith("M-") || upper.endsWith(" M") || upper.endsWith("-M")) detectedSize = "M";
+
+  // Detect shirt type
+  let shirtType = "Event Shirt";
+  if (upper.includes("SEMI") && upper.includes("CROP")) shirtType = "Semi-Crop Top";
+  else if (upper.includes("CROP")) shirtType = "Crop Top";
+  else if (upper.includes("SINGLET")) shirtType = "Singlet";
+  else if (upper.includes("KID")) shirtType = "Kids Shirt";
+
+  let result = `${shirtType}: ${detectedSize};`;
+
+  // If 20KM category, add Finisher Shirt
+  const is20KM = String(category || "").toUpperCase().startsWith("20K");
+  if (is20KM && !upper.includes("FINISHER")) {
+    result += ` Finisher Shirt: ${detectedSize};`;
+  }
+
+  return result;
+};
 
 // Download official CSV template
 const downloadCsvTemplate = () => {
@@ -2370,6 +2841,7 @@ const handleCsvFileSelected = async (event) => {
       contact_email: getIndex(["email", "contactemail", "mail"]),
       contact_address: getIndex(["address", "contactaddress", "city", "location"]),
       organization: getIndex(["organization", "sponsor", "company", "affiliation", "org"]),
+      partner_office: getIndex(["partneroffice", "partner", "office", "dept", "department", "unit"]),
       payment_status: getIndex(["paymentstatus", "paystatus", "status"]),
       payment_type: getIndex(["paymentoption", "paymenttype", "paytype", "mode"]),
       run_number: getIndex(["racebib", "runnumber", "bibnumber", "bib"]),
@@ -2409,7 +2881,14 @@ const handleCsvFileSelected = async (event) => {
         participant_type = "Sponsors";
       } else if (typeUpper.includes("STUDENT")) {
         participant_type = "LSU Exclusive - Enrolled Student";
-      } else if (typeUpper.includes("EMPLOYEE") || typeUpper.includes("FACULTY") || typeUpper.includes("STAFF")) {
+      } else if (
+        typeUpper.includes("EMPLOYEE") ||
+        typeUpper.includes("FACULTY") ||
+        typeUpper.includes("STAFF") ||
+        typeUpper.includes("GSO") ||
+        typeUpper.includes("GSC") ||
+        typeUpper.includes("MAINTENANCE")
+      ) {
         participant_type = "LSU Exclusive - Employee";
       } else if (typeUpper.includes("ALUMNI")) {
         participant_type = "LSU Exclusive - Alumni";
@@ -2420,8 +2899,8 @@ const handleCsvFileSelected = async (event) => {
       let rawCat = getVal(colIdx.category, "3KM");
       let category = normalizeCategory(rawCat) || "3KM";
 
-      let rawSize = getVal(colIdx.tshirt_size, "M").toUpperCase();
-      let tshirt_size = rawSize || "M";
+      let rawSize = getVal(colIdx.tshirt_size, "M");
+      let tshirt_size = normalizeCsvShirtSize(rawSize, category);
 
       let payment_status = getVal(colIdx.payment_status, "Confirmed");
       if (!payment_status) payment_status = "Confirmed";
@@ -2432,9 +2911,21 @@ const handleCsvFileSelected = async (event) => {
           payment_type = "complimentary";
         } else if (participant_type === "Sponsors") {
           payment_type = "sponsor";
+        } else if (participant_type === "LSU Exclusive - Employee" || typeUpper.includes("GSC") || typeUpper.includes("GSO")) {
+          payment_type = "salary_deduction";
         } else {
           payment_type = "cash_payment";
         }
+      }
+
+      let organization = getVal(colIdx.organization);
+      if (!organization && (typeUpper.includes("GSC") || typeUpper.includes("GSO"))) {
+        organization = "General Services Office (GSO)";
+      }
+
+      let partner_office = getVal(colIdx.partner_office);
+      if (!partner_office && (typeUpper.includes("GSC") || typeUpper.includes("GSO"))) {
+        partner_office = "General Services Office (GSO)";
       }
 
       parsed.push({
@@ -2452,7 +2943,8 @@ const handleCsvFileSelected = async (event) => {
         contact_number: getVal(colIdx.contact_number),
         contact_email: getVal(colIdx.contact_email),
         contact_address: getVal(colIdx.contact_address),
-        organization: getVal(colIdx.organization),
+        organization,
+        partner_office,
         payment_status,
         payment_type,
         run_number: getVal(colIdx.run_number),
@@ -2490,19 +2982,20 @@ const executeCsvImport = async () => {
       body: payload,
     });
 
-    const count = res.count || csvParsedRunners.value.length;
+    const count = res?.count || csvParsedRunners.value.length;
     const stats = csvImportStats.value;
 
-    if (res.runners && Array.isArray(res.runners)) {
+    if (res?.runners && Array.isArray(res.runners)) {
       // Prepend newly created runners to registrations list immediately
       const newRunners = res.runners;
       const existingIds = new Set(registrations.value.map((r) => r.id));
       const filteredNew = newRunners.filter((r) => !existingIds.has(r.id));
       registrations.value = [...filteredNew, ...registrations.value];
       persistCache(registrations.value);
-    } else {
-      await fetchRegistrations(true);
     }
+
+    // Refresh full list from server to ensure perfect sync
+    await fetchRegistrations(true);
 
     isCsvImportModalOpen.value = false;
     csvParsedRunners.value = [];
@@ -2512,6 +3005,9 @@ const executeCsvImport = async () => {
     if (stats.vvip) details.push(`${stats.vvip} VVIP`);
     if (stats.brothers) details.push(`${stats.brothers} Brothers`);
     if (stats.sponsors) details.push(`${stats.sponsors} Sponsors`);
+    if (stats.employees) details.push(`${stats.employees} Employees`);
+    if (stats.students) details.push(`${stats.students} Students`);
+    if (stats.alumni) details.push(`${stats.alumni} Alumni`);
     if (stats.others) details.push(`${stats.others} Others`);
 
     showNotice(
@@ -2522,7 +3018,7 @@ const executeCsvImport = async () => {
   } catch (err) {
     console.error("CSV import error:", err);
     showNotice(
-      err?.data?.message || err?.message || "Failed to import runners from CSV. Please check the data format and try again.",
+      err?.data?.message || err?.data?.error || err?.message || "Failed to import runners from CSV. Please check the data format and try again.",
       "Import Failed",
       "error"
     );
@@ -2956,6 +3452,7 @@ const CSV_ALL_COLUMNS = [
   { key: 'college_course', label: 'Course / Program' },
   { key: 'college_year', label: 'Year / Grade Level' },
   { key: 'lsu_id', label: 'LSU ID Number' },
+  { key: 'partner_office', label: 'Partner Office' },
   { key: 'organization', label: 'Club / Organization' },
   { key: 'affiliation', label: 'Batch / Affiliation' },
   { key: 'tshirt_size', label: 'T-Shirt Size' },
@@ -3038,6 +3535,7 @@ const generateCsvFromList = (list, batchLabel = "Export") => {
       college_course: escapeCsv(getCourseLabel(r.college_course) || r.college_course || ""),
       college_year: escapeCsv(r.college_year || r.beu_grade || ""),
       lsu_id: escapeCsv(r.lsu_id_number || ""),
+      partner_office: escapeCsv(r.partner_office || ""),
       organization: escapeCsv(r.organization || ""),
       affiliation: escapeCsv(r.alumni_batch || ""),
       tshirt_size: escapeCsv(r.tshirt_size || "M"),
@@ -4913,6 +5411,28 @@ const closeRunnerQrPassModal = () => {
                       </button>
                     </div>
 
+                    <!-- ── DUPLICATE SCANNER ACTION (REVIEW DUPLICATES & RACE BIBS) ── -->
+                    <div
+                      class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
+                      <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
+                        <i class="fas fa-clone text-amber-500 text-[11px]"></i> Duplicates:
+                      </span>
+                      <!-- Scan Duplicates Button -->
+                      <button type="button" @click="openDuplicateScannerModal"
+                        class="px-2.5 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border select-none bg-amber-500 hover:bg-amber-600 text-white border-amber-500 shadow-xs active:scale-95"
+                        title="Scan for duplicate registrants and review race BIB numbers">
+                        <i class="fas fa-search text-white text-[10px]"></i>
+                        <span>Scan Duplicates</span>
+                        <span v-if="duplicateScanCount > 0"
+                          :class="[
+                            'px-1.5 py-0.2 rounded-full text-[10px] font-black ml-0.5 shadow-2xs',
+                            duplicateStats.bibCollisions > 0 ? 'bg-rose-600 text-white animate-pulse' : 'bg-amber-700 text-white'
+                          ]">
+                          {{ duplicateScanCount }}
+                        </span>
+                      </button>
+                    </div>
+
                   </div>
 
                   <!-- Runners Results Count -->
@@ -4998,8 +5518,12 @@ const closeRunnerQrPassModal = () => {
                     ]">
                       <option value="date_desc">📅 Date: Latest → Oldest</option>
                       <option value="date_asc">📅 Date: Oldest → Latest</option>
-                      <option value="name_asc">👤 Name: Ascending (A-Z)</option>
-                      <option value="name_desc">👤 Name: Descending (Z-A)</option>
+                      <option value="firstname_asc">🔤 First Name: Ascending (A-Z)</option>
+                      <option value="firstname_desc">🔤 First Name: Descending (Z-A)</option>
+                      <option value="lastname_asc">👤 Last Name: Ascending (A-Z)</option>
+                      <option value="lastname_desc">👤 Last Name: Descending (Z-A)</option>
+                      <option value="name_asc">👤 Full Name (Last): A-Z</option>
+                      <option value="name_desc">👤 Full Name (Last): Z-A</option>
                       <option value="bib_asc">🔢 Race Bib #: Ascending</option>
                       <option value="batch_asc">📦 Supplier Batch: Ascending</option>
                       <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
@@ -5121,10 +5645,22 @@ const closeRunnerQrPassModal = () => {
 
               <!-- Runner Info -->
               <div>
-                <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100 leading-snug">
-                  {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname
-                  }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
-                </h4>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <h4 class="font-bold text-sm text-gray-900 dark:text-gray-100 leading-snug">
+                    {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{ runner.lastname
+                    }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
+                  </h4>
+                  <span v-if="getFullNameCount(runner) > 1"
+                    class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                    :title="`${getFullNameCount(runner)} runners have this exact same name`">
+                    <i class="fas fa-clone text-[8px] mr-1"></i>Same Name ({{ getFullNameCount(runner) }})
+                  </span>
+                  <span v-else-if="getFirstNameCount(runner.firstname) > 1"
+                    class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60"
+                    :title="`${getFirstNameCount(runner.firstname)} runners share the first name '${runner.firstname}'`">
+                    <i class="fas fa-users text-[8px] mr-1"></i>{{ getFirstNameCount(runner.firstname) }} same
+                  </span>
+                </div>
                 <div class="flex items-center gap-3 text-xs text-gray-500 mt-1 flex-wrap">
                   <span v-if="runner.contact_email || runner.email"
                     class="flex items-center gap-1 truncate max-w-[200px]">
@@ -5398,13 +5934,21 @@ const closeRunnerQrPassModal = () => {
                   col.key === 'receipt' ? 'text-center' : '',
                   ['race_bib', 'reg_id', 'full_name', 'firstname', 'lastname', 'batch', 'reg_date', 'receipt'].includes(col.key) ? 'cursor-pointer hover:text-emerald-500' : ''
                 ]"
-                  @click="['race_bib', 'reg_id'].includes(col.key) ? toggleSort('bib') : ['full_name', 'firstname', 'lastname'].includes(col.key) ? toggleSort('name') : col.key === 'batch' ? toggleSort('batch') : col.key === 'reg_date' ? toggleSort('date') : col.key === 'receipt' ? toggleSort('receipt') : null">
+                  @click="['race_bib', 'reg_id'].includes(col.key) ? toggleSort('bib') : col.key === 'firstname' ? toggleSort('firstname') : col.key === 'lastname' ? toggleSort('lastname') : col.key === 'full_name' ? toggleSort('name') : col.key === 'batch' ? toggleSort('batch') : col.key === 'reg_date' ? toggleSort('date') : col.key === 'receipt' ? toggleSort('receipt') : null">
                   {{ col.label }}
                   <i v-if="['race_bib', 'reg_id'].includes(col.key)" :class="[
                     'fas ml-1 text-[10px]',
                     sortBy === 'bib_asc' ? 'fa-sort-up text-emerald-600' : 'fa-sort text-gray-400'
                   ]"></i>
-                  <i v-else-if="['full_name', 'firstname', 'lastname'].includes(col.key)" :class="[
+                  <i v-else-if="col.key === 'firstname'" :class="[
+                    'fas ml-1 text-[10px]',
+                    sortBy === 'firstname_asc' ? 'fa-sort-alpha-down text-emerald-600' : sortBy === 'firstname_desc' ? 'fa-sort-alpha-up text-emerald-600' : 'fa-sort text-gray-400'
+                  ]"></i>
+                  <i v-else-if="col.key === 'lastname'" :class="[
+                    'fas ml-1 text-[10px]',
+                    sortBy === 'lastname_asc' ? 'fa-sort-alpha-down text-emerald-600' : sortBy === 'lastname_desc' ? 'fa-sort-alpha-up text-emerald-600' : 'fa-sort text-gray-400'
+                  ]"></i>
+                  <i v-else-if="col.key === 'full_name'" :class="[
                     'fas ml-1 text-[10px]',
                     sortBy === 'name_asc' ? 'fa-sort-alpha-down text-emerald-600' : sortBy === 'name_desc' ? 'fa-sort-alpha-up text-emerald-600' : 'fa-sort text-gray-400'
                   ]"></i>
@@ -5494,7 +6038,7 @@ const closeRunnerQrPassModal = () => {
 
                     <!-- classification / academic unit -->
                     <div
-                      v-else-if="['classification', 'academic_unit', 'college_course', 'college_year'].includes(col.key)"
+                      v-else-if="['classification', 'academic_unit', 'college_course', 'college_year', 'partner_office'].includes(col.key)"
                       class="h-5 w-24 rounded-full bg-slate-200 dark:bg-gray-700"></div>
 
                     <!-- tshirt_size -->
@@ -5569,9 +6113,16 @@ const closeRunnerQrPassModal = () => {
 
                     <!-- full_name -->
                     <template v-else-if="col.key === 'full_name'">
-                      <div class="font-bold text-gray-900 dark:text-gray-100 uppercase leading-snug">
-                        {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{
-                          runner.lastname }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
+                      <div class="font-bold text-gray-900 dark:text-gray-100 uppercase leading-snug flex items-center gap-1.5 flex-wrap">
+                        <span>
+                          {{ runner.firstname }} {{ runner.middlename ? runner.middlename[0] + '.' : '' }} {{
+                            runner.lastname }}{{ runner.suffix ? ' ' + runner.suffix : '' }}
+                        </span>
+                        <span v-if="getFullNameCount(runner) > 1"
+                          class="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-black bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                          :title="`${getFullNameCount(runner)} runners have this exact same name (${runner.firstname} ${runner.lastname})`">
+                          <i class="fas fa-clone text-[8px] mr-1"></i>Same Name ({{ getFullNameCount(runner) }})
+                        </span>
                       </div>
                       <div class="text-[11px] text-gray-500 truncate max-w-[180px]">
                         {{ runner.contact_email || runner.email }}
@@ -5580,7 +6131,19 @@ const closeRunnerQrPassModal = () => {
 
                     <!-- firstname -->
                     <template v-else-if="col.key === 'firstname'">
-                      <span class="font-semibold text-gray-900 dark:text-gray-100">{{ runner.firstname || '-' }}</span>
+                      <div class="inline-flex items-center gap-1.5 flex-wrap">
+                        <span class="font-semibold text-gray-900 dark:text-gray-100">{{ runner.firstname || '-' }}</span>
+                        <span v-if="getFullNameCount(runner) > 1"
+                          class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                          :title="`Exact full name match: ${getFullNameCount(runner)} runners with name '${runner.firstname} ${runner.lastname}'`">
+                          <i class="fas fa-clone text-[9px] mr-1"></i>{{ getFullNameCount(runner) }} exact
+                        </span>
+                        <span v-else-if="getFirstNameCount(runner.firstname) > 1"
+                          class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60"
+                          :title="`${getFirstNameCount(runner.firstname)} runners have the first name '${runner.firstname}'`">
+                          <i class="fas fa-users text-[9px] mr-1"></i>{{ getFirstNameCount(runner.firstname) }} same
+                        </span>
+                      </div>
                     </template>
 
                     <!-- middlename -->
@@ -5590,7 +6153,14 @@ const closeRunnerQrPassModal = () => {
 
                     <!-- lastname -->
                     <template v-else-if="col.key === 'lastname'">
-                      <span class="font-semibold text-gray-900 dark:text-gray-100">{{ runner.lastname || '-' }}</span>
+                      <div class="inline-flex items-center gap-1.5 flex-wrap">
+                        <span class="font-semibold text-gray-900 dark:text-gray-100">{{ runner.lastname || '-' }}</span>
+                        <span v-if="getFullNameCount(runner) > 1"
+                          class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                          :title="`Exact full name match: ${getFullNameCount(runner)} runners with name '${runner.firstname} ${runner.lastname}'`">
+                          <i class="fas fa-clone text-[9px] mr-1"></i>{{ getFullNameCount(runner) }} exact
+                        </span>
+                      </div>
                     </template>
 
                     <!-- suffix -->
@@ -5768,6 +6338,11 @@ const closeRunnerQrPassModal = () => {
                     <template v-else-if="col.key === 'lsu_id'">
                       <span class="font-mono text-gray-700 dark:text-gray-300 text-[11px]">{{ runner.lsu_id_number ||
                         '-' }}</span>
+                    </template>
+
+                    <!-- partner_office -->
+                    <template v-else-if="col.key === 'partner_office'">
+                      <span class="text-gray-700 dark:text-gray-300 text-[11px] font-medium">{{ runner.partner_office || '-' }}</span>
                     </template>
 
                     <!-- organization -->
@@ -7955,27 +8530,48 @@ const closeRunnerQrPassModal = () => {
           </button>
         </div>
 
-        <!-- Breakdown Chips (VVIP, Brothers, Sponsors, Others) -->
+        <!-- Breakdown Chips (VVIP, Brothers, Sponsors, Employees, Students, Others) -->
         <div class="flex items-center gap-2 flex-wrap shrink-0 pt-0.5">
-          <div
+          <div v-if="csvImportStats.vvip > 0"
             class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-purple-100 dark:bg-purple-950/70 text-purple-900 dark:text-purple-300 border border-purple-300 dark:border-purple-800 shadow-xs">
             <i class="fas fa-crown text-amber-500 text-xs"></i>
             <span>VVIP:</span>
             <span class="font-black text-sm">{{ csvImportStats.vvip }}</span>
           </div>
 
-          <div
+          <div v-if="csvImportStats.brothers > 0"
             class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-xs">
             <i class="fas fa-cross text-emerald-600 text-xs"></i>
             <span>De La Salle Brothers:</span>
             <span class="font-black text-sm">{{ csvImportStats.brothers }}</span>
           </div>
 
-          <div
+          <div v-if="csvImportStats.sponsors > 0"
             class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-blue-100 dark:bg-blue-950/70 text-blue-900 dark:text-blue-300 border border-blue-300 dark:border-blue-800 shadow-xs">
             <i class="fas fa-handshake text-blue-600 text-xs"></i>
             <span>Sponsors:</span>
             <span class="font-black text-sm">{{ csvImportStats.sponsors }}</span>
+          </div>
+
+          <div v-if="csvImportStats.employees > 0"
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-teal-100 dark:bg-teal-950/70 text-teal-900 dark:text-teal-300 border border-teal-300 dark:border-teal-800 shadow-xs">
+            <i class="fas fa-id-badge text-teal-600 text-xs"></i>
+            <span>Employees / GSO:</span>
+            <span class="font-black text-sm">{{ csvImportStats.employees }}</span>
+          </div>
+
+          <div v-if="csvImportStats.students > 0"
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-800 shadow-xs">
+            <i class="fas fa-user-graduate text-amber-600 text-xs"></i>
+            <span>Students:</span>
+            <span class="font-black text-sm">{{ csvImportStats.students }}</span>
+          </div>
+
+          <div v-if="csvImportStats.alumni > 0"
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-cyan-100 dark:bg-cyan-950/70 text-cyan-900 dark:text-cyan-300 border border-cyan-300 dark:border-cyan-800 shadow-xs">
+            <i class="fas fa-user-shield text-cyan-600 text-xs"></i>
+            <span>Alumni:</span>
+            <span class="font-black text-sm">{{ csvImportStats.alumni }}</span>
           </div>
 
           <div v-if="csvImportStats.others > 0"
@@ -8017,13 +8613,21 @@ const closeRunnerQrPassModal = () => {
                         ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300'
                         : r.participant_type === 'Sponsors'
                           ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border-blue-300'
-                          : 'bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-gray-600'
+                          : r.participant_type === 'LSU Exclusive - Employee' || r.participant_type === 'GSC' || r.participant_type === 'GSO'
+                            ? 'bg-teal-100 text-teal-900 dark:bg-teal-950 dark:text-teal-300 border-teal-300'
+                            : r.participant_type === 'LSU Exclusive - Enrolled Student'
+                              ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border-amber-300'
+                              : 'bg-slate-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-slate-200 dark:border-gray-600'
                   ]">
                     <i v-if="r.participant_type === 'VVIP'" class="fas fa-crown text-amber-500 text-[9px]"></i>
                     <i v-else-if="r.participant_type === 'De La Salle Brothers'"
                       class="fas fa-cross text-emerald-600 text-[9px]"></i>
                     <i v-else-if="r.participant_type === 'Sponsors'"
                       class="fas fa-handshake text-blue-600 text-[9px]"></i>
+                    <i v-else-if="r.participant_type === 'LSU Exclusive - Employee' || r.participant_type === 'GSC' || r.participant_type === 'GSO'"
+                      class="fas fa-id-badge text-teal-600 text-[9px]"></i>
+                    <i v-else-if="r.participant_type === 'LSU Exclusive - Enrolled Student'"
+                      class="fas fa-user-graduate text-amber-600 text-[9px]"></i>
                     <span>{{ r.participant_type }}</span>
                   </span>
                 </td>
@@ -8045,8 +8649,8 @@ const closeRunnerQrPassModal = () => {
                 </td>
 
                 <!-- Shirt Size -->
-                <td class="py-2 px-3 text-gray-700 dark:text-gray-300 font-semibold uppercase">
-                  {{ r.tshirt_size || 'M' }}
+                <td class="py-2 px-3 text-gray-700 dark:text-gray-300 font-semibold text-[11px] whitespace-nowrap">
+                  {{ (r.tshirt_size || 'M').replace(/;/g, ' ').trim() }}
                 </td>
 
                 <!-- Contact / Email -->
@@ -8060,10 +8664,10 @@ const closeRunnerQrPassModal = () => {
                   <span v-if="!r.contact_email && !r.contact_number" class="text-gray-400 italic">None</span>
                 </td>
 
-                <!-- Organization / Sponsor -->
+                <!-- Organization / Sponsor / Partner Office -->
                 <td class="py-2 px-3 text-gray-600 dark:text-gray-300 text-[11px] max-w-[150px] truncate"
-                  :title="r.organization">
-                  {{ r.organization || '-' }}
+                  :title="r.organization || r.partner_office">
+                  {{ r.organization || r.partner_office || '-' }}
                 </td>
 
                 <!-- Payment Status -->
@@ -8916,6 +9520,431 @@ const closeRunnerQrPassModal = () => {
           <button type="button" @click="openRunnerClaimModal(claimQrPassData.runner); closeRunnerQrPassModal();"
             class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer">
             <i class="fas fa-hand-holding-box text-[10px]"></i> Claim Kit Now
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         DUPLICATE REGISTRANT SCANNER & RACE BIB REVIEW MODAL
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div v-if="isDuplicateModalOpen"
+      class="fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-4 md:p-6 bg-black/80 backdrop-blur-md transition-opacity"
+      @click.self="closeDuplicateScannerModal">
+      
+      <div :class="[
+        'w-full max-w-6xl max-h-[92vh] flex flex-col rounded-3xl shadow-2xl border overflow-hidden transition-all',
+        props.darkMode ? 'bg-gray-900 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+
+        <!-- ── MODAL HEADER ── -->
+        <div class="p-4 sm:p-5 border-b dark:border-gray-800 bg-gradient-to-r from-amber-500 via-amber-600 to-orange-600 text-white flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-xs flex items-center justify-center text-xl shadow-xs">
+              <i class="fas fa-clone"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="text-base sm:text-lg font-black tracking-tight leading-tight">
+                  Duplicate Registrations & BIB Scanner
+                </h3>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-white/25 backdrop-blur-xs text-white">
+                  {{ duplicateStats.totalGroups }} Group{{ duplicateStats.totalGroups !== 1 ? 's' : '' }}
+                </span>
+                <span v-if="duplicateStats.bibCollisions > 0" class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-600 text-white animate-pulse">
+                  🚨 {{ duplicateStats.bibCollisions }} BIB Conflict{{ duplicateStats.bibCollisions !== 1 ? 's' : '' }}
+                </span>
+              </div>
+              <p class="text-xs text-amber-100 font-medium">
+                Review duplicate registrants and their assigned Race BIB numbers. You can manually delete any duplicate entry below.
+              </p>
+            </div>
+          </div>
+
+          <button type="button" @click="closeDuplicateScannerModal"
+            class="w-9 h-9 rounded-2xl bg-white/10 hover:bg-white/20 active:scale-90 text-white transition flex items-center justify-center cursor-pointer shadow-xs"
+            title="Close modal">
+            <i class="fas fa-times text-sm"></i>
+          </button>
+        </div>
+
+        <!-- ── BIB NUMBERS REVIEW BANNER ── -->
+        <div class="p-3 sm:p-4 border-b dark:border-gray-800 bg-amber-50/70 dark:bg-amber-950/30 shrink-0">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div>
+              <div class="text-[11px] font-black uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                <i class="fas fa-id-badge text-amber-600 dark:text-amber-400"></i>
+                <span>Race BIB Numbers Needing Review ({{ allDuplicateBibs.length }} Distinct BIBs):</span>
+              </div>
+              <p class="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5">
+                Click any BIB chip below to filter directly to that registration group:
+              </p>
+            </div>
+
+            <!-- Clear BIB filter if active -->
+            <button v-if="selectedBibFilter" type="button" @click="selectedBibFilter = ''"
+              class="self-start sm:self-auto px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-200 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200 hover:bg-amber-300 flex items-center gap-1 cursor-pointer transition">
+              <span>Filter: BIB {{ selectedBibFilter }}</span>
+              <i class="fas fa-times text-[10px]"></i>
+            </button>
+          </div>
+
+          <!-- BIB Numbers Chips Carousel / Flex list -->
+          <div v-if="allDuplicateBibs.length > 0" class="flex flex-wrap gap-1.5 mt-2.5 max-h-24 overflow-y-auto pr-1">
+            <button v-for="bib in allDuplicateBibs" :key="bib" type="button"
+              @click="selectedBibFilter = selectedBibFilter === bib ? '' : bib"
+              :class="[
+                'px-2.5 py-1 rounded-lg text-xs font-mono font-black border transition flex items-center gap-1.5 cursor-pointer select-none shadow-2xs',
+                selectedBibFilter === bib
+                  ? 'bg-amber-600 text-white border-amber-600 ring-2 ring-amber-400 scale-105'
+                  : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-amber-200 dark:border-amber-900/60 hover:bg-amber-100 dark:hover:bg-amber-900/40'
+              ]">
+              <i class="fas fa-running text-[10px] text-amber-500"></i>
+              <span>BIB {{ bib }}</span>
+            </button>
+          </div>
+          <div v-else class="text-xs text-gray-500 dark:text-gray-400 italic mt-1 flex items-center gap-1.5">
+            <i class="fas fa-info-circle text-amber-500"></i>
+            <span>No allocated Race BIBs in the duplicate list (registrants may be pending assignment or unallocated).</span>
+          </div>
+        </div>
+
+        <!-- ── SEARCH & FILTER CONTROLS ── -->
+        <div class="p-3 sm:p-4 border-b dark:border-gray-800 bg-slate-50 dark:bg-gray-900/80 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+          <!-- Search Input -->
+          <div class="relative flex-1 max-w-md">
+            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input type="text" v-model="duplicateSearchQuery"
+              placeholder="Search by runner name, BIB #, ID, email..."
+              class="w-full pl-8 pr-8 py-1.5 text-xs rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 transition" />
+            <button v-if="duplicateSearchQuery" type="button" @click="duplicateSearchQuery = ''"
+              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs">
+              <i class="fas fa-times-circle"></i>
+            </button>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <button type="button" @click="duplicateTypeFilter = 'all'"
+              :class="[
+                'px-2.5 py-1 rounded-xl text-xs font-bold transition border cursor-pointer select-none',
+                duplicateTypeFilter === 'all'
+                  ? 'bg-amber-500 text-white border-amber-500 shadow-2xs'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+              ]">
+              All ({{ scanDuplicateClusters.length }})
+            </button>
+            <button type="button" @click="duplicateTypeFilter = 'bib'"
+              :class="[
+                'px-2.5 py-1 rounded-xl text-xs font-bold transition border cursor-pointer select-none flex items-center gap-1',
+                duplicateTypeFilter === 'bib'
+                  ? 'bg-rose-600 text-white border-rose-600 shadow-2xs'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+              ]">
+              <i class="fas fa-triangle-exclamation text-[10px] text-rose-500" :class="{ 'text-white': duplicateTypeFilter === 'bib' }"></i>
+              <span>BIB Conflicts</span>
+            </button>
+            <button type="button" @click="duplicateTypeFilter = 'name'"
+              :class="[
+                'px-2.5 py-1 rounded-xl text-xs font-bold transition border cursor-pointer select-none flex items-center gap-1',
+                duplicateTypeFilter === 'name'
+                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-2xs'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+              ]">
+              <i class="fas fa-user-tag text-[10px] text-indigo-500" :class="{ 'text-white': duplicateTypeFilter === 'name' }"></i>
+              <span>Name Matches</span>
+            </button>
+            <button type="button" @click="duplicateTypeFilter = 'contact'"
+              :class="[
+                'px-2.5 py-1 rounded-xl text-xs font-bold transition border cursor-pointer select-none flex items-center gap-1',
+                duplicateTypeFilter === 'contact'
+                  ? 'bg-sky-600 text-white border-sky-600 shadow-2xs'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100'
+              ]">
+              <i class="fas fa-address-book text-[10px] text-sky-500" :class="{ 'text-white': duplicateTypeFilter === 'contact' }"></i>
+              <span>Contact Matches</span>
+            </button>
+
+            <!-- Multi-select Bulk Delete button if any selected -->
+            <button v-if="selectedDuplicateRunnerIds.length > 0" type="button"
+              @click="executeBulkDeleteSelectedDuplicates" :disabled="isDeletingDuplicateRunner"
+              class="px-3 py-1 rounded-xl text-xs font-black bg-rose-600 hover:bg-rose-700 text-white transition flex items-center gap-1.5 cursor-pointer shadow-sm ml-auto disabled:opacity-50">
+              <i class="fas fa-trash-alt text-[10px]"></i>
+              <span>Delete Selected ({{ selectedDuplicateRunnerIds.length }})</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ── MODAL SCROLLABLE CONTENT (CLUSTERS LIST) ── -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          
+          <!-- Empty State: No duplicates -->
+          <div v-if="filteredDuplicateClusters.length === 0" class="py-16 text-center space-y-3">
+            <div class="w-16 h-16 mx-auto rounded-3xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-3xl shadow-sm">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+              <h4 class="text-base font-extrabold text-gray-800 dark:text-gray-100">
+                {{ scanDuplicateClusters.length === 0 ? 'No Duplicate Registrants Detected!' : 'No Matching Duplicates Found' }}
+              </h4>
+              <p class="text-xs text-gray-500 dark:text-gray-400 max-w-md mx-auto mt-1">
+                {{ scanDuplicateClusters.length === 0
+                  ? 'All runners have unique registration records and race BIB numbers. Great job!'
+                  : 'Try clearing your search query or filter pills to see other duplicate groups.' }}
+              </p>
+            </div>
+            <button v-if="selectedBibFilter || duplicateSearchQuery || duplicateTypeFilter !== 'all'" type="button"
+              @click="selectedBibFilter = ''; duplicateSearchQuery = ''; duplicateTypeFilter = 'all'"
+              class="px-4 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white transition cursor-pointer">
+              Reset Filters
+            </button>
+          </div>
+
+          <!-- Clusters Loop -->
+          <div v-for="(group, gIdx) in filteredDuplicateClusters" :key="group.id"
+            :class="[
+              'rounded-2xl border transition-all overflow-hidden shadow-xs',
+              group.hasBibCollision
+                ? 'border-rose-300 dark:border-rose-900/70 bg-rose-50/20 dark:bg-rose-950/20'
+                : 'border-amber-200 dark:border-gray-800 bg-white dark:bg-gray-800/80'
+            ]">
+
+            <!-- Cluster Header -->
+            <div :class="[
+              'p-3.5 border-b flex flex-wrap items-center justify-between gap-2.5',
+              group.hasBibCollision
+                ? 'bg-rose-100/70 dark:bg-rose-950/50 border-rose-200 dark:border-rose-900/60'
+                : 'bg-amber-50/60 dark:bg-gray-800/90 border-amber-100 dark:border-gray-700/80'
+            ]">
+              <div class="flex items-center gap-2.5 flex-wrap">
+                <span :class="[
+                  'w-6 h-6 rounded-lg flex items-center justify-center text-xs font-black shadow-2xs',
+                  group.hasBibCollision
+                    ? 'bg-rose-600 text-white'
+                    : 'bg-amber-500 text-white'
+                ]">
+                  {{ gIdx + 1 }}
+                </span>
+
+                <div class="flex items-center gap-2">
+                  <h4 class="text-sm font-extrabold text-gray-900 dark:text-gray-100 tracking-tight">
+                    {{ group.name }}
+                  </h4>
+                  <span class="text-[11px] font-bold text-gray-500 dark:text-gray-400">
+                    ({{ group.runners.length }} entries)
+                  </span>
+                </div>
+
+                <!-- Collision Warning Badge -->
+                <span v-if="group.hasBibCollision"
+                  class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase bg-rose-600 text-white tracking-wider flex items-center gap-1 shadow-2xs animate-pulse">
+                  <i class="fas fa-triangle-exclamation"></i>
+                  Exact BIB Collision: {{ group.collidingBibs.join(', ') }}
+                </span>
+
+                <!-- Match Reasons Badges -->
+                <div class="flex items-center gap-1 flex-wrap">
+                  <span v-for="reason in group.reasons" :key="reason"
+                    class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white dark:bg-gray-900/70 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                    {{ reason }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- BIB Summary for this cluster -->
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="text-[10px] font-bold uppercase text-gray-400">Involved BIBs:</span>
+                <span v-for="bib in group.bibs" :key="bib"
+                  :class="[
+                    'px-2 py-0.5 rounded text-[11px] font-mono font-black border',
+                    group.collidingBibs.includes(bib)
+                      ? 'bg-rose-500 text-white border-rose-600 shadow-2xs'
+                      : 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-800'
+                  ]">
+                  BIB {{ bib }}
+                </span>
+                <span v-if="group.bibs.length === 0" class="text-[11px] text-gray-400 italic">
+                  Unallocated
+                </span>
+              </div>
+            </div>
+
+            <!-- Cluster Runners Grid (Side-by-side on desktop) -->
+            <div class="p-3 sm:p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              <div v-for="(runner, rIdx) in group.runners" :key="runner.id"
+                :class="[
+                  'relative rounded-2xl p-3.5 border transition-all flex flex-col justify-between space-y-3',
+                  isDuplicateRunnerSelected(runner.id)
+                    ? 'border-rose-500 ring-2 ring-rose-400 bg-rose-50/40 dark:bg-rose-950/30'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-2xs hover:border-amber-300 dark:hover:border-amber-800'
+                ]">
+
+                <!-- Top row: Selection checkbox, submission tag, ID -->
+                <div class="flex items-center justify-between gap-2">
+                  <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" :checked="isDuplicateRunnerSelected(runner.id)"
+                      @change="toggleSelectDuplicateRunner(runner.id)"
+                      class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-gray-300 dark:border-gray-600 cursor-pointer" />
+                    <span :class="[
+                      'px-1.5 py-0.2 rounded text-[10px] font-black uppercase tracking-wider',
+                      rIdx === 0
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                    ]">
+                      {{ rIdx === 0 ? 'Entry #1 (First)' : `Entry #${rIdx + 1} (Duplicate)` }}
+                    </span>
+                  </label>
+
+                  <span class="text-[10px] font-mono text-gray-400">
+                    ID #{{ runner.id }}
+                  </span>
+                </div>
+
+                <!-- PROMINENT RACE BIB BADGE (Plate Style) -->
+                <div class="p-2.5 rounded-xl border border-amber-200 dark:border-amber-900/60 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-gray-800 dark:to-gray-800/60 flex items-center justify-between shadow-2xs">
+                  <div>
+                    <span class="text-[9px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 block">
+                      Race BIB Number:
+                    </span>
+                    <span class="text-base sm:text-lg font-mono font-black tracking-tight text-gray-900 dark:text-white">
+                      {{ runner.run_number || runner.bib_number || 'UNALLOCATED' }}
+                    </span>
+                  </div>
+
+                  <!-- Distance / Category Pill -->
+                  <div class="text-right">
+                    <span class="px-2 py-0.5 rounded-lg text-xs font-black bg-emerald-600 text-white shadow-2xs">
+                      {{ runner.run_category || runner.category || '3KM' }}
+                    </span>
+                    <span v-if="runner.shirt_size" class="text-[10px] block text-gray-500 dark:text-gray-400 font-bold mt-0.5">
+                      {{ runner.shirt_size }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Runner Details -->
+                <div class="space-y-1.5 text-xs text-gray-700 dark:text-gray-300">
+                  <div class="font-extrabold text-sm text-gray-900 dark:text-gray-100 leading-snug">
+                    {{ runner.firstname }} {{ runner.lastname }}
+                  </div>
+
+                  <!-- Email & Phone -->
+                  <div class="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                    <i class="fas fa-envelope text-[10px] text-gray-400 shrink-0"></i>
+                    <span class="truncate">{{ runner.contact_email || runner.email || '-' }}</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-phone text-[10px] text-gray-400 shrink-0"></i>
+                    <span>{{ runner.contact_number || runner.mobile || '-' }}</span>
+                  </div>
+
+                  <!-- Status & Payment -->
+                  <div class="flex items-center gap-1.5 pt-1 flex-wrap">
+                    <span :class="[
+                      'px-2 py-0.5 rounded-full text-[10px] font-extrabold',
+                      runner.status === 'Confirmed'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                    ]">
+                      {{ runner.status || 'Pending' }}
+                    </span>
+                    <span class="text-[10px] text-gray-400">
+                      {{ formatPaymentType(runner.payment_type) }}
+                    </span>
+                    <span v-if="runner.reference_number" class="text-[10px] font-mono text-gray-500 truncate max-w-[120px]">
+                      Ref: {{ runner.reference_number }}
+                    </span>
+                  </div>
+
+                  <!-- Date -->
+                  <div class="text-[10px] text-gray-400 flex items-center gap-1 pt-0.5">
+                    <i class="fas fa-calendar-alt text-[9px]"></i>
+                    <span>{{ formatDuplicateDate(runner.created_at) }}</span>
+                  </div>
+                </div>
+
+                <!-- ACTIONS PER RUNNER: Delete Record & View Record -->
+                <div class="pt-2 border-t dark:border-gray-800 flex items-center gap-2">
+                  <button type="button" @click="openDetails(runner)"
+                    class="flex-1 py-1.5 px-2 rounded-xl text-xs font-bold border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition flex items-center justify-center gap-1 cursor-pointer">
+                    <i class="fas fa-eye text-[10px]"></i>
+                    <span>Details</span>
+                  </button>
+
+                  <!-- Delete Record Button -->
+                  <button type="button" @click="promptDeleteDuplicateRunner(runner)" :disabled="isDeletingDuplicateRunner"
+                    class="flex-1 py-1.5 px-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition flex items-center justify-center gap-1 cursor-pointer shadow-xs disabled:opacity-50">
+                    <i class="fas fa-trash-alt text-[10px]"></i>
+                    <span>Delete</span>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- ── MODAL FOOTER ── -->
+        <div class="p-3.5 sm:p-4 border-t dark:border-gray-800 bg-slate-50 dark:bg-gray-900 flex items-center justify-between gap-3 shrink-0">
+          <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
+            <i class="fas fa-shield-halved text-amber-500"></i>
+            <span>Manual deletion mode: review race BIB numbers and remove unwanted duplicates safely.</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button type="button" @click="closeDuplicateScannerModal"
+              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 text-xs font-bold transition cursor-pointer">
+              Close
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── SINGLE DUPLICATE DELETE CONFIRMATION MODAL ── -->
+    <div v-if="isDuplicateDeleteConfirmOpen && duplicateRunnerToDelete"
+      class="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+      @click.self="closeDuplicateDeleteConfirm">
+      <div :class="[
+        'w-full max-w-sm rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-rose-500"></div>
+
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400 flex items-center justify-center text-2xl shadow-sm mt-2">
+          <i class="fas fa-trash-alt"></i>
+        </div>
+
+        <div>
+          <h3 class="text-base font-black tracking-tight">Delete Duplicate Registration?</h3>
+          <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 font-medium">
+            You are about to delete the duplicate record for:
+          </p>
+          <div class="p-3 my-2.5 rounded-xl bg-slate-100 dark:bg-gray-900 border dark:border-gray-700 text-left text-xs space-y-1">
+            <div><strong>Name:</strong> {{ duplicateRunnerToDelete.firstname }} {{ duplicateRunnerToDelete.lastname }}</div>
+            <div><strong>Race BIB:</strong> <span class="font-mono font-bold text-amber-600 dark:text-amber-400">{{ duplicateRunnerToDelete.run_number || duplicateRunnerToDelete.bib_number || 'Unallocated' }}</span></div>
+            <div><strong>Reg ID:</strong> #{{ duplicateRunnerToDelete.id }}</div>
+            <div><strong>Category:</strong> {{ duplicateRunnerToDelete.run_category || duplicateRunnerToDelete.category || '3KM' }}</div>
+            <div><strong>Date:</strong> {{ formatDuplicateDate(duplicateRunnerToDelete.created_at) }}</div>
+          </div>
+          <p class="text-[11px] text-rose-500 dark:text-rose-400 font-semibold">
+            This will permanently remove this duplicate registration.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button type="button" @click="closeDuplicateDeleteConfirm" :disabled="isDeletingDuplicateRunner"
+            class="flex-1 py-2 px-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="button" @click="executeDeleteDuplicateRunner(duplicateRunnerToDelete)" :disabled="isDeletingDuplicateRunner"
+            class="flex-1 py-2 px-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60">
+            <i v-if="!isDeletingDuplicateRunner" class="fas fa-trash"></i>
+            <i v-else class="fas fa-spinner fa-spin"></i>
+            <span>{{ isDeletingDuplicateRunner ? 'Deleting...' : 'Yes, Delete' }}</span>
           </button>
         </div>
       </div>

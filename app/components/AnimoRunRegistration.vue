@@ -8,151 +8,7 @@ import waiverConsentData from "~/animorun_waiver_consent.json";
 import lsuIdVerifierLocalData from "~/animorun_lsuid_verifier.json";
 const lsuIdVerifierData = ref([]);
 
-// ── Slot Capacity Limits & Availability ─────────────────────────────────────
-// Dynamically fetched from backend /api/animorun/slot-count/ (AnimoRunSlotAllocation) and /api/animorun/list/
-// Base acceptance submission is confirmed (paid registrations), not the total.
 
-const slotData = ref({});
-const slotDataLoaded = ref(false);
-
-const normalizeSlotCategory = (val) => {
-  const str = String(val || "").trim().toUpperCase();
-  if (str.includes("PET") || str.startsWith("1K") || str === "1") return "1KM";
-  if (str.startsWith("20K") || str === "20") return "20KM";
-  if (str.startsWith("10K") || str === "10") return "10KM";
-  if (str.startsWith("3K") || str === "3") return "3KM";
-  const prefix = str.split(" ")[0];
-  if (prefix.endsWith("KM")) return prefix;
-  if (prefix.endsWith("K")) return prefix + "M";
-  if (!isNaN(prefix)) return prefix + "KM";
-  return "3KM";
-};
-
-const calculateSlotState = (conf, pend, maxSlots) => {
-  const confirmed = Math.max(0, Number(conf) || 0);
-  const pending = Math.max(0, Number(pend) || 0);
-  const total = confirmed + pending;
-  const max = Math.max(0, Number(maxSlots) || 0);
-
-  // Base acceptance submission is CONFIRMED, not the total.
-  // Registration is full when confirmed registrations reach max capacity.
-  const is_full = max > 0 && confirmed >= max;
-  const remaining = max > 0 ? Math.max(0, max - confirmed) : 9999;
-  const confirmed_remaining = remaining;
-
-  return {
-    filled: confirmed, // base filled is confirmed, not total
-    confirmed,
-    pending,
-    total,
-    max,
-    effective_max: max,
-    remaining,
-    confirmed_remaining,
-    is_full,
-  };
-};
-
-const fetchSlotCounts = async (endpointUrl) => {
-  const rawUrl = endpointUrl || config?.public?.apiUrl || endpoint?.value || 'http://127.0.0.1:8000';
-  const url = String(rawUrl).replace(/\/+$/, '');
-
-  // 1. Fetch dynamic slot limits from AnimoRunSlotAllocation via /api/animorun/slot-count/
-  let dynamicLimits = {};
-  try {
-    const res = await $fetch(`${url}/api/animorun/slot-count/`, { timeout: 10000, cache: "no-store" });
-    if (res && typeof res === "object" && !Array.isArray(res) && Object.keys(res).length > 0) {
-      dynamicLimits = res;
-    }
-  } catch (err) {
-    console.warn("Failed to fetch dynamic slot counts from /api/animorun/slot-count/:", err);
-  }
-
-  // 2. Fetch full registration list from /api/animorun/list/ to get exact confirmed and pending counts
-  try {
-    let list = null;
-    try {
-      list = await $fetch(`${url}/api/animorun/list/`, { timeout: 15000, cache: "no-store" });
-    } catch (e) {
-      if (typeof window !== "undefined") {
-        list = await $fetch('/api/animorun/list/', { timeout: 15000, cache: "no-store" });
-      }
-    }
-
-    if (Array.isArray(list)) {
-      const breakdown = {};
-      const knownCats = Object.keys(dynamicLimits);
-      for (const cat of (knownCats.length > 0 ? knownCats : ["1KM", "3KM", "10KM", "20KM"])) {
-        breakdown[cat] = { total: 0, confirmed: 0, pending: 0 };
-      }
-
-      list.forEach((r) => {
-        const norm = normalizeSlotCategory(r.run_category);
-        if (!breakdown[norm]) {
-          breakdown[norm] = { total: 0, confirmed: 0, pending: 0 };
-        }
-
-        const paymentStatus = String(r.payment_status || "").trim().toLowerCase();
-        const isConfirmed = paymentStatus === "confirmed";
-        const isPending = !paymentStatus || paymentStatus.startsWith("pending");
-
-        breakdown[norm].total++;
-        if (isConfirmed) breakdown[norm].confirmed++;
-        if (isPending) breakdown[norm].pending++;
-      });
-
-      const updatedSlots = {};
-      const allCategories = new Set([...Object.keys(dynamicLimits), ...Object.keys(breakdown)]);
-      for (const cat of allCategories) {
-        const catStats = breakdown[cat] || { total: 0, confirmed: 0, pending: 0 };
-        const maxSlots = Number(dynamicLimits[cat]?.max) || 0;
-        updatedSlots[cat] = calculateSlotState(catStats.confirmed, catStats.pending, maxSlots);
-      }
-
-      slotData.value = updatedSlots;
-      slotDataLoaded.value = true;
-      return;
-    }
-  } catch (listErr) {
-    console.warn("Fallback to slot-count endpoint limits:", listErr);
-  }
-
-  // 3. Fallback: if list was unreachable, use dynamicLimits from /api/animorun/slot-count/
-  if (Object.keys(dynamicLimits).length > 0) {
-    const fallbackSlots = {};
-    for (const [cat, data] of Object.entries(dynamicLimits)) {
-      const maxSlots = Number(data.max) || 0;
-      const conf = Number(data.confirmed ?? data.filled) || 0;
-      const pend = Number(data.pending) || 0;
-      fallbackSlots[cat] = calculateSlotState(conf, pend, maxSlots);
-    }
-    slotData.value = fallbackSlots;
-    slotDataLoaded.value = true;
-  }
-};
-
-const getSlotInfo = (categoryId) => {
-  const norm = categoryId === '1K' ? '1KM' : (categoryId || '3KM');
-  return slotData.value[norm] || {
-    filled: 0,
-    confirmed: 0,
-    pending: 0,
-    total: 0,
-    max: 0,
-    effective_max: 0,
-    remaining: 9999,
-    confirmed_remaining: 9999,
-    is_full: false,
-  };
-};
-
-const isCategoryFull = (categoryId) => {
-  return Boolean(getSlotInfo(categoryId)?.is_full);
-};
-
-const getRemainingSlots = (categoryId) => {
-  return getSlotInfo(categoryId)?.remaining ?? 0;
-};
 
 const props = defineProps({
   darkMode: {
@@ -670,8 +526,6 @@ onMounted(async () => {
     participants.value[0].contact_email = user.value.email;
   }
 
-  // Fetch slot counts for availability checking
-  fetchSlotCounts();
 
   // LSU ID verifier: use local bundled JSON (no network, no CORS issues).
   lsuIdVerifierData.value = Array.isArray(lsuIdVerifierLocalData) ? lsuIdVerifierLocalData : [];
@@ -1207,11 +1061,6 @@ const formValidationIssues = computed(() => {
     const catId = p.run_category === "1K" ? "1KM" : p.run_category;
     if (!catId) {
       issues.push(`${runnerLabel}: Please select a race category.`);
-    } else {
-      const slot = getSlotInfo(catId);
-      if (slot && slot.is_full) {
-        issues.push(`${runnerLabel}: ${catId} category is already full.`);
-      }
     }
 
     // Name
@@ -1365,35 +1214,22 @@ const submitRegistration = async () => {
 
   // Lock submission state immediately so users on slow connection cannot re-trigger
   isSubmitting.value = true;
-  submissionStatusMessage.value = "Verifying race category slots...";
+  submissionStatusMessage.value = "Validating registration details...";
 
   try {
-    // ── Slot Availability Check (re-fetch fresh counts before submit) ──────────
-    await fetchSlotCounts();
-  for (let i = 0; i < participants.value.length; i++) {
-    const p = participants.value[i];
-    const catId = p.run_category === '1K' ? '1KM' : p.run_category;
-    if (!catId) {
-      showNotice(
-        `Please select a Race Category for Runner #${i + 1}.`,
-        "Race Category Required",
-        "warning"
-      );
-      activeParticipantIndex.value = i;
-      return;
+    for (let i = 0; i < participants.value.length; i++) {
+      const p = participants.value[i];
+      const catId = p.run_category === '1K' ? '1KM' : p.run_category;
+      if (!catId) {
+        showNotice(
+          `Please select a Race Category for Runner #${i + 1}.`,
+          "Race Category Required",
+          "warning"
+        );
+        activeParticipantIndex.value = i;
+        return;
+      }
     }
-    const slotInfo = getSlotInfo(catId);
-    if (slotInfo.is_full) {
-      const catLabel = catId === '1KM' ? 'Pet Run (1KM)' : catId;
-      showNotice(
-        `Sorry, registration for ${catLabel} is already full (${slotInfo.max} slots filled). Please select a different race category.`,
-        "Category Full — No Slots Available",
-        "error"
-      );
-      activeParticipantIndex.value = i;
-      return;
-    }
-  }
 
   // Validate participant name & contact
   for (let i = 0; i < participants.value.length; i++) {
@@ -2271,7 +2107,7 @@ const sendChatWidgetMessage = async () => {
                 <!-- HUMAN RUN CARDS -->
                 <div class="contents">
                   <div v-for="cat in runCategories.filter(c => c.categoryType === 'human')" :key="cat.id"
-                    @click="isCategoryFull(cat.id) ? showNotice(`Sorry, registration for ${cat.name} (${cat.id}) is already full (${getSlotInfo(cat.id).max} slots). Please select another race category.`, 'Category Full — No Slots Available', 'error') : currentParticipant.run_category = cat.id"
+                    @click="currentParticipant.run_category = cat.id"
                     class="relative rounded-2xl p-4 sm:p-5 border-2 cursor-pointer transition-all duration-300 flex flex-col justify-between overflow-hidden select-none w-full shrink-0 snap-center lg:shrink"
                     :style="currentParticipant.run_category === cat.id
                       ? {
@@ -2283,7 +2119,7 @@ const sendChatWidgetMessage = async () => {
                       : {
                         background: `linear-gradient(145deg, ${cat.colors.dark}, ${cat.colors.secondary})`,
                         borderColor: cat.colors.primary + '55',
-                        opacity: isCategoryFull(cat.id) ? '0.55' : '0.92',
+                        opacity: '0.92',
                       }">
 
                     <!-- Watermark -->
@@ -2304,7 +2140,7 @@ const sendChatWidgetMessage = async () => {
                             <i class="fas fa-check"></i>
                           </div>
 
-                          <!-- Distance label & dynamic slot counter -->
+                          <!-- Distance label -->
                           <div>
                             <h2 class="text-4xl font-black tracking-tight whitespace-nowrap"
                               :style="{ color: currentParticipant.run_category === cat.id ? '#fff' : 'rgba(255,255,255,0.7)' }">
@@ -2383,8 +2219,7 @@ const sendChatWidgetMessage = async () => {
                     : {
                       background: 'linear-gradient(145deg, #0B0A09, #035751)',
                       borderColor: 'rgba(2,133,125,0.4)',
-                      opacity: isCategoryFull('1KM') ? '0.55' : '1',
-                    }" @click="isCategoryFull('1KM') ? showNotice(`Sorry, registration for Pet Run (1KM) is already full (${getSlotInfo('1KM').max} slots). Please select another race category.`, 'Category Full — No Slots Available', 'error') : currentParticipant.run_category = '1K'">
+                    }" @click="currentParticipant.run_category = '1K'">
 
                   <!-- Watermark -->
                   <div class="absolute -right-4 -bottom-4 text-8xl pointer-events-none select-none"
@@ -2409,7 +2244,7 @@ const sendChatWidgetMessage = async () => {
                       </div>
                     </div>
 
-                    <!-- Distance & Fee & Dynamic Slot Counter -->
+                    <!-- Distance & Fee -->
                     <div class="flex items-baseline justify-between pt-1">
                       <div>
                         <h2 class="text-3xl font-black tracking-tight"
