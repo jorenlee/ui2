@@ -4,28 +4,28 @@ declare module "nitropack/types" {
   type Awaited<T> = T extends PromiseLike<infer U> ? Awaited<U> : T
   interface InternalApi {
     '/api/auth/callback': {
-      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../app/server/api/auth/callback.get').default>>>>
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/auth/callback.get').default>>>>
     }
     '/api/auth/google': {
-      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../app/server/api/auth/google.get').default>>>>
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/auth/google.get').default>>>>
     }
     '/api/boxes': {
-      'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../app/server/api/boxes.post').default>>>>
+      'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/boxes.post').default>>>>
     }
     '/api/save-names': {
-      'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../app/server/api/save-names.post').default>>>>
+      'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/save-names.post').default>>>>
     }
     '/ads.txt': {
-      'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../app/server/routes/ads.txt').default>>>>
+      'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/routes/ads.txt').default>>>>
     }
     '/sitemap.xml': {
-      'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../app/server/routes/sitemap.xml').default>>>>
+      'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/routes/sitemap.xml').default>>>>
     }
     '/__nuxt_error': {
-      'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../node_modules/@nuxt/nitro-server/dist/runtime/handlers/renderer').default>>>>
+      'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../node_modules/.pnpm/@nuxt+nitro-server@4.6.2_66b3086d933e4e460b640f26824e47ae/node_modules/@nuxt/nitro-server/dist/runtime/handlers/renderer').default>>>>
     }
     '/__nuxt_island/**': {
-      'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../app/server/#internal/nuxt/island-renderer').default>>>>
+      'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/#internal/nuxt/island-renderer').default>>>>
     }
   }
 }

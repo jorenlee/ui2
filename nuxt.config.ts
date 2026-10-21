@@ -64,7 +64,6 @@ export default defineNuxtConfig({
   },
   modules: [
     '@pinia/nuxt',
-    'nuxt-lodash',
     '@nuxtjs/google-adsense',
     'nuxt-gtag',
   ],
@@ -85,7 +84,7 @@ export default defineNuxtConfig({
     authOrigin: process.env.AUTH_ORIGIN,
     public: {
       googleClientId: process.env.GOOGLE_CLIENT_ID,
-      apiUrl: process.env.API_URL || "http://127.0.0.1:8000",
+      apiUrl: process.env.API_URL,
       adsenseId: process.env.NUXT_PUBLIC_ADSENSE,
       analyticsId: process.env.NUXT_PUBLIC_ANALYTICS,
     },

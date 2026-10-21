@@ -395,9 +395,11 @@ const receiptCounts = computed(() => {
 
 // ── Multi-Confirm State ─────────────────────────────────────────────────────
 const selectedPendingRunners = computed(() => {
-  return registrations.value.filter(
-    (r) => selectedIds.value.includes(r.id) && r.payment_status && r.payment_status !== "Confirmed"
-  );
+  return registrations.value.filter((r) => {
+    if (!selectedIds.value.includes(r.id)) return false;
+    const status = String(r.payment_status || "").trim().toLowerCase();
+    return status !== "confirmed";
+  });
 });
 
 // ── Bulk Confirm Modal & State ──────────────────────────────────────────────
@@ -405,10 +407,8 @@ const isBulkConfirming = ref(false);
 const bulkConfirmModal = ref({ show: false });
 
 const promptBulkConfirm = () => {
-  if (!selectedPendingRunners.value.length || isBulkConfirming.value) {
-    if (selectedIds.value.length > 0 && selectedPendingRunners.value.length === 0) {
-      showFastToast("All selected runners are already confirmed!", "info");
-    }
+  if (!selectedIds.value.length || isBulkConfirming.value) {
+    showFastToast("Please select at least one runner.", "info");
     return;
   }
   bulkConfirmModal.value.show = true;
@@ -419,7 +419,11 @@ const closeBulkConfirmModal = () => {
 };
 
 const executeBulkConfirm = async () => {
-  const runnersToConfirm = [...selectedPendingRunners.value];
+  // If there are unconfirmed runners selected, confirm them; otherwise if all selected are already confirmed, re-send to all selected runners!
+  const runnersToConfirm = selectedPendingRunners.value.length > 0
+    ? [...selectedPendingRunners.value]
+    : registrations.value.filter((r) => selectedIds.value.includes(r.id));
+
   if (!runnersToConfirm.length || isBulkConfirming.value) return;
 
   const idsToConfirm = runnersToConfirm.map((r) => r.id);
@@ -563,7 +567,7 @@ const modalTotalSlots = computed(() => {
 
 const fetchSlotCounts = async () => {
   try {
-    const rawUrl = endpoint.value || config?.public?.apiUrl || 'http://127.0.0.1:8000';
+    const rawUrl = endpoint.value || config?.public?.apiUrl;
     const url = String(rawUrl).replace(/\/+$/, '');
     const res = await $fetch(`${url}/api/animorun/slot-count/`);
     if (res && typeof res === "object") {
@@ -642,7 +646,7 @@ const addNewCategorySlot = () => {
 const saveSlotAdjustments = async () => {
   isSavingSlots.value = true;
   try {
-    const rawUrl = endpoint.value || config?.public?.apiUrl || 'http://127.0.0.1:8000';
+    const rawUrl = endpoint.value || config?.public?.apiUrl;
     const url = String(rawUrl).replace(/\/+$/, '');
     const payload = {};
     for (const [cat, val] of Object.entries(slotEditValues.value)) {
@@ -5890,12 +5894,13 @@ const closeRunnerQrPassModal = () => {
             </span>
           </div>
           <div class="flex items-center gap-2">
-            <button v-if="selectedPendingRunners.length > 0" type="button" @click="promptBulkConfirm"
+            <button type="button" @click="promptBulkConfirm"
               :disabled="isBulkConfirming"
               class="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60">
               <i v-if="!isBulkConfirming" class="fas fa-check-double text-[11px]"></i>
               <i v-else class="fas fa-spinner fa-spin text-[11px]"></i>
-              <span>Confirm Selected ({{ selectedPendingRunners.length }})</span>
+              <span v-if="selectedPendingRunners.length > 0">Confirm Selected ({{ selectedPendingRunners.length }})</span>
+              <span v-else>Resend Confirm Email ({{ selectedIds.length }})</span>
             </button>
             <button type="button" @click="executeBulkMarkKitReady" :disabled="isBulkMarkingReady"
               class="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
@@ -6628,13 +6633,14 @@ const closeRunnerQrPassModal = () => {
 
 
         <!-- Multi-Confirm Payment button -->
-        <button v-if="selectedPendingRunners.length > 0" type="button" @click="promptBulkConfirm"
+        <button v-if="selectedIds.length > 0" type="button" @click="promptBulkConfirm"
           :disabled="isBulkConfirming"
           class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs transition shadow-lg flex items-center gap-1.5 border border-emerald-400/40 cursor-pointer active:scale-95 disabled:opacity-60"
           title="Approve / Confirm payment for all selected pending runners">
           <i v-if="!isBulkConfirming" class="fas fa-check-double"></i>
           <i v-else class="fas fa-spinner fa-spin"></i>
-          <span>Multi-Confirm ({{ selectedPendingRunners.length }})</span>
+          <span v-if="selectedPendingRunners.length > 0">Multi-Confirm ({{ selectedPendingRunners.length }})</span>
+          <span v-else>Resend Email ({{ selectedIds.length }})</span>
         </button>
 
         <!-- Finalize Supplier Batch button -->
@@ -7371,15 +7377,23 @@ const closeRunnerQrPassModal = () => {
 
         <div>
           <h3 class="text-lg font-black tracking-tight">
-            Confirm {{ selectedPendingRunners.length }} Runner Payment{{ selectedPendingRunners.length !== 1 ? 's' : ''
-            }}?
+            <span v-if="selectedPendingRunners.length > 0">
+              Confirm {{ selectedPendingRunners.length }} Runner Payment{{ selectedPendingRunners.length !== 1 ? 's' : '' }}?
+            </span>
+            <span v-else>
+              Resend Confirmation Email to {{ selectedIds.length }} Runner{{ selectedIds.length !== 1 ? 's' : '' }}?
+            </span>
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-            This will mark all <strong class="text-emerald-600 dark:text-emerald-400">{{ selectedPendingRunners.length
-              }}
-              pending registrations</strong> as <strong
-              class="text-emerald-600 dark:text-emerald-400">Confirmed</strong>
-            and queue their official registration confirmation emails.
+            <span v-if="selectedPendingRunners.length > 0">
+              This will mark all <strong class="text-emerald-600 dark:text-emerald-400">{{ selectedPendingRunners.length }}
+                pending registrations</strong> as <strong class="text-emerald-600 dark:text-emerald-400">Confirmed</strong>
+              and queue their official registration confirmation emails.
+            </span>
+            <span v-else>
+              This will queue and resend official registration confirmation emails to all
+              <strong class="text-emerald-600 dark:text-emerald-400">{{ selectedIds.length }} selected runner(s)</strong>.
+            </span>
           </p>
         </div>
 
@@ -7391,10 +7405,12 @@ const closeRunnerQrPassModal = () => {
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ currentOperator || 'Admin' }}</span>
           </div>
           <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
-            <span>Runners to Confirm:</span>
-            <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ selectedPendingRunners.length }}</span>
+            <span>{{ selectedPendingRunners.length > 0 ? 'Runners to Confirm:' : 'Runners to Email:' }}</span>
+            <span class="font-bold text-emerald-600 dark:text-emerald-400">
+              {{ selectedPendingRunners.length > 0 ? selectedPendingRunners.length : selectedIds.length }}
+            </span>
           </div>
-          <div v-if="selectedIds.length > selectedPendingRunners.length"
+          <div v-if="selectedPendingRunners.length > 0 && selectedIds.length > selectedPendingRunners.length"
             class="flex justify-between items-center text-gray-400 text-[11px]">
             <span>Already confirmed (skipped):</span>
             <span>{{ selectedIds.length - selectedPendingRunners.length }}</span>

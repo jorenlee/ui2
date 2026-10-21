@@ -6,7 +6,7 @@ export const useAuth = () => {
 
   // Call on app/page mount to hydrate from localStorage
   const init = () => {
-    if (!process.client) return
+    if (!(import.meta.client ?? process.client)) return
     const storedToken = localStorage.getItem('auth_token')
     const storedUser = localStorage.getItem('auth_user')
     if (storedToken) token.value = storedToken
@@ -17,7 +17,7 @@ export const useAuth = () => {
 
   // Store JWT from OAuth callback and decode user info
   const setAuth = (jwt) => {
-    if (!process.client) return
+    if (!(import.meta.client ?? process.client)) return
     try {
       // Decode base64url payload (middle part of JWT)
       const base64 = jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
@@ -42,7 +42,7 @@ export const useAuth = () => {
   }
 
   const logout = () => {
-    if (process.client) {
+    if (import.meta.client ?? process.client) {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_user')
     }
