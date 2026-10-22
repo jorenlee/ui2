@@ -1512,26 +1512,66 @@ const currentOperator = computed(() => user.value?.email || user.value?.name || 
 
 // ── Sorting state ──────────────────────────────────────────────────────────
 const sortBy = ref("date_desc");
-// Options: "date_desc", "date_asc", "firstname_asc", "firstname_desc", "lastname_asc", "lastname_desc", "name_asc", "name_desc", "bib_asc", "batch_asc", "shirt_asc", "receipt_desc", "receipt_asc"
 
-const toggleSort = (field) => {
-  if (field === "firstname") {
-    sortBy.value = sortBy.value === "firstname_asc" ? "firstname_desc" : "firstname_asc";
-  } else if (field === "lastname") {
-    sortBy.value = sortBy.value === "lastname_asc" ? "lastname_desc" : "lastname_asc";
-  } else if (field === "name") {
-    sortBy.value = sortBy.value === "name_asc" ? "name_desc" : "name_asc";
-  } else if (field === "date") {
-    sortBy.value = sortBy.value === "date_desc" ? "date_asc" : "date_desc";
-  } else if (field === "bib") {
-    sortBy.value = sortBy.value === "bib_asc" ? "date_desc" : "bib_asc";
-  } else if (field === "batch") {
-    sortBy.value = sortBy.value === "batch_asc" ? "date_desc" : "batch_asc";
-  } else if (field === "shirt") {
-    sortBy.value = sortBy.value === "shirt_asc" ? "date_desc" : "shirt_asc";
-  } else if (field === "receipt") {
-    sortBy.value = sortBy.value === "receipt_desc" ? "receipt_asc" : "receipt_desc";
+// Canonical aliases for sort fields
+const getSortFieldKey = (rawKey) => {
+  if (!rawKey) return "";
+  const key = String(rawKey).trim();
+  if (key === "full_name") return "name";
+  if (key === "reg_date") return "date";
+  if (key === "race_bib") return "bib";
+  if (key === "reg_id") return "id";
+  if (key === "tshirt_size") return "shirt";
+  if (key === "race_kit") return "kit";
+  if (key === "messages_count") return "messages";
+  return key;
+};
+
+// Returns 'asc', 'desc', or null for a given column key
+const getSortDirection = (rawKey) => {
+  const field = getSortFieldKey(rawKey);
+  const current = String(sortBy.value || "");
+
+  if (current === `${field}_asc` || current === `${rawKey}_asc`) return "asc";
+  if (current === `${field}_desc` || current === `${rawKey}_desc`) return "desc";
+
+  // Specific aliases backwards compatibility
+  if ((rawKey === "full_name" || rawKey === "name") && current === "name_asc") return "asc";
+  if ((rawKey === "full_name" || rawKey === "name") && current === "name_desc") return "desc";
+  if ((rawKey === "race_bib" || rawKey === "bib") && current === "bib_asc") return "asc";
+  if ((rawKey === "race_bib" || rawKey === "bib") && current === "bib_desc") return "desc";
+  if ((rawKey === "reg_id" || rawKey === "id") && current === "id_asc") return "asc";
+  if ((rawKey === "reg_id" || rawKey === "id") && current === "id_desc") return "desc";
+  if ((rawKey === "reg_date" || rawKey === "date") && current === "date_asc") return "asc";
+  if ((rawKey === "reg_date" || rawKey === "date") && current === "date_desc") return "desc";
+  if ((rawKey === "tshirt_size" || rawKey === "shirt") && current === "shirt_asc") return "asc";
+  if ((rawKey === "tshirt_size" || rawKey === "shirt") && current === "shirt_desc") return "desc";
+  if ((rawKey === "messages" || rawKey === "messages_count") && current === "messages_asc") return "asc";
+  if ((rawKey === "messages" || rawKey === "messages_count") && current === "messages_desc") return "desc";
+  if ((rawKey === "race_kit" || rawKey === "kit") && current === "kit_asc") return "asc";
+  if ((rawKey === "race_kit" || rawKey === "kit") && current === "kit_desc") return "desc";
+
+  return null;
+};
+
+const toggleSort = (rawField) => {
+  const currentDir = getSortDirection(rawField);
+  const field = getSortFieldKey(rawField);
+
+  // Default initial direction: date, receipt, messages, total_amount start with desc
+  const defaultDescFields = ["date", "receipt", "messages", "total_amount"];
+  const defaultDir = defaultDescFields.includes(field) ? "desc" : "asc";
+
+  let nextDir = "asc";
+  if (!currentDir) {
+    nextDir = defaultDir;
+  } else if (currentDir === "asc") {
+    nextDir = "desc";
+  } else {
+    nextDir = "asc";
   }
+
+  sortBy.value = `${field}_${nextDir}`;
 };
 
 // ── Same Name / Duplicate Quick-Check Helpers ─────────────────────────────
@@ -1754,95 +1794,239 @@ const filteredRegistrations = computed(() => {
     return matchesQuery && matchesCategory && matchesStatus && matchesPaymentType && matchesReceipt && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate && matchesChat && matchesKit;
   });
 
-  // Sorting
+  // Sorting: Universal ASC/DESC for every column
   return list.sort((a, b) => {
-    if (sortBy.value === "date_desc") {
-      return (new Date(b.created_at || 0)) - (new Date(a.created_at || 0));
+    const current = String(sortBy.value || "date_desc");
+    const isAsc = current.endsWith("_asc");
+    const field = current.replace(/_(asc|desc)$/, "");
+
+    // 1. Date
+    if (field === "date" || field === "reg_date") {
+      const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return isAsc ? tA - tB : tB - tA;
     }
-    if (sortBy.value === "date_asc") {
-      return (new Date(a.created_at || 0)) - (new Date(b.created_at || 0));
+
+    // 2. Full Name
+    if (field === "name" || field === "full_name") {
+      const nameA = `${a.lastname || ""} ${a.firstname || ""}`.trim().toLowerCase();
+      const nameB = `${b.lastname || ""} ${b.firstname || ""}`.trim().toLowerCase();
+      const cmp = nameA.localeCompare(nameB);
+      if (cmp !== 0) return isAsc ? cmp : -cmp;
+      return isAsc ? Number(a.id || 0) - Number(b.id || 0) : Number(b.id || 0) - Number(a.id || 0);
     }
-    if (sortBy.value === "firstname_asc") {
+
+    // 3. First Name
+    if (field === "firstname") {
       const fA = (a.firstname || "").trim().toLowerCase();
       const fB = (b.firstname || "").trim().toLowerCase();
       const cmp = fA.localeCompare(fB);
-      if (cmp !== 0) return cmp;
+      if (cmp !== 0) return isAsc ? cmp : -cmp;
       const lA = (a.lastname || "").trim().toLowerCase();
       const lB = (b.lastname || "").trim().toLowerCase();
-      const cmpL = lA.localeCompare(lB);
-      if (cmpL !== 0) return cmpL;
-      const mA = (a.middlename || "").trim().toLowerCase();
-      const mB = (b.middlename || "").trim().toLowerCase();
-      return mA.localeCompare(mB);
+      return isAsc ? lA.localeCompare(lB) : lB.localeCompare(lA);
     }
-    if (sortBy.value === "firstname_desc") {
-      const fA = (a.firstname || "").trim().toLowerCase();
-      const fB = (b.firstname || "").trim().toLowerCase();
-      const cmp = fB.localeCompare(fA);
-      if (cmp !== 0) return cmp;
-      const lA = (a.lastname || "").trim().toLowerCase();
-      const lB = (b.lastname || "").trim().toLowerCase();
-      const cmpL = lA.localeCompare(lB);
-      if (cmpL !== 0) return cmpL;
-      const mA = (a.middlename || "").trim().toLowerCase();
-      const mB = (b.middlename || "").trim().toLowerCase();
-      return mA.localeCompare(mB);
-    }
-    if (sortBy.value === "lastname_asc") {
+
+    // 4. Last Name
+    if (field === "lastname") {
       const lA = (a.lastname || "").trim().toLowerCase();
       const lB = (b.lastname || "").trim().toLowerCase();
       const cmp = lA.localeCompare(lB);
-      if (cmp !== 0) return cmp;
+      if (cmp !== 0) return isAsc ? cmp : -cmp;
       const fA = (a.firstname || "").trim().toLowerCase();
       const fB = (b.firstname || "").trim().toLowerCase();
-      return fA.localeCompare(fB);
+      return isAsc ? fA.localeCompare(fB) : fB.localeCompare(fA);
     }
-    if (sortBy.value === "lastname_desc") {
-      const lA = (a.lastname || "").trim().toLowerCase();
-      const lB = (b.lastname || "").trim().toLowerCase();
-      const cmp = lB.localeCompare(lA);
-      if (cmp !== 0) return cmp;
-      const fA = (a.firstname || "").trim().toLowerCase();
-      const fB = (b.firstname || "").trim().toLowerCase();
-      return fA.localeCompare(fB);
+
+    // 5. Middle Name
+    if (field === "middlename") {
+      const mA = (a.middlename || "").trim().toLowerCase();
+      const mB = (b.middlename || "").trim().toLowerCase();
+      const cmp = mA.localeCompare(mB);
+      return isAsc ? cmp : -cmp;
     }
-    if (sortBy.value === "name_asc") {
-      const nameA = `${a.lastname || ""} ${a.firstname || ""}`.toLowerCase();
-      const nameB = `${b.lastname || ""} ${b.firstname || ""}`.toLowerCase();
-      return nameA.localeCompare(nameB);
+
+    // 6. Race BIB
+    if (field === "bib" || field === "race_bib") {
+      const bibA = String(a.run_number || a.bib_number || a.id || "");
+      const bibB = String(b.run_number || b.bib_number || b.id || "");
+      const cmp = bibA.localeCompare(bibB, undefined, { numeric: true, sensitivity: "base" });
+      return isAsc ? cmp : -cmp;
     }
-    if (sortBy.value === "name_desc") {
-      const nameA = `${a.lastname || ""} ${a.firstname || ""}`.toLowerCase();
-      const nameB = `${b.lastname || ""} ${b.firstname || ""}`.toLowerCase();
-      return nameB.localeCompare(nameA);
+
+    // 7. Reg ID
+    if (field === "id" || field === "reg_id") {
+      const idA = Number(a.id || 0);
+      const idB = Number(b.id || 0);
+      return isAsc ? idA - idB : idB - idA;
     }
-    if (sortBy.value === "bib_asc") {
-      return String(a.run_number || a.id).localeCompare(String(b.run_number || b.id), undefined, { numeric: true });
+
+    // 8. Category
+    if (field === "category") {
+      const getCategoryDistRank = (cat) => {
+        if (!cat) return 999;
+        const s = String(cat).toUpperCase();
+        if (s.includes("1K") || s.includes("PET")) return 1;
+        if (s.includes("3K")) return 3;
+        if (s.includes("5K")) return 5;
+        if (s.includes("10K")) return 10;
+        if (s.includes("20K") || s.includes("21K")) return 20;
+        if (s.includes("42K")) return 42;
+        const match = s.match(/\d+/);
+        return match ? parseInt(match[0], 10) : 100;
+      };
+      const rA = getCategoryDistRank(a.run_category);
+      const rB = getCategoryDistRank(b.run_category);
+      if (rA !== rB) return isAsc ? rA - rB : rB - rA;
+      const cA = String(a.run_category || "").toLowerCase();
+      const cB = String(b.run_category || "").toLowerCase();
+      const cmp = cA.localeCompare(cB);
+      return isAsc ? cmp : -cmp;
     }
-    if (sortBy.value === "batch_asc") {
-      return (a.batch_name || "ZZZ").localeCompare(b.batch_name || "ZZZ");
+
+    // 9. Classification
+    if (field === "classification") {
+      const cA = (a.participant_type || "Open Category").trim().toLowerCase();
+      const cB = (b.participant_type || "Open Category").trim().toLowerCase();
+      const cmp = cA.localeCompare(cB);
+      return isAsc ? cmp : -cmp;
     }
-    if (sortBy.value === "shirt_asc") {
-      const sizeOrder = ['3XS', '2XS', 'XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '4XL', '5XL'];
-      const szA = (a.tshirt_size || 'M').trim().toUpperCase().split(';')[0].split(':').pop().trim();
-      const szB = (b.tshirt_size || 'M').trim().toUpperCase().split(';')[0].split(':').pop().trim();
+
+    // 10. Payment Option
+    if (field === "payment_option") {
+      const getPaymentOptLabel = (item) => {
+        if (item.payment_type === "salary_deduction") return "Salary Deduction";
+        if (item.payment_type === "family_salary_deduction") return "Family Salary Deduction";
+        if (item.payment_type === "add_to_tuition") return "Add to Tuition";
+        if (item.payment_type === "over_the_counter") return "Over the Counter";
+        if (item.payment_type === "qr") return "QR";
+        return item.payment_type || "Over-the-Counter / QR";
+      };
+      const pA = getPaymentOptLabel(a).toLowerCase();
+      const pB = getPaymentOptLabel(b).toLowerCase();
+      const cmp = pA.localeCompare(pB);
+      return isAsc ? cmp : -cmp;
+    }
+
+    // 11. Payment Status
+    if (field === "payment_status") {
+      const sA = (a.payment_status || "").trim().toLowerCase();
+      const sB = (b.payment_status || "").trim().toLowerCase();
+      const cmp = sA.localeCompare(sB);
+      if (cmp !== 0) return isAsc ? cmp : -cmp;
+      const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return tB - tA;
+    }
+
+    // 12. Receipt
+    if (field === "receipt") {
+      const hasA = a.proof_of_payment ? 1 : 0;
+      const hasB = b.proof_of_payment ? 1 : 0;
+      if (hasA !== hasB) return isAsc ? hasA - hasB : hasB - hasA;
+      const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return tB - tA;
+    }
+
+    // 13. Messages
+    if (field === "messages" || field === "messages_count") {
+      const statsA = typeof getRunnerMessageStats === "function" ? getRunnerMessageStats(a) : { total: 0, newCount: 0 };
+      const statsB = typeof getRunnerMessageStats === "function" ? getRunnerMessageStats(b) : { total: 0, newCount: 0 };
+      const scoreA = (statsA.newCount * 10000) + statsA.total;
+      const scoreB = (statsB.newCount * 10000) + statsB.total;
+      if (scoreA !== scoreB) return isAsc ? scoreA - scoreB : scoreB - scoreA;
+      const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return tB - tA;
+    }
+
+    // 14. Race Kit
+    if (field === "kit" || field === "race_kit") {
+      const getKitScore = (item) => {
+        if (item.kit_claimed) return 3;
+        if (item.kit_ready) return 2;
+        return 1;
+      };
+      const kA = getKitScore(a);
+      const kB = getKitScore(b);
+      if (kA !== kB) return isAsc ? kA - kB : kB - kA;
+      const tA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const tB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return tB - tA;
+    }
+
+    // 15. Supplier Batch
+    if (field === "batch") {
+      const bA = (a.batch_name || "").trim().toLowerCase();
+      const bB = (b.batch_name || "").trim().toLowerCase();
+      if (!bA && bB) return isAsc ? 1 : -1;
+      if (bA && !bB) return isAsc ? -1 : 1;
+      const cmp = bA.localeCompare(bB);
+      return isAsc ? cmp : -cmp;
+    }
+
+    // 16. Lock Status
+    if (field === "lock_status") {
+      const lA = a.batch_locked ? 1 : 0;
+      const lB = b.batch_locked ? 1 : 0;
+      return isAsc ? lA - lB : lB - lA;
+    }
+
+    // 17. T-Shirt Size
+    if (field === "shirt" || field === "tshirt_size") {
+      const sizeOrder = ["3XS", "2XS", "XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"];
+      const szA = (a.tshirt_size || "M").trim().toUpperCase().split(";")[0].split(":").pop().trim();
+      const szB = (b.tshirt_size || "M").trim().toUpperCase().split(";")[0].split(":").pop().trim();
       const idxA = sizeOrder.indexOf(szA);
       const idxB = sizeOrder.indexOf(szB);
-      return (idxA === -1 ? 99 : idxA) - (idxB === -1 ? 99 : idxB);
+      const rA = idxA === -1 ? 99 : idxA;
+      const rB = idxB === -1 ? 99 : idxB;
+      return isAsc ? rA - rB : rB - rA;
     }
-    if (sortBy.value === "receipt_desc") {
-      const hasA = a.proof_of_payment ? 1 : 0;
-      const hasB = b.proof_of_payment ? 1 : 0;
-      if (hasA !== hasB) return hasB - hasA;
-      return (new Date(b.created_at || 0)) - (new Date(a.created_at || 0));
+
+    // 18. Total Amount
+    if (field === "total_amount") {
+      const amtA = Number(a.grand_total_payment || a.grand_total || 0);
+      const amtB = Number(b.grand_total_payment || b.grand_total || 0);
+      return isAsc ? amtA - amtB : amtB - amtA;
     }
-    if (sortBy.value === "receipt_asc") {
-      const hasA = a.proof_of_payment ? 1 : 0;
-      const hasB = b.proof_of_payment ? 1 : 0;
-      if (hasA !== hasB) return hasA - hasB;
-      return (new Date(b.created_at || 0)) - (new Date(a.created_at || 0));
+
+    // 19. Age
+    if (field === "age") {
+      const ageA = computeAge(a.birthdate);
+      const ageB = computeAge(b.birthdate);
+      const vA = ageA === null ? (isAsc ? 999 : -1) : ageA;
+      const vB = ageB === null ? (isAsc ? 999 : -1) : ageB;
+      return isAsc ? vA - vB : vB - vA;
     }
-    return 0;
+
+    // 20. Birthdate
+    if (field === "birthdate") {
+      const tA = a.birthdate ? new Date(a.birthdate).getTime() : 0;
+      const tB = b.birthdate ? new Date(b.birthdate).getTime() : 0;
+      return isAsc ? tA - tB : tB - tA;
+    }
+
+    // 21. Confirmed Date
+    if (field === "confirmed_date") {
+      const tA = a.confirmed_at ? new Date(a.confirmed_at).getTime() : 0;
+      const tB = b.confirmed_at ? new Date(b.confirmed_at).getTime() : 0;
+      return isAsc ? tA - tB : tB - tA;
+    }
+
+    // 22. Batch Locked At
+    if (field === "locked_at") {
+      const tA = a.batch_locked_at ? new Date(a.batch_locked_at).getTime() : 0;
+      const tB = b.batch_locked_at ? new Date(b.batch_locked_at).getTime() : 0;
+      return isAsc ? tA - tB : tB - tA;
+    }
+
+    // 23. Fallback for any other column in activeTableColumns (e.g. college_course, college_year, lsu_id, etc.)
+    const valA = String(a[field] ?? "").trim().toLowerCase();
+    const valB = String(b[field] ?? "").trim().toLowerCase();
+    const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: "base" });
+    return isAsc ? cmp : -cmp;
   });
 });
 
@@ -2788,16 +2972,6 @@ const csvParseErrors = ref([]);
 const isImportingCsv = ref(false);
 const csvUploadFileName = ref("");
 
-// ── CSV Import for BEU & HEU Students ──────────────────────────────────────────
-const studentCsvFileInputRef = ref(null);
-const isStudentCsvModalOpen = ref(false);
-const studentImportUnit = ref("BEU"); // "BEU" or "HEU"
-const studentRawRows = ref([]);
-const studentParsedRunners = ref([]);
-const studentSkippedRunners = ref([]);
-const studentCsvUploadFileName = ref("");
-const isImportingStudentCsv = ref(false);
-const studentCsvActiveTab = ref("valid"); // "valid" or "skipped"
 
 const csvImportStats = computed(() => {
   const list = csvParsedRunners.value;
@@ -3110,37 +3284,6 @@ const handleCsvFileSelected = async (event) => {
 
     const rawHeaders = rows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));
 
-    // Check if this CSV is specifically a BEU/HEU Student CSV
-    const isStudentCsv =
-      rawHeaders.some(
-        (h) => h.includes("studentid") || h.includes("studentnumber") || (h.includes("student") && h.includes("id"))
-      ) || (rawHeaders.includes("gradelevel") && rawHeaders.includes("section"));
-
-    if (isStudentCsv) {
-      // Auto-detect unit from file content
-      const firstDataRows = rows.slice(1, 15);
-      const isBeuContent = firstDataRows.some((r) => {
-        const text = r.join(" ").toUpperCase();
-        return (
-          text.includes("JUNIOR HIGH") ||
-          text.includes("SENIOR HIGH") ||
-          text.includes("ELEMENTARY") ||
-          text.includes("PREPARATORY") ||
-          text.includes("KINDER") ||
-          text.includes("BE-") ||
-          text.includes("GRADE")
-        );
-      });
-      studentImportUnit.value = isBeuContent ? "BEU" : "HEU";
-      studentRawRows.value = rows;
-      studentCsvUploadFileName.value = file.name;
-      const { valid, skipped } = parseStudentCsvData(rows, studentImportUnit.value);
-      studentParsedRunners.value = valid;
-      studentSkippedRunners.value = skipped;
-      studentCsvActiveTab.value = valid.length ? "valid" : "skipped";
-      isStudentCsvModalOpen.value = true;
-      return;
-    }
 
     // Find column index matching multiple alias keys
     const getIndex = (aliases) => {
@@ -3344,409 +3487,6 @@ const executeCsvImport = async () => {
     );
   } finally {
     isImportingCsv.value = false;
-  }
-};
-
-// ── STUDENT CSV IMPORT LOGIC (BEU & HEU) ──────────────────────────────────────────
-
-const normalizeStudentDob = (val) => {
-  if (!val) return "";
-  const s = String(val).trim();
-  // Check MM/DD/YYYY or M/D/YYYY
-  const mdy = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
-  if (mdy) {
-    const [, m, d, y] = mdy;
-    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-  // Check YYYY-MM-DD
-  const ymd = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
-  if (ymd) {
-    const [, y, m, d] = ymd;
-    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
-  }
-  return s;
-};
-
-const normalizeStudentMobile = (val) => {
-  if (!val) return "";
-  let digits = String(val).replace(/[^0-9]/g, "");
-  if (!digits) return "";
-  if (digits.length === 10 && digits.startsWith("9")) {
-    digits = "0" + digits;
-  }
-  return digits;
-};
-
-const normalizeStudentGender = (val) => {
-  if (!val) return "Male";
-  const s = String(val).trim().toUpperCase();
-  if (s.startsWith("F")) return "Female";
-  if (s.startsWith("M")) return "Male";
-  return val.trim();
-};
-
-const parseStudentCsvData = (rows, unit = "BEU") => {
-  if (!rows || rows.length < 2) return { valid: [], skipped: [] };
-
-  const rawHeaders = rows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));
-  const getIndex = (aliases, fallbackIdx) => {
-    const idx = rawHeaders.findIndex((h) => aliases.some((a) => h.includes(a)));
-    return idx !== -1 ? idx : fallbackIdx;
-  };
-
-  const colIdx = {
-    student_id: getIndex(["studentid", "studentnumber", "studentno", "lsuid", "idnumber", "studid", "id"], 0),
-    last_name: getIndex(["lastname", "last", "lname", "surname"], 1),
-    first_name: getIndex(["firstname", "first", "fname"], 2),
-    middle_name: getIndex(["middlename", "middle", "mname", "mi"], 3),
-    gender: getIndex(["gender", "sex"], 4),
-    dob: getIndex(["dob", "birthdate", "birth", "bday", "dateofbirth"], 5),
-    grade_level: getIndex(["gradelevel", "grade", "level", "yearlevel", "course", "program"], 6),
-    section: getIndex(["section", "class", "strand"], 7),
-    student_email: getIndex(["studentemail", "email", "mail", "contactemail"], 8),
-    student_mobile: getIndex(["studentmobile", "mobile", "phone", "contactnumber", "cellphone"], 9),
-  };
-
-  const valid = [];
-  const skipped = [];
-  const currentRegs = registrations.value || [];
-  const defaultEmail = unit === "BEU" ? "is@lsu.edu.ph" : "dev@lsu.edu.ph";
-
-  for (let r = 1; r < rows.length; r++) {
-    const row = rows[r];
-    if (!row || row.length === 0 || row.every((c) => !c)) continue;
-
-    const getVal = (idx, fallback = "") => (idx !== -1 && row[idx] !== undefined ? row[idx].trim() : fallback);
-
-    const studentId = getVal(colIdx.student_id);
-    const lastName = getVal(colIdx.last_name);
-    const firstName = getVal(colIdx.first_name);
-    const middleName = getVal(colIdx.middle_name);
-
-    if (!studentId && !lastName && !firstName) continue;
-
-    const rawDob = getVal(colIdx.dob);
-    const birthdate = normalizeStudentDob(rawDob);
-    const gender = normalizeStudentGender(getVal(colIdx.gender));
-    const gradeLevel = getVal(colIdx.grade_level);
-    const section = getVal(colIdx.section);
-    const rawEmail = getVal(colIdx.student_email);
-    const mobile = normalizeStudentMobile(getVal(colIdx.student_mobile));
-
-    // Handle email: use provided student email if valid, otherwise fallback to is@lsu.edu.ph (BEU) or dev@lsu.edu.ph (HEU)
-    let contactEmail = "";
-    let isDefaultEmail = false;
-    const cleanMail = String(rawEmail || "").trim().toLowerCase();
-    if (cleanMail && cleanMail !== "-" && cleanMail !== "n/a" && cleanMail !== "none" && cleanMail !== "null" && cleanMail.includes("@")) {
-      contactEmail = cleanMail;
-      isDefaultEmail = false;
-    } else {
-      contactEmail = defaultEmail;
-      isDefaultEmail = true;
-    }
-
-    // Determine Academic Fields
-    let collegeCourse = "";
-    let collegeYear = gradeLevel;
-    let beuGrade = "";
-    let partnerOffice = section ? `Section: ${section}` : "";
-
-    if (unit === "BEU") {
-      const glUpper = gradeLevel.toUpperCase();
-      if (
-        glUpper.includes("SENIOR HIGH") ||
-        glUpper.includes("GRADE 11") ||
-        glUpper.includes("GRADE 12") ||
-        glUpper.includes("SHS") ||
-        glUpper.includes("HUMSS") ||
-        glUpper.includes("STEM") ||
-        glUpper.includes("ABM") ||
-        glUpper.includes("TVL")
-      ) {
-        collegeCourse = "SHS";
-      } else if (
-        glUpper.includes("JUNIOR HIGH") ||
-        glUpper.includes("GRADE 7") ||
-        glUpper.includes("GRADE 8") ||
-        glUpper.includes("GRADE 9") ||
-        glUpper.includes("GRADE 10") ||
-        glUpper.includes("JHS")
-      ) {
-        collegeCourse = "JHS";
-      } else if (
-        glUpper.includes("ELEMENTARY") ||
-        glUpper.includes("PREPARATORY") ||
-        glUpper.includes("KINDER") ||
-        /GRADE\s*[1-6]\b/i.test(glUpper)
-      ) {
-        collegeCourse = "Grade School";
-      } else {
-        collegeCourse = "BEU";
-      }
-      collegeYear = gradeLevel;
-      beuGrade = section ? `${gradeLevel} - ${section}` : gradeLevel;
-    } else {
-      collegeCourse = gradeLevel || "College";
-      collegeYear = section || "Enrolled";
-      beuGrade = "";
-    }
-
-    const runnerData = {
-      lsu_id_number: studentId,
-      firstname: firstName,
-      lastname: lastName,
-      middlename: middleName,
-      gender,
-      birthdate,
-      raw_dob: rawDob,
-      grade_level: gradeLevel,
-      section,
-      contact_email: contactEmail,
-      is_default_email: isDefaultEmail,
-      contact_number: mobile,
-      run_category: "3KM",
-      category: "3KM",
-      tshirt_size: "Event Shirt: L;",
-      participant_type: "LSU Exclusive - Enrolled Student",
-      college_course: collegeCourse,
-      college_year: collegeYear,
-      beu_grade: beuGrade,
-      partner_office: partnerOffice,
-      contact_address: "La Salle University Ozamiz",
-      organization: unit === "BEU" ? "Basic Education Unit (BEU)" : "Higher Education Unit (HEU)",
-      payment_status: "Confirmed",
-      payment_type: "add_to_tuition",
-      grand_total_payment: "1000",
-      row_number: r + 1,
-    };
-
-    // ── Detect done registered students -> Skip ─────────────────────────
-    const cleanId = String(studentId || "").trim().toLowerCase();
-    const cleanFirst = String(firstName || "").trim().toLowerCase();
-    const cleanLast = String(lastName || "").trim().toLowerCase();
-
-    let matched = null;
-    let skipReason = "";
-
-    // 1. Match by Student ID
-    if (cleanId) {
-      matched = currentRegs.find((reg) => {
-        const regId = String(reg.lsu_id_number || "").trim().toLowerCase();
-        return regId && regId === cleanId;
-      });
-      if (matched) {
-        skipReason = `Matched Student ID: ${matched.lsu_id_number} (BIB: ${matched.run_number || matched.id})`;
-      }
-    }
-
-    // 2. Match by First Name & Last Name
-    if (!matched && cleanFirst && cleanLast) {
-      matched = currentRegs.find((reg) => {
-        const rFirst = String(reg.firstname || "").trim().toLowerCase();
-        const rLast = String(reg.lastname || "").trim().toLowerCase();
-        return rFirst === cleanFirst && rLast === cleanLast;
-      });
-      if (matched) {
-        skipReason = `Matched Name: ${matched.firstname} ${matched.lastname} (BIB: ${matched.run_number || matched.id})`;
-      }
-    }
-
-    // 3. Match by non-generic Email
-    if (!matched && !isDefaultEmail && contactEmail) {
-      matched = currentRegs.find((reg) => {
-        const rMail = String(reg.contact_email || reg.email || "").trim().toLowerCase();
-        return rMail && rMail === contactEmail;
-      });
-      if (matched) {
-        skipReason = `Matched Email: ${matched.contact_email || matched.email} (BIB: ${matched.run_number || matched.id})`;
-      }
-    }
-
-    // 4. In-batch duplicate check
-    if (!matched) {
-      const inBatch = valid.find((v) => {
-        const vId = String(v.lsu_id_number || "").trim().toLowerCase();
-        const vFirst = String(v.firstname || "").trim().toLowerCase();
-        const vLast = String(v.lastname || "").trim().toLowerCase();
-        return (cleanId && vId === cleanId) || (cleanFirst && cleanLast && vFirst === cleanFirst && vLast === cleanLast);
-      });
-      if (inBatch) {
-        skipped.push({
-          ...runnerData,
-          skip_reason: "Duplicate entry within this CSV file",
-          matched_runner: null,
-        });
-        continue;
-      }
-    }
-
-    if (matched) {
-      skipped.push({
-        ...runnerData,
-        skip_reason: skipReason,
-        matched_runner: matched,
-      });
-    } else {
-      valid.push(runnerData);
-    }
-  }
-
-  return { valid, skipped };
-};
-
-// Handle Student CSV File Selection
-const handleStudentCsvFileSelected = async (event) => {
-  const file = event.target?.files?.[0];
-  if (!file) return;
-
-  studentCsvUploadFileName.value = file.name;
-  try {
-    const text = await file.text();
-    const rows = parseCsvText(text);
-
-    if (rows.length < 2) {
-      showNotice("The selected CSV file appears to be empty or has no data rows.", "Empty CSV", "error");
-      return;
-    }
-
-    studentRawRows.value = rows;
-    const { valid, skipped } = parseStudentCsvData(rows, studentImportUnit.value);
-
-    if (!valid.length && !skipped.length) {
-      showNotice("No valid student entries could be extracted from this CSV.", "Parsing Failed", "error");
-      return;
-    }
-
-    studentParsedRunners.value = valid;
-    studentSkippedRunners.value = skipped;
-    studentCsvActiveTab.value = valid.length ? "valid" : "skipped";
-    isStudentCsvModalOpen.value = true;
-  } catch (err) {
-    console.error("Error reading Student CSV file:", err);
-    showNotice("Failed to read CSV file. Please make sure it is a valid .csv file.", "File Read Error", "error");
-  }
-};
-
-// Trigger Student CSV File Selection
-const triggerStudentCsvUpload = (unit = "BEU") => {
-  studentImportUnit.value = unit;
-  if (studentCsvFileInputRef.value) {
-    studentCsvFileInputRef.value.value = "";
-    studentCsvFileInputRef.value.click();
-  }
-};
-
-// Change unit inside the modal and re-parse
-const setStudentImportUnit = (unit) => {
-  studentImportUnit.value = unit;
-  if (studentRawRows.value.length > 0) {
-    const { valid, skipped } = parseStudentCsvData(studentRawRows.value, unit);
-    studentParsedRunners.value = valid;
-    studentSkippedRunners.value = skipped;
-  }
-};
-
-// Download official student CSV template for BEU or HEU
-const downloadStudentCsvTemplate = (unit = "BEU") => {
-  const headers = [
-    "STUDENT ID",
-    "LAST NAME",
-    "FIRST NAME",
-    "MIDDLE NAME",
-    "GENDER",
-    "DOB",
-    "GRADE LEVEL",
-    "SECTION",
-    "STUDENT EMAIL",
-    "STUDENT MOBILE",
-  ];
-
-  const beuRows = [
-    ["11722243", "Abadilla", "Summer Louisse", "J", "F", "11/04/2009", "Junior High - Grade 10", "BE-BR. FIDELIS LEDDY FSC", "summerlouise.abadilla@lsu.edu.ph", "09108804256"],
-    ["200669746", "Abadilla", "Therese Elizabeth", "", "F", "11/07/2014", "Elementary - Grade 6", "BE-BR. ANTHONY FERDINAND FSC", "", "0906916781"],
-    ["260337826", "Abaquita", "Jasmine", "S", "F", "01/27/2012", "Junior High - Grade 9", "BE-BR. HUGH WESTER FSC", "", "09102918665"],
-    ["G11480654", "Ablong", "Dale Dexter", "P", "M", "11/23/2008", "Senior High - Grade 12-STEM-MED", "BE-BR. BERTRAN FRANCISCO FSC", "", "09391868853"],
-    ["G11658006", "Abucay", "Aaron James", "B", "M", "06/08/2010", "Senior High - Grade 11 - STEM - Engineering", "BE-BR. ESTEBAN VICENTE FSC", "aaronabucay2@gmail.com", "09063656905"],
-    ["260070844", "Abejuela", "Xanleigh Myrth", "P", "M", "04/04/2021", "Preparatory - Universal Kindergarten", "BE-ISUK", "jvpabejuela@yahoo.com", "09614889432"],
-  ];
-
-  const heuRows = [
-    ["202100123", "Dela Cruz", "Juan", "M", "M", "05/14/2003", "BSIT", "4th Year", "juan.delacruz@lsu.edu.ph", "09171234567"],
-    ["202200456", "Santos", "Maria", "C", "F", "09/21/2004", "BSBA-MARKETING", "3rd Year", "", "09181234567"],
-    ["202300789", "Reyes", "Carlo", "G", "M", "01/15/2005", "BSN", "2nd Year", "", "09201234567"],
-  ];
-
-  const rows = unit === "HEU" ? heuRows : beuRows;
-  const escapeCol = (val) => {
-    if (val === null || val === undefined) return '""';
-    return `"${String(val).replace(/"/g, '""')}"`;
-  };
-
-  const csvRows = [
-    headers.map(escapeCol).join(","),
-    ...rows.map((row) => row.map(escapeCol).join(",")),
-  ];
-
-  const csvContent = csvRows.join("\r\n");
-  const filename = unit === "HEU" ? "AnimoRun_HEU_Students_Template.csv" : "AnimoRun_BEU_Students_Template.csv";
-  downloadCsvFile(csvContent, filename);
-
-  showNotice(
-    `${unit} Student CSV template downloaded! Columns: STUDENT ID, LAST NAME, FIRST NAME, MIDDLE NAME, GENDER, DOB, GRADE LEVEL, SECTION, STUDENT EMAIL, STUDENT MOBILE.`,
-    "Template Downloaded",
-    "success"
-  );
-};
-
-// Execute bulk student import to backend
-const executeStudentCsvImport = async () => {
-  if (!studentParsedRunners.value.length || isImportingStudentCsv.value) return;
-
-  isImportingStudentCsv.value = true;
-  try {
-    const payload = {
-      is_dashboard: true,
-      participants: studentParsedRunners.value,
-    };
-
-    const res = await $fetch(`${endpoint.value}/api/animorun/create/`, {
-      method: "POST",
-      body: payload,
-    });
-
-    const count = res.count || studentParsedRunners.value.length;
-    const skippedCount = studentSkippedRunners.value.length;
-
-    if (res.runners && Array.isArray(res.runners)) {
-      const newRunners = res.runners;
-      const existingIds = new Set(registrations.value.map((r) => r.id));
-      const filteredNew = newRunners.filter((r) => !existingIds.has(r.id));
-      registrations.value = [...filteredNew, ...registrations.value];
-      persistCache(registrations.value);
-    } else {
-      await fetchRegistrations(true);
-    }
-
-    isStudentCsvModalOpen.value = false;
-    studentParsedRunners.value = [];
-    studentSkippedRunners.value = [];
-    studentRawRows.value = [];
-    if (studentCsvFileInputRef.value) studentCsvFileInputRef.value.value = "";
-
-    showNotice(
-      `🎉 Successfully added ${count} ${studentImportUnit.value} student(s) directly via CSV!\n\n• Category: 3KM\n• Shirt: Event Shirt (Large)\n• Default Email: ${studentImportUnit.value === "BEU" ? "is@lsu.edu.ph" : "dev@lsu.edu.ph"}\n• Skipped: ${skippedCount} already-registered student(s)\n\nRace BIB numbers have been automatically allocated and payment status marked as Confirmed.`,
-      "Students CSV Import Successful",
-      "success"
-    );
-  } catch (err) {
-    console.error("Student CSV import error:", err);
-    showNotice(
-      err?.data?.message || err?.message || "Failed to import students from CSV. Please check the data format and try again.",
-      "Import Failed",
-      "error"
-    );
-  } finally {
-    isImportingStudentCsv.value = false;
   }
 };
 
@@ -4176,6 +3916,165 @@ const downloadBatchCsv = (batch) => {
   showNotice(`Downloaded CSV for ${batch.batch_name} (${runners.length} runners).`, "CSV Downloaded", "success");
 };
 
+// ── Schedule for Batch Distribution Modal ───────────────────────────────────────
+const batchScheduleModal = ref({
+  show: false,
+  selectedBatchId: null,
+  batchName: "Batch 1",
+  distributionDate: "",
+  distributionVenue: "",
+  distributionTime: "",
+  distributionNotes: "",
+  applyToAll: false,
+  isSaving: false,
+});
+
+const sortedBatches = computed(() => {
+  return [...batchesList.value].sort((a, b) => {
+    const numA = Number(a.batch_number) || (parseInt(String(a.batch_name).match(/\d+/)?.[0] || '0', 10));
+    const numB = Number(b.batch_number) || (parseInt(String(b.batch_name).match(/\d+/)?.[0] || '0', 10));
+    return numA - numB;
+  });
+});
+
+const openBatchScheduleModal = async (batch = null) => {
+  try {
+    await fetchBatches();
+  } catch (e) {
+    console.warn("Could not fetch batches:", e);
+  }
+
+  let target = batch;
+  if (!target && batchScheduleModal.value.selectedBatchId) {
+    target = batchesList.value.find((b) => b.id === batchScheduleModal.value.selectedBatchId);
+  }
+  if (!target && batchesList.value.length > 0) {
+    target = sortedBatches.value[0] || batchesList.value[0];
+  }
+  selectBatchForSchedule(target);
+  batchScheduleModal.value.show = true;
+};
+
+const selectBatchForSchedule = (b) => {
+  if (b) {
+    batchScheduleModal.value.selectedBatchId = b.id || null;
+    batchScheduleModal.value.batchName = b.batch_name || "Batch 1";
+    batchScheduleModal.value.distributionDate = b.distribution_date || "November 09 – 13, 2026";
+    batchScheduleModal.value.distributionVenue = b.distribution_venue || "LSU Student Center - Claiming Station";
+    batchScheduleModal.value.distributionTime = b.distribution_time || "8:00 AM – 5:00 PM";
+    batchScheduleModal.value.distributionNotes = b.distribution_notes || "Please present your Official Claim Pass QR code and valid ID.";
+  } else {
+    batchScheduleModal.value.selectedBatchId = null;
+    batchScheduleModal.value.batchName = "Batch 1";
+    batchScheduleModal.value.distributionDate = "November 09 – 13, 2026";
+    batchScheduleModal.value.distributionVenue = "LSU Student Center - Claiming Station";
+    batchScheduleModal.value.distributionTime = "8:00 AM – 5:00 PM";
+    batchScheduleModal.value.distributionNotes = "Please present your Official Claim Pass QR code and valid ID.";
+  }
+};
+
+const closeBatchScheduleModal = () => {
+  batchScheduleModal.value.show = false;
+};
+
+const setSchedulePreset = (field, value) => {
+  if (field === "date") batchScheduleModal.value.distributionDate = value;
+  if (field === "venue") batchScheduleModal.value.distributionVenue = value;
+  if (field === "time") batchScheduleModal.value.distributionTime = value;
+};
+
+const saveBatchSchedule = async () => {
+  const modal = batchScheduleModal.value;
+  const targetBatchName = (modal.batchName || "").trim() || "Batch 1";
+  const numMatch = targetBatchName.match(/\d+/);
+  const batchNum = numMatch ? parseInt(numMatch[0], 10) : 1;
+
+  modal.isSaving = true;
+
+  const scheduleData = {
+    distribution_date: (modal.distributionDate || "").trim(),
+    distribution_venue: (modal.distributionVenue || "").trim(),
+    distribution_time: (modal.distributionTime || "").trim(),
+    distribution_notes: (modal.distributionNotes || "").trim(),
+  };
+
+  const syncLocalBatches = (serverBatch = null) => {
+    if (modal.applyToAll) {
+      batchesList.value = batchesList.value.map((b) => ({
+        ...b,
+        ...scheduleData,
+      }));
+    } else {
+      const idx = batchesList.value.findIndex(
+        (b) => (modal.selectedBatchId && b.id === modal.selectedBatchId) ||
+               (b.batch_name && b.batch_name.toLowerCase() === targetBatchName.toLowerCase())
+      );
+      if (idx !== -1) {
+        batchesList.value[idx] = {
+          ...batchesList.value[idx],
+          ...scheduleData,
+          ...(serverBatch || {}),
+        };
+      } else {
+        const newBatch = serverBatch || {
+          id: modal.selectedBatchId || Date.now(),
+          batch_name: targetBatchName,
+          batch_number: batchNum,
+          total_runners: 0,
+          ...scheduleData,
+        };
+        batchesList.value.push(newBatch);
+      }
+    }
+    persistBatchesCache(batchesList.value);
+  };
+
+  try {
+    const payload = {
+      id: modal.selectedBatchId,
+      batch_name: targetBatchName,
+      batch_number: batchNum,
+      apply_to_all: modal.applyToAll,
+      ...scheduleData,
+    };
+
+    const res = await $fetch(`${endpoint.value}/api/animorun/batch/schedule/`, {
+      method: "POST",
+      body: payload,
+    });
+
+    if (res && res.batches && Array.isArray(res.batches)) {
+      batchesList.value = res.batches;
+      persistBatchesCache(batchesList.value);
+      if (res.batch) modal.selectedBatchId = res.batch.id;
+    } else if (res && res.batch) {
+      modal.selectedBatchId = res.batch.id;
+      syncLocalBatches(res.batch);
+    } else {
+      syncLocalBatches();
+    }
+
+    const successMsg = modal.applyToAll
+      ? "Claiming distribution schedule applied to ALL batches!"
+      : (res?.message || `Claiming schedule for ${targetBatchName} saved successfully!`);
+
+    showNotice(successMsg, "Schedule Updated", "success");
+    showFastToast(`Schedule for ${targetBatchName} updated!`, "success");
+  } catch (err) {
+    console.error("Error saving batch distribution schedule:", err);
+    // Even if backend fails or network error occurs, preserve and apply to local storage
+    syncLocalBatches();
+    const errMsg = err?.data?.error || err?.message || "Saved locally";
+    showNotice(
+      `Distribution schedule for ${targetBatchName} updated successfully in local session. (Sync note: ${errMsg})`,
+      "Schedule Saved",
+      "success"
+    );
+    showFastToast(`Schedule for ${targetBatchName} updated!`, "success");
+  } finally {
+    modal.isSaving = false;
+  }
+};
 
 // ── Communication Chat (Admin Side) ─────────────────────────────────────────────
 const chatMessages = ref([]);
@@ -5238,6 +5137,15 @@ const closeRunnerQrPassModal = () => {
                 </span>
               </button>
 
+              <!-- Schedule for Batch Distribution button -->
+              <button type="button" @click="openBatchScheduleModal()" :class="[
+                'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs',
+                props.darkMode ? 'bg-teal-900/40 hover:bg-teal-900/60 border-teal-700/60 text-teal-200' : 'bg-teal-700 hover:bg-teal-800 border-teal-800 text-white'
+              ]" title="Schedule for Batch Distribution">
+                <i class="fas fa-calendar-check text-[11px] text-amber-300"></i>
+                <span class="hidden md:inline">Distribution Schedule</span>
+              </button>
+
               <!-- Messages / Chat Inquiry Filter button -->
               <button type="button" @click="toggleChatFilter" :class="[
                 'px-2.5 sm:px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer border shadow-xs select-none',
@@ -5804,45 +5712,6 @@ const closeRunnerQrPassModal = () => {
                         @change="handleCsvFileSelected" />
                     </div>
 
-                    <!-- ── STUDENT CSV IMPORT ACTIONS (BEU / HEU STUDENTS) ── -->
-                    <div
-                      class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
-                      <span class="text-[10px] font-bold text-gray-400 uppercase mr-1 flex items-center gap-1">
-                        <i class="fas fa-user-graduate text-sky-500 text-[11px]"></i> Students:
-                      </span>
-                      <!-- Upload BEU Button -->
-                      <button type="button" @click="triggerStudentCsvUpload('BEU')"
-                        class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-sky-600 hover:bg-sky-700 text-white border-sky-600 shadow-xs active:scale-95"
-                        title="Upload CSV for Basic Education Unit (BEU) Students (Defaults: 3KM, Event Shirt Large, is@lsu.edu.ph)">
-                        <i class="fas fa-school text-white text-[10px]"></i>
-                        <span>Import BEU</span>
-                      </button>
-                      <!-- Upload HEU Button -->
-                      <button type="button" @click="triggerStudentCsvUpload('HEU')"
-                        class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600 shadow-xs active:scale-95"
-                        title="Upload CSV for Higher Education Unit (HEU) Students (Defaults: 3KM, Event Shirt Large, dev@lsu.edu.ph)">
-                        <i class="fas fa-graduation-cap text-white text-[10px]"></i>
-                        <span>Import HEU</span>
-                      </button>
-                      <!-- BEU Template Download -->
-                      <button type="button" @click="downloadStudentCsvTemplate('BEU')"
-                        class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-sky-50 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-sky-300 active:scale-95"
-                        title="Download BEU Students CSV Template (STUDENT ID, LAST NAME, FIRST NAME, MIDDLE NAME, GENDER, DOB, GRADE LEVEL, SECTION, STUDENT EMAIL, STUDENT MOBILE)">
-                        <i class="fas fa-download text-sky-600 dark:text-sky-400 text-[10px]"></i>
-                        <span>BEU Template</span>
-                      </button>
-                      <!-- HEU Template Download -->
-                      <button type="button" @click="downloadStudentCsvTemplate('HEU')"
-                        class="px-2 py-0.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer border select-none bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 hover:text-indigo-700 dark:hover:text-indigo-300 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700 shadow-xs hover:border-indigo-300 active:scale-95"
-                        title="Download HEU Students CSV Template">
-                        <i class="fas fa-download text-indigo-600 dark:text-indigo-400 text-[10px]"></i>
-                        <span>HEU Template</span>
-                      </button>
-                      <!-- Hidden file input for Student CSV selection -->
-                      <input ref="studentCsvFileInputRef" type="file" accept=".csv,text/csv" class="hidden"
-                        @change="handleStudentCsvFileSelected" />
-                    </div>
-
                     <!-- ── SLOT ALLOCATION ACTIONS (ADJUST RUNNER SLOTS) ── -->
                     <div
                       class="flex items-center whitespace-nowrap gap-1 px-2 py-1 rounded-xl border dark:border-gray-700 bg-slate-100/70 dark:bg-gray-900/60 shadow-xs">
@@ -5969,17 +5838,34 @@ const closeRunnerQrPassModal = () => {
                     ]">
                       <option value="date_desc">📅 Date: Latest → Oldest</option>
                       <option value="date_asc">📅 Date: Oldest → Latest</option>
+                      <option value="name_asc">👤 Full Name (Last): A-Z</option>
+                      <option value="name_desc">👤 Full Name (Last): Z-A</option>
                       <option value="firstname_asc">🔤 First Name: Ascending (A-Z)</option>
                       <option value="firstname_desc">🔤 First Name: Descending (Z-A)</option>
                       <option value="lastname_asc">👤 Last Name: Ascending (A-Z)</option>
                       <option value="lastname_desc">👤 Last Name: Descending (Z-A)</option>
-                      <option value="name_asc">👤 Full Name (Last): A-Z</option>
-                      <option value="name_desc">👤 Full Name (Last): Z-A</option>
-                      <option value="bib_asc">🔢 Race Bib #: Ascending</option>
-                      <option value="batch_asc">📦 Supplier Batch: Ascending</option>
-                      <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
+                      <option value="category_asc">🏃 Category: 1KM → 20KM</option>
+                      <option value="category_desc">🏃 Category: 20KM → 1KM</option>
+                      <option value="classification_asc">🏷️ Classification: A-Z</option>
+                      <option value="classification_desc">🏷️ Classification: Z-A</option>
+                      <option value="payment_option_asc">💳 Payment Option: A-Z</option>
+                      <option value="payment_option_desc">💳 Payment Option: Z-A</option>
+                      <option value="payment_status_asc">📊 Payment Status: A-Z</option>
+                      <option value="payment_status_desc">📊 Payment Status: Z-A</option>
                       <option value="receipt_desc">🧾 Receipt: Has Receipt First</option>
                       <option value="receipt_asc">🧾 Receipt: Without Receipt First</option>
+                      <option value="messages_desc">💬 Messages: Newest / Most First</option>
+                      <option value="messages_asc">💬 Messages: Fewest / None First</option>
+                      <option value="kit_desc">📦 Race Kit: Claimed First</option>
+                      <option value="kit_asc">📦 Race Kit: Pending First</option>
+                      <option value="bib_asc">🔢 Race Bib #: Ascending</option>
+                      <option value="bib_desc">🔢 Race Bib #: Descending</option>
+                      <option value="batch_asc">📦 Supplier Batch: Ascending</option>
+                      <option value="batch_desc">📦 Supplier Batch: Descending</option>
+                      <option value="shirt_asc">👕 T-Shirt Size: S → XL</option>
+                      <option value="shirt_desc">👕 T-Shirt Size: XL → S</option>
+                      <option value="total_amount_desc">💰 Amount: Highest → Lowest</option>
+                      <option value="total_amount_asc">💰 Amount: Lowest → Highest</option>
                     </select>
                   </div>
                 </div>
@@ -6383,70 +6269,82 @@ const closeRunnerQrPassModal = () => {
 
                 <!-- Dynamic Columns Header driven by selectedCsvColumns -->
                 <th v-for="col in activeTableColumns" :key="col.key" :class="[
-                  'p-3 transition select-none',
-                  col.key === 'receipt' ? 'text-center' : '',
-                  ['race_bib', 'reg_id', 'full_name', 'firstname', 'lastname', 'batch', 'reg_date', 'receipt'].includes(col.key) ? 'cursor-pointer hover:text-emerald-500' : ''
+                  'p-3 transition select-none cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 group',
+                  col.key === 'receipt' ? 'text-center' : ''
                 ]"
-                  @click="['race_bib', 'reg_id'].includes(col.key) ? toggleSort('bib') : col.key === 'firstname' ? toggleSort('firstname') : col.key === 'lastname' ? toggleSort('lastname') : col.key === 'full_name' ? toggleSort('name') : col.key === 'batch' ? toggleSort('batch') : col.key === 'reg_date' ? toggleSort('date') : col.key === 'receipt' ? toggleSort('receipt') : null">
-                  {{ col.label }}
-                  <i v-if="['race_bib', 'reg_id'].includes(col.key)" :class="[
-                    'fas ml-1 text-[10px]',
-                    sortBy === 'bib_asc' ? 'fa-sort-up text-emerald-600' : 'fa-sort text-gray-400'
-                  ]"></i>
-                  <i v-else-if="col.key === 'firstname'" :class="[
-                    'fas ml-1 text-[10px]',
-                    sortBy === 'firstname_asc' ? 'fa-sort-alpha-down text-emerald-600' : sortBy === 'firstname_desc' ? 'fa-sort-alpha-up text-emerald-600' : 'fa-sort text-gray-400'
-                  ]"></i>
-                  <i v-else-if="col.key === 'lastname'" :class="[
-                    'fas ml-1 text-[10px]',
-                    sortBy === 'lastname_asc' ? 'fa-sort-alpha-down text-emerald-600' : sortBy === 'lastname_desc' ? 'fa-sort-alpha-up text-emerald-600' : 'fa-sort text-gray-400'
-                  ]"></i>
-                  <i v-else-if="col.key === 'full_name'" :class="[
-                    'fas ml-1 text-[10px]',
-                    sortBy === 'name_asc' ? 'fa-sort-alpha-down text-emerald-600' : sortBy === 'name_desc' ? 'fa-sort-alpha-up text-emerald-600' : 'fa-sort text-gray-400'
-                  ]"></i>
-                  <i v-else-if="col.key === 'batch'" :class="[
-                    'fas ml-1 text-[10px]',
-                    sortBy === 'batch_asc' ? 'fa-sort-amount-down text-emerald-600' : 'fa-sort text-gray-400'
-                  ]"></i>
-                  <i v-else-if="col.key === 'reg_date'" :class="[
-                    'fas ml-1 text-[10px]',
-                    sortBy === 'date_desc' ? 'fa-sort-numeric-down text-emerald-600' : sortBy === 'date_asc' ? 'fa-sort-numeric-up text-emerald-600' : 'fa-sort text-gray-400'
-                  ]"></i>
-                  <i v-else-if="col.key === 'receipt'" :class="[
-                    'fas ml-1 text-[10px]',
-                    sortBy === 'receipt_desc' ? 'fa-sort-amount-down text-emerald-600' : sortBy === 'receipt_asc' ? 'fa-sort-amount-up text-emerald-600' : 'fa-sort text-gray-400'
-                  ]"></i>
+                  @click="toggleSort(col.key)"
+                  :title="`Click to sort by ${col.label} (${getSortDirection(col.key) === 'asc' ? 'Descending' : 'Ascending'})`">
+                  <div class="inline-flex items-center gap-1.5" :class="col.key === 'receipt' ? 'justify-center w-full' : ''">
+                    <span>{{ col.label }}</span>
+                    <span class="inline-flex items-center shrink-0">
+                      <i v-if="getSortDirection(col.key) === 'asc'"
+                        class="fas fa-sort-up text-emerald-600 dark:text-emerald-400 text-[11px] -mb-1"></i>
+                      <i v-else-if="getSortDirection(col.key) === 'desc'"
+                        class="fas fa-sort-down text-emerald-600 dark:text-emerald-400 text-[11px] -mt-1"></i>
+                      <i v-else
+                        class="fas fa-sort text-gray-300 dark:text-gray-600 group-hover:text-emerald-500 text-[10px] transition-colors"></i>
+                    </span>
+                  </div>
                 </th>
 
                 <!-- Messages / Chat Column Header (Red box in user's layout) -->
                 <th class="p-3 text-center whitespace-nowrap">
-                  <span
-                    class="inline-flex items-center gap-1.5 cursor-pointer hover:text-emerald-500 transition select-none"
-                    @click="toggleChatFilter"
-                    :title="`Click to filter runners with new queries (${totalNewQueriesCount} new)`">
-                    <i class="fas fa-comments text-emerald-600 dark:text-emerald-400 text-xs"></i>
-                    <span>Messages</span>
-                    <span v-if="totalNewQueriesCount > 0"
-                      class="px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-black text-[9px] animate-pulse">
-                      {{ totalNewQueriesCount }} NEW
+                  <div class="inline-flex items-center justify-center gap-1.5 select-none">
+                    <span
+                      class="inline-flex items-center gap-1.5 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition group"
+                      @click="toggleSort('messages')"
+                      :title="`Click to sort by messages (${getSortDirection('messages') === 'asc' ? 'Descending' : 'Ascending'})`">
+                      <i class="fas fa-comments text-emerald-600 dark:text-emerald-400 text-xs"></i>
+                      <span>Messages</span>
+                      <span class="inline-flex items-center shrink-0">
+                        <i v-if="getSortDirection('messages') === 'asc'"
+                          class="fas fa-sort-up text-emerald-600 dark:text-emerald-400 text-[11px] -mb-1"></i>
+                        <i v-else-if="getSortDirection('messages') === 'desc'"
+                          class="fas fa-sort-down text-emerald-600 dark:text-emerald-400 text-[11px] -mt-1"></i>
+                        <i v-else
+                          class="fas fa-sort text-gray-300 dark:text-gray-600 group-hover:text-emerald-500 text-[10px] transition-colors"></i>
+                      </span>
                     </span>
-                  </span>
+                    <button v-if="totalNewQueriesCount > 0" type="button"
+                      @click.stop="toggleChatFilter"
+                      class="px-1.5 py-0.2 rounded-full bg-rose-600 text-white font-black text-[9px] animate-pulse cursor-pointer hover:bg-rose-700"
+                      :title="`Click to filter runners with new queries (${totalNewQueriesCount} new)`">
+                      {{ totalNewQueriesCount }} NEW
+                    </button>
+                    <button v-else-if="selectedChatFilter !== 'all'" type="button"
+                      @click.stop="toggleChatFilter"
+                      class="px-1 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-[9px] cursor-pointer"
+                      title="Clear chat filter">
+                      Filtered
+                    </button>
+                  </div>
                 </th>
 
                 <!-- Race Kit Status Column Header (Red box in user's layout) -->
                 <th class="p-3 text-center whitespace-nowrap">
-                  <span
-                    class="inline-flex items-center gap-1.5 cursor-pointer hover:text-emerald-500 transition select-none"
-                    @click="selectedKitStatus = selectedKitStatus === 'All' ? 'ready' : selectedKitStatus === 'ready' ? 'claimed' : 'All'"
-                    :title="`Click to cycle kit filters (Current: ${selectedKitStatus})`">
-                    <i class="fas fa-box-archive text-emerald-600 dark:text-emerald-400 text-xs"></i>
-                    <span>Race Kit</span>
-                    <span v-if="selectedKitStatus !== 'All'"
-                      class="px-1.5 py-0.2 rounded-full bg-emerald-600 text-white font-black text-[9px] uppercase">
-                      {{ selectedKitStatus }}
+                  <div class="inline-flex items-center justify-center gap-1.5 select-none">
+                    <span
+                      class="inline-flex items-center gap-1.5 cursor-pointer hover:text-emerald-600 dark:hover:text-emerald-400 transition group"
+                      @click="toggleSort('race_kit')"
+                      :title="`Click to sort by Race Kit status (${getSortDirection('race_kit') === 'asc' ? 'Descending' : 'Ascending'})`">
+                      <i class="fas fa-box-archive text-emerald-600 dark:text-emerald-400 text-xs"></i>
+                      <span>Race Kit</span>
+                      <span class="inline-flex items-center shrink-0">
+                        <i v-if="getSortDirection('race_kit') === 'asc'"
+                          class="fas fa-sort-up text-emerald-600 dark:text-emerald-400 text-[11px] -mb-1"></i>
+                        <i v-else-if="getSortDirection('race_kit') === 'desc'"
+                          class="fas fa-sort-down text-emerald-600 dark:text-emerald-400 text-[11px] -mt-1"></i>
+                        <i v-else
+                          class="fas fa-sort text-gray-300 dark:text-gray-600 group-hover:text-emerald-500 text-[10px] transition-colors"></i>
+                      </span>
                     </span>
-                  </span>
+                    <button v-if="selectedKitStatus !== 'All'" type="button"
+                      @click.stop="selectedKitStatus = selectedKitStatus === 'ready' ? 'claimed' : 'All'"
+                      class="px-1.5 py-0.2 rounded-full bg-emerald-600 text-white font-black text-[9px] uppercase cursor-pointer hover:bg-emerald-700"
+                      :title="`Kit filter active: ${selectedKitStatus}. Click to cycle.`">
+                      {{ selectedKitStatus }}
+                    </button>
+                  </div>
                 </th>
 
                 <th class="p-3 text-center">Actions</th>
@@ -8321,9 +8219,9 @@ const closeRunnerQrPassModal = () => {
           <h3 class="text-lg font-black tracking-tight">
             {{ toastModal.title }}
           </h3>
-          <!-- <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 leading-relaxed whitespace-pre-line px-2">
+          <p class="text-xs text-gray-600 dark:text-gray-300 mt-2 leading-relaxed whitespace-pre-line px-2">
             {{ toastModal.message }} 
-          </p> -->
+          </p>
         </div>
 
         <div class="pt-2">
@@ -8716,6 +8614,13 @@ const closeRunnerQrPassModal = () => {
               </div>
 
               <div class="flex items-center gap-2">
+                <!-- Schedule for Batch Distribution Button -->
+                <button type="button" @click="() => { closeBatchHistoryModal(); openBatchScheduleModal(b); }"
+                  class="px-3 py-1.5 rounded-xl border border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-950 font-bold text-xs transition flex items-center gap-1 cursor-pointer"
+                  title="Configure kit claiming schedule for this batch">
+                  <i class="fas fa-calendar-alt text-amber-500"></i>
+                  <span>Schedule Distribution</span>
+                </button>
 
                 <!-- Superadmin Toggle Lock -->
                 <button type="button" @click="openUnlockPrompt(b, 'batch')"
@@ -8734,6 +8639,17 @@ const closeRunnerQrPassModal = () => {
               <div><strong>Date:</strong> {{ b.created_at_formatted || b.created_at }}</div>
             </div>
 
+            <!-- Distribution Schedule Info if set -->
+            <div v-if="b.distribution_date"
+              class="p-2.5 rounded-xl bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 text-[11px] text-teal-900 dark:text-teal-200 flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-bold text-teal-800 dark:text-teal-300"><i class="fas fa-calendar-check mr-1 text-teal-600"></i>Claiming Period:</span>
+                <span class="font-extrabold text-teal-950 dark:text-teal-100">{{ b.distribution_date }}</span>
+                <span v-if="b.distribution_venue" class="text-gray-600 dark:text-gray-300">&bull; 📍 {{ b.distribution_venue }}</span>
+                <span v-if="b.distribution_time" class="text-gray-500 dark:text-gray-400">&bull; 🕒 {{ b.distribution_time }}</span>
+              </div>
+              <span class="px-2 py-0.5 rounded-md bg-teal-200 dark:bg-teal-900 text-teal-800 dark:text-teal-200 text-[10px] font-bold">Scheduled</span>
+            </div>
 
           </div>
         </div>
@@ -8748,6 +8664,154 @@ const closeRunnerQrPassModal = () => {
             class="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold text-xs transition cursor-pointer">
             Close
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SCHEDULE FOR BATCH DISTRIBUTION MODAL ───────────────────────── -->
+    <div v-if="batchScheduleModal.show"
+      class="fixed inset-0 z-[65] flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-sm overflow-y-auto"
+      @click.self="closeBatchScheduleModal">
+      <div :class="[
+        'relative w-full max-w-3xl rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all space-y-5 max-h-[92vh] overflow-y-auto',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b pb-3 dark:border-gray-700">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-teal-100 dark:bg-teal-950/80 text-teal-600 dark:text-teal-400 flex items-center justify-center text-lg font-bold shadow-sm">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div>
+              <h3 class="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
+                <span>Schedule for Batch Distribution</span>
+              </h3>
+            </div>
+          </div>
+          <button type="button" @click="closeBatchScheduleModal"
+            class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-rose-500 hover:text-white transition flex items-center justify-center font-bold text-xs cursor-pointer">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        
+        <!-- Live Visual Preview of Email Kit Claiming Banner (Big Center) -->
+        <div class="p-4 rounded-2xl border bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/40 dark:to-teal-950/30 border-teal-200 dark:border-teal-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
+              <i class="fas fa-eye text-teal-600"></i>
+              Live Email Template Preview (Big Center After Banner)
+            </span>
+          </div>
+          <!-- Card replica -->
+          <div class="text-center p-4 rounded-xl border-2 border-emerald-500 bg-white dark:bg-gray-900 shadow-sm space-y-1.5">
+            <span class="inline-block px-3 py-1 bg-emerald-900 text-emerald-300 rounded-full text-[10px] font-black tracking-widest uppercase">
+              CLAIMING PERIOD &amp; BATCH ASSIGNMENT
+            </span>
+            <div class="text-3xl font-black text-emerald-900 dark:text-emerald-300 tracking-wide uppercase">
+              {{ batchScheduleModal.batchName || 'BATCH 1' }}
+            </div>
+            <div class="text-base font-extrabold text-emerald-700 dark:text-emerald-400">
+              {{ batchScheduleModal.distributionDate || 'November 09 – 13, 2026' }}
+            </div>
+            <div class="flex items-center justify-center gap-3 text-[11px] text-gray-600 dark:text-gray-300 font-semibold flex-wrap pt-1">
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
+                🕒 Hours: {{ batchScheduleModal.distributionTime || '8:00 AM – 5:00 PM' }}
+              </span>
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
+                📍 Venue: {{ batchScheduleModal.distributionVenue || 'LSU Campus - Student Center' }}
+              </span>
+            </div>
+            <p v-if="batchScheduleModal.distributionNotes" class="text-[10.5px] text-emerald-700 dark:text-emerald-400 italic pt-1">
+              {{ batchScheduleModal.distributionNotes }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Form Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs ">
+          <!-- Batch Name -->
+          <div>
+            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Batch Name / Code</label>
+            <input v-model="batchScheduleModal.batchName" :class="inputCls" class="w-full font-bold" placeholder="e.g. Batch 1" />
+          </div>
+
+          <!-- Distribution Period / Date Range -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="font-bold text-gray-700 dark:text-gray-300">Date of Period Distribution</label>
+            </div>
+            <input v-model="batchScheduleModal.distributionDate" :class="inputCls" class="w-full font-semibold" placeholder="e.g. November 09 – 13, 2026" />
+          </div>
+
+          <!-- Claiming Venue -->
+          <div>
+            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Claiming Venue / Station</label>
+            <input v-model="batchScheduleModal.distributionVenue" :class="inputCls" class="w-full" placeholder="e.g. LSU Campus - Student Center Claiming Desk" />
+          </div>
+
+          <!-- Claiming Operating Hours -->
+          <div>
+            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Claiming Hours</label>
+            <input v-model="batchScheduleModal.distributionTime" :class="inputCls" class="w-full" placeholder="e.g. 8:00 AM – 5:00 PM" />
+          </div>
+
+          <!-- Claiming Notes / Reminders -->
+          <div class="md:col-span-4">
+            <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Claiming Desk Instructions / Notes</label>
+            <textarea v-model="batchScheduleModal.distributionNotes" rows="2" :class="inputCls" class="w-full" placeholder="e.g. Please present your Official Claim Pass QR code and valid ID upon claiming."></textarea>
+          </div>
+        </div>
+
+
+        <!-- All Batches Schedule Summary Table -->
+        <div v-if="batchesList.length > 0" class="border rounded-2xl overflow-hidden dark:border-gray-700 text-xs">
+          <div class="p-2.5 bg-slate-100 dark:bg-gray-900 font-bold text-gray-700 dark:text-gray-300 flex items-center justify-between border-b dark:border-gray-700">
+            <span>All Finalized Batches Claiming Status</span>
+            <span class="text-[11px] text-gray-500">{{ sortedBatches.length }} total batches</span>
+          </div>
+          <div class="divide-y dark:divide-gray-700 max-h-48 overflow-y-auto">
+            <div v-for="b in sortedBatches" :key="b.id || b.batch_name"
+              class="p-2.5 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-gray-700/50 transition">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="px-2 py-0.5 rounded-lg bg-amber-500 text-white font-black text-[11px]">
+                  {{ b.batch_name }}
+                </span>
+                <span class="text-gray-500 text-[11px] font-semibold">({{ b.total_runners || 0 }} runners)</span>
+                <span v-if="b.distribution_date" class="text-teal-700 dark:text-teal-300 font-bold">
+                  {{ b.distribution_date }}
+                </span>
+                <span v-else class="text-amber-600 dark:text-amber-400 font-medium italic text-[11px]">
+                  No schedule set
+                </span>
+              </div>
+              <button type="button" @click="selectBatchForSchedule(b)"
+                class="px-2.5 py-1 rounded-lg border border-teal-300 dark:border-teal-700 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950 font-bold text-[11px] cursor-pointer">
+                Edit
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="pt-3 border-t dark:border-gray-700 flex items-center justify-between gap-3">
+            <label class="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300 font-semibold cursor-pointer select-none w-full">
+              <input type="checkbox" v-model="batchScheduleModal.applyToAll" class="rounded text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer" />
+              <span>Apply to all batches</span>
+            </label>
+          <div class="flex items-center gap-3">
+
+            <button type="button" @click="closeBatchScheduleModal"
+              class="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold text-xs transition cursor-pointer">
+              Close
+            </button>
+            <button type="button" @click="saveBatchSchedule" :disabled="batchScheduleModal.isSaving"
+              class="px-5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md hover:shadow-lg transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50">
+              <i v-if="batchScheduleModal.isSaving" class="fas fa-spinner fa-spin"></i>
+              <i v-else class="fas fa-save"></i>
+              <span class="whitespace-nowrap">{{ batchScheduleModal.isSaving ? 'Saving Schedule...' : (batchScheduleModal.applyToAll ? 'Save to All Batches' : 'Save') }}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -9371,293 +9435,6 @@ const closeRunnerQrPassModal = () => {
       </div>
     </div>
 
-    <!-- ── STUDENT CSV IMPORT PREVIEW MODAL (BEU / HEU DIRECT IMPORT) ── -->
-    <div v-if="isStudentCsvModalOpen"
-      class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm overflow-y-auto"
-      @click.self="isStudentCsvModalOpen = false">
-      <div :class="[
-        'relative w-full max-w-5xl rounded-3xl p-5 sm:p-7 shadow-2xl border transition-all space-y-4 overflow-hidden max-h-[94vh] flex flex-col',
-        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
-      ]">
-        <!-- Top Gradient Accent Bar (Sky to Indigo to Purple) -->
-        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500">
-        </div>
-
-        <!-- Modal Header -->
-        <div class="flex items-start justify-between border-b pb-3.5 dark:border-gray-700 shrink-0">
-          <div class="flex items-center gap-3">
-            <div
-              class="w-11 h-11 rounded-2xl bg-sky-100 dark:bg-sky-950/80 text-sky-600 dark:text-sky-400 flex items-center justify-center text-xl font-bold shadow-xs">
-              <i class="fas fa-user-graduate"></i>
-            </div>
-            <div>
-              <div class="flex items-center gap-2 flex-wrap">
-                <h3 class="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
-                  Import {{ studentImportUnit }} Students from CSV
-                </h3>
-                <span
-                  class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 border border-sky-300 dark:border-sky-700">
-                  {{ studentParsedRunners.length }} Ready
-                </span>
-                <span v-if="studentSkippedRunners.length > 0"
-                  class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
-                  {{ studentSkippedRunners.length }} Skipped (Already Registered)
-                </span>
-              </div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                File: <strong class="text-sky-600 dark:text-sky-400">{{ studentCsvUploadFileName }}</strong> · Detecting
-                duplicates, mapping academic records & shirt sizes
-              </p>
-            </div>
-          </div>
-          <button type="button" @click="isStudentCsvModalOpen = false"
-            class="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-500 flex items-center justify-center cursor-pointer transition">
-            <i class="fas fa-times text-xs"></i>
-          </button>
-        </div>
-
-        <!-- Student Unit Selector & Preset Settings Banner -->
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3 rounded-2xl bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/60 shrink-0">
-          <div class="flex items-center gap-2">
-            <span class="text-xs font-bold text-gray-600 dark:text-gray-300">Target Unit:</span>
-            <div class="inline-flex rounded-xl p-0.5 bg-white dark:bg-gray-800 border dark:border-gray-700 shadow-xs">
-              <button type="button" @click="setStudentImportUnit('BEU')" :class="[
-                'px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer',
-                studentImportUnit === 'BEU'
-                  ? 'bg-sky-600 text-white shadow-xs'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-sky-600'
-              ]">
-                <i class="fas fa-school text-[11px]"></i>
-                <span>BEU (Basic Education)</span>
-              </button>
-              <button type="button" @click="setStudentImportUnit('HEU')" :class="[
-                'px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer',
-                studentImportUnit === 'HEU'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-indigo-600'
-              ]">
-                <i class="fas fa-graduation-cap text-[11px]"></i>
-                <span>HEU (Higher Education)</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Configuration pills -->
-          <div class="flex items-center gap-2 flex-wrap text-[11px] text-gray-600 dark:text-gray-300">
-            <span
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
-              <i class="fas fa-person-running text-red-500"></i> Category: <strong
-                class="text-red-600 dark:text-red-400">3KM</strong>
-            </span>
-            <span
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
-              <i class="fas fa-shirt text-emerald-500"></i> Shirt: <strong
-                class="text-emerald-600 dark:text-emerald-400">Event Shirt: Large</strong>
-            </span>
-            <span
-              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 font-bold">
-              <i class="fas fa-envelope text-blue-500"></i> Default Email: <strong
-                class="text-blue-600 dark:text-blue-400 font-mono">{{ studentImportUnit === 'BEU' ? 'is@lsu.edu.ph' :
-                'dev@lsu.edu.ph' }}</strong>
-            </span>
-          </div>
-        </div>
-
-        <!-- Navigation Tabs: Ready vs Skipped -->
-        <div class="flex items-center justify-between gap-2 border-b dark:border-gray-700 pb-1 shrink-0">
-          <div class="flex items-center gap-2">
-            <button type="button" @click="studentCsvActiveTab = 'valid'" :class="[
-              'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border',
-              studentCsvActiveTab === 'valid'
-                ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
-            ]">
-              <i class="fas fa-check-circle text-[11px]"></i>
-              <span>Ready to Register</span>
-              <span class="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20 text-white font-black">
-                {{ studentParsedRunners.length }}
-              </span>
-            </button>
-
-            <button type="button" @click="studentCsvActiveTab = 'skipped'" :class="[
-              'px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer border',
-              studentCsvActiveTab === 'skipped'
-                ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
-            ]">
-              <i class="fas fa-ban text-[11px]"></i>
-              <span>Already Registered (Skipped)</span>
-              <span
-                class="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-900 dark:text-amber-200 font-black"
-                :class="{ '!bg-white/20 !text-white': studentCsvActiveTab === 'skipped' }">
-                {{ studentSkippedRunners.length }}
-              </span>
-            </button>
-          </div>
-
-          <div class="text-[11px] text-gray-400 hidden sm:block">
-            Showing <strong class="text-gray-700 dark:text-gray-200">{{ studentCsvActiveTab === 'valid' ?
-              studentParsedRunners.length : studentSkippedRunners.length }}</strong> student(s)
-          </div>
-        </div>
-
-        <!-- Table View: Ready to Register -->
-        <div v-if="studentCsvActiveTab === 'valid'"
-          class="flex-1 overflow-y-auto border rounded-2xl dark:border-gray-700 min-h-[240px]">
-          <div v-if="studentParsedRunners.length === 0"
-            class="flex flex-col items-center justify-center p-8 text-center text-gray-400">
-            <i class="fas fa-user-check text-3xl mb-2 text-emerald-400 opacity-60"></i>
-            <p class="font-bold text-sm">All students from this CSV are already registered!</p>
-            <p class="text-xs mt-1">Check the "Already Registered (Skipped)" tab above to view them.</p>
-          </div>
-          <table v-else class="w-full text-left text-xs border-collapse">
-            <thead
-              class="sticky top-0 bg-slate-100 dark:bg-gray-900/90 backdrop-blur-sm border-b dark:border-gray-700 text-gray-500 uppercase text-[10px] font-bold z-10">
-              <tr>
-                <th class="py-2.5 px-3">#</th>
-                <th class="py-2.5 px-3">Student ID</th>
-                <th class="py-2.5 px-3">Student Name</th>
-                <th class="py-2.5 px-3">Gender / DOB</th>
-                <th class="py-2.5 px-3">Grade Level & Section</th>
-                <th class="py-2.5 px-3">Student Email</th>
-                <th class="py-2.5 px-3">Mobile</th>
-                <th class="py-2.5 px-3">Category</th>
-                <th class="py-2.5 px-3">Shirt Size</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y dark:divide-gray-700/60 font-medium">
-              <tr v-for="(s, idx) in studentParsedRunners" :key="idx"
-                class="hover:bg-slate-50 dark:hover:bg-gray-700/40 transition">
-                <td class="py-2 px-3 text-gray-400 text-[11px] font-bold">{{ idx + 1 }}</td>
-                <td class="py-2 px-3 whitespace-nowrap font-mono font-bold text-sky-700 dark:text-sky-300">
-                  {{ s.lsu_id_number || '-' }}
-                </td>
-                <td class="py-2 px-3 whitespace-nowrap font-bold text-gray-900 dark:text-gray-100">
-                  {{ s.firstname }} {{ s.middlename ? s.middlename + '.' : '' }} {{ s.lastname }}
-                </td>
-                <td class="py-2 px-3 whitespace-nowrap text-gray-600 dark:text-gray-300 text-[11px]">
-                  <span>{{ s.gender }}</span>
-                  <span v-if="s.birthdate" class="text-gray-400 ml-1">({{ s.birthdate }})</span>
-                </td>
-                <td class="py-2 px-3 text-gray-700 dark:text-gray-300 text-[11px] max-w-[200px]">
-                  <div class="font-bold truncate" :title="s.grade_level">{{ s.grade_level }}</div>
-                  <div v-if="s.section" class="text-[10px] text-gray-500 truncate" :title="s.section">
-                    {{ s.section }}
-                  </div>
-                </td>
-                <td class="py-2 px-3 whitespace-nowrap text-[11px]">
-                  <div v-if="s.is_default_email"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-mono text-[10px]"
-                    :title="'Default email used because none provided in CSV'">
-                    <i class="fas fa-wand-magic-sparkles text-[9px]"></i>
-                    {{ s.contact_email }}
-                  </div>
-                  <div v-else class="text-gray-700 dark:text-gray-300 font-mono text-[11px] truncate max-w-[170px]"
-                    :title="s.contact_email">
-                    {{ s.contact_email }}
-                  </div>
-                </td>
-                <td class="py-2 px-3 whitespace-nowrap text-gray-500 text-[11px] font-mono">
-                  {{ s.contact_number || '-' }}
-                </td>
-                <td class="py-2 px-3 whitespace-nowrap">
-                  <span class="px-2 py-0.5 rounded-full font-black text-[10px] text-white bg-red-600 shadow-xs">
-                    3KM
-                  </span>
-                </td>
-                <td class="py-2 px-3 whitespace-nowrap">
-                  <span
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                    <i class="fas fa-shirt text-[9px]"></i>
-                    Event Shirt: Large
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Table View: Skipped / Already Registered -->
-        <div v-else class="flex-1 overflow-y-auto border rounded-2xl dark:border-gray-700 min-h-[240px]">
-          <div v-if="studentSkippedRunners.length === 0"
-            class="flex flex-col items-center justify-center p-8 text-center text-gray-400">
-            <i class="fas fa-check-double text-3xl mb-2 text-emerald-400 opacity-60"></i>
-            <p class="font-bold text-sm">No duplicate registrations detected!</p>
-            <p class="text-xs mt-1">All {{ studentParsedRunners.length }} student(s) in this CSV are new and ready to be
-              registered.</p>
-          </div>
-          <table v-else class="w-full text-left text-xs border-collapse">
-            <thead
-              class="sticky top-0 bg-amber-50 dark:bg-amber-950/60 backdrop-blur-sm border-b dark:border-gray-700 text-amber-800 dark:text-amber-300 uppercase text-[10px] font-bold z-10">
-              <tr>
-                <th class="py-2.5 px-3">#</th>
-                <th class="py-2.5 px-3">Student ID</th>
-                <th class="py-2.5 px-3">Student Name</th>
-                <th class="py-2.5 px-3">Grade & Section</th>
-                <th class="py-2.5 px-3">Skip Reason / Duplicate Match</th>
-                <th class="py-2.5 px-3">Status</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y dark:divide-gray-700/60 font-medium">
-              <tr v-for="(s, idx) in studentSkippedRunners" :key="idx"
-                class="bg-amber-50/30 dark:bg-amber-950/20 hover:bg-amber-50/70 dark:hover:bg-amber-950/40 transition">
-                <td class="py-2 px-3 text-gray-400 text-[11px] font-bold">{{ idx + 1 }}</td>
-                <td class="py-2 px-3 whitespace-nowrap font-mono font-bold text-gray-700 dark:text-gray-300">
-                  {{ s.lsu_id_number || '-' }}
-                </td>
-                <td class="py-2 px-3 whitespace-nowrap font-bold text-gray-800 dark:text-gray-200">
-                  {{ s.firstname }} {{ s.middlename ? s.middlename + '.' : '' }} {{ s.lastname }}
-                </td>
-                <td class="py-2 px-3 text-gray-600 dark:text-gray-400 text-[11px] max-w-[180px] truncate">
-                  {{ s.grade_level }} {{ s.section ? '· ' + s.section : '' }}
-                </td>
-                <td class="py-2 px-3 text-amber-700 dark:text-amber-400 font-semibold text-[11px]">
-                  <span
-                    class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-100 dark:bg-amber-900/60 border border-amber-300 dark:border-amber-700">
-                    <i class="fas fa-exclamation-triangle text-amber-600 dark:text-amber-400 text-[10px]"></i>
-                    {{ s.skip_reason }}
-                  </span>
-                </td>
-                <td class="py-2 px-3 whitespace-nowrap">
-                  <span
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                    <i class="fas fa-forward text-[9px]"></i> Skipped
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Modal Bottom Actions -->
-        <div
-          class="pt-3 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <div class="text-[11px] text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
-            <i class="fas fa-shield-halved text-sky-500"></i>
-            <span>
-              <strong>{{ studentSkippedRunners.length }}</strong> registered student(s) skipped to prevent duplicates.
-              <strong>{{ studentParsedRunners.length }}</strong> will be registered with BIB numbers.
-            </span>
-          </div>
-
-          <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <button type="button" @click="isStudentCsvModalOpen = false" :disabled="isImportingStudentCsv"
-              class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
-              Cancel
-            </button>
-            <button type="button" @click="executeStudentCsvImport"
-              :disabled="isImportingStudentCsv || !studentParsedRunners.length"
-              class="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer">
-              <i :class="['fas', isImportingStudentCsv ? 'fa-spinner fa-spin' : 'fa-check']"></i>
-              <span>{{ isImportingStudentCsv ? 'Registering Students...' : `Confirm & Register
-                ${studentParsedRunners.length} Students` }}</span>
-            </button>
-          </div>
-        </div>
-
-      </div>
-    </div>
 
     <!-- ── SLOT ALLOCATION ADJUSTMENT MODAL ── -->
     <div v-if="isSlotModalOpen"
@@ -10274,39 +10051,6 @@ const closeRunnerQrPassModal = () => {
             <i class="fas fa-times"></i>
           </button>
         </div>
-
-        <!-- Body with QR -->
-        <div class="p-6 space-y-3 bg-white dark:bg-gray-800 flex flex-col items-center">
-          <div class="p-3 bg-white rounded-2xl shadow-md border-2 border-dashed border-emerald-500 inline-block">
-            <img v-if="claimQrPassData.qr_code_url || claimQrPassData.qr_code_base64"
-              :src="claimQrPassData.qr_code_url || claimQrPassData.qr_code_base64" alt="Claim QR Code"
-              class="w-48 h-48 rounded-xl object-contain mx-auto" />
-            <div v-else class="w-48 h-48 flex items-center justify-center bg-gray-100 rounded-xl text-gray-400">
-              <i class="fas fa-qrcode text-5xl text-emerald-600"></i>
-            </div>
-          </div>
-
-          <div
-            class="font-mono text-xs font-black text-emerald-800 dark:text-emerald-300 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/60 rounded-lg">
-            {{ claimQrPassData.claim_code }}
-          </div>
-
-          <p class="text-xs text-gray-500 dark:text-gray-400 leading-snug max-w-xs">
-            Present this QR code on mobile screen or printout to the distribution desk to verify and claim your race
-            kit.
-          </p>
-
-          <div class="w-full text-left pt-2 border-t dark:border-gray-700 text-xs space-y-1">
-            <span class="text-[10px] font-bold text-gray-400 uppercase block">Inclusions</span>
-            <div class="flex flex-wrap gap-1">
-              <span v-for="inc in claimQrPassData.inclusions" :key="inc"
-                class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-gray-700 text-[10px] text-gray-700 dark:text-gray-300 font-semibold">
-                {{ inc }}
-              </span>
-            </div>
-          </div>
-        </div>
-
         <!-- Footer -->
         <div
           class="p-3 border-t dark:border-gray-700 bg-slate-50 dark:bg-gray-900 flex items-center justify-between gap-2">
