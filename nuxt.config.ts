@@ -60,6 +60,13 @@ export default defineNuxtConfig({
           warn(warning);
         }
       }
+    },
+    optimizeDeps: {
+      include: [
+        'lodash',       // CJS – used in BlogPosting.vue
+        'moment',       // CJS – used in Header.vue
+        'html5-qrcode', // new dep found at runtime
+      ]
     }
   },
   modules: [
