@@ -275,18 +275,38 @@ const closeReceiptModal = () => {
 };
 
 // Strip everything after the file extension (removes query strings, tokens, extra params)
-const cleanURL = (url) => {
+const cleanURL = (url, fallbackName = "") => {
   if (!url) return "";
-  // Match the URL up to and including the file extension (e.g. .jpg, .png, .pdf, .jpeg, .webp, .gif)
-  const match = String(url).match(/^(.*?\.(?:jpg|jpeg|png|gif|webp|bmp|svg|pdf|heic|heif))/i);
-  return match ? match[1] : url;
+  if (typeof url === "string" && (url.startsWith("data:") || url.startsWith("blob:"))) {
+    return url;
+  }
+  let clean = String(url).trim().split(/[?#]/)[0];
+
+  // Repair URL if it was previously truncated before the real file extension (e.g. file.PNG.jpg truncated to file.PNG)
+  if (fallbackName && typeof fallbackName === "string") {
+    const doubleExtMatch = fallbackName.match(/\.(?:png|jpe?g|pdf)\.(?:jpe?g|png|pdf)$/i);
+    if (doubleExtMatch) {
+      const lastExt = fallbackName.slice(fallbackName.lastIndexOf("."));
+      if (!clean.toLowerCase().endsWith(lastExt.toLowerCase())) {
+        clean += lastExt;
+      }
+    }
+  }
+
+  // Match greedily up to the last supported extension
+  const match = clean.match(/^(.*\.(?:jpg|jpeg|png|gif|webp|bmp|svg|pdf|heic|heif))/i);
+  return match ? match[1] : clean;
 };
 
-// Clean image URLs only until extension (.jpg, .jpeg, .png) removing query params/tokens
-const getCleanUrl = (url) => {
+// Clean image URLs only until extension (.jpg, .jpeg, .png, etc.) removing query params/tokens
+const getCleanUrl = (url, fallbackName = "") => {
   if (!url) return "";
-  const match = String(url).match(/^(.*?\.(?:jpg|jpeg|png))/i);
-  return match ? match[1] : cleanURL(url);
+  if (typeof url === "string" && (url.startsWith("data:") || url.startsWith("blob:"))) {
+    return url;
+  }
+  let clean = cleanURL(url, fallbackName);
+  const match = clean.match(/^(.*\.(?:jpe?g|png|webp|gif|heic|heif|bmp|svg))/i);
+  return match ? match[1] : clean;
 };
 
 
@@ -1451,10 +1471,10 @@ onUnmounted(() => {
 const getImageUrl = (val) => {
   if (!val) return null;
   if (typeof val === "string") return getCleanUrl(val);
-  if (typeof val === "object" && val.url) return getCleanUrl(val.url);
+  if (typeof val === "object" && val.url) return getCleanUrl(val.url, val.name);
   if (Array.isArray(val) && val.length > 0) {
     if (typeof val[0] === "string") return getCleanUrl(val[0]);
-    return getCleanUrl(val[0]?.url) || null;
+    return getCleanUrl(val[0]?.url, val[0]?.name) || null;
   }
   return null;
 };
@@ -1482,7 +1502,8 @@ const getDocumentList = (val) => {
 
 const isPdfUrl = (url) => {
   if (!url || typeof url !== "string") return false;
-  return url.toLowerCase().includes(".pdf") || url.toLowerCase().startsWith("data:application/pdf");
+  const clean = cleanURL(url).toLowerCase();
+  return clean.endsWith(".pdf") || clean.startsWith("data:application/pdf");
 };
 
 // ── Auth & Current Operator ─────────────────────────────────────────────
@@ -2177,6 +2198,7 @@ const validIdCapturedImage = ref(null);
 const validIdCapturedBlob = ref(null);
 const isValidIdUploading = ref(false);
 const isValidIdDeleting = ref(false);
+const deleteValidIdModal = ref({ show: false, runner: null });
 const validIdCameraFacingMode = ref("environment");
 const validIdCameraError = ref("");
 const hasMultipleCameras = ref(false);
@@ -2426,12 +2448,18 @@ const handleValidIdFileSelect = async (event, runner) => {
   }
 };
 
-const promptDeleteValidId = async (runner) => {
+const promptDeleteValidId = (runner) => {
   if (!runner || isValidIdDeleting.value) return;
-  const confirmed = confirm(
-    `Are you sure you want to remove the recorded Valid ID for ${runner.firstname} ${runner.lastname}?`
-  );
-  if (!confirmed) return;
+  deleteValidIdModal.value = { show: true, runner };
+};
+
+const closeDeleteValidIdModal = () => {
+  deleteValidIdModal.value = { show: false, runner: null };
+};
+
+const executeDeleteValidId = async () => {
+  const runner = deleteValidIdModal.value.runner;
+  if (!runner || isValidIdDeleting.value) return;
 
   isValidIdDeleting.value = true;
   try {
@@ -2444,9 +2472,11 @@ const promptDeleteValidId = async (runner) => {
     });
 
     syncRunnerValidIdAcrossView(runner.id, []);
-    showNotice(`Valid ID photo removed for ${runner.firstname} ${runner.lastname}.`, "Valid ID Removed", "info");
+    closeDeleteValidIdModal();
+    showFastToast(`Valid ID photo removed for ${runner.firstname} ${runner.lastname}.`, "info");
   } catch (err) {
     console.error("Delete Valid ID error:", err);
+    closeDeleteValidIdModal();
     showNotice(err.data?.error || "Failed to remove Valid ID photo.", "Error", "error");
   } finally {
     isValidIdDeleting.value = false;
@@ -4213,7 +4243,11 @@ const removeChatAttachment = () => {
   chatAttachment.value = null;
 };
 
-const isPdfAttachment = (url) => (url || '').toLowerCase().includes('.pdf') || (url || '').endsWith('pdf');
+const isPdfAttachment = (url, name = '') => {
+  const clean = (cleanURL(url, name) || '').toLowerCase();
+  const n = (name || '').toLowerCase();
+  return clean.endsWith('.pdf') || n.endsWith('.pdf');
+};
 
 
 const loadChat = async (runner) => {
@@ -4255,7 +4289,7 @@ const sendAdminMessage = async () => {
         method: 'POST',
         body: formData,
       });
-      attachmentUrl = getCleanUrl(uploadRes.url) || uploadRes.url || '';
+      attachmentUrl = getCleanUrl(uploadRes.url, attachment.name) || uploadRes.url || '';
       attachmentName = attachment.name || 'Attachment';
     }
 
@@ -4546,6 +4580,19 @@ const isMarkingKitReady = ref(false);
 const isConfirmingClaim = ref(false);
 const isBulkMarkingReady = ref(false);
 const bulkMarkReadyProgress = ref({ current: 0, total: 0, success: 0, failed: 0 });
+const bulkMarkReadyModal = ref({ show: false });
+
+const promptBulkMarkKitReady = () => {
+  if (!selectedIds.value.length || isBulkMarkingReady.value) {
+    showFastToast("Please select at least one runner.", "info");
+    return;
+  }
+  bulkMarkReadyModal.value.show = true;
+};
+
+const closeBulkMarkReadyModal = () => {
+  bulkMarkReadyModal.value.show = false;
+};
 const isResendingClaimEmail = ref(false);
 const isUnclaiming = ref(false);
 const unclaimConfirmModal = ref({
@@ -4962,11 +5009,7 @@ const markKitReadyAndNotify = async (runner, options = {}) => {
 const executeBulkMarkKitReady = async () => {
   if (!selectedIds.value.length || isBulkMarkingReady.value) return;
 
-  const count = selectedIds.value.length;
-  const confirmed = confirm(
-    `Are you sure you want to mark race kits ready and send claiming notification emails with QR codes to each of the ${count} selected runner(s)?`
-  );
-  if (!confirmed) return;
+  closeBulkMarkReadyModal();
 
   isBulkMarkingReady.value = true;
   const targetIds = [...selectedIds.value];
@@ -6149,7 +6192,7 @@ const closeRunnerQrPassModal = () => {
                 <div class="flex items-center gap-2">
                   <div v-if="!isPdfUrl(runner.proof_of_payment)" class="relative cursor-pointer shrink-0"
                     @click.stop="openReceiptModal(runner.proof_of_payment, 'Payment Receipt', runner)">
-                    <img :src="runner.proof_of_payment" :alt="runner.firstname + ' Receipt'"
+                    <img :src="getCleanUrl(runner.proof_of_payment)" :alt="runner.firstname + ' Receipt'"
                       class="w-8 h-8 rounded-lg object-cover border border-slate-300 dark:border-gray-600 shadow-2xs" />
                   </div>
                   <div v-else
@@ -6306,7 +6349,7 @@ const closeRunnerQrPassModal = () => {
               <span v-if="selectedPendingRunners.length > 0">Confirm Selected ({{ selectedPendingRunners.length }})</span>
               <span v-else>Resend Confirm Email ({{ selectedIds.length }})</span>
             </button>
-            <button type="button" @click="executeBulkMarkKitReady" :disabled="isBulkMarkingReady"
+            <button type="button" @click="promptBulkMarkKitReady" :disabled="isBulkMarkingReady"
               class="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 active:scale-95 text-white font-bold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
               title="Send claiming notification email with QR code to all selected runners">
               <i v-if="!isBulkMarkingReady" class="fas fa-qrcode text-[11px]"></i>
@@ -6950,14 +6993,6 @@ const closeRunnerQrPassModal = () => {
                       </button>
                     </div>
 
-                    <!-- Case 3: Kit Not Ready Yet (Direct single-runner notification) -->
-                    <div v-else class="inline-flex items-center gap-1.5">
-                      <button type="button" @click="markKitReadyAndNotify(runner)" :disabled="isMarkingKitReady"
-                        class="px-2 py-1 rounded-xl bg-slate-100 hover:bg-sky-100 dark:bg-gray-800 dark:hover:bg-sky-950 text-slate-500 hover:text-sky-700 dark:text-gray-400 dark:hover:text-sky-300 border border-slate-200 dark:border-gray-700 text-[10px] font-semibold transition inline-flex items-center gap-1 cursor-pointer"
-                        title="Mark kit ready and email claim pass with QR code to this runner">
-                        <i class="fas fa-paper-plane text-[9px]"></i> Notify
-                      </button>
-                    </div>
                   </td>
                   <!-- Fixed Actions column -->
                   <td class="px-3 text-center whitespace-nowrap">
@@ -7057,7 +7092,7 @@ const closeRunnerQrPassModal = () => {
         </button>
 
         <!-- Notify Kit Ready button -->
-        <button v-if="selectedIds.length > 0" type="button" @click="executeBulkMarkKitReady"
+        <button v-if="selectedIds.length > 0" type="button" @click="promptBulkMarkKitReady"
           :disabled="isBulkMarkingReady"
           class="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold text-xs transition shadow-lg flex items-center gap-1.5 border border-sky-400/40 cursor-pointer active:scale-95 disabled:opacity-60"
           title="Send claiming notification email with QR code to all selected runners">
@@ -7750,14 +7785,14 @@ const closeRunnerQrPassModal = () => {
                   <p v-if="msg.message" class="whitespace-pre-wrap break-words">{{ msg.message }}</p>
                   <!-- Attachment -->
                   <div v-if="msg.attachment_url" class="mt-1.5">
-                    <a v-if="isPdfAttachment(msg.attachment_url)" :href="cleanURL(msg.attachment_url)" target="_blank"
+                    <a v-if="isPdfAttachment(msg.attachment_url, msg.attachment_name)" :href="cleanURL(msg.attachment_url, msg.attachment_name)" target="_blank"
                       :class="['flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition', msg.sender_type === 'admin' ? 'bg-white/20 hover:bg-white/30 text-white' : 'bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200']">
                       <i class="fas fa-file-pdf"></i>
                       <span class="truncate max-w-[140px]">{{ msg.attachment_name || 'View PDF' }}</span>
                       <i class="fas fa-external-link-alt text-[9px] opacity-60 ml-auto"></i>
                     </a>
-                    <a v-else :href="getCleanUrl(msg.attachment_url)" target="_blank" class="block">
-                      <img :src="getCleanUrl(msg.attachment_url)" :alt="msg.attachment_name || 'Image'"
+                    <a v-else :href="getCleanUrl(msg.attachment_url, msg.attachment_name)" target="_blank" class="block">
+                      <img :src="getCleanUrl(msg.attachment_url, msg.attachment_name)" :alt="msg.attachment_name || 'Image'"
                         @load="scrollChatToBottom"
                         class="mt-1 max-w-[180px] max-h-[160px] rounded-xl object-cover border border-white/20 shadow-sm cursor-pointer hover:opacity-90 transition" />
                     </a>
@@ -7941,6 +7976,64 @@ const closeRunnerQrPassModal = () => {
       </div>
     </div>
 
+    <!-- BULK-MARK KIT READY CONFIRMATION MODAL (REPLACES BROWSER CONFIRM) -->
+    <div v-if="bulkMarkReadyModal.show"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      @click.self="closeBulkMarkReadyModal">
+      <div :class="[
+        'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <!-- Sky accent bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 to-blue-600"></div>
+
+        <div
+          class="w-14 h-14 mx-auto rounded-2xl bg-sky-100 text-sky-600 dark:bg-sky-950/80 dark:text-sky-400 flex items-center justify-center text-2xl shadow-sm mt-2">
+          <i class="fas fa-qrcode"></i>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-black tracking-tight">
+            Send Race Kit Claiming Emails?
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+            Are you sure you want to mark race kits ready and dispatch claiming notification emails with QR codes to each of the
+            <strong class="text-sky-600 dark:text-sky-400">{{ selectedIds.length }} selected runner{{ selectedIds.length !== 1 ? 's' : '' }}</strong>?
+          </p>
+        </div>
+
+        <!-- Quick Summary Box -->
+        <div
+          class="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 text-left text-xs space-y-1.5">
+          <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
+            <span>Operator:</span>
+            <span class="font-bold text-gray-800 dark:text-gray-100">{{ currentOperator || 'Admin' }}</span>
+          </div>
+          <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
+            <span>Runners to Notify:</span>
+            <span class="font-bold text-sky-600 dark:text-sky-400">{{ selectedIds.length }}</span>
+          </div>
+          <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
+            <span>Inclusions:</span>
+            <span class="font-medium text-gray-700 dark:text-gray-200">Claim QR Code + Kit Instructions</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" @click="closeBulkMarkReadyModal" :disabled="isBulkMarkingReady"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="button" @click="executeBulkMarkKitReady" :disabled="isBulkMarkingReady"
+            class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 active:scale-95">
+            <i v-if="!isBulkMarkingReady" class="fas fa-paper-plane"></i>
+            <i v-else class="fas fa-spinner fa-spin"></i>
+            <span>{{ isBulkMarkingReady ? 'Dispatching...' : 'Yes, Send Emails' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- BULK-DELETE CONFIRMATION MODAL ──────────────────────────────── -->
     <div v-if="bulkDeleteModal.show"
       class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
@@ -8020,6 +8113,48 @@ const closeRunnerQrPassModal = () => {
             <i v-if="!isDeletingReceipt" class="fas fa-trash"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
             <span>{{ isDeletingReceipt ? 'Deleting...' : 'Yes, Delete Receipt' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE VALID ID CONFIRMATION MODAL (REPLACES BROWSER CONFIRM) -->
+    <div v-if="deleteValidIdModal.show && deleteValidIdModal.runner"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      @click.self="closeDeleteValidIdModal">
+      <div :class="[
+        'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-rose-500"></div>
+
+        <div
+          class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400 flex items-center justify-center text-2xl shadow-sm mt-2">
+          <i class="fas fa-id-card"></i>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-black tracking-tight">Remove Valid ID?</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Are you sure you want to remove the recorded Valid ID for
+            <strong class="text-rose-600 dark:text-rose-400">{{ deleteValidIdModal.runner.firstname }} {{
+              deleteValidIdModal.runner.lastname }}</strong>?
+          </p>
+          <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-2 leading-relaxed">
+            This will remove the uploaded identification image. You can upload a new Valid ID at any time.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" @click="closeDeleteValidIdModal" :disabled="isValidIdDeleting"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="button" @click="executeDeleteValidId" :disabled="isValidIdDeleting"
+            class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60">
+            <i v-if="!isValidIdDeleting" class="fas fa-trash"></i>
+            <i v-else class="fas fa-spinner fa-spin"></i>
+            <span>{{ isValidIdDeleting ? 'Removing...' : 'Yes, Remove Valid ID' }}</span>
           </button>
         </div>
       </div>
@@ -8916,7 +9051,7 @@ const closeRunnerQrPassModal = () => {
               <div v-if="msg.attachment_url" class="mt-2 pt-2 border-t"
                 :class="msg.sender_type === 'admin' ? 'border-white/20' : 'border-gray-200 dark:border-gray-600'">
                 <!-- PDF Attachment -->
-                <a v-if="isPdfAttachment(msg.attachment_url)" :href="cleanURL(msg.attachment_url)" target="_blank"
+                <a v-if="isPdfAttachment(msg.attachment_url, msg.attachment_name)" :href="cleanURL(msg.attachment_url, msg.attachment_name)" target="_blank"
                   :class="[
                     'flex items-center gap-2 p-2 rounded-xl text-[11px] font-bold transition',
                     msg.sender_type === 'admin'
@@ -8930,9 +9065,9 @@ const closeRunnerQrPassModal = () => {
 
                 <!-- Image Attachment -->
                 <div v-else class="space-y-1">
-                  <a :href="getCleanUrl(msg.attachment_url)" target="_blank"
+                  <a :href="getCleanUrl(msg.attachment_url, msg.attachment_name)" target="_blank"
                     class="block group relative overflow-hidden rounded-xl">
-                    <img :src="getCleanUrl(msg.attachment_url)" :alt="msg.attachment_name || 'Attached Image'"
+                    <img :src="getCleanUrl(msg.attachment_url, msg.attachment_name)" :alt="msg.attachment_name || 'Attached Image'"
                       class="max-w-[220px] max-h-[180px] rounded-xl object-cover border border-white/20 shadow-sm cursor-pointer group-hover:scale-105 transition-transform" />
                   </a>
                   <p class="text-[9px] opacity-70 truncate">{{ msg.attachment_name || 'Attachment' }}</p>

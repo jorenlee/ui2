@@ -47,18 +47,41 @@ const removeChatAttachment = () => {
   chatAttachment.value = null;
 };
 
-const isPdfAttachment = (url) => (url || '').toLowerCase().includes('.pdf') || (url || '').endsWith('pdf');
-
-const cleanURL = (url) => {
-  if (!url) return "";
-  const match = String(url).match(/^(.*?\.(?:jpg|jpeg|png|gif|webp|bmp|svg|pdf|heic|heif))/i);
-  return match ? match[1] : url;
+const isPdfAttachment = (url, name = '') => {
+  const clean = (cleanURL(url, name) || '').toLowerCase();
+  const n = (name || '').toLowerCase();
+  return clean.endsWith('.pdf') || n.endsWith('.pdf');
 };
 
-const getCleanUrl = (url) => {
+const cleanURL = (url, fallbackName = "") => {
   if (!url) return "";
-  const match = String(url).match(/^(.*?\.(?:jpg|jpeg|png))/i);
-  return match ? match[1] : cleanURL(url);
+  if (typeof url === "string" && (url.startsWith("data:") || url.startsWith("blob:"))) {
+    return url;
+  }
+  let clean = String(url).trim().split(/[?#]/)[0];
+
+  if (fallbackName && typeof fallbackName === "string") {
+    const doubleExtMatch = fallbackName.match(/\.(?:png|jpe?g|pdf)\.(?:jpe?g|png|pdf)$/i);
+    if (doubleExtMatch) {
+      const lastExt = fallbackName.slice(fallbackName.lastIndexOf("."));
+      if (!clean.toLowerCase().endsWith(lastExt.toLowerCase())) {
+        clean += lastExt;
+      }
+    }
+  }
+
+  const match = clean.match(/^(.*\.(?:jpg|jpeg|png|gif|webp|bmp|svg|pdf|heic|heif))/i);
+  return match ? match[1] : clean;
+};
+
+const getCleanUrl = (url, fallbackName = "") => {
+  if (!url) return "";
+  if (typeof url === "string" && (url.startsWith("data:") || url.startsWith("blob:"))) {
+    return url;
+  }
+  let clean = cleanURL(url, fallbackName);
+  const match = clean.match(/^(.*\.(?:jpe?g|png|webp|gif|heic|heif|bmp|svg))/i);
+  return match ? match[1] : clean;
 };
 
 const getCategoryBadge = (cat) => {
@@ -221,7 +244,7 @@ const sendMessage = async (reg) => {
         method: 'POST',
         body: formData,
       });
-      attachmentUrl = getCleanUrl(uploadRes.url) || uploadRes.url || '';
+      attachmentUrl = getCleanUrl(uploadRes.url, attachment.name) || uploadRes.url || '';
       attachmentName = attachment.name || 'Attachment';
     }
     const senderName = `${reg.firstname || ""} ${reg.lastname || ""}`.trim() || user.value?.email;
@@ -430,14 +453,14 @@ onMounted(() => fetchMyRegistrations());
                 <p v-if="msg.message" class="whitespace-pre-wrap break-words">{{ msg.message }}</p>
                 <!-- Attachment -->
                 <div v-if="msg.attachment_url" class="mt-1.5">
-                  <a v-if="isPdfAttachment(msg.attachment_url)" :href="cleanURL(msg.attachment_url)" target="_blank"
+                  <a v-if="isPdfAttachment(msg.attachment_url, msg.attachment_name)" :href="cleanURL(msg.attachment_url, msg.attachment_name)" target="_blank"
                     :class="['flex items-center gap-1.5 rounded-lg px-2 py-1 text-[10px] font-bold transition', msg.sender_type === 'admin' ? 'bg-white/20 hover:bg-white/30 text-white' : darkMode ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700']">
                     <i class="fas fa-file-pdf"></i>
                     <span class="truncate max-w-[140px]">{{ msg.attachment_name || 'View PDF' }}</span>
                     <i class="fas fa-external-link-alt text-[9px] opacity-60 ml-auto"></i>
                   </a>
-                  <a v-else :href="getCleanUrl(msg.attachment_url)" target="_blank" class="block">
-                    <img :src="getCleanUrl(msg.attachment_url)" :alt="msg.attachment_name || 'Image'"
+                  <a v-else :href="getCleanUrl(msg.attachment_url, msg.attachment_name)" target="_blank" class="block">
+                    <img :src="getCleanUrl(msg.attachment_url, msg.attachment_name)" :alt="msg.attachment_name || 'Image'"
                       @load="scrollToBottom(reg.id)"
                       class="mt-1 max-w-[180px] max-h-[150px] rounded-xl object-cover border border-white/20 shadow-sm cursor-pointer hover:opacity-90 transition" />
                   </a>
