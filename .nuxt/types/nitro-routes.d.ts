@@ -24,6 +24,9 @@ declare module "nitropack/types" {
     '/__nuxt_error': {
       'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../node_modules/.pnpm/@nuxt+nitro-server@4.6.2_66b3086d933e4e460b640f26824e47ae/node_modules/@nuxt/nitro-server/dist/runtime/handlers/renderer').default>>>>
     }
+    '/__nuxt_dev__/error/**': {
+      'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../node_modules/.pnpm/@nuxt+nitro-server@4.6.2_66b3086d933e4e460b640f26824e47ae/node_modules/@nuxt/nitro-server/dist/runtime/handlers/error-channel').default>>>>
+    }
     '/__nuxt_island/**': {
       'default': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/#internal/nuxt/island-renderer').default>>>>
     }

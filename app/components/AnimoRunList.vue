@@ -1436,6 +1436,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  stopValidIdCamera();
   stopPolling();
   if (mobileObserver) {
     mobileObserver.disconnect();
@@ -2164,6 +2165,291 @@ const executeDeleteReceipt = async () => {
     );
   } finally {
     isDeletingReceipt.value = false;
+  }
+};
+
+// ── Valid ID Camera & Capture ───────────────────────────────────────────────
+const isValidIdCameraModalOpen = ref(false);
+const validIdCameraRunner = ref(null);
+const validIdCameraVideoRef = ref(null);
+const validIdCameraStream = ref(null);
+const validIdCapturedImage = ref(null);
+const validIdCapturedBlob = ref(null);
+const isValidIdUploading = ref(false);
+const isValidIdDeleting = ref(false);
+const validIdCameraFacingMode = ref("environment");
+const validIdCameraError = ref("");
+const hasMultipleCameras = ref(false);
+
+const openValidIdCamera = async (runner) => {
+  if (!runner) return;
+  validIdCameraRunner.value = runner;
+  validIdCapturedImage.value = null;
+  validIdCapturedBlob.value = null;
+  validIdCameraError.value = "";
+  isValidIdCameraModalOpen.value = true;
+  await nextTick();
+  startValidIdCamera();
+};
+
+const closeValidIdCamera = () => {
+  stopValidIdCamera();
+  isValidIdCameraModalOpen.value = false;
+  validIdCapturedImage.value = null;
+  validIdCapturedBlob.value = null;
+  validIdCameraError.value = "";
+};
+
+const startValidIdCamera = async () => {
+  stopValidIdCamera();
+  validIdCameraError.value = "";
+  try {
+    if (typeof navigator === "undefined" || !navigator?.mediaDevices?.getUserMedia) {
+      throw new Error("Camera API is not supported in this browser. Please use file upload instead.");
+    }
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoInputs = devices.filter((d) => d.kind === "videoinput");
+      hasMultipleCameras.value = videoInputs.length > 1;
+    } catch (e) {}
+
+    let stream = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: validIdCameraFacingMode.value },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      });
+    } catch (errWithConstraints) {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false,
+      });
+    }
+
+    validIdCameraStream.value = stream;
+    await nextTick();
+    if (validIdCameraVideoRef.value) {
+      validIdCameraVideoRef.value.srcObject = stream;
+      await validIdCameraVideoRef.value.play().catch(() => {});
+    }
+  } catch (err) {
+    console.warn("Valid ID camera error:", err);
+    validIdCameraError.value =
+      err.message || "Unable to access camera. Please check camera permissions or use the upload button.";
+  }
+};
+
+const switchValidIdCamera = async () => {
+  validIdCameraFacingMode.value = validIdCameraFacingMode.value === "environment" ? "user" : "environment";
+  await startValidIdCamera();
+};
+
+const stopValidIdCamera = () => {
+  if (validIdCameraStream.value) {
+    try {
+      validIdCameraStream.value.getTracks().forEach((track) => track.stop());
+    } catch (e) {}
+    validIdCameraStream.value = null;
+  }
+  if (validIdCameraVideoRef.value) {
+    validIdCameraVideoRef.value.srcObject = null;
+  }
+};
+
+const captureValidIdPhoto = () => {
+  const video = validIdCameraVideoRef.value;
+  if (!video || !video.videoWidth) {
+    showNotice("Camera video is not ready yet. Please wait a moment.", "Camera Busy", "warning");
+    return;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  canvas.toBlob(
+    (blob) => {
+      if (!blob) {
+        showNotice("Failed to capture image. Please try again.", "Error", "error");
+        return;
+      }
+      validIdCapturedBlob.value = blob;
+      validIdCapturedImage.value = URL.createObjectURL(blob);
+      stopValidIdCamera();
+    },
+    "image/jpeg",
+    0.9
+  );
+};
+
+const retakeValidIdPhoto = async () => {
+  if (validIdCapturedImage.value) {
+    try {
+      URL.revokeObjectURL(validIdCapturedImage.value);
+    } catch (e) {}
+  }
+  validIdCapturedImage.value = null;
+  validIdCapturedBlob.value = null;
+  await nextTick();
+  startValidIdCamera();
+};
+
+const syncRunnerValidIdAcrossView = (runnerId, updatedFront) => {
+  if (validIdCameraRunner.value && validIdCameraRunner.value.id === runnerId) {
+    validIdCameraRunner.value.valid_id_front = updatedFront;
+  }
+  if (activeClaimRunner.value && activeClaimRunner.value.id === runnerId) {
+    activeClaimRunner.value.valid_id_front = updatedFront;
+  }
+  if (selectedRunner.value && selectedRunner.value.id === runnerId) {
+    selectedRunner.value.valid_id_front = updatedFront;
+  }
+  const idx = registrations.value.findIndex((r) => r.id === runnerId);
+  if (idx !== -1) {
+    registrations.value[idx].valid_id_front = updatedFront;
+  }
+};
+
+const saveCapturedValidId = async () => {
+  const runner = validIdCameraRunner.value;
+  if (!runner || !validIdCapturedBlob.value || isValidIdUploading.value) return;
+
+  isValidIdUploading.value = true;
+  try {
+    const filename = `valid_id_${runner.run_number || runner.id}_${Date.now()}.jpg`;
+    const file = new File([validIdCapturedBlob.value], filename, { type: "image/jpeg" });
+
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await $fetch(`${endpoint.value}/api/animorun/upload/`, {
+      method: "POST",
+      body: formData,
+    });
+    const photoUrl = res.url;
+
+    const filePayload = [
+      {
+        name: "valid_id",
+        url: photoUrl,
+        timestamp: new Date().toISOString(),
+      },
+    ];
+
+    const editRes = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/edit/`, {
+      method: "PUT",
+      body: {
+        valid_id_front: filePayload,
+        bypass_lock: true,
+      },
+    });
+
+    const updatedFront = editRes.data?.valid_id_front || filePayload;
+    syncRunnerValidIdAcrossView(runner.id, updatedFront);
+
+    showNotice(
+      `Valid ID photo captured and recorded successfully for ${runner.firstname} ${runner.lastname}!`,
+      "Valid ID Recorded",
+      "success"
+    );
+    closeValidIdCamera();
+  } catch (err) {
+    console.error("Save valid ID photo error:", err);
+    showNotice(err.data?.error || "Failed to upload and record Valid ID photo. Please try again.", "Error", "error");
+  } finally {
+    isValidIdUploading.value = false;
+  }
+};
+
+const handleValidIdFileSelect = async (event, runner) => {
+  const file = event.target.files?.[0];
+  if (!file || !runner) return;
+
+  const isImg = file.type?.startsWith("image/") || /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+  if (!isImg) {
+    showNotice("Please select a valid image file (JPG, PNG, WEBP).", "Invalid File", "error");
+    event.target.value = "";
+    return;
+  }
+
+  isValidIdUploading.value = true;
+  try {
+    const fileToUpload = await compressImageIfNeeded(file, MAX_FILE_UPLOAD_BYTES);
+    const formData = new FormData();
+    formData.append("file", fileToUpload);
+
+    const res = await $fetch(`${endpoint.value}/api/animorun/upload/`, {
+      method: "POST",
+      body: formData,
+    });
+    const photoUrl = res.url;
+
+    const filePayload = [
+      {
+        name: file.name || "valid_id",
+        url: photoUrl,
+        timestamp: new Date().toISOString(),
+      },
+    ];
+
+    const editRes = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/edit/`, {
+      method: "PUT",
+      body: {
+        valid_id_front: filePayload,
+        bypass_lock: true,
+      },
+    });
+
+    const updatedFront = editRes.data?.valid_id_front || filePayload;
+    syncRunnerValidIdAcrossView(runner.id, updatedFront);
+
+    showNotice(
+      `Valid ID uploaded and recorded successfully for ${runner.firstname} ${runner.lastname}!`,
+      "Valid ID Recorded",
+      "success"
+    );
+    if (isValidIdCameraModalOpen.value) {
+      closeValidIdCamera();
+    }
+  } catch (err) {
+    console.error("Valid ID upload error:", err);
+    showNotice(err.data?.error || "Failed to upload Valid ID. Please try again.", "Error", "error");
+  } finally {
+    isValidIdUploading.value = false;
+    event.target.value = "";
+  }
+};
+
+const promptDeleteValidId = async (runner) => {
+  if (!runner || isValidIdDeleting.value) return;
+  const confirmed = confirm(
+    `Are you sure you want to remove the recorded Valid ID for ${runner.firstname} ${runner.lastname}?`
+  );
+  if (!confirmed) return;
+
+  isValidIdDeleting.value = true;
+  try {
+    await $fetch(`${endpoint.value}/api/animorun/${runner.id}/edit/`, {
+      method: "PUT",
+      body: {
+        valid_id_front: [],
+        bypass_lock: true,
+      },
+    });
+
+    syncRunnerValidIdAcrossView(runner.id, []);
+    showNotice(`Valid ID photo removed for ${runner.firstname} ${runner.lastname}.`, "Valid ID Removed", "info");
+  } catch (err) {
+    console.error("Delete Valid ID error:", err);
+    showNotice(err.data?.error || "Failed to remove Valid ID photo.", "Error", "error");
+  } finally {
+    isValidIdDeleting.value = false;
   }
 };
 
@@ -4368,7 +4654,15 @@ const startCameraScanner = async () => {
     }
 
     html5QrCodeScanner = new Html5Qrcode("qr-reader-camera");
-    const config = { fps: 15, qrbox: { width: 240, height: 240 } };
+    const config = {
+      fps: 20,
+      qrbox: (viewfinderWidth, viewfinderHeight) => {
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        const qrboxSize = Math.floor(minEdge * 0.75);
+        return { width: Math.max(qrboxSize, 160), height: Math.max(qrboxSize, 160) };
+      },
+      aspectRatio: 1.0,
+    };
 
     await html5QrCodeScanner.start(
       { facingMode: "environment" },
@@ -4377,6 +4671,15 @@ const startCameraScanner = async () => {
         handleQrCodeDetected(decodedText);
       }
     );
+
+    // Ensure video fills the entire viewport without letterboxing or black gaps
+    const video = container.querySelector("video");
+    if (video) {
+      video.style.width = "100%";
+      video.style.height = "100%";
+      video.style.objectFit = "cover";
+      video.style.borderRadius = "1rem";
+    }
   } catch (err) {
     console.warn("Camera start failed, falling back to manual entry:", err);
     scannerErrorMessage.value = "Camera access not allowed or unavailable. You can search by Bib # or Name below.";
@@ -4444,6 +4747,7 @@ const openRunnerClaimModal = (runner) => {
 };
 
 const closeClaimVerificationModal = () => {
+  closeValidIdCamera();
   isClaimVerificationModalOpen.value = false;
   activeClaimRunner.value = null;
 };
@@ -7149,40 +7453,125 @@ const closeRunnerQrPassModal = () => {
               </div>
             </div>
 
-            <!-- Alumni Valid ID (Front and Back) if uploaded -->
-            <div v-if="getImageUrl(selectedRunner.valid_id_front) || getImageUrl(selectedRunner.valid_id_back)"
-              class="lg:flex mt-3 gap-x-2">
-
-
-              <div v-if="getImageUrl(selectedRunner.valid_id_front)"
-                class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between w-full">
-                <div class="flex items-center gap-3">
-
+            <!-- Valid ID Verification & Camera Capture -->
+            <div class="mt-4 p-3.5 rounded-2xl border border-slate-200 dark:border-gray-700 bg-slate-50/70 dark:bg-gray-900/40 space-y-3">
+              <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="flex items-center gap-2">
+                  <div
+                    :class="[
+                      'w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold',
+                      getImageUrl(selectedRunner.valid_id_front)
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-amber-500 text-white'
+                    ]"
+                  >
+                    <i :class="getImageUrl(selectedRunner.valid_id_front) ? 'fas fa-id-card-clip' : 'fas fa-id-card'"></i>
+                  </div>
                   <div>
-                    <p class="font-bold text-xs">Alumni ID</p>
-
+                    <h5 class="text-xs font-black uppercase tracking-wide flex items-center gap-1.5">
+                      <span>Valid ID</span>
+                      <span
+                        v-if="getImageUrl(selectedRunner.valid_id_front)"
+                        class="px-2 py-0.2 rounded-full bg-emerald-600 text-white text-[9px] font-bold"
+                      >
+                        Recorded
+                      </span>
+                      <span
+                        v-else
+                        class="px-2 py-0.2 rounded-full bg-amber-500 text-white text-[9px] font-bold"
+                      >
+                        Not Recorded
+                      </span>
+                    </h5>
+                    <p class="text-[10px] text-gray-500 dark:text-gray-400">
+                      {{ getImageUrl(selectedRunner.valid_id_front)
+                        ? 'Official participant Valid ID recorded on file.'
+                        : 'Take a picture with camera or upload proof of identity.' }}
+                    </p>
                   </div>
                 </div>
-                <button type="button"
-                  @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_front), 'Alumni ID (Front)', selectedRunner)"
-                  class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-sm">
-                  <i class="fas fa-eye text-xs"></i> View Front
-                </button>
+
+                <!-- Action buttons -->
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    type="button"
+                    @click="openValidIdCamera(selectedRunner)"
+                    :disabled="isValidIdUploading"
+                    class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
+                  >
+                    <i class="fas fa-camera text-xs"></i>
+                    <span>{{ getImageUrl(selectedRunner.valid_id_front) ? 'Retake Photo' : 'Take Picture (Camera)' }}</span>
+                  </button>
+
+                  <label
+                    class="px-2.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                    title="Upload Valid ID file"
+                  >
+                    <i class="fas fa-upload text-[11px]"></i>
+                    <span class="hidden sm:inline">Upload</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      class="hidden"
+                      @change="handleValidIdFileSelect($event, selectedRunner)"
+                      :disabled="isValidIdUploading"
+                    />
+                  </label>
+                </div>
               </div>
 
-              <div v-if="getImageUrl(selectedRunner.valid_id_back)"
-                class="border rounded-2xl p-3 bg-slate-50 dark:bg-gray-900/40 flex items-center justify-between w-full">
-                <div class="flex items-center gap-3">
-
-                  <div>
-                    <p class="font-bold text-xs">Alumni ID </p>
+              <!-- Display Valid ID if recorded -->
+              <div v-if="getImageUrl(selectedRunner.valid_id_front) || getImageUrl(selectedRunner.valid_id_back)" class="space-y-2">
+                <div v-if="getImageUrl(selectedRunner.valid_id_front)"
+                  class="border rounded-2xl p-2.5 bg-white dark:bg-gray-800 flex items-center justify-between gap-3 shadow-2xs">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <img
+                      :src="getImageUrl(selectedRunner.valid_id_front)"
+                      alt="Valid ID Front"
+                      class="w-16 h-12 rounded-lg object-cover border bg-gray-100 cursor-pointer shrink-0"
+                      @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_front), 'Valid ID (Front)', selectedRunner)"
+                    />
+                    <div class="truncate">
+                      <p class="font-extrabold text-xs text-gray-900 dark:text-gray-100 truncate">Valid ID (Front)</p>
+                      <p class="text-[10px] text-gray-500">Click to view full preview</p>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <button type="button"
+                      @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_front), 'Valid ID (Front)', selectedRunner)"
+                      class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-700 transition flex items-center gap-1 cursor-pointer shadow-xs">
+                      <i class="fas fa-eye text-xs"></i> View
+                    </button>
+                    <button type="button"
+                      @click="promptDeleteValidId(selectedRunner)"
+                      :disabled="isValidIdDeleting"
+                      class="px-2 py-1 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 font-bold text-[11px] hover:bg-rose-200 transition flex items-center gap-1 cursor-pointer">
+                      <i class="fas fa-trash text-xs"></i>
+                    </button>
                   </div>
                 </div>
-                <button type="button"
-                  @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_back), 'Alumni ID (Back)', selectedRunner)"
-                  class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-700 transition whitespace-nowrap flex items-center gap-1.5 cursor-pointer shadow-sm">
-                  <i class="fas fa-eye text-xs"></i> View Back
-                </button>
+
+                <div v-if="getImageUrl(selectedRunner.valid_id_back)"
+                  class="border rounded-2xl p-2.5 bg-white dark:bg-gray-800 flex items-center justify-between gap-3 shadow-2xs">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <img
+                      :src="getImageUrl(selectedRunner.valid_id_back)"
+                      alt="Valid ID Back"
+                      class="w-16 h-12 rounded-lg object-cover border bg-gray-100 cursor-pointer shrink-0"
+                      @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_back), 'Valid ID (Back)', selectedRunner)"
+                    />
+                    <div class="truncate">
+                      <p class="font-extrabold text-xs text-gray-900 dark:text-gray-100 truncate">Valid ID (Back)</p>
+                      <p class="text-[10px] text-gray-500">Click to view full preview</p>
+                    </div>
+                  </div>
+                  <button type="button"
+                    @click="openReceiptModal(getImageUrl(selectedRunner.valid_id_back), 'Valid ID (Back)', selectedRunner)"
+                    class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-700 transition flex items-center gap-1 cursor-pointer shadow-xs shrink-0">
+                    <i class="fas fa-eye text-xs"></i> View
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -9214,9 +9603,9 @@ const closeRunnerQrPassModal = () => {
         </div>
 
         <!-- Camera Viewport / Reader -->
-        <div class="p-4 flex flex-col items-center justify-center relative bg-slate-900 min-h-[300px]">
+        <div class="p-4 flex flex-col items-center justify-center relative bg-slate-900">
           <div id="qr-reader-camera"
-            class="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-inner border-2 border-emerald-500/50 relative bg-black">
+            class="w-full max-w-[280px] aspect-square rounded-2xl overflow-hidden shadow-inner border-2 border-emerald-500/70 relative">
           </div>
 
           <!-- Helper alert if error or camera blocked -->
@@ -9274,21 +9663,16 @@ const closeRunnerQrPassModal = () => {
          MODAL 2: CLAIM VERIFICATION & INCLUSIONS CHECKLIST MODAL
          ═══════════════════════════════════════════════════════════════════ -->
     <div v-if="isClaimVerificationModalOpen && activeClaimRunner"
-      class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm transition-opacity">
+      class="fixed  inset-0 z-50 justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm transition-opacity overflow-y-scroll">
       <div
-        class="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col max-h-[94vh]">
+        class="bg-white dark:bg-gray-800 lg:w-fit w-full mx-auto overflow-hidden shadow-2xl  flex flex-col">
         <!-- Header -->
         <div
-          class="p-4 border-b dark:border-gray-700/80 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white flex items-center justify-between">
+          class="px-4 py-1 border-b dark:border-gray-700/80 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <div class="w-9 h-9 rounded-2xl bg-white/20 flex items-center justify-center">
-              <i class="fas fa-box-check text-amber-300 text-base"></i>
-            </div>
             <div>
-              <h3 class="font-extrabold text-sm sm:text-base tracking-tight leading-tight">Race Kit Claiming &
-                Inclusions
+              <h3 class="font-extrabold text-sm sm:text-base tracking-tight leading-tight">Race Kit Claiming & Inclusions
               </h3>
-              <p class="text-[10px] text-emerald-200">Verify items before releasing to participant</p>
             </div>
           </div>
           <button type="button" @click="closeClaimVerificationModal"
@@ -9297,7 +9681,7 @@ const closeRunnerQrPassModal = () => {
           </button>
         </div>
 
-        <div class="p-4 sm:p-5 overflow-y-auto space-y-4">
+        <div class="p-2 overflow-y-auto space-y-1">
           <!-- ALREADY CLAIMED WARNING BANNER -->
           <div v-if="activeClaimRunner.kit_claimed"
             class="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-800 flex items-start gap-3">
@@ -9334,17 +9718,14 @@ const closeRunnerQrPassModal = () => {
           <!-- RUNNER PROFILE SUMMARY CARD -->
           <div
             class="p-4 rounded-2xl border border-slate-200 dark:border-gray-700/80 bg-slate-50 dark:bg-gray-900/40 space-y-2.5">
-            <div class="flex items-center justify-between gap-2 flex-wrap">
-              <div class="flex items-center gap-2">
-                <span
-                  class="px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-black text-xs tracking-wider uppercase shadow-2xs">
-                  BIB # {{ activeClaimRunner.run_number || ('AR-' + activeClaimRunner.id) }}
-                </span>
+            <div class="flex items-center justify-between flex-wrap">
+              <div class="flex items-center">
+         
                 <span :class="[
                   'px-2 py-0.5 rounded font-black text-[10px] text-white uppercase shadow-2xs',
                   runCategories.find(c => normalizeCategory(activeClaimRunner.run_category) === c.id)?.color || 'bg-emerald-700'
                 ]">
-                  {{ activeClaimRunner.run_category }}
+                    {{ activeClaimRunner.run_number || ('AR-' + activeClaimRunner.id) }}
                 </span>
               </div>
               <span :class="[
@@ -9360,7 +9741,7 @@ const closeRunnerQrPassModal = () => {
             </div>
 
             <div>
-              <h4 class="font-black text-base text-gray-900 dark:text-gray-100 uppercase">
+              <h4 class="font-black text-xs text-gray-900 dark:text-gray-100 uppercase">
                 {{ activeClaimRunner.firstname }} {{ activeClaimRunner.middlename ? activeClaimRunner.middlename[0] +
                 '.' :
                 '' }} {{ activeClaimRunner.lastname }} {{ activeClaimRunner.suffix || '' }}
@@ -9387,16 +9768,162 @@ const closeRunnerQrPassModal = () => {
                 <span class="font-bold text-gray-800 dark:text-gray-200">{{ activeClaimRunner.pet_name }} ({{
                   activeClaimRunner.pet_type || 'Pet' }})</span>
               </div>
-              <div>
-                <span class="text-[10px] font-bold text-gray-400 uppercase block">Claim Code</span>
-                <span class="font-mono text-[11px] font-bold text-gray-600 dark:text-gray-300">{{
-                  activeClaimRunner.claim_qr_code || ('AR-' + activeClaimRunner.id) }}</span>
+              
+            </div>
+          </div>
+
+          <!-- ── PARTICIPANT VALID ID VERIFICATION & CAMERA SNAP ── -->
+          <div
+            class="p-4 rounded-2xl border transition-all space-y-3"
+            :class="getImageUrl(activeClaimRunner.valid_id_front)
+              ? (props.darkMode ? 'bg-emerald-950/25 border-emerald-700/60' : 'bg-emerald-50/70 border-emerald-200')
+              : (props.darkMode ? 'bg-amber-950/25 border-amber-800/60' : 'bg-amber-50/70 border-amber-200')"
+          >
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <div class="flex items-center gap-2">
+                <div
+                  :class="[
+                    'w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold',
+                    getImageUrl(activeClaimRunner.valid_id_front)
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-amber-500 text-white animate-pulse'
+                  ]"
+                >
+                  <i :class="getImageUrl(activeClaimRunner.valid_id_front) ? 'fas fa-id-card-clip' : 'fas fa-camera'"></i>
+                </div>
+                <div>
+                  <h5 class="text-xs font-black uppercase tracking-wide flex items-center gap-1.5">
+                    <span>Valid ID Verification</span>
+                    <span
+                      v-if="getImageUrl(activeClaimRunner.valid_id_front)"
+                      class="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[9px] font-black tracking-normal"
+                    >
+                      <i class="fas fa-check text-[8px] mr-0.5"></i> Recorded
+                    </span>
+                    <span
+                      v-else
+                      class="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-black tracking-normal"
+                    >
+                      Verification Needed
+                    </span>
+                  </h5>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400">
+                    {{ getImageUrl(activeClaimRunner.valid_id_front)
+                      ? 'Participant identity verified and recorded on file.'
+                      : 'Take a picture of participant Valid ID with camera before releasing kit.' }}
+                  </p>
+                </div>
               </div>
+
+              <!-- Action buttons -->
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  @click="openValidIdCamera(activeClaimRunner)"
+                  :disabled="isValidIdUploading"
+                  class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95 disabled:opacity-50"
+                >
+                  <i class="fas fa-camera text-xs"></i>
+                  <span>{{ getImageUrl(activeClaimRunner.valid_id_front) ? 'Retake Photo' : 'Take Picture (Camera)' }}</span>
+                </button>
+
+                <label
+                  class="px-2.5 py-1.5 rounded-xl border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                  title="Upload Valid ID file"
+                >
+                  <i class="fas fa-upload text-[11px]"></i>
+                  <span class="hidden sm:inline">Upload</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    class="hidden"
+                    @change="handleValidIdFileSelect($event, activeClaimRunner)"
+                    :disabled="isValidIdUploading"
+                  />
+                </label>
+              </div>
+            </div>
+
+            <!-- If Valid ID is recorded, display it -->
+            <div
+              v-if="getImageUrl(activeClaimRunner.valid_id_front)"
+              class="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-800/80 shadow-2xs"
+            >
+              <div
+                class="relative group w-20 h-14 sm:w-28 sm:h-18 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-900 border shrink-0 cursor-pointer"
+                @click="openReceiptModal(getImageUrl(activeClaimRunner.valid_id_front), 'Valid ID - ' + activeClaimRunner.firstname + ' ' + activeClaimRunner.lastname, activeClaimRunner)"
+              >
+                <img
+                  :src="getImageUrl(activeClaimRunner.valid_id_front)"
+                  alt="Valid ID"
+                  class="w-full h-full object-cover transition duration-300 group-hover:scale-110"
+                />
+                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-xs font-bold gap-1">
+                  <i class="fas fa-magnifying-glass-plus"></i> View
+                </div>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-extrabold text-gray-900 dark:text-gray-100 truncate">
+                    Valid ID Captured
+                  </span>
+                  <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+                </div>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                  Identity recorded. Click image to enlarge full preview.
+                </p>
+                <div class="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    @click="openReceiptModal(getImageUrl(activeClaimRunner.valid_id_front), 'Valid ID - ' + activeClaimRunner.firstname + ' ' + activeClaimRunner.lastname, activeClaimRunner)"
+                    class="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <i class="fas fa-eye text-[10px]"></i> View Full Image
+                  </button>
+                  <span class="text-gray-300 dark:text-gray-600">&middot;</span>
+                  <button
+                    type="button"
+                    @click="promptDeleteValidId(activeClaimRunner)"
+                    :disabled="isValidIdDeleting"
+                    class="text-[11px] font-bold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <i class="fas fa-trash text-[10px]"></i> Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty State / Prompt to snap photo -->
+            <div
+              v-else
+              class="p-3 rounded-xl border border-dashed border-amber-300 dark:border-amber-700/60 bg-amber-50/50 dark:bg-amber-950/10 flex items-center justify-between gap-3"
+            >
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <i class="fas fa-id-card text-xs"></i>
+                </div>
+                <div>
+                  <p class="text-xs font-bold text-amber-900 dark:text-amber-200">No Valid ID Recorded Yet</p>
+                  <p class="text-[10px] text-amber-700 dark:text-amber-400">
+                    Snap a picture with camera or upload proof of identity.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                @click="openValidIdCamera(activeClaimRunner)"
+                class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition shrink-0 flex items-center gap-1 cursor-pointer active:scale-95"
+              >
+                <i class="fas fa-camera text-[10px]"></i>
+                <span>Open Camera</span>
+              </button>
             </div>
           </div>
 
           <!-- INCLUSIONS CHECKLIST SECTION -->
-          <div class="space-y-2.5">
+          <div class="space-y-2.5 mt-3">
             <div class="flex items-center justify-between">
               <div>
                 <h5
@@ -9404,26 +9931,25 @@ const closeRunnerQrPassModal = () => {
                   <i class="fas fa-list-check text-emerald-600"></i>
                   <span>Kit Inclusions Checklist</span>
                 </h5>
-                <p class="text-[10px] text-gray-500">Check off each item as you hand it to the runner:</p>
               </div>
 
               <!-- Check All / Clear Button -->
               <button type="button" @click="toggleAllInclusions"
-                class="px-2.5 py-1 rounded-lg text-[11px] font-bold transition border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 cursor-pointer">
+                class="px-2.5 py-0.5 rounded-lg text-[11px] font-bold transition border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 cursor-pointer">
                 {{ allInclusionsChecked ? 'Uncheck All' : 'Check All' }}
               </button>
             </div>
 
             <!-- Inclusions Items list -->
-            <div class="space-y-1.5">
+            <div class="space-y-1">
               <label v-for="item in claimInclusions" :key="item" :class="[
-                'flex items-center gap-3 p-3 rounded-2xl border transition-all cursor-pointer select-none active:scale-[0.99]',
+                'flex items-center px-2 py-2 rounded-xl border transition-all cursor-pointer select-none active:scale-[0.99]',
                 selectedClaimInclusions.includes(item)
                   ? (props.darkMode ? 'bg-emerald-950/40 border-emerald-700 text-white' : 'bg-emerald-50/80 border-emerald-300 text-emerald-950 font-semibold shadow-2xs')
                   : (props.darkMode ? 'bg-gray-900/40 border-gray-700 text-gray-400' : 'bg-white border-slate-200 text-gray-700 hover:bg-slate-50')
               ]">
                 <input type="checkbox" :value="item" v-model="selectedClaimInclusions"
-                  class="w-5 h-5 rounded-md accent-emerald-600 cursor-pointer" />
+                  class="w-5 h-5 rounded-md accent-emerald-600 cursor-pointer mr-3" />
                 <div class="flex-1 flex items-center justify-between text-xs sm:text-sm">
                   <span>{{ item }}</span>
                   <i v-if="selectedClaimInclusions.includes(item)"
@@ -9537,6 +10063,195 @@ const closeRunnerQrPassModal = () => {
             class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 cursor-pointer">
             <i class="fas fa-hand-holding-box text-[10px]"></i> Claim Kit Now
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MODAL: VALID ID LIVE CAMERA CAPTURE & RECORD MODAL
+         ═══════════════════════════════════════════════════════════════════ -->
+    <div
+      v-if="isValidIdCameraModalOpen && validIdCameraRunner"
+      class="fixed inset-0 z-[95] flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md transition-opacity"
+    >
+      <div
+        class="bg-gray-900 text-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-gray-700 flex flex-col max-h-[94vh]"
+      >
+        <!-- Camera Modal Header -->
+        <div class="p-4 border-b border-gray-800 bg-gradient-to-r from-emerald-800 to-teal-900 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center">
+              <i class="fas fa-id-card text-emerald-300 text-sm"></i>
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm tracking-tight leading-tight">
+                {{ validIdCapturedImage ? 'Review Valid ID Photo' : 'Capture Valid ID' }}
+              </h3>
+              <p class="text-[10px] text-emerald-200">
+                {{ validIdCameraRunner.firstname }} {{ validIdCameraRunner.lastname }} &middot; BIB # {{ validIdCameraRunner.run_number || ('AR-' + validIdCameraRunner.id) }}
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <!-- Camera Flip Button (only in live mode and if multiple cameras exist) -->
+            <button
+              v-if="!validIdCapturedImage && hasMultipleCameras"
+              type="button"
+              @click="switchValidIdCamera"
+              class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center cursor-pointer"
+              title="Switch Camera (Front/Back)"
+            >
+              <i class="fas fa-camera-rotate text-xs"></i>
+            </button>
+            <!-- Close Modal -->
+            <button
+              type="button"
+              @click="closeValidIdCamera"
+              class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white transition flex items-center justify-center cursor-pointer"
+            >
+              <i class="fas fa-times text-xs"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Camera Viewfinder / Preview Area -->
+        <div class="relative bg-black flex flex-col items-center justify-center p-3 sm:p-4 min-h-[340px] sm:min-h-[380px] overflow-hidden select-none">
+          <!-- ERROR STATE -->
+          <div v-if="validIdCameraError && !validIdCapturedImage" class="p-6 text-center max-w-sm space-y-3">
+            <div class="w-14 h-14 rounded-2xl bg-rose-950/80 border border-rose-700 text-rose-300 flex items-center justify-center mx-auto text-2xl">
+              <i class="fas fa-camera-slash"></i>
+            </div>
+            <p class="text-xs text-rose-200 font-semibold leading-relaxed">
+              {{ validIdCameraError }}
+            </p>
+            <div class="pt-2 flex flex-col sm:flex-row gap-2 justify-center">
+              <button
+                type="button"
+                @click="startValidIdCamera"
+                class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition cursor-pointer"
+              >
+                <i class="fas fa-rotate-right mr-1"></i> Retry Camera
+              </button>
+              <label class="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-600 text-white font-bold text-xs transition cursor-pointer text-center">
+                <i class="fas fa-upload mr-1"></i> Choose from Files
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  class="hidden"
+                  @change="handleValidIdFileSelect($event, validIdCameraRunner)"
+                />
+              </label>
+            </div>
+          </div>
+
+          <!-- LIVE CAMERA STREAM -->
+          <div v-show="!validIdCapturedImage && !validIdCameraError" class="relative w-full max-w-md aspect-[4/3] rounded-2xl overflow-hidden bg-black flex items-center justify-center border-2 border-emerald-500/40 shadow-inner">
+            <video
+              ref="validIdCameraVideoRef"
+              autoplay
+              playsinline
+              muted
+              class="w-full h-full object-cover"
+            ></video>
+
+            <!-- ID CARD FRAMING OVERLAY / GUIDELINES -->
+            <div class="absolute inset-4 pointer-events-none border-2 border-dashed border-emerald-400/70 rounded-xl flex flex-col justify-between p-2 shadow-[0_0_20px_rgba(16,185,129,0.25)]">
+              <div class="flex justify-between items-start">
+                <span class="w-4 h-4 border-t-2 border-l-2 border-emerald-300 rounded-tl"></span>
+                <span class="px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-xs text-[10px] text-emerald-300 font-bold uppercase tracking-wider">
+                  Align ID Here
+                </span>
+                <span class="w-4 h-4 border-t-2 border-r-2 border-emerald-300 rounded-tr"></span>
+              </div>
+              <div class="flex justify-between items-end">
+                <span class="w-4 h-4 border-b-2 border-l-2 border-emerald-300 rounded-bl"></span>
+                <span class="text-[9px] text-emerald-200/80 font-medium bg-black/50 px-2 py-0.5 rounded">
+                  Hold camera steady
+                </span>
+                <span class="w-4 h-4 border-b-2 border-r-2 border-emerald-300 rounded-br"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STILL PHOTO REVIEW -->
+          <div v-if="validIdCapturedImage" class="relative w-full max-w-md aspect-[4/3] rounded-2xl overflow-hidden bg-black flex items-center justify-center border-2 border-emerald-500 shadow-2xl">
+            <img
+              :src="validIdCapturedImage"
+              alt="Captured Valid ID Preview"
+              class="w-full h-full object-contain"
+            />
+            <div class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-emerald-600/90 text-white font-black text-[10px] uppercase tracking-wider shadow-sm flex items-center gap-1">
+              <i class="fas fa-check-circle"></i> Photo Ready
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera Controls / Footer -->
+        <div class="p-4 border-t border-gray-800 bg-gray-950 flex items-center justify-between gap-3">
+          <!-- LIVE MODE CONTROLS -->
+          <template v-if="!validIdCapturedImage">
+            <button
+              type="button"
+              @click="closeValidIdCamera"
+              class="px-4 py-2 rounded-xl border border-gray-700 text-gray-400 hover:text-white hover:bg-gray-800 text-xs font-semibold cursor-pointer"
+            >
+              Cancel
+            </button>
+
+            <!-- SHUTTER BUTTON -->
+            <div class="flex-1 flex justify-center">
+              <button
+                type="button"
+                @click="captureValidIdPhoto"
+                :disabled="!!validIdCameraError"
+                class="group relative w-16 h-16 rounded-full border-4 border-emerald-500 flex items-center justify-center cursor-pointer transition transform active:scale-90 hover:border-emerald-400 disabled:opacity-40"
+                title="Capture Photo"
+              >
+                <span class="w-12 h-12 rounded-full bg-white group-hover:bg-emerald-300 transition-colors shadow-lg"></span>
+              </button>
+            </div>
+
+            <!-- Upload from gallery / files fallback -->
+            <label
+              class="px-3.5 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border border-gray-700"
+              title="Upload existing image or file"
+            >
+              <i class="fas fa-folder-open text-xs"></i>
+              <span class="hidden sm:inline">Files</span>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                class="hidden"
+                @change="handleValidIdFileSelect($event, validIdCameraRunner)"
+              />
+            </label>
+          </template>
+
+          <!-- PHOTO REVIEW CONTROLS -->
+          <template v-else>
+            <button
+              type="button"
+              @click="retakeValidIdPhoto"
+              :disabled="isValidIdUploading"
+              class="px-4 py-2.5 rounded-xl border border-gray-700 hover:bg-gray-800 text-gray-300 hover:text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            >
+              <i class="fas fa-rotate-left text-xs"></i>
+              <span>Retake</span>
+            </button>
+
+            <button
+              type="button"
+              @click="saveCapturedValidId"
+              :disabled="isValidIdUploading"
+              class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-500 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs sm:text-sm shadow-lg transition flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-60"
+            >
+              <i :class="['fas', isValidIdUploading ? 'fa-spinner fa-spin' : 'fa-cloud-arrow-up']"></i>
+              <span>{{ isValidIdUploading ? 'Recording...' : 'Record & Display Valid ID' }}</span>
+            </button>
+          </template>
         </div>
       </div>
     </div>
@@ -10004,5 +10719,42 @@ const closeRunnerQrPassModal = () => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ── QR Scanner Camera Viewport Styling (Removes black letterboxing) ── */
+:deep(#qr-reader-camera) {
+  border: none !important;
+  background: transparent !important;
+  overflow: hidden !important;
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+:deep(#qr-reader-camera video) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  border-radius: 1rem !important;
+}
+
+:deep(#qr-shaded-region) {
+  border-color: rgba(16, 185, 129, 0.6) !important;
+}
+
+:deep(#qr-shaded-region > div) {
+  background-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+:deep(#qr-reader-camera canvas) {
+  display: none !important;
+}
+
+:deep(#qr-reader-camera img[alt="Info icon"]) {
+  display: none !important;
 }
 </style>
