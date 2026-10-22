@@ -4545,6 +4545,7 @@ const isRunnerQrPassModalOpen = ref(false);
 const isMarkingKitReady = ref(false);
 const isConfirmingClaim = ref(false);
 const isBulkMarkingReady = ref(false);
+const bulkMarkReadyProgress = ref({ current: 0, total: 0, success: 0, failed: 0 });
 const isResendingClaimEmail = ref(false);
 const isUnclaiming = ref(false);
 const unclaimConfirmModal = ref({
@@ -4868,70 +4869,169 @@ const executeUnclaim = async (runner) => {
   }
 };
 
-const markKitReadyAndNotify = async (runner) => {
-  if (!runner || isMarkingKitReady.value) return;
-  isMarkingKitReady.value = true;
-  const operator = currentOperator.value;
+const markKitReadyAndNotify = async (runner, options = {}) => {
+  const { silent = false, force = false } = options;
+  if (!runner) return { success: false, error: "No runner specified" };
+  if (!force && isMarkingKitReady.value) return { success: false, error: "Operation in progress" };
+
+  if (!silent) {
+    isMarkingKitReady.value = true;
+  }
+  const operator = currentOperator.value || "Admin";
+
   try {
     const res = await $fetch(`${endpoint.value}/api/animorun/${runner.id}/mark-kit-ready/`, {
       method: "POST",
       body: { operator },
     });
 
-    if (res?.data) {
-      const idx = registrations.value.findIndex((r) => r.id === runner.id);
-      if (idx !== -1) registrations.value[idx] = { ...registrations.value[idx], ...res.data };
-      if (selectedRunner.value && selectedRunner.value.id === runner.id) {
-        selectedRunner.value = { ...selectedRunner.value, ...res.data };
-      }
-    } else {
-      const idx = registrations.value.findIndex((r) => r.id === runner.id);
-      if (idx !== -1) {
-        registrations.value[idx].kit_ready = true;
-        registrations.value[idx].kit_ready_by = operator;
-        registrations.value[idx].kit_ready_at = new Date().toISOString();
+    const nowIso = new Date().toISOString();
+    const serverData = res?.data || {};
+
+    // 1. Reactive in-place update of runner instance
+    runner.kit_ready = true;
+    runner.kit_ready_by = operator;
+    runner.kit_ready_at = serverData.kit_ready_at || nowIso;
+    if (serverData.claim_qr_code) {
+      runner.claim_qr_code = serverData.claim_qr_code;
+    }
+
+    // 2. Synchronize inside registrations array
+    const idx = registrations.value.findIndex((r) => r.id === runner.id);
+    if (idx !== -1) {
+      registrations.value[idx] = {
+        ...registrations.value[idx],
+        ...serverData,
+        kit_ready: true,
+        kit_ready_by: operator,
+        kit_ready_at: serverData.kit_ready_at || nowIso,
+      };
+    }
+
+    // 3. Synchronize selectedRunner if currently viewed
+    if (selectedRunner.value && selectedRunner.value.id === runner.id) {
+      selectedRunner.value = {
+        ...selectedRunner.value,
+        ...serverData,
+        kit_ready: true,
+        kit_ready_by: operator,
+        kit_ready_at: serverData.kit_ready_at || nowIso,
+      };
+    }
+
+    // 4. Synchronize claimQrPassData if currently open
+    if (claimQrPassData.value && claimQrPassData.value.runner && claimQrPassData.value.runner.id === runner.id) {
+      Object.assign(claimQrPassData.value.runner, {
+        ...serverData,
+        kit_ready: true,
+        kit_ready_by: operator,
+        kit_ready_at: serverData.kit_ready_at || nowIso,
+      });
+      if (serverData.claim_qr_code) {
+        claimQrPassData.value.claim_code = serverData.claim_qr_code;
       }
     }
 
-    showNotice(
-      `Race kit marked ready for ${runner.firstname} ${runner.lastname}. Email with QR code sent to ${runner.contact_email || runner.email}!`,
-      "Claiming Email Notified",
-      "success"
-    );
+    if (!silent) {
+      const emailTarget = runner.contact_email || runner.email || "registrant";
+      showNotice(
+        `Race kit marked ready for ${runner.firstname} ${runner.lastname}. Claiming email with QR code sent to ${emailTarget}!`,
+        "Claiming Email Notified",
+        "success"
+      );
+    }
+
+    return { success: true, runner, data: serverData };
   } catch (err) {
-    console.error("Mark ready error:", err);
-    showNotice("Failed to send kit claiming email. Please try again.", "Email Failed", "error");
+    console.error(`Mark ready error for runner #${runner?.id}:`, err);
+    if (!silent) {
+      showNotice(
+        err.data?.error || "Failed to send kit claiming email. Please try again.",
+        "Email Failed",
+        "error"
+      );
+    }
+    return { success: false, runner, error: err };
   } finally {
-    isMarkingKitReady.value = false;
+    if (!silent) {
+      isMarkingKitReady.value = false;
+    }
   }
 };
 
 const executeBulkMarkKitReady = async () => {
   if (!selectedIds.value.length || isBulkMarkingReady.value) return;
+
+  const count = selectedIds.value.length;
+  const confirmed = confirm(
+    `Are you sure you want to mark race kits ready and send claiming notification emails with QR codes to each of the ${count} selected runner(s)?`
+  );
+  if (!confirmed) return;
+
   isBulkMarkingReady.value = true;
-  const ids = [...selectedIds.value];
-  const operator = currentOperator.value;
-  try {
-    const res = await $fetch(`${endpoint.value}/api/animorun/bulk-mark-kit-ready/`, {
-      method: "POST",
-      body: { ids, operator },
-    });
-    const nowStr = new Date().toISOString();
-    registrations.value.forEach((r) => {
-      if (ids.includes(r.id)) {
-        r.kit_ready = true;
-        r.kit_ready_at = nowStr;
-        r.kit_ready_by = operator;
+  const targetIds = [...selectedIds.value];
+
+  // Map selected IDs to runner instances
+  const runnerMap = new Map(registrations.value.map((r) => [r.id, r]));
+  const runnersToProcess = targetIds.map((id) => runnerMap.get(id) || { id, firstname: `Runner #${id}`, lastname: "" });
+
+  bulkMarkReadyProgress.value = {
+    current: 0,
+    total: runnersToProcess.length,
+    success: 0,
+    failed: 0,
+  };
+
+  showFastToast(`Starting to dispatch claiming emails to ${runnersToProcess.length} runner(s)...`, "info", 2000);
+
+  // Controlled concurrency pool (concurrency limit = 6)
+  // Sends each individual email via markKitReadyAndNotify so every selected runner is dispatched
+  const CONCURRENCY = 6;
+  let cursor = 0;
+
+  const worker = async () => {
+    while (cursor < runnersToProcess.length) {
+      const currentIndex = cursor++;
+      const runner = runnersToProcess[currentIndex];
+      try {
+        const res = await markKitReadyAndNotify(runner, { silent: true, force: true });
+        if (res && res.success) {
+          bulkMarkReadyProgress.value.success++;
+        } else {
+          bulkMarkReadyProgress.value.failed++;
+        }
+      } catch (e) {
+        bulkMarkReadyProgress.value.failed++;
+      } finally {
+        bulkMarkReadyProgress.value.current++;
       }
-    });
-    showNotice(
-      res.message || `${ids.length} runner(s) notified! Claiming emails with QR codes have been dispatched.`,
-      "Claiming Emails Notified",
-      "success"
-    );
+    }
+  };
+
+  try {
+    const workerCount = Math.min(CONCURRENCY, runnersToProcess.length);
+    const workers = Array.from({ length: workerCount }, () => worker());
+    await Promise.all(workers);
+
+    const { total, success, failed } = bulkMarkReadyProgress.value;
+    clearSelection();
+
+    if (failed === 0) {
+      showNotice(
+        `🎉 Successfully sent kit claiming emails with QR codes to all ${success} runner(s)!`,
+        "All Emails Dispatched",
+        "success"
+      );
+    } else {
+      showNotice(
+        `Bulk dispatch completed for ${total} runner(s): ${success} email(s) sent successfully, ${failed} failed.`,
+        "Bulk Notice Completed",
+        success > 0 ? "warning" : "error"
+      );
+    }
   } catch (err) {
     console.error("Bulk mark ready error:", err);
-    showNotice("Failed to dispatch claiming emails.", "Bulk Notice Failed", "error");
+    showNotice("An error occurred during bulk email dispatch.", "Bulk Notice Failed", "error");
   } finally {
     isBulkMarkingReady.value = false;
   }
@@ -6211,7 +6311,8 @@ const closeRunnerQrPassModal = () => {
               title="Send claiming notification email with QR code to all selected runners">
               <i v-if="!isBulkMarkingReady" class="fas fa-qrcode text-[11px]"></i>
               <i v-else class="fas fa-spinner fa-spin text-[11px]"></i>
-              <span>Notify Ready ({{ selectedIds.length }})</span>
+              <span v-if="isBulkMarkingReady">Sending ({{ bulkMarkReadyProgress.current }}/{{ bulkMarkReadyProgress.total }})</span>
+              <span v-else>Notify Ready ({{ selectedIds.length }})</span>
             </button>
             <button type="button" @click="clearSelection"
               class="text-xs text-gray-500 hover:text-rose-600 dark:text-gray-400 dark:hover:text-rose-300 font-semibold cursor-pointer px-2 py-1">
@@ -6842,11 +6943,19 @@ const closeRunnerQrPassModal = () => {
 
                     <!-- Case 2: Kit Marked Ready for Claiming (Email dispatched with QR code) -->
                     <div v-else-if="runner.kit_ready" class="inline-flex items-center gap-1.5">
-
                       <button type="button" @click="openRunnerQrPassModal(runner)"
                         class="px-1.5 py-0.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700/80 transition inline-flex items-center justify-center cursor-pointer"
                         title="View or print Runner Claim Pass with QR code">
                         <i class="fas fa-qrcode text-3xl"></i>
+                      </button>
+                    </div>
+
+                    <!-- Case 3: Kit Not Ready Yet (Direct single-runner notification) -->
+                    <div v-else class="inline-flex items-center gap-1.5">
+                      <button type="button" @click="markKitReadyAndNotify(runner)" :disabled="isMarkingKitReady"
+                        class="px-2 py-1 rounded-xl bg-slate-100 hover:bg-sky-100 dark:bg-gray-800 dark:hover:bg-sky-950 text-slate-500 hover:text-sky-700 dark:text-gray-400 dark:hover:text-sky-300 border border-slate-200 dark:border-gray-700 text-[10px] font-semibold transition inline-flex items-center gap-1 cursor-pointer"
+                        title="Mark kit ready and email claim pass with QR code to this runner">
+                        <i class="fas fa-paper-plane text-[9px]"></i> Notify
                       </button>
                     </div>
                   </td>
@@ -6945,6 +7054,17 @@ const closeRunnerQrPassModal = () => {
           <i v-else class="fas fa-spinner fa-spin"></i>
           <span v-if="selectedPendingRunners.length > 0">Multi-Confirm ({{ selectedPendingRunners.length }})</span>
           <span v-else>Resend Email ({{ selectedIds.length }})</span>
+        </button>
+
+        <!-- Notify Kit Ready button -->
+        <button v-if="selectedIds.length > 0" type="button" @click="executeBulkMarkKitReady"
+          :disabled="isBulkMarkingReady"
+          class="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white font-bold text-xs transition shadow-lg flex items-center gap-1.5 border border-sky-400/40 cursor-pointer active:scale-95 disabled:opacity-60"
+          title="Send claiming notification email with QR code to all selected runners">
+          <i v-if="!isBulkMarkingReady" class="fas fa-qrcode"></i>
+          <i v-else class="fas fa-spinner fa-spin"></i>
+          <span v-if="isBulkMarkingReady">Sending ({{ bulkMarkReadyProgress.current }}/{{ bulkMarkReadyProgress.total }})</span>
+          <span v-else>Notify Ready ({{ selectedIds.length }})</span>
         </button>
 
         <!-- Finalize Supplier Batch button -->
