@@ -3960,14 +3960,14 @@ const selectBatchForSchedule = (b) => {
     batchScheduleModal.value.selectedBatchId = b.id || null;
     batchScheduleModal.value.batchName = b.batch_name || "Batch 1";
     batchScheduleModal.value.distributionDate = b.distribution_date || "November 09 – 13, 2026";
-    batchScheduleModal.value.distributionVenue = b.distribution_venue || "LSU Student Center - Claiming Station";
+    batchScheduleModal.value.distributionVenue = b.distribution_venue || "LSU Arts Center";
     batchScheduleModal.value.distributionTime = b.distribution_time || "8:00 AM – 5:00 PM";
     batchScheduleModal.value.distributionNotes = b.distribution_notes || "Please present your Official Claim Pass QR code and valid ID.";
   } else {
     batchScheduleModal.value.selectedBatchId = null;
     batchScheduleModal.value.batchName = "Batch 1";
     batchScheduleModal.value.distributionDate = "November 09 – 13, 2026";
-    batchScheduleModal.value.distributionVenue = "LSU Student Center - Claiming Station";
+    batchScheduleModal.value.distributionVenue = "LSU Arts Center";
     batchScheduleModal.value.distributionTime = "8:00 AM – 5:00 PM";
     batchScheduleModal.value.distributionNotes = "Please present your Official Claim Pass QR code and valid ID.";
   }
