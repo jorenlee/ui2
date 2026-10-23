@@ -54,7 +54,7 @@ const quickLinks = [
   <footer class="w-full text-slate-100 font-sans relative justify-center text-center">
     <GoogleAdsense />
     <UniversityFeedbackWidget />
-    <LSUAnimoAI />
+
 
     <!-- Top Accent Gradient Line -->
     <div class="h-1.5 w-full bg-gradient-to-r from-emerald-600 via-teal-400 to-emerald-600"></div>
