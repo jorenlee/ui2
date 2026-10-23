@@ -68,6 +68,8 @@ export const ITFeedback: typeof import("../app/components/ITFeedback/index.vue")
 export const InvestitureDonationBox: typeof import("../app/components/InvestitureDonationBox.vue")['default']
 export const JurisDoctorAdmin: typeof import("../app/components/JurisDoctor/Admin.vue")['default']
 export const JurisDoctorAdmission: typeof import("../app/components/JurisDoctor/Admission.vue")['default']
+export const LSUAnimoAI: typeof import("../app/components/LSUAnimoAI.vue")['default']
+export const LSUAnimoAIAdmin: typeof import("../app/components/LSUAnimoAIAdmin.vue")['default']
 export const LibraryElectronicResources: typeof import("../app/components/Library/ElectronicResources.vue")['default']
 export const LibraryBooks: typeof import("../app/components/Library/books/index.vue")['default']
 export const LibraryReserved: typeof import("../app/components/Library/reserved/index.vue")['default']
@@ -85,6 +87,7 @@ export const NetworkLogo: typeof import("../app/components/NetworkLogo.vue")['de
 export const NewsAndUpdates: typeof import("../app/components/NewsAndUpdates.vue")['default']
 export const OERForm: typeof import("../app/components/OER/Form.vue")['default']
 export const OERList: typeof import("../app/components/OER/List.vue")['default']
+export const PSAList: typeof import("../app/components/PSA/List.vue")['default']
 export const Pagination: typeof import("../app/components/Pagination.vue")['default']
 export const Panaglambigit: typeof import("../app/components/Panaglambigit.vue")['default']
 export const PopularCourses: typeof import("../app/components/PopularCourses.vue")['default']
@@ -285,6 +288,8 @@ export const LazyITFeedback: LazyComponent<typeof import("../app/components/ITFe
 export const LazyInvestitureDonationBox: LazyComponent<typeof import("../app/components/InvestitureDonationBox.vue")['default']>
 export const LazyJurisDoctorAdmin: LazyComponent<typeof import("../app/components/JurisDoctor/Admin.vue")['default']>
 export const LazyJurisDoctorAdmission: LazyComponent<typeof import("../app/components/JurisDoctor/Admission.vue")['default']>
+export const LazyLSUAnimoAI: LazyComponent<typeof import("../app/components/LSUAnimoAI.vue")['default']>
+export const LazyLSUAnimoAIAdmin: LazyComponent<typeof import("../app/components/LSUAnimoAIAdmin.vue")['default']>
 export const LazyLibraryElectronicResources: LazyComponent<typeof import("../app/components/Library/ElectronicResources.vue")['default']>
 export const LazyLibraryBooks: LazyComponent<typeof import("../app/components/Library/books/index.vue")['default']>
 export const LazyLibraryReserved: LazyComponent<typeof import("../app/components/Library/reserved/index.vue")['default']>
@@ -302,6 +307,7 @@ export const LazyNetworkLogo: LazyComponent<typeof import("../app/components/Net
 export const LazyNewsAndUpdates: LazyComponent<typeof import("../app/components/NewsAndUpdates.vue")['default']>
 export const LazyOERForm: LazyComponent<typeof import("../app/components/OER/Form.vue")['default']>
 export const LazyOERList: LazyComponent<typeof import("../app/components/OER/List.vue")['default']>
+export const LazyPSAList: LazyComponent<typeof import("../app/components/PSA/List.vue")['default']>
 export const LazyPagination: LazyComponent<typeof import("../app/components/Pagination.vue")['default']>
 export const LazyPanaglambigit: LazyComponent<typeof import("../app/components/Panaglambigit.vue")['default']>
 export const LazyPopularCourses: LazyComponent<typeof import("../app/components/PopularCourses.vue")['default']>

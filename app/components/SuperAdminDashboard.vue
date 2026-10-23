@@ -76,7 +76,9 @@ const openGroups = ref([
   "Super Admin",
   "Juris Doctor Admin",
   "Juris Doctor Examinee",
-  "My Animo Run"
+  "My Animo Run",
+  "PSA Data",
+  "LSU Animo AI"
 ]);
 
 const lsuOnlyMenuGroups = new Set([
@@ -630,6 +632,30 @@ const subMenuList = [
       },
     ],
   },
+  {
+    group: "PSA Data",
+    allowedRole: "Super Admin",
+    items: [
+      {
+        label: "PSA Data List",
+        icon: "fa-id-card-o",
+        type: "button",
+        view: "ViewPSAList",
+      },
+    ],
+  },
+  {
+    group: "LSU Animo AI",
+    allowedRole: "Super Admin",
+    items: [
+      {
+        label: "Chat Sessions & FAQs",
+        icon: "fa-comments",
+        type: "button",
+        view: "ViewLSUAnimoAI",
+      },
+    ],
+  },
 ];
 
 // ---------------- TOP MENU ----------------
@@ -685,6 +711,8 @@ const lazyViewMap = {
   ViewJurisDoctorAdmissionTestManagement: { loader: () => import("~/components/JurisDoctor/Admin.vue"), class: "pb-32" },
   ViewJurisDoctorAdmissionTest: { loader: () => import("~/components/JurisDoctor/Admission.vue"), class: "pb-32" },
   ViewMyAnimoRun: { loader: () => import("~/components/MyAnimoRun/MyRuns.vue"), class: "pb-32" },
+  ViewPSAList: { loader: () => import("~/components/PSA/List.vue"), class: "pb-32" },
+  ViewLSUAnimoAI: { loader: () => import("~/components/LSUAnimoAIAdmin.vue"), class: "pb-32" },
 };
 
 // ---------------- ACTIVE VIEW (resolved lazily) ----------------

@@ -68,6 +68,8 @@ interface _GlobalComponents {
   InvestitureDonationBox: typeof import("../../app/components/InvestitureDonationBox.vue")['default']
   JurisDoctorAdmin: typeof import("../../app/components/JurisDoctor/Admin.vue")['default']
   JurisDoctorAdmission: typeof import("../../app/components/JurisDoctor/Admission.vue")['default']
+  LSUAnimoAI: typeof import("../../app/components/LSUAnimoAI.vue")['default']
+  LSUAnimoAIAdmin: typeof import("../../app/components/LSUAnimoAIAdmin.vue")['default']
   LibraryElectronicResources: typeof import("../../app/components/Library/ElectronicResources.vue")['default']
   LibraryBooks: typeof import("../../app/components/Library/books/index.vue")['default']
   LibraryReserved: typeof import("../../app/components/Library/reserved/index.vue")['default']
@@ -85,6 +87,7 @@ interface _GlobalComponents {
   NewsAndUpdates: typeof import("../../app/components/NewsAndUpdates.vue")['default']
   OERForm: typeof import("../../app/components/OER/Form.vue")['default']
   OERList: typeof import("../../app/components/OER/List.vue")['default']
+  PSAList: typeof import("../../app/components/PSA/List.vue")['default']
   Pagination: typeof import("../../app/components/Pagination.vue")['default']
   Panaglambigit: typeof import("../../app/components/Panaglambigit.vue")['default']
   PopularCourses: typeof import("../../app/components/PopularCourses.vue")['default']
@@ -285,6 +288,8 @@ interface _GlobalComponents {
   LazyInvestitureDonationBox: LazyComponent<typeof import("../../app/components/InvestitureDonationBox.vue")['default']>
   LazyJurisDoctorAdmin: LazyComponent<typeof import("../../app/components/JurisDoctor/Admin.vue")['default']>
   LazyJurisDoctorAdmission: LazyComponent<typeof import("../../app/components/JurisDoctor/Admission.vue")['default']>
+  LazyLSUAnimoAI: LazyComponent<typeof import("../../app/components/LSUAnimoAI.vue")['default']>
+  LazyLSUAnimoAIAdmin: LazyComponent<typeof import("../../app/components/LSUAnimoAIAdmin.vue")['default']>
   LazyLibraryElectronicResources: LazyComponent<typeof import("../../app/components/Library/ElectronicResources.vue")['default']>
   LazyLibraryBooks: LazyComponent<typeof import("../../app/components/Library/books/index.vue")['default']>
   LazyLibraryReserved: LazyComponent<typeof import("../../app/components/Library/reserved/index.vue")['default']>
@@ -302,6 +307,7 @@ interface _GlobalComponents {
   LazyNewsAndUpdates: LazyComponent<typeof import("../../app/components/NewsAndUpdates.vue")['default']>
   LazyOERForm: LazyComponent<typeof import("../../app/components/OER/Form.vue")['default']>
   LazyOERList: LazyComponent<typeof import("../../app/components/OER/List.vue")['default']>
+  LazyPSAList: LazyComponent<typeof import("../../app/components/PSA/List.vue")['default']>
   LazyPagination: LazyComponent<typeof import("../../app/components/Pagination.vue")['default']>
   LazyPanaglambigit: LazyComponent<typeof import("../../app/components/Panaglambigit.vue")['default']>
   LazyPopularCourses: LazyComponent<typeof import("../../app/components/PopularCourses.vue")['default']>
