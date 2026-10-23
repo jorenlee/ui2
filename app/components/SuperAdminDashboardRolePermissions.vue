@@ -1,6 +1,35 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from "vue";
 
+// ---------------- ROLES ----------------
+const availableRoles = [
+  "Animo Run",
+  "Animo Run Admin",
+  "Super Admin",
+  "NPCC Menu",
+  "OCH Admin",
+  "Content Writer",
+  "HR Menu",
+  "Library Menu",
+  "Registrar Menu",
+  "Campus Pass Admin",
+  "DRS Admin",
+  "The Emerald Run",
+  "Commission on Election",
+  "Commission on Election BEU",
+  "External Links",
+  "General Services Office",
+  "Lasalle Alumni Association",
+  "Open Educational Resources",
+  "Safety and Security Center",
+  "Juris Doctor Admin",
+  "Juris Doctor Examinee",
+  "Enrolled Student",
+  "Employee",
+  "LSU Animo AI",
+  "LSU Animo AI Admin",
+].map((r) => ({ value: r, label: r }));
+
 // ---------------- CONFIG ----------------
 const props = defineProps({
   darkMode: Boolean,
@@ -616,32 +645,7 @@ const applyAllAndClean = async () => {
 
 
 
-// ---------------- ROLES ----------------
-const availableRoles = [
-  "Animo Run",
-  "Animo Run Admin",
-  "Super Admin",
-  "NPCC Menu",
-  "OCH Admin",
-  "Content Writer",
-  "HR Menu",
-  "Library Menu",
-  "Registrar Menu",
-  "Campus Pass Admin",
-  "DRS Admin",
-  "The Emerald Run",
-  "Commission on Election",
-  "Commission on Election BEU",
-  "External Links",
-  "General Services Office",
-  "Lasalle Alumni Association",
-  "Open Educational Resources",
-  "Safety and Security Center",
-  "Juris Doctor Admin",
-  "Juris Doctor Examinee",
-  "Enrolled Student",
-  "Employee",
-].map((r) => ({ value: r, label: r }));
+
 
 // ---------------- PRE-INDEXED SEARCH & FAST LOOKUPS ----------------
 const prepareItemSearchIndex = (item) => {
