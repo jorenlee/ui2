@@ -11,16 +11,16 @@
         "../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt"
       ],
       "@unhead/vue": [
-        "../node_modules/@unhead/vue"
+        "../node_modules/.pnpm/@unhead+vue@3.4.3_@oxc-proj_f3250da4dd8549dfd1652df583f9e6ae/node_modules/@unhead/vue"
       ],
       "vue": [
-        "../node_modules/vue"
+        "../node_modules/.pnpm/vue@3.5.44/node_modules/vue"
       ],
       "@vue/runtime-core": [
-        "../node_modules/@vue/runtime-core"
+        "../node_modules/.pnpm/@vue+runtime-core@3.5.44/node_modules/@vue/runtime-core"
       ],
       "@vue/compiler-sfc": [
-        "../node_modules/@vue/compiler-sfc"
+        "../node_modules/.pnpm/@vue+compiler-sfc@3.5.44/node_modules/@vue/compiler-sfc"
       ],
       "vue-router": [
         "../node_modules/.pnpm/vue-router@5.4.0_@vue+compi_81d8fcea8016f1d43ce90fd155c6f8eb/node_modules/vue-router"
@@ -29,16 +29,16 @@
         "../node_modules/.pnpm/vue-router@5.4.0_@vue+compi_81d8fcea8016f1d43ce90fd155c6f8eb/node_modules/vue-router/vue-router-auto-routes.d.mts"
       ],
       "vite/client": [
-        "../node_modules/vite/client.d.ts"
+        "../node_modules/.pnpm/vite@8.3.4_esbuild@0.28.2_j_6ba98852643ad8be8e93d694bf27731c/node_modules/vite/client.d.ts"
       ],
       "defu": [
-        "../node_modules/defu"
+        "../node_modules/.pnpm/defu@6.1.7/node_modules/defu"
       ],
       "consola": [
-        "../node_modules/consola"
+        "../node_modules/.pnpm/consola@3.4.2/node_modules/consola"
       ],
       "ofetch": [
-        "../node_modules/ofetch"
+        "../node_modules/.pnpm/ofetch@1.5.1/node_modules/ofetch"
       ],
       "~": [
         "../app"
@@ -222,8 +222,8 @@
     "../node_modules/.pnpm/@nuxtjs+google-adsense@3.0._cf6f304555be65df0d9925312e0ff305/node_modules/dist/runtime",
     "../node_modules/.pnpm/nuxt-gtag@3.0.3_magicast@0.5.5/node_modules/runtime",
     "../node_modules/.pnpm/nuxt-gtag@3.0.3_magicast@0.5.5/node_modules/dist/runtime",
-    "../node_modules/runtime",
-    "../node_modules/dist/runtime",
+    "../node_modules/.pnpm/@nuxt+telemetry@2.9.1_@nuxt_253df71d7bfa4b172b06d0fba17c1464/node_modules/runtime",
+    "../node_modules/.pnpm/@nuxt+telemetry@2.9.1_@nuxt_253df71d7bfa4b172b06d0fba17c1464/node_modules/dist/runtime",
     "../shared/**/*.vue",
     "../modules/*/shared/**/*.vue",
     "../layers/*/shared/**/*.vue",
@@ -233,8 +233,8 @@
     "../node_modules/.pnpm/@nuxtjs+google-adsense@3.0._cf6f304555be65df0d9925312e0ff305/node_modules/dist/runtime/**/*.vue",
     "../node_modules/.pnpm/nuxt-gtag@3.0.3_magicast@0.5.5/node_modules/runtime/**/*.vue",
     "../node_modules/.pnpm/nuxt-gtag@3.0.3_magicast@0.5.5/node_modules/dist/runtime/**/*.vue",
-    "../node_modules/runtime/**/*.vue",
-    "../node_modules/dist/runtime/**/*.vue"
+    "../node_modules/.pnpm/@nuxt+telemetry@2.9.1_@nuxt_253df71d7bfa4b172b06d0fba17c1464/node_modules/runtime/**/*.vue",
+    "../node_modules/.pnpm/@nuxt+telemetry@2.9.1_@nuxt_253df71d7bfa4b172b06d0fba17c1464/node_modules/dist/runtime/**/*.vue"
   ],
   "exclude": [
     "../node_modules",
@@ -242,7 +242,7 @@
     "../node_modules/.pnpm/@pinia+nuxt@1.0.3_@nuxt+sch_e80c5cf1c7fc28b89134f01fd1ce9c66/node_modules/@pinia/nuxt/node_modules",
     "../node_modules/.pnpm/@nuxtjs+google-adsense@3.0._cf6f304555be65df0d9925312e0ff305/node_modules/@nuxtjs/google-adsense/node_modules",
     "../node_modules/.pnpm/nuxt-gtag@3.0.3_magicast@0.5.5/node_modules/nuxt-gtag/node_modules",
-    "../node_modules/@nuxt/telemetry/node_modules",
+    "../node_modules/.pnpm/@nuxt+telemetry@2.9.1_@nuxt_253df71d7bfa4b172b06d0fba17c1464/node_modules/@nuxt/telemetry/node_modules",
     "../dist",
     "../.data",
     "../server/**/*",
@@ -255,8 +255,8 @@
     "../node_modules/.pnpm/@nuxtjs+google-adsense@3.0._cf6f304555be65df0d9925312e0ff305/node_modules/dist/runtime/server",
     "../node_modules/.pnpm/nuxt-gtag@3.0.3_magicast@0.5.5/node_modules/runtime/server",
     "../node_modules/.pnpm/nuxt-gtag@3.0.3_magicast@0.5.5/node_modules/dist/runtime/server",
-    "../node_modules/runtime/server",
-    "../node_modules/dist/runtime/server"
+    "../node_modules/.pnpm/@nuxt+telemetry@2.9.1_@nuxt_253df71d7bfa4b172b06d0fba17c1464/node_modules/runtime/server",
+    "../node_modules/.pnpm/@nuxt+telemetry@2.9.1_@nuxt_253df71d7bfa4b172b06d0fba17c1464/node_modules/dist/runtime/server"
   ],
   "vueCompilerOptions": {
     "plugins": [

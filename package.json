@@ -2,21 +2,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "nuxt build",
     "dev": "nuxt dev",
+    "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
-    "nuxt": "^4.5.2",
+    "nuxt": "^4.6.2",
     "nuxt-gtag": "^3.0.2",
     "postcss": "^8.4.21",
     "tailwindcss": "^3.2.7"
-  },
-  "overrides": {
-    "vue": "latest"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",

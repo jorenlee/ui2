@@ -8683,9 +8683,9 @@ const closeRunnerQrPassModal = () => {
               <i class="fas fa-calendar-alt"></i>
             </div>
             <div>
-              <h3 class="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
-                <span>Schedule for Batch Distribution</span>
-              </h3>
+              <p class="text-base sm:text-lg font-black tracking-tight flex items-center gap-2">
+                Schedule Distribution for Claiming period and batch assignment 
+              </p>
             </div>
           </div>
           <button type="button" @click="closeBatchScheduleModal"
@@ -8693,43 +8693,8 @@ const closeRunnerQrPassModal = () => {
             <i class="fas fa-times"></i>
           </button>
         </div>
-
-        
-        <!-- Live Visual Preview of Email Kit Claiming Banner (Big Center) -->
-        <div class="p-4 rounded-2xl border bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/40 dark:to-teal-950/30 border-teal-200 dark:border-teal-800 space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-black uppercase tracking-wider text-teal-800 dark:text-teal-300 flex items-center gap-1.5">
-              <i class="fas fa-eye text-teal-600"></i>
-              Live Email Template Preview (Big Center After Banner)
-            </span>
-          </div>
-          <!-- Card replica -->
-          <div class="text-center p-4 rounded-xl border-2 border-emerald-500 bg-white dark:bg-gray-900 shadow-sm space-y-1.5">
-            <span class="inline-block px-3 py-1 bg-emerald-900 text-emerald-300 rounded-full text-[10px] font-black tracking-widest uppercase">
-              CLAIMING PERIOD &amp; BATCH ASSIGNMENT
-            </span>
-            <div class="text-3xl font-black text-emerald-900 dark:text-emerald-300 tracking-wide uppercase">
-              {{ batchScheduleModal.batchName || 'BATCH 1' }}
-            </div>
-            <div class="text-base font-extrabold text-emerald-700 dark:text-emerald-400">
-              {{ batchScheduleModal.distributionDate || 'November 09 – 13, 2026' }}
-            </div>
-            <div class="flex items-center justify-center gap-3 text-[11px] text-gray-600 dark:text-gray-300 font-semibold flex-wrap pt-1">
-              <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
-                🕒 Hours: {{ batchScheduleModal.distributionTime || '8:00 AM – 5:00 PM' }}
-              </span>
-              <span class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
-                📍 Venue: {{ batchScheduleModal.distributionVenue || 'LSU Campus - Student Center' }}
-              </span>
-            </div>
-            <p v-if="batchScheduleModal.distributionNotes" class="text-[10.5px] text-emerald-700 dark:text-emerald-400 italic pt-1">
-              {{ batchScheduleModal.distributionNotes }}
-            </p>
-          </div>
-        </div>
-
         <!-- Form Grid -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs ">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs ">
           <!-- Batch Name -->
           <div>
             <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Batch Name / Code</label>
@@ -8759,7 +8724,7 @@ const closeRunnerQrPassModal = () => {
           <!-- Claiming Notes / Reminders -->
           <div class="md:col-span-4">
             <label class="block font-bold text-gray-700 dark:text-gray-300 mb-1">Claiming Desk Instructions / Notes</label>
-            <textarea v-model="batchScheduleModal.distributionNotes" rows="2" :class="inputCls" class="w-full" placeholder="e.g. Please present your Official Claim Pass QR code and valid ID upon claiming."></textarea>
+            <textarea v-model="batchScheduleModal.distributionNotes" rows="4" :class="inputCls" class="w-full" placeholder="e.g. Please present your Official Claim Pass QR code and valid ID upon claiming."></textarea>
           </div>
         </div>
 
