@@ -1785,6 +1785,10 @@ const filteredRegistrations = computed(() => {
     let matchesKit = true;
     if (selectedKitStatus.value === "claimed") {
       matchesKit = !!item.kit_claimed;
+    } else if (selectedKitStatus.value === "complete") {
+      matchesKit = !!item.kit_claimed && isRunnerClaimComplete(item);
+    } else if (selectedKitStatus.value === "partial") {
+      matchesKit = !!item.kit_claimed && isRunnerClaimPartial(item);
     } else if (selectedKitStatus.value === "ready") {
       matchesKit = !!item.kit_ready && !item.kit_claimed;
     } else if (selectedKitStatus.value === "pending") {
@@ -3790,7 +3794,6 @@ const executeFinalizeBatch = async () => {
       `🎉 ${res.batch?.batch_name || "Supplier Batch"} finalized with ${res.batch?.total_runners || runners.length} orders!\n\n` +
       `📥 Supplier CSV has been automatically downloaded (${selectedCsvColumns.value.length} columns).\n\n` +
       `📧 Breakdown and CSV have been emailed to:\n` +
-      `• jorenlee.luna@lsu.edu.ph\n• calendar@lsu.edu.ph\n• vpal@lsu.edu.ph\n• animorun@lsu.edu.ph\n\n` +
       `🔒 Orders are now LOCKED for supplier production (Strictly no return / no upgrade / no downgrade). Superadmin bypass is required to modify.`,
       "Batch Finalized & Locked!",
       "success"
@@ -4508,9 +4511,51 @@ const isVerifyingCode = ref(false);
 const scannerErrorMessage = ref("");
 let html5QrCodeScanner = null;
 
+const isDistributionItem = (item) => {
+  const val = String(item).toLowerCase();
+  return !val.includes("medal") && !val.includes("post-meal") && !val.includes("post meal") && !val.includes("pet treat");
+};
+
+const isEventDayItem = (item) => {
+  return !isDistributionItem(item);
+};
+
+const getDistributionInclusions = (runner) => {
+  return getInclusionsForRunner(runner).filter(isDistributionItem);
+};
+
+const getEventDayInclusions = (runner) => {
+  return getInclusionsForRunner(runner).filter(isEventDayItem);
+};
+
 const allInclusionsChecked = computed(() => {
   return claimInclusions.value.length > 0 && selectedClaimInclusions.value.length === claimInclusions.value.length;
 });
+
+const missingClaimInclusions = computed(() => {
+  return claimInclusions.value.filter((item) => !selectedClaimInclusions.value.includes(item));
+});
+
+const isRunnerClaimComplete = (runner) => {
+  if (!runner || !runner.kit_claimed) return false;
+  const dist = getDistributionInclusions(runner);
+  const claimed = runner.kit_inclusions_claimed || [];
+  return dist.length > 0 && dist.every((item) => claimed.includes(item));
+};
+
+const isRunnerClaimPartial = (runner) => {
+  if (!runner || !runner.kit_claimed) return false;
+  const dist = getDistributionInclusions(runner);
+  const claimed = runner.kit_inclusions_claimed || [];
+  return dist.some((item) => !claimed.includes(item));
+};
+
+const getRunnerMissingInclusions = (runner) => {
+  if (!runner) return [];
+  const dist = getDistributionInclusions(runner);
+  const claimed = runner.kit_inclusions_claimed || [];
+  return dist.filter((item) => !claimed.includes(item));
+};
 
 const toggleAllInclusions = () => {
   if (allInclusionsChecked.value) {
@@ -4542,35 +4587,55 @@ const getInclusionsForRunner = (runner) => {
 
   const items = [];
   if (cat.startsWith("1K")) {
+    // 1. Shirt & Pet Bandana (Distribution Day)
     items.push(`Pet Owner's Shirt: ${parsedShirts[0] || "Event Shirt"}`);
     items.push("Pet Bandana");
+    // 2. Race Bib (Distribution Day)
     items.push("Race Bib");
-    items.push("Post-Meal");
+    // 3. Medal (Event Day - Nov 14)
+    items.push("Acrylic Finisher Medal");
     if (runner.pet_name) items.push(`Pet Treat (${runner.pet_name})`);
     else items.push("Pet Treat");
-    items.push("Acrylic Finisher Medal");
+    // 4. Post-Meal (Event Day - Nov 14)
+    items.push("Post-Meal");
   } else if (cat.startsWith("3K")) {
+    // 1. Shirt (Distribution Day)
     parsedShirts.forEach((s) => items.push(s));
-    items.push("Post-Meal");
+    // 2. Race Bib (Distribution Day)
     items.push("Race Bib");
+    // 3. Medal (Event Day - Nov 14)
     items.push("Metal Finisher Medal");
+    // 4. Post-Meal (Event Day - Nov 14)
+    items.push("Post-Meal");
   } else if (cat.startsWith("10K")) {
+    // 1. Shirt (Distribution Day)
     parsedShirts.forEach((s) => items.push(s));
-    items.push("Post-Meal");
+    // 2. Race Bib (Distribution Day)
     items.push("Race Bib");
+    // 3. Medal (Event Day - Nov 14)
     items.push("Metal Finisher Medal");
+    // 4. Post-Meal (Event Day - Nov 14)
+    items.push("Post-Meal");
   } else if (cat.startsWith("20K")) {
+    // 1. Shirt (Distribution Day)
     parsedShirts.forEach((s) => items.push(s));
     const hasFinisher = parsedShirts.some((s) => s.toLowerCase().includes("finisher"));
     if (!hasFinisher) items.push("Finisher Shirt");
-    items.push("Post-Meal");
+    // 2. Race Bib (Distribution Day)
     items.push("Race Bib");
+    // 3. Medal (Event Day - Nov 14)
     items.push("Metal Finisher Medal");
-  } else {
-    parsedShirts.forEach((s) => items.push(s));
+    // 4. Post-Meal (Event Day - Nov 14)
     items.push("Post-Meal");
+  } else {
+    // 1. Shirt (Distribution Day)
+    parsedShirts.forEach((s) => items.push(s));
+    // 2. Race Bib (Distribution Day)
     items.push("Race Bib");
+    // 3. Medal (Event Day - Nov 14)
     items.push("Finisher Medal");
+    // 4. Post-Meal (Event Day - Nov 14)
+    items.push("Post-Meal");
   }
   return items;
 };
@@ -4663,11 +4728,12 @@ const verifyAndOpenClaimModal = async (code) => {
     });
     if (res && res.found && res.runner) {
       activeClaimRunner.value = res.runner;
-      claimInclusions.value = res.inclusions || getInclusionsForRunner(res.runner);
+      const distItems = getDistributionInclusions(res.runner);
+      claimInclusions.value = distItems;
       if (res.is_claimed && res.claimed_inclusions && res.claimed_inclusions.length) {
-        selectedClaimInclusions.value = [...res.claimed_inclusions];
+        selectedClaimInclusions.value = res.claimed_inclusions.filter(isDistributionItem);
       } else {
-        selectedClaimInclusions.value = [...claimInclusions.value];
+        selectedClaimInclusions.value = [...distItems];
       }
       isClaimVerificationModalOpen.value = true;
     } else {
@@ -4683,12 +4749,12 @@ const verifyAndOpenClaimModal = async (code) => {
 
 const openRunnerClaimModal = (runner) => {
   activeClaimRunner.value = runner;
-  const inc = getInclusionsForRunner(runner);
-  claimInclusions.value = inc;
+  const distInc = getDistributionInclusions(runner);
+  claimInclusions.value = distInc;
   if (runner.kit_claimed && runner.kit_inclusions_claimed && runner.kit_inclusions_claimed.length) {
-    selectedClaimInclusions.value = [...runner.kit_inclusions_claimed];
+    selectedClaimInclusions.value = runner.kit_inclusions_claimed.filter(isDistributionItem);
   } else {
-    selectedClaimInclusions.value = [...inc];
+    selectedClaimInclusions.value = [...distInc];
   }
   isClaimVerificationModalOpen.value = true;
 };
@@ -4736,12 +4802,23 @@ const executeConfirmClaim = async () => {
       if (selectedRunner.value && selectedRunner.value.id === runnerId) selectedRunner.value = { ...selectedRunner.value, ...updated };
     }
 
-    const emailNotice = activeClaimRunner.value?.contact_email ? ` Confirmation email with "See you in the event day!" dispatched to ${activeClaimRunner.value.contact_email}.` : '';
-    showNotice(
-      `Race kit successfully released to ${activeClaimRunner.value.firstname} ${activeClaimRunner.value.lastname} (${activeClaimRunner.value.run_number})!${emailNotice}`,
-      "Kit Claimed & Released",
-      "success"
-    );
+    const isPartial = !allInclusionsChecked.value;
+    const missing = missingClaimInclusions.value;
+    const emailNotice = activeClaimRunner.value?.contact_email ? ` Email Sent to ${activeClaimRunner.value.contact_email}.` : '';
+    if (isPartial) {
+      showNotice(
+        `Race kit partially released to ${activeClaimRunner.value.firstname} ${activeClaimRunner.value.lastname} (${activeClaimRunner.value.run_number})! Missing items: ${missing.join(', ')}. Participant will be back again for missing items.${emailNotice}`,
+        "Kit Partially Released (Items Missing)",
+        "warning"
+      );
+      showFastToast(`⚠️ Kit partially released. Missing: ${missing.join(', ')}. Participant will return.`, "warning", 4500);
+    } else {
+      showNotice(
+        `Race kit successfully released to ${activeClaimRunner.value.firstname} ${activeClaimRunner.value.lastname} (${activeClaimRunner.value.run_number})!${emailNotice}`,
+        "Kit Claimed & Released",
+        "success"
+      );
+    }
     closeClaimVerificationModal();
   } catch (err) {
     console.error("Claim confirmation error:", err);
@@ -5589,7 +5666,8 @@ const closeRunnerQrPassModal = () => {
                     ]">
                       <option value="All">📦 All Kit Statuses</option>
                       <option value="ready">📫 Ready for Claiming</option>
-                      <option value="claimed">✅ Claimed Kits</option>
+                      <option value="claimed">✅ All Claimed Kits</option>
+                      <option value="partial">⚠️ Partial (Will Return for Missing)</option>
                       <option value="pending">⏳ Not Ready / Pending</option>
                     </select>
                   </div>
@@ -6100,7 +6178,9 @@ const closeRunnerQrPassModal = () => {
               <div :class="[
                 'p-2.5 rounded-xl text-xs flex items-center justify-between gap-2 border',
                 runner.kit_claimed
-                  ? (props.darkMode ? 'bg-emerald-950/40 border-emerald-800' : 'bg-emerald-50 border-emerald-200')
+                  ? (isRunnerClaimPartial(runner)
+                    ? (props.darkMode ? 'bg-amber-950/40 border-amber-800' : 'bg-amber-50 border-amber-300')
+                    : (props.darkMode ? 'bg-emerald-950/40 border-emerald-800' : 'bg-emerald-50 border-emerald-200'))
                   : runner.kit_ready
                     ? (props.darkMode ? 'bg-sky-950/40 border-sky-800' : 'bg-sky-50 border-sky-200')
                     : (props.darkMode ? 'bg-gray-900/40 border-gray-700/60' : 'bg-slate-50 border-slate-200')
@@ -6108,16 +6188,22 @@ const closeRunnerQrPassModal = () => {
                 <div class="flex items-center gap-2">
                   <div :class="[
                     'w-7 h-7 rounded-lg flex items-center justify-center text-xs shrink-0',
-                    runner.kit_claimed ? 'bg-emerald-600 text-white' : runner.kit_ready ? 'bg-sky-600 text-white' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                    runner.kit_claimed
+                      ? (isRunnerClaimPartial(runner) ? 'bg-amber-500 text-white' : 'bg-emerald-600 text-white')
+                      : runner.kit_ready ? 'bg-sky-600 text-white' : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
                   ]">
                     <i
-                      :class="['fas', runner.kit_claimed ? 'fa-check-double' : runner.kit_ready ? 'fa-box-open' : 'fa-bell']"></i>
+                      :class="['fas', runner.kit_claimed ? (isRunnerClaimPartial(runner) ? 'fa-clock-rotate-left' : 'fa-check-double') : runner.kit_ready ? 'fa-box-open' : 'fa-bell']"></i>
                   </div>
                   <div class="leading-tight">
                     <span class="font-bold text-[11px] block text-gray-900 dark:text-gray-100">
-                      {{ runner.kit_claimed ? 'Race Kit Claimed' : (runner.kit_ready ? 'Ready for Claiming' : 'Kit Pending Claim') }}
+                      {{ runner.kit_claimed ? (isRunnerClaimPartial(runner) ? 'Kit Partially Claimed' : 'Race Kit Claimed') : (runner.kit_ready ? 'Ready for Claiming' : 'Kit Pending Claim') }}
                     </span>
-                    <span v-if="runner.kit_claimed && runner.kit_claimed_by"
+                    <span v-if="runner.kit_claimed && isRunnerClaimPartial(runner)"
+                      class="text-[9px] text-amber-700 dark:text-amber-400 font-semibold">
+                      Will return for missing ({{ getRunnerMissingInclusions(runner).length }} pending)
+                    </span>
+                    <span v-else-if="runner.kit_claimed && runner.kit_claimed_by"
                       class="text-[9px] text-emerald-700 dark:text-emerald-400">
                       Claimed by {{ runner.kit_claimed_by.split('@')[0] }}
                     </span>
@@ -6865,17 +6951,30 @@ const closeRunnerQrPassModal = () => {
                     <!-- Case 1: Kit Already Claimed -->
                     <div v-if="runner.kit_claimed" class="inline-flex flex-col items-center gap-0.5">
                       <div class="inline-flex items-center gap-1">
-                        <button type="button" @click="openRunnerClaimModal(runner)"
+                        <!-- Fully Claimed: Green -->
+                        <button v-if="isRunnerClaimComplete(runner)" type="button" @click="openRunnerClaimModal(runner)"
                           class="px-2.5 py-1 rounded-xl bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-950/80 dark:hover:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700 font-bold text-[11px] shadow-2xs transition inline-flex items-center gap-1 cursor-pointer group"
-                          :title="`Kit claimed on ${runner.kit_claimed_at ? new Date(runner.kit_claimed_at).toLocaleDateString() : 'N/A'} by ${runner.kit_claimed_by || 'Admin'}. Click to view or update claimed inclusions.`">
+                          :title="`Kit fully claimed on ${runner.kit_claimed_at ? new Date(runner.kit_claimed_at).toLocaleDateString() : 'N/A'} by ${runner.kit_claimed_by || 'Admin'}. All inclusions complete.`">
                           <i
                             class="fas fa-check-double text-emerald-600 dark:text-emerald-400 text-xs group-hover:scale-110 transition-transform"></i>
                           <span>Claimed</span>
                         </button>
 
-
+                        <!-- Partially Claimed: Yellow / Amber -->
+                        <button v-else type="button" @click="openRunnerClaimModal(runner)"
+                          class="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/80 dark:hover:bg-amber-900/80 text-amber-900 dark:text-amber-200 border border-amber-300 dark:border-amber-700 font-bold text-[11px] shadow-2xs transition inline-flex items-center gap-1 cursor-pointer group"
+                          :title="`Kit partially claimed on ${runner.kit_claimed_at ? new Date(runner.kit_claimed_at).toLocaleDateString() : 'N/A'}. Missing: ${getRunnerMissingInclusions(runner).join(', ')}. Will be back again for missing items.`">
+                          <i
+                            class="fas fa-clock-rotate-left text-amber-600 dark:text-amber-400 text-xs group-hover:scale-110 transition-transform"></i>
+                          <span>Partial (Will return)</span>
+                        </button>
                       </div>
-                      <span v-if="runner.kit_claimed_by"
+                      <span v-if="isRunnerClaimPartial(runner)"
+                        class="text-[9px] font-bold text-amber-700 dark:text-amber-400 truncate max-w-[130px]"
+                        :title="`Missing: ${getRunnerMissingInclusions(runner).join(', ')}`">
+                        Missing {{ getRunnerMissingInclusions(runner).length }} item(s)
+                      </span>
+                      <span v-else-if="runner.kit_claimed_by"
                         class="text-[9px] text-gray-500 dark:text-gray-400 truncate max-w-[120px]"
                         :title="runner.kit_claimed_by">
                         by {{ runner.kit_claimed_by.split('@')[0] }}
@@ -8067,30 +8166,21 @@ const closeRunnerQrPassModal = () => {
         props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
       ]">
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-emerald-500"></div>
-
         <div
           class="w-14 h-14 mx-auto rounded-2xl bg-emerald-100 text-emerald-600 dark:bg-emerald-950/80 dark:text-emerald-400 flex items-center justify-center text-2xl shadow-sm mt-2">
           <i class="fas fa-envelope-circle-check"></i>
         </div>
-
         <div>
           <h3 class="text-lg font-black tracking-tight">
             Confirm Payment?
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            Confirm payment for <strong class="text-emerald-600 dark:text-emerald-400">{{ confirmModal.runner.firstname
-            }}
-              {{ confirmModal.runner.lastname }}</strong>?
+            Confirm payment for <strong class="text-emerald-600 dark:text-emerald-400">{{ confirmModal.runner.firstname}} {{ confirmModal.runner.lastname }}</strong>?
           </p>
           <p class="text-[11px] text-gray-400 dark:text-gray-500 mt-1 leading-relaxed">
-            An official confirmation email will be sent to <strong>{{ confirmModal.runner.contact_email ||
-              confirmModal.runner.email }}</strong> with BCC to <strong>animorun@lsu.edu.ph</strong>,
-            <strong>calendar@lsu.edu.ph</strong>, and <strong>vpal@lsu.edu.ph</strong>.
+            An official confirmation email will be sent to <strong>{{ confirmModal.runner.contact_email || confirmModal.runner.email }}</strong>.
           </p>
         </div>
-
-
-
         <div class="flex items-center gap-2 pt-2">
           <button type="button" @click="closeConfirmModal" :disabled="isConfirming"
             class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
@@ -8115,16 +8205,12 @@ const closeRunnerQrPassModal = () => {
         props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
       ]">
         <div class="absolute top-0 left-0 right-0 h-1.5 bg-rose-500"></div>
-
         <div
           class="w-14 h-14 mx-auto rounded-2xl bg-rose-100 text-rose-600 dark:bg-rose-950/80 dark:text-rose-400 flex items-center justify-center text-2xl shadow-sm mt-2">
           <i class="fas fa-rotate-left"></i>
         </div>
-
         <div>
-          <h3 class="text-lg font-black tracking-tight">
-            Revert Claim Status?
-          </h3>
+          <h3 class="text-lg font-black tracking-tight">Revert Claim Status?</h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Are you sure you want to revert claimed status for
             <strong class="text-rose-600 dark:text-rose-400">
@@ -8136,7 +8222,6 @@ const closeRunnerQrPassModal = () => {
             This will mark the race kit as uncollected and clear the claimed handover record.
           </p>
         </div>
-
         <div class="flex items-center gap-2 pt-2">
           <button type="button" @click="closeUnclaimConfirmModal" :disabled="isUnclaiming"
             class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
@@ -8236,7 +8321,6 @@ const closeRunnerQrPassModal = () => {
         </div>
       </div>
     </div>
-
     <!-- PAYMENT RECEIPT & IMAGE PREVIEW MODAL WITH INTERACTIVE ZOOM & PAN -->
     <div v-if="receiptModal.show && receiptModal.url"
       class="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm"
@@ -8265,7 +8349,6 @@ const closeRunnerQrPassModal = () => {
               </p>
             </div>
           </div>
-
           <!-- Zoom & Modal Controls Toolbar -->
           <div class="flex items-center gap-1.5 sm:gap-2">
             <!-- Zoom Controls (for image receipts) -->
@@ -9681,21 +9764,32 @@ const closeRunnerQrPassModal = () => {
         <div class="p-2 overflow-y-auto space-y-1">
           <!-- ALREADY CLAIMED WARNING BANNER -->
           <div v-if="activeClaimRunner.kit_claimed"
-            class="p-3.5 rounded-2xl bg-rose-50 dark:bg-rose-950/60 border-2 border-rose-300 dark:border-rose-800 flex items-start gap-3">
+            :class="[
+              'p-3.5 rounded-2xl border-2 flex items-start gap-3',
+              isRunnerClaimPartial(activeClaimRunner)
+                ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200'
+                : 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-950 dark:text-rose-200'
+            ]">
             <div
-              class="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center text-sm shrink-0 mt-0.5">
-              <i class="fas fa-triangle-exclamation"></i>
+              :class="[
+                'w-8 h-8 rounded-xl text-white flex items-center justify-center text-sm shrink-0 mt-0.5',
+                isRunnerClaimPartial(activeClaimRunner) ? 'bg-amber-500' : 'bg-rose-600'
+              ]">
+              <i :class="['fas', isRunnerClaimPartial(activeClaimRunner) ? 'fa-clock-rotate-left' : 'fa-triangle-exclamation']"></i>
             </div>
             <div class="flex-1">
-              <h4 class="text-xs font-black text-rose-900 dark:text-rose-200 uppercase tracking-wide">
-                Notice: Kit Already Claimed
+              <h4 :class="['text-xs font-black uppercase tracking-wide', isRunnerClaimPartial(activeClaimRunner) ? 'text-amber-900 dark:text-amber-200' : 'text-rose-900 dark:text-rose-200']">
+                {{ isRunnerClaimPartial(activeClaimRunner) ? 'Notice: Kit Partially Claimed (Items Pending)' : 'Notice: Kit Already Claimed' }}
               </h4>
-              <p class="text-[11px] text-rose-800 dark:text-rose-300 mt-0.5">
+              <p :class="['text-[11px] mt-0.5', isRunnerClaimPartial(activeClaimRunner) ? 'text-amber-800 dark:text-amber-300' : 'text-rose-800 dark:text-rose-300']">
                 This runner's kit was marked claimed on
                 <strong>{{ activeClaimRunner.kit_claimed_at ? new
                   Date(activeClaimRunner.kit_claimed_at).toLocaleString() :
                   'N/A' }}</strong>
                 by <strong>{{ activeClaimRunner.kit_claimed_by || 'Admin' }}</strong>.
+                <span v-if="isRunnerClaimPartial(activeClaimRunner)" class="block mt-1 font-semibold text-amber-900 dark:text-amber-200">
+                  Missing item(s): <strong>{{ getRunnerMissingInclusions(activeClaimRunner).join(', ') }}</strong>. Participant will be back again for the missing items.
+                </span>
               </p>
               <div class="mt-2.5 flex items-center gap-2 flex-wrap">
                 <button type="button" @click="resendClaimEmail(activeClaimRunner)" :disabled="isResendingClaimEmail"
@@ -9925,9 +10019,12 @@ const closeRunnerQrPassModal = () => {
               <div>
                 <h5
                   class="font-extrabold text-xs text-gray-900 dark:text-gray-100 uppercase tracking-wide flex items-center gap-1.5">
-                  <i class="fas fa-list-check text-emerald-600"></i>
-                  <span>Kit Inclusions Checklist</span>
+                  <i class="fas fa-shirt text-emerald-600"></i>
+                  <span>1. Advance Kit Release Checklist &middot; Shirt &amp; Race Bib</span>
                 </h5>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                  Handed over before event day (Nov 14) &middot; Check items released to participant
+                </p>
               </div>
 
               <!-- Check All / Clear Button -->
@@ -9937,26 +10034,103 @@ const closeRunnerQrPassModal = () => {
               </button>
             </div>
 
-            <!-- Inclusions Items list -->
+            <!-- Inclusions Items list (Shirt & Bib) -->
             <div class="space-y-1">
               <label v-for="item in claimInclusions" :key="item" :class="[
                 'flex items-center px-2 py-2 rounded-xl border transition-all cursor-pointer select-none active:scale-[0.99]',
                 selectedClaimInclusions.includes(item)
                   ? (props.darkMode ? 'bg-emerald-950/40 border-emerald-700 text-white' : 'bg-emerald-50/80 border-emerald-300 text-emerald-950 font-semibold shadow-2xs')
-                  : (props.darkMode ? 'bg-gray-900/40 border-gray-700 text-gray-400' : 'bg-white border-slate-200 text-gray-700 hover:bg-slate-50')
+                  : (props.darkMode ? 'bg-amber-950/20 border-amber-800/60 text-amber-200' : 'bg-amber-50/40 border-amber-200 text-amber-950 hover:bg-amber-50')
               ]">
                 <input type="checkbox" :value="item" v-model="selectedClaimInclusions"
                   class="w-5 h-5 rounded-md accent-emerald-600 cursor-pointer mr-3" />
                 <div class="flex-1 flex items-center justify-between text-xs sm:text-sm">
-                  <span>{{ item }}</span>
-                  <i v-if="selectedClaimInclusions.includes(item)"
-                    class="fas fa-check text-emerald-600 text-xs font-black"></i>
+                  <span :class="{ 'font-semibold text-gray-900 dark:text-gray-100': selectedClaimInclusions.includes(item), 'text-amber-950 dark:text-amber-200': !selectedClaimInclusions.includes(item) }">{{ item }}</span>
+                  <span v-if="selectedClaimInclusions.includes(item)" class="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 text-xs font-black">
+                    <i class="fas fa-check"></i>
+                    <span class="text-[10px] uppercase font-bold tracking-wider">Checked</span>
+                  </span>
+                  <span v-else class="flex items-center gap-1 text-amber-700 dark:text-amber-400 text-xs font-bold bg-amber-100 dark:bg-amber-950/70 px-2 py-0.5 rounded-md border border-amber-300 dark:border-amber-700">
+                    <i class="fas fa-clock-rotate-left text-[10px]"></i>
+                    <span class="text-[10px] tracking-tight">Missing &middot; Return Before Nov 14</span>
+                  </span>
                 </div>
               </label>
             </div>
 
-            <div class="text-right text-[11px] text-gray-500">
-              Selected <strong>{{ selectedClaimInclusions.length }}</strong> of {{ claimInclusions.length }} inclusions
+            <!-- Inclusions status summary -->
+            <div class="flex items-center justify-between text-[11px] pt-1">
+              <span v-if="!allInclusionsChecked && claimInclusions.length > 0" class="text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
+                <i class="fas fa-triangle-exclamation text-amber-500"></i>
+                <span>{{ missingClaimInclusions.length }} missing &mdash; will be back again</span>
+              </span>
+              <span v-else class="text-emerald-700 dark:text-emerald-400 font-bold flex items-center gap-1">
+                <i class="fas fa-check-circle text-emerald-600"></i>
+                <span>All distribution items released (Shirt &amp; Bib)</span>
+              </span>
+              <span class="text-gray-500 dark:text-gray-400">
+                Selected <strong>{{ selectedClaimInclusions.length }}</strong> of {{ claimInclusions.length }} items
+              </span>
+            </div>
+
+            <!-- INCOMPLETE CHECKLIST NOTICE BANNER (YELLOW) -->
+            <div v-if="!allInclusionsChecked && claimInclusions.length > 0"
+              class="p-3 rounded-2xl bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100 dark:from-amber-950/50 dark:via-yellow-950/30 dark:to-amber-900/40 border-2 border-amber-300 dark:border-amber-700/80 text-amber-950 dark:text-amber-200 flex items-start gap-2.5 shadow-sm">
+              <div
+                class="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center text-xs shrink-0 mt-0.5 shadow-2xs font-bold">
+                <i class="fas fa-clock-rotate-left"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between gap-1 flex-wrap">
+                  <h5 class="font-black text-xs uppercase tracking-wide text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+                    <span>Kit Check Incomplete &middot; Missing Items</span>
+                  </h5>
+                  <span class="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[9px] font-black uppercase tracking-wider">
+                    {{ missingClaimInclusions.length }} Pending
+                  </span>
+                </div>
+                <p class="text-[11px] text-amber-900 dark:text-amber-200 mt-1 leading-snug">
+                  Missing: <strong class="underline decoration-amber-500 decoration-2 font-bold">{{ missingClaimInclusions.join(', ') }}</strong>.
+                </p>
+                <p class="text-[10px] text-amber-800 dark:text-amber-300 mt-1 font-semibold flex items-center gap-1">
+                  <i class="fas fa-info-circle text-amber-600"></i>
+                  <span>Participant will be back again for missing items before event day (Nov 14).</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- STATIC EVENT DAY INCLUSIONS (NOVEMBER 14) -->
+            <div v-if="activeClaimRunner && getEventDayInclusions(activeClaimRunner).length"
+              class="mt-3 pt-3 border-t dark:border-gray-800 space-y-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <h5 class="font-extrabold text-xs text-sky-900 dark:text-sky-200 uppercase tracking-wide flex items-center gap-1.5">
+                    <i class="fas fa-medal text-sky-600"></i>
+                    <span>2. Event Day Inclusions &middot; November 14 (Medal &amp; Post-Meal)</span>
+                  </h5>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                    Static event-day inclusions &middot; Given during race event on November 14
+                  </p>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-sky-100 dark:bg-sky-950 text-sky-800 dark:text-sky-300 text-[10px] font-bold shrink-0">
+                  Nov 14 Event
+                </span>
+              </div>
+
+              <div class="space-y-1">
+                <div v-for="item in getEventDayInclusions(activeClaimRunner)" :key="item"
+                  class="flex items-center justify-between px-3 py-2 rounded-xl border border-sky-200 dark:border-sky-800/80 bg-sky-50/60 dark:bg-sky-950/20 text-xs">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-md bg-sky-600 text-white flex items-center justify-center text-[10px] font-bold">
+                      <i :class="item.toLowerCase().includes('medal') ? 'fas fa-medal' : (item.toLowerCase().includes('meal') ? 'fas fa-utensils' : 'fas fa-gift')"></i>
+                    </span>
+                    <span class="font-bold text-sky-950 dark:text-sky-100">{{ item }}</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-sky-700 dark:text-sky-300 uppercase tracking-tight">
+                    {{ item.toLowerCase().includes('medal') ? 'Awarded at Finish Line' : 'Claimed after run' }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -9973,7 +10147,7 @@ const closeRunnerQrPassModal = () => {
           </div>
         </div>
 
-        <!-- Actions -->
+        <!-- Actions: Dynamic Color and Text (Yellow when incomplete) -->
         <div
           class="p-4 border-t dark:border-gray-700 bg-slate-50 dark:bg-gray-900/60 flex items-center justify-between gap-3">
           <button type="button" @click="closeClaimVerificationModal"
@@ -9981,11 +10155,32 @@ const closeRunnerQrPassModal = () => {
             Cancel
           </button>
 
+          <!-- Complete: Green Emerald; Incomplete: Yellow/Amber -->
           <button type="button" @click="executeConfirmClaim" :disabled="isConfirmingClaim"
-            class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 text-white font-extrabold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60">
+            :class="[
+              'flex-1 py-3 px-4 rounded-xl active:scale-95 font-extrabold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60',
+              allInclusionsChecked
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white'
+                : 'bg-gradient-to-r from-amber-500 via-amber-500 to-yellow-500 hover:from-amber-600 hover:to-yellow-600 text-slate-900 border-2 border-amber-300 dark:border-amber-400 font-black shadow-amber-500/25'
+            ]">
             <i
-              :class="['fas', isConfirmingClaim ? 'fa-spinner fa-spin' : (activeClaimRunner.kit_claimed ? 'fa-check-double' : 'fa-box-check')]"></i>
-            <span>{{ isConfirmingClaim ? 'Recording Claim...' : (activeClaimRunner.kit_claimed ? 'Update Claim Inclusions' : 'Confirm & Release Kit (Sends Email)') }}</span>
+              :class="[
+                'fas',
+                isConfirmingClaim
+                  ? 'fa-spinner fa-spin'
+                  : (allInclusionsChecked
+                      ? (activeClaimRunner.kit_claimed ? 'fa-check-double' : 'fa-box-check')
+                      : 'fa-clock-rotate-left')
+              ]"></i>
+            <span>
+              {{
+                isConfirmingClaim
+                  ? (allInclusionsChecked ? 'Recording Claim...' : 'Recording Partial Claim...')
+                  : (allInclusionsChecked
+                      ? (activeClaimRunner.kit_claimed ? 'Update Claim Inclusions' : 'Confirm & Release Kit (Sends Email)')
+                      : (activeClaimRunner.kit_claimed ? 'Update Claim (Will be back again for missing)' : 'Confirm & Release (Will be back again for missing)'))
+              }}
+            </span>
           </button>
         </div>
       </div>
