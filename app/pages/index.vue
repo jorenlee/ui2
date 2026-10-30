@@ -58,8 +58,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
       </div> -->
       <section id="animo-run-banner" class="relative w-full overflow-hidden bg-white">
           <img
-            src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20ANIMO%20RUN.svg"
-            alt="LSU ANIMO RUN Logo"
+            src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LSU%20Enrollment%20AY2627%20White%20BG.webp"
+            alt="Enrollment for AY2627"
             class="w-full h-auto object-contain"
           />
       </section>
