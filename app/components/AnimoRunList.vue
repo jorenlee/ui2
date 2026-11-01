@@ -422,6 +422,105 @@ const selectedPendingRunners = computed(() => {
   });
 });
 
+// ── Multi-Unbatch (Remove Batch Status & Lock to Null) State ─────────────────
+const isBulkUnbatching = ref(false);
+const bulkUnbatchModal = ref({ show: false });
+
+const selectedBatchedRunners = computed(() => {
+  return registrations.value.filter((r) => {
+    if (!selectedIds.value.includes(r.id)) return false;
+    return !!r.batch_name || !!r.batch_locked;
+  });
+});
+
+const uniqueSelectedBatches = computed(() => {
+  const set = new Set();
+  registrations.value.forEach((r) => {
+    if (selectedIds.value.includes(r.id) && r.batch_name) {
+      set.add(r.batch_name);
+    }
+  });
+  return Array.from(set).sort();
+});
+
+const promptBulkUnbatch = () => {
+  if (!selectedIds.value.length || isBulkUnbatching.value) {
+    showFastToast("Please select at least one runner.", "info");
+    return;
+  }
+  bulkUnbatchModal.value.show = true;
+};
+
+const closeBulkUnbatchModal = () => {
+  bulkUnbatchModal.value.show = false;
+};
+
+const executeBulkUnbatch = async () => {
+  const runnersToUnbatch = selectedBatchedRunners.value.length > 0
+    ? [...selectedBatchedRunners.value]
+    : registrations.value.filter((r) => selectedIds.value.includes(r.id));
+
+  if (!runnersToUnbatch.length || isBulkUnbatching.value) return;
+
+  const idsToUnbatch = runnersToUnbatch.map((r) => r.id);
+  const operator = currentOperator.value || "Admin";
+
+  // 1. OPTIMISTIC UPDATE: instant visual confirmation across table & cards
+  runnersToUnbatch.forEach((r) => {
+    r.batch_name = "";
+    r.batch_locked = false;
+    r.batch_locked_at = null;
+    r.batch_locked_by = "";
+    const inList = registrations.value.find((item) => item.id === r.id);
+    if (inList) {
+      inList.batch_name = "";
+      inList.batch_locked = false;
+      inList.batch_locked_at = null;
+      inList.batch_locked_by = "";
+    }
+    if (selectedRunner.value && selectedRunner.value.id === r.id) {
+      selectedRunner.value.batch_name = "";
+      selectedRunner.value.batch_locked = false;
+      selectedRunner.value.batch_locked_at = null;
+      selectedRunner.value.batch_locked_by = "";
+      bypassWarningAcknowledged.value = true;
+    }
+  });
+  persistCache(registrations.value);
+
+  const count = runnersToUnbatch.length;
+  closeBulkUnbatchModal();
+  clearSelection();
+  showFastToast(`🔓 Successfully removed batch status & unlocked ${count} runner(s)!`, "success", 4000);
+
+  // 2. Perform backend API request
+  isBulkUnbatching.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/bulk-unbatch/`, {
+      method: "POST",
+      body: {
+        ids: idsToUnbatch,
+        operator: operator,
+      },
+    });
+    fetchBatches();
+    showNotice(
+      res?.message || `Batch status removed and orders unlocked for ${count} runner(s). They are now open for changes or future batching.`,
+      "Batch Status Removed",
+      "success"
+    );
+  } catch (err) {
+    console.error("Bulk unbatch error:", err);
+    showNotice(
+      "Unbatch completed locally, but server encountered an issue. Please verify connection or server logs.",
+      "Sync Notice",
+      "warning"
+    );
+  } finally {
+    isBulkUnbatching.value = false;
+  }
+};
+
 // ── Bulk Confirm Modal & State ──────────────────────────────────────────────
 const isBulkConfirming = ref(false);
 const bulkConfirmModal = ref({ show: false });
@@ -1383,6 +1482,7 @@ const fetchRegistrations = async (silent = false) => {
       registrations.value = res;
       lastUpdated.value = new Date();
       persistCache(res);
+      fetchFailedNotificationStats();
       // Auto-deduplication removed to allow manual review via Duplicate Scanner modal
     }
   } catch (err) {
@@ -1415,6 +1515,18 @@ const formatLastUpdated = computed(() => {
 
 onMounted(() => {
   let hasCache = false;
+
+  // Restore active Celery bulk notification tracking if a task was left running
+  if (process.client) {
+    try {
+      const savedTaskId = localStorage.getItem('animorun_active_notify_task_id');
+      if (savedTaskId) {
+        celeryProgressModal.value.show = true;
+        celeryProgressModal.value.minimized = true;
+        startCeleryTaskPolling(savedTaskId);
+      }
+    } catch (e) {}
+  }
   // Restore registrations from cache immediately for 0ms initial paint
   if (process.client && registrations.value.length === 0) {
     try {
@@ -1451,6 +1563,7 @@ onMounted(() => {
   fetchRegistrations(hasCache);
   fetchBatches();
   fetchSlotCounts();
+  fetchFailedNotificationStats();
   startPolling();
   initScrollObservers();
 });
@@ -3895,6 +4008,52 @@ const executeToggleLock = async () => {
   }
 };
 
+const executeUnbatchSingle = async (target) => {
+  if (!target) return;
+  isTogglingLock.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/${target.id}/unbatch/`, {
+      method: "POST",
+      body: {
+        operator: currentOperator.value || "Admin",
+      },
+    });
+    target.batch_name = "";
+    target.batch_locked = false;
+    target.batch_locked_at = null;
+    target.batch_locked_by = "";
+    const inList = registrations.value.find((item) => item.id === target.id);
+    if (inList) {
+      inList.batch_name = "";
+      inList.batch_locked = false;
+      inList.batch_locked_at = null;
+      inList.batch_locked_by = "";
+    }
+    if (selectedRunner.value && selectedRunner.value.id === target.id) {
+      Object.assign(selectedRunner.value, {
+        batch_name: "",
+        batch_locked: false,
+        batch_locked_at: null,
+        batch_locked_by: "",
+      });
+      bypassWarningAcknowledged.value = true;
+    }
+    persistCache(registrations.value);
+    closeUnlockPrompt();
+    fetchBatches();
+    showNotice(
+      `Runner #${target.id} (${target.firstname} ${target.lastname}) has been removed from batch and unlocked.\nOperator: ${currentOperator.value}`,
+      "Removed from Batch",
+      "success"
+    );
+  } catch (err) {
+    console.error("Single unbatch error:", err);
+    showNotice(err?.data?.error || "Failed to remove runner from batch.", "Error", "error");
+  } finally {
+    isTogglingLock.value = false;
+  }
+};
+
 // ── Batch History Modal ──────────────────────────────────────────────────────────
 const batchHistoryModal = ref({
   show: false,
@@ -4484,11 +4643,176 @@ const isBulkMarkingReady = ref(false);
 const bulkMarkReadyProgress = ref({ current: 0, total: 0, success: 0, failed: 0 });
 const bulkMarkReadyModal = ref({ show: false });
 
+// ── Celery & Redis High-Volume Bulk Notification State (5000+ Runners) ───────
+const bulkNotifyTargetMode = ref('selected'); // 'selected' | 'all_confirmed' | 'resend_failed'
+const activeCeleryTaskId = ref(null);
+const isCeleryTaskRunning = ref(false);
+const failedNotificationsCount = ref(0);
+const isFetchingFailedStats = ref(false);
+
+const celeryTaskProgress = ref({
+  status: 'IDLE',
+  current: 0,
+  total: 0,
+  success: 0,
+  failed: 0,
+  percentage: 0,
+  last_runner: '',
+  last_error: '',
+  quota_exceeded: false,
+  message: '',
+});
+const celeryProgressModal = ref({ show: false, minimized: false });
+let celeryPollTimer = null;
+
+const fetchFailedNotificationStats = async () => {
+  if (isFetchingFailedStats.value) return;
+  isFetchingFailedStats.value = true;
+  try {
+    const res = await $fetch(`${endpoint.value}/api/animorun/failed-notifications/`);
+    if (res && res.status === 'success') {
+      failedNotificationsCount.value = Number(res.failed_count || 0);
+    }
+  } catch (err) {
+    console.debug("Failed to fetch failed notification stats:", err);
+  } finally {
+    isFetchingFailedStats.value = false;
+  }
+};
+
+const totalConfirmedUnnotifiedCount = computed(() => {
+  return registrations.value.filter(
+    (r) => String(r.payment_status || "").trim().toLowerCase() === "confirmed" && !r.kit_ready
+  ).length;
+});
+
+const startCeleryTaskPolling = (taskId) => {
+  activeCeleryTaskId.value = taskId;
+  isCeleryTaskRunning.value = true;
+  isBulkMarkingReady.value = true;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('animorun_active_notify_task_id', taskId);
+    }
+  } catch (e) {}
+
+  if (celeryPollTimer) clearInterval(celeryPollTimer);
+
+  const poll = async () => {
+    try {
+      const res = await $fetch(`${endpoint.value}/api/animorun/notify-task-status/${taskId}/`);
+      const state = res.state;
+      const prog = res.progress || {};
+
+      const current = Number(prog.current || 0);
+      const total = Number(prog.total || 0);
+      const success = Number(prog.success || 0);
+      const failed = Number(prog.failed || 0);
+      const pct = prog.percentage !== undefined ? Number(prog.percentage) : (total > 0 ? Math.round((current / total) * 100) : 0);
+
+      celeryTaskProgress.value = {
+        status: prog.status || state,
+        current,
+        total,
+        success,
+        failed,
+        percentage: pct,
+        last_runner: prog.last_runner || '',
+        last_error: prog.last_error || prog.error || '',
+        quota_exceeded: Boolean(prog.quota_exceeded),
+        message: prog.message || '',
+      };
+
+      bulkMarkReadyProgress.value = {
+        current,
+        total,
+        success,
+        failed,
+      };
+
+      if (state === 'SUCCESS' || prog.status === 'SUCCESS' || prog.status === 'COMPLETED') {
+        stopCeleryTaskPolling();
+        fetchFailedNotificationStats();
+        if (failed > 0) {
+          showNotice(
+            `Bulk dispatch finished: ${success} sent, ${failed} failed. You can click "Resend Failed" to re-queue failed runners.`,
+            "Dispatch Finished with Failures",
+            "warning"
+          );
+        } else {
+          showNotice(
+            `🎉 Celery & Redis bulk dispatch completed! Dispatched all ${success} email(s) successfully.`,
+            "Bulk Notification Finished",
+            "success"
+          );
+        }
+        clearSelection();
+        fetchRegistrations();
+      } else if (state === 'FAILURE' || prog.status === 'FAILED') {
+        stopCeleryTaskPolling();
+        fetchFailedNotificationStats();
+        const errDetails = prog.last_error || prog.error || prog.message || "Task encountered an error during dispatch.";
+        showNotice(
+          `${errDetails} (${success} sent, ${failed} failed). You can resend to failed runners anytime.`,
+          "Dispatch Error",
+          "error"
+        );
+        fetchRegistrations();
+      } else if (state === 'REVOKED' || prog.status === 'REVOKED') {
+        stopCeleryTaskPolling();
+        fetchFailedNotificationStats();
+        showNotice(
+          "Bulk notification task was cancelled by administrator.",
+          "Dispatch Cancelled",
+          "warning"
+        );
+      }
+    } catch (err) {
+      console.warn("Celery task status poll warning:", err);
+    }
+  };
+
+  poll();
+  celeryPollTimer = setInterval(poll, 1500);
+};
+
+const stopCeleryTaskPolling = () => {
+  if (celeryPollTimer) {
+    clearInterval(celeryPollTimer);
+    celeryPollTimer = null;
+  }
+  isCeleryTaskRunning.value = false;
+  isBulkMarkingReady.value = false;
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('animorun_active_notify_task_id');
+    }
+  } catch (e) {}
+};
+
+const cancelCeleryNotificationTask = async () => {
+  if (!activeCeleryTaskId.value) return;
+  try {
+    await $fetch(`${endpoint.value}/api/animorun/notify-task-cancel/${activeCeleryTaskId.value}/`, {
+      method: "POST",
+    });
+    showFastToast("Cancelling Celery notification task...", "warning");
+    stopCeleryTaskPolling();
+    celeryProgressModal.value.show = false;
+  } catch (err) {
+    console.error("Cancel Celery task error:", err);
+    showNotice(err?.data?.error || "Failed to cancel task.", "Cancel Failed", "error");
+  }
+};
+
 const promptBulkMarkKitReady = () => {
-  if (!selectedIds.value.length || isBulkMarkingReady.value) {
-    showFastToast("Please select at least one runner.", "info");
+  if (isBulkMarkingReady.value) {
+    // If already running, show progress modal
+    celeryProgressModal.value.show = true;
+    celeryProgressModal.value.minimized = false;
     return;
   }
+  bulkNotifyTargetMode.value = selectedIds.value.length > 0 ? 'selected' : 'all_confirmed';
   bulkMarkReadyModal.value.show = true;
 };
 
@@ -4983,77 +5307,92 @@ const markKitReadyAndNotify = async (runner, options = {}) => {
 };
 
 const executeBulkMarkKitReady = async () => {
-  if (!selectedIds.value.length || isBulkMarkingReady.value) return;
+  if (isBulkMarkingReady.value) return;
+
+  const mode = bulkNotifyTargetMode.value; // 'selected' | 'all_confirmed' | 'resend_failed'
+  const isResendFailed = mode === 'resend_failed';
+  const sendAllUnnotified = mode === 'all_confirmed';
+  const targetIds = (!sendAllUnnotified && !isResendFailed) ? [...selectedIds.value] : [];
+  const operator = currentOperator.value || "Admin";
+
+  if (mode === 'selected' && targetIds.length === 0) {
+    showFastToast("Please select at least one runner.", "info");
+    return;
+  }
+
+  let estCount = 0;
+  if (isResendFailed) {
+    estCount = failedNotificationsCount.value;
+  } else if (sendAllUnnotified) {
+    estCount = totalConfirmedUnnotifiedCount.value;
+  } else {
+    estCount = targetIds.length;
+  }
 
   closeBulkMarkReadyModal();
 
-  isBulkMarkingReady.value = true;
-  const targetIds = [...selectedIds.value];
+  celeryProgressModal.value.show = true;
+  celeryProgressModal.value.minimized = false;
 
-  // Map selected IDs to runner instances
-  const runnerMap = new Map(registrations.value.map((r) => [r.id, r]));
-  const runnersToProcess = targetIds.map((id) => runnerMap.get(id) || { id, firstname: `Runner #${id}`, lastname: "" });
-
-  bulkMarkReadyProgress.value = {
+  celeryTaskProgress.value = {
+    status: 'ENQUEUING',
     current: 0,
-    total: runnersToProcess.length,
+    total: estCount,
     success: 0,
     failed: 0,
+    percentage: 0,
+    last_runner: '',
+    last_error: '',
+    quota_exceeded: false,
+    message: `Queueing ${estCount} ${isResendFailed ? 'failed ' : ''}notifications into Celery & Redis...`,
   };
-
-  showFastToast(`Starting to dispatch claiming emails to ${runnersToProcess.length} runner(s)...`, "info", 2000);
-
-  // Controlled concurrency pool (concurrency limit = 6)
-  // Sends each individual email via markKitReadyAndNotify so every selected runner is dispatched
-  const CONCURRENCY = 6;
-  let cursor = 0;
-
-  const worker = async () => {
-    while (cursor < runnersToProcess.length) {
-      const currentIndex = cursor++;
-      const runner = runnersToProcess[currentIndex];
-      try {
-        const res = await markKitReadyAndNotify(runner, { silent: true, force: true });
-        if (res && res.success) {
-          bulkMarkReadyProgress.value.success++;
-        } else {
-          bulkMarkReadyProgress.value.failed++;
-        }
-      } catch (e) {
-        bulkMarkReadyProgress.value.failed++;
-      } finally {
-        bulkMarkReadyProgress.value.current++;
-      }
-    }
-  };
+  isBulkMarkingReady.value = true;
 
   try {
-    const workerCount = Math.min(CONCURRENCY, runnersToProcess.length);
-    const workers = Array.from({ length: workerCount }, () => worker());
-    await Promise.all(workers);
+    const res = await $fetch(`${endpoint.value}/api/animorun/bulk-notify-celery/`, {
+      method: "POST",
+      body: {
+        type: "kit_ready",
+        mode: mode,
+        ids: targetIds,
+        send_all_unnotified: sendAllUnnotified,
+        resend_failed_only: isResendFailed,
+        operator: operator,
+        throttle_delay: 0.15,
+      },
+    });
 
-    const { total, success, failed } = bulkMarkReadyProgress.value;
-    clearSelection();
-
-    if (failed === 0) {
-      showNotice(
-        `🎉 Successfully sent kit claiming emails with QR codes to all ${success} runner(s)!`,
-        "All Emails Dispatched",
-        "success"
-      );
+    if (res?.task_id) {
+      showFastToast(`🚀 Queued ${res.total} notifications with Celery & Redis!`, "info", 3000);
+      startCeleryTaskPolling(res.task_id);
     } else {
-      showNotice(
-        `Bulk dispatch completed for ${total} runner(s): ${success} email(s) sent successfully, ${failed} failed.`,
-        "Bulk Notice Completed",
-        success > 0 ? "warning" : "error"
-      );
+      isBulkMarkingReady.value = false;
+      showNotice(res?.message || "Task started.", "Notification Dispatched", "success");
     }
   } catch (err) {
-    console.error("Bulk mark ready error:", err);
-    showNotice("An error occurred during bulk email dispatch.", "Bulk Notice Failed", "error");
-  } finally {
+    console.error("Celery bulk notify error:", err);
+    celeryProgressModal.value.show = false;
     isBulkMarkingReady.value = false;
+    showNotice(
+      err?.data?.error || "Failed to queue bulk notification task. Please ensure Redis and Celery worker are running.",
+      "Celery Queue Error",
+      "error"
+    );
   }
+};
+
+const executeResendFailedEmails = async (specificIds = null) => {
+  if (isBulkMarkingReady.value) return;
+  bulkNotifyTargetMode.value = 'resend_failed';
+  if (specificIds && specificIds.length) {
+    selectedIds.value = [...specificIds];
+  }
+  await executeBulkMarkKitReady();
+};
+
+const promptResendFailedOnly = () => {
+  bulkNotifyTargetMode.value = 'resend_failed';
+  bulkMarkReadyModal.value.show = true;
 };
 
 const openRunnerQrPassModal = async (runner) => {
@@ -6329,6 +6668,20 @@ const closeRunnerQrPassModal = () => {
               <span v-if="isBulkMarkingReady">Sending ({{ bulkMarkReadyProgress.current }}/{{ bulkMarkReadyProgress.total }})</span>
               <span v-else>Notify Ready ({{ selectedIds.length }})</span>
             </button>
+            <button v-if="failedNotificationsCount > 0" type="button" @click="promptResendFailedOnly"
+              :disabled="isBulkMarkingReady"
+              class="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 active:scale-95 text-white font-bold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+              title="Resend email notifications to participants whose delivery failed">
+              <i class="fas fa-rotate-right text-[11px]"></i>
+              <span>Resend Failed ({{ failedNotificationsCount }})</span>
+            </button>
+            <button type="button" @click="promptBulkUnbatch" :disabled="isBulkUnbatching"
+              class="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold text-xs transition shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+              title="Remove batch assignment and unlock selected runners (set batch & lock to null)">
+              <i v-if="!isBulkUnbatching" class="fas fa-box-open text-[11px]"></i>
+              <i v-else class="fas fa-spinner fa-spin text-[11px]"></i>
+              <span>Unbatch ({{ selectedBatchedRunners.length || selectedIds.length }})</span>
+            </button>
             <button type="button" @click="clearSelection"
               class="text-xs text-gray-500 hover:text-rose-600 dark:text-gray-400 dark:hover:text-rose-300 font-semibold cursor-pointer px-2 py-1">
               Clear
@@ -6982,12 +7335,26 @@ const closeRunnerQrPassModal = () => {
                     </div>
 
                     <!-- Case 2: Kit Marked Ready for Claiming (Email dispatched with QR code) -->
-                    <div v-else-if="runner.kit_ready" class="inline-flex items-center gap-1.5">
-                      <button type="button" @click="openRunnerQrPassModal(runner)"
-                        class="px-1.5 py-0.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700/80 transition inline-flex items-center justify-center cursor-pointer"
-                        title="View or print Runner Claim Pass with QR code">
-                        <i class="fas fa-qrcode text-3xl"></i>
-                      </button>
+                    <div v-else-if="runner.kit_ready" class="inline-flex flex-col items-center gap-0.5">
+                      <div class="inline-flex items-center gap-1">
+                        <button type="button" @click="openRunnerQrPassModal(runner)"
+                          class="px-1.5 py-0.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-300 dark:border-sky-700/80 transition inline-flex items-center justify-center cursor-pointer"
+                          title="View or print Runner Claim Pass with QR code">
+                          <i class="fas fa-qrcode text-3xl"></i>
+                        </button>
+                        <button v-if="runner.kit_email_failed || runner.kit_email_sent === false" type="button"
+                          @click.stop="markKitReadyAndNotify(runner, { force: true })"
+                          :disabled="isMarkingKitReady"
+                          class="p-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 border border-rose-300 dark:border-rose-800 text-[10px] font-bold transition cursor-pointer"
+                          :title="`Email delivery failed: ${runner.kit_email_error || 'SMTP Error'}. Click to resend.`">
+                          <i class="fas fa-rotate-right"></i>
+                        </button>
+                      </div>
+                      <span v-if="runner.kit_email_failed || runner.kit_email_sent === false"
+                        class="text-[9px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-0.5"
+                        :title="runner.kit_email_error || 'Email delivery failed'">
+                        <i class="fas fa-exclamation-circle text-[8px]"></i> Email Failed
+                      </span>
                     </div>
 
                   </td>
@@ -7060,9 +7427,9 @@ const closeRunnerQrPassModal = () => {
         class="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md"
         :class="props.darkMode ? 'bg-gray-900/90 border-gray-700 text-gray-100' : 'bg-white/90 border-slate-200 text-gray-800'">
         <!-- Count badge -->
-        <span class="flex items-center gap-1.5 text-xs font-bold">
+        <span class="flex items-center gap-1.5 text-sm font-bold uppercase">
           <span
-            class="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px] font-black">
+            class="w-auto px-5 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[11px] font-black">
             {{ selectedIds.length }}
           </span>
           {{ selectedIds.length === 1 ? 'runner' : 'runners' }} selected
@@ -7072,7 +7439,7 @@ const closeRunnerQrPassModal = () => {
 
         <!-- Clear selection -->
         <button type="button" @click="clearSelection"
-          class="text-xs font-semibold text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 transition cursor-pointer flex items-center gap-1.5">
+          class="text-xs font-semibold text-white bg-black px-5 py-2 rounded-xl hover:text-white transition cursor-pointer flex items-center gap-1.5">
           <i class="fas fa-times-circle"></i> Clear
         </button>
 
@@ -7099,10 +7466,28 @@ const closeRunnerQrPassModal = () => {
           <span v-else>Notify Ready ({{ selectedIds.length }})</span>
         </button>
 
+        <!-- Resend Failed Kit Ready Emails button -->
+        <button v-if="failedNotificationsCount > 0" type="button" @click="promptResendFailedOnly"
+          :disabled="isBulkMarkingReady"
+          class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 active:scale-95 text-white font-extrabold text-xs shadow-md transition flex items-center gap-1.5 border border-rose-400/40 cursor-pointer disabled:opacity-60"
+          title="Resend race kit claiming notification emails to runners whose email failed">
+          <i class="fas fa-rotate-right"></i>
+          <span>Resend Failed ({{ failedNotificationsCount }})</span>
+        </button>
+
         <!-- Finalize Supplier Batch button -->
         <button type="button" @click="openBatchFinalizeModal"
           class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md border border-amber-400/40 cursor-pointer">
           <i class="fas fa-layer-group"></i> Finalize Supplier Batch (CSV)
+        </button>
+
+        <!-- Multi-Unbatch (Remove Batch & Lock to Null) Button -->
+        <button type="button" @click="promptBulkUnbatch" :disabled="isBulkUnbatching"
+          class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 active:scale-95 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-md border border-purple-400/40 cursor-pointer disabled:opacity-60"
+          title="Remove batch assignment and unlock selected runners (set batch & lock to null)">
+          <i v-if="!isBulkUnbatching" class="fas fa-box-open"></i>
+          <i v-else class="fas fa-spinner fa-spin"></i>
+          <span>{{ isBulkUnbatching ? 'Unbatching...' : (selectedBatchedRunners.length > 0 ? `Unbatch Selected (${selectedBatchedRunners.length})` : `Unbatch Selected (${selectedIds.length})`) }}</span>
         </button>
 
         <!-- Delete selected -->
@@ -7973,29 +8358,30 @@ const closeRunnerQrPassModal = () => {
       </div>
     </div>
 
-    <!-- BULK-MARK KIT READY CONFIRMATION MODAL (REPLACES BROWSER CONFIRM) -->
-    <div v-if="bulkMarkReadyModal.show"
+    <!-- ── BULK UNBATCH CONFIRMATION MODAL ─────────────────────────────── -->
+    <div v-if="bulkUnbatchModal.show"
       class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      @click.self="closeBulkMarkReadyModal">
+      @click.self="closeBulkUnbatchModal">
       <div :class="[
         'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
         props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
       ]">
-        <!-- Sky accent bar -->
-        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 to-blue-600"></div>
+        <!-- Purple/Indigo accent bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600"></div>
 
         <div
-          class="w-14 h-14 mx-auto rounded-2xl bg-sky-100 text-sky-600 dark:bg-sky-950/80 dark:text-sky-400 flex items-center justify-center text-2xl shadow-sm mt-2">
-          <i class="fas fa-qrcode"></i>
+          class="w-14 h-14 mx-auto rounded-2xl bg-purple-100 text-purple-600 dark:bg-purple-950/80 dark:text-purple-300 flex items-center justify-center text-2xl shadow-sm mt-2">
+          <i class="fas fa-box-open"></i>
         </div>
 
         <div>
           <h3 class="text-lg font-black tracking-tight">
-            Send Race Kit Claiming Emails?
+            Remove Batch &amp; Unlock {{ (selectedBatchedRunners.length || selectedIds.length) }} Runner(s)?
           </h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
-            Are you sure you want to mark race kits ready and dispatch claiming notification emails with QR codes to each of the
-            <strong class="text-sky-600 dark:text-sky-400">{{ selectedIds.length }} selected runner{{ selectedIds.length !== 1 ? 's' : '' }}</strong>?
+            This will clear the supplier batch assignment (<strong class="text-purple-600 dark:text-purple-400">set to unbatched</strong>)
+            and remove the supplier production (<strong class="text-purple-600 dark:text-purple-400">unlocked</strong>) for the selected registrations.
+            They will be restored to open status for edits, review, or future batching.
           </p>
         </div>
 
@@ -8007,12 +8393,147 @@ const closeRunnerQrPassModal = () => {
             <span class="font-bold text-gray-800 dark:text-gray-100">{{ currentOperator || 'Admin' }}</span>
           </div>
           <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
-            <span>Runners to Notify:</span>
-            <span class="font-bold text-sky-600 dark:text-sky-400">{{ selectedIds.length }}</span>
+            <span>Runners Selected:</span>
+            <span class="font-bold text-purple-600 dark:text-purple-400">
+              {{ selectedIds.length }}
+            </span>
+          </div>
+          <div v-if="selectedBatchedRunners.length > 0" class="flex justify-between items-center text-gray-600 dark:text-gray-300">
+            <span>Currently Batched / Locked:</span>
+            <span class="font-bold text-amber-600 dark:text-amber-400">
+              {{ selectedBatchedRunners.length }}
+            </span>
+          </div>
+          <div v-if="uniqueSelectedBatches.length > 0" class="flex justify-between items-center text-gray-600 dark:text-gray-300">
+            <span>Batches Affected:</span>
+            <span class="font-bold text-purple-600 dark:text-purple-400">
+              {{ uniqueSelectedBatches.join(', ') }}
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 pt-2">
+          <button type="button" @click="closeBulkUnbatchModal" :disabled="isBulkUnbatching"
+            class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
+            Cancel
+          </button>
+          <button type="button" @click="executeBulkUnbatch" :disabled="isBulkUnbatching"
+            class="flex-1 items-center py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold transition shadow-md cursor-pointer justify-center gap-1.5 disabled:opacity-60 active:scale-95">
+            <i v-if="!isBulkUnbatching" class="fas fa-box-open"></i>
+            <i v-else class="fas fa-spinner fa-spin"></i>
+            <span class="ml-2">{{ isBulkUnbatching ? 'Unbatching...' : 'Confirm' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- BULK-MARK KIT READY CONFIRMATION MODAL (CELERY + REDIS HIGH-VOLUME ENGINE) -->
+    <div v-if="bulkMarkReadyModal.show"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+      @click.self="closeBulkMarkReadyModal">
+      <div :class="[
+        'w-full max-w-lg rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <!-- Sky & Indigo accent bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-blue-600"></div>
+
+        <div
+          class="w-14 h-14 mx-auto rounded-2xl bg-indigo-100 text-indigo-600 dark:bg-indigo-950/80 dark:text-indigo-400 flex items-center justify-center text-2xl shadow-sm mt-2">
+          <i class="fas fa-paper-plane"></i>
+        </div>
+
+        <div>
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-300 text-[11px] font-bold mb-1.5 border border-indigo-200 dark:border-indigo-800">
+            <i class="fas fa-bolt text-amber-500"></i> Celery Queue + Redis Broker (5000+ Scalable)
+          </div>
+          <h3 class="text-lg font-black tracking-tight">
+            Send Race Kit Claiming Emails
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+            Dispatch official kit claiming emails with dynamic QR codes to participants via asynchronous Celery workers.
+          </p>
+        </div>
+
+        <!-- Target Scope Selector (Selected vs All Confirmed Unnotified vs Resend Failed) -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-left text-xs">
+          <label :class="[
+            'p-3 rounded-2xl border cursor-pointer transition flex flex-col justify-between',
+            bulkNotifyTargetMode === 'selected'
+              ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 shadow-sm'
+              : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 text-gray-600 dark:text-gray-300'
+          ]">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold flex items-center gap-1.5">
+                <input type="radio" value="selected" v-model="bulkNotifyTargetMode" class="text-sky-600" />
+                Selected Only
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300 text-[10px] font-black">
+                {{ selectedIds.length }}
+              </span>
+            </div>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400">Only dispatch to current checked rows</p>
+          </label>
+
+          <label :class="[
+            'p-3 rounded-2xl border cursor-pointer transition flex flex-col justify-between',
+            bulkNotifyTargetMode === 'all_confirmed'
+              ? 'border-indigo-500 bg-indigo-50/70 dark:bg-indigo-950/40 text-indigo-900 dark:text-indigo-200 shadow-sm'
+              : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 text-gray-600 dark:text-gray-300'
+          ]">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold flex items-center gap-1.5">
+                <input type="radio" value="all_confirmed" v-model="bulkNotifyTargetMode" class="text-indigo-600" />
+                All Unnotified
+              </span>
+              <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 text-[10px] font-black">
+                {{ totalConfirmedUnnotifiedCount }}
+              </span>
+            </div>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400">All confirmed paid runners needing kit ready</p>
+          </label>
+
+          <label :class="[
+            'p-3 rounded-2xl border cursor-pointer transition flex flex-col justify-between',
+            bulkNotifyTargetMode === 'resend_failed'
+              ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 text-rose-900 dark:text-rose-200 shadow-sm ring-1 ring-rose-400'
+              : 'border-gray-200 dark:border-gray-700 hover:bg-rose-50/30 dark:hover:bg-rose-950/20 text-gray-600 dark:text-gray-300'
+          ]">
+            <div class="flex items-center justify-between mb-1">
+              <span class="font-bold flex items-center gap-1.5 text-rose-700 dark:text-rose-300">
+                <input type="radio" value="resend_failed" v-model="bulkNotifyTargetMode" class="text-rose-600" />
+                Resend Failed
+              </span>
+              <span :class="['px-2 py-0.5 rounded-full text-[10px] font-black', failedNotificationsCount > 0 ? 'bg-rose-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300']">
+                {{ failedNotificationsCount }}
+              </span>
+            </div>
+            <p class="text-[11px] text-gray-500 dark:text-gray-400">Re-queue all runners whose emails failed</p>
+          </label>
+        </div>
+
+        <!-- Quick Summary Box -->
+        <div
+          class="p-3.5 rounded-2xl bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-700 text-left text-xs space-y-1.5">
+          <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
+            <span>Operator:</span>
+            <span class="font-bold text-gray-800 dark:text-gray-100">{{ currentOperator || 'Admin' }}</span>
+          </div>
+          <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
+            <span>Target Recipients:</span>
+            <span class="font-bold text-indigo-600 dark:text-indigo-400">
+              {{ bulkNotifyTargetMode === 'resend_failed' ? failedNotificationsCount : (bulkNotifyTargetMode === 'all_confirmed' ? totalConfirmedUnnotifiedCount : selectedIds.length) }} runner(s)
+            </span>
           </div>
           <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
             <span>Inclusions:</span>
             <span class="font-medium text-gray-700 dark:text-gray-200">Claim QR Code + Kit Instructions</span>
+          </div>
+          <div class="flex justify-between items-center text-gray-600 dark:text-gray-300">
+            <span>Execution:</span>
+            <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+              <i class="fas fa-check-circle text-[10px]"></i> Background Persistent SMTP (Safe for 5000+)
+            </span>
           </div>
         </div>
 
@@ -8022,12 +8543,152 @@ const closeRunnerQrPassModal = () => {
             Cancel
           </button>
           <button type="button" @click="executeBulkMarkKitReady" :disabled="isBulkMarkingReady"
-            class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-700 hover:to-blue-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 active:scale-95">
+            class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-700 hover:to-sky-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60 active:scale-95">
             <i v-if="!isBulkMarkingReady" class="fas fa-paper-plane"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
-            <span>{{ isBulkMarkingReady ? 'Dispatching...' : 'Yes, Send Emails' }}</span>
+            <span>{{ isBulkMarkingReady ? 'Dispatching...' : 'Yes, Dispatch via Celery' }}</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- ── CELERY LIVE PROGRESS MODAL (5000+ DISPATCH MONITOR) ──────────── -->
+    <div v-if="celeryProgressModal.show && !celeryProgressModal.minimized"
+      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+      <div :class="[
+        'w-full max-w-md rounded-3xl p-6 shadow-2xl border transition-all text-center space-y-4 relative overflow-hidden',
+        props.darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-800 border-slate-200'
+      ]">
+        <!-- Animated top progress bar -->
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gray-200 dark:bg-gray-700 overflow-hidden">
+          <div class="h-full bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-500 transition-all duration-300"
+            :style="{ width: `${celeryTaskProgress.percentage}%` }"></div>
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/70 text-indigo-600 dark:text-indigo-400 text-[10px] font-black tracking-wide border border-indigo-200 dark:border-indigo-800">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            CELERY &bull; REDIS ENGINE
+          </div>
+          <button type="button" @click="celeryProgressModal.minimized = true"
+            class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xs font-bold cursor-pointer p-1"
+            title="Minimize to background pill">
+            <i class="fas fa-compress-alt"></i> Minimize
+          </button>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-black tracking-tight">
+            Dispatching Bulk Notifications
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            {{ celeryTaskProgress.message || 'Processing background queue...' }}
+          </p>
+        </div>
+
+        <!-- Big Progress Percent & Counter -->
+        <div class="py-2">
+          <div class="text-4xl font-black text-indigo-600 dark:text-indigo-400 tracking-tight">
+            {{ celeryTaskProgress.percentage }}%
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">
+            <span class="font-bold text-gray-800 dark:text-gray-100">{{ celeryTaskProgress.current.toLocaleString() }}</span> of
+            <span class="font-bold text-gray-800 dark:text-gray-100">{{ celeryTaskProgress.total.toLocaleString() }}</span> dispatched
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-gray-100 dark:bg-gray-700/80 rounded-full h-3.5 p-0.5 overflow-hidden border border-gray-200 dark:border-gray-600">
+          <div
+            class="bg-gradient-to-r from-sky-500 via-indigo-500 to-emerald-500 h-full rounded-full transition-all duration-300 relative shadow-sm"
+            :style="{ width: `${celeryTaskProgress.percentage}%` }">
+          </div>
+        </div>
+
+        <!-- Status Badges: Success / Failed -->
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><i class="fas fa-check-circle"></i> Sent</span>
+            <span class="font-black text-sm">{{ celeryTaskProgress.success.toLocaleString() }}</span>
+          </div>
+          <div class="p-2.5 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><i class="fas fa-times-circle"></i> Failed</span>
+            <span class="font-black text-sm">{{ celeryTaskProgress.failed.toLocaleString() }}</span>
+          </div>
+        </div>
+
+        <!-- Failed Email Resend Action Card -->
+        <div v-if="celeryTaskProgress.failed > 0"
+          class="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-left space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-black text-rose-800 dark:text-rose-200 flex items-center gap-1.5">
+              <i class="fas fa-triangle-exclamation text-rose-600"></i>
+              <span>{{ celeryTaskProgress.failed.toLocaleString() }} Notification(s) Failed</span>
+            </span>
+            <span v-if="celeryTaskProgress.quota_exceeded" class="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[9px] font-black uppercase">
+              Quota Limit (550)
+            </span>
+          </div>
+          <p class="text-[11px] text-rose-700 dark:text-rose-300">
+            {{ celeryTaskProgress.last_error || 'Some emails could not be sent due to Google Workspace daily SMTP limits (2,000/day) or connection drops.' }}
+          </p>
+          <button type="button" @click="executeResendFailedEmails()" :disabled="isCeleryTaskRunning"
+            class="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 active:scale-95 text-white font-black text-xs transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50">
+            <i class="fas fa-rotate-right"></i>
+            <span>Resend to {{ celeryTaskProgress.failed.toLocaleString() }} Failed Runner(s)</span>
+          </button>
+        </div>
+
+        <!-- Currently Processing Runner -->
+        <div v-if="celeryTaskProgress.last_runner"
+          class="text-[11px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/40 rounded-xl p-2 text-left truncate flex items-center gap-2">
+          <i class="fas fa-envelope-open-text text-sky-500"></i>
+          <span class="truncate">Current: <strong class="text-gray-700 dark:text-gray-200">{{ celeryTaskProgress.last_runner }}</strong></span>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="flex items-center gap-2 pt-1">
+          <button v-if="isCeleryTaskRunning" type="button" @click="cancelCeleryNotificationTask"
+            class="flex-1 py-2 px-3 rounded-xl border border-rose-300 dark:border-rose-700 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/60 text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5">
+            <i class="fas fa-stop-circle"></i> Cancel Task
+          </button>
+          <button v-else type="button" @click="celeryProgressModal.show = false"
+            class="flex-1 py-2 px-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5">
+            <i class="fas fa-check"></i> Close Monitor
+          </button>
+          <button type="button" @click="celeryProgressModal.minimized = true"
+            class="flex-1 py-2 px-3 rounded-xl bg-gray-900 hover:bg-black dark:bg-gray-100 dark:hover:bg-white text-white dark:text-gray-900 text-xs font-bold transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5">
+            <i class="fas fa-layer-group"></i> Run in Background
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── MINIMIZED FLOATING CELERY PROGRESS PILL ────────────────────── -->
+    <div v-if="celeryProgressModal.show && celeryProgressModal.minimized"
+      class="fixed bottom-6 right-6 z-[9999] cursor-pointer transition-all hover:scale-105 active:scale-95"
+      @click="celeryProgressModal.minimized = false">
+      <div class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-gray-900/95 text-white shadow-2xl border border-indigo-500/40 backdrop-blur-md">
+        <div class="relative w-7 h-7 flex items-center justify-center">
+          <i class="fas fa-spinner fa-spin text-indigo-400 text-lg"></i>
+          <i class="fas fa-bolt text-[9px] text-amber-400 absolute"></i>
+        </div>
+        <div class="text-left">
+          <div class="text-xs font-black tracking-tight flex items-center gap-1.5">
+            <span>Celery Dispatching</span>
+            <span class="px-1.5 py-0.2 rounded-full bg-indigo-500/40 text-indigo-200 text-[10px] font-bold">
+              {{ celeryTaskProgress.percentage }}%
+            </span>
+          </div>
+          <div class="text-[11px] text-gray-300">
+            {{ celeryTaskProgress.current.toLocaleString() }} / {{ celeryTaskProgress.total.toLocaleString() }}
+            <span class="text-emerald-400 font-bold ml-1">({{ celeryTaskProgress.success }} ✓)</span>
+          </div>
+        </div>
+        <button type="button" @click.stop="celeryProgressModal.minimized = false"
+          class="ml-2 text-gray-400 hover:text-white text-xs p-1">
+          <i class="fas fa-expand-alt"></i>
+        </button>
       </div>
     </div>
 
@@ -8899,13 +9560,20 @@ const closeRunnerQrPassModal = () => {
           </p>
         </div>
 
-        <div class="flex items-center gap-2 pt-2">
+        <div class="flex items-center gap-2 pt-2 flex-wrap">
           <button type="button" @click="closeUnlockPrompt" :disabled="isTogglingLock"
-            class="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
+            class="flex-1 py-2.5 px-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
             Cancel
           </button>
+          <button v-if="unlockPromptModal.type === 'runner' && unlockPromptModal.target.batch_name"
+            type="button" @click="executeUnbatchSingle(unlockPromptModal.target)" :disabled="isTogglingLock"
+            class="py-2.5 px-3 rounded-xl border border-rose-300 dark:border-rose-700 bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-700 dark:text-rose-300 text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5"
+            title="Remove runner from batch completely and set lock to null">
+            <i class="fas fa-box-open"></i>
+            <span>Remove from Batch</span>
+          </button>
           <button type="button" @click="executeToggleLock" :disabled="isTogglingLock"
-            class="flex-1 py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60">
+            class="flex-1 py-2.5 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition shadow-md cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60">
             <i v-if="!isTogglingLock"
               :class="['fas', unlockPromptModal.target.batch_locked || unlockPromptModal.target.is_locked ? 'fa-unlock' : 'fa-lock']"></i>
             <i v-else class="fas fa-spinner fa-spin"></i>
