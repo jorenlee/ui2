@@ -3760,6 +3760,128 @@ const downloadBatchCsvPreview = () => {
   );
 };
 
+// ── PDF Export: Batch Supplier Order List (print-friendly, no npm packages) ──
+const exportBatchPdf = () => {
+  const runners = eligibleBatchRunners.value;
+  if (!runners.length) {
+    showNotice("No eligible runners found for this batch selection.", "Cannot Export PDF", "error");
+    return;
+  }
+  const batchName = batchFinalizeModal.value.batchName || "Supplier Batch";
+  const activeCols = CSV_ALL_COLUMNS.filter(c => selectedCsvColumns.value.includes(c.key));
+  if (!activeCols.length) {
+    showNotice("Please select at least one column to export.", "No Columns Selected", "error");
+    return;
+  }
+  const dateStr = new Date().toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" });
+  const printedAt = new Date().toLocaleString("en-PH");
+
+  // Build column map same as generateCsvFromList
+  const rowsHtml = runners.map((r, idx) => {
+    const fullName = `${r.firstname || ""} ${r.middlename || ""} ${r.lastname || ""}${r.suffix ? " " + r.suffix : ""}`.trim();
+    const batchStr = r.batch_name || batchName;
+    const lockStr = r.batch_locked ? "LOCKED" : "OPEN";
+    const age = r.birthdate ? (() => { const b = new Date(r.birthdate); const n = new Date(); let a = n.getFullYear() - b.getFullYear(); if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--; return a; })() : "";
+    const colMap = {
+      batch: batchStr,
+      lock_status: lockStr,
+      reg_id: r.id,
+      race_bib: r.run_number || r.bib_number || `AR-${r.id}`,
+      category: r.run_category || "",
+      full_name: fullName,
+      firstname: r.firstname || "",
+      middlename: r.middlename || "",
+      lastname: r.lastname || "",
+      suffix: r.suffix || "",
+      gender: r.gender || "",
+      age: age,
+      birthdate: r.birthdate || "",
+      contact_number: r.contact_number || r.phone || "",
+      email: r.contact_email || r.email || "",
+      address: r.contact_address || r.address || "",
+      classification: r.participant_type || "",
+      college_course: r.college_course || "",
+      college_year: r.college_year || r.beu_grade || "",
+      lsu_id: r.lsu_id_number || "",
+      partner_office: r.partner_office || "",
+      organization: r.organization || "",
+      affiliation: r.alumni_batch || "",
+      tshirt_size: r.tshirt_size || "M",
+      pet_name: r.pet_name || "",
+      pet_type: r.pet_type || "",
+      pet_bandana: (r.run_category || "").toUpperCase().startsWith("1K") || r.pet_name || r.pet_bandana_size || r.pet_bandana ? "Standard" : "",
+      pet_vaccinated: r.pet_vaccinated ? "Yes" : "No",
+      payment_option: r.payment_type || "",
+      payment_status: r.payment_status || "",
+      receipt: r.proof_of_payment || "",
+      total_amount: r.grand_total_payment || r.grand_total || 0,
+      reg_date: r.created_at_formatted || r.created_at || "",
+      confirmed_date: r.confirmed_at || "",
+      confirmed_by: r.confirmed_by || "",
+      locked_by: r.batch_locked_by || "",
+      locked_at: r.batch_locked_at || "",
+      messages_count: Array.isArray(r.communication_logs) ? r.communication_logs.length : 0,
+    };
+    const bg = idx % 2 === 0 ? "#ffffff" : "#f8faf8";
+    const cells = activeCols.map(c => `<td style="padding:5px 7px;border:1px solid #ddd;font-size:10px;white-space:nowrap;background:${bg}">${colMap[c.key] ?? ""}</td>`).join("");
+    return `<tr><td style="padding:5px 7px;border:1px solid #ddd;font-size:10px;text-align:center;background:${bg};color:#666">${idx + 1}</td>${cells}</tr>`;
+  }).join("");
+
+  const headerCells = activeCols.map(c => `<th style="padding:7px 8px;background:#064e3b;color:#fff;font-size:10px;white-space:nowrap;border:1px solid #043927;text-align:left">${c.label}</th>`).join("");
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>${batchName} - Supplier Order List</title>
+  <style>
+    @page { size: A4 landscape; margin: 12mm 10mm; }
+    body { font-family: Arial, sans-serif; font-size: 11px; color: #222; margin: 0; padding: 0; }
+    h1 { font-size: 15px; margin: 0 0 2px; color: #064e3b; }
+    .meta { font-size: 10px; color: #555; margin-bottom: 10px; }
+    table { border-collapse: collapse; width: 100%; }
+    @media print { button { display: none !important; } }
+  </style>
+</head>
+<body>
+  <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:flex-end">
+    <div>
+      <h1>&#x1F7E2; The Emerald Run &ndash; Supplier Batch Order</h1>
+      <div class="meta"><strong>Batch:</strong> ${batchName} &nbsp;|&nbsp; <strong>Date:</strong> ${dateStr} &nbsp;|&nbsp; <strong>Total Runners:</strong> ${runners.length} &nbsp;|&nbsp; <strong>Columns:</strong> ${activeCols.length}</div>
+      <div class="meta" style="color:#888">Generated: ${printedAt} &nbsp;&bull;&nbsp; La Salle University Ozamiz &ndash; Emerald Run Registration System</div>
+    </div>
+    <button onclick="window.print()" style="padding:8px 18px;background:#064e3b;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:bold;cursor:pointer">&#128438; Print / Save PDF</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="padding:7px 8px;background:#064e3b;color:#fff;font-size:10px;border:1px solid #043927;text-align:center;width:30px">#</th>
+        ${headerCells}
+      </tr>
+    </thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+  <div style="margin-top:12px;font-size:9px;color:#aaa;text-align:center">
+    ${batchName} &bull; Emerald Run Supplier Batch Order &bull; Printed: ${printedAt}
+  </div>
+  <script>window.onload = () => setTimeout(() => window.print(), 400);<\/script>
+</body>
+</html>`;
+
+  const win = window.open("", "_blank", "width=1200,height=800");
+  if (!win) {
+    showNotice("Please allow pop-ups for this site to export PDF.", "Pop-up Blocked", "warning");
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  showNotice(
+    `PDF preview opened for ${runners.length} runner(s). Click "Print / Save PDF" in the new tab, then choose "Save as PDF" as the printer.`,
+    "PDF Export Ready",
+    "success"
+  );
+};
+
 // ── Batch Finalization & Lock Modal ──────────────────────────────────────────────
 let initialBatches = [];
 if (process.client) {
@@ -9288,6 +9410,13 @@ const closeRunnerQrPassModal = () => {
           <button type="button" @click="closeBatchFinalizeModal" :disabled="isFinalizingBatch"
             class="py-2.5 px-3.5 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-xs font-bold transition cursor-pointer">
             Cancel
+          </button>
+          <button type="button" @click="exportBatchPdf"
+            :disabled="isFinalizingBatch || batchBreakdown.count === 0 || selectedCsvColumns.length === 0"
+            class="py-2.5 px-3.5 rounded-xl border border-rose-500/50 hover:border-rose-500 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 text-xs font-bold transition shadow-sm cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+            title="Opens a print-ready PDF in a new tab — click Print / Save PDF there">
+            <i class="fas fa-file-pdf"></i>
+            <span>Export PDF</span>
           </button>
           <button type="button" @click="downloadBatchCsvPreview"
             :disabled="isFinalizingBatch || batchBreakdown.count === 0 || selectedCsvColumns.length === 0"
