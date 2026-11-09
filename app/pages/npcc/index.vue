@@ -180,7 +180,7 @@
         </p>
       </section>
     </div>
-
+       <LSUAnimoAI />
     <Footer />
   </div>
 </template>

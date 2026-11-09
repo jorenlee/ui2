@@ -155,6 +155,7 @@ const selectedPaymentType = ref("All"); // "All", "add_to_tuition", "salary_dedu
 const selectedReceipt = ref("All"); // "All", "has_receipt", "without_receipt"
 const selectedParticipantType = ref("All");
 const selectedAgeGroup = ref("All");
+const selectedGender = ref("All"); // "All", "Male", "Female"
 const selectedAcademicUnit = ref("All"); // "All", "HEU", "BEU", "Grade School", "JHS", "SHS", or specific course
 const selectedKitStatus = ref("All"); // "All", "claimed", "ready", "pending"
 
@@ -1856,6 +1857,20 @@ const filteredRegistrations = computed(() => {
       matchesAge = ag === selectedAgeGroup.value;
     }
 
+    // Gender filter
+    let matchesGender = true;
+    if (selectedGender.value !== "All") {
+      const g = String(item.gender || "").trim().toLowerCase();
+      const target = String(selectedGender.value).trim().toLowerCase();
+      if (target === "male") {
+        matchesGender = g === "male" || g === "m" || (g.startsWith("m") && !g.startsWith("f"));
+      } else if (target === "female") {
+        matchesGender = g === "female" || g === "f" || g.startsWith("f");
+      } else {
+        matchesGender = g === target;
+      }
+    }
+
     // Batch filter
     let matchesBatch = true;
     if (selectedBatch.value === "Unbatched") {
@@ -1908,7 +1923,7 @@ const filteredRegistrations = computed(() => {
       matchesKit = !item.kit_ready && !item.kit_claimed;
     }
 
-    return matchesQuery && matchesCategory && matchesStatus && matchesPaymentType && matchesReceipt && matchesType && matchesAcademicUnit && matchesAge && matchesBatch && matchesLock && matchesDate && matchesChat && matchesKit;
+    return matchesQuery && matchesCategory && matchesStatus && matchesPaymentType && matchesReceipt && matchesType && matchesAcademicUnit && matchesAge && matchesGender && matchesBatch && matchesLock && matchesDate && matchesChat && matchesKit;
   });
 
   // Sorting: Universal ASC/DESC for every column
@@ -4713,7 +4728,7 @@ const isFilterExpanded = ref(false);
 
 // Reset render limit when filters change
 watch(
-  [searchQuery, selectedAcademicUnit, selectedCategory, selectedStatus, selectedPaymentType, selectedReceipt, selectedParticipantType, selectedAgeGroup, selectedChatFilter, selectedBatch, selectedLockStatus, selectedKitStatus, dateFrom, dateTo, sortBy],
+  [searchQuery, selectedAcademicUnit, selectedCategory, selectedStatus, selectedPaymentType, selectedReceipt, selectedParticipantType, selectedAgeGroup, selectedGender, selectedChatFilter, selectedBatch, selectedLockStatus, selectedKitStatus, dateFrom, dateTo, sortBy],
   () => { renderLimit.value = INITIAL_CHUNK; }
 );
 
@@ -4726,6 +4741,7 @@ const activeFilterCount = computed(() => {
   if (selectedReceipt.value !== "All") count++;
   if (selectedParticipantType.value !== "All") count++;
   if (selectedAgeGroup.value !== "All") count++;
+  if (selectedGender.value !== "All") count++;
   if (selectedChatFilter.value !== "All") count++;
   if (selectedBatch.value !== "All") count++;
   if (selectedLockStatus.value !== "All") count++;
@@ -4746,6 +4762,7 @@ const resetAllFilters = () => {
   selectedReceipt.value = "All";
   selectedParticipantType.value = "All";
   selectedAgeGroup.value = "All";
+  selectedGender.value = "All";
   selectedAcademicUnit.value = "All";
   selectedBatch.value = "All";
   selectedLockStatus.value = "All";
@@ -4959,7 +4976,7 @@ let html5QrCodeScanner = null;
 
 const isDistributionItem = (item) => {
   const val = String(item).toLowerCase();
-  return !val.includes("medal") && !val.includes("post-meal") && !val.includes("post meal") && !val.includes("pet treat");
+  return !val.includes("finisher") && !val.includes("medal") && !val.includes("post-meal") && !val.includes("post meal") && !val.includes("pet treat");
 };
 
 const isEventDayItem = (item) => {
@@ -5798,6 +5815,16 @@ const closeRunnerQrPassModal = () => {
               </button>
             </span>
 
+            <!-- Gender pill -->
+            <span v-if="selectedGender !== 'All'"
+              class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">
+              Gender: {{ selectedGender }}
+              <button type="button" @click="selectedGender = 'All'"
+                class="hover:text-emerald-950 dark:hover:text-white ml-0.5" title="Remove gender filter">
+                <i class="fas fa-times text-[10px]"></i>
+              </button>
+            </span>
+
             <!-- Chat filter pill -->
             <span v-if="selectedChatFilter !== 'All'"
               class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-700">
@@ -6096,7 +6123,50 @@ const closeRunnerQrPassModal = () => {
                     </select>
                   </div>
 
-                  <!-- Messages / Queries Filter -->
+                  <!-- Gender Filter (All / Male / Female) -->
+                  <div>
+                    <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      <i class="fas fa-venus-mars text-emerald-500 mr-0.5"></i> Gender
+                    </label>
+                    <div :class="[
+                      'inline-flex items-center p-0.5 rounded-xl border text-xs transition h-[34px]',
+                      props.darkMode ? 'bg-gray-900 border-gray-700 text-gray-100' : 'bg-slate-50 border-gray-300 text-gray-800',
+                      selectedGender !== 'All' ? 'ring-2 ring-emerald-500 font-bold !border-emerald-500' : ''
+                    ]">
+                      <button type="button"
+                        @click="selectedGender = 'All'"
+                        :class="[
+                          'px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer',
+                          selectedGender === 'All'
+                            ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400'
+                        ]">
+                        All
+                      </button>
+                      <button type="button"
+                        @click="selectedGender = 'Male'"
+                        :class="[
+                          'px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1',
+                          selectedGender === 'Male'
+                            ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400'
+                        ]">
+                        <i class="fas fa-mars text-[10px]"></i> Male
+                      </button>
+                      <button type="button"
+                        @click="selectedGender = 'Female'"
+                        :class="[
+                          'px-2.5 py-1 rounded-lg text-xs font-semibold transition cursor-pointer flex items-center gap-1',
+                          selectedGender === 'Female'
+                            ? 'bg-emerald-600 text-white shadow-sm font-bold'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400'
+                        ]">
+                        <i class="fas fa-venus text-[10px]"></i> Female
+                      </button>
+                    </div>
+                  </div>
+
+<!-- Messages / Queries Filter -->
                   <div>
                     <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
                       <i class="fas fa-comment-dots text-emerald-500 mr-0.5"></i> Chat & Inquiries
@@ -7464,7 +7534,7 @@ const closeRunnerQrPassModal = () => {
                           title="View or print Runner Claim Pass with QR code">
                           <i class="fas fa-qrcode text-3xl"></i>
                         </button>
-                        <button v-if="runner.kit_email_failed || runner.kit_email_sent === false" type="button"
+                        <button v-if="runner.kit_email_failed" type="button"
                           @click.stop="markKitReadyAndNotify(runner, { force: true })"
                           :disabled="isMarkingKitReady"
                           class="p-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-300 border border-rose-300 dark:border-rose-800 text-[10px] font-bold transition cursor-pointer"
@@ -7472,7 +7542,7 @@ const closeRunnerQrPassModal = () => {
                           <i class="fas fa-rotate-right"></i>
                         </button>
                       </div>
-                      <span v-if="runner.kit_email_failed || runner.kit_email_sent === false"
+                      <span v-if="runner.kit_email_failed"
                         class="text-[9px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-0.5"
                         :title="runner.kit_email_error || 'Email delivery failed'">
                         <i class="fas fa-exclamation-circle text-[8px]"></i> Email Failed
@@ -10903,7 +10973,7 @@ const closeRunnerQrPassModal = () => {
                 <div>
                   <h5 class="font-extrabold text-xs text-sky-900 dark:text-sky-200 uppercase tracking-wide flex items-center gap-1.5">
                     <i class="fas fa-medal text-sky-600"></i>
-                    <span>2. Event Day Inclusions &middot; November 14 (Medal &amp; Post-Meal)</span>
+                    <span>2. Event Day Inclusions &middot; November 14 (Finisher Shirt, Medal &amp; Post-Meal)</span>
                   </h5>
                   <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
                     Static event-day inclusions &middot; Given during race event on November 14
@@ -10919,12 +10989,12 @@ const closeRunnerQrPassModal = () => {
                   class="flex items-center justify-between px-3 py-2 rounded-xl border border-sky-200 dark:border-sky-800/80 bg-sky-50/60 dark:bg-sky-950/20 text-xs">
                   <div class="flex items-center gap-2">
                     <span class="w-5 h-5 rounded-md bg-sky-600 text-white flex items-center justify-center text-[10px] font-bold">
-                      <i :class="item.toLowerCase().includes('medal') ? 'fas fa-medal' : (item.toLowerCase().includes('meal') ? 'fas fa-utensils' : 'fas fa-gift')"></i>
+                      <i :class="item.toLowerCase().includes('finisher') ? 'fas fa-shirt' : (item.toLowerCase().includes('medal') ? 'fas fa-medal' : (item.toLowerCase().includes('meal') ? 'fas fa-utensils' : 'fas fa-gift'))"></i>
                     </span>
                     <span class="font-bold text-sky-950 dark:text-sky-100">{{ item }}</span>
                   </div>
                   <span class="text-[10px] font-bold text-sky-700 dark:text-sky-300 uppercase tracking-tight">
-                    {{ item.toLowerCase().includes('medal') ? 'Awarded at Finish Line' : 'Claimed after run' }}
+                    {{ item.toLowerCase().includes('finisher') ? 'Awarded at Finish Line (Nov 14)' : (item.toLowerCase().includes('medal') ? 'Awarded at Finish Line' : 'Claimed after run') }}
                   </span>
                 </div>
               </div>

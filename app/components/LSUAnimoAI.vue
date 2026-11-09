@@ -261,6 +261,7 @@ const sendMessage = async () => {
       text: res.reply,
       time: now(),
       escalated: res.escalated,
+      source: res.source || '',
     })
     if (!isOpen.value || isMinimized.value) unread.value++
   } catch {
@@ -292,6 +293,18 @@ const sendQuick = (label) => {
   showMenu.value = false
   inputText.value = label
   sendMessage()
+}
+
+// ─── AI SOURCE LABEL ──────────────────────────────────────────────────
+const sourceLabel = (src) => {
+  if (!src || src === 'greeting' || src === 'thanks') return null
+  if (src === 'gemini')        return { icon: '✦',  text: 'Gemini AI',        cls: 'text-blue-500 border-blue-200 bg-blue-50' }
+  if (src === 'faq_exact')     return { icon: '📋', text: 'FAQ Match',         cls: 'text-emerald-600 border-emerald-200 bg-emerald-50' }
+  if (src === 'faq_fuzzy')     return { icon: '🔍', text: 'Related FAQ',       cls: 'text-amber-600 border-amber-200 bg-amber-50' }
+  if (src === 'computed')      return { icon: '🗓️', text: 'Auto-Computed',     cls: 'text-purple-600 border-purple-200 bg-purple-50' }
+  if (src === 'human_request') return { icon: '🧑‍💼', text: 'Escalated to MCC', cls: 'text-rose-500 border-rose-200 bg-rose-50' }
+  if (src === 'fallback')      return { icon: '📨', text: 'Escalated to MCC',  cls: 'text-rose-500 border-rose-200 bg-rose-50' }
+  return null
 }
 
 // ─── RENDER TEXT ──────────────────────────────────────────────────────
@@ -525,6 +538,15 @@ const renderText = (text) => {
                 >
                   <i class="fa fa-envelope text-xs"></i>
                   Our team has been notified and will follow up via email.
+                </div>
+
+                <!-- AI Source badge (bot only, non-typing) -->
+                <div
+                  v-if="msg.sender === 'bot' && !msg.typing && sourceLabel(msg.source)"
+                  :class="['inline-flex items-center gap-1 mt-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border', sourceLabel(msg.source).cls]"
+                >
+                  <span>{{ sourceLabel(msg.source).icon }}</span>
+                  <span>{{ sourceLabel(msg.source).text }}</span>
                 </div>
 
                 <!-- Time -->

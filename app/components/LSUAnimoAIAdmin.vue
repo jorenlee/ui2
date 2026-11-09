@@ -15,6 +15,9 @@ const activeTab = ref('sessions') // 'sessions' | 'faqs' | 'stats'
 const stats = ref(null)
 const statsLoading = ref(false)
 
+// Human-readable label for the active AI model shown in Stats panel
+const AI_MODEL_DISPLAY = 'Gemini 1.5 Flash (google-genai)'
+
 const fetchStats = async () => {
   statsLoading.value = true
   try {
@@ -740,6 +743,10 @@ const senderColor = (sender) => ({ user: 'clr-user', bot: 'clr-bot', human: 'clr
 .det-msg-body { font-size:12.5px;line-height:1.5;color:#1e293b; }
 .dark-mode .det-msg-body { color:#e2e8f0; }
 .det-faq-tag { font-size:10px;color:#16a34a;margin-top:4px;display:flex;align-items:center;gap:4px; }
+.src-badge { display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:600;border:1px solid; }
+.src-gemini { color:#2563eb;background:#eff6ff;border-color:#bfdbfe; }
+.src-faq    { color:#16a34a;background:#f0fdf4;border-color:#bbf7d0; }
+.src-esc    { color:#dc2626;background:#fef2f2;border-color:#fecaca; }
 .detail-slide-enter-active, .detail-slide-leave-active { transition:opacity .25s,transform .25s; }
 .detail-slide-enter-from, .detail-slide-leave-to { opacity:0;transform:translateX(20px); }
 
