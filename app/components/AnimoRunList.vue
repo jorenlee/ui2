@@ -2981,6 +2981,7 @@ const openEdit = () => {
     tshirt_size: parsedShirts.mainShirt,
     run_category: selectedRunner.value.run_category || "",
     run_number: selectedRunner.value.run_number || selectedRunner.value.bib_number || "",
+    rank_record: selectedRunner.value.rank_record || "",
     payment_status: selectedRunner.value.payment_status || "",
     payment_type: selectedRunner.value.payment_type || "",
     finisher_shirt_size: parsedShirts.finisherShirt,
@@ -3628,6 +3629,7 @@ const CSV_ALL_COLUMNS = [
   { key: 'lock_status', label: 'Lock Status' },
   { key: 'reg_id', label: 'Reg ID' },
   { key: 'race_bib', label: 'Race BIB Number' },
+  { key: 'rank_record', label: 'Rank Record' },
   { key: 'category', label: 'Category' },
   { key: 'full_name', label: 'Full Name' },
   { key: 'firstname', label: 'First Name' },
@@ -3711,6 +3713,7 @@ const generateCsvFromList = (list, batchLabel = "Export") => {
       lock_status: escapeCsv(lockStr),
       reg_id: escapeCsv(r.id),
       race_bib: escapeCsv(r.run_number || r.bib_number || `AR-${r.id}`),
+      rank_record: escapeCsv(r.rank_record || ''),
       category: escapeCsv(r.run_category || ""),
       full_name: escapeCsv(fullName),
       firstname: escapeCsv(r.firstname || ""),
@@ -6993,8 +6996,12 @@ const closeRunnerQrPassModal = () => {
 
                   <!-- Dynamic Columns -->
                   <td v-for="col in activeTableColumns" :key="col.key" class="px-3 py-3.5">
+                    <!-- rank_record -->
+                    <div v-if="col.key === 'rank_record'"
+                      class="h-5 w-16 rounded-full bg-slate-200 dark:bg-gray-700"></div>
+
                     <!-- race_bib -->
-                    <div v-if="col.key === 'race_bib'"
+                    <div v-else-if="col.key === 'race_bib'"
                       class="h-5 w-16 rounded bg-emerald-100/80 dark:bg-emerald-950/70"></div>
 
                     <!-- reg_id -->
