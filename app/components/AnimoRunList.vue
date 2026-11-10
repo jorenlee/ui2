@@ -7086,8 +7086,27 @@ const closeRunnerQrPassModal = () => {
                   <!-- Dynamic columns rendered based on col.key -->
                   <td v-for="col in activeTableColumns" :key="col.key"
                     :class="['px-3', col.key === 'receipt' ? 'text-center' : '']">
+                    <!-- rank_record -->
+                    <template v-if="col.key === 'rank_record'">
+                      <div v-if="runner.rank_record" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black border shadow-sm"
+                        :class="[
+                          runner.rank_record.includes('1st') ? 'bg-amber-100 text-amber-900 border-amber-400 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-500' :
+                          runner.rank_record.includes('2nd') ? 'bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-500' :
+                          runner.rank_record.includes('3rd') ? 'bg-orange-100 text-orange-900 border-orange-400 dark:bg-orange-950/80 dark:text-orange-300 dark:border-orange-600' :
+                          'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300 dark:border-blue-800'
+                        ]">
+                        <i :class="[
+                          runner.rank_record.includes('1st') ? 'fa-solid fa-trophy text-amber-500' :
+                          runner.rank_record.includes('2nd') || runner.rank_record.includes('3rd') ? 'fa-solid fa-medal' :
+                          'fa-solid fa-flag-checkered text-blue-500'
+                        ]"></i>
+                        <span class="font-mono tracking-tight">{{ runner.rank_record }}</span>
+                      </div>
+                      <span v-else class="text-xs text-gray-400 dark:text-gray-600">—</span>
+                    </template>
+
                     <!-- race_bib -->
-                    <template v-if="col.key === 'race_bib'">
+                    <template v-else-if="col.key === 'race_bib'">
                       <span
                         class="inline-block px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-extrabold text-[10px] uppercase">
                         {{ runner.run_number || runner.bib_number || ('AR-' + runner.id) }}
