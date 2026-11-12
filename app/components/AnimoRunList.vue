@@ -10704,12 +10704,14 @@ const closeRunnerQrPassModal = () => {
             class="p-4 rounded-2xl border border-slate-200 dark:border-gray-700/80 bg-slate-50 dark:bg-gray-900/40 space-y-2.5">
             <div class="flex items-center justify-between flex-wrap">
               <div class="flex items-center">
-         
+                <span class="px-2 py-0.5 rounded font-black text-[10px] text-white uppercase shadow-2xs bg-black">
+                  {{activeClaimRunner.batch_name}} 
+                </span>
                 <span :class="[
                   'px-2 py-0.5 rounded font-black text-[10px] text-white uppercase shadow-2xs',
                   runCategories.find(c => normalizeCategory(activeClaimRunner.run_category) === c.id)?.color || 'bg-emerald-700'
                 ]">
-                    {{ activeClaimRunner.run_number || ('AR-' + activeClaimRunner.id) }}
+                   {{ activeClaimRunner.run_number || ('AR-' + activeClaimRunner.id) }}
                 </span>
               </div>
               <span :class="[
