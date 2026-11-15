@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import animoRunData from "~/animorun.json";
+import PetAwardModal from './PetAwardModal.vue';
 
 const COLLEGE_COURSE_OPTIONS = animoRunData?.COLLEGE_COURSE_OPTIONS || [];
 const OFFICIAL_SHIRT_CONFIGS = animoRunData?.OFFICIAL_SHIRT_CONFIGS || [];
@@ -11,10 +12,39 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  rolePermissions: {
+    type: Array,
+    default: () => [],
+  },
 });
 
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
+const { user: petAwardUser, token: petAwardToken, init: initPetAwardAuth } = useAuth();
+const canManagePetAwards = ref(false);
+const petAwardModalOpen = ref(false);
+const petAwardRunner = ref(null);
+async function refreshPetAwardPermission() {
+  canManagePetAwards.value = false;
+  if (!petAwardUser.value?.email || !petAwardToken.value) return;
+  try {
+    const response = await fetch(`${endpoint.value}/api/cits/role-permissions/list/?email=${encodeURIComponent(petAwardUser.value.email)}`);
+    const data = await response.json();
+    const allowed = ['the emerald run', 'animo run admin', 'super admin'];
+    canManagePetAwards.value = response.ok && Array.isArray(data) && data.some(row =>
+      Array.isArray(row.role_filter_permissions) && row.role_filter_permissions.some(role => typeof role === 'string' && allowed.includes(role.trim().toLowerCase())));
+  } catch { canManagePetAwards.value = false; }
+}
+function openPetWinnerDetails(runner = null) {
+  petAwardRunner.value = runner;
+  petAwardModalOpen.value = true;
+}
+async function petWinnerDetailsSaved() {
+  petAwardModalOpen.value = false;
+  await fetchRegistrations(true);
+  showNotice('Pet winner details saved and shared with the rankings page.', 'Pet Winner Saved', 'success');
+}
+watch(() => petAwardUser.value?.email, refreshPetAwardPermission);
 
 const isFetching = ref(false);
 const isAutoRefreshing = ref(false);
@@ -1481,6 +1511,10 @@ const fetchRegistrations = async (silent = false) => {
     const res = await $fetch(`${endpoint.value}/api/animorun/list/`);
     if (Array.isArray(res)) {
       registrations.value = res;
+      if (selectedRunner.value && !isEditMode.value) {
+        const fresh = res.find(runner => runner.id === selectedRunner.value.id);
+        if (fresh) Object.assign(selectedRunner.value, { pet_awards: fresh.pet_awards, pet_name: fresh.pet_name, pet_type: fresh.pet_type });
+      }
       lastUpdated.value = new Date();
       persistCache(res);
       fetchFailedNotificationStats();
@@ -1515,6 +1549,8 @@ const formatLastUpdated = computed(() => {
 });
 
 onMounted(() => {
+  initPetAwardAuth();
+  refreshPetAwardPermission();
   let hasCache = false;
 
   // Restore active Celery bulk notification tracking if a task was left running
@@ -5590,7 +5626,7 @@ const closeRunnerQrPassModal = () => {
             </span>
           </div>
 
-          <!-- Live indicator & Manual Refresh Button -->
+          
           <button type="button" @click="fetchRegistrations(false)" :disabled="isFetching || isAutoRefreshing"
             class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 text-white text-[11px] font-medium transition cursor-pointer disabled:opacity-75 select-none"
             title="Click to refresh registrations">
@@ -6610,6 +6646,9 @@ const closeRunnerQrPassModal = () => {
                     <i class="fas fa-users text-[8px] mr-1"></i>{{ getFirstNameCount(runner.firstname) }} same
                   </span>
                 </div>
+                <div v-for="award in runner.pet_awards || []" :key="award.award" class="mt-2 rounded-lg border border-teal-500/40 p-2 text-xs text-teal-700 dark:text-teal-300">
+                  <strong>{{ award.label }}</strong><p v-if="award.notes" class="whitespace-pre-wrap">{{ award.notes }}</p>
+                </div>
                 <div class="flex items-center gap-3 text-xs text-gray-500 mt-1 flex-wrap">
                   <span v-if="runner.contact_email || runner.email"
                     class="flex items-center gap-1 truncate max-w-[200px]">
@@ -7103,6 +7142,9 @@ const closeRunnerQrPassModal = () => {
                         <span class="font-mono tracking-tight">{{ runner.rank_record }}</span>
                       </div>
                       <span v-else class="text-xs text-gray-400 dark:text-gray-600">—</span>
+                      <div v-for="award in runner.pet_awards || []" :key="award.award" class="mt-1 rounded-lg border border-teal-500/40 p-2 text-xs text-teal-700 dark:text-teal-300">
+                        <strong>{{ award.label }}</strong><p v-if="award.notes" class="whitespace-pre-wrap">{{ award.notes }}</p>
+                      </div>
                     </template>
 
                     <!-- race_bib -->
@@ -7134,6 +7176,9 @@ const closeRunnerQrPassModal = () => {
                       </div>
                       <div class="text-[11px] text-gray-500 truncate max-w-[180px]">
                         {{ runner.contact_email || runner.email }}
+                      </div>
+                      <div v-for="award in runner.pet_awards || []" :key="award.award" class="mt-1 rounded-lg border border-teal-500/40 p-2 text-xs text-teal-700 dark:text-teal-300">
+                        <strong>{{ award.label }}</strong><p v-if="award.notes" class="whitespace-pre-wrap">{{ award.notes }}</p>
                       </div>
                     </template>
 
@@ -8098,6 +8143,11 @@ const closeRunnerQrPassModal = () => {
                 }})
                 </p>
                 <p><strong>Bandana:</strong> Standard</p>
+                <div v-for="award in selectedRunner.pet_awards || []" :key="award.award" class="rounded-lg border border-teal-500/40 p-2 text-xs">
+                  <strong>{{ award.label }}</strong><p v-if="award.notes" class="whitespace-pre-wrap">{{ award.notes }}</p>
+                </div>
+                <button v-if="canManagePetAwards" type="button" @click="openPetWinnerDetails(selectedRunner)"
+                  class="rounded-lg bg-teal-700 px-3 py-2 text-xs font-bold text-white cursor-pointer">Edit Pet winner details</button>
 
                 <!-- Pet Vaccine Document -->
                 <div v-if="getDocumentUrl(selectedRunner.pet_vaccine_record)"
@@ -11738,6 +11788,8 @@ const closeRunnerQrPassModal = () => {
   </div>
 
 
+  <PetAwardModal v-if="petAwardModalOpen && canManagePetAwards" :api-url="endpoint" :token="petAwardToken || ''" :runner="petAwardRunner"
+    @close="petAwardModalOpen = false" @saved="petWinnerDetailsSaved" />
 </template>
 
 <style scoped>

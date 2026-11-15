@@ -149,7 +149,10 @@ const userRoles = computed(() => {
 });
 
 // ---------------- AUTH ----------------
-const isUserAuthenticated = computed(() => isLoggedIn.value);
+// The client auth plugin restores login before hydration; the server has no
+// localStorage. Keep the initial render identical until this component mounts.
+const authReady = ref(false);
+const isUserAuthenticated = computed(() => authReady.value && isLoggedIn.value);
 
 // ---------------- DARK MODE ----------------
 const toggleDarkMode = () => {
@@ -180,6 +183,8 @@ onMounted(() => {
     router.replace("/login");
     return;
   }
+
+  authReady.value = true;
 
   // Read dark mode preference (sync, no await).
   if (process.client) {

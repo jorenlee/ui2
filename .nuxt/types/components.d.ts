@@ -90,6 +90,7 @@ interface _GlobalComponents {
   PSAList: typeof import("../../app/components/PSA/List.vue")['default']
   Pagination: typeof import("../../app/components/Pagination.vue")['default']
   Panaglambigit: typeof import("../../app/components/Panaglambigit.vue")['default']
+  PetAwardModal: typeof import("../../app/components/PetAwardModal.vue")['default']
   PopularCourses: typeof import("../../app/components/PopularCourses.vue")['default']
   ProcurementFooter: typeof import("../../app/components/ProcurementFooter.vue")['default']
   ProcurementMenuBar: typeof import("../../app/components/ProcurementMenuBar.vue")['default']
@@ -310,6 +311,7 @@ interface _GlobalComponents {
   LazyPSAList: LazyComponent<typeof import("../../app/components/PSA/List.vue")['default']>
   LazyPagination: LazyComponent<typeof import("../../app/components/Pagination.vue")['default']>
   LazyPanaglambigit: LazyComponent<typeof import("../../app/components/Panaglambigit.vue")['default']>
+  LazyPetAwardModal: LazyComponent<typeof import("../../app/components/PetAwardModal.vue")['default']>
   LazyPopularCourses: LazyComponent<typeof import("../../app/components/PopularCourses.vue")['default']>
   LazyProcurementFooter: LazyComponent<typeof import("../../app/components/ProcurementFooter.vue")['default']>
   LazyProcurementMenuBar: LazyComponent<typeof import("../../app/components/ProcurementMenuBar.vue")['default']>

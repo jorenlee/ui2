@@ -20,7 +20,11 @@ export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
   const clientId = config.public.googleClientId as string
   const clientSecret = config.googleClientSecret as string
-  const secret = process.env.AUTH_SECRET || 'change-this-secret'
+  // Nuxt production uses private runtime configuration (NUXT_AUTH_SECRET).
+  const secret = config.authSecret as string
+  if (!secret) {
+    throw createError({ statusCode: 503, statusMessage: 'Sign-in is not configured.' })
+  }
 
   // Recover the exact redirectUri and returnPath from state param
   const stateParam = query.state as string | undefined

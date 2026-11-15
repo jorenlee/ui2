@@ -90,6 +90,7 @@ export const OERList: typeof import("../app/components/OER/List.vue")['default']
 export const PSAList: typeof import("../app/components/PSA/List.vue")['default']
 export const Pagination: typeof import("../app/components/Pagination.vue")['default']
 export const Panaglambigit: typeof import("../app/components/Panaglambigit.vue")['default']
+export const PetAwardModal: typeof import("../app/components/PetAwardModal.vue")['default']
 export const PopularCourses: typeof import("../app/components/PopularCourses.vue")['default']
 export const ProcurementFooter: typeof import("../app/components/ProcurementFooter.vue")['default']
 export const ProcurementMenuBar: typeof import("../app/components/ProcurementMenuBar.vue")['default']
@@ -310,6 +311,7 @@ export const LazyOERList: LazyComponent<typeof import("../app/components/OER/Lis
 export const LazyPSAList: LazyComponent<typeof import("../app/components/PSA/List.vue")['default']>
 export const LazyPagination: LazyComponent<typeof import("../app/components/Pagination.vue")['default']>
 export const LazyPanaglambigit: LazyComponent<typeof import("../app/components/Panaglambigit.vue")['default']>
+export const LazyPetAwardModal: LazyComponent<typeof import("../app/components/PetAwardModal.vue")['default']>
 export const LazyPopularCourses: LazyComponent<typeof import("../app/components/PopularCourses.vue")['default']>
 export const LazyProcurementFooter: LazyComponent<typeof import("../app/components/ProcurementFooter.vue")['default']>
 export const LazyProcurementMenuBar: LazyComponent<typeof import("../app/components/ProcurementMenuBar.vue")['default']>
