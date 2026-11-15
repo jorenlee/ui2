@@ -6,7 +6,8 @@ export function createApiAuth({ apiUrl, pageUrl, getToken, onUnauthorized }) {
   } catch {
     // Missing/invalid configuration must never send a token to another host.
   }
-  const apiPath = apiBase && `${apiBase.pathname.replace(/\/+$/, '')}/api/`;
+  const basePath = apiBase?.pathname.replace(/\/+$/, '');
+  const apiPath = apiBase && (/\/api(?:\/|$)/.test(basePath) ? `${basePath}/` : `${basePath}/api/`);
 
   function authorizationFor(input) {
     if (!apiBase) return null;
@@ -16,7 +17,7 @@ export function createApiAuth({ apiUrl, pageUrl, getToken, onUnauthorized }) {
     } catch {
       return null;
     }
-    if (url.origin !== apiBase.origin || !url.pathname.startsWith(apiPath)) return null;
+    if (url.origin !== apiBase.origin || !(url.pathname === apiPath.slice(0, -1) || url.pathname.startsWith(apiPath))) return null;
     const token = getToken();
     return token ? `Bearer ${token}` : null;
   }
@@ -32,6 +33,13 @@ export function createApiAuth({ apiUrl, pageUrl, getToken, onUnauthorized }) {
       // A late response for an old token must not log out a newly signed-in user.
       if (response.status === 401 && headers.get('Authorization') === authorizationFor(input)) {
         onUnauthorized?.();
+        // An expired login must not block an otherwise public read. Retry once
+        // anonymously after clearing the session; never replay a submission.
+        const method = (options?.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
+        if (!getToken() && (method === 'GET' || method === 'HEAD')) {
+          headers.delete('Authorization');
+          return originalFetch(input, { ...options, headers });
+        }
       }
       return response;
     };
@@ -64,5 +72,47 @@ export function createApiAuth({ apiUrl, pageUrl, getToken, onUnauthorized }) {
     };
   }
 
-  return { wrapFetch, installAxios };
+  // Keep upload progress support while authenticating native XHR uploads.
+  function installXHR(XMLHttpRequest) {
+    const prototype = XMLHttpRequest.prototype;
+    const originalOpen = prototype.open;
+    const originalSetHeader = prototype.setRequestHeader;
+    const originalSend = prototype.send;
+    const requests = new WeakMap();
+    function open(method, url, ...args) {
+      const result = originalOpen.call(this, method, url, ...args);
+      requests.set(this, { url, authorization: null });
+      return result;
+    }
+    function setRequestHeader(name, value) {
+      const result = originalSetHeader.call(this, name, value);
+      const request = requests.get(this);
+      if (request && name.toLowerCase() === 'authorization') request.authorization = value;
+      return result;
+    }
+    function send(body) {
+      const request = requests.get(this);
+      const authorization = request && authorizationFor(request.url);
+      if (authorization) {
+        if (request.authorization === null) {
+          originalSetHeader.call(this, 'Authorization', authorization);
+          request.authorization = authorization;
+        }
+        this.addEventListener('loadend', () => {
+          if (this.status === 401 && request.authorization === authorizationFor(request.url)) onUnauthorized?.();
+        }, { once: true });
+      }
+      return originalSend.call(this, body);
+    }
+    prototype.open = open;
+    prototype.setRequestHeader = setRequestHeader;
+    prototype.send = send;
+    return () => {
+      if (prototype.open === open) prototype.open = originalOpen;
+      if (prototype.setRequestHeader === setRequestHeader) prototype.setRequestHeader = originalSetHeader;
+      if (prototype.send === send) prototype.send = originalSend;
+    };
+  }
+
+  return { wrapFetch, installAxios, installXHR };
 }

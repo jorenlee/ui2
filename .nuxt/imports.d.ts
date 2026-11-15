@@ -39,6 +39,7 @@ export { useCmsContent } from '../app/composables/useCmsContent';
 export { useImageUrl } from '../app/composables/useImageUrl';
 export { useTheme } from '../app/composables/useTheme';
 export { createApiAuth } from '../app/utils/api-auth';
+export { PRIVATE_API_PAGES, isPrivateApiPage } from '../app/utils/private-api-pages';
 export { useBoxesStore } from '../app/stores/boxes';
 export { defineStore, acceptHMRUpdate, usePinia, storeToRefs } from '../node_modules/.pnpm/@pinia+nuxt@1.0.3_@nuxt+sch_e80c5cf1c7fc28b89134f01fd1ce9c66/node_modules/@pinia/nuxt/dist/runtime/composables';
 export { useAdsense } from '../node_modules/.pnpm/@nuxtjs+google-adsense@3.0._cf6f304555be65df0d9925312e0ff305/node_modules/@nuxtjs/google-adsense/dist/runtime/composables/adsense';

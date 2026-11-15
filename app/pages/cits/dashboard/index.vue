@@ -28,7 +28,6 @@
     await $fetch(endpoint.value + "/api/campus-pass/" + deleteIDItem.value + "/delete/", {
       method: "DELETE",
       headers: {
-        Authorization: userStore.user.token,
         "Content-Type": "application/json",
       },
     }).then(async (response) => {

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { createApiAuth } from '~/utils/api-auth';
+import { isPrivateApiPage } from '~/utils/private-api-pages';
 
 export default defineNuxtPlugin({
   name: 'api-auth',
@@ -7,12 +8,11 @@ export default defineNuxtPlugin({
   setup(nuxtApp) {
     const config = useRuntimeConfig();
     const auth = useAuth();
-    auth.init();
     // Child components mount before the dashboard's onMounted callback.
     // Save the OAuth result before any of them request protected data.
     const pageUrl = new URL(window.location.href);
     const callbackToken = pageUrl.searchParams.get('token');
-    if (pageUrl.pathname.replace(/\/$/, '') === '/dashboard' && callbackToken) {
+    if (callbackToken) {
       auth.setAuth(callbackToken);
     }
 
@@ -20,7 +20,9 @@ export default defineNuxtPlugin({
       apiUrl: config.public.apiUrl,
       pageUrl: window.location.href,
       getToken: () => auth.token.value,
-      onUnauthorized: () => nuxtApp.runWithContext(() => auth.logout()),
+      onUnauthorized: () => nuxtApp.runWithContext(() => auth.logout({
+        redirect: isPrivateApiPage(window.location.pathname),
+      })),
     });
     const originalFetch = window.fetch;
     // Nuxt/ofetch uses the browser's fetch at request time. This also covers
@@ -28,11 +30,14 @@ export default defineNuxtPlugin({
     const authenticatedFetch = apiAuth.wrapFetch(originalFetch.bind(window));
     window.fetch = authenticatedFetch;
     const removeAxiosInterceptor = apiAuth.installAxios(axios);
+    const removeXHR = apiAuth.installXHR(window.XMLHttpRequest);
+    auth.init();
 
     if (import.meta.hot) {
       import.meta.hot.dispose(() => {
         if (window.fetch === authenticatedFetch) window.fetch = originalFetch;
         removeAxiosInterceptor();
+        removeXHR();
       });
     }
   },

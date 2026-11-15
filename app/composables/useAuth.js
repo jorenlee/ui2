@@ -41,14 +41,14 @@ export const useAuth = () => {
     window.location.href = '/api/auth/google'
   }
 
-  const logout = () => {
+  const logout = ({ redirect = true } = {}) => {
     if (import.meta.client ?? process.client) {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_user')
     }
     token.value = null
     user.value = null
-    navigateTo('/login')
+    if (redirect) navigateTo('/login')
   }
 
   return { user, token, isLoggedIn, init, setAuth, login, logout }

@@ -2,6 +2,7 @@
 export {}
 declare global {
   const $fetch: typeof import('../fetch').$fetch
+  const PRIVATE_API_PAGES: typeof import('../../app/utils/private-api-pages').PRIVATE_API_PAGES
   const abortNavigation: typeof import('../../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/composables/router').abortNavigation
   const acceptHMRUpdate: typeof import('../../node_modules/.pnpm/@pinia+nuxt@1.0.3_@nuxt+sch_e80c5cf1c7fc28b89134f01fd1ce9c66/node_modules/@pinia/nuxt/dist/runtime/composables').acceptHMRUpdate
   const addRouteMiddleware: typeof import('../../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/composables/router').addRouteMiddleware
@@ -43,6 +44,7 @@ declare global {
   const injectHead: typeof import('../../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/composables/head').injectHead
   const isNuxtError: typeof import('../../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/composables/error').isNuxtError
   const isPrerendered: typeof import('../../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/composables/payload').isPrerendered
+  const isPrivateApiPage: typeof import('../../app/utils/private-api-pages').isPrivateApiPage
   const isProxy: typeof import('../../node_modules/.pnpm/vue@3.5.44/node_modules/vue').isProxy
   const isReactive: typeof import('../../node_modules/.pnpm/vue@3.5.44/node_modules/vue').isReactive
   const isReadonly: typeof import('../../node_modules/.pnpm/vue@3.5.44/node_modules/vue').isReadonly
@@ -225,6 +227,7 @@ import { UnwrapRef } from 'vue'
 declare module 'vue' {
   interface ComponentCustomProperties {
     readonly $fetch: UnwrapRef<typeof import('../fetch')['$fetch']>
+    readonly PRIVATE_API_PAGES: UnwrapRef<typeof import('../../app/utils/private-api-pages')['PRIVATE_API_PAGES']>
     readonly abortNavigation: UnwrapRef<typeof import('../../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/composables/router')['abortNavigation']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('../../node_modules/.pnpm/@pinia+nuxt@1.0.3_@nuxt+sch_e80c5cf1c7fc28b89134f01fd1ce9c66/node_modules/@pinia/nuxt/dist/runtime/composables')['acceptHMRUpdate']>
     readonly addRouteMiddleware: UnwrapRef<typeof import('../../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/composables/router')['addRouteMiddleware']>
@@ -266,6 +269,7 @@ declare module 'vue' {
     readonly injectHead: UnwrapRef<typeof import('../../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/composables/head')['injectHead']>
     readonly isNuxtError: UnwrapRef<typeof import('../../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/composables/error')['isNuxtError']>
     readonly isPrerendered: UnwrapRef<typeof import('../../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/composables/payload')['isPrerendered']>
+    readonly isPrivateApiPage: UnwrapRef<typeof import('../../app/utils/private-api-pages')['isPrivateApiPage']>
     readonly isProxy: UnwrapRef<typeof import('../../node_modules/.pnpm/vue@3.5.44/node_modules/vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('../../node_modules/.pnpm/vue@3.5.44/node_modules/vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('../../node_modules/.pnpm/vue@3.5.44/node_modules/vue')['isReadonly']>

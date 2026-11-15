@@ -2,6 +2,8 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import moment from "moment";
 
+defineOptions({ inheritAttrs: false });
+
 const menuDetails = ref(false);
 const isScrolled = ref(false);
 const showSearchModal = ref(false);
@@ -523,6 +525,7 @@ const shortcutLinks = ref([
 
 <template>
   <div
+    v-bind="$attrs"
     class="z-50 w-full font-montserrat border-b-4 border-green-800 transition-all duration-300"
     :class="
       isScrolled ? 'bg-white backdrop-blur-md shadow-lg fixed top-0' : ''

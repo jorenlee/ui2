@@ -1,8 +1,13 @@
+import { PRIVATE_API_PAGES } from './app/utils/private-api-pages.js';
+
 export default defineNuxtConfig({
   srcDir: 'app/',
   compatibilityDate: '2025-07-30',
   experimental: { appManifest: false },
   devtools: { enabled: false },
+  routeRules: Object.fromEntries(PRIVATE_API_PAGES.flatMap(path => [
+    [path, { ssr: false }], [`${path}/**`, { ssr: false }],
+  ])),
   app: {
     head: {
       charset: 'utf-8',
@@ -87,11 +92,11 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    authSecret: process.env.AUTH_SECRET,
+    authSecret: process.env.AUTH_SECRET || '',
     authOrigin: process.env.AUTH_ORIGIN,
     public: {
       googleClientId: process.env.GOOGLE_CLIENT_ID,
-      apiUrl: process.env.API_URL,
+      apiUrl: process.env.API_URL || 'http://127.0.0.1:8000',
       adsenseId: process.env.NUXT_PUBLIC_ADSENSE,
       analyticsId: process.env.NUXT_PUBLIC_ANALYTICS,
     },

@@ -97,7 +97,6 @@ const saveFile = async () => {
 
   let axiosConfig = {
     headers: {
-      Authorization: userStore.user.token,
       "Content-Type": "multipart/form-data",
     },
   };

@@ -112,7 +112,6 @@ const addDates = async () => {
     await $fetch(endpoint.value + "/api/schedules/create/", {
       method: "POST",
       headers: {
-        Authorization: userStore.user.token,
         "Content-Type": "application/json",
       },
       body: {

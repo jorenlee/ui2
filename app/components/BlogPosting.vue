@@ -1,6 +1,5 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, nextTick, computed, watch } from "vue";
-import _ from "lodash";
 import moment from "moment";
 
 const display = ref("desktop");
@@ -9,26 +8,31 @@ const endpoint = ref(config.public.apiUrl);
 
 // In-memory cache across client route transitions
 const cachedNews = useState("blog_posting_content_cache", () => []);
-const info = ref(cachedNews.value && cachedNews.value.length ? [...cachedNews.value] : []);
-const loading = ref(info.value.length === 0);
-const errorMsg = ref("");
 
-// Immediate client-side sessionStorage check for 0ms instant display on repeat visits / reloads
-if (process.client && info.value.length === 0) {
-  try {
-    const local = sessionStorage.getItem("lsu_blog_posting_cache");
-    if (local) {
-      const parsed = JSON.parse(local);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        info.value = parsed;
-        cachedNews.value = parsed;
-        loading.value = false;
-      }
+// Render from Nuxt's data ref directly: server prefetch and the hydration
+// payload must select the same cards/loading branch without client-only state.
+const { data: rawInfo, status: fetchStatus } = useAsyncData(
+  "blog-posting-content-fast",
+  async () => {
+    try {
+      const res = await $fetch(
+        `${endpoint.value}/api/cms/content/fast/?filters=published&exclude=bot,programs,organizational chart,oer,human resource center,human resource,hero carousel&limit=60`
+      );
+      return Array.isArray(res) ? res : [];
+    } catch (fastError) {
+      console.warn("Fast endpoint failed, falling back to list endpoint:", fastError);
+      const fallback = await $fetch(`${endpoint.value}/api/cms/content/list/`);
+      return Array.isArray(fallback) ? fallback : [];
     }
-  } catch (e) {
-    // sessionStorage unavailable
+  },
+  {
+    lazy: true,
+    default: () => (Array.isArray(cachedNews.value) ? [...cachedNews.value] : []),
   }
-}
+);
+const info = computed(() => (Array.isArray(rawInfo.value) ? rawInfo.value : []));
+const loading = computed(() => info.value.length === 0 &&
+  (fetchStatus.value === "idle" || fetchStatus.value === "pending"));
 
 // Carousel state
 const currentSlide = ref(0);
@@ -253,7 +257,7 @@ useHead({
 
 // Background image preloader for instant slide transitions
 const preloadImages = () => {
-  if (!highlightedNews.value || !highlightedNews.value.length) return;
+  if (!process.client || !highlightedNews.value.length) return;
 
   // Preload default image
   const defaultImg = new Image();
@@ -276,60 +280,27 @@ watch(info, (newVal, oldVal) => {
   }
 });
 
-// Early setup-level fetch for faster initial load & SSR support
-const { data: rawInfo, pending: fetchPending, error: fetchError } = useAsyncData(
-  "blog-posting-content-fast",
-  async () => {
-    try {
-      const res = await $fetch(
-        `${endpoint.value}/api/cms/content/fast/?filters=published&exclude=bot,programs,organizational chart,oer,human resource center,human resource,hero carousel&limit=60`
-      );
-      return Array.isArray(res) ? res : [];
-    } catch (fastError) {
-      console.warn("Fast endpoint failed, falling back to list endpoint:", fastError);
-      const fallback = await $fetch(`${endpoint.value}/api/cms/content/list/`);
-      return Array.isArray(fallback) ? fallback : [];
-    }
-  },
-  {
-    lazy: true,
-    default: () => (cachedNews.value && cachedNews.value.length ? cachedNews.value : []),
-  }
-);
-
-// Synchronize fetched data into state and cache
-watch(
-  rawInfo,
-  (newData) => {
-    if (Array.isArray(newData) && newData.length > 0) {
-      info.value = newData;
-      cachedNews.value = newData;
-      loading.value = false;
-      preloadImages();
-      if (process.client) {
-        try {
-          sessionStorage.setItem("lsu_blog_posting_cache", JSON.stringify(newData));
-        } catch (e) {}
-      }
-    }
-  },
-  { immediate: true }
-);
-
-watch(fetchPending, (isPending) => {
-  if (!isPending) {
-    loading.value = false;
-  }
-});
-
-watch(fetchError, (err) => {
-  if (err && info.value.length === 0) {
-    errorMsg.value = "Failed to load news & updates.";
-    loading.value = false;
-  }
-});
-
 onMounted(async () => {
+  // Browser storage cannot change the DOM until hydration has finished. A
+  // successful empty response also takes precedence over older cached news.
+  if (info.value.length === 0 && fetchStatus.value !== "success") {
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem("lsu_blog_posting_cache") || "null");
+      if (Array.isArray(parsed) && parsed.length > 0) rawInfo.value = parsed;
+    } catch {
+      // Browser storage can be unavailable or contain an invalid cache.
+    }
+  }
+
+  watch(rawInfo, (newData) => {
+    if (!Array.isArray(newData)) return;
+    cachedNews.value = newData;
+    try {
+      sessionStorage.setItem("lsu_blog_posting_cache", JSON.stringify(newData));
+    } catch {}
+    preloadImages();
+  }, { immediate: true });
+
   await nextTick();
 
   if (window.innerWidth < 800) {

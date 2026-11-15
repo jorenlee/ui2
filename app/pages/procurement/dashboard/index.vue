@@ -24,7 +24,6 @@ const deleteProcurement = async () => {
     {
       method: "DELETE",
       headers: {
-        Authorization: userStore.user.token,
         "Content-Type": "application/json",
       },
     }

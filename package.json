@@ -6,7 +6,8 @@
     "build": "nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test:auth": "node --test tests/api-auth-transports.test.mjs tests/api-auth-plugin.test.mjs tests/api-auth.test.mjs tests/dashboard-hydration.test.mjs"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
