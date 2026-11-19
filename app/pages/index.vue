@@ -27,7 +27,7 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
 <template>
   <div class="font-montserrat bg-slate-50 text-slate-800 antialiased">
     <section id="hero" class="relative bg-white">
-      <Header class="hidden lg:block" />
+      <Header/>
       <!-- <div class="relative w-full overflow-hidden bg-white">
         <img
           src="https://lsu-media-styles.sgp1.digitaloceanspaces.com/LANDSCAPE%20CROPPED.jpg"
