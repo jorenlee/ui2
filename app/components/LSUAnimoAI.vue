@@ -41,13 +41,13 @@ let pollTimer = null
 
 // ─── QUICK REPLIES ────────────────────────────────────────────────────
 const quickReplies = [
-  { icon: 'fa fa-coins text-amber-500', label: 'Tuition fees' },
-  { icon: 'fa fa-clipboard-list text-blue-500', label: 'Enrollment steps' },
-  { icon: 'fa fa-graduation-cap text-indigo-500', label: 'Admission requirements' },
-  { icon: 'fa fa-award text-emerald-500', label: 'Scholarship programs' },
-  { icon: 'fa fa-phone text-rose-500', label: 'Contact information' },
-  { icon: 'fa fa-calendar-days text-teal-500', label: 'Academic calendar' },
-  { icon: 'fa fa-building-columns text-sky-500', label: 'Campus services' },
+  { icon: 'fa fa-coins text-amber-500', label: 'Tuition fees', prompt: 'How much are your tuition fee/s?' },
+  { icon: 'fa fa-clipboard-list text-blue-500', label: 'Enrollment steps', prompt: 'What are the enrollment steps?' },
+  { icon: 'fa fa-graduation-cap text-indigo-500', label: 'Admission requirements', prompt: 'What are your admission requirements?' },
+  { icon: 'fa fa-award text-emerald-500', label: 'Scholarship programs', prompt: 'What scholarships do you offer?' },
+  { icon: 'fa fa-phone text-rose-500', label: 'Contact information', prompt: 'How do I contact your offices?' },
+  { icon: 'fa fa-calendar-days text-teal-500', label: 'Academic calendar', prompt: 'What is your schedule for events?' },
+  { icon: 'fa fa-building-columns text-sky-500', label: 'Campus services', prompt: 'How to get my school documents? (TOR/Diploma/Form 137 etc.)' },
 ]
 
 const now = () =>
@@ -462,9 +462,10 @@ const scrollToBottom = () => {
   }
 }
 
-const sendQuick = (label) => {
+const sendQuick = (item) => {
   showMenu.value = false
-  inputText.value = label
+  const text = typeof item === 'object' && item ? (item.prompt || item.label) : String(item)
+  inputText.value = text
   sendMessage()
 }
 
@@ -826,7 +827,7 @@ const renderText = (text) => {
                 :key="qr.label"
                 type="button"
                 class="px-3 py-1.5 rounded-full border border-emerald-500/40 bg-white text-emerald-800 text-xs font-semibold hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5 group"
-                @click="sendQuick(qr.label)"
+                @click="sendQuick(qr)"
               >
                 <i :class="[qr.icon, 'text-xs transition-colors group-hover:text-white']"></i>
                 <span>{{ qr.label }}</span>
@@ -864,7 +865,7 @@ const renderText = (text) => {
                   :key="qr.label"
                   type="button"
                   class="flex items-center justify-between px-4 py-2.5 border-0 border-b border-slate-100 last:border-b-0 bg-transparent hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 text-xs font-medium text-left cursor-pointer transition-colors w-full group"
-                  @click="sendQuick(qr.label)"
+                  @click="sendQuick(qr)"
                 >
                   <span class="flex items-center gap-2.5">
                     <i :class="[qr.icon, 'text-xs w-4 text-center text-slate-400 group-hover:text-emerald-700 transition-colors']"></i>
