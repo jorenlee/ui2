@@ -26,6 +26,77 @@ const fetchStats = async () => {
   finally { statsLoading.value = false }
 }
 
+// ─── TOAST NOTIFICATIONS (v-if Toaster) ────────────────────────────────
+const toast = ref({
+  show: false,
+  message: '',
+  title: '',
+  type: 'info', // 'success' | 'error' | 'warning' | 'info'
+  timeoutId: null,
+})
+
+const showToast = (message, type = 'info', title = '') => {
+  if (toast.value.timeoutId) clearTimeout(toast.value.timeoutId)
+  const defaultTitle =
+    type === 'error'
+      ? 'Error'
+      : type === 'success'
+      ? 'Success'
+      : type === 'warning'
+      ? 'Warning'
+      : 'Notice'
+
+  toast.value = {
+    show: true,
+    message,
+    title: title || defaultTitle,
+    type,
+    timeoutId: setTimeout(() => {
+      toast.value.show = false
+    }, 4000),
+  }
+}
+
+const closeToast = () => {
+  if (toast.value.timeoutId) clearTimeout(toast.value.timeoutId)
+  toast.value.show = false
+}
+
+// ─── CONFIRM MODAL (v-if Confirm Modal, replaces browser confirm()) ────
+const confirmModal = ref({
+  show: false,
+  title: 'Confirm Action',
+  message: '',
+  confirmText: 'Confirm',
+  cancelText: 'Cancel',
+  type: 'danger',
+  resolve: null,
+})
+
+const showConfirm = (message, { title = 'Confirm Action', confirmText = 'Confirm', cancelText = 'Cancel', type = 'danger' } = {}) => {
+  return new Promise((resolve) => {
+    confirmModal.value = {
+      show: true,
+      title,
+      message,
+      confirmText,
+      cancelText,
+      type,
+      resolve,
+    }
+  })
+}
+
+const handleConfirmOk = () => {
+  if (confirmModal.value.resolve) confirmModal.value.resolve(true)
+  confirmModal.value.show = false
+}
+
+const handleConfirmCancel = () => {
+  if (confirmModal.value.resolve) confirmModal.value.resolve(false)
+  confirmModal.value.show = false
+}
+
 // ─── SESSIONS ─────────────────────────────────────────────────────────
 const sessions = ref([])
 const sessionsLoading = ref(false)
@@ -75,16 +146,31 @@ const openDetail = async (session) => {
 }
 
 const deleteSession = async (s) => {
-  if (!confirm(`Delete session for ${s.visitor_name || 'Anonymous'}?`)) return
+  const confirmed = await showConfirm(`Are you sure you want to delete the session for ${s.visitor_name || 'Anonymous'}?`, {
+    title: 'Delete Session',
+    confirmText: 'Delete',
+    type: 'danger',
+  })
+  if (!confirmed) return
   try {
     await $fetch(`${endpoint}/api/lsuanimoaichat/admin/sessions/${s.id}/`, { method: 'DELETE' })
     sessions.value = sessions.value.filter(x => x.id !== s.id)
     if (showDetail.value && detailSession.value?.id === s.id) showDetail.value = false
-  } catch { alert('Failed to delete session.') }
+    showToast('Session deleted successfully.', 'success')
+  } catch {
+    showToast('Failed to delete session.', 'error')
+  }
 }
 
 const bulkDeleteSessions = async () => {
-  if (!selectedSessionIds.value.length || !confirm(`Delete ${selectedSessionIds.value.length} sessions?`)) return
+  if (!selectedSessionIds.value.length) return
+  const count = selectedSessionIds.value.length
+  const confirmed = await showConfirm(`Are you sure you want to delete ${count} selected session${count > 1 ? 's' : ''}?`, {
+    title: 'Bulk Delete Sessions',
+    confirmText: `Delete ${count}`,
+    type: 'danger',
+  })
+  if (!confirmed) return
   bulkDeletingSessions.value = true
   try {
     await $fetch(`${endpoint}/api/lsuanimoaichat/admin/sessions/bulk-delete/`, {
@@ -92,8 +178,12 @@ const bulkDeleteSessions = async () => {
     })
     sessions.value = sessions.value.filter(s => !selectedSessionIds.value.includes(s.id))
     selectedSessionIds.value = []
-  } catch { alert('Bulk delete failed.') }
-  finally { bulkDeletingSessions.value = false }
+    showToast(`${count} session${count > 1 ? 's' : ''} deleted successfully.`, 'success')
+  } catch {
+    showToast('Bulk delete failed.', 'error')
+  } finally {
+    bulkDeletingSessions.value = false
+  }
 }
 
 const allSessionsSelected = computed(() =>
@@ -156,10 +246,12 @@ const saveFaq = async () => {
     if (faqModalMode.value === 'create') {
       const res = await $fetch(`${endpoint}/api/lsuanimoaichat/faqs/create/`, { method: 'POST', body: faqForm.value })
       faqs.value.unshift(res)
+      showToast('FAQ created successfully!', 'success')
     } else {
       const res = await $fetch(`${endpoint}/api/lsuanimoaichat/faqs/${editingFaqId.value}/edit/`, { method: 'PUT', body: faqForm.value })
       const idx = faqs.value.findIndex(f => f.id === editingFaqId.value)
       if (idx !== -1) faqs.value[idx] = res
+      showToast('FAQ updated successfully!', 'success')
     }
     showFaqModal.value = false
   } catch { faqSaveError.value = 'Failed to save FAQ.' }
@@ -167,22 +259,64 @@ const saveFaq = async () => {
 }
 
 const deleteFaq = async (faq) => {
-  if (!confirm(`Delete FAQ: "${faq.question.slice(0, 60)}"?`)) return
+  const confirmed = await showConfirm(`Are you sure you want to delete FAQ: "${faq.question.slice(0, 60)}"?`, {
+    title: 'Delete FAQ',
+    confirmText: 'Delete',
+    type: 'danger',
+  })
+  if (!confirmed) return
   try {
     await $fetch(`${endpoint}/api/lsuanimoaichat/faqs/${faq.id}/delete/`, { method: 'DELETE' })
     faqs.value = faqs.value.filter(f => f.id !== faq.id)
-  } catch { alert('Failed to delete FAQ.') }
+    selectedFaqIds.value = selectedFaqIds.value.filter(id => id !== faq.id)
+    showToast('FAQ deleted successfully.', 'success')
+  } catch {
+    showToast('Failed to delete FAQ.', 'error')
+  }
 }
 
 const bulkDeleteFaqs = async () => {
-  if (!selectedFaqIds.value.length || !confirm(`Delete ${selectedFaqIds.value.length} FAQs?`)) return
+  if (!selectedFaqIds.value.length) return
+  const count = selectedFaqIds.value.length
+  const confirmed = await showConfirm(`Are you sure you want to delete ${count} FAQ${count > 1 ? 's' : ''}?`, {
+    title: 'Delete FAQs',
+    confirmText: `Delete ${count}`,
+    type: 'danger',
+  })
+  if (!confirmed) return
   bulkDeletingFaqs.value = true
   try {
     await $fetch(`${endpoint}/api/lsuanimoaichat/faqs/bulk-delete/`, { method: 'POST', body: { ids: selectedFaqIds.value } })
     faqs.value = faqs.value.filter(f => !selectedFaqIds.value.includes(f.id))
     selectedFaqIds.value = []
-  } catch { alert('Bulk delete failed.') }
-  finally { bulkDeletingFaqs.value = false }
+    showToast(`${count} FAQ${count > 1 ? 's' : ''} deleted successfully.`, 'success')
+  } catch {
+    showToast('Bulk delete failed.', 'error')
+  } finally {
+    bulkDeletingFaqs.value = false
+  }
+}
+
+const allFaqsSelected = computed(() =>
+  faqs.value.length > 0 &&
+  faqs.value.every(f => selectedFaqIds.value.includes(f.id))
+)
+
+const toggleAllFaqs = () => {
+  if (allFaqsSelected.value) {
+    selectedFaqIds.value = []
+  } else {
+    selectedFaqIds.value = faqs.value.map(f => f.id)
+  }
+}
+
+const toggleFaqSelect = (id) => {
+  const idx = selectedFaqIds.value.indexOf(id)
+  if (idx > -1) {
+    selectedFaqIds.value.splice(idx, 1)
+  } else {
+    selectedFaqIds.value.push(id)
+  }
 }
 
 const toggleFaqActive = async (faq) => {
@@ -192,7 +326,10 @@ const toggleFaqActive = async (faq) => {
     })
     const idx = faqs.value.findIndex(f => f.id === faq.id)
     if (idx !== -1) faqs.value[idx] = res
-  } catch { alert('Failed to toggle FAQ.') }
+    showToast(`FAQ marked as ${res.is_active ? 'Active' : 'Inactive'}.`, 'success')
+  } catch {
+    showToast('Failed to toggle FAQ.', 'error')
+  }
 }
 
 // ─── ADMIN REPLY & REAL-TIME FETCH ──────────────────────────────────
@@ -213,8 +350,9 @@ const sendAdminReply = async () => {
     detailSession.value.messages.push(res)
     adminReplyText.value = ''
     fetchStats()
+    showToast('Reply sent successfully.', 'success')
   } catch {
-    alert('Failed to send reply.')
+    showToast('Failed to send reply.', 'error')
   } finally {
     replying.value = false
   }
@@ -252,6 +390,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (adminPollTimer) clearInterval(adminPollTimer)
+  if (toast.value.timeoutId) clearTimeout(toast.value.timeoutId)
 })
 
 watch(activeTab, (tab) => {
@@ -493,7 +632,7 @@ const senderColor = (sender) => ({ user: 'clr-user', bot: 'clr-bot', human: 'clr
         <table class="ai-table">
           <thead>
             <tr>
-              <th><input type="checkbox" /></th>
+              <th><input type="checkbox" :checked="allFaqsSelected" :indeterminate="selectedFaqIds.length > 0 && !allFaqsSelected" @change="toggleAllFaqs" /></th>
               <th>#</th>
               <th>Question</th>
               <th>Category</th>
@@ -508,7 +647,7 @@ const senderColor = (sender) => ({ user: 'clr-user', bot: 'clr-bot', human: 'clr
               <td colspan="8" class="empty-row"><i class="fa fa-question-circle"></i> No FAQs yet. Add one to train the chatbot!</td>
             </tr>
             <tr v-for="(faq, idx) in faqs" :key="faq.id" :class="{ 'row-selected': selectedFaqIds.includes(faq.id) }">
-              <td><input type="checkbox" :checked="selectedFaqIds.includes(faq.id)" @change="selectedFaqIds.includes(faq.id) ? selectedFaqIds.splice(selectedFaqIds.indexOf(faq.id),1) : selectedFaqIds.push(faq.id)" /></td>
+              <td><input type="checkbox" :checked="selectedFaqIds.includes(faq.id)" @change="toggleFaqSelect(faq.id)" /></td>
               <td class="td-num">{{ idx + 1 }}</td>
               <td class="td-bold faq-q">{{ faq.question }}</td>
               <td><span class="cat-badge">{{ faq.category }}</span></td>
@@ -589,6 +728,61 @@ const senderColor = (sender) => ({ user: 'clr-user', bot: 'clr-bot', human: 'clr
               <button class="btn-primary" :disabled="faqSaving" @click="saveFaq">
                 <span v-if="faqSaving"><i class="fa fa-spinner fa-spin"></i> Saving…</span>
                 <span v-else><i class="fa fa-save"></i> Save FAQ</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </teleport>
+
+    <!-- ─── TOASTER (v-if) ────────────────────── -->
+    <teleport to="body">
+      <transition name="toast-slide">
+        <div v-if="toast.show" class="ai-toaster-container">
+          <div class="ai-toast" :class="[`toast-${toast.type}`, darkMode ? 'toast-dark' : 'toast-light']">
+            <div class="toast-icon">
+              <i v-if="toast.type === 'success'" class="fa fa-check-circle"></i>
+              <i v-else-if="toast.type === 'error'" class="fa fa-exclamation-circle"></i>
+              <i v-else-if="toast.type === 'warning'" class="fa fa-exclamation-triangle"></i>
+              <i v-else class="fa fa-info-circle"></i>
+            </div>
+            <div class="toast-content">
+              <div class="toast-title">{{ toast.title }}</div>
+              <div class="toast-message">{{ toast.message }}</div>
+            </div>
+            <button class="toast-close" @click="closeToast" title="Dismiss">
+              <i class="fa fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </transition>
+    </teleport>
+
+    <!-- ─── CONFIRM MODAL (v-if) ───────────────── -->
+    <teleport to="body">
+      <transition name="modal-fade">
+        <div v-if="confirmModal.show" class="modal-overlay" @click.self="handleConfirmCancel">
+          <div class="modal-box confirm-box" :class="darkMode ? 'modal-dark' : 'modal-light'">
+            <div class="confirm-content">
+              <div class="confirm-icon" :class="`icon-${confirmModal.type}`">
+                <i v-if="confirmModal.type === 'danger'" class="fa fa-trash"></i>
+                <i v-else-if="confirmModal.type === 'warning'" class="fa fa-exclamation-triangle"></i>
+                <i v-else class="fa fa-question-circle"></i>
+              </div>
+              <div class="confirm-text">
+                <h3 class="confirm-title">{{ confirmModal.title }}</h3>
+                <p class="confirm-desc">{{ confirmModal.message }}</p>
+              </div>
+            </div>
+            <div class="modal-footer confirm-footer">
+              <button class="btn-ghost" @click="handleConfirmCancel">
+                {{ confirmModal.cancelText }}
+              </button>
+              <button
+                :class="confirmModal.type === 'danger' ? 'btn-danger' : 'btn-primary'"
+                @click="handleConfirmOk"
+              >
+                {{ confirmModal.confirmText }}
               </button>
             </div>
           </div>
@@ -683,6 +877,7 @@ const senderColor = (sender) => ({ user: 'clr-user', bot: 'clr-bot', human: 'clr
 .ai-table tbody tr:hover { background:#f0fdf4; }
 .dark-mode .ai-table tbody tr:hover { background:#1a2e1a; }
 .ai-table td { padding:9px 13px;vertical-align:middle; }
+.ai-table input[type="checkbox"] { cursor:pointer; }
 .row-selected { background:#dcfce7 !important; }
 .dark-mode .row-selected { background:#14532d !important; }
 .row-active { background:#eff6ff !important; }
@@ -785,4 +980,43 @@ const senderColor = (sender) => ({ user: 'clr-user', bot: 'clr-bot', human: 'clr
 .dark-mode .modal-footer { border-color:#334155; }
 .modal-fade-enter-active, .modal-fade-leave-active { transition:opacity .25s,transform .25s; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity:0;transform:scale(.97); }
+
+/* ─── CONFIRM MODAL ─────────────────────────── */
+.confirm-box { max-width: 440px; }
+.confirm-content { padding: 24px 20px 16px; display: flex; gap: 16px; align-items: flex-start; }
+.confirm-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.icon-danger { background: #fee2e2; color: #dc2626; }
+.icon-warning { background: #fef3c7; color: #d97706; }
+.icon-info { background: #e0f2fe; color: #0284c7; }
+.confirm-text { flex: 1; }
+.confirm-title { font-size: 16px; font-weight: 700; margin: 0 0 6px; }
+.confirm-desc { font-size: 13px; color: #64748b; margin: 0; line-height: 1.5; word-break: break-word; }
+.dark-mode .confirm-desc { color: #94a3b8; }
+.confirm-footer { border-top: 1px solid #e2e8f0; padding: 12px 20px; }
+.dark-mode .confirm-footer { border-color: #334155; }
+
+/* ─── TOASTER ────────────────────────────────── */
+.ai-toaster-container { position: fixed; bottom: 24px; right: 24px; z-index: 10000; pointer-events: none; }
+.ai-toast { pointer-events: auto; display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 14px; min-width: 280px; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,.15); border: 1.5px solid transparent; }
+.toast-light { background: #fff; color: #1e293b; }
+.toast-dark { background: #1e293b; color: #e2e8f0; }
+.toast-success { border-color: #86efac; }
+.toast-error { border-color: #fca5a5; }
+.toast-warning { border-color: #fde047; }
+.toast-info { border-color: #93c5fd; }
+.toast-icon { font-size: 18px; margin-top: 1px; flex-shrink: 0; }
+.toast-success .toast-icon { color: #16a34a; }
+.toast-error .toast-icon { color: #dc2626; }
+.toast-warning .toast-icon { color: #d97706; }
+.toast-info .toast-icon { color: #2563eb; }
+.toast-content { flex: 1; }
+.toast-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.toast-message { font-size: 12px; color: #64748b; line-height: 1.4; word-break: break-word; }
+.toast-dark .toast-message { color: #94a3b8; }
+.toast-close { background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 2px 6px; font-size: 13px; border-radius: 6px; transition: color .15s; }
+.toast-close:hover { color: #1e293b; }
+.toast-dark .toast-close:hover { color: #fff; }
+.toast-slide-enter-active, .toast-slide-leave-active { transition: all .25s ease-out; }
+.toast-slide-enter-from { opacity: 0; transform: translateY(16px) scale(.96); }
+.toast-slide-leave-to { opacity: 0; transform: translateY(16px) scale(.96); }
 </style>

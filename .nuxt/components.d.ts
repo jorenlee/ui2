@@ -16,6 +16,7 @@ type LazyComponent<T> = DefineComponent<HydrationStrategies, {}, {}, {}, {}, {},
 
 export const AboutSideMenu: typeof import("../app/components/AboutSideMenu.vue")['default']
 export const AboutUs: typeof import("../app/components/AboutUs.vue")['default']
+export const ActiveEmployees: typeof import("../app/components/ActiveEmployees.vue")['default']
 export const Activities: typeof import("../app/components/Activities.vue")['default']
 export const Adsbygoogle: typeof import("../app/components/Adsbygoogle.vue")['default']
 export const AnimoRunList: typeof import("../app/components/AnimoRunList.vue")['default']
@@ -40,6 +41,8 @@ export const CommissionOnElectionBEUListEnrolledStudents: typeof import("../app/
 export const CommissionOnElectionBEUStudentElectionResults: typeof import("../app/components/CommissionOnElectionBEU/StudentElectionResults.vue")['default']
 export const CommissionOnElectionBEUStudentElectionVoting: typeof import("../app/components/CommissionOnElectionBEU/StudentElectionVoting.vue")['default']
 export const Countdown: typeof import("../app/components/Countdown.vue")['default']
+export const CurrentEnrolledStudentsBasicEducation: typeof import("../app/components/CurrentEnrolledStudents/BasicEducation.vue")['default']
+export const CurrentEnrolledStudentsHigherEducation: typeof import("../app/components/CurrentEnrolledStudents/HigherEducation.vue")['default']
 export const DashboardFooter: typeof import("../app/components/DashboardFooter.vue")['default']
 export const DataProcessDPO: typeof import("../app/components/DataProcessDPO/index.vue")['default']
 export const DocumentRequestForm: typeof import("../app/components/DocumentRequestForm.vue")['default']
@@ -237,6 +240,7 @@ export const Body: typeof import("../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin
 export const NuxtIsland: typeof import("../node_modules/.pnpm/nuxt@4.6.2_@babel+plugin-sy_edd079e22ac5d4b554a3a507d5bc718e/node_modules/nuxt/dist/app/components/nuxt-island")['default']
 export const LazyAboutSideMenu: LazyComponent<typeof import("../app/components/AboutSideMenu.vue")['default']>
 export const LazyAboutUs: LazyComponent<typeof import("../app/components/AboutUs.vue")['default']>
+export const LazyActiveEmployees: LazyComponent<typeof import("../app/components/ActiveEmployees.vue")['default']>
 export const LazyActivities: LazyComponent<typeof import("../app/components/Activities.vue")['default']>
 export const LazyAdsbygoogle: LazyComponent<typeof import("../app/components/Adsbygoogle.vue")['default']>
 export const LazyAnimoRunList: LazyComponent<typeof import("../app/components/AnimoRunList.vue")['default']>
@@ -261,6 +265,8 @@ export const LazyCommissionOnElectionBEUListEnrolledStudents: LazyComponent<type
 export const LazyCommissionOnElectionBEUStudentElectionResults: LazyComponent<typeof import("../app/components/CommissionOnElectionBEU/StudentElectionResults.vue")['default']>
 export const LazyCommissionOnElectionBEUStudentElectionVoting: LazyComponent<typeof import("../app/components/CommissionOnElectionBEU/StudentElectionVoting.vue")['default']>
 export const LazyCountdown: LazyComponent<typeof import("../app/components/Countdown.vue")['default']>
+export const LazyCurrentEnrolledStudentsBasicEducation: LazyComponent<typeof import("../app/components/CurrentEnrolledStudents/BasicEducation.vue")['default']>
+export const LazyCurrentEnrolledStudentsHigherEducation: LazyComponent<typeof import("../app/components/CurrentEnrolledStudents/HigherEducation.vue")['default']>
 export const LazyDashboardFooter: LazyComponent<typeof import("../app/components/DashboardFooter.vue")['default']>
 export const LazyDataProcessDPO: LazyComponent<typeof import("../app/components/DataProcessDPO/index.vue")['default']>
 export const LazyDocumentRequestForm: LazyComponent<typeof import("../app/components/DocumentRequestForm.vue")['default']>
