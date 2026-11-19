@@ -784,6 +784,7 @@ const logOut = () => logout();
                 :is="activeViewComponent"
                 :darkMode="darkMode"
                 :rolePermissions="rolePermissions"
+                @change-view="(view) => currentView = view"
                 @update:rolePermissions="(val) => rolePermissions = val"
               />
               <template #fallback></template>
