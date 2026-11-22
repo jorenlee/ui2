@@ -21,11 +21,9 @@ const searchForAvailableBooks = ref("");
 let highlightedDates = ref([]);
 const minDate = ref(new Date());
 let currentHour = ref(moment().format("hh:mm A"));
-let id = ref();
 let limitCounter = ref(0);
 let allFieldsAreRequired = ref(false);
 
-let timeList = ref([]);
 const pickedTime = ref();
 let displayForm = ref(false);
 
@@ -137,15 +135,17 @@ const fetchInitialData = async () => {
     schedulesListsData.value = scheds || [];
     books.value = bookList || [];
     highlightedDates.value = schedulesListsData.value.map((s) => s.date);
+    return true;
   } catch (e) {
     console.error("Initial data fetch error:", e);
     showToaster("Failed to load data. Please refresh the page.", "error");
+    return false;
   } finally {
     isLoading.value = false;
   }
 };
 
-// ✅ Silent refetch every second
+// Refresh availability while the page is open.
 let silentFetchInterval = null;
 const fetchSchedulesSilently = async () => {
   try {
@@ -158,22 +158,29 @@ const fetchSchedulesSilently = async () => {
       if (schedule.value.date) updateAvailableTimeSlots();
     }
   } catch (e) {
+    // Stop polling a rejected request until the page is reloaded.
+    if (e.statusCode === 401 || e.statusCode === 403) {
+      clearInterval(silentFetchInterval);
+      silentFetchInterval = null;
+    }
     console.warn("Silent fetch failed:", e);
   }
 };
 
 // ✅ onMounted setup
 onMounted(async () => {
-  await fetchInitialData();
+  const loaded = await fetchInitialData();
 
   interval = setInterval(() => {
     currentHour.value = moment().format("HH:mm");
     if (schedule.value.date) updateAvailableTimeSlots();
   }, 1000);
 
-  silentFetchInterval = setInterval(() => {
-    fetchSchedulesSilently();
-  }, 1000);
+  if (loaded) {
+    silentFetchInterval = setInterval(() => {
+      fetchSchedulesSilently();
+    }, 10000);
+  }
 });
 
 // ✅ Cleanup
@@ -208,8 +215,6 @@ const updateAvailableTimeSlots = () => {
     schedule.value.time = [];
     return;
   }
-
-  id.value = match.id;
 
   // Filter time slots for today (only future times) or show all for future dates
   schedule.value.time =
@@ -262,7 +267,7 @@ watch(searchForAvailableBooks, () => {
 });
 
 // ✅ Add book from search results
-const addBooks = async (obj) => {
+const addBooks = (obj) => {
   // Check if book is already in the list
   const alreadyAdded = info.value.books.some(
     (book) => book.book_call_number === obj.call_number,
@@ -283,7 +288,6 @@ const addBooks = async (obj) => {
     return;
   }
 
-  obj.number_of_copies--;
   info.value.books.push({
     book_title: obj.title,
     book_author: obj.author,
@@ -291,19 +295,9 @@ const addBooks = async (obj) => {
   });
   limitCounter.value--;
 
-  try {
-    await editForm(obj);
-    showToaster(`"${obj.title}" added to your list!`, "success", 2000);
-    filterSearchBooks.value = [];
-    searchForAvailableBooks.value = "";
-  } catch (error) {
-    console.error("Error adding book:", error);
-    showToaster("Failed to add book. Please try again.", "error");
-    // Rollback changes
-    obj.number_of_copies++;
-    info.value.books.pop();
-    limitCounter.value++;
-  }
+  showToaster(`"${obj.title}" added to your list!`, "success", 2000);
+  filterSearchBooks.value = [];
+  searchForAvailableBooks.value = "";
 };
 
 // ✅ Manually add empty book entry
@@ -324,63 +318,12 @@ const addManualBook = () => {
   showToaster("Book entry added. Please fill in the details.", "info", 2000);
 };
 
-const editForm = async (obj) => {
-  let booksData =
-    (await $fetch(
-      endpoint.value + "/api/library/reports/book/" + obj.id + "/",
-    ).catch((error) => error.data)) || 0;
-  booksData.number_of_copies--;
-  await $fetch(
-    endpoint.value + "/api/library/reports/book/edit/" + obj.id + "/",
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: booksData,
-    },
-  );
-};
-
-// ✅ Remove book from list
-const removeRow = async (obj) => {
-  try {
-    // Check if this book was added from library search (has call number in library)
-    const bookInLibrary = books.value.find(
-      (params) => params.call_number === obj.book_call_number,
-    );
-
-    // If book exists in library, restore the copy count
-    if (bookInLibrary) {
-      bookInLibrary.number_of_copies++;
-      await reverseEditForm(bookInLibrary);
-    }
-
-    // Remove book from the borrowing list
-    _.pull(info.value.books, obj);
-    limitCounter.value++;
-    filterSearchBooks.value = [];
-
-    const bookTitle = obj.book_title || "Book";
-    showToaster(`"${bookTitle}" removed from your list.`, "info", 2000);
-  } catch (error) {
-    console.error("Error removing book:", error);
-    showToaster("Failed to remove book. Please try again.", "error");
-  }
-};
-
-const reverseEditForm = async (obj) => {
-  let booksData =
-    (await $fetch(
-      endpoint.value + "/api/library/reports/book/" + obj.id + "/",
-    ).catch((error) => error.data)) || 0;
-  booksData.number_of_copies++;
-  await $fetch(
-    endpoint.value + "/api/library/reports/book/edit/" + obj.id + "/",
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: booksData,
-    },
-  );
+// Selection stays local until booking creation reserves the requested copies.
+const removeRow = (obj) => {
+  _.pull(info.value.books, obj);
+  limitCounter.value++;
+  filterSearchBooks.value = [];
+  showToaster(`"${obj.book_title || 'Book'}" removed from your list.`, "info", 2000);
 };
 
 const defaultIDNumber = () => {
@@ -407,54 +350,6 @@ const borrowerCategoryLimit = () => {
   // Decrease limit counter since we added one book entry
   if (limitCounter.value > 0) {
     limitCounter.value--;
-  }
-};
-
-const updateSchedule = async () => {
-  try {
-    // Ensure schedule.time is an array
-    if (!Array.isArray(schedule.value.time)) {
-      console.error("schedule.time is not an array:", schedule.value.time);
-      schedule.value.time = [];
-    }
-
-    // Calculate remaining time slots after removing the picked time
-    timeList.value =
-      schedule.value.time.length === 1
-        ? [
-            {
-              range_from_time: "",
-              range_to_time: "",
-              _12_hour_format_from: "",
-              _12_hour_format_to: "",
-            },
-          ]
-        : _.filter(
-            schedule.value.time,
-            (params) =>
-              params.range_from_time !== pickedTime.value.range_from_time &&
-              params.range_to_time !== pickedTime.value.range_to_time,
-          );
-
-    // Update the schedule in the database
-    await $fetch(
-      endpoint.value + "/api/library/schedule/booking/" + id.value + "/edit/",
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: {
-          date: schedule.value.date,
-          time: timeList.value,
-          updated_at: schedule.value.updated_at,
-        },
-      },
-    );
-
-    // Send email notification
-    await submitAppointmentToGmail();
-  } catch (error) {
-    console.error("Error updating schedule:", error);
-    throw error; // Re-throw to be caught by submitForm
   }
 };
 
@@ -584,7 +479,7 @@ const submitForm = async () => {
       showToaster("Please check all required fields.", "error");
       scrollToTop();
     } else {
-      await updateSchedule();
+      await submitAppointmentToGmail();
       submissionForm.value = false;
       showToaster("🎉 Appointment booked successfully! Check your email for confirmation.", "success", 5000);
       scrollToTop();
@@ -596,7 +491,11 @@ const submitForm = async () => {
     }
   } catch (error) {
     console.error("Submission error:", error);
-    showToaster("Failed to submit appointment. Please try again.", "error");
+    const errors = error.data;
+    const message = errors?.booking_time?.[0] || errors?.books?.[0]
+      || "Failed to submit appointment. Please try again.";
+    showToaster(message, "error");
+    await fetchInitialData();
     scrollToTop();
   } finally {
     isSubmitting.value = false;
