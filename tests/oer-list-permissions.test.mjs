@@ -33,7 +33,7 @@ function subject(records = [], fetch = async () => [], account = { email: 'user@
     async (url, options) => { calls.push({ url, options }); return fetch(url, options); }, () => 0, () => {},
   );
   const state = scope.run(() => component.setup(props, { expose() {}, emit() {} }));
-  state.oerList.value = [resource];
+  state.oerList.value = [{ ...resource, logs: [] }];
   return { state, props, user, calls, dispose: () => scope.stop(), html() {
     const app = Vue.createSSRApp({ setup: () => ({ ...state }), render });
     app.component('OERForm', { render: () => null });
@@ -59,6 +59,7 @@ test('only matching Role Permissions admins see actions and selection controls',
       assert.equal(html.includes('>Action</th>'), allowed);
       assert.equal(html.includes('title="Delete resource"'), allowed);
       assert.equal(html.includes('type="checkbox"'), allowed);
+      assert.equal(html.includes('title="Approved resources are displayed on /oer"'), allowed);
       assert.ok(html.includes('Lesson'));
     } finally { page.dispose(); }
   }
@@ -90,9 +91,74 @@ test('ordinary users cannot invoke details, selection, or deletion handlers', as
     page.state.selectedIds.value = [1];
     await page.state.deleteSelected();
     await page.state.deleteSingle(resource);
+    await page.state.updateStatus(resource, 'Approved');
     assert.equal(page.calls.length, 0);
     assert.equal(page.state.showDetailModal.value, false);
     assert.equal(page.state.confirmModal.value.show, false);
+  } finally { page.dispose(); }
+});
+
+test('admin status selector saves approval and immediately updates count, filters, and details', async () => {
+  const page = subject([permission(['OER Admin'])], async () => ({
+    status: 'updated', resource: { ...resource, status: 'Approved', logs: [{ status_update: 'Approved', status_update_by: 'user@lsu.edu.ph' }] },
+  }));
+  try {
+    const item = page.state.oerList.value[0];
+    page.state.openDetail(item);
+    await page.state.updateStatus(item, 'Approved');
+    assert.equal(page.calls.length, 1);
+    assert.equal(page.calls[0].url, 'https://example.com/api/oer/1/status/');
+    assert.deepEqual(page.calls[0].options, { method: 'PATCH', body: { status: 'Approved' } });
+    assert.equal(page.state.getLatestStatus(item), 'Approved');
+    assert.equal(page.state.stats.value.approved, 1);
+    assert.equal(page.state.selectedResource.value.logs[0].status_update, 'Approved');
+    assert.match(page.state.toast.value.message, /available on \/oer/);
+    page.state.selectedStatusFilter.value = 'Checking';
+    assert.equal(page.state.filteredList.value.length, 0);
+    page.state.selectedStatusFilter.value = 'Approved';
+    assert.equal(page.state.filteredList.value.length, 1);
+  } finally { page.dispose(); }
+});
+
+test('failed status save restores the displayed status and keeps the previous history', async () => {
+  const page = subject([permission(['Super Admin'])], async () => { throw new Error('Offline'); });
+  try {
+    const item = page.state.oerList.value[0];
+    const event = { target: { value: 'Approved' } };
+    await page.state.updateStatus(item, 'Approved', event);
+    assert.equal(page.state.getLatestStatus(item), 'Submitted');
+    assert.equal(event.target.value, 'Submitted');
+    assert.deepEqual(page.state.savingStatusIds.value, []);
+    assert.equal(page.state.toast.value.type, 'error');
+  } finally { page.dispose(); }
+});
+
+test('status changes prevent duplicate saves and the filter offers exactly three statuses', async () => {
+  let resolve;
+  const page = subject([permission(['OER Admin'])], () => new Promise(done => { resolve = done; }));
+  try {
+    const item = page.state.oerList.value[0];
+    assert.deepEqual(page.state.resourceStatuses, ['Submitted', 'Checking', 'Approved']);
+    const pending = page.state.updateStatus(item, 'Checking');
+    await page.state.updateStatus(item, 'Approved');
+    assert.equal(page.calls.length, 1);
+    assert.deepEqual(page.state.savingStatusIds.value, [1]);
+    resolve({ status: 'updated', resource: { ...resource, status: 'Checking', logs: [{ status_update: 'Checking' }] } });
+    await pending;
+    assert.deepEqual(page.state.savingStatusIds.value, []);
+    assert.equal(page.state.getLatestStatus(item), 'Checking');
+  } finally { page.dispose(); }
+});
+
+test('legacy review and publication statuses map safely to the three current statuses', () => {
+  const page = subject();
+  try {
+    for (const [legacy, expected] of [
+      ['Published', 'Approved'], ['Approved / Published', 'Approved'],
+      ['Under Review', 'Checking'], ['Not approved', 'Checking'], ['Submitted', 'Submitted'],
+    ]) {
+      assert.equal(page.state.getLatestStatus({ logs: [{ status_update: legacy }] }), expected);
+    }
   } finally { page.dispose(); }
 });
 

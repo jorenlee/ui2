@@ -61,6 +61,36 @@ const searchQuery = ref("");
 const selectedTypeFilter = ref("All");
 const selectedCollegeFilter = ref("All");
 const selectedStatusFilter = ref("All");
+const resourceStatuses = ['Submitted', 'Checking', 'Approved'];
+const savingStatusIds = ref([]);
+
+const updateStatus = async (item, status, event) => {
+    const resetControl = () => {
+        if (event?.target) event.target.value = getLatestStatus(item);
+    };
+    if (!canManageResources.value || savingStatusIds.value.includes(item.id)
+        || !resourceStatuses.includes(status) || status === getLatestStatus(item)) {
+        resetControl();
+        return;
+    }
+    savingStatusIds.value.push(item.id);
+    try {
+        const result = await $fetch(`${endpoint.value}/api/oer/${item.id}/status/`, {
+            method: 'PATCH', body: { status },
+        });
+        if (result?.status !== 'updated' || !result.resource) throw new Error('Status update failed');
+        Object.assign(item, result.resource);
+        if (selectedResource.value?.id === item.id) Object.assign(selectedResource.value, result.resource);
+        showToast(status === 'Approved'
+            ? 'Resource approved. It is now available on /oer.'
+            : `Status updated to ${status}. This resource is not displayed on /oer.`, 'success');
+    } catch {
+        showToast('Could not update the status. Please try again.', 'error');
+    } finally {
+        savingStatusIds.value = savingStatusIds.value.filter(id => id !== item.id);
+        resetControl();
+    }
+};
 
 // Modal State
 const selectedResource = ref(null);
@@ -236,8 +266,7 @@ const stats = computed(() => {
         else if (type.includes("video")) videos++;
         else documents++;
 
-        const latestStatus = getLatestStatus(item).toLowerCase();
-        if (latestStatus.includes("approved") || latestStatus.includes("published")) {
+        if (getLatestStatus(item) === 'Approved') {
             approved++;
         }
     });
@@ -247,24 +276,29 @@ const stats = computed(() => {
 
 // Helper: Get latest status from logs
 const getLatestStatus = (item) => {
+    if (resourceStatuses.includes(item.status)) return item.status;
     if (Array.isArray(item.logs) && item.logs.length > 0) {
         const latest = item.logs[item.logs.length - 1];
-        return latest.status_update || "Submitted";
+        return normalizeStatus(latest?.status_update);
     }
     return "Submitted";
 };
 
+const normalizeStatus = (status) => {
+    const value = (status || '').trim().toLowerCase();
+    if (['approved', 'published', 'approved / published'].includes(value)) return 'Approved';
+    if (!value || value === 'submitted') return 'Submitted';
+    return 'Checking';
+};
+
 // Helper: Get status badge class
 const getStatusBadgeClass = (statusText) => {
-    const s = (statusText || "").toLowerCase();
-    if (s.includes("approved") || s.includes("published")) {
+    const s = normalizeStatus(statusText);
+    if (s === 'Approved') {
         return "bg-emerald-100 text-emerald-800 border-emerald-300";
     }
-    if (s.includes("review") || s.includes("checking")) {
+    if (s === 'Checking') {
         return "bg-amber-100 text-amber-800 border-amber-300";
-    }
-    if (s.includes("revision") || s.includes("reject")) {
-        return "bg-rose-100 text-rose-800 border-rose-300";
     }
     return "bg-blue-100 text-blue-800 border-blue-300";
 };
@@ -425,7 +459,7 @@ const filteredList = computed(() => {
         // Status filter
         if (selectedStatusFilter.value !== "All") {
             const status = getLatestStatus(item);
-            if (!status.toLowerCase().includes(selectedStatusFilter.value.toLowerCase())) {
+            if (status !== selectedStatusFilter.value) {
                 return false;
             }
         }
@@ -609,7 +643,7 @@ const closeDetail = () => {
                 </div>
                 <div>
                     <div class="text-xl font-black text-gray-800">{{ stats.approved }}</div>
-                    <div class="text-xs text-gray-500 font-medium">Approved / Active</div>
+                    <div class="text-xs text-gray-500 font-medium">Approved</div>
                 </div>
             </div>
         </div>
@@ -666,10 +700,7 @@ const closeDetail = () => {
                         class="w-full px-3 py-2 text-xs rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-600 bg-white"
                     >
                         <option value="All">All Statuses</option>
-                        <option value="Submitted">Submitted</option>
-                        <option value="Under Review">Under Review</option>
-                        <option value="Approved">Approved / Published</option>
-                        <option value="Revision">Revision Requested</option>
+                        <option v-for="status in resourceStatuses" :key="status" :value="status">{{ status }}</option>
                     </select>
                 </div>
             </div>
@@ -922,12 +953,24 @@ const closeDetail = () => {
 
                             <!-- Status -->
                             <td class="py-3 px-3 text-center">
+                                <select v-if="canManageResources"
+                                    :value="getLatestStatus(item)"
+                                    @change="updateStatus(item, $event.target.value, $event)"
+                                    :disabled="savingStatusIds.includes(item.id)"
+                                    :aria-label="`Status for ${item.title || item.tracking_id}`"
+                                    title="Approved resources are displayed on /oer"
+                                    :class="getStatusBadgeClass(getLatestStatus(item))"
+                                    class="min-w-[110px] px-2 py-1.5 rounded-lg text-xs font-semibold border focus:outline-none focus:ring-2 focus:ring-green-600 disabled:opacity-60 disabled:cursor-wait">
+                                    <option v-for="status in resourceStatuses" :key="status" :value="status">{{ status }}</option>
+                                </select>
                                 <span
+                                    v-else
                                     class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border shadow-2xs whitespace-nowrap"
                                     :class="getStatusBadgeClass(getLatestStatus(item))"
                                 >
                                     {{ getLatestStatus(item) }}
                                 </span>
+                                <span v-if="savingStatusIds.includes(item.id)" role="status" class="block text-xs text-gray-500 mt-1">Saving…</span>
                             </td>
 
                             <!-- Date Submitted -->
