@@ -82,6 +82,8 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
       <BlogPosting />
     </section>
     <TUKIB />
+    <OERAnnouncement />
+
     <section id="sustainability" class="relative bg-slate-50 py-2">
       <div class="w-11/12 mx-auto my-10">
         <div class="flex items-center gap-3 mb-1">

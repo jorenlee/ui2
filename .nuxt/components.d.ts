@@ -90,6 +90,7 @@ export const NetworkLogo: typeof import("../app/components/NetworkLogo.vue")['de
 export const NewsAndUpdates: typeof import("../app/components/NewsAndUpdates.vue")['default']
 export const OERForm: typeof import("../app/components/OER/Form.vue")['default']
 export const OERList: typeof import("../app/components/OER/List.vue")['default']
+export const OERAnnouncement: typeof import("../app/components/OERAnnouncement.vue")['default']
 export const PSAList: typeof import("../app/components/PSA/List.vue")['default']
 export const Pagination: typeof import("../app/components/Pagination.vue")['default']
 export const Panaglambigit: typeof import("../app/components/Panaglambigit.vue")['default']
@@ -314,6 +315,7 @@ export const LazyNetworkLogo: LazyComponent<typeof import("../app/components/Net
 export const LazyNewsAndUpdates: LazyComponent<typeof import("../app/components/NewsAndUpdates.vue")['default']>
 export const LazyOERForm: LazyComponent<typeof import("../app/components/OER/Form.vue")['default']>
 export const LazyOERList: LazyComponent<typeof import("../app/components/OER/List.vue")['default']>
+export const LazyOERAnnouncement: LazyComponent<typeof import("../app/components/OERAnnouncement.vue")['default']>
 export const LazyPSAList: LazyComponent<typeof import("../app/components/PSA/List.vue")['default']>
 export const LazyPagination: LazyComponent<typeof import("../app/components/Pagination.vue")['default']>
 export const LazyPanaglambigit: LazyComponent<typeof import("../app/components/Panaglambigit.vue")['default']>

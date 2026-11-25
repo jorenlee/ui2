@@ -90,6 +90,7 @@ interface _GlobalComponents {
   NewsAndUpdates: typeof import("../../app/components/NewsAndUpdates.vue")['default']
   OERForm: typeof import("../../app/components/OER/Form.vue")['default']
   OERList: typeof import("../../app/components/OER/List.vue")['default']
+  OERAnnouncement: typeof import("../../app/components/OERAnnouncement.vue")['default']
   PSAList: typeof import("../../app/components/PSA/List.vue")['default']
   Pagination: typeof import("../../app/components/Pagination.vue")['default']
   Panaglambigit: typeof import("../../app/components/Panaglambigit.vue")['default']
@@ -314,6 +315,7 @@ interface _GlobalComponents {
   LazyNewsAndUpdates: LazyComponent<typeof import("../../app/components/NewsAndUpdates.vue")['default']>
   LazyOERForm: LazyComponent<typeof import("../../app/components/OER/Form.vue")['default']>
   LazyOERList: LazyComponent<typeof import("../../app/components/OER/List.vue")['default']>
+  LazyOERAnnouncement: LazyComponent<typeof import("../../app/components/OERAnnouncement.vue")['default']>
   LazyPSAList: LazyComponent<typeof import("../../app/components/PSA/List.vue")['default']>
   LazyPagination: LazyComponent<typeof import("../../app/components/Pagination.vue")['default']>
   LazyPanaglambigit: LazyComponent<typeof import("../../app/components/Panaglambigit.vue")['default']>
