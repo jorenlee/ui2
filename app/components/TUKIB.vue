@@ -77,6 +77,24 @@
         </aside>
       </div>
 
+      <section class="mb-7 flex items-center justify-between gap-8 rounded-2xl border border-[#e5c57840] bg-[linear-gradient(115deg,#ffffff09,#e5c5780d)] px-8 py-7 shadow-[0_12px_36px_-20px_#0005] max-[1000px]:gap-6 max-[760px]:flex-col max-[760px]:items-stretch max-[760px]:px-5 max-[760px]:py-6" aria-labelledby="tukib-countdown-title">
+        <div class="max-[760px]:text-center">
+          <p class="m-0 text-sm font-semibold uppercase tracking-[.14em] text-[#e5ce8d]">See you at TUKIB 2027</p>
+          <h3 id="tukib-countdown-title" class="mb-2 mt-2 text-[clamp(1.4rem,2vw,1.75rem)] font-semibold leading-tight tracking-[-.025em]" aria-live="polite">{{ countdownTitle }}</h3>
+          <p class="m-0 text-sm text-[#bdd1c5]">
+            <time datetime="2027-04-23">April 23, 2027</time>
+            <span class="mx-2 text-[#e5c57880]" aria-hidden="true">/</span>
+            Philippine time (UTC+8)
+          </p>
+        </div>
+        <div class="grid w-full max-w-[27rem] shrink-0 grid-cols-4 gap-3 max-[1000px]:max-w-[23rem] max-[760px]:mx-auto max-[760px]:max-w-[27rem] max-[420px]:gap-2" role="timer" aria-live="off" aria-label="Time remaining until April 23, 2027, Philippine time">
+          <div v-for="unit in countdownUnits" :key="unit.label" class="min-w-0 rounded-xl border border-[#ffffff1a] bg-[#041e1880] px-3 pb-3 pt-4 text-center max-[420px]:px-1">
+            <span class="block text-[clamp(1.75rem,3vw,2.75rem)] font-bold leading-none tracking-[-.035em] text-[#efd394] tabular-nums max-[420px]:text-[1.75rem]">{{ unit.value }}</span>
+            <span class="mt-2 block text-sm font-medium text-[#bdd1c5]">{{ unit.label }}</span>
+          </div>
+        </div>
+      </section>
+
       <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-[#ffffff24] pt-4 text-sm">
         <p class="m-0 text-[#b0c9ba]">Connecting ideas. Inspiring innovation. <span class="text-[#e5ce8d]">Transforming communities.</span></p>
         <a href="https://tukib.lsu.edu.ph" class="inline-flex min-h-11 items-center font-semibold text-[#e5ce8d] no-underline hover:underline hover:underline-offset-4 focus-visible:outline-[#f2d995]">tukib.lsu.edu.ph</a>
@@ -84,3 +102,42 @@
     </div>
   </section>
 </template>
+
+<script setup>
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+
+// Only a date is announced, so count down to the start of that day in the Philippines.
+const eventStart = Date.parse('2027-04-23T00:00:00+08:00')
+const eventEnd = Date.parse('2027-04-24T00:00:00+08:00')
+const now = ref(null)
+let countdownInterval
+
+const countdownTitle = computed(() => {
+  if (now.value !== null && now.value >= eventEnd) return 'Ideas that keep moving forward.'
+  if (now.value !== null && now.value >= eventStart) return 'The congress day is here!'
+  return 'The countdown to discovery is on.'
+})
+
+const countdownUnits = computed(() => {
+  const remaining = now.value === null ? null : Math.max(0, Math.ceil((eventStart - now.value) / 1000))
+  return [
+    { label: 'Days', seconds: 86400, modulo: null },
+    { label: 'Hours', seconds: 3600, modulo: 24 },
+    { label: 'Minutes', seconds: 60, modulo: 60 },
+    { label: 'Seconds', seconds: 1, modulo: 60 },
+  ].map(({ label, seconds, modulo }) => {
+    const value = remaining === null ? null : Math.floor(remaining / seconds)
+    return {
+      label,
+      value: value === null ? '—' : String(modulo === null ? value : value % modulo).padStart(2, '0'),
+    }
+  })
+})
+
+onMounted(() => {
+  now.value = Date.now()
+  countdownInterval = setInterval(() => { now.value = Date.now() }, 1000)
+})
+
+onUnmounted(() => clearInterval(countdownInterval))
+</script>
