@@ -18,11 +18,15 @@
           <p class="mb-4 mt-0 text-sm font-semibold uppercase tracking-[.11em] text-[#bdd7c7] max-[1000px]:max-w-[22rem] max-[760px]:max-w-none max-[760px]:tracking-[.07em]">Connecting ideas. Inspiring innovation.</p>
           <h2 id="tukib-banner-title" class="m-0 text-[clamp(3.25rem,6.2vw,6rem)] font-extrabold leading-[1.05] tracking-[-.055em] max-[760px]:text-[clamp(3.25rem,11vw,5rem)]">TUKIB <span class="text-[#e5c578]">2027</span></h2>
           <p class="mb-0 mt-4 text-[clamp(1.25rem,1.85vw,1.75rem)] font-semibold leading-[1.4] tracking-[-.025em] text-[#f1f6f3] max-[420px]:text-[1.2rem]">International Research Congress</p>
-          <p class="mb-0 mt-5 max-w-xl text-base leading-[1.85] text-[#bdd1c5]">
-            Transforming Understanding Through Knowledge, Innovation, and
-            Breakthroughs. Share your research and be part of a global conversation
-            that moves communities forward.
+          <p class="mb-0 mt-2 max-w-xl text-base leading-[1.85] text-[#bdd1c5]">
+            <span class="font-bold text-yellow-400">T</span>ransforming 
+            <span class="font-bold text-yellow-400">U</span>nderstanding 
+            <span class="font-bold text-yellow-400">K</span>nowledge, 
+            <span class="font-bold text-yellow-400">I</span>nnovation, and
+            <span class="font-bold text-yellow-400">B</span>reakthroughs. 
           </p>
+          <p class="max-w-xl text-base leading-[1.85] text-[#bdd1c5]">Share your research and be part of a global conversation
+            that moves communities forward.</p>
           <div class="mt-8 flex flex-wrap gap-[.85rem] max-[420px]:flex-col">
             <a
               href="https://tukib.lsu.edu.ph"
