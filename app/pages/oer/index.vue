@@ -1,4 +1,85 @@
 <script setup>
+import { computed, onMounted, ref, watch } from 'vue';
+
+const config = useRuntimeConfig();
+const resources = ref([]);
+const isLoading = ref(true);
+const loadError = ref(false);
+const searchQuery = ref('');
+const selectedFormat = ref('');
+const visibleCount = ref(9);
+const resourceFormats = [
+  { value: 'Document', label: 'Documents', icon: 'fa-file-lines' },
+  { value: 'Google Doc', label: 'Google Docs', icon: 'fa-file-lines' },
+  { value: 'Video', label: 'Videos', icon: 'fa-circle-play' },
+];
+
+function safeResourceUrl(value) {
+  try {
+    const url = new URL(value);
+    return ['https:', 'http:'].includes(url.protocol) ? url.href : '';
+  } catch {
+    return '';
+  }
+}
+
+function resourceLinks(resource) {
+  const links = [];
+  const add = (name, value) => {
+    const url = safeResourceUrl(value);
+    if (url && !links.some(link => link.url === url)) links.push({ name, url });
+  };
+  add('Open Google Doc', resource.google_doc_link);
+  add('Watch video', resource.video_links);
+  if (Array.isArray(resource.resource_files)) {
+    resource.resource_files.forEach(file => {
+      if (file && typeof file === 'object') add(file.name || 'Open document', file.url);
+    });
+  }
+  return links;
+}
+
+const catalog = computed(() => resources.value.map(resource => {
+  const type = (resource.type_of_entry || '').toLowerCase();
+  const format = resourceFormats.find(item => item.value.toLowerCase() === type)
+    || (resource.google_doc_link ? resourceFormats[1] : resource.video_links ? resourceFormats[2] : resourceFormats[0]);
+  return { ...resource, format, links: resourceLinks(resource) };
+}));
+
+const filteredResources = computed(() => {
+  const terms = searchQuery.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  return catalog.value.filter(resource => {
+    if (selectedFormat.value && resource.format.value !== selectedFormat.value) return false;
+    const text = [resource.title, resource.author_and_affiliation, resource.description_abstract,
+      resource.subject_areas, resource.keywords, resource.course_codes, resource.target_audience,
+      resource.languages].filter(Boolean).join(' ').toLowerCase();
+    return terms.every(term => text.includes(term));
+  });
+});
+const visibleResources = computed(() => filteredResources.value.slice(0, visibleCount.value));
+const hasFilters = computed(() => Boolean(searchQuery.value || selectedFormat.value));
+watch([searchQuery, selectedFormat], () => { visibleCount.value = 9; });
+
+function clearFilters() {
+  searchQuery.value = '';
+  selectedFormat.value = '';
+}
+
+async function fetchResources() {
+  isLoading.value = true;
+  loadError.value = false;
+  try {
+    const data = await $fetch(`${config.public.apiUrl.replace(/\/$/, '')}/api/oer/catalog/`);
+    if (!Array.isArray(data)) throw new Error('Invalid catalog response');
+    resources.value = data;
+  } catch {
+    loadError.value = true;
+  } finally {
+    isLoading.value = false;
+  }
+}
+onMounted(fetchResources);
+
 useHead({
   title: 'Metau | Open Educational Resources | La Salle University',
   meta: [{
@@ -45,11 +126,16 @@ const goals = [
 
     <main id="oer-main">
       <div class="oer-breadcrumb-wrap">
-        <nav class="oer-shell oer-breadcrumb" aria-label="Breadcrumb">
-          <NuxtLink to="/">Home</NuxtLink>
-          <span aria-hidden="true">/</span>
-          <span aria-current="page">Metau: LSU OER</span>
-        </nav>
+        <div class="oer-shell oer-page-nav">
+          <nav class="oer-breadcrumb" aria-label="Breadcrumb">
+            <NuxtLink to="/">Home</NuxtLink>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">Metau: LSU OER</span>
+          </nav>
+          <a href="#oer-resources" class="oer-browse-link">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i> Browse resources
+          </a>
+        </div>
       </div>
 
       <section class="oer-hero" aria-labelledby="oer-title">
@@ -104,6 +190,80 @@ const goals = [
               <circle cx="157" cy="292" r="5" fill="#c5192d" />
             </svg>
             <div class="oer-art-caption"><span>Learn.</span><span>Create.</span><span>Share.</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="oer-resources" class="oer-resources-section" aria-labelledby="oer-resources-title">
+        <div class="oer-shell">
+          <div class="oer-section-heading">
+            <div>
+              <p class="oer-eyebrow">Explore. Learn. Share.</p>
+              <h2 id="oer-resources-title">Open Educational Resources</h2>
+            </div>
+            <p>Discover free learning materials created and shared by our community.</p>
+          </div>
+
+          <form class="oer-search-form" role="search" @submit.prevent>
+            <div class="oer-search-field">
+              <label for="oer-search">Search resources</label>
+              <div class="oer-search-input">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input id="oer-search" v-model="searchQuery" type="search" placeholder="Title, author, subject, or keyword" aria-controls="oer-resource-results">
+              </div>
+            </div>
+            <div class="oer-format-field">
+              <label for="oer-format">Resource format</label>
+              <div class="oer-select-wrap">
+                <select id="oer-format" v-model="selectedFormat" aria-controls="oer-resource-results">
+                  <option value="">All formats</option>
+                  <option v-for="format in resourceFormats" :key="format.value" :value="format.value">{{ format.label }}</option>
+                </select>
+                <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+              </div>
+            </div>
+          </form>
+
+          <div id="oer-resource-results" :aria-busy="isLoading">
+            <div v-if="isLoading" class="oer-catalog-message" role="status">Loading resources…</div>
+            <div v-else-if="loadError" class="oer-catalog-message" role="alert">
+              <h3>Resources could not be loaded.</h3>
+              <p>Please try again to load the collection.</p>
+              <button type="button" class="oer-button oer-button-secondary" @click="fetchResources">Try again</button>
+            </div>
+            <template v-else>
+              <div class="oer-results-summary">
+                <p role="status">{{ filteredResources.length }} resource{{ filteredResources.length === 1 ? '' : 's' }}{{ hasFilters ? ' found' : ' available' }}</p>
+                <button v-if="hasFilters" type="button" class="oer-clear-filters" @click="clearFilters">Clear filters</button>
+              </div>
+              <div v-if="!filteredResources.length" class="oer-catalog-message">
+                <i class="fa-solid fa-book-open" aria-hidden="true"></i>
+                <h3>{{ hasFilters ? 'No matching resources' : 'Our collection is growing' }}</h3>
+                <p>{{ hasFilters ? 'Try another keyword or choose a different format.' : 'Approved learning materials will appear here as they become available.' }}</p>
+              </div>
+              <div v-else class="oer-resource-grid">
+                <article v-for="resource in visibleResources" :key="resource.id" class="oer-resource-card">
+                  <span class="oer-resource-format"><i :class="['fa-solid', resource.format.icon]" aria-hidden="true"></i> {{ resource.format.value }}</span>
+                  <h3>{{ resource.title || 'Untitled resource' }}</h3>
+                  <p v-if="resource.author_and_affiliation" class="oer-resource-author">{{ resource.author_and_affiliation }}</p>
+                  <p v-if="resource.description_abstract" class="oer-resource-description">{{ resource.description_abstract }}</p>
+                  <dl class="oer-resource-meta">
+                    <template v-if="resource.subject_areas"><dt>Subject</dt><dd>{{ resource.subject_areas }}</dd></template>
+                    <template v-if="resource.target_audience"><dt>For</dt><dd>{{ resource.target_audience }}</dd></template>
+                    <template v-if="resource.languages"><dt>Language</dt><dd>{{ resource.languages }}</dd></template>
+                    <template v-if="resource.license_chosen"><dt>License</dt><dd>{{ resource.license_chosen }}</dd></template>
+                  </dl>
+                  <div class="oer-resource-links">
+                    <a v-for="link in resource.links" :key="link.url" :href="link.url" target="_blank" rel="noopener noreferrer">{{ link.name }}<span class="oer-sr-only"> (opens in a new tab)</span></a>
+                    <span v-if="!resource.links.length" class="oer-resource-author">Resource link coming soon.</span>
+                  </div>
+                </article>
+              </div>
+              <div v-if="visibleCount < filteredResources.length" class="oer-load-more">
+                <p>Showing {{ visibleResources.length }} of {{ filteredResources.length }} resources</p>
+                <button type="button" class="oer-button oer-button-secondary" @click="visibleCount += 9">Show more resources</button>
+              </div>
+            </template>
           </div>
         </div>
       </section>
@@ -183,6 +343,9 @@ const goals = [
 .oer-page *, .oer-page *::before, .oer-page *::after { box-sizing: border-box; }
 .oer-shell { width: min(100% - 3rem, 76rem); margin-inline: auto; }
 .oer-breadcrumb-wrap { border-bottom: 1px solid #e5ece7; }
+.oer-page-nav { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1.5rem; }
+.oer-browse-link { display: inline-flex; align-items: center; gap: .6rem; padding-block: .65rem; color: var(--oer-green); font-size: .9375rem; font-weight: 650; text-decoration: none; }
+.oer-browse-link:hover { text-decoration: underline; text-underline-offset: .25em; }
 .oer-breadcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; padding-block: 1rem; font-size: .875rem; color: var(--oer-muted); }
 .oer-breadcrumb a { color: var(--oer-green); text-decoration: none; }
 .oer-breadcrumb a:hover { text-decoration: underline; }
@@ -213,6 +376,38 @@ const goals = [
 .oer-art-caption span:nth-child(1) { color: #a81729; }
 .oer-art-caption span:nth-child(2) { color: #b50d54; }
 .oer-art-caption span:nth-child(3) { color: #19486a; }
+.oer-resources-section { padding-block: 3.75rem; border-top: 1px solid #e6ece8; scroll-margin-top: 7rem; }
+.oer-search-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(12rem, .35fr); gap: 1.25rem; padding: 1.5rem; border: 1px solid #d8e6dd; border-radius: 1rem; background: #edf5ef; }
+.oer-search-form label { display: block; margin-bottom: .45rem; font-size: .9375rem; font-weight: 650; }
+.oer-search-input, .oer-select-wrap { position: relative; }
+.oer-search-input > i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--oer-muted); pointer-events: none; }
+.oer-search-form input, .oer-search-form select { display: block; width: 100%; min-height: 3.25rem; border: 1px solid #b8cbbf; border-radius: .6rem; background: #fff; color: var(--oer-ink); font: inherit; }
+.oer-search-form input { padding: .65rem 1rem .65rem 2.75rem; }
+.oer-search-form input::placeholder { color: #62746b; opacity: 1; }
+.oer-search-form select { appearance: none; padding: .65rem 2.75rem .65rem 1rem; }
+.oer-select-wrap > i { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: .875rem; }
+.oer-results-summary { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; margin-block: 1.5rem; font-size: .9375rem; }
+.oer-results-summary p { margin: 0; color: var(--oer-muted); }
+.oer-page button { font-family: inherit; cursor: pointer; }
+.oer-clear-filters { min-height: 2.75rem; border: 0; background: transparent; color: var(--oer-green); font-size: .9375rem; font-weight: 650; text-decoration: underline; text-underline-offset: .2em; }
+.oer-resource-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
+.oer-resource-card { display: flex; flex-direction: column; min-width: 0; padding: 1.5rem; border: 1px solid #d8e6dd; border-radius: 1rem; background: #fff; overflow-wrap: anywhere; }
+.oer-resource-format { display: inline-flex; align-items: center; align-self: start; gap: .5rem; padding: .3rem .7rem; border-radius: .4rem; background: #edf5ef; color: var(--oer-green); font-size: .875rem; font-weight: 650; }
+.oer-resource-card h3 { margin: 1rem 0 .6rem; font-size: 1.25rem; line-height: 1.4; font-weight: 700; }
+.oer-resource-author { margin: 0; color: var(--oer-muted); font-size: .875rem; }
+.oer-resource-description { margin: 1rem 0 0; color: var(--oer-muted); font-size: 1rem; white-space: pre-line; }
+.oer-resource-meta { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; gap: .4rem .75rem; margin-block: 1.25rem; font-size: .875rem; }
+.oer-resource-meta dt { font-weight: 650; }
+.oer-resource-meta dd { margin: 0; color: var(--oer-muted); }
+.oer-resource-links { display: flex; flex-direction: column; align-items: start; gap: .5rem; margin-top: auto; padding-top: 1rem; border-top: 1px solid #e6ece8; }
+.oer-resource-links a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--oer-green); font-size: .9375rem; font-weight: 650; text-decoration: underline; text-underline-offset: .2em; }
+.oer-resource-links a:hover { color: #0c4b31; }
+.oer-catalog-message { padding: 3rem 1.5rem; margin-top: 1.5rem; border: 1px dashed #b8cbbf; border-radius: 1rem; text-align: center; color: var(--oer-muted); }
+.oer-catalog-message > i { color: var(--oer-green); font-size: 1.75rem; }
+.oer-catalog-message h3 { margin: .75rem 0 .5rem; color: var(--oer-ink); font-size: 1.25rem; font-weight: 650; }
+.oer-catalog-message p { margin: 0 0 1rem; }
+.oer-load-more { margin-top: 2rem; text-align: center; }
+.oer-load-more p { margin: 0 0 .75rem; color: var(--oer-muted); font-size: .9375rem; }
 .oer-goals-section { padding-block: 3.75rem; border-block: 1px solid #e6ece8; background: #f7f9f8; }
 .oer-section-heading { display: flex; justify-content: space-between; align-items: end; gap: 2rem; margin-bottom: 1.8rem; }
 .oer-section-heading .oer-eyebrow { margin-bottom: .5rem; }
@@ -244,10 +439,11 @@ const goals = [
 .oer-contribute-banner p:last-child { margin: .8rem 0 0; color: #dae8f0; font-size: 1rem; }
 .oer-button-light { flex-shrink: 0; background: #fff; color: #19486a; }
 .oer-button-light:hover { background: #e8f2f8; }
-.oer-page a:focus-visible { outline: 3px solid #19486a; outline-offset: 4px; }
+.oer-page :is(a, button, input, select):focus-visible { outline: 3px solid #19486a; outline-offset: 4px; }
 .oer-contribute-banner a:focus-visible { outline-color: #fff; }
 .oer-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (max-width: 1000px) {
+  .oer-resource-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .oer-hero-grid { gap: 2rem; }
   .oer-hero h1 { font-size: clamp(2.1rem, 4.4vw, 3rem); }
   .oer-art-panel { padding: 1.25rem; }
@@ -256,6 +452,9 @@ const goals = [
   .oer-goal { padding: 1.25rem; }
 }
 @media (max-width: 760px) {
+  .oer-resource-grid, .oer-search-form { grid-template-columns: minmax(0, 1fr); }
+  .oer-search-form, .oer-resource-card { padding: 1.25rem; }
+  .oer-resources-section { padding-block: 2.75rem; }
   .oer-shell { width: min(100% - 2rem, 38rem); }
   .oer-hero { padding-block: 2.5rem; }
   .oer-hero-grid, .oer-about-grid { grid-template-columns: minmax(0, 1fr); }

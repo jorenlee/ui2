@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from "vue";
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from "vue";
 
 // ---------------- ROLES ----------------
 const availableRoles = [
@@ -54,6 +54,15 @@ const sortOrder = ref("desc"); // 'asc' | 'desc'
 const selectedIds = ref([]);
 const confirmBulkDeleteModal = ref(false);
 const isBulkDeleting = ref(false);
+const showBulkEditModal = ref(false);
+const isBulkEditing = ref(false);
+const bulkEditIds = ref([]);
+const bulkEditRoles = ref([]);
+const bulkEditOperation = ref('add');
+const bulkEditError = ref('');
+const bulkEditDialog = ref(null);
+const selectionCheckbox = ref(null);
+let bulkEditOpener = null;
 
 // Single delete state
 const confirmDeleteModal = ref(false);
@@ -862,6 +871,83 @@ const toggleSelectItem = (id) => {
     selectedIds.value = selectedIds.value.filter((i) => i !== id);
   } else {
     selectedIds.value.push(id);
+  }
+};
+
+// ---------------- BULK ROLE EDIT ----------------
+const bulkEditUsers = computed(() => {
+  const ids = new Set(bulkEditIds.value);
+  return listItems.value.filter(item => ids.has(item.id));
+});
+
+const openBulkEditModal = async () => {
+  if (!selectedIds.value.length || isBulkDeleting.value || isBulkEditing.value) return;
+  bulkEditIds.value = [...selectedIds.value];
+  bulkEditRoles.value = [];
+  bulkEditOperation.value = 'add';
+  bulkEditError.value = '';
+  bulkEditOpener = typeof document !== 'undefined' ? document.activeElement : null;
+  showBulkEditModal.value = true;
+  await nextTick();
+  bulkEditDialog.value?.querySelector('select')?.focus();
+};
+
+const restoreBulkEditFocus = async () => {
+  await nextTick();
+  (bulkEditOpener?.isConnected ? bulkEditOpener : selectionCheckbox.value)?.focus();
+};
+
+const closeBulkEditModal = () => {
+  if (isBulkEditing.value) return;
+  showBulkEditModal.value = false;
+  restoreBulkEditFocus();
+};
+
+const trapBulkEditFocus = (event) => {
+  const controls = Array.from(bulkEditDialog.value?.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), summary') || [])
+    .filter(control => !control.matches(':disabled'));
+  const first = controls[0];
+  const last = controls[controls.length - 1];
+  if (event.shiftKey && event.target === first) {
+    event.preventDefault();
+    last?.focus();
+  } else if (!event.shiftKey && event.target === last) {
+    event.preventDefault();
+    first?.focus();
+  }
+};
+
+const performBulkEdit = async () => {
+  if (isBulkEditing.value || !bulkEditIds.value.length || !bulkEditRoles.value.length) return;
+  isBulkEditing.value = true;
+  bulkEditError.value = '';
+  const ids = [...bulkEditIds.value];
+  try {
+    const result = await $fetch(`${endpoint}/api/cits/role-permissions/bulk-update/`, {
+      method: 'POST',
+      body: { ids, operation: bulkEditOperation.value, roles: [...bulkEditRoles.value] },
+    });
+    if (result?.status !== 'updated' || !Array.isArray(result.items)) {
+      throw new Error(result?.message || 'The selected users could not be updated.');
+    }
+    const updates = new Map(result.items.map(item => [item.id, item]));
+    listItems.value = listItems.value.map(item => {
+      const update = updates.get(item.id);
+      if (!update) return item;
+      const updated = { ...item, role_filter_permissions: [...update.role_filter_permissions], updated_at: update.updated_at };
+      prepareItemSearchIndex(updated);
+      return updated;
+    });
+    emit('update:rolePermissions', listItems.value);
+    const saved = new Set(ids);
+    selectedIds.value = selectedIds.value.filter(id => !saved.has(id));
+    showBulkEditModal.value = false;
+    restoreBulkEditFocus();
+    showToast(`Updated roles for ${result.count.toLocaleString()} selected user(s)`, 'success');
+  } catch (error) {
+    bulkEditError.value = error?.data?.message || error.message || 'Could not update selected users. Please try again.';
+  } finally {
+    isBulkEditing.value = false;
   }
 };
 
@@ -2303,7 +2389,13 @@ onMounted(async () => {
         </button>
       </div>
 
-      <div class="flex items-center gap-2 text-xs">
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <button type="button" @click="openBulkEditModal" :disabled="isBulkDeleting || isBulkEditing"
+          class="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg flex items-center gap-1.5 font-medium shadow-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Edit roles for selected users">
+          <i class="fa fa-edit" aria-hidden="true"></i>
+          <span>Edit Selected ({{ selectedIds.length }})</span>
+        </button>
         <button @click="openEmailModal('selected')"
           class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center gap-1.5 font-medium shadow-xs transition cursor-pointer"
           title="Send BCC email to selected recipients">
@@ -2411,10 +2503,10 @@ onMounted(async () => {
                 <th scope="col"
                   class="w-12 px-3 py-3.5 text-center shrink-0 border-r border-gray-200/60 bg-gray-100/90">
                   <div class="flex items-center justify-center">
-                    <input type="checkbox" :checked="isAllPageSelected" :indeterminate.prop="isPartialPageSelected"
+                    <input ref="selectionCheckbox" type="checkbox" :checked="isAllPageSelected" :indeterminate.prop="isPartialPageSelected"
                       @change="toggleSelectAllPage()"
                       class="w-4 h-4 rounded text-green-600 focus:ring-green-500 cursor-pointer accent-green-600"
-                      title="Select all on current page" />
+                      title="Select all on current page" aria-label="Select all users on current page" />
                   </div>
                 </th>
 
@@ -2511,6 +2603,7 @@ onMounted(async () => {
                 <td class="w-12 px-3 py-0.5 text-center shrink-0 border-r border-gray-100/80">
                   <div class="flex items-center justify-center">
                     <input type="checkbox" :checked="isItemSelected(item.id)" @change="toggleSelectItem(item.id)"
+                      :aria-label="`Select ${item.fullname || item.email}`"
                       class="w-4 h-4 rounded text-green-600 focus:ring-green-500 cursor-pointer accent-green-600" />
                   </div>
                 </td>
@@ -3466,6 +3559,58 @@ onMounted(async () => {
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- BULK ROLE EDIT MODAL -->
+    <div v-if="showBulkEditModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      @click.self="closeBulkEditModal" @keydown.esc.stop="closeBulkEditModal">
+      <section ref="bulkEditDialog" role="dialog" aria-modal="true" aria-labelledby="bulk-role-edit-title" aria-describedby="bulk-role-edit-description"
+        @keydown.tab="trapBulkEditFocus"
+        class="bg-white w-full max-w-2xl rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto p-6 text-gray-900">
+        <h2 id="bulk-role-edit-title" class="text-xl font-bold">Edit roles for {{ bulkEditIds.length.toLocaleString() }} selected users</h2>
+        <p id="bulk-role-edit-description" class="text-sm text-gray-600 mt-2">Choose how to update the selected users' roles. Names, emails, and LSU ID numbers stay the same.</p>
+        <form class="mt-5 space-y-4" :aria-busy="isBulkEditing" @submit.prevent="performBulkEdit">
+          <fieldset :disabled="isBulkEditing" class="space-y-4">
+            <div>
+              <label for="bulk-role-operation" class="block text-sm font-semibold mb-1">Update method</label>
+              <select id="bulk-role-operation" v-model="bulkEditOperation" autofocus
+                class="w-full border border-gray-300 p-3 rounded-lg text-sm bg-white focus:ring-2 focus:ring-green-500">
+                <option value="add">Add roles to existing roles</option>
+                <option value="remove">Remove selected roles</option>
+                <option value="replace">Replace all roles with selected roles</option>
+              </select>
+              <p class="mt-2 text-sm" :class="bulkEditOperation === 'replace' ? 'text-amber-800' : 'text-gray-600'">
+                {{ bulkEditOperation === 'replace' ? 'Each selected user will have only the roles checked below.' : bulkEditOperation === 'remove' ? 'Only the roles checked below will be removed. Other roles will be kept.' : 'The roles checked below will be added. Existing roles will be kept.' }}
+              </p>
+            </div>
+            <fieldset>
+              <legend class="text-sm font-semibold mb-2">Roles ({{ bulkEditRoles.length }} selected)</legend>
+              <div class="grid sm:grid-cols-2 gap-1 max-h-64 overflow-y-auto rounded-lg border border-gray-200 p-2">
+                <label v-for="role in availableRoles" :key="role.value" class="flex items-center gap-2 text-sm p-2 hover:bg-green-50 rounded cursor-pointer">
+                  <input v-model="bulkEditRoles" type="checkbox" :value="role.value" class="accent-green-600 rounded">
+                  {{ role.label }}
+                </label>
+              </div>
+            </fieldset>
+          </fieldset>
+          <details class="text-sm border border-gray-200 rounded-lg p-3">
+            <summary class="font-semibold cursor-pointer">Selected users ({{ bulkEditIds.length.toLocaleString() }})</summary>
+            <ul class="mt-2 max-h-32 overflow-y-auto space-y-1">
+              <li v-for="item in bulkEditUsers" :key="item.id" class="break-words">{{ item.fullname || item.email }} <span v-if="item.fullname" class="text-gray-500">({{ item.email }})</span></li>
+            </ul>
+          </details>
+          <p v-if="bulkEditError" role="alert" class="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">{{ bulkEditError }}</p>
+          <div class="flex flex-wrap justify-end gap-2 pt-2">
+            <button type="button" :disabled="isBulkEditing" @click="closeBulkEditModal"
+              class="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-50">Cancel</button>
+            <button type="submit" :disabled="isBulkEditing || !bulkEditRoles.length"
+              class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+              <i v-if="isBulkEditing" class="fa fa-spinner fa-spin mr-1" aria-hidden="true"></i>
+              {{ isBulkEditing ? 'Saving roles…' : `Apply to ${bulkEditIds.length.toLocaleString()} users` }}
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
 
     <!-- CREATE / EDIT MODAL -->
