@@ -21,6 +21,7 @@ const availableRoles = [
   "General Services Office",
   "Lasalle Alumni Association",
   "Open Educational Resources",
+  "OER Admin",
   "Safety and Security Center",
   "Juris Doctor Admin",
   "Juris Doctor Examinee",

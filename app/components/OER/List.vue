@@ -1,14 +1,44 @@
 <script setup>
-import { ref, computed, onMounted, defineAsyncComponent } from "vue";
+import { ref, computed, onMounted, defineAsyncComponent, watch } from "vue";
 import moment from "moment";
 
 const emit = defineEmits(["change-view"]);
+const props = defineProps({
+    rolePermissions: { type: Array, default: () => [] },
+});
 
 // Dynamic import of Form component for fallback/in-place tab switching
 const OERForm = defineAsyncComponent(() => import("./Form.vue"));
 
 const config = useRuntimeConfig();
 const endpoint = ref(config.public.apiUrl);
+const { user } = useAuth();
+const localRolePermissions = ref([]);
+const currentEmail = computed(() => (user.value?.email || '').trim().toLowerCase());
+const canManageResources = computed(() => {
+    if (!currentEmail.value) return false;
+    const records = props.rolePermissions.length ? props.rolePermissions : localRolePermissions.value;
+    return records.some(record =>
+        (record.email || '').trim().toLowerCase() === currentEmail.value
+        && Array.isArray(record.role_filter_permissions)
+        && record.role_filter_permissions.some(role => typeof role === 'string'
+            && ['superadmin', 'oeradmin'].includes(role.trim().toLowerCase().replace(/\s+/g, '')))
+    );
+});
+const tableColumnCount = computed(() => canManageResources.value ? 10 : 8);
+
+const fetchRolePermissions = async () => {
+    localRolePermissions.value = [];
+    const email = currentEmail.value;
+    if (!email || props.rolePermissions.length) return;
+    try {
+        const records = await $fetch(`${endpoint.value}/api/cits/role-permissions/list/?email=${encodeURIComponent(email)}`);
+        if (currentEmail.value === email) localRolePermissions.value = Array.isArray(records) ? records : [];
+    } catch {
+        // Actions stay hidden when role permissions cannot be verified.
+    }
+};
+watch(currentEmail, fetchRolePermissions);
 
 // Navigation Tabs state
 const activeTab = ref("list");
@@ -101,6 +131,7 @@ const allSelected = computed(() =>
 );
 
 const toggleSelectAll = () => {
+    if (!canManageResources.value) return;
     if (allSelected.value) {
         selectedIds.value = selectedIds.value.filter(id => !filteredList.value.map(i => i.id).includes(id));
     } else {
@@ -111,13 +142,13 @@ const toggleSelectAll = () => {
 };
 
 const deleteSelected = async () => {
-    if (!selectedIds.value.length) return;
+    if (!canManageResources.value || !selectedIds.value.length) return;
     const count = selectedIds.value.length;
     const confirmed = await showConfirm(
         `Are you sure you want to permanently delete ${count} selected resource${count > 1 ? 's' : ''}? This action cannot be undone.`,
         { title: `Delete ${count} Resource${count > 1 ? 's' : ''}`, confirmText: `Delete ${count}`, type: 'danger' }
     );
-    if (!confirmed) return;
+    if (!confirmed || !canManageResources.value) return;
     isDeleting.value = true;
     try {
         await $fetch(`${endpoint.value}/api/oer/bulk-delete/`, {
@@ -135,11 +166,12 @@ const deleteSelected = async () => {
 };
 
 const deleteSingle = async (item) => {
+    if (!canManageResources.value) return;
     const confirmed = await showConfirm(
         `Are you sure you want to permanently delete "${item.title || 'this resource'}"? This action cannot be undone.`,
         { title: 'Delete Resource', confirmText: 'Delete', type: 'danger' }
     );
-    if (!confirmed) return;
+    if (!confirmed || !canManageResources.value) return;
     isDeleting.value = true;
     try {
         await $fetch(`${endpoint.value}/api/oer/${item.id}/delete/`, { method: 'DELETE' });
@@ -169,7 +201,16 @@ const fetchOERList = async () => {
 };
 
 onMounted(() => {
+    fetchRolePermissions();
     fetchOERList();
+});
+
+watch(canManageResources, allowed => {
+    if (allowed) return;
+    selectedIds.value = [];
+    showDetailModal.value = false;
+    selectedResource.value = null;
+    handleConfirmCancel();
 });
 
 // Colleges present in list
@@ -429,6 +470,7 @@ const filteredList = computed(() => {
 
 // Modal view
 const openDetail = (item) => {
+    if (!canManageResources.value) return;
     selectedResource.value = item;
     showDetailModal.value = true;
 };
@@ -476,7 +518,7 @@ const closeDetail = () => {
                 <!-- Bulk Delete Button (visible when items selected) -->
                 <transition name="fade-slide">
                     <button
-                        v-if="selectedIds.length > 0"
+                        v-if="canManageResources && selectedIds.length > 0"
                         type="button"
                         @click="deleteSelected"
                         :disabled="isDeleting"
@@ -684,7 +726,7 @@ const closeDetail = () => {
                     <thead class="bg-gradient-to-r from-green-800 via-green-700 to-emerald-800 text-white uppercase text-[11px] font-bold tracking-wider">
                         <tr>
                             <!-- Select All -->
-                            <th class="py-3 px-3 w-12 text-center">
+                            <th v-if="canManageResources" class="py-3 px-3 w-12 text-center">
                                 <input
                                     type="checkbox"
                                     :checked="allSelected"
@@ -745,13 +787,13 @@ const closeDetail = () => {
                                 </div>
                             </th>
                             <!-- Action (non-sortable) -->
-                            <th class="py-3 px-3 w-20 text-center">Action</th>
+                            <th v-if="canManageResources" class="py-3 px-3 w-20 text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         <!-- Loading state -->
                         <tr v-if="isLoading">
-                            <td colspan="11" class="py-12 text-center text-gray-500">
+                            <td :colspan="tableColumnCount" class="py-12 text-center text-gray-500">
                                 <i class="fa fa-circle-notch fa-spin text-2xl text-green-700 mb-2"></i>
                                 <p class="text-xs font-medium">Loading OER Submissions...</p>
                             </td>
@@ -759,7 +801,7 @@ const closeDetail = () => {
 
                         <!-- Empty state -->
                         <tr v-else-if="filteredList.length === 0">
-                            <td colspan="11" class="py-12 text-center text-gray-500">
+                            <td :colspan="tableColumnCount" class="py-12 text-center text-gray-500">
                                 <i class="fa fa-folder-open text-3xl text-gray-300 mb-2"></i>
                                 <p class="text-sm font-semibold text-gray-700">No OER resources found</p>
                                 <p class="text-xs text-gray-400 mt-1">Try adjusting your search or filters.</p>
@@ -775,7 +817,7 @@ const closeDetail = () => {
                             :class="{ 'bg-green-50': selectedIds.includes(item.id) }"
                         >
                             <!-- Checkbox + Index -->
-                            <td class="py-3 px-3 text-center">
+                            <td v-if="canManageResources" class="py-3 px-3 text-center">
                                 <div class="flex flex-col items-center gap-0.5">
                                     <input
                                         type="checkbox"
@@ -796,7 +838,7 @@ const closeDetail = () => {
 
                             <!-- Title & Abstract -->
                             <td class="py-3 px-4">
-                                <div class="font-bold text-gray-900 text-xs line-clamp-2 hover:text-green-800 cursor-pointer" @click="openDetail(item)">
+                                <div class="font-bold text-gray-900 text-xs line-clamp-2" :class="{ 'hover:text-green-800 cursor-pointer': canManageResources }" @click="openDetail(item)">
                                     {{ item.title || 'Untitled Resource' }}
                                 </div>
                                 <div class="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
@@ -894,7 +936,7 @@ const closeDetail = () => {
                             </td>
 
                             <!-- Action -->
-                            <td class="py-3 px-3 text-center">
+                            <td v-if="canManageResources" class="py-3 px-3 text-center">
                                 <div class="flex items-center justify-center gap-1">
                                     <button
                                         type="button"
@@ -933,7 +975,7 @@ const closeDetail = () => {
 
         <!-- Detail Modal -->
         <div
-            v-if="showDetailModal && selectedResource"
+            v-if="canManageResources && showDetailModal && selectedResource"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
             @click.self="closeDetail"
         >

@@ -549,7 +549,7 @@ const subMenuList = [
   },
   {
     group: "Open Educational Resources",
-    allowedRole: "Open Educational Resources",
+    allowedRole: ["Open Educational Resources", "OER Admin"],
     items: [
       {
         label: "OER Form",
