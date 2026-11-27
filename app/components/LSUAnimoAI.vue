@@ -763,7 +763,7 @@ const renderText = (text) => {
           @click="openChat"
         >
           <!-- Speech Bubble Card -->
-          <div class="relative bg-white border border-emerald-500/30 text-slate-800 px-3.5 py-2.5 shadow-xl flex items-center gap-2.5 whitespace-nowrap transition-transform duration-200 group-hover:-translate-y-0.5 rounded-xl">
+          <div class="relative bg-white border border-emerald-500 text-slate-800 px-3.5 py-2.5 shadow-xl flex items-center gap-2.5 whitespace-nowrap transition-transform duration-200 group-hover:-translate-y-0.5 rounded-xl">
             <i class="fa fa-comment-dots text-emerald-600 text-base leading-none"></i>
             <div class="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
               <span>Hi! Ask me anything about LSU</span>
@@ -817,7 +817,7 @@ const renderText = (text) => {
           <button
             type="button"
             :class="[
-              'relative w-[80px] h-[80px] lg:w-[120px] lg:h-[120px] rounded-full border-[3px] border-white flex items-center justify-center shadow-[0_8px_30px_rgba(5,150,105,0.55)] hover:scale-105 active:scale-95 transition-transform duration-200 overflow-hidden animo-sheen-wrap',
+              'relative w-[80px] h-[80px] lg:w-[120px] lg:h-[120px] rounded-full border-[5px] border-green-700 flex items-center justify-center shadow-[0_8px_30px_rgba(5,150,105,0.55)] hover:scale-105 active:scale-95 transition-transform duration-200 overflow-hidden animo-sheen-wrap',
               isDraggingFab ? 'cursor-grabbing scale-105' : 'cursor-grab'
             ]"
             aria-label="Open LSU Animo AI (drag to move)"
