@@ -132,6 +132,7 @@ export const SuperAdminDashboardNavigation: typeof import("../app/components/Sup
 export const SuperAdminDashboardProfile: typeof import("../app/components/SuperAdminDashboardProfile.vue")['default']
 export const SuperAdminDashboardRolePermissions: typeof import("../app/components/SuperAdminDashboardRolePermissions.vue")['default']
 export const SuperAdminDashboardWelcome: typeof import("../app/components/SuperAdminDashboardWelcome.vue")['default']
+export const TINGOG: typeof import("../app/components/TINGOG.vue")['default']
 export const TUKIB: typeof import("../app/components/TUKIB.vue")['default']
 export const Testimonials: typeof import("../app/components/Testimonials.vue")['default']
 export const ThankYouNotifFromFormSubmit: typeof import("../app/components/ThankYouNotifFromFormSubmit.vue")['default']
@@ -357,6 +358,7 @@ export const LazySuperAdminDashboardNavigation: LazyComponent<typeof import("../
 export const LazySuperAdminDashboardProfile: LazyComponent<typeof import("../app/components/SuperAdminDashboardProfile.vue")['default']>
 export const LazySuperAdminDashboardRolePermissions: LazyComponent<typeof import("../app/components/SuperAdminDashboardRolePermissions.vue")['default']>
 export const LazySuperAdminDashboardWelcome: LazyComponent<typeof import("../app/components/SuperAdminDashboardWelcome.vue")['default']>
+export const LazyTINGOG: LazyComponent<typeof import("../app/components/TINGOG.vue")['default']>
 export const LazyTUKIB: LazyComponent<typeof import("../app/components/TUKIB.vue")['default']>
 export const LazyTestimonials: LazyComponent<typeof import("../app/components/Testimonials.vue")['default']>
 export const LazyThankYouNotifFromFormSubmit: LazyComponent<typeof import("../app/components/ThankYouNotifFromFormSubmit.vue")['default']>

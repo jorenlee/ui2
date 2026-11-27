@@ -132,6 +132,7 @@ interface _GlobalComponents {
   SuperAdminDashboardProfile: typeof import("../../app/components/SuperAdminDashboardProfile.vue")['default']
   SuperAdminDashboardRolePermissions: typeof import("../../app/components/SuperAdminDashboardRolePermissions.vue")['default']
   SuperAdminDashboardWelcome: typeof import("../../app/components/SuperAdminDashboardWelcome.vue")['default']
+  TINGOG: typeof import("../../app/components/TINGOG.vue")['default']
   TUKIB: typeof import("../../app/components/TUKIB.vue")['default']
   Testimonials: typeof import("../../app/components/Testimonials.vue")['default']
   ThankYouNotifFromFormSubmit: typeof import("../../app/components/ThankYouNotifFromFormSubmit.vue")['default']
@@ -357,6 +358,7 @@ interface _GlobalComponents {
   LazySuperAdminDashboardProfile: LazyComponent<typeof import("../../app/components/SuperAdminDashboardProfile.vue")['default']>
   LazySuperAdminDashboardRolePermissions: LazyComponent<typeof import("../../app/components/SuperAdminDashboardRolePermissions.vue")['default']>
   LazySuperAdminDashboardWelcome: LazyComponent<typeof import("../../app/components/SuperAdminDashboardWelcome.vue")['default']>
+  LazyTINGOG: LazyComponent<typeof import("../../app/components/TINGOG.vue")['default']>
   LazyTUKIB: LazyComponent<typeof import("../../app/components/TUKIB.vue")['default']>
   LazyTestimonials: LazyComponent<typeof import("../../app/components/Testimonials.vue")['default']>
   LazyThankYouNotifFromFormSubmit: LazyComponent<typeof import("../../app/components/ThankYouNotifFromFormSubmit.vue")['default']>
