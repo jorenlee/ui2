@@ -49,6 +49,23 @@ interface _GlobalComponents {
   DocumentReviewSystemForm: typeof import("../../app/components/DocumentReviewSystem/Form.vue")['default']
   DocumentReviewSystemList: typeof import("../../app/components/DocumentReviewSystem/List.vue")['default']
   DynamicSideMenu: typeof import("../../app/components/DynamicSideMenu/index.vue")['default']
+  ETCContact: typeof import("../../app/components/ETC/Contact.vue")['default']
+  ETCCustodianship: typeof import("../../app/components/ETC/Custodianship.vue")['default']
+  ETCEdTechTraining: typeof import("../../app/components/ETC/EdTechTraining.vue")['default']
+  ETCEquipmentList: typeof import("../../app/components/ETC/EquipmentList.vue")['default']
+  ETCEquipmentRental: typeof import("../../app/components/ETC/EquipmentRental.vue")['default']
+  ETCEventStreaming: typeof import("../../app/components/ETC/EventStreaming.vue")['default']
+  ETCFAQs: typeof import("../../app/components/ETC/FAQs.vue")['default']
+  ETCHero: typeof import("../../app/components/ETC/Hero.vue")['default']
+  ETCHyZONE: typeof import("../../app/components/ETC/HyZONE.vue")['default']
+  ETCMultimediaProduction: typeof import("../../app/components/ETC/MultimediaProduction.vue")['default']
+  ETCPolicies: typeof import("../../app/components/ETC/Policies.vue")['default']
+  ETCProcessSteps: typeof import("../../app/components/ETC/ProcessSteps.vue")['default']
+  ETCProductionAndRates: typeof import("../../app/components/ETC/ProductionAndRates.vue")['default']
+  ETCServices: typeof import("../../app/components/ETC/Services.vue")['default']
+  ETCStudioRental: typeof import("../../app/components/ETC/StudioRental.vue")['default']
+  ETCTeam: typeof import("../../app/components/ETC/Team.vue")['default']
+  ETC: typeof import("../../app/components/ETC/index.vue")['default']
   EnrollmentMenuBar: typeof import("../../app/components/EnrollmentMenuBar.vue")['default']
   FAQs: typeof import("../../app/components/FAQs/index.vue")['default']
   Footer: typeof import("../../app/components/Footer.vue")['default']
@@ -275,6 +292,23 @@ interface _GlobalComponents {
   LazyDocumentReviewSystemForm: LazyComponent<typeof import("../../app/components/DocumentReviewSystem/Form.vue")['default']>
   LazyDocumentReviewSystemList: LazyComponent<typeof import("../../app/components/DocumentReviewSystem/List.vue")['default']>
   LazyDynamicSideMenu: LazyComponent<typeof import("../../app/components/DynamicSideMenu/index.vue")['default']>
+  LazyETCContact: LazyComponent<typeof import("../../app/components/ETC/Contact.vue")['default']>
+  LazyETCCustodianship: LazyComponent<typeof import("../../app/components/ETC/Custodianship.vue")['default']>
+  LazyETCEdTechTraining: LazyComponent<typeof import("../../app/components/ETC/EdTechTraining.vue")['default']>
+  LazyETCEquipmentList: LazyComponent<typeof import("../../app/components/ETC/EquipmentList.vue")['default']>
+  LazyETCEquipmentRental: LazyComponent<typeof import("../../app/components/ETC/EquipmentRental.vue")['default']>
+  LazyETCEventStreaming: LazyComponent<typeof import("../../app/components/ETC/EventStreaming.vue")['default']>
+  LazyETCFAQs: LazyComponent<typeof import("../../app/components/ETC/FAQs.vue")['default']>
+  LazyETCHero: LazyComponent<typeof import("../../app/components/ETC/Hero.vue")['default']>
+  LazyETCHyZONE: LazyComponent<typeof import("../../app/components/ETC/HyZONE.vue")['default']>
+  LazyETCMultimediaProduction: LazyComponent<typeof import("../../app/components/ETC/MultimediaProduction.vue")['default']>
+  LazyETCPolicies: LazyComponent<typeof import("../../app/components/ETC/Policies.vue")['default']>
+  LazyETCProcessSteps: LazyComponent<typeof import("../../app/components/ETC/ProcessSteps.vue")['default']>
+  LazyETCProductionAndRates: LazyComponent<typeof import("../../app/components/ETC/ProductionAndRates.vue")['default']>
+  LazyETCServices: LazyComponent<typeof import("../../app/components/ETC/Services.vue")['default']>
+  LazyETCStudioRental: LazyComponent<typeof import("../../app/components/ETC/StudioRental.vue")['default']>
+  LazyETCTeam: LazyComponent<typeof import("../../app/components/ETC/Team.vue")['default']>
+  LazyETC: LazyComponent<typeof import("../../app/components/ETC/index.vue")['default']>
   LazyEnrollmentMenuBar: LazyComponent<typeof import("../../app/components/EnrollmentMenuBar.vue")['default']>
   LazyFAQs: LazyComponent<typeof import("../../app/components/FAQs/index.vue")['default']>
   LazyFooter: LazyComponent<typeof import("../../app/components/Footer.vue")['default']>

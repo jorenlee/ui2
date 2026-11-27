@@ -579,8 +579,8 @@ onBeforeUnmount(() => {
                 <!-- Description Preview -->
                 <p v-if="j.descriptions"
                   class="lg:text-xs text-[10px] text-[#1d1d1d] mb-3 line-clamp-2 font-montserrat">
-                  {{ j.descriptions.substring(0, 100)
-                  }}{{ j.descriptions.length > 100 ? "..." : "" }}
+                  {{ Array.from(j.descriptions).slice(0, 100).join("")
+                  }}{{ Array.from(j.descriptions).length > 100 ? "..." : "" }}
                 </p>
 
                 <!-- Footer -->
