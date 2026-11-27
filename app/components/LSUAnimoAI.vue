@@ -14,6 +14,120 @@ const isMinimized = ref(false)
 const showIntro   = ref(false)
 const showMenu    = ref(false)
 const showResetConfirm = ref(false)
+const showDeleteConfirm = ref(false)
+const isDeleting = ref(false)
+
+// ─── DRAGGABLE FAB POSITION ───────────────────────────────────────────
+const fabRef = ref(null)
+const fabX = ref(null)
+const fabY = ref(null)
+const isDraggingFab = ref(false)
+const winW = ref(1200)
+const winH = ref(800)
+let fabDragStartX = 0
+let fabDragStartY = 0
+let fabOriginX = 0
+let fabOriginY = 0
+let fabMoved = false
+
+const getFabSize = () => {
+  if (fabRef.value) {
+    const rect = fabRef.value.getBoundingClientRect()
+    if (rect.width > 0) return { w: rect.width, h: rect.height }
+  }
+  return winW.value >= 1024 ? { w: 120, h: 120 } : { w: 80, h: 80 }
+}
+
+const clampFabPos = (x, y) => {
+  const { w, h } = getFabSize()
+  const pad = 8
+  const maxX = Math.max(pad, window.innerWidth - w - pad)
+  const maxY = Math.max(pad, window.innerHeight - h - pad)
+  return {
+    x: Math.min(Math.max(x, pad), maxX),
+    y: Math.min(Math.max(y, pad), maxY),
+  }
+}
+
+const fabStyle = computed(() => {
+  if (fabX.value === null || fabY.value === null) {
+    return { right: '8px', bottom: '144px' }
+  }
+  return {
+    left: `${fabX.value}px`,
+    top: `${fabY.value}px`,
+    transition: isDraggingFab.value ? 'none' : 'transform 0.15s ease',
+  }
+})
+
+const fabIsNearTop = computed(() => fabY.value !== null && fabY.value < 120)
+const fabIsOnLeft = computed(() => fabX.value !== null && fabX.value < winW.value / 2)
+
+const startFabDrag = (e) => {
+  if (e.button !== undefined && e.button !== 0) return
+  if (isOpen.value) return
+  isDraggingFab.value = true
+  fabMoved = false
+  fabDragStartX = e.clientX
+  fabDragStartY = e.clientY
+
+  if (fabX.value === null || fabY.value === null) {
+    const rect = fabRef.value?.getBoundingClientRect()
+    fabOriginX = rect ? rect.left : window.innerWidth - 100
+    fabOriginY = rect ? rect.top : window.innerHeight - 220
+  } else {
+    fabOriginX = fabX.value
+    fabOriginY = fabY.value
+  }
+
+  window.addEventListener('pointermove', onFabPointerMove)
+  window.addEventListener('pointerup', onFabPointerUp)
+  window.addEventListener('pointercancel', onFabPointerUp)
+}
+
+const onFabPointerMove = (e) => {
+  if (!isDraggingFab.value) return
+  const dx = e.clientX - fabDragStartX
+  const dy = e.clientY - fabDragStartY
+  if (!fabMoved && Math.hypot(dx, dy) > 6) {
+    fabMoved = true
+  }
+  if (fabMoved) {
+    const clamped = clampFabPos(fabOriginX + dx, fabOriginY + dy)
+    fabX.value = clamped.x
+    fabY.value = clamped.y
+  }
+}
+
+const onFabPointerUp = () => {
+  if (!isDraggingFab.value) return
+  isDraggingFab.value = false
+  window.removeEventListener('pointermove', onFabPointerMove)
+  window.removeEventListener('pointerup', onFabPointerUp)
+  window.removeEventListener('pointercancel', onFabPointerUp)
+  if (fabMoved && process.client && fabX.value !== null && fabY.value !== null) {
+    localStorage.setItem('lsuanimoai_fab_pos', JSON.stringify({ x: fabX.value, y: fabY.value }))
+  }
+}
+
+const onFabClick = () => {
+  if (fabMoved) {
+    fabMoved = false
+    return
+  }
+  openChat()
+}
+
+const onWindowResize = () => {
+  if (!process.client) return
+  winW.value = window.innerWidth
+  winH.value = window.innerHeight
+  if (fabX.value !== null && fabY.value !== null) {
+    const clamped = clampFabPos(fabX.value, fabY.value)
+    fabX.value = clamped.x
+    fabY.value = clamped.y
+  }
+}
 
 // ─── AGENT SELECTION ──────────────────────────────────────────────────
 const agentGender   = ref('') // '' = not chosen yet, 'female' | 'male'
@@ -148,6 +262,21 @@ onMounted(async () => {
     const savedH = parseInt(localStorage.getItem('lsuanimoai_box_h') || '0', 10)
     if (savedW >= 320 && savedW <= 1200) chatWidth.value = savedW
     if (savedH >= 380 && savedH <= 1000) chatHeight.value = savedH
+
+    winW.value = window.innerWidth
+    winH.value = window.innerHeight
+    const savedPos = localStorage.getItem('lsuanimoai_fab_pos')
+    if (savedPos) {
+      try {
+        const parsed = JSON.parse(savedPos)
+        if (typeof parsed?.x === 'number' && typeof parsed?.y === 'number') {
+          const clamped = clampFabPos(parsed.x, parsed.y)
+          fabX.value = clamped.x
+          fabY.value = clamped.y
+        }
+      } catch {}
+    }
+    window.addEventListener('resize', onWindowResize)
   }
 })
 
@@ -156,6 +285,10 @@ onUnmounted(() => {
   if (process.client) {
     window.removeEventListener('pointermove', onPointerMove)
     window.removeEventListener('pointerup', onPointerUp)
+    window.removeEventListener('pointermove', onFabPointerMove)
+    window.removeEventListener('pointerup', onFabPointerUp)
+    window.removeEventListener('pointercancel', onFabPointerUp)
+    window.removeEventListener('resize', onWindowResize)
   }
 })
 
@@ -248,6 +381,52 @@ const cancelResetChat = () => {
   showResetConfirm.value = false
 }
 
+// ─── DELETE CHAT HISTORY (removes from database) ──────────────────────
+const promptDeleteChat = () => {
+  if (isMinimized.value) isMinimized.value = false
+  showDeleteConfirm.value = true
+}
+
+const cancelDeleteChat = () => {
+  showDeleteConfirm.value = false
+}
+
+const confirmDeleteChat = async () => {
+  showDeleteConfirm.value = false
+  isDeleting.value = true
+  const oldSessionId = sessionId.value
+
+  try {
+    if (oldSessionId) {
+      await $fetch(`${endpoint}/api/lsuanimoaichat/chat/${oldSessionId}/history/`, {
+        method: 'DELETE',
+      })
+    }
+  } catch {
+    // If session was already gone or network error, proceed anyway
+  }
+
+  // Clear local state
+  stopPolling()
+  isSending.value = false
+  messages.value = []
+  inputText.value = ''
+  unread.value = 0
+  nameStep.value = false
+  showMenu.value = false
+  sessionId.value = ''
+  visitorName.value = ''
+  visitorEmail.value = ''
+
+  if (process.client) {
+    localStorage.removeItem('lsuanimoai_session')
+  }
+
+  // Start fresh — go back to name step
+  nameStep.value = true
+  isDeleting.value = false
+}
+
 const confirmResetChat = async () => {
   showResetConfirm.value = false
   stopPolling()
@@ -295,6 +474,17 @@ const boxStyle = computed(() => {
       maxWidth: 'calc(100vw - 32px)',
       height: '62px',
       transition: 'height 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+    }
+  }
+
+  // Mobile: full-screen chat
+  if (process.client && window.innerWidth < 640) {
+    return {
+      width: '100vw',
+      height: '100vh',
+      maxWidth: '100vw',
+      maxHeight: '100vh',
+      transition: isResizing.value ? 'none' : 'width 0.25s ease, height 0.25s ease',
     }
   }
 
@@ -545,77 +735,99 @@ const renderText = (text) => {
 </script>
 
 <template>
-  <!-- ── ROOT CONTAINER (Fixed at bottom-right like Messenger) ─────── -->
-  <div class="fixed  right-5 bottom-44 z-[99990] font-sans pointer-events-none">
+  <!-- ── ROOT WRAPPER ───────────────────────────────────────────────── -->
+  <div class="font-sans">
 
-    <!-- ── INTRO SPEECH BUBBLE ──────────────────────────────────────── -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 -translate-y-2 scale-95"
-      leave-active-class="transition duration-200 ease-in"
-      leave-to-class="opacity-0 -translate-y-2 scale-95"
+    <!-- ── DRAGGABLE FAB + INTRO SPEECH BUBBLE (Movable anywhere) ──── -->
+    <div
+      v-if="!isOpen"
+      ref="fabRef"
+      class="fixed z-[99990] touch-none select-none pointer-events-auto"
+      :style="fabStyle"
+      @pointerdown="startFabDrag"
     >
-      <div
-        v-if="showIntro && !isOpen"
-        class="absolute bottom-[76px] sm:bottom-[84px] right-0 pointer-events-auto filter drop-shadow-lg cursor-pointer group"
-        @click="openChat"
+      <!-- ── INTRO SPEECH BUBBLE ────────────────────────────────────── -->
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 -translate-y-2 scale-95"
+        leave-active-class="transition duration-200 ease-in"
+        leave-to-class="opacity-0 -translate-y-2 scale-95"
       >
-        <!-- Speech Bubble Card -->
-        <div class="relative bg-white border border-emerald-500/30 text-slate-800 px-3.5 py-2.5  shadow-xl flex items-center gap-2.5 whitespace-nowrap transition-transform duration-200 group-hover:-translate-y-0.5">
-          <i class="fa fa-comment-dots text-emerald-600 text-base leading-none"></i>
-          <div class="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
-            <span>Hi! Ask me anything about LSU</span>
-            <span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-mono font-semibold hidden sm:inline-block">AI</span>
+        <div
+          v-if="showIntro"
+          :class="[
+            'absolute pointer-events-auto filter drop-shadow-lg cursor-pointer group z-50',
+            fabIsNearTop ? 'top-full mt-3' : 'bottom-full mb-3',
+            fabIsOnLeft ? 'left-0' : 'right-0'
+          ]"
+          @click="openChat"
+        >
+          <!-- Speech Bubble Card -->
+          <div class="relative bg-white border border-emerald-500/30 text-slate-800 px-3.5 py-2.5 shadow-xl flex items-center gap-2.5 whitespace-nowrap transition-transform duration-200 group-hover:-translate-y-0.5 rounded-xl">
+            <i class="fa fa-comment-dots text-emerald-600 text-base leading-none"></i>
+            <div class="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <span>Hi! Ask me anything about LSU</span>
+              <span class="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-mono font-semibold hidden sm:inline-block">AI</span>
+            </div>
+            <button
+              type="button"
+              class="w-5 h-5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer border-0 bg-transparent ml-0.5"
+              aria-label="Dismiss message"
+              @click.stop="showIntro = false"
+            >
+              <i class="fa fa-times text-[10px]"></i>
+            </button>
+            <!-- Speech bubble triangle tail pointing to button -->
+            <div
+              :class="[
+                'absolute w-3 h-3 bg-white rotate-45 border-emerald-500/30',
+                fabIsNearTop ? '-top-1.5 border-l border-t' : '-bottom-1.5 border-r border-b',
+                fabIsOnLeft ? 'left-5' : 'right-5'
+              ]"
+            ></div>
           </div>
-          <button
-            type="button"
-            class="w-5 h-5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer border-0 bg-transparent ml-0.5"
-            aria-label="Dismiss message"
-            @click.stop="showIntro = false"
-          >
-            <i class="fa fa-times text-[10px]"></i>
-          </button>
-          <!-- Speech bubble downward triangle tail pointing to button -->
-          <div class="absolute -bottom-1.5 right-5 w-3 h-3 bg-white border-r border-b border-emerald-500/30 rotate-45"></div>
         </div>
-      </div>
-    </Transition>
+      </Transition>
 
-    <!-- ── FLOATING ACTION BUTTON (FAB) — Messenger-sized ───────────── -->
-    <Transition
-      enter-active-class="transition duration-200 ease-out"
-      enter-from-class="opacity-0 scale-75"
-      leave-active-class="transition duration-150 ease-in"
-      leave-to-class="opacity-0 scale-75"
-    >
-      <div v-if="!isOpen" class="relative pointer-events-auto animo-float">
-        <!-- Sonar ring -->
-        <span class="absolute -inset-2 rounded-full bg-emerald-400/30 animo-ring pointer-events-none"></span>
+      <!-- ── FLOATING ACTION BUTTON (FAB) — Movable & Responsive ────── -->
+      <div :class="['relative pointer-events-auto', !isDraggingFab && 'animo-float']">
+        <!-- Sonar ring — smaller on mobile -->
+        <span class="absolute -inset-1 sm:-inset-2 rounded-full bg-emerald-400/30 animo-ring pointer-events-none"></span>
         <!-- Ambient glow -->
-        <span class="absolute -inset-1 rounded-full bg-emerald-500/25 blur-lg animate-pulse pointer-events-none"></span>
+        <span class="absolute -inset-0.5 sm:-inset-1 rounded-full bg-emerald-500/25 blur-lg animate-pulse pointer-events-none"></span>
 
         <!-- Tooltip wrapper -->
         <div class="group relative">
-          <!-- Tooltip: Beta Launch -->
-          <div class="pointer-events-none absolute -top-11 right-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+          <!-- Tooltip: Beta Launch (flips below if near top) -->
+          <div
+            :class="[
+              'pointer-events-none absolute right-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50',
+              fabIsNearTop ? '-bottom-11' : '-top-11'
+            ]"
+          >
+            <div v-if="fabIsNearTop" class="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mb-1"></div>
             <div class="bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg whitespace-nowrap shadow-lg flex items-center gap-1.5">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Beta Launch
+              Beta Launch · Drag to move
             </div>
-            <div class="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mt-1"></div>
+            <div v-if="!fabIsNearTop" class="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mt-1"></div>
           </div>
 
-          <!-- Main messenger-sized circle button (60×60) -->
+          <!-- Main messenger-sized circle button — responsive & draggable -->
           <button
             type="button"
-            class="relative w-[150px] h-[150px] rounded-full border-[3px] border-white cursor-pointer flex items-center justify-center shadow-[0_8px_30px_rgba(5,150,105,0.55)] hover:scale-110 active:scale-95 transition-all duration-300 overflow-hidden animo-sheen-wrap"
-            aria-label="Open LSU Animo AI"
-            @click="openChat"
+            :class="[
+              'relative w-[80px] h-[80px] lg:w-[120px] lg:h-[120px] rounded-full border-[3px] border-white flex items-center justify-center shadow-[0_8px_30px_rgba(5,150,105,0.55)] hover:scale-105 active:scale-95 transition-transform duration-200 overflow-hidden animo-sheen-wrap',
+              isDraggingFab ? 'cursor-grabbing scale-105' : 'cursor-grab'
+            ]"
+            aria-label="Open LSU Animo AI (drag to move)"
+            @click="onFabClick"
           >
             <img
               :src="agentGender ? agentAvatar : FEMALE_AGENT"
               alt="LSU Animo AI Agent"
-              class="w-full h-full object-cover"
+              draggable="false"
+              class="w-full h-full object-cover pointer-events-none select-none"
             />
             <!-- Sheen sweep -->
             <span class="animo-sheen pointer-events-none absolute inset-0"></span>
@@ -629,45 +841,46 @@ const renderText = (text) => {
             </span>
           </button>
 
-          <!-- "Click me" label below the button -->
-          <div class="mt-1.5 flex justify-center">
+          <!-- "Click me" label — hidden on small screens to save space -->
+          <div class="mt-1.5 hidden sm:flex justify-center pointer-events-none">
             <span class="bg-emerald-700 text-white text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full shadow-md animate-pulse">
               Click me
             </span>
           </div>
         </div>
       </div>
-    </Transition>
+    </div>
 
-    <!-- ── CHAT WINDOW ─────────────────────────────────────────────────── -->
-    <Transition
-      enter-active-class="transition duration-300 ease-out"
-      enter-from-class="opacity-0 translate-y-4 scale-95"
-      leave-active-class="transition duration-200 ease-in"
-      leave-to-class="opacity-0 translate-y-4 scale-95"
-    >
-      <div
-        v-if="isOpen"
-        class="pointer-events-auto absolute bottom-0 right-0 bg-white shadow-[0_20px_60px_rgba(0,0,0,.25)] flex flex-col border border-emerald-500/20 overflow-visible select-auto"
-        :style="boxStyle"
+    <!-- ── CHAT WINDOW CONTAINER (Anchored bottom-right) ───────────── -->
+    <div class="fixed right-0 bottom-0 sm:right-5 sm:bottom-6 z-[99990] pointer-events-none">
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="opacity-0 translate-y-4 scale-95"
+        leave-active-class="transition duration-200 ease-in"
+        leave-to-class="opacity-0 translate-y-4 scale-95"
       >
-        <!-- ── RESIZE HANDLES ─────────────────────────────────────── -->
+        <div
+          v-if="isOpen"
+          class="pointer-events-auto relative bg-white shadow-[0_20px_60px_rgba(0,0,0,.25)] flex flex-col border border-emerald-500/20 overflow-visible select-auto"
+          :style="boxStyle"
+        >
+        <!-- ── RESIZE HANDLES (desktop only) ─────────────────────── -->
         <template v-if="!isMinimized">
           <!-- Top Border Resize Handle -->
           <div
-            class="absolute top-0 left-0 right-12 h-2 cursor-ns-resize z-40 hover:bg-emerald-400/20 transition-colors"
+            class="hidden sm:block absolute top-0 left-0 right-12 h-2 cursor-ns-resize z-40 hover:bg-emerald-400/20 transition-colors"
             title="Drag to resize height"
             @pointerdown="startResize($event, 'n')"
           ></div>
           <!-- Right Border Resize Handle -->
           <div
-            class="absolute top-12 bottom-0 right-0 w-2 cursor-ew-resize z-40 hover:bg-emerald-400/20 transition-colors"
+            class="hidden sm:block absolute top-12 bottom-0 right-0 w-2 cursor-ew-resize z-40 hover:bg-emerald-400/20 transition-colors"
             title="Drag to resize width"
             @pointerdown="startResize($event, 'e')"
           ></div>
           <!-- Top-Right Corner Resize Grip Handle -->
           <div
-            class="absolute top-0 right-0 w-7 h-7 cursor-nesw-resize z-50 flex items-center justify-center group"
+            class="hidden sm:flex absolute top-0 right-0 w-7 h-7 cursor-nesw-resize z-50 items-center justify-center group"
             title="Drag corner to resize width and height"
             @pointerdown="startResize($event, 'ne')"
           >
@@ -676,31 +889,32 @@ const renderText = (text) => {
         </template>
         <!-- ── HEADER ───────────────────────────────────────────────── -->
         <div
-          class="relative flex items-center justify-between pl-20 pr-4 pt-6 pb-3 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 flex-shrink-0 select-none shadow-sm cursor-default rounded-t-3xl"
+          class="relative flex items-center justify-between px-3 py-3 sm:pl-20 sm:pr-4 sm:pt-6 sm:pb-3 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 flex-shrink-0 select-none shadow-sm cursor-default sm:rounded-t-3xl"
           @dblclick="toggleMaximize"
         >
-          <!-- Agent avatar — oversized, overlapping the top edge of the box -->
-          <div class="absolute -top-10 -left-20 z-20">
-            <div class="relative w-[120px] h-[120px] rounded-full border-[3px] border-white overflow-hidden shadow-2xl ring-4 ring-emerald-400/40">
-              <img :src="agentAvatar" alt="LSU Agent" class="w-full h-full object-cover" />
+          <div class="flex items-center gap-2.5 sm:block min-w-0">
+            <!-- Agent avatar — inline on mobile (never clipped), oversized overlapping on desktop -->
+            <div class="relative flex-shrink-0 sm:absolute sm:-top-10 sm:-left-20 z-20">
+              <div class="relative w-10 h-10 sm:w-[120px] sm:h-[120px] rounded-full border-2 sm:border-[3px] border-white overflow-hidden shadow-lg sm:shadow-2xl ring-2 sm:ring-4 ring-emerald-400/40">
+                <img :src="agentAvatar" alt="LSU Agent" class="w-full h-full object-cover" />
+              </div>
+              <!-- Online dot -->
+              <span class="absolute bottom-0 right-0 sm:bottom-1.5 sm:right-0.5 w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 rounded-full bg-emerald-400 border-2 border-white z-20">
+                <span class="absolute inset-0 rounded-full bg-emerald-300 animate-ping opacity-70"></span>
+              </span>
             </div>
-            <!-- Online dot -->
-            <span class="absolute bottom-1.5 right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-white z-20">
-              <span class="absolute inset-0 rounded-full bg-emerald-300 animate-ping opacity-70"></span>
-            </span>
-          </div>
 
-          <div>
-            <div class="text-white text-sm font-black leading-tight text-left flex items-center gap-1.5 -ml-7">
-              <span>Animo Chat</span>
-              <span class="text-[9px] font-black bg-emerald-400 text-emerald-900 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Beta</span>
-              <span v-if="isFetching" class="w-1.5 h-1.5 rounded-full bg-emerald-200 animate-ping" title="Syncing"></span>
+            <div class="min-w-0">
+              <div class="text-white text-sm font-black leading-tight text-left flex items-center gap-1.5 sm:-ml-7">
+                <span class="truncate">Animo Chat</span>
+                <span class="text-[9px] font-black bg-emerald-400 text-emerald-900 px-1.5 py-0.5 rounded-full uppercase tracking-wide flex-shrink-0">Beta</span>
+                <span v-if="isFetching" class="w-1.5 h-1.5 rounded-full bg-emerald-200 animate-ping flex-shrink-0" title="Syncing"></span>
+              </div>
             </div>
-           
           </div>
 
           <!-- Header Action Buttons -->
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1 flex-shrink-0">
             <!-- Reset / New Chat -->
             <button
               type="button"
@@ -719,10 +933,10 @@ const renderText = (text) => {
             >
               <i class="fa fa-user-astronaut"></i>
             </button>
-            <!-- Maximize / Restore -->
+            <!-- Maximize / Restore (desktop only) -->
             <button
               type="button"
-              class="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white border-0 cursor-pointer flex items-center justify-center text-xs transition-colors"
+              class="hidden sm:flex w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white border-0 cursor-pointer items-center justify-center text-xs transition-colors"
               :title="isMaximized ? 'Restore Size' : 'Maximize Chat'"
               @click="toggleMaximize"
             >
@@ -795,6 +1009,7 @@ const renderText = (text) => {
             </div>
 
             <p class="text-[10px] text-slate-400 mt-1">You can change this anytime from the settings.</p>
+            <p class="text-[9px] text-slate-400/70 mt-2"><i class="fa fa-shield-halved text-emerald-600 mr-0.5"></i> This AI chatbot does not collect any personal and sensitive data or information.</p>
           </div>
 
           <!-- NAME STEP ─────────────────────────────────────────────── -->
@@ -842,14 +1057,22 @@ const renderText = (text) => {
             </div>
 
             <!-- Reset Chat Link (When in Update Contact screen and active conversation exists) -->
-            <div v-if="messages.length > 0" class="w-full pt-3 mt-1 border-t border-slate-100 flex flex-col items-center">
+            <div v-if="messages.length > 0" class="w-full pt-3 mt-1 border-t border-slate-100 flex flex-col items-center gap-1">
               <button
                 type="button"
                 class="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1.5 py-1.5 px-3 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer border-0 bg-transparent"
                 @click="promptResetChat"
               >
                 <i class="fa fa-rotate-right"></i>
-                Reset Chat & Start Over
+                Reset Chat &amp; Start Over
+              </button>
+              <button
+                type="button"
+                class="text-xs font-semibold text-rose-500 hover:text-rose-700 flex items-center gap-1.5 py-1.5 px-3 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer border-0 bg-transparent"
+                @click="promptDeleteChat"
+              >
+                <i class="fa fa-trash-can"></i>
+                Delete Chat History
               </button>
             </div>
           </div>
@@ -1002,6 +1225,18 @@ const renderText = (text) => {
                   </span>
                   <i class="fa fa-chevron-right text-[10px] text-slate-400"></i>
                 </button>
+                <!-- Delete Chat History (permanently removes from database) -->
+                <button
+                  type="button"
+                  class="flex items-center justify-between px-4 py-2.5 border-0 border-t border-slate-100 bg-slate-50/80 hover:bg-rose-50 text-slate-600 hover:text-rose-700 text-xs font-semibold text-left cursor-pointer transition-colors w-full"
+                  @click="promptDeleteChat"
+                >
+                  <span class="flex items-center gap-2">
+                    <i class="fa fa-trash-can text-xs text-rose-400"></i>
+                    <span>Delete Chat History</span>
+                  </span>
+                  <i class="fa fa-chevron-right text-[10px] text-slate-400"></i>
+                </button>
               </div>
             </div>
           </Transition>
@@ -1053,7 +1288,8 @@ const renderText = (text) => {
 
           <!-- ── FOOTER ────────────────────────────────────────────── -->
           <div class="py-1.5 text-center text-[10px] text-slate-400 border-t border-slate-100 bg-white flex-shrink-0 select-none">
-            Powered by <strong class="text-emerald-700">NPCC</strong> · La Salle University Ozamiz, Inc.
+            <div>Powered by <strong class="text-emerald-700">NPCC</strong> · La Salle University Ozamiz, Inc.</div>
+            <div class="text-[9px] text-slate-400/80 mt-0.5"><i class="fa fa-shield-halved text-emerald-600 mr-0.5"></i> This AI chatbot does not collect any personal and sensitive data or information.</div>
           </div>
 
         </template>
@@ -1097,8 +1333,51 @@ const renderText = (text) => {
           </div>
         </Transition>
 
+        <!-- ── DELETE CHAT CONFIRMATION MODAL ──────────────────────── -->
+        <Transition
+          enter-active-class="transition duration-150 ease-out"
+          enter-from-class="opacity-0 scale-95"
+          leave-active-class="transition duration-100 ease-in"
+          leave-to-class="opacity-0 scale-95"
+        >
+          <div
+            v-if="showDeleteConfirm"
+            class="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] z-50 flex items-center justify-center p-4"
+          >
+            <div class="bg-white rounded-2xl p-5 shadow-2xl max-w-[320px] w-full text-center border border-slate-100">
+              <div class="w-12 h-12 mx-auto rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg mb-3 shadow-inner">
+                <i class="fa fa-trash-can"></i>
+              </div>
+              <div class="text-sm font-black text-slate-800">Delete Chat History?</div>
+              <p class="text-xs text-slate-500 mt-1.5 mb-4 leading-relaxed">
+                This will <strong class="text-rose-600">permanently delete</strong> all your messages from our system. This action cannot be undone.
+              </p>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  class="flex-1 py-2 px-3 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer border-0"
+                  @click="cancelDeleteChat"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="flex-1 py-2 px-3 text-xs font-bold text-white bg-gradient-to-r from-rose-700 to-rose-600 hover:from-rose-800 hover:to-rose-700 rounded-xl transition-all cursor-pointer border-0 shadow-md flex items-center justify-center gap-1.5"
+                  :disabled="isDeleting"
+                  @click="confirmDeleteChat"
+                >
+                  <i v-if="isDeleting" class="fa fa-spinner fa-spin text-[11px]"></i>
+                  <i v-else class="fa fa-trash-can text-[11px]"></i>
+                  Delete Forever
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+
       </div>
     </Transition>
+    </div>
   </div>
 </template>
 

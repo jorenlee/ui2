@@ -10,18 +10,7 @@ useHead({
   ]
 });
 
-const showScrollButton = ref(false);
 
-const handleScroll = () => {
-  showScrollButton.value = window.scrollY > 400;
-};
-
-const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
-onMounted(() => window.addEventListener("scroll", handleScroll));
-onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
 </script>
 
 <template>
@@ -144,15 +133,6 @@ onBeforeUnmount(() => window.removeEventListener("scroll", handleScroll));
       <NetworkLogo class="py-6 sm:py-10" />
     </section>
     <Footer />
-    <Transition enter-active-class="transition-all duration-300 ease-out"
-      enter-from-class="opacity-0 scale-75 translate-y-4" enter-to-class="opacity-100 scale-100 translate-y-0"
-      leave-active-class="transition-all duration-200 ease-in" leave-from-class="opacity-100 scale-100 translate-y-0"
-      leave-to-class="opacity-0 scale-75 translate-y-4">
-      <button v-show="showScrollButton" @click="scrollToTop"
-        class="fixed bottom-6 right-6 z-50 w-12 h-12 flex items-center justify-center bg-gradient-to-br from-emerald-700 to-teal-900 hover:from-emerald-600 hover:to-teal-800 text-white rounded-2xl shadow-xl shadow-emerald-950/30 hover:shadow-2xl transition-all duration-300 group"
-        aria-label="Scroll to top">
-        <i class="fas fa-chevron-up text-sm group-hover:-translate-y-0.5 transition-transform duration-200"></i>
-      </button>
-    </Transition>
+    
   </div>
 </template>
