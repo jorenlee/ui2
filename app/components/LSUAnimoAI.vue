@@ -2,6 +2,8 @@
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 
 const LSU_SEAL = 'https://lsu-media-styles.sgp1.digitaloceanspaces.com/Logos/University%20Seal/LSU%20Seal.PNG'
+const FEMALE_AGENT = 'https://lsu-media-styles.sgp1.digitaloceanspaces.com/AIAgent/FemaleAgentProfile.jpg'
+const MALE_AGENT   = 'https://lsu-media-styles.sgp1.digitaloceanspaces.com/AIAgent/MaleAgentProfile.jpg'
 
 const config = useRuntimeConfig()
 const endpoint = config.public.apiUrl
@@ -12,6 +14,13 @@ const isMinimized = ref(false)
 const showIntro   = ref(false)
 const showMenu    = ref(false)
 const showResetConfirm = ref(false)
+
+// ─── AGENT SELECTION ──────────────────────────────────────────────────
+const agentGender   = ref('') // '' = not chosen yet, 'female' | 'male'
+const showAgentPick = ref(false) // shown on very first open
+const agentAvatar   = computed(() =>
+  agentGender.value === 'male' ? MALE_AGENT : FEMALE_AGENT
+)
 
 // ─── RESIZABLE CHAT BOX STATE ─────────────────────────────────────────
 const chatWidth       = ref(420)
@@ -41,13 +50,13 @@ let pollTimer = null
 
 // ─── QUICK REPLIES ────────────────────────────────────────────────────
 const quickReplies = [
-  { icon: 'fa fa-coins text-amber-500', label: 'Tuition fees', prompt: 'How much are your tuition fee/s?' },
-  { icon: 'fa fa-clipboard-list text-blue-500', label: 'Enrollment steps', prompt: 'What are the enrollment steps?' },
-  { icon: 'fa fa-graduation-cap text-indigo-500', label: 'Admission requirements', prompt: 'What are your admission requirements?' },
-  { icon: 'fa fa-award text-emerald-500', label: 'Scholarship programs', prompt: 'What scholarships do you offer?' },
-  { icon: 'fa fa-phone text-rose-500', label: 'Contact information', prompt: 'How do I contact your offices?' },
-  { icon: 'fa fa-calendar-days text-teal-500', label: 'Academic calendar', prompt: 'What is your schedule for events?' },
-  { icon: 'fa fa-building-columns text-sky-500', label: 'Campus services', prompt: 'How to get my school documents? (TOR/Diploma/Form 137 etc.)' },
+  { icon: 'fa fa-coins', label: 'Tuition fees', prompt: 'How much are your tuition fee/s?' },
+  { icon: 'fa fa-clipboard-list', label: 'Enrollment steps', prompt: 'What are the enrollment steps?' },
+  { icon: 'fa fa-graduation-cap', label: 'Admission requirements', prompt: 'What are your admission requirements?' },
+  { icon: 'fa fa-award', label: 'Scholarship programs', prompt: 'What scholarships do you offer?' },
+  { icon: 'fa fa-phone', label: 'Contact information', prompt: 'How do I contact your offices?' },
+  { icon: 'fa fa-calendar-days', label: 'Academic calendar', prompt: 'What is your schedule for events?' },
+  { icon: 'fa fa-building-columns', label: 'Campus services', prompt: 'How to get my school documents? (TOR/Diploma/Form 137 etc.)' },
 ]
 
 const now = () =>
@@ -127,6 +136,10 @@ onMounted(async () => {
   setTimeout(() => { showIntro.value = false }, 16000)
   if (process.client) {
     const saved = localStorage.getItem('lsuanimoai_session')
+    const savedGender = localStorage.getItem('lsuanimoai_agent_gender')
+    if (savedGender) agentGender.value = savedGender
+    else showAgentPick.value = false // will show on first open
+
     if (saved) {
       sessionId.value = saved
       await fetchHistory()
@@ -149,6 +162,16 @@ onUnmounted(() => {
 // ─── OPEN / CLOSE / TOGGLES ───────────────────────────────────────────
 const openChat = async () => {
   showIntro.value = false
+
+  // If agent never picked, show picker first
+  if (!agentGender.value) {
+    showAgentPick.value = true
+    isOpen.value = true
+    isMinimized.value = false
+    unread.value = 0
+    return
+  }
+
   isOpen.value = true
   isMinimized.value = false
   unread.value = 0
@@ -158,6 +181,24 @@ const openChat = async () => {
     if (messages.value.length === 0 && !nameStep.value) {
       pushBotWelcome()
     }
+  } else if (messages.value.length === 0) {
+    nameStep.value = true
+  }
+
+  startPolling()
+  await nextTick()
+  scrollToBottom()
+}
+
+// Pick agent and proceed to chat
+const pickAgent = async (gender) => {
+  agentGender.value = gender
+  if (process.client) localStorage.setItem('lsuanimoai_agent_gender', gender)
+  showAgentPick.value = false
+
+  if (sessionId.value) {
+    await fetchHistory()
+    if (messages.value.length === 0 && !nameStep.value) pushBotWelcome()
   } else if (messages.value.length === 0) {
     nameStep.value = true
   }
@@ -504,10 +545,10 @@ const renderText = (text) => {
 </script>
 
 <template>
-  <!-- ── ROOT CONTAINER (Fixed at bottom-left) ────────────────────────── -->
-  <div class="fixed bottom-5 left-5 sm:bottom-6 sm:left-6 z-[99990] font-sans pointer-events-none">
+  <!-- ── ROOT CONTAINER (Fixed at bottom-right like Messenger) ─────── -->
+  <div class="fixed  right-5 bottom-44 z-[99990] font-sans pointer-events-none">
 
-    <!-- ── INTRO SPEECH BUBBLE ────────────────────────────────────────── -->
+    <!-- ── INTRO SPEECH BUBBLE ──────────────────────────────────────── -->
     <Transition
       enter-active-class="transition duration-300 ease-out"
       enter-from-class="opacity-0 -translate-y-2 scale-95"
@@ -516,11 +557,11 @@ const renderText = (text) => {
     >
       <div
         v-if="showIntro && !isOpen"
-        class="absolute bottom-[68px] sm:bottom-[72px] left-0 pointer-events-auto filter drop-shadow-lg cursor-pointer group"
+        class="absolute bottom-[76px] sm:bottom-[84px] right-0 pointer-events-auto filter drop-shadow-lg cursor-pointer group"
         @click="openChat"
       >
         <!-- Speech Bubble Card -->
-        <div class="relative bg-white border border-emerald-500/30 text-slate-800 px-3.5 py-2.5 rounded-2xl shadow-xl flex items-center gap-2.5 whitespace-nowrap transition-transform duration-200 group-hover:-translate-y-0.5">
+        <div class="relative bg-white border border-emerald-500/30 text-slate-800 px-3.5 py-2.5  shadow-xl flex items-center gap-2.5 whitespace-nowrap transition-transform duration-200 group-hover:-translate-y-0.5">
           <i class="fa fa-comment-dots text-emerald-600 text-base leading-none"></i>
           <div class="text-xs sm:text-sm font-bold text-slate-800 flex items-center gap-1.5">
             <span>Hi! Ask me anything about LSU</span>
@@ -534,46 +575,67 @@ const renderText = (text) => {
           >
             <i class="fa fa-times text-[10px]"></i>
           </button>
-
           <!-- Speech bubble downward triangle tail pointing to button -->
-          <div class="absolute -bottom-1.5 left-5 w-3 h-3 bg-white border-r border-b border-emerald-500/30 rotate-45"></div>
+          <div class="absolute -bottom-1.5 right-5 w-3 h-3 bg-white border-r border-b border-emerald-500/30 rotate-45"></div>
         </div>
       </div>
     </Transition>
 
-    <!-- ── FLOATING ACTION BUTTON (FAB) ─────────────────────────────────── -->
+    <!-- ── FLOATING ACTION BUTTON (FAB) — Messenger-sized ───────────── -->
     <Transition
       enter-active-class="transition duration-200 ease-out"
       enter-from-class="opacity-0 scale-75"
       leave-active-class="transition duration-150 ease-in"
       leave-to-class="opacity-0 scale-75"
     >
-      <div v-if="!isOpen" class="relative pointer-events-auto">
-        <!-- Soft breathing ambient glow (no murky ping discs!) -->
-        <span class="absolute -inset-1 rounded-full bg-emerald-500/25 blur-[3px] animate-pulse"></span>
+      <div v-if="!isOpen" class="relative pointer-events-auto animo-float">
+        <!-- Sonar ring -->
+        <span class="absolute -inset-2 rounded-full bg-emerald-400/30 animo-ring pointer-events-none"></span>
+        <!-- Ambient glow -->
+        <span class="absolute -inset-1 rounded-full bg-emerald-500/25 blur-lg animate-pulse pointer-events-none"></span>
 
-        <!-- Main circular button -->
-        <button
-          type="button"
-          class="relative w-14 h-14 rounded-full bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 border-2 border-white/90 cursor-pointer flex items-center justify-center shadow-[0_8px_25px_rgba(5,150,105,0.45)] hover:scale-105 active:scale-95 transition-all duration-300 group"
-          aria-label="Open LSU Animo AI"
-          @click="openChat"
-        >
-          <!-- Seal logo inside button -->
-          <img
-            :src="LSU_SEAL"
-            alt="LSU"
-            class="w-9 h-9 object-contain relative z-10 drop-shadow-md group-hover:scale-110 transition-transform duration-300"
-          />
+        <!-- Tooltip wrapper -->
+        <div class="group relative">
+          <!-- Tooltip: Beta Launch -->
+          <div class="pointer-events-none absolute -top-11 right-1/2 translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+            <div class="bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg whitespace-nowrap shadow-lg flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Beta Launch
+            </div>
+            <div class="w-2 h-2 bg-slate-900 rotate-45 mx-auto -mt-1"></div>
+          </div>
 
-          <!-- Unread notification badge (adapts to 1, 2, or 3+ digits cleanly!) -->
-          <span
-            v-if="unread > 0"
-            class="absolute -top-1 -right-1 z-20 min-w-5 h-5 px-1.5 bg-rose-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-md"
+          <!-- Main messenger-sized circle button (60×60) -->
+          <button
+            type="button"
+            class="relative w-[150px] h-[150px] rounded-full border-[3px] border-white cursor-pointer flex items-center justify-center shadow-[0_8px_30px_rgba(5,150,105,0.55)] hover:scale-110 active:scale-95 transition-all duration-300 overflow-hidden animo-sheen-wrap"
+            aria-label="Open LSU Animo AI"
+            @click="openChat"
           >
-            {{ unread > 99 ? '99+' : unread }}
-          </span>
-        </button>
+            <img
+              :src="agentGender ? agentAvatar : FEMALE_AGENT"
+              alt="LSU Animo AI Agent"
+              class="w-full h-full object-cover"
+            />
+            <!-- Sheen sweep -->
+            <span class="animo-sheen pointer-events-none absolute inset-0"></span>
+
+            <!-- Unread badge -->
+            <span
+              v-if="unread > 0"
+              class="absolute -top-0.5 -right-0.5 z-20 min-w-5 h-5 px-1.5 bg-rose-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-md"
+            >
+              {{ unread > 99 ? '99+' : unread }}
+            </span>
+          </button>
+
+          <!-- "Click me" label below the button -->
+          <div class="mt-1.5 flex justify-center">
+            <span class="bg-emerald-700 text-white text-[9px] font-black uppercase tracking-wide px-2 py-0.5 rounded-full shadow-md animate-pulse">
+              Click me
+            </span>
+          </div>
+        </div>
       </div>
     </Transition>
 
@@ -586,7 +648,7 @@ const renderText = (text) => {
     >
       <div
         v-if="isOpen"
-        class="pointer-events-auto absolute bottom-0 left-0 bg-white rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,.25)] flex flex-col border border-emerald-500/20 overflow-hidden relative select-auto"
+        class="pointer-events-auto absolute bottom-0 right-0 bg-white shadow-[0_20px_60px_rgba(0,0,0,.25)] flex flex-col border border-emerald-500/20 overflow-visible select-auto"
         :style="boxStyle"
       >
         <!-- ── RESIZE HANDLES ─────────────────────────────────────── -->
@@ -614,24 +676,27 @@ const renderText = (text) => {
         </template>
         <!-- ── HEADER ───────────────────────────────────────────────── -->
         <div
-          class="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 flex-shrink-0 select-none shadow-sm cursor-default"
+          class="relative flex items-center justify-between pl-20 pr-4 pt-6 pb-3 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 flex-shrink-0 select-none shadow-sm cursor-default rounded-t-3xl"
           @dblclick="toggleMaximize"
         >
-          <div class="flex items-center gap-2.5">
-            <!-- Avatar with online dot -->
-            <div class="relative w-9 h-9 rounded-full bg-white/15 p-1 flex items-center justify-center flex-shrink-0 border border-white/20">
-              <img :src="LSU_SEAL" alt="LSU" class="w-7 h-7 object-contain drop-shadow" />
-              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-emerald-800"></span>
+          <!-- Agent avatar — oversized, overlapping the top edge of the box -->
+          <div class="absolute -top-10 -left-20 z-20">
+            <div class="relative w-[120px] h-[120px] rounded-full border-[3px] border-white overflow-hidden shadow-2xl ring-4 ring-emerald-400/40">
+              <img :src="agentAvatar" alt="LSU Agent" class="w-full h-full object-cover" />
             </div>
-            <div>
-              <div class="text-white text-sm font-black leading-tight text-left flex items-center gap-1.5">
-                <span>LSU Animo AI</span>
-                <span v-if="isFetching" class="w-1.5 h-1.5 rounded-full bg-emerald-200 animate-ping" title="Syncing"></span>
-              </div>
-              <div class="text-emerald-100/90 text-[11px] font-medium flex items-center gap-1">
-                <span>La Salle University Assistant</span>
-              </div>
+            <!-- Online dot -->
+            <span class="absolute bottom-1.5 right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-400 border-2 border-white z-20">
+              <span class="absolute inset-0 rounded-full bg-emerald-300 animate-ping opacity-70"></span>
+            </span>
+          </div>
+
+          <div>
+            <div class="text-white text-sm font-black leading-tight text-left flex items-center gap-1.5 -ml-7">
+              <span>Animo Chat</span>
+              <span class="text-[9px] font-black bg-emerald-400 text-emerald-900 px-1.5 py-0.5 rounded-full uppercase tracking-wide">Beta</span>
+              <span v-if="isFetching" class="w-1.5 h-1.5 rounded-full bg-emerald-200 animate-ping" title="Syncing"></span>
             </div>
+           
           </div>
 
           <!-- Header Action Buttons -->
@@ -644,6 +709,15 @@ const renderText = (text) => {
               @click="promptResetChat"
             >
               <i class="fa fa-rotate-right"></i>
+            </button>
+            <!-- Change Agent -->
+            <button
+              type="button"
+              class="w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white border-0 cursor-pointer flex items-center justify-center text-xs transition-colors"
+              title="Switch AI Agent"
+              @click="showAgentPick = true; nameStep = false"
+            >
+              <i class="fa fa-user-astronaut"></i>
             </button>
             <!-- Maximize / Restore -->
             <button
@@ -687,10 +761,46 @@ const renderText = (text) => {
         <!-- ── BODY (hidden when minimized) ───────────────────────── -->
         <template v-if="!isMinimized">
 
+          <!-- AGENT PICKER ─────────────────────────────────────────────── -->
+          <div v-if="showAgentPick" class="flex flex-col items-center gap-4 px-5 py-8 flex-1 bg-white overflow-y-auto text-center">
+            <div class="text-base font-black text-slate-800">Choose Your Preferred AI Agent</div>
+           
+
+            <div class="grid grid-cols-2 gap-3 w-full mt-1">
+              <!-- Female Agent -->
+              <button
+                type="button"
+                class="group flex flex-col items-center gap-2 p-3 rounded-2xl border-2 border-emerald-100 hover:border-emerald-500 bg-emerald-50 hover:bg-emerald-50 transition-all cursor-pointer"
+                @click="pickAgent('female')"
+              >
+                <div class="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md group-hover:scale-105 transition-transform">
+                  <img :src="FEMALE_AGENT" alt="Female Agent" class="w-full h-full object-cover" />
+                </div>
+                <span class="text-xs font-bold text-emerald-800">Female Agent</span>
+                <span class="text-[10px] text-slate-500">She / Her</span>
+              </button>
+
+              <!-- Male Agent -->
+              <button
+                type="button"
+                class="group flex flex-col items-center gap-2 p-3 rounded-2xl border-2 border-emerald-100 hover:border-emerald-500 bg-emerald-50 hover:bg-emerald-50 transition-all cursor-pointer"
+                @click="pickAgent('male')"
+              >
+                <div class="w-20 h-20 rounded-full overflow-hidden border-2 border-white shadow-md group-hover:scale-105 transition-transform">
+                  <img :src="MALE_AGENT" alt="Male Agent" class="w-full h-full object-cover" />
+                </div>
+                <span class="text-xs font-bold text-emerald-800">Male Agent</span>
+                <span class="text-[10px] text-slate-500">He / Him</span>
+              </button>
+            </div>
+
+            <p class="text-[10px] text-slate-400 mt-1">You can change this anytime from the settings.</p>
+          </div>
+
           <!-- NAME STEP ─────────────────────────────────────────────── -->
-          <div v-if="nameStep" class="flex flex-col items-center gap-3 px-5 py-6 flex-1 bg-white overflow-y-auto">
-            <div class="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center p-2 mb-1 shadow-sm">
-              <img :src="LSU_SEAL" alt="LSU" class="w-12 h-12 object-contain drop-shadow" />
+          <div v-if="nameStep && !showAgentPick" class="flex flex-col items-center gap-3 px-5 py-6 flex-1 bg-white overflow-y-auto">
+            <div class="w-20 h-20 rounded-full overflow-hidden border-4 border-emerald-100 shadow-md mb-1">
+              <img :src="agentAvatar" alt="Agent" class="w-full h-full object-cover" />
             </div>
             <div class="text-base font-black text-slate-800 text-center">
               {{ messages.length > 0 ? 'Update Contact Information' : 'Welcome to LSU Animo AI!' }}
@@ -746,7 +856,7 @@ const renderText = (text) => {
 
           <!-- CHAT MESSAGES ────────────────────────────────────────── -->
           <div
-            v-else
+            v-else-if="!showAgentPick && !nameStep"
             ref="chatBodyRef"
             class="flex-1 overflow-y-auto px-3.5 py-3 flex flex-col gap-2.5 bg-slate-50/70 scroll-smooth min-h-[280px]"
             style="scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent;"
@@ -759,11 +869,18 @@ const renderText = (text) => {
               <!-- Bot / Staff avatar -->
               <div
                 v-if="msg.sender !== 'user'"
-                class="w-7 h-7 rounded-full bg-emerald-700 border border-slate-200 flex items-center justify-center p-0.5 flex-shrink-0 shadow-xs"
+                class="w-8 h-8 rounded-full overflow-hidden border border-slate-200 flex-shrink-0 shadow-sm"
                 :title="msg.sender === 'human' ? 'LSU Support Team' : 'LSU Animo AI'"
               >
-                <img v-if="msg.sender === 'bot'" :src="LSU_SEAL" alt="LSU" class="w-5 h-5 object-contain" />
-                <i v-else class="fa fa-user-circle text-white text-sm"></i>
+                <img
+                  v-if="msg.sender === 'bot'"
+                  :src="agentAvatar"
+                  alt="LSU Agent"
+                  class="w-full h-full object-cover"
+                />
+                <div v-else class="w-full h-full bg-emerald-700 flex items-center justify-center">
+                  <i class="fa fa-user-circle text-white text-sm"></i>
+                </div>
               </div>
 
               <!-- Message Bubble -->
@@ -829,7 +946,7 @@ const renderText = (text) => {
                 class="px-3 py-1.5 rounded-full border border-emerald-500/40 bg-white text-emerald-800 text-xs font-semibold hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5 group"
                 @click="sendQuick(qr)"
               >
-                <i :class="[qr.icon, 'text-xs transition-colors group-hover:text-white']"></i>
+                <i :class="[qr.icon, 'text-xs text-emerald-700 transition-colors group-hover:text-white']"></i>
                 <span>{{ qr.label }}</span>
               </button>
             </div>
@@ -868,7 +985,7 @@ const renderText = (text) => {
                   @click="sendQuick(qr)"
                 >
                   <span class="flex items-center gap-2.5">
-                    <i :class="[qr.icon, 'text-xs w-4 text-center text-slate-400 group-hover:text-emerald-700 transition-colors']"></i>
+                    <i :class="[qr.icon, 'text-xs w-4 text-center text-emerald-700 group-hover:text-emerald-800 transition-colors']"></i>
                     <span>{{ qr.label }}</span>
                   </span>
                   <i class="fa fa-chevron-right text-[10px] text-slate-400 group-hover:text-emerald-600 transition-colors"></i>
@@ -985,4 +1102,44 @@ const renderText = (text) => {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+@keyframes animo-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+@keyframes animo-ring {
+  0%   { transform: scale(0.9); opacity: 0.6; }
+  70%  { transform: scale(1.18); opacity: 0; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+
+@keyframes animo-sheen {
+  0%, 60% { transform: translateX(-160%) skewX(-18deg); }
+  100%    { transform: translateX(260%) skewX(-18deg); }
+}
+
+.animo-float {
+  animation: animo-float 3s ease-in-out infinite;
+}
+.animo-float:hover {
+  animation-play-state: paused;
+}
+
+.animo-ring {
+  animation: animo-ring 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Sheen on the circular FAB */
+.animo-sheen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: animo-sheen 4s ease-in-out infinite;
+  border-radius: inherit;
+  pointer-events: none;
+}
+</style>

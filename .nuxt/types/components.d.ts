@@ -56,6 +56,7 @@ interface _GlobalComponents {
   ETCEquipmentRental: typeof import("../../app/components/ETC/EquipmentRental.vue")['default']
   ETCEventStreaming: typeof import("../../app/components/ETC/EventStreaming.vue")['default']
   ETCFAQs: typeof import("../../app/components/ETC/FAQs.vue")['default']
+  ETCForm: typeof import("../../app/components/ETC/Form.vue")['default']
   ETCHero: typeof import("../../app/components/ETC/Hero.vue")['default']
   ETCHyZONE: typeof import("../../app/components/ETC/HyZONE.vue")['default']
   ETCMultimediaProduction: typeof import("../../app/components/ETC/MultimediaProduction.vue")['default']
@@ -299,6 +300,7 @@ interface _GlobalComponents {
   LazyETCEquipmentRental: LazyComponent<typeof import("../../app/components/ETC/EquipmentRental.vue")['default']>
   LazyETCEventStreaming: LazyComponent<typeof import("../../app/components/ETC/EventStreaming.vue")['default']>
   LazyETCFAQs: LazyComponent<typeof import("../../app/components/ETC/FAQs.vue")['default']>
+  LazyETCForm: LazyComponent<typeof import("../../app/components/ETC/Form.vue")['default']>
   LazyETCHero: LazyComponent<typeof import("../../app/components/ETC/Hero.vue")['default']>
   LazyETCHyZONE: LazyComponent<typeof import("../../app/components/ETC/HyZONE.vue")['default']>
   LazyETCMultimediaProduction: LazyComponent<typeof import("../../app/components/ETC/MultimediaProduction.vue")['default']>

@@ -44,9 +44,7 @@
       <!-- Quick Action Buttons -->
       <div class="mt-7 flex flex-wrap items-center justify-center gap-3">
         <a
-          href="https://bit.ly/ETCRequestS"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="#request-form"
           class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white hover:bg-green-50 text-[#14532d] font-black text-xs sm:text-sm shadow-lg shadow-black/20 transition-all hover:scale-105"
         >
           <span>Request an ETC Service</span>
@@ -54,124 +52,118 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
         </a>
-
-        <!-- <a
-          href="https://bit.ly/ETCmyZ1guide"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/25 backdrop-blur-md transition-all hover:scale-105"
-        >
-          <svg class="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-          </svg>
-          <span>Public Manual Guide</span>
-        </a> -->
       </div>
 
       <!-- Categorized Navigation Dock -->
-      <div class="w-full max-w-4xl mt-10 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 p-4 sm:p-5 shadow-2xl shadow-black/25">
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/15 text-[11px] font-bold uppercase tracking-wider text-green-200">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Quick Directory Navigation</span>
+      <div class="w-full max-w-5xl mt-10 rounded-3xl bg-gradient-to-b from-white/[0.12] to-white/[0.04] backdrop-blur-xl border border-white/15 p-4 sm:p-6 shadow-2xl shadow-black/30 text-left">
+        <!-- Dock Header + Featured Quick Jumps -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
+          <div class="flex items-center gap-2.5">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
+            </span>
+            <div>
+              <span class="block text-xs font-extrabold uppercase tracking-[0.18em] text-emerald-200">
+                Quick Directory
+              </span>
+              <span class="block text-[11px] text-green-200/70">
+                Jump directly to any ETC service or resource
+              </span>
+            </div>
           </div>
-          <span class="text-[10px] text-green-300/80 font-medium lowercase">click to jump</span>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <a
+              href="#request-form"
+              class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-[#0a2e18] font-black text-xs shadow-lg shadow-emerald-950/30 transition-all hover:-translate-y-0.5"
+            >
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Request Form</span>
+            </a>
+            <a
+              href="#e-services"
+              class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white hover:bg-green-50 text-[#14532d] font-black text-xs shadow-lg shadow-black/20 transition-all hover:-translate-y-0.5"
+            >
+              <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span>E-Services</span>
+            </a>
+          </div>
         </div>
 
-        <div class="flex flex-wrap items-center justify-center gap-2">
-          <!-- Main E-Services -->
-          <a
-            href="#e-services"
-            class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#14532d] hover:bg-green-50 font-black text-xs shadow-md transition-all hover:scale-105"
+        <!-- 3-Column Categorized Links -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+          <div
+            v-for="group in directoryGroups"
+            :key="group.title"
+            class="rounded-2xl bg-black/20 border border-white/10 p-3.5 hover:border-emerald-400/30 transition-colors"
           >
-            <span>⚡ E-Services</span>
-          </a>
+            <div class="flex items-center gap-2 mb-2.5 px-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span class="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-300/90">
+                {{ group.title }}
+              </span>
+            </div>
 
-          <!-- Core Academic & Borrowing -->
-          <a
-            href="#equipment-list"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>Equipment List</span>
-          </a>
-          <a
-            href="#hyzone"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>HyZONE</span>
-          </a>
-          <a
-            href="#custodianship"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>Custodianship</span>
-          </a>
-
-          <!-- Media & Productions -->
-          <a
-            href="#production-rates"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>Sound &amp; Crew</span>
-          </a>
-          <a
-            href="#streaming"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>Streaming</span>
-          </a>
-          <a
-            href="#equipment-rental"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>Gear Rental</span>
-          </a>
-          <a
-            href="#studio-rental"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>Studio Rental</span>
-          </a>
-          <a
-            href="#multimedia-production"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>Multimedia Prod</span>
-          </a>
-
-          <!-- Training, Steps, Info -->
-          <a
-            href="#edtech-training"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>EdTech Training</span>
-          </a>
-          <a
-            href="#process-steps"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>Workflow Steps</span>
-          </a>
-          <a
-            href="#etc-policies"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>Policies</span>
-          </a>
-          <a
-            href="#etc-team"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>Our Team</span>
-          </a>
-          <a
-            href="#etc-faqs"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/20 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition-all hover:scale-105"
-          >
-            <span>FAQs</span>
-          </a>
+            <div class="flex flex-wrap gap-1.5">
+              <a
+                v-for="item in group.items"
+                :key="item.href"
+                :href="item.href"
+                class="group inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.06] hover:bg-emerald-400/20 border border-white/10 hover:border-emerald-400/40 text-xs font-medium text-green-50 hover:text-white transition-all"
+              >
+                <span>{{ item.label }}</span>
+                <svg
+                  class="w-3 h-3 text-emerald-300/60 group-hover:text-emerald-300 group-hover:translate-x-0.5 transition-all"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 </template>
+
+<script setup>
+const directoryGroups = [
+  {
+    title: 'Equipment & Spaces',
+    items: [
+      { label: 'Equipment List', href: '#equipment-list' },
+      { label: 'HyZONE', href: '#hyzone' },
+      { label: 'Custodianship', href: '#custodianship' },
+      { label: 'Gear Rental', href: '#equipment-rental' },
+      { label: 'Studio Rental', href: '#studio-rental' },
+    ],
+  },
+  {
+    title: 'Media & Training',
+    items: [
+      { label: 'Sound & Crew', href: '#production-rates' },
+      { label: 'Streaming', href: '#streaming' },
+      { label: 'Multimedia Prod', href: '#multimedia-production' },
+      { label: 'EdTech Training', href: '#edtech-training' },
+    ],
+  },
+  {
+    title: 'Guides & Support',
+    items: [
+      { label: 'Workflow Steps', href: '#process-steps' },
+      { label: 'Policies', href: '#etc-policies' },
+      { label: 'Our Team', href: '#etc-team' },
+      { label: 'FAQs', href: '#etc-faqs' },
+    ],
+  },
+];
+</script>

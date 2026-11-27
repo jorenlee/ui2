@@ -16,6 +16,7 @@ useHead({
     <Header />
 
     <ETCHero />
+    <ETCForm />
     <ETCServices />
     <ETCEquipmentList />
     <ETCHyZONE />

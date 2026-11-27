@@ -56,6 +56,7 @@ export const ETCEquipmentList: typeof import("../app/components/ETC/EquipmentLis
 export const ETCEquipmentRental: typeof import("../app/components/ETC/EquipmentRental.vue")['default']
 export const ETCEventStreaming: typeof import("../app/components/ETC/EventStreaming.vue")['default']
 export const ETCFAQs: typeof import("../app/components/ETC/FAQs.vue")['default']
+export const ETCForm: typeof import("../app/components/ETC/Form.vue")['default']
 export const ETCHero: typeof import("../app/components/ETC/Hero.vue")['default']
 export const ETCHyZONE: typeof import("../app/components/ETC/HyZONE.vue")['default']
 export const ETCMultimediaProduction: typeof import("../app/components/ETC/MultimediaProduction.vue")['default']
@@ -299,6 +300,7 @@ export const LazyETCEquipmentList: LazyComponent<typeof import("../app/component
 export const LazyETCEquipmentRental: LazyComponent<typeof import("../app/components/ETC/EquipmentRental.vue")['default']>
 export const LazyETCEventStreaming: LazyComponent<typeof import("../app/components/ETC/EventStreaming.vue")['default']>
 export const LazyETCFAQs: LazyComponent<typeof import("../app/components/ETC/FAQs.vue")['default']>
+export const LazyETCForm: LazyComponent<typeof import("../app/components/ETC/Form.vue")['default']>
 export const LazyETCHero: LazyComponent<typeof import("../app/components/ETC/Hero.vue")['default']>
 export const LazyETCHyZONE: LazyComponent<typeof import("../app/components/ETC/HyZONE.vue")['default']>
 export const LazyETCMultimediaProduction: LazyComponent<typeof import("../app/components/ETC/MultimediaProduction.vue")['default']>

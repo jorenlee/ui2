@@ -51,7 +51,9 @@ const quickLinks = [
 </script>
 
 <template>
-  <footer class="w-full text-slate-100 font-sans relative justify-center text-center">
+<div>
+    <footer class="w-full text-slate-100 font-sans relative justify-center text-center">
+        <LSUAnimoAI />
     <GoogleAdsense />
     <UniversityFeedbackWidget />
 
@@ -172,4 +174,5 @@ const quickLinks = [
       </div>
     </div>
   </footer>
+</div>
 </template>
