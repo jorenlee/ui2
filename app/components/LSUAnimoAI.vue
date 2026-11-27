@@ -127,6 +127,11 @@ const onWindowResize = () => {
     fabX.value = clamped.x
     fabY.value = clamped.y
   }
+  if (boxX.value !== null && boxY.value !== null) {
+    const clampedBox = clampBoxPos(boxX.value, boxY.value)
+    boxX.value = clampedBox.x
+    boxY.value = clampedBox.y
+  }
 }
 
 // ─── AGENT SELECTION ──────────────────────────────────────────────────
@@ -136,7 +141,7 @@ const agentAvatar   = computed(() =>
   agentGender.value === 'male' ? MALE_AGENT : FEMALE_AGENT
 )
 
-// ─── RESIZABLE CHAT BOX STATE ─────────────────────────────────────────
+// ─── RESIZABLE & DRAGGABLE CHAT BOX STATE ─────────────────────────────
 const chatWidth       = ref(420)
 const chatHeight      = ref(560)
 const isMaximized     = ref(false)
@@ -147,6 +152,17 @@ let startX = 0
 let startY = 0
 let startW = 0
 let startH = 0
+let startBoxX = 0
+let startBoxY = 0
+
+const boxRef          = ref(null)
+const boxX            = ref(null)
+const boxY            = ref(null)
+const isDraggingBox   = ref(false)
+let boxDragStartX     = 0
+let boxDragStartY     = 0
+let boxOriginX        = 0
+let boxOriginY        = 0
 
 const sessionId    = ref('')
 const messages     = ref([])
@@ -277,18 +293,6 @@ onMounted(async () => {
       } catch {}
     }
     window.addEventListener('resize', onWindowResize)
-  }
-})
-
-onUnmounted(() => {
-  stopPolling()
-  if (process.client) {
-    window.removeEventListener('pointermove', onPointerMove)
-    window.removeEventListener('pointerup', onPointerUp)
-    window.removeEventListener('pointermove', onFabPointerMove)
-    window.removeEventListener('pointerup', onFabPointerUp)
-    window.removeEventListener('pointercancel', onFabPointerUp)
-    window.removeEventListener('resize', onWindowResize)
   }
 })
 
@@ -466,29 +470,53 @@ const confirmResetChat = async () => {
   scrollToBottom()
 }
 
-// ─── RESIZE & MAXIMIZE LOGIC ──────────────────────────────────────────
+// ─── RESIZE, DRAG & MAXIMIZE LOGIC ────────────────────────────────────
+const isMobileView = () => winW.value < 640
+
+const clampBoxPos = (x, y) => {
+  const rect = boxRef.value?.getBoundingClientRect()
+  const w = rect?.width || Math.min(chatWidth.value, winW.value)
+  const h = rect?.height || (isMinimized.value ? 62 : Math.min(chatHeight.value, winH.value))
+  const maxX = Math.max(0, winW.value - w)
+  const maxY = Math.max(0, winH.value - h)
+  return {
+    x: Math.min(Math.max(x, 0), maxX),
+    y: Math.min(Math.max(y, 0), maxY),
+  }
+}
+
+const boxContainerStyle = computed(() => {
+  if (boxX.value !== null && boxY.value !== null && !isMaximized.value) {
+    return {
+      left: `${boxX.value}px`,
+      top: `${boxY.value}px`,
+      right: 'auto',
+      bottom: 'auto',
+    }
+  }
+  return {}
+})
+
 const boxStyle = computed(() => {
   if (isMinimized.value) {
     return {
-      width: '420px',
-      maxWidth: 'calc(100vw - 32px)',
+      width: isMobileView() ? 'min(340px, calc(100vw - 16px))' : '420px',
+      maxWidth: 'calc(100vw - 16px)',
       height: '62px',
-      transition: 'height 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-    }
-  }
-
-  // Mobile: full-screen chat
-  if (process.client && window.innerWidth < 640) {
-    return {
-      width: '100vw',
-      height: '100vh',
-      maxWidth: '100vw',
-      maxHeight: '100vh',
-      transition: isResizing.value ? 'none' : 'width 0.25s ease, height 0.25s ease',
+      transition: isDraggingBox.value ? 'none' : 'height 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
     }
   }
 
   if (isMaximized.value) {
+    if (isMobileView()) {
+      return {
+        width: '100vw',
+        height: '100vh',
+        maxWidth: '100vw',
+        maxHeight: '100vh',
+        transition: isResizing.value ? 'none' : 'width 0.25s ease, height 0.25s ease',
+      }
+    }
     return {
       width: 'min(920px, calc(100vw - 32px))',
       height: 'min(820px, calc(100vh - 48px))',
@@ -498,14 +526,64 @@ const boxStyle = computed(() => {
     }
   }
 
+  if (isMobileView()) {
+    return {
+      width: `${Math.min(chatWidth.value, winW.value)}px`,
+      height: `${Math.min(chatHeight.value, winH.value)}px`,
+      maxWidth: '100vw',
+      maxHeight: '100vh',
+      transition: isResizing.value || isDraggingBox.value ? 'none' : 'height 0.25s ease, width 0.25s ease',
+    }
+  }
+
   return {
     width: `${chatWidth.value}px`,
     height: `${chatHeight.value}px`,
     maxWidth: 'calc(100vw - 32px)',
     maxHeight: 'calc(100vh - 48px)',
-    transition: isResizing.value ? 'none' : 'height 0.25s ease, width 0.25s ease',
+    transition: isResizing.value || isDraggingBox.value ? 'none' : 'height 0.25s ease, width 0.25s ease',
   }
 })
+
+const startBoxDrag = (e) => {
+  if (e.button !== undefined && e.button !== 0) return
+  if (isMaximized.value) return
+  if (e.target.closest('button')) return
+
+  const rect = boxRef.value?.getBoundingClientRect()
+  if (!rect) return
+
+  isDraggingBox.value = true
+  boxDragStartX = e.clientX
+  boxDragStartY = e.clientY
+  boxOriginX = rect.left
+  boxOriginY = rect.top
+  boxX.value = rect.left
+  boxY.value = rect.top
+
+  window.addEventListener('pointermove', onBoxPointerMove)
+  window.addEventListener('pointerup', onBoxPointerUp)
+  window.addEventListener('pointercancel', onBoxPointerUp)
+  document.body.style.userSelect = 'none'
+}
+
+const onBoxPointerMove = (e) => {
+  if (!isDraggingBox.value) return
+  const dx = e.clientX - boxDragStartX
+  const dy = e.clientY - boxDragStartY
+  const clamped = clampBoxPos(boxOriginX + dx, boxOriginY + dy)
+  boxX.value = clamped.x
+  boxY.value = clamped.y
+}
+
+const onBoxPointerUp = () => {
+  if (!isDraggingBox.value) return
+  isDraggingBox.value = false
+  window.removeEventListener('pointermove', onBoxPointerMove)
+  window.removeEventListener('pointerup', onBoxPointerUp)
+  window.removeEventListener('pointercancel', onBoxPointerUp)
+  document.body.style.userSelect = ''
+}
 
 const startResize = (e, direction) => {
   if (isMinimized.value) return
@@ -515,28 +593,31 @@ const startResize = (e, direction) => {
   resizeDirection = direction
   startX = e.clientX
   startY = e.clientY
-  startW = chatWidth.value
-  startH = chatHeight.value
+
+  const rect = boxRef.value?.getBoundingClientRect()
+  startW = rect ? Math.round(rect.width) : chatWidth.value
+  startH = rect ? Math.round(rect.height) : chatHeight.value
+  startBoxX = rect ? rect.left : 0
+  startBoxY = rect ? rect.top : 0
 
   if (isMaximized.value) {
     isMaximized.value = false
-    startW = Math.min(920, window.innerWidth - 32)
-    startH = Math.min(820, window.innerHeight - 48)
     chatWidth.value = startW
     chatHeight.value = startH
   }
 
   window.addEventListener('pointermove', onPointerMove)
   window.addEventListener('pointerup', onPointerUp)
+  window.addEventListener('pointercancel', onPointerUp)
   document.body.style.userSelect = 'none'
 }
 
 const onPointerMove = (e) => {
   if (!isResizing.value) return
-  const maxW = Math.max(340, window.innerWidth - 32)
-  const maxH = Math.max(380, window.innerHeight - 48)
-  const minW = 320
-  const minH = 380
+  const maxW = isMobileView() ? window.innerWidth : Math.max(340, window.innerWidth - 32)
+  const maxH = isMobileView() ? window.innerHeight : Math.max(380, window.innerHeight - 48)
+  const minW = isMobileView() ? 280 : 320
+  const minH = isMobileView() ? 300 : 380
 
   if (resizeDirection.includes('e')) {
     const deltaX = e.clientX - startX
@@ -544,10 +625,22 @@ const onPointerMove = (e) => {
     chatWidth.value = Math.round(newW)
   }
 
+  if (resizeDirection.includes('w')) {
+    const deltaX = startX - e.clientX
+    const newW = Math.round(Math.min(Math.max(startW + deltaX, minW), maxW))
+    chatWidth.value = newW
+    if (boxX.value !== null) {
+      boxX.value = Math.max(0, startBoxX + (startW - newW))
+    }
+  }
+
   if (resizeDirection.includes('n')) {
     const deltaY = startY - e.clientY
-    const newH = Math.min(Math.max(startH + deltaY, minH), maxH)
-    chatHeight.value = Math.round(newH)
+    const newH = Math.round(Math.min(Math.max(startH + deltaY, minH), maxH))
+    chatHeight.value = newH
+    if (boxY.value !== null) {
+      boxY.value = Math.max(0, startBoxY + (startH - newH))
+    }
   }
 }
 
@@ -557,6 +650,7 @@ const onPointerUp = () => {
     resizeDirection = null
     window.removeEventListener('pointermove', onPointerMove)
     window.removeEventListener('pointerup', onPointerUp)
+    window.removeEventListener('pointercancel', onPointerUp)
     document.body.style.userSelect = ''
     if (process.client) {
       localStorage.setItem('lsuanimoai_box_w', String(chatWidth.value))
@@ -732,6 +826,22 @@ const renderText = (text) => {
     '<a href="$1" target="_blank" rel="noopener noreferrer" class="underline text-emerald-600 hover:text-emerald-800 break-all font-semibold">$1</a>'
   )
 }
+
+onUnmounted(() => {
+  stopPolling()
+  if (process.client) {
+    window.removeEventListener('pointermove', onPointerMove)
+    window.removeEventListener('pointerup', onPointerUp)
+    window.removeEventListener('pointercancel', onPointerUp)
+    window.removeEventListener('pointermove', onBoxPointerMove)
+    window.removeEventListener('pointerup', onBoxPointerUp)
+    window.removeEventListener('pointercancel', onBoxPointerUp)
+    window.removeEventListener('pointermove', onFabPointerMove)
+    window.removeEventListener('pointerup', onFabPointerUp)
+    window.removeEventListener('pointercancel', onFabPointerUp)
+    window.removeEventListener('resize', onWindowResize)
+  }
+})
 </script>
 
 <template>
@@ -851,8 +961,11 @@ const renderText = (text) => {
       </div>
     </div>
 
-    <!-- ── CHAT WINDOW CONTAINER (Anchored bottom-right) ───────────── -->
-    <div class="fixed right-0 bottom-0 sm:right-5 sm:bottom-6 z-[99990] pointer-events-none">
+    <!-- ── CHAT WINDOW CONTAINER (Draggable & Resizable) ────────────── -->
+    <div
+      class="fixed right-0 bottom-0 sm:right-5 sm:bottom-6 z-[99990] pointer-events-none"
+      :style="boxContainerStyle"
+    >
       <Transition
         enter-active-class="transition duration-300 ease-out"
         enter-from-class="opacity-0 translate-y-4 scale-95"
@@ -861,35 +974,54 @@ const renderText = (text) => {
       >
         <div
           v-if="isOpen"
-          class="pointer-events-auto relative bg-white shadow-[0_20px_60px_rgba(0,0,0,.25)] flex flex-col border border-emerald-500/20 overflow-visible select-auto"
+          ref="boxRef"
+          class="pointer-events-auto relative bg-white shadow-[0_20px_60px_rgba(0,0,0,.25)] flex flex-col border border-emerald-500/20 overflow-visible select-auto rounded-t-2xl sm:rounded-t-3xl"
           :style="boxStyle"
         >
-        <!-- ── RESIZE HANDLES (desktop only) ─────────────────────── -->
+        <!-- ── RESIZE HANDLES (desktop & mobile touch) ──────────── -->
         <template v-if="!isMinimized">
           <!-- Top Border Resize Handle -->
           <div
-            class="hidden sm:block absolute top-0 left-0 right-12 h-2 cursor-ns-resize z-40 hover:bg-emerald-400/20 transition-colors"
+            class="absolute top-0 left-7 right-7 h-2.5 cursor-ns-resize z-40 hover:bg-emerald-400/20 transition-colors touch-none"
             title="Drag to resize height"
             @pointerdown="startResize($event, 'n')"
           ></div>
+          <!-- Left Border Resize Handle -->
+          <div
+            class="absolute top-7 bottom-0 left-0 w-2.5 cursor-ew-resize z-40 hover:bg-emerald-400/20 transition-colors touch-none"
+            title="Drag to resize width"
+            @pointerdown="startResize($event, 'w')"
+          ></div>
           <!-- Right Border Resize Handle -->
           <div
-            class="hidden sm:block absolute top-12 bottom-0 right-0 w-2 cursor-ew-resize z-40 hover:bg-emerald-400/20 transition-colors"
+            class="absolute top-7 bottom-0 right-0 w-2.5 cursor-ew-resize z-40 hover:bg-emerald-400/20 transition-colors touch-none"
             title="Drag to resize width"
             @pointerdown="startResize($event, 'e')"
           ></div>
+          <!-- Top-Left Corner Resize Grip Handle -->
+          <div
+            class="flex absolute top-0 left-0 w-7 h-7 cursor-nwse-resize z-50 items-center justify-center group touch-none"
+            title="Drag corner to resize width and height"
+            @pointerdown="startResize($event, 'nw')"
+          >
+            <div class="w-3 h-3 border-t-2 border-l-2 border-white/40 group-hover:border-white transition-all rounded-tl-md group-hover:scale-110"></div>
+          </div>
           <!-- Top-Right Corner Resize Grip Handle -->
           <div
-            class="hidden sm:flex absolute top-0 right-0 w-7 h-7 cursor-nesw-resize z-50 items-center justify-center group"
+            class="flex absolute top-0 right-0 w-7 h-7 cursor-nesw-resize z-50 items-center justify-center group touch-none"
             title="Drag corner to resize width and height"
             @pointerdown="startResize($event, 'ne')"
           >
             <div class="w-3 h-3 border-t-2 border-r-2 border-white/40 group-hover:border-white transition-all rounded-tr-md group-hover:scale-110"></div>
           </div>
         </template>
-        <!-- ── HEADER ───────────────────────────────────────────────── -->
+        <!-- ── HEADER (Draggable on mobile & desktop) ─────────────── -->
         <div
-          class="relative flex items-center justify-between px-3 py-3 sm:pl-20 sm:pr-4 sm:pt-6 sm:pb-3 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 flex-shrink-0 select-none shadow-sm cursor-default sm:rounded-t-3xl"
+          :class="[
+            'relative flex items-center justify-between px-3 py-3 sm:pl-20 sm:pr-4 sm:pt-6 sm:pb-3 bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-700 flex-shrink-0 select-none shadow-sm rounded-t-2xl sm:rounded-t-3xl touch-none',
+            isMaximized ? 'cursor-default' : (isDraggingBox ? 'cursor-grabbing' : 'cursor-grab')
+          ]"
+          @pointerdown="startBoxDrag"
           @dblclick="toggleMaximize"
         >
           <div class="flex items-center gap-2.5 sm:block min-w-0">
@@ -933,10 +1065,10 @@ const renderText = (text) => {
             >
               <i class="fa fa-user-astronaut"></i>
             </button>
-            <!-- Maximize / Restore (desktop only) -->
+            <!-- Maximize / Restore -->
             <button
               type="button"
-              class="hidden sm:flex w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white border-0 cursor-pointer items-center justify-center text-xs transition-colors"
+              class="flex w-7 h-7 rounded-lg bg-white/15 hover:bg-white/25 text-white border-0 cursor-pointer items-center justify-center text-xs transition-colors"
               :title="isMaximized ? 'Restore Size' : 'Maximize Chat'"
               @click="toggleMaximize"
             >
